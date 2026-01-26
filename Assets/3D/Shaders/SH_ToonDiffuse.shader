@@ -1,0 +1,129 @@
+Shader "Cel Shader/Toon Diffuse"
+
+
+{
+
+	Properties
+
+	// The shadow ranges (below) are very small because of the minimal values required to get the desired look. 
+	// If needed, you can furhter adjust these ranges.
+
+	{
+		_MainTex("Texture", 2D) = "white" {}
+		_AmbientColor("Ambient Color", Color) = (0,0,0,1)
+		_AmbientColorIntensity("Ambient Color Intensity", Range(0,5)) = 0.5
+		_ShadowSoftness("Shadow Softness", Range(0,0.5)) = 0.1
+		_ShadowScatter("Shadow Scatter", Range(0,10)) = 5
+		_ShadowRangeMin("Shadow Range Min", Range(0,1)) = 0.54
+		_ShadowRangeMax("Shadow Range Max", Range(-2,2)) = -0.4
+	}
+
+	SubShader
+	{
+		Tags
+		{
+			"RenderType" = "Opaque"
+			"RenderPipeline" = "UniversalPipeline"
+			"LightMode" = "UniversalForward"
+		}
+
+		Pass
+		{
+			Name "ToonDiffuse"
+
+			CGPROGRAM
+
+			#pragma vertex vert
+			#pragma fragment frag
+
+			#pragma multi_compile_fog
+
+			#include "UnityCG.cginc"
+
+			#include "Lighting.cginc"
+
+
+			struct appdata
+			{
+				float4 vertex : POSITION;
+				float2 uv : TEXCOORD0;
+				float3 normal : NORMAL;
+			};
+
+			struct v2f
+			{
+				float2 uv : TEXCOORD0;
+				UNITY_FOG_COORDS(1)
+				float4 vertex : SV_POSITION;
+				float3 normal : NORMAL;
+			};
+
+			sampler _MainTex;
+			float4 _MainTex_ST;
+			float4 _AmbientColor;
+			float _AmbientColorIntensity;
+			float _ShadowSoftness;
+			float _ShadowScatter;
+			float _ShadowRangeMin;
+			float _ShadowRangeMax;
+
+			v2f vert(appdata v)
+			{
+				v2f o;
+				o.vertex = UnityObjectToClipPos(v.vertex);
+				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+				o.normal = UnityObjectToWorldNormal(v.normal);
+				o.normal = normalize(o.normal);
+				UNITY_TRANSFER_FOG(o, o.vertex);
+				return o;
+			}
+
+			// inverse lerp + lerp = REMAP node in Shader Graph.
+
+			// create inverse lerp function to use for Remap:
+			float invLerp(float a, float b, float value)
+			{
+				return (value - a) / (b - a);
+			}
+
+
+			fixed4 frag(v2f i) : SV_Target
+			{
+				float shadowScatter = _ShadowScatter / 50; // dividing shadowScatter value to have more precise control over the slider in inspector.
+				float3 lightDir = _WorldSpaceLightPos0.xyz; // getting the world space light (Directional Light in scene).
+
+				float ramp = dot(lightDir, i.normal); // dot product between the Directional Light and the object normal vector.
+
+				// REMAP of the dot product:
+				float remapIn = invLerp(-1, 1, ramp);
+				float remapOut = lerp(0, 1, remapIn);
+
+				float shadowDivide1 = remapOut / shadowScatter;
+
+				float shadowFloor = floor(shadowDivide1); // flooring the remap of the dot product.
+				
+				// REMAP of the shadowFloor:
+				float shadowDivide2 = 1 / shadowScatter;
+				float shadowRemapIn = invLerp(shadowDivide2, 0, shadowFloor);
+				float shadowRemapOut = lerp(_ShadowRangeMin, _ShadowRangeMax, shadowRemapIn);
+				
+				// sample the Texture
+				fixed4 col = tex2D(_MainTex, i.uv);
+
+				// smoothstep between the shadow remap and the shadow softness + adding the ambient color:
+				float3 lighting = smoothstep(0, _ShadowSoftness, shadowRemapOut) + (_AmbientColor * _AmbientColorIntensity);
+
+				float3 texLighting = col + lighting;
+
+				// multiply the shaded texture with the base texture (to get colored shadows):
+				fixed4 final = col * fixed4(texLighting, 1.0);
+
+				// apply fog
+				UNITY_APPLY_FOG(i.fogCoord, final);
+				return final;
+			}
+
+			ENDCG
+		}
+	}
+}

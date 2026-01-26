@@ -14,7 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp-Editor::ColoredFolderSettings
   folderPaths:
   - Assets/3D
+  - Assets/3D/Testing
+  - Assets/3D/Testing/dummy
+  - Assets/3D/Testing/dummy/materials
+  - Assets/3D/Shaders
   folderColors:
   - {r: 1, g: 0, b: 0.07474327, a: 0}
-  folderApplyModes: 01000000
+  - {r: 1, g: 0, b: 0.07474327, a: 0}
+  - {r: 1, g: 0, b: 0.07474327, a: 0}
+  - {r: 1, g: 0, b: 0.07474327, a: 0}
+  - {r: 1, g: 0, b: 0.07474327, a: 0}
+  folderApplyModes: 0100000001000000010000000100000001000000
   autoInheritColors: 1
