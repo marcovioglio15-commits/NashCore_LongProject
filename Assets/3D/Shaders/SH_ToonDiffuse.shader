@@ -92,7 +92,7 @@ Shader "Cel Shader/Toon Diffuse"
 				float shadowScatter = _ShadowScatter / 50; // dividing shadowScatter value to have more precise control over the slider in inspector.
 				float3 lightDir = _WorldSpaceLightPos0.xyz; // getting the world space light (Directional Light in scene).
 
-				float ramp = dot(lightDir, i.normal); // dot product between the Directional Light and the object normal vector.
+				float ramp = dot(lightDir, i.normal); // dot product between the Directional Light and the object's normal vector.
 
 				// REMAP of the dot product:
 				float remapIn = invLerp(-1, 1, ramp);
