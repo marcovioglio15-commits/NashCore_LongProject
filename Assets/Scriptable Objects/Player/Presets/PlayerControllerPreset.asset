@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4c5ed84bdc257044839a6d901f81512, type: 3}
+  m_Name: PlayerControllerPreset
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPreset
+  m_PresetId: 903fe97c3f5243de90489e5dff9eaed9
+  m_PresetName: PlayerControllerPreset
+  m_Description: What an awesome description!
+  m_Version: 1.0.0
+  m_MovementSettings:
+    m_DirectionsMode: 1
+    m_DiscreteDirectionCount: 4
+    m_DirectionOffsetDegrees: 0
+    m_MovementReference: 0
+    m_Values:
+      m_BaseSpeed: 4
+      m_MaxSpeed: 6
+      m_Acceleration: 12
+      m_Deceleration: 14
+      m_InputDeadZone: 0.1
+  m_LookSettings:
+    m_DirectionsMode: 1
+    m_DiscreteDirectionCount: 4
+    m_DirectionOffsetDegrees: 0
+    m_FrontConeEnabled: 1
+    m_FrontConeAngle: 90
+    m_FrontConeMaxSpeedMultiplier: 1
+    m_FrontConeAccelerationMultiplier: 1
+    m_BackConeEnabled: 0
+    m_BackConeAngle: 90
+    m_BackConeMaxSpeedMultiplier: 1
+    m_BackConeAccelerationMultiplier: 1
+    m_LeftConeEnabled: 0
+    m_LeftConeAngle: 90
+    m_LeftConeMaxSpeedMultiplier: 1
+    m_LeftConeAccelerationMultiplier: 1
+    m_RightConeEnabled: 0
+    m_RightConeAngle: 90
+    m_RightConeMaxSpeedMultiplier: 1
+    m_RightConeAccelerationMultiplier: 1
+    m_LookReference: 0
+    m_RotationMode: 0
+    m_RotationSpeed: 540
+    m_MultiplierSampling: 0
+    m_DiscreteDirectionMaxSpeedMultipliers:
+    - 1
+    - 1
+    - 1
+    - 1
+    m_DiscreteDirectionAccelerationMultipliers:
+    - 1
+    - 1
+    - 1
+    - 1
+    m_Values:
+      m_RotationDamping: 0.1
+      m_RotationMaxSpeed: 720
+      m_RotationDeadZone: 0.1
+  m_CameraSettings:
+    m_Behavior: 2
+    m_FollowOffset: {x: 0, y: 10, z: -8}
+    m_RoomAnchor: {fileID: 0}
+    m_Values:
+      m_FollowSpeed: 8
+      m_CameraLag: 0.1
+      m_Damping: 0.15
+      m_MaxFollowDistance: 6
+      m_DeadZoneRadius: 0.2
+  m_MoveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+  m_LookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
+  m_InputOverrides:
+  - m_ActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
+    m_BindingId: c1f7a91b-d0fd-4a62-997e-7fb9b69bf235
+    m_OverridePath: <Gamepad>/rightStick
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: e2062cb9-1b15-46a2-838c-2f8d72a0bdd9
+    m_OverridePath: <Keyboard>/w
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 8180e8bd-4097-4f4e-ab88-4523101a6ce9
+    m_OverridePath: <Keyboard>/w
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 320bffee-a40b-4347-ac70-c210eb8bc73a
+    m_OverridePath: <Keyboard>/s
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 1c5327b5-f71c-4f60-99c7-4e737386f1d1
+    m_OverridePath: <Keyboard>/s
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: d2581a9b-1d11-4566-b27d-b92aff5fabbc
+    m_OverridePath: <Keyboard>/a
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 2e46982e-44cc-431b-9f0b-c11910bf467a
+    m_OverridePath: <Keyboard>/a
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: fcfe95b8-67b9-4526-84b5-5d0bc98d6400
+    m_OverridePath: <Keyboard>/d
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 77bff152-3580-4b21-b6de-dcd0c7e41164
+    m_OverridePath: <Keyboard>/d
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 

@@ -54,7 +54,7 @@ public class ColoredFolderAutoApplyPostprocessor : AssetPostprocessor
     private static ColoredFolderSettings LoadSettingsForRoot(string rootName)
     {
         // load-only variant (no creation)
-        string assetPath = $"Assets/Editor/ColoredFolders/ColoredFolderSettings_{rootName}.asset";
+        string assetPath = $"Assets/Scriptable Objects/Editor/ColoredFolders/ColoredFolderSettings_{rootName}.asset";
         return AssetDatabase.LoadAssetAtPath<ColoredFolderSettings>(assetPath);
     }
 }

@@ -141,7 +141,7 @@ public class ColoredFoldersWindow : EditorWindow
     // load or create settings for a root group (used in editor window only)
     private static ColoredFolderSettings LoadOrCreateSettingsForRoot(string rootName)
     {
-        string folderPath = "Assets/Editor/ColoredFolders";
+        string folderPath = "Assets/Scriptable Objects/Editor/ColoredFolders";
         if (!Directory.Exists(folderPath))
             Directory.CreateDirectory(folderPath); // ensure dir exists
 
@@ -164,14 +164,14 @@ public class ColoredFoldersWindow : EditorWindow
     // load existing settings WITHOUT creating new ones (used by drawer)
     public static ColoredFolderSettings LoadSettingsIfExists(string rootName)
     {
-        string path = $"Assets/Editor/ColoredFolders/ColoredFolderSettings_{rootName}.asset";
+        string path = $"Assets/Scriptable Objects/Editor/ColoredFolders/ColoredFolderSettings_{rootName}.asset";
         return AssetDatabase.LoadAssetAtPath<ColoredFolderSettings>(path); // null if missing
     }
 
     // get list of existing roots
     private static string[] GetExistingRoots()
     {
-        string folderPath = "Assets/Editor/ColoredFolders";
+        string folderPath = "Assets/Scriptable Objects/Editor/ColoredFolders";
         if (!Directory.Exists(folderPath))
             return new string[0];
 

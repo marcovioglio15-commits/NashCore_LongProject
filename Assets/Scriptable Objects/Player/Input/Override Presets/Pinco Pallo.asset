@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01cc8ee778137ee4e92183556dc2dc3e, type: 3}
+  m_Name: Pinco Pallo
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputOverridePreset
+  m_PresetId: 78ae6094279a451eae662b3cd5466062
+  m_PresetName: Pinco Pallo
+  m_Description: 
+  m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+  m_ActionName: Move
+  m_Overrides:
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: e2062cb9-1b15-46a2-838c-2f8d72a0bdd9
+    m_OverridePath: <Keyboard>/upArrow
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 8180e8bd-4097-4f4e-ab88-4523101a6ce9
+    m_OverridePath: <Keyboard>/upArrow
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 320bffee-a40b-4347-ac70-c210eb8bc73a
+    m_OverridePath: <Keyboard>/downArrow
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 1c5327b5-f71c-4f60-99c7-4e737386f1d1
+    m_OverridePath: <Keyboard>/downArrow
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: d2581a9b-1d11-4566-b27d-b92aff5fabbc
+    m_OverridePath: <Keyboard>/leftArrow
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 2e46982e-44cc-431b-9f0b-c11910bf467a
+    m_OverridePath: <Keyboard>/leftArrow
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: fcfe95b8-67b9-4526-84b5-5d0bc98d6400
+    m_OverridePath: <Keyboard>/rightArrow
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
+  - m_ActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+    m_BindingId: 77bff152-3580-4b21-b6de-dcd0c7e41164
+    m_OverridePath: <Keyboard>/rightArrow
+    m_OverrideInteractions: 
+    m_OverrideProcessors: 
