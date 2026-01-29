@@ -31,7 +31,33 @@ Shader "Cel Shader/Toon Outline"
 			float4 _OutlineColor;
 			float _OutlineThickness;
 
-			struct vertexInput
+
+			struct appdata
+			{
+				float4 vertex : POSITION;
+				float3 normal : NORMAL;
+			};
+
+			struct v2f
+			{
+				float4 vertex : SV_POSITION;
+			};
+
+			v2f vert(appdata v)
+			{
+				float outlineThickness = _OutlineThickness / 1000; // diving OutlineThickness value to have more precise control over the slider in inspector.
+				
+				v2f o;
+				o.vertex = UnityObjectToClipPos(v.vertex + outlineThickness * v.normal);
+				return o;
+			}
+
+			fixed4 frag(v2f i) : SV_Target
+			{
+				return _OutlineColor;
+			}
+
+			/*struct vertexInput
 			{
 				float4 vertex : POSITION;
 				float3 normal : NORMAL;
@@ -55,10 +81,10 @@ Shader "Cel Shader/Toon Outline"
 				float3 normal = normalize(input.normal);
 				newPos += float4(normal, 0.0) * outlineThickness;
 								
-				// [FAILED] add object position:
-					//float3 baseWorldPos = unity_ObjectToWorld._m03_m13_m23;
-					//float3 addPosition = newPos + baseWorldPos;
-					//float3 addPosition = newPos * input.vertex;
+					// [FAILED] add object position:
+						//float3 baseWorldPos = unity_ObjectToWorld._m03_m13_m23;
+						//float3 addPosition = newPos + baseWorldPos;
+						//float3 addPosition = newPos * input.vertex;
 
 				// convert to world space:
 				output.pos = UnityObjectToClipPos(newPos);
@@ -70,7 +96,7 @@ Shader "Cel Shader/Toon Outline"
 			float4 frag(vertexOutput input) : COLOR
 			{
 				return input.color;
-			}
+			}*/
 
 			ENDCG
 		}
