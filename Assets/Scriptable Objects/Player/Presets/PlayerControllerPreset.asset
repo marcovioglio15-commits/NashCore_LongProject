@@ -18,7 +18,7 @@ MonoBehaviour:
   m_Version: 1.0.0
   m_MovementSettings:
     m_DirectionsMode: 1
-    m_DiscreteDirectionCount: 4
+    m_DiscreteDirectionCount: 5
     m_DirectionOffsetDegrees: 0
     m_MovementReference: 0
     m_Values:
@@ -29,7 +29,7 @@ MonoBehaviour:
       m_InputDeadZone: 0.1
   m_LookSettings:
     m_DirectionsMode: 1
-    m_DiscreteDirectionCount: 4
+    m_DiscreteDirectionCount: 5
     m_DirectionOffsetDegrees: 0
     m_FrontConeEnabled: 1
     m_FrontConeAngle: 90
@@ -56,7 +56,9 @@ MonoBehaviour:
     - 1
     - 1
     - 1
+    - 1
     m_DiscreteDirectionAccelerationMultipliers:
+    - 1
     - 1
     - 1
     - 1

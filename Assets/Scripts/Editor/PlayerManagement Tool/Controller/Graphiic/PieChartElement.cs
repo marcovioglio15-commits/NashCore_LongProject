@@ -36,6 +36,18 @@ public sealed class PieChartElement : VisualElement
     }
 
     /// <summary>
+    /// Represents a descriptor for a text label displayed at a specific angle around the pie chart.
+    /// </summary>
+    public sealed class LabelDescriptor
+    {
+        public float Angle;
+        public string Text;
+        public float RadiusOffset;
+        public Color TextColor;
+        public bool UseTextColor;
+    }
+
+    /// <summary>
     /// Represents a binding between a float angle, a FloatField, and a SerializedProperty for overlay operations.
     /// </summary>
     private sealed class OverlayBinding
@@ -45,6 +57,16 @@ public sealed class PieChartElement : VisualElement
         public SerializedProperty Property;
         public float RadiusOffset;
         public bool DisplayAsPercent;
+    }
+
+    /// <summary>
+    /// Represents a binding between a float angle and a Label for display around the pie chart.
+    /// </summary>
+    private sealed class LabelBinding
+    {
+        public float Angle;
+        public Label Label;
+        public float RadiusOffset;
     }
     #endregion
 
@@ -57,6 +79,13 @@ public sealed class PieChartElement : VisualElement
     private const float DirectionLineRadiusFactor = 0.9f;
     private const float PieRadiusFactor = 0.48f;
     private const float OverlayRadiusFactor = 0.34f;
+    private const float LabelWidth = 52f;
+    private const float LabelHeight = 14f;
+    private const float LabelFontSize = 9f;
+    private const float LabelRadiusFactor = 0.62f;
+    private const float BaseMinSize = 220f;
+    private const float OverlayGroupPadding = 6f;
+    private const float OverlayAngleKeyScale = 1000f;
     #endregion
 
     #region Fields
@@ -64,10 +93,14 @@ public sealed class PieChartElement : VisualElement
     private readonly List<PieSlice> m_Slices = new List<PieSlice>();
     private readonly List<OverlayBinding> m_OverlayBindings = new List<OverlayBinding>();
     private readonly List<float> m_DirectionAngles = new List<float>();
+    private readonly List<LabelBinding> m_LabelBindings = new List<LabelBinding>();
     private readonly VisualElement m_OverlayRoot;
+    private readonly VisualElement m_FieldRoot;
+    private readonly VisualElement m_LabelRoot;
     private readonly Label m_ForwardLabel;
     private Color m_DirectionColor = new Color(1f, 1f, 1f, 0.9f);
     private Color m_ForwardColor = new Color(1f, 0.9f, 0.2f, 1f);
+    private Color m_LabelColor = new Color(1f, 1f, 1f, 0.85f);
     private float m_ForwardAngle;
     private bool m_ShowForwardLabel;
     private float m_Zoom = 1f;
@@ -81,8 +114,8 @@ public sealed class PieChartElement : VisualElement
     public PieChartElement()
     {
         style.flexGrow = 1f;
-        style.minHeight = 220f;
-        style.minWidth = 220f;
+        style.minHeight = BaseMinSize;
+        style.minWidth = BaseMinSize;
         style.marginTop = 6f;
         style.marginBottom = 6f;
 
@@ -92,6 +125,24 @@ public sealed class PieChartElement : VisualElement
         m_OverlayRoot.style.top = 0f;
         m_OverlayRoot.style.right = 0f;
         m_OverlayRoot.style.bottom = 0f;
+
+        m_FieldRoot = new VisualElement();
+        m_FieldRoot.style.position = Position.Absolute;
+        m_FieldRoot.style.left = 0f;
+        m_FieldRoot.style.top = 0f;
+        m_FieldRoot.style.right = 0f;
+        m_FieldRoot.style.bottom = 0f;
+        m_FieldRoot.pickingMode = PickingMode.Ignore;
+        m_OverlayRoot.Add(m_FieldRoot);
+
+        m_LabelRoot = new VisualElement();
+        m_LabelRoot.style.position = Position.Absolute;
+        m_LabelRoot.style.left = 0f;
+        m_LabelRoot.style.top = 0f;
+        m_LabelRoot.style.right = 0f;
+        m_LabelRoot.style.bottom = 0f;
+        m_LabelRoot.pickingMode = PickingMode.Ignore;
+        m_OverlayRoot.Add(m_LabelRoot);
 
         m_ForwardLabel = new Label("F");
         m_ForwardLabel.style.position = Position.Absolute;
@@ -133,12 +184,13 @@ public sealed class PieChartElement : VisualElement
     /// <param name="descriptors">A list of OverlayDescriptor objects used to create and bind overlay fields.</param>
     public void SetOverlayFields(List<OverlayDescriptor> descriptors)
     {
-        m_OverlayRoot.Clear();
+        m_FieldRoot.Clear();
         m_OverlayBindings.Clear();
-        m_OverlayRoot.Add(m_ForwardLabel);
 
         if (descriptors == null)
+        {
             return;
+        }
 
         for (int i = 0; i < descriptors.Count; i++)
         {
@@ -158,7 +210,9 @@ public sealed class PieChartElement : VisualElement
             field.style.unityTextAlign = TextAnchor.MiddleCenter;
 
             if (descriptor.UseFieldColor)
+            {
                 field.style.color = descriptor.FieldColor;
+            }
 
             if (descriptor.Property != null)
             {
@@ -168,7 +222,9 @@ public sealed class PieChartElement : VisualElement
                 field.RegisterValueChangedCallback(evt =>
                 {
                     if (descriptor.Property == null)
+                    {
                         return;
+                    }
 
                     float inputValue = evt.newValue;
                     float storedValue = descriptor.DisplayAsPercent ? Mathf.Clamp(inputValue / 100f, 0f, 1f) : inputValue;
@@ -176,7 +232,9 @@ public sealed class PieChartElement : VisualElement
                     descriptor.Property.serializedObject.ApplyModifiedProperties();
 
                     if (descriptor.DisplayAsPercent)
+                    {
                         field.SetValueWithoutNotify(storedValue * 100f);
+                    }
                 });
             }
 
@@ -190,7 +248,62 @@ public sealed class PieChartElement : VisualElement
             };
 
             m_OverlayBindings.Add(binding);
-            m_OverlayRoot.Add(field);
+            m_FieldRoot.Add(field);
+        }
+
+        UpdateOverlayLayout();
+    }
+
+    /// <summary>
+    /// Configures text labels displayed on the pie chart based on the provided descriptors.
+    /// </summary>
+    /// <param name="descriptors">A list of LabelDescriptor objects used to create and position labels.</param>
+    public void SetSegmentLabels(List<LabelDescriptor> descriptors)
+    {
+        m_LabelRoot.Clear();
+        m_LabelBindings.Clear();
+
+        if (descriptors == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < descriptors.Count; i++)
+        {
+            LabelDescriptor descriptor = descriptors[i];
+
+            if (descriptor == null)
+            {
+                continue;
+            }
+
+            Label label = new Label(descriptor.Text);
+            label.style.position = Position.Absolute;
+            label.style.width = LabelWidth;
+            label.style.height = LabelHeight;
+            label.style.fontSize = LabelFontSize;
+            label.style.unityTextAlign = TextAnchor.MiddleCenter;
+            label.style.unityFontStyleAndWeight = FontStyle.Bold;
+            label.pickingMode = PickingMode.Ignore;
+
+            if (descriptor.UseTextColor)
+            {
+                label.style.color = descriptor.TextColor;
+            }
+            else
+            {
+                label.style.color = m_LabelColor;
+            }
+
+            LabelBinding binding = new LabelBinding
+            {
+                Angle = descriptor.Angle,
+                Label = label,
+                RadiusOffset = descriptor.RadiusOffset
+            };
+
+            m_LabelBindings.Add(binding);
+            m_LabelRoot.Add(label);
         }
 
         UpdateOverlayLayout();
@@ -231,6 +344,7 @@ public sealed class PieChartElement : VisualElement
     public void SetZoom(float zoom)
     {
         m_Zoom = Mathf.Max(0.1f, zoom);
+        UpdateSizeForZoom();
         MarkDirtyRepaint();
         UpdateOverlayLayout();
     }
@@ -249,7 +363,7 @@ public sealed class PieChartElement : VisualElement
             return;
 
         Vector2 center = rect.center;
-        float radius = Mathf.Min(rect.width, rect.height) * PieRadiusFactor * m_Zoom;
+        float radius = Mathf.Min(rect.width, rect.height) * PieRadiusFactor;
 
         Painter2D painter = mgc.painter2D;
         painter.lineWidth = 1f;
@@ -260,9 +374,19 @@ public sealed class PieChartElement : VisualElement
             painter.fillColor = slice.Color;
             painter.strokeColor = new Color(0f, 0f, 0f, 0.35f);
 
+            float delta = slice.EndAngle - slice.StartAngle;
+
+            if (delta <= 0f)
+            {
+                continue;
+            }
+
+            float startAngle = GetPainterStartAngle(slice.StartAngle);
+            float endAngle = startAngle + delta;
+
             painter.BeginPath();
             painter.MoveTo(center);
-            painter.Arc(center, radius, slice.StartAngle, slice.EndAngle);
+            painter.Arc(center, radius, startAngle, endAngle);
             painter.ClosePath();
             painter.Fill();
             painter.Stroke();
@@ -281,8 +405,7 @@ public sealed class PieChartElement : VisualElement
             for (int i = 0; i < m_DirectionAngles.Count; i++)
             {
                 float angle = m_DirectionAngles[i];
-                float radians = (angle - 90f) * Mathf.Deg2Rad;
-                Vector2 dir = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+                Vector2 dir = GetDirectionVector(angle);
                 Vector2 end = center + (dir * radius * DirectionLineRadiusFactor);
 
                 painter.strokeColor = IsForwardAngle(angle) ? m_ForwardColor : m_DirectionColor;
@@ -313,36 +436,73 @@ public sealed class PieChartElement : VisualElement
     {
         Rect rect = contentRect;
         Vector2 center = rect.center;
-        float radius = Mathf.Min(rect.width, rect.height) * OverlayRadiusFactor * m_Zoom;
-        float pieRadius = Mathf.Min(rect.width, rect.height) * PieRadiusFactor * m_Zoom;
+        float radius = Mathf.Min(rect.width, rect.height) * OverlayRadiusFactor;
+        float pieRadius = Mathf.Min(rect.width, rect.height) * PieRadiusFactor;
 
         if (m_OverlayBindings.Count > 0)
         {
+            Dictionary<int, List<OverlayBinding>> groupedBindings = new Dictionary<int, List<OverlayBinding>>();
+
             for (int i = 0; i < m_OverlayBindings.Count; i++)
             {
                 OverlayBinding binding = m_OverlayBindings[i];
-                FloatField field = binding.Field;
+                int key = GetAngleKey(binding.Angle);
+                List<OverlayBinding> group;
 
-                if (field == null)
-                    continue;
-
-                float radians = (binding.Angle - 90f) * Mathf.Deg2Rad;
-                Vector2 dir = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
-                float adjustedRadius = radius + binding.RadiusOffset;
-                Vector2 position = center + (dir * adjustedRadius);
-
-                field.style.left = position.x - (FieldWidth * 0.5f);
-                field.style.top = position.y - (FieldHeight * 0.5f);
-
-                if (binding.Property != null)
+                if (groupedBindings.TryGetValue(key, out group) == false)
                 {
-                    float value = binding.Property.floatValue;
-                    field.SetValueWithoutNotify(binding.DisplayAsPercent ? value * 100f : value);
+                    group = new List<OverlayBinding>();
+                    groupedBindings.Add(key, group);
+                }
+
+                group.Add(binding);
+            }
+
+            foreach (KeyValuePair<int, List<OverlayBinding>> pair in groupedBindings)
+            {
+                List<OverlayBinding> group = pair.Value;
+
+                if (group == null || group.Count == 0)
+                {
+                    continue;
+                }
+
+                group.Sort(CompareBindingsByRadiusOffset);
+
+                float angle = group[0].Angle;
+                Vector2 dir = GetDirectionVector(angle);
+                Vector2 tangent = new Vector2(-dir.y, dir.x);
+                float spacing = GetOverlayGroupSpacing(tangent);
+                float startOffset = -0.5f * spacing * (group.Count - 1);
+
+                for (int i = 0; i < group.Count; i++)
+                {
+                    OverlayBinding binding = group[i];
+                    FloatField field = binding.Field;
+
+                    if (field == null)
+                    {
+                        continue;
+                    }
+
+                    float adjustedRadius = radius + binding.RadiusOffset;
+                    float tangentialOffset = startOffset + (i * spacing);
+                    Vector2 position = center + (dir * adjustedRadius) + (tangent * tangentialOffset);
+
+                    field.style.left = position.x - (FieldWidth * 0.5f);
+                    field.style.top = position.y - (FieldHeight * 0.5f);
+
+                    if (binding.Property != null)
+                    {
+                        float value = binding.Property.floatValue;
+                        field.SetValueWithoutNotify(binding.DisplayAsPercent ? value * 100f : value);
+                    }
                 }
             }
         }
 
         UpdateForwardLabelPosition(center, pieRadius);
+        UpdateLabelLayout(center, pieRadius);
     }
 
     /// <summary>
@@ -364,7 +524,9 @@ public sealed class PieChartElement : VisualElement
     private void UpdateForwardLabelPosition(Vector2 center, float radius)
     {
         if (m_ShowForwardLabel == false || m_ForwardLabel == null)
+        {
             return;
+        }
 
         float radians = (m_ForwardAngle - 90f) * Mathf.Deg2Rad;
         Vector2 dir = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
@@ -375,6 +537,33 @@ public sealed class PieChartElement : VisualElement
         m_ForwardLabel.style.top = position.y - (ForwardLabelSize * 0.5f);
     }
 
+    private void UpdateLabelLayout(Vector2 center, float pieRadius)
+    {
+        if (m_LabelBindings.Count == 0)
+        {
+            return;
+        }
+
+        float labelRadius = pieRadius * LabelRadiusFactor;
+
+        for (int i = 0; i < m_LabelBindings.Count; i++)
+        {
+            LabelBinding binding = m_LabelBindings[i];
+            Label label = binding.Label;
+
+            if (label == null)
+            {
+                continue;
+            }
+
+            Vector2 dir = GetDirectionVector(binding.Angle);
+            Vector2 position = center + (dir * (labelRadius + binding.RadiusOffset));
+
+            label.style.left = position.x - (LabelWidth * 0.5f);
+            label.style.top = position.y - (LabelHeight * 0.5f);
+        }
+    }
+
     /// <summary>
     /// Determines whether the specified angle is within 0.5 degrees of the forward angle.
     /// </summary>
@@ -383,6 +572,59 @@ public sealed class PieChartElement : VisualElement
     private bool IsForwardAngle(float angle)
     {
         return Mathf.Abs(Mathf.DeltaAngle(angle, m_ForwardAngle)) < 0.5f;
+    }
+
+    private void UpdateSizeForZoom()
+    {
+        float scaledSize = BaseMinSize * m_Zoom;
+        style.minHeight = scaledSize;
+        style.minWidth = scaledSize;
+    }
+
+    private int GetAngleKey(float angle)
+    {
+        float normalized = Mathf.Repeat(angle, 360f);
+        return Mathf.RoundToInt(normalized * OverlayAngleKeyScale);
+    }
+
+    private Vector2 GetDirectionVector(float angle)
+    {
+        float radians = (angle - 90f) * Mathf.Deg2Rad;
+        return new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+    }
+
+    private float GetPainterStartAngle(float angle)
+    {
+        float adjusted = angle - 90f;
+        return Mathf.Repeat(adjusted, 360f);
+    }
+
+    private float GetOverlayGroupSpacing(Vector2 tangent)
+    {
+        float halfWidth = FieldWidth * 0.5f;
+        float halfHeight = FieldHeight * 0.5f;
+        float projectedHalf = (halfWidth * Mathf.Abs(tangent.x)) + (halfHeight * Mathf.Abs(tangent.y));
+        return (projectedHalf * 2f) + OverlayGroupPadding;
+    }
+
+    private static int CompareBindingsByRadiusOffset(OverlayBinding left, OverlayBinding right)
+    {
+        if (left == null && right == null)
+        {
+            return 0;
+        }
+
+        if (left == null)
+        {
+            return -1;
+        }
+
+        if (right == null)
+        {
+            return 1;
+        }
+
+        return left.RadiusOffset.CompareTo(right.RadiusOffset);
     }
     #endregion
 }

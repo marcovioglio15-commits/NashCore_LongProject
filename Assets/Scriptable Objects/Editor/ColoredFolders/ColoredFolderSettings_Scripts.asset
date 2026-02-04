@@ -29,6 +29,28 @@ MonoBehaviour:
   - Assets/Scripts/Utils/Editor/AutoAddScenePrompt
   - Assets/Scripts/Utils/Editor/CustomFolderTool
   - Assets/Scripts/Utils/Static Helpers
+  - Assets/Scripts/Editor/PlayerManagement Tool/Controller
+  - Assets/Scripts/Editor/PlayerManagement Tool/Controller/Actions
+  - Assets/Scripts/Editor/PlayerManagement Tool/Controller/Graphiic
+  - Assets/Scripts/Editor/PlayerManagement Tool/Controller/Input
+  - Assets/Scripts/Editor/PlayerManagement Tool/Controller/Input/Actions
+  - Assets/Scripts/Editor/PlayerManagement Tool/Controller/Utils
+  - Assets/Scripts/Editor/PlayerManagement Tool/Graphic
+  - Assets/Scripts/Editor/PlayerManagement Tool/Utils
+  - Assets/Scripts/Player/Scriptable Presets
+  - Assets/Scripts/Player/Scriptable Presets/Camera
+  - Assets/Scripts/Player/Scriptable Presets/Look
+  - Assets/Scripts/Player/Scriptable Presets/Controller
+  - Assets/Scripts/Player/Scriptable Presets/Controller/Look
+  - Assets/Scripts/Player/Scriptable Presets/Movement
+  - Assets/Scripts/Player/Scriptable Presets/Controller/Movement
+  - Assets/Scripts/Player/Scriptable Presets/Master
+  - Assets/Scripts/Player/Scriptable Presets/Controller/Camera
+  - Assets/Scripts/Player/Scriptable Presets/Animations
+  - Assets/Scripts/Player/Scriptable Presets/Power Ups
+  - Assets/Scripts/Player/Scriptable Presets/Progression
+  - Assets/Scripts/Player/Components
+  - Assets/Scripts/Player/Systems
   folderColors:
   - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
   - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
@@ -46,5 +68,27 @@ MonoBehaviour:
   - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
   - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
   - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
-  folderApplyModes: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  - {r: 0.24912083, g: 0.8867924, b: 0.24679601, a: 0}
+  folderApplyModes: 0100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
   autoInheritColors: 1

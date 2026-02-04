@@ -15,7 +15,12 @@ public sealed class PlayerControllerPresetsPanel
     #region Constants
     // Width of the left pane containing the preset list
     private const float LeftPaneWidth = 280f;
-    private const float MultiplierOverlayRadiusOffset = 12f;
+    private const float MultiplierFieldWidth = 70f;
+    private const float MultiplierFieldHeight = 18f;
+    private const float MultiplierLabelWidth = 56f;
+    private const float MultiplierAngleWidth = 52f;
+    private const float MultiplierRangeWidth = 110f;
+    private const float MultiplierRowSpacing = 2f;
 
     // Colors for pie chart segments and overlays
     private static readonly Color SliceColorA = new Color(0.2f, 0.6f, 0.9f, 0.75f);
@@ -716,20 +721,22 @@ public sealed class PlayerControllerPresetsPanel
         List<Toggle> coneToggles = new List<Toggle>();
         List<FloatField> coneAngleFields = new List<FloatField>();
 
-        conesContainer.Add(BuildConeRow("Front", frontEnabledProperty, frontAngleProperty, coneToggles, coneAngleFields));
-        conesContainer.Add(BuildConeRow("Back", backEnabledProperty, backAngleProperty, coneToggles, coneAngleFields));
-        conesContainer.Add(BuildConeRow("Left", leftEnabledProperty, leftAngleProperty, coneToggles, coneAngleFields));
-        conesContainer.Add(BuildConeRow("Right", rightEnabledProperty, rightAngleProperty, coneToggles, coneAngleFields));
+        conesContainer.Add(BuildConeRow("Front", frontEnabledProperty, frontAngleProperty, frontMaxSpeedMultiplierProperty, frontAccelerationMultiplierProperty, coneToggles, coneAngleFields));
+        conesContainer.Add(BuildConeRow("Back", backEnabledProperty, backAngleProperty, backMaxSpeedMultiplierProperty, backAccelerationMultiplierProperty, coneToggles, coneAngleFields));
+        conesContainer.Add(BuildConeRow("Left", leftEnabledProperty, leftAngleProperty, leftMaxSpeedMultiplierProperty, leftAccelerationMultiplierProperty, coneToggles, coneAngleFields));
+        conesContainer.Add(BuildConeRow("Right", rightEnabledProperty, rightAngleProperty, rightMaxSpeedMultiplierProperty, rightAccelerationMultiplierProperty, coneToggles, coneAngleFields));
 
         PieChartElement pieChart = new PieChartElement();
         VisualElement multiplierLegend = BuildMultiplierLegend();
         Slider lookZoomSlider = CreatePieZoomSlider(pieChart);
+        VisualElement multipliersSection = BuildDiscreteMultipliersSection(out VisualElement multipliersTableRoot, out Label multipliersHeader);
 
         foldout.Add(discreteContainer);
         foldout.Add(conesContainer);
         foldout.Add(multiplierLegend);
         foldout.Add(pieChart);
         foldout.Add(lookZoomSlider);
+        foldout.Add(multipliersSection);
 
         EnumField referenceField = new EnumField("Look Reference");
         referenceField.BindProperty(referenceProperty);
@@ -784,7 +791,20 @@ public sealed class PlayerControllerPresetsPanel
                 SnapOffsetToStep(offsetProperty, countProperty.intValue);
 
             UpdateLookPieChart(pieChart, directionsMode, countProperty.intValue, offsetProperty.floatValue, frontEnabledProperty, frontAngleProperty, backEnabledProperty, backAngleProperty, leftEnabledProperty, leftAngleProperty, rightEnabledProperty, rightAngleProperty);
-            UpdateLookOverlayFields(pieChart, directionsMode, samplingMode, countProperty.intValue, offsetProperty.floatValue, maxSpeedMultipliersProperty, accelerationMultipliersProperty, frontEnabledProperty, frontMaxSpeedMultiplierProperty, frontAccelerationMultiplierProperty, backEnabledProperty, backMaxSpeedMultiplierProperty, backAccelerationMultiplierProperty, leftEnabledProperty, leftMaxSpeedMultiplierProperty, leftAccelerationMultiplierProperty, rightEnabledProperty, rightMaxSpeedMultiplierProperty, rightAccelerationMultiplierProperty);
+            UpdateLookLabels(pieChart, directionsMode, samplingMode, countProperty.intValue, offsetProperty.floatValue);
+            pieChart.SetOverlayFields(null);
+
+            multipliersSection.style.display = isDiscrete ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (multipliersHeader != null)
+            {
+                multipliersHeader.text = samplingMode == LookMultiplierSampling.ArcConstant ? "Arc Multipliers" : "Directional Multipliers";
+            }
+
+            if (isDiscrete)
+            {
+                UpdateDiscreteMultipliersTable(multipliersTableRoot, samplingMode, countProperty.intValue, offsetProperty.floatValue, maxSpeedMultipliersProperty, accelerationMultipliersProperty);
+            }
         };
 
         directionsModeField.RegisterValueChangedCallback(evt =>
@@ -843,11 +863,12 @@ public sealed class PlayerControllerPresetsPanel
     /// <param name="toggles">An optional list to which the created toggle will be added.</param>
     /// <param name="angleFields">An optional list to which the created angle float field will be added.</param>
     /// <returns>A VisualElement representing the constructed row.</returns>
-    private VisualElement BuildConeRow(string label, SerializedProperty enabledProperty, SerializedProperty angleProperty, List<Toggle> toggles, List<FloatField> angleFields)
+    private VisualElement BuildConeRow(string label, SerializedProperty enabledProperty, SerializedProperty angleProperty, SerializedProperty maxSpeedProperty, SerializedProperty accelerationProperty, List<Toggle> toggles, List<FloatField> angleFields)
     {
         VisualElement row = new VisualElement();
         row.style.flexDirection = FlexDirection.Row;
         row.style.alignItems = Align.Center;
+        row.style.marginBottom = MultiplierRowSpacing;
 
         Toggle enabledToggle = new Toggle(label);
         enabledToggle.style.minWidth = 120f;
@@ -855,15 +876,25 @@ public sealed class PlayerControllerPresetsPanel
         row.Add(enabledToggle);
 
         FloatField angleField = new FloatField("Angle");
-        angleField.style.flexGrow = 1f;
+        angleField.style.flexGrow = 0f;
+        angleField.style.width = 110f;
         angleField.BindProperty(angleProperty);
         row.Add(angleField);
 
+        FloatField maxSpeedField = CreatePercentField(maxSpeedProperty, MaxSpeedMultiplierColor, "Max speed multiplier for this cone.", "Max %", MultiplierFieldWidth);
+        FloatField accelerationField = CreatePercentField(accelerationProperty, AccelerationMultiplierColor, "Acceleration multiplier for this cone.", "Accel %", MultiplierFieldWidth);
+        row.Add(maxSpeedField);
+        row.Add(accelerationField);
+
         if (toggles != null)
+        {
             toggles.Add(enabledToggle);
+        }
 
         if (angleFields != null)
+        {
             angleFields.Add(angleField);
+        }
 
         return row;
     }
@@ -1047,6 +1078,272 @@ public sealed class PlayerControllerPresetsPanel
         return item;
     }
 
+    private VisualElement BuildDiscreteMultipliersSection(out VisualElement tableRoot, out Label headerLabel)
+    {
+        VisualElement container = new VisualElement();
+        container.style.marginTop = 4f;
+
+        headerLabel = new Label("Directional Multipliers");
+        headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        headerLabel.style.marginBottom = 2f;
+        container.Add(headerLabel);
+
+        tableRoot = new VisualElement();
+        tableRoot.style.flexDirection = FlexDirection.Column;
+        tableRoot.style.alignItems = Align.FlexStart;
+        container.Add(tableRoot);
+
+        return container;
+    }
+
+    private void UpdateDiscreteMultipliersTable(VisualElement tableRoot, LookMultiplierSampling samplingMode, int count, float offset, SerializedProperty maxSpeedMultipliersProperty, SerializedProperty accelerationMultipliersProperty)
+    {
+        if (tableRoot == null)
+        {
+            return;
+        }
+
+        tableRoot.Clear();
+
+        if (maxSpeedMultipliersProperty == null || accelerationMultipliersProperty == null)
+        {
+            return;
+        }
+
+        int sliceCount = Mathf.Max(1, count);
+        EnsureArraySize(maxSpeedMultipliersProperty, sliceCount);
+        EnsureArraySize(accelerationMultipliersProperty, sliceCount);
+
+        string maxSpeedTooltip = samplingMode == LookMultiplierSampling.ArcConstant
+            ? "Max speed multiplier for this look arc (constant across the arc)."
+            : "Max speed multiplier for this look direction (blended by alignment).";
+        string accelerationTooltip = samplingMode == LookMultiplierSampling.ArcConstant
+            ? "Acceleration multiplier for this look arc (constant across the arc)."
+            : "Acceleration multiplier for this look direction (blended by alignment).";
+
+        tableRoot.Add(BuildMultipliersHeaderRow(samplingMode));
+
+        float step = 360f / sliceCount;
+
+        for (int i = 0; i < sliceCount; i++)
+        {
+            SerializedProperty maxSpeedElement = maxSpeedMultipliersProperty.GetArrayElementAtIndex(i);
+            SerializedProperty accelerationElement = accelerationMultipliersProperty.GetArrayElementAtIndex(i);
+
+            if (samplingMode == LookMultiplierSampling.ArcConstant)
+            {
+                float startAngle = offset - (step * 0.5f) + (i * step);
+                float endAngle = startAngle + step;
+                string range = FormatAngleRange(startAngle, endAngle);
+                VisualElement row = BuildArcRow(i, range, maxSpeedElement, accelerationElement, maxSpeedTooltip, accelerationTooltip);
+                tableRoot.Add(row);
+            }
+            else
+            {
+                float angle = Mathf.Repeat(offset + (i * step), 360f);
+                VisualElement row = BuildDirectionRow(i, angle, maxSpeedElement, accelerationElement, maxSpeedTooltip, accelerationTooltip);
+                tableRoot.Add(row);
+            }
+        }
+    }
+
+    private VisualElement BuildMultipliersHeaderRow(LookMultiplierSampling samplingMode)
+    {
+        VisualElement row = new VisualElement();
+        row.style.flexDirection = FlexDirection.Row;
+        row.style.alignItems = Align.Center;
+        row.style.justifyContent = Justify.FlexStart;
+        row.style.flexWrap = Wrap.NoWrap;
+        row.style.marginBottom = MultiplierRowSpacing;
+
+        if (samplingMode == LookMultiplierSampling.ArcConstant)
+        {
+            row.Add(BuildHeaderLabel("Arc", MultiplierLabelWidth));
+            row.Add(BuildHeaderLabel("Range", MultiplierRangeWidth));
+        }
+        else
+        {
+            row.Add(BuildHeaderLabel("Dir", MultiplierLabelWidth));
+            row.Add(BuildHeaderLabel("Angle", MultiplierAngleWidth));
+        }
+
+        row.Add(BuildHeaderLabel("Max %", MultiplierFieldWidth));
+        row.Add(BuildHeaderLabel("Accel %", MultiplierFieldWidth));
+
+        return row;
+    }
+
+    private VisualElement BuildDirectionRow(int index, float angle, SerializedProperty maxSpeedProperty, SerializedProperty accelerationProperty, string maxSpeedTooltip, string accelerationTooltip)
+    {
+        VisualElement row = new VisualElement();
+        row.style.flexDirection = FlexDirection.Row;
+        row.style.alignItems = Align.Center;
+        row.style.justifyContent = Justify.FlexStart;
+        row.style.flexWrap = Wrap.NoWrap;
+        row.style.marginBottom = MultiplierRowSpacing;
+
+        Label dirLabel = BuildRowLabel("Dir " + (index + 1), MultiplierLabelWidth);
+        row.Add(dirLabel);
+
+        Label angleLabel = BuildRowLabel(angle.ToString("0.#") + "°", MultiplierAngleWidth);
+        row.Add(angleLabel);
+
+        FloatField maxSpeedField = CreatePercentField(maxSpeedProperty, MaxSpeedMultiplierColor, maxSpeedTooltip, string.Empty, MultiplierFieldWidth);
+        FloatField accelerationField = CreatePercentField(accelerationProperty, AccelerationMultiplierColor, accelerationTooltip, string.Empty, MultiplierFieldWidth);
+        row.Add(maxSpeedField);
+        row.Add(accelerationField);
+
+        return row;
+    }
+
+    private VisualElement BuildArcRow(int index, string range, SerializedProperty maxSpeedProperty, SerializedProperty accelerationProperty, string maxSpeedTooltip, string accelerationTooltip)
+    {
+        VisualElement row = new VisualElement();
+        row.style.flexDirection = FlexDirection.Row;
+        row.style.alignItems = Align.Center;
+        row.style.justifyContent = Justify.FlexStart;
+        row.style.flexWrap = Wrap.NoWrap;
+        row.style.marginBottom = MultiplierRowSpacing;
+
+        Label arcLabel = BuildRowLabel("Arc " + (index + 1), MultiplierLabelWidth);
+        row.Add(arcLabel);
+
+        Label rangeLabel = BuildRowLabel(range, MultiplierRangeWidth);
+        row.Add(rangeLabel);
+
+        FloatField maxSpeedField = CreatePercentField(maxSpeedProperty, MaxSpeedMultiplierColor, maxSpeedTooltip, string.Empty, MultiplierFieldWidth);
+        FloatField accelerationField = CreatePercentField(accelerationProperty, AccelerationMultiplierColor, accelerationTooltip, string.Empty, MultiplierFieldWidth);
+        row.Add(maxSpeedField);
+        row.Add(accelerationField);
+
+        return row;
+    }
+
+    private Label BuildHeaderLabel(string text, float width)
+    {
+        Label label = new Label(text);
+        label.style.width = width;
+        label.style.minWidth = width;
+        label.style.maxWidth = width;
+        label.style.flexGrow = 0f;
+        label.style.flexShrink = 0f;
+        label.style.fontSize = 10f;
+        label.style.unityFontStyleAndWeight = FontStyle.Bold;
+        label.style.unityTextAlign = TextAnchor.MiddleLeft;
+        return label;
+    }
+
+    private Label BuildRowLabel(string text, float width)
+    {
+        Label label = new Label(text);
+        label.style.width = width;
+        label.style.minWidth = width;
+        label.style.maxWidth = width;
+        label.style.flexGrow = 0f;
+        label.style.flexShrink = 0f;
+        label.style.unityTextAlign = TextAnchor.MiddleLeft;
+        return label;
+    }
+
+    private FloatField CreatePercentField(SerializedProperty property, Color color, string tooltip, string label, float width)
+    {
+        FloatField field = new FloatField(label);
+        field.isDelayed = true;
+        field.style.width = width;
+        field.style.minWidth = width;
+        field.style.maxWidth = width;
+        field.style.flexGrow = 0f;
+        field.style.flexShrink = 0f;
+        field.style.height = MultiplierFieldHeight;
+        field.style.fontSize = 10f;
+        field.style.unityTextAlign = TextAnchor.MiddleCenter;
+        field.style.color = color;
+        field.tooltip = tooltip;
+
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            field.labelElement.style.display = DisplayStyle.None;
+        }
+
+        if (property != null)
+        {
+            float value = property.floatValue;
+            field.value = value * 100f;
+
+            field.RegisterValueChangedCallback(evt =>
+            {
+                if (property == null)
+                {
+                    return;
+                }
+
+                float inputValue = evt.newValue;
+                float storedValue = Mathf.Clamp(inputValue / 100f, 0f, 1f);
+                property.floatValue = storedValue;
+                property.serializedObject.ApplyModifiedProperties();
+                field.SetValueWithoutNotify(storedValue * 100f);
+            });
+        }
+
+        return field;
+    }
+
+    private string FormatAngleRange(float startAngle, float endAngle)
+    {
+        float normalizedStart = Mathf.Repeat(startAngle, 360f);
+        float normalizedEnd = Mathf.Repeat(endAngle, 360f);
+        string startText = normalizedStart.ToString("0.#") + "°";
+        string endText = normalizedEnd.ToString("0.#") + "°";
+
+        if (normalizedEnd < normalizedStart)
+        {
+            return startText + " - " + endText + " (wrap)";
+        }
+
+        return startText + " - " + endText;
+    }
+
+    private void UpdateLookLabels(PieChartElement pieChart, LookDirectionsMode directionsMode, LookMultiplierSampling samplingMode, int count, float offset)
+    {
+        if (pieChart == null)
+        {
+            return;
+        }
+
+        if (directionsMode != LookDirectionsMode.DiscreteCount)
+        {
+            pieChart.SetSegmentLabels(null);
+            return;
+        }
+
+        string prefix = samplingMode == LookMultiplierSampling.ArcConstant ? "Arc" : "Dir";
+        pieChart.SetSegmentLabels(BuildDirectionalLabels(count, offset, prefix));
+    }
+
+    private List<PieChartElement.LabelDescriptor> BuildDirectionalLabels(int count, float offset, string prefix)
+    {
+        int sliceCount = Mathf.Max(1, count);
+        float step = 360f / sliceCount;
+        List<PieChartElement.LabelDescriptor> labels = new List<PieChartElement.LabelDescriptor>();
+
+        for (int i = 0; i < sliceCount; i++)
+        {
+            float angle = Mathf.Repeat(offset + (i * step), 360f);
+            PieChartElement.LabelDescriptor descriptor = new PieChartElement.LabelDescriptor
+            {
+                Angle = angle,
+                Text = prefix + " " + (i + 1),
+                RadiusOffset = 0f,
+                TextColor = DirectionMarkerColor,
+                UseTextColor = true
+            };
+
+            labels.Add(descriptor);
+        }
+
+        return labels;
+    }
+
     private void SnapOffsetToStep(SerializedProperty offsetProperty, int count)
     {
         if (offsetProperty == null)
@@ -1083,12 +1380,13 @@ public sealed class PlayerControllerPresetsPanel
         {
             float startAngle = offset - (step * 0.5f) + (i * step);
             Color color = i % 2 == 0 ? SliceColorA : SliceColorB;
-            AddWrappedSliceByStep(slices, startAngle, step, color);
+            AddSliceByStep(slices, startAngle, step, color);
             directionAngles.Add(Mathf.Repeat(offset + (i * step), 360f));
         }
 
         pieChart.SetSlices(slices);
         pieChart.SetOverlayFields(null);
+        pieChart.SetSegmentLabels(BuildDirectionalLabels(sliceCount, offset, "Dir"));
         pieChart.SetDirectionMarkers(directionAngles, DirectionMarkerColor, ForwardMarkerColor, 0f, true);
     }
 
@@ -1105,13 +1403,15 @@ public sealed class PlayerControllerPresetsPanel
             {
                 float startAngle = offset - (step * 0.5f) + (i * step);
                 Color color = i % 2 == 0 ? SliceColorA : SliceColorB;
-                AddWrappedSliceByStep(slices, startAngle, step, color);
+                AddSliceByStep(slices, startAngle, step, color);
             }
 
             List<float> directionAngles = new List<float>();
 
             for (int i = 0; i < sliceCount; i++)
+            {
                 directionAngles.Add(Mathf.Repeat(offset + (i * step), 360f));
+            }
 
             pieChart.SetDirectionMarkers(directionAngles, DirectionMarkerColor, ForwardMarkerColor, 0f, true);
         }
@@ -1124,7 +1424,9 @@ public sealed class PlayerControllerPresetsPanel
             pieChart.SetDirectionMarkers(null, DirectionMarkerColor, ForwardMarkerColor, 0f, false);
         }
         else
+        {
             pieChart.SetDirectionMarkers(null, DirectionMarkerColor, ForwardMarkerColor, 0f, false);
+        }
 
         pieChart.SetSlices(slices);
     }
@@ -1132,34 +1434,24 @@ public sealed class PlayerControllerPresetsPanel
     private void AddConeSlices(List<PieChartElement.PieSlice> slices, float centerAngle, SerializedProperty enabledProperty, SerializedProperty angleProperty, Color color)
     {
         if (enabledProperty == null || angleProperty == null)
+        {
             return;
+        }
 
         if (enabledProperty.boolValue == false)
+        {
             return;
+        }
 
         float angle = Mathf.Clamp(angleProperty.floatValue, 1f, 360f);
         float half = angle * 0.5f;
         float start = centerAngle - half;
         float end = centerAngle + half;
 
-        if (start < 0f)
-        {
-            AddSlice(slices, start + 360f, 360f, color);
-            AddSlice(slices, 0f, end, color);
-            return;
-        }
-
-        if (end > 360f)
-        {
-            AddSlice(slices, start, 360f, color);
-            AddSlice(slices, 0f, end - 360f, color);
-            return;
-        }
-
         AddSlice(slices, start, end, color);
     }
 
-    private void AddWrappedSliceByStep(List<PieChartElement.PieSlice> slices, float startAngle, float step, Color color)
+    private void AddSliceByStep(List<PieChartElement.PieSlice> slices, float startAngle, float step, Color color)
     {
         if (step >= 359.99f)
         {
@@ -1167,17 +1459,8 @@ public sealed class PlayerControllerPresetsPanel
             return;
         }
 
-        float normalizedStart = Mathf.Repeat(startAngle, 360f);
-        float normalizedEnd = normalizedStart + step;
-
-        if (normalizedEnd > 360f)
-        {
-            AddSlice(slices, normalizedStart, 360f, color);
-            AddSlice(slices, 0f, normalizedEnd - 360f, color);
-            return;
-        }
-
-        AddSlice(slices, normalizedStart, normalizedEnd, color);
+        float endAngle = startAngle + step;
+        AddSlice(slices, startAngle, endAngle, color);
     }
 
     private void AddSlice(List<PieChartElement.PieSlice> slices, float startAngle, float endAngle, Color color)
@@ -1191,113 +1474,6 @@ public sealed class PlayerControllerPresetsPanel
         };
 
         slices.Add(slice);
-    }
-
-    private void UpdateLookOverlayFields(PieChartElement pieChart, LookDirectionsMode mode, LookMultiplierSampling samplingMode, int count, float offset, SerializedProperty maxSpeedMultipliersProperty, SerializedProperty accelerationMultipliersProperty, SerializedProperty frontEnabled, SerializedProperty frontMaxSpeedMultiplier, SerializedProperty frontAccelerationMultiplier, SerializedProperty backEnabled, SerializedProperty backMaxSpeedMultiplier, SerializedProperty backAccelerationMultiplier, SerializedProperty leftEnabled, SerializedProperty leftMaxSpeedMultiplier, SerializedProperty leftAccelerationMultiplier, SerializedProperty rightEnabled, SerializedProperty rightMaxSpeedMultiplier, SerializedProperty rightAccelerationMultiplier)
-    {
-        if (mode == LookDirectionsMode.AllDirections)
-        {
-            pieChart.SetOverlayFields(null);
-            return;
-        }
-
-        List<PieChartElement.OverlayDescriptor> descriptors = new List<PieChartElement.OverlayDescriptor>();
-
-        if (mode == LookDirectionsMode.DiscreteCount)
-        {
-            if (maxSpeedMultipliersProperty == null || accelerationMultipliersProperty == null)
-            {
-                pieChart.SetOverlayFields(null);
-                return;
-            }
-
-            int sliceCount = Mathf.Max(1, count);
-            EnsureArraySize(maxSpeedMultipliersProperty, sliceCount);
-            EnsureArraySize(accelerationMultipliersProperty, sliceCount);
-
-            float step = 360f / sliceCount;
-            string maxSpeedTooltip = samplingMode == LookMultiplierSampling.ArcConstant
-                ? "Max speed multiplier for this look arc (constant across the arc)."
-                : "Max speed multiplier for this look direction (blended by alignment).";
-            string accelerationTooltip = samplingMode == LookMultiplierSampling.ArcConstant
-                ? "Acceleration multiplier for this look arc (constant across the arc)."
-                : "Acceleration multiplier for this look direction (blended by alignment).";
-
-            for (int i = 0; i < sliceCount; i++)
-            {
-                float angle = offset + (i * step);
-                SerializedProperty maxSpeedElement = maxSpeedMultipliersProperty.GetArrayElementAtIndex(i);
-                SerializedProperty accelerationElement = accelerationMultipliersProperty.GetArrayElementAtIndex(i);
-
-                descriptors.Add(new PieChartElement.OverlayDescriptor
-                {
-                    Angle = angle,
-                    Property = maxSpeedElement,
-                    Tooltip = maxSpeedTooltip,
-                    RadiusOffset = -MultiplierOverlayRadiusOffset,
-                    FieldColor = MaxSpeedMultiplierColor,
-                    UseFieldColor = true,
-                    DisplayAsPercent = true
-                });
-
-                descriptors.Add(new PieChartElement.OverlayDescriptor
-                {
-                    Angle = angle,
-                    Property = accelerationElement,
-                    Tooltip = accelerationTooltip,
-                    RadiusOffset = MultiplierOverlayRadiusOffset,
-                    FieldColor = AccelerationMultiplierColor,
-                    UseFieldColor = true,
-                    DisplayAsPercent = true
-                });
-            }
-        }
-        else if (mode == LookDirectionsMode.Cones)
-        {
-            AddConeDescriptors(descriptors, 0f, frontEnabled, frontMaxSpeedMultiplier, frontAccelerationMultiplier, "Max speed multiplier while look direction is inside the front cone.", "Acceleration multiplier while look direction is inside the front cone.");
-            AddConeDescriptors(descriptors, 180f, backEnabled, backMaxSpeedMultiplier, backAccelerationMultiplier, "Max speed multiplier while look direction is inside the back cone.", "Acceleration multiplier while look direction is inside the back cone.");
-            AddConeDescriptors(descriptors, 270f, leftEnabled, leftMaxSpeedMultiplier, leftAccelerationMultiplier, "Max speed multiplier while look direction is inside the left cone.", "Acceleration multiplier while look direction is inside the left cone.");
-            AddConeDescriptors(descriptors, 90f, rightEnabled, rightMaxSpeedMultiplier, rightAccelerationMultiplier, "Max speed multiplier while look direction is inside the right cone.", "Acceleration multiplier while look direction is inside the right cone.");
-        }
-
-        pieChart.SetOverlayFields(descriptors);
-    }
-
-    private void AddConeDescriptors(List<PieChartElement.OverlayDescriptor> descriptors, float angle, SerializedProperty enabledProperty, SerializedProperty maxSpeedMultiplier, SerializedProperty accelerationMultiplier, string maxSpeedTooltip, string accelerationTooltip)
-    {
-        if (enabledProperty == null)
-            return;
-
-        if (enabledProperty.boolValue == false)
-            return;
-
-        if (maxSpeedMultiplier != null)
-        {
-            descriptors.Add(new PieChartElement.OverlayDescriptor
-            {
-                Angle = angle,
-                Property = maxSpeedMultiplier,
-                Tooltip = maxSpeedTooltip,
-                RadiusOffset = -MultiplierOverlayRadiusOffset,
-                FieldColor = MaxSpeedMultiplierColor,
-                UseFieldColor = true,
-                DisplayAsPercent = true
-            });
-        }
-
-        if (accelerationMultiplier == null)
-            return;
-
-        descriptors.Add(new PieChartElement.OverlayDescriptor
-        {
-            Angle = angle,
-            Property = accelerationMultiplier,
-            Tooltip = accelerationTooltip,
-            RadiusOffset = MultiplierOverlayRadiusOffset,
-            FieldColor = AccelerationMultiplierColor,
-            UseFieldColor = true,
-            DisplayAsPercent = true
-        });
     }
 
     private void EnsureArraySize(SerializedProperty arrayProperty, int size)
