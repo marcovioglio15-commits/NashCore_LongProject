@@ -22,6 +22,11 @@ public sealed class PlayerControllerPresetsPanel
     private const float MultiplierRangeWidth = 110f;
     private const float MultiplierRowSpacing = 2f;
 
+    // Sections Margin
+    private const float SectionMarginTop = 8f;
+    private const float SubSectionMarginLeft = 5f;
+
+
     // Colors for pie chart segments and overlays
     private static readonly Color SliceColorA = new Color(0.2f, 0.6f, 0.9f, 0.75f);
     private static readonly Color SliceColorB = new Color(0.1f, 0.4f, 0.7f, 0.75f);
@@ -30,6 +35,7 @@ public sealed class PlayerControllerPresetsPanel
     private static readonly Color LeftConeColor = new Color(0.3f, 0.6f, 0.9f, 0.7f);
     private static readonly Color RightConeColor = new Color(0.9f, 0.7f, 0.2f, 0.7f);
     private static readonly Color DirectionMarkerColor = new Color(0.95f, 0.95f, 0.95f, 0.9f);
+    private static readonly Color DirectionLabelColor = new Color(0f, 0f, 0f, 1f);
     private static readonly Color ForwardMarkerColor = new Color(1f, 0.9f, 0.2f, 1f);
     private static readonly Color MaxSpeedMultiplierColor = new Color(0.2f, 0.8f, 1f, 0.85f);
     private static readonly Color AccelerationMultiplierColor = new Color(1f, 0.65f, 0.2f, 0.85f);
@@ -66,6 +72,8 @@ public sealed class PlayerControllerPresetsPanel
         }
     }
     #endregion
+
+    #region Methods
 
     #region Constructors
     /// <summary>
@@ -195,6 +203,17 @@ public sealed class PlayerControllerPresetsPanel
         Label label = new Label();
         label.style.unityTextAlign = TextAnchor.MiddleLeft;
         label.style.marginLeft = 4f;
+        label.AddManipulator(new ContextualMenuManipulator(evt =>
+        {
+            PlayerControllerPreset preset = label.userData as PlayerControllerPreset;
+
+            if (preset == null)
+                return;
+
+            evt.menu.AppendAction("Duplicate", action => DuplicatePreset(preset), DropdownMenuAction.AlwaysEnabled);
+            evt.menu.AppendAction("Delete", action => DeletePreset(preset), DropdownMenuAction.AlwaysEnabled);
+            evt.menu.AppendAction("Rename", action => ShowRenamePopup(label, preset), DropdownMenuAction.AlwaysEnabled);
+        }));
         return label;
     }
 
@@ -213,6 +232,7 @@ public sealed class PlayerControllerPresetsPanel
         if (index < 0 || index >= m_FilteredPresets.Count)
         {
             label.text = string.Empty;
+            label.userData = null;
             return;
         }
 
@@ -222,9 +242,11 @@ public sealed class PlayerControllerPresetsPanel
         {
             label.text = "<Missing Preset>";
             label.tooltip = string.Empty;
+            label.userData = null;
             return;
         }
 
+        label.userData = preset;
         label.text = GetPresetDisplayName(preset);
         label.tooltip = string.IsNullOrWhiteSpace(preset.Description) ? string.Empty : preset.Description;
     }
@@ -340,14 +362,19 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void DuplicatePreset()
     {
-        if (m_SelectedPreset == null)
+        DuplicatePreset(m_SelectedPreset);
+    }
+
+    private void DuplicatePreset(PlayerControllerPreset preset)
+    {
+        if (preset == null)
             return;
 
         PlayerControllerPreset duplicatedPreset = ScriptableObject.CreateInstance<PlayerControllerPreset>();
-        EditorUtility.CopySerialized(m_SelectedPreset, duplicatedPreset);
-        duplicatedPreset.name = m_SelectedPreset.name + " Copy";
+        EditorUtility.CopySerialized(preset, duplicatedPreset);
+        duplicatedPreset.name = preset.name + " Copy";
 
-        string originalPath = AssetDatabase.GetAssetPath(m_SelectedPreset);
+        string originalPath = AssetDatabase.GetAssetPath(preset);
         string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
@@ -380,7 +407,12 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void DeletePreset()
     {
-        if (m_SelectedPreset == null)
+        DeletePreset(m_SelectedPreset);
+    }
+
+    private void DeletePreset(PlayerControllerPreset preset)
+    {
+        if (preset == null)
             return;
 
         bool confirmed = EditorUtility.DisplayDialog("Delete Preset", "Delete the selected preset asset?", "Delete", "Cancel");
@@ -388,10 +420,10 @@ public sealed class PlayerControllerPresetsPanel
         if (confirmed == false)
             return;
 
-        string assetPath = AssetDatabase.GetAssetPath(m_SelectedPreset);
+        string assetPath = AssetDatabase.GetAssetPath(preset);
 
         Undo.RecordObject(m_Library, "Delete Preset");
-        m_Library.RemovePreset(m_SelectedPreset);
+        m_Library.RemovePreset(preset);
         EditorUtility.SetDirty(m_Library);
         AssetDatabase.SaveAssets();
 
@@ -518,13 +550,18 @@ public sealed class PlayerControllerPresetsPanel
     /// <param name="newName">The new name to assign to the selected preset.</param>
     private void HandlePresetNameChanged(string newName)
     {
-        if (m_SelectedPreset == null)
+        RenamePreset(m_SelectedPreset, newName);
+    }
+
+    private void RenamePreset(PlayerControllerPreset preset, string newName)
+    {
+        if (preset == null)
             return;
 
         if (string.IsNullOrWhiteSpace(newName))
             return;
 
-        string assetPath = AssetDatabase.GetAssetPath(m_SelectedPreset);
+        string assetPath = AssetDatabase.GetAssetPath(preset);
 
         if (string.IsNullOrWhiteSpace(assetPath) == false)
         {
@@ -534,10 +571,20 @@ public sealed class PlayerControllerPresetsPanel
                 Debug.LogWarning("Preset rename failed: " + error);
         }
 
-        m_SelectedPreset.name = newName;
-        EditorUtility.SetDirty(m_SelectedPreset);
+        preset.name = newName;
+        EditorUtility.SetDirty(preset);
         AssetDatabase.SaveAssets();
         RefreshPresetList();
+    }
+
+    private void ShowRenamePopup(VisualElement anchor, PlayerControllerPreset preset)
+    {
+        if (anchor == null || preset == null)
+            return;
+
+        Rect anchorRect = anchor.worldBound;
+        string title = "Rename Controller Preset";
+        PresetRenamePopup.Show(anchorRect, title, preset.PresetName, newName => RenamePreset(preset, newName));
     }
 
     /// <summary>
@@ -591,10 +638,6 @@ public sealed class PlayerControllerPresetsPanel
         countField.BindProperty(countProperty);
         discreteContainer.Add(countField);
 
-        FloatField offsetField = new FloatField("Direction Offset");
-        offsetField.BindProperty(offsetProperty);
-        discreteContainer.Add(offsetField);
-
         PieChartElement pieChart = new PieChartElement();
         Slider movementZoomSlider = CreatePieZoomSlider(pieChart);
         discreteContainer.Add(pieChart);
@@ -607,10 +650,9 @@ public sealed class PlayerControllerPresetsPanel
         foldout.Add(referenceField);
 
         SerializedProperty moveActionProperty = m_PresetSerializedObject.FindProperty("m_MoveActionId");
-        SerializedProperty overridesProperty = m_PresetSerializedObject.FindProperty("m_InputOverrides");
         EnsureDefaultActionId(moveActionProperty, "Move");
 
-        Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, moveActionProperty, overridesProperty, InputActionBindingOverridesElement.QuickBindingMode.Movement);
+        Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, moveActionProperty, InputActionSelectionElement.SelectionMode.Movement);
         foldout.Add(bindingsFoldout);
 
         Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
@@ -619,7 +661,8 @@ public sealed class PlayerControllerPresetsPanel
             "m_MaxSpeed",
             "m_Acceleration",
             "m_Deceleration",
-            "m_InputDeadZone"
+            "m_InputDeadZone",
+            "m_DigitalReleaseGraceSeconds"
         });
         foldout.Add(valuesFoldout);
 
@@ -646,11 +689,6 @@ public sealed class PlayerControllerPresetsPanel
             updateView();
         });
 
-        offsetField.RegisterValueChangedCallback(evt =>
-        {
-            updateView();
-        });
-
         updateView();
     }
     #endregion
@@ -662,114 +700,130 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void BuildLookSection()
     {
+        // Look Settings Foldout
         Foldout foldout = new Foldout();
         foldout.text = "Look Settings";
         foldout.value = true;
         foldout.style.marginTop = 8f;
         m_DetailsRoot.Add(foldout);
 
+        // Look Settings Properties
         SerializedProperty lookProperty = m_PresetSerializedObject.FindProperty("m_LookSettings");
         SerializedProperty directionsModeProperty = lookProperty.FindPropertyRelative("m_DirectionsMode");
         SerializedProperty countProperty = lookProperty.FindPropertyRelative("m_DiscreteDirectionCount");
         SerializedProperty offsetProperty = lookProperty.FindPropertyRelative("m_DirectionOffsetDegrees");
-        SerializedProperty referenceProperty = lookProperty.FindPropertyRelative("m_LookReference");
         SerializedProperty rotationModeProperty = lookProperty.FindPropertyRelative("m_RotationMode");
         SerializedProperty rotationSpeedProperty = lookProperty.FindPropertyRelative("m_RotationSpeed");
         SerializedProperty samplingProperty = lookProperty.FindPropertyRelative("m_MultiplierSampling");
         SerializedProperty maxSpeedMultipliersProperty = lookProperty.FindPropertyRelative("m_DiscreteDirectionMaxSpeedMultipliers");
         SerializedProperty accelerationMultipliersProperty = lookProperty.FindPropertyRelative("m_DiscreteDirectionAccelerationMultipliers");
 
+        // Cone properties
         SerializedProperty frontEnabledProperty = lookProperty.FindPropertyRelative("m_FrontConeEnabled");
         SerializedProperty frontAngleProperty = lookProperty.FindPropertyRelative("m_FrontConeAngle");
         SerializedProperty frontMaxSpeedMultiplierProperty = lookProperty.FindPropertyRelative("m_FrontConeMaxSpeedMultiplier");
         SerializedProperty frontAccelerationMultiplierProperty = lookProperty.FindPropertyRelative("m_FrontConeAccelerationMultiplier");
 
+        // Back cone properties
         SerializedProperty backEnabledProperty = lookProperty.FindPropertyRelative("m_BackConeEnabled");
         SerializedProperty backAngleProperty = lookProperty.FindPropertyRelative("m_BackConeAngle");
         SerializedProperty backMaxSpeedMultiplierProperty = lookProperty.FindPropertyRelative("m_BackConeMaxSpeedMultiplier");
         SerializedProperty backAccelerationMultiplierProperty = lookProperty.FindPropertyRelative("m_BackConeAccelerationMultiplier");
 
+        // Left cone properties
         SerializedProperty leftEnabledProperty = lookProperty.FindPropertyRelative("m_LeftConeEnabled");
         SerializedProperty leftAngleProperty = lookProperty.FindPropertyRelative("m_LeftConeAngle");
         SerializedProperty leftMaxSpeedMultiplierProperty = lookProperty.FindPropertyRelative("m_LeftConeMaxSpeedMultiplier");
         SerializedProperty leftAccelerationMultiplierProperty = lookProperty.FindPropertyRelative("m_LeftConeAccelerationMultiplier");
 
+        // Right cone properties
         SerializedProperty rightEnabledProperty = lookProperty.FindPropertyRelative("m_RightConeEnabled");
         SerializedProperty rightAngleProperty = lookProperty.FindPropertyRelative("m_RightConeAngle");
         SerializedProperty rightMaxSpeedMultiplierProperty = lookProperty.FindPropertyRelative("m_RightConeMaxSpeedMultiplier");
         SerializedProperty rightAccelerationMultiplierProperty = lookProperty.FindPropertyRelative("m_RightConeAccelerationMultiplier");
 
+        // Build Look Settings UI
         EnumField directionsModeField = new EnumField("Allowed Directions");
         directionsModeField.BindProperty(directionsModeProperty);
         foldout.Add(directionsModeField);
 
+        // Discrete Directions Container
         VisualElement discreteContainer = new VisualElement();
         discreteContainer.style.marginLeft = 8f;
 
+        // Direction Count Field
         IntegerField countField = new IntegerField("Direction Count");
         countField.BindProperty(countProperty);
         discreteContainer.Add(countField);
 
-        FloatField offsetField = new FloatField("Direction Offset");
-        offsetField.BindProperty(offsetProperty);
-        discreteContainer.Add(offsetField);
+        // Direction Offset Field
+        //FloatField offsetField = new FloatField("Direction Offset");
+        //offsetField.BindProperty(offsetProperty);
+        //discreteContainer.Add(offsetField);
 
+        // Cones Container
         VisualElement conesContainer = new VisualElement();
         conesContainer.style.marginLeft = 8f;
         conesContainer.style.marginTop = 4f;
 
+        // Lists to hold references to cone toggles and angle fields for event registration
         List<Toggle> coneToggles = new List<Toggle>();
         List<FloatField> coneAngleFields = new List<FloatField>();
 
+        // Add cone rows
         conesContainer.Add(BuildConeRow("Front", frontEnabledProperty, frontAngleProperty, frontMaxSpeedMultiplierProperty, frontAccelerationMultiplierProperty, coneToggles, coneAngleFields));
         conesContainer.Add(BuildConeRow("Back", backEnabledProperty, backAngleProperty, backMaxSpeedMultiplierProperty, backAccelerationMultiplierProperty, coneToggles, coneAngleFields));
         conesContainer.Add(BuildConeRow("Left", leftEnabledProperty, leftAngleProperty, leftMaxSpeedMultiplierProperty, leftAccelerationMultiplierProperty, coneToggles, coneAngleFields));
         conesContainer.Add(BuildConeRow("Right", rightEnabledProperty, rightAngleProperty, rightMaxSpeedMultiplierProperty, rightAccelerationMultiplierProperty, coneToggles, coneAngleFields));
 
+        // Pie Chart and Multiplier Legend
         PieChartElement pieChart = new PieChartElement();
-        VisualElement multiplierLegend = BuildMultiplierLegend();
+        //VisualElement multiplierLegend = BuildMultiplierLegend();
         Slider lookZoomSlider = CreatePieZoomSlider(pieChart);
         VisualElement multipliersSection = BuildDiscreteMultipliersSection(out VisualElement multipliersTableRoot, out Label multipliersHeader);
 
         foldout.Add(discreteContainer);
         foldout.Add(conesContainer);
-        foldout.Add(multiplierLegend);
+        //foldout.Add(multiplierLegend);
         foldout.Add(pieChart);
         foldout.Add(lookZoomSlider);
         foldout.Add(multipliersSection);
 
-        EnumField referenceField = new EnumField("Look Reference");
-        referenceField.BindProperty(referenceProperty);
-        foldout.Add(referenceField);
-
+        // Rotation Mode Field
         EnumField rotationModeField = new EnumField("Rotation Mode");
         rotationModeField.BindProperty(rotationModeProperty);
         foldout.Add(rotationModeField);
 
+        // Rotation Speed Field
         FloatField rotationSpeedField = new FloatField("Rotation Speed");
         rotationSpeedField.BindProperty(rotationSpeedProperty);
         foldout.Add(rotationSpeedField);
 
+        // Multiplier Sampling Field
         EnumField samplingField = new EnumField("Multiplier Sampling");
         samplingField.BindProperty(samplingProperty);
         foldout.Add(samplingField);
 
+        // Input Bindings
         SerializedProperty lookActionProperty = m_PresetSerializedObject.FindProperty("m_LookActionId");
-        SerializedProperty overridesProperty = m_PresetSerializedObject.FindProperty("m_InputOverrides");
         EnsureDefaultActionId(lookActionProperty, "Look");
 
-        Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, lookActionProperty, overridesProperty, InputActionBindingOverridesElement.QuickBindingMode.Look);
+        // Bindings Foldout
+        Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, lookActionProperty, InputActionSelectionElement.SelectionMode.Look);
         foldout.Add(bindingsFoldout);
 
+        // Values Foldout
         SerializedProperty valuesProperty = lookProperty.FindPropertyRelative("m_Values");
         Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
         {
             "m_RotationDamping",
             "m_RotationMaxSpeed",
-            "m_RotationDeadZone"
+            "m_RotationDeadZone",
+            "m_DigitalReleaseGraceSeconds"
         });
         foldout.Add(valuesFoldout);
 
+        // Update View Action
         Action updateView = () =>
         {
             LookDirectionsMode directionsMode = (LookDirectionsMode)directionsModeProperty.enumValueIndex;
@@ -778,23 +832,28 @@ public sealed class PlayerControllerPresetsPanel
 
             bool isDiscrete = directionsMode == LookDirectionsMode.DiscreteCount;
             bool isCones = directionsMode == LookDirectionsMode.Cones;
+            bool followMovement = directionsMode == LookDirectionsMode.FollowMovementDirection;
 
-            discreteContainer.style.display = isDiscrete ? DisplayStyle.Flex : DisplayStyle.None;
-            conesContainer.style.display = isCones ? DisplayStyle.Flex : DisplayStyle.None;
-            pieChart.style.display = directionsMode == LookDirectionsMode.AllDirections ? DisplayStyle.None : DisplayStyle.Flex;
-            multiplierLegend.style.display = directionsMode == LookDirectionsMode.AllDirections ? DisplayStyle.None : DisplayStyle.Flex;
-            lookZoomSlider.style.display = directionsMode == LookDirectionsMode.AllDirections ? DisplayStyle.None : DisplayStyle.Flex;
-            rotationSpeedField.style.display = rotationMode == RotationMode.Continuous ? DisplayStyle.Flex : DisplayStyle.None;
-            samplingField.style.display = isDiscrete ? DisplayStyle.Flex : DisplayStyle.None;
+            discreteContainer.style.display = isDiscrete && followMovement == false ? DisplayStyle.Flex : DisplayStyle.None;
+            conesContainer.style.display = isCones && followMovement == false ? DisplayStyle.Flex : DisplayStyle.None;
+            pieChart.style.display = directionsMode == LookDirectionsMode.AllDirections || followMovement ? DisplayStyle.None : DisplayStyle.Flex;
+            //multiplierLegend.style.display = directionsMode == LookDirectionsMode.AllDirections ? DisplayStyle.None : DisplayStyle.Flex;
+            lookZoomSlider.style.display = directionsMode == LookDirectionsMode.AllDirections || followMovement ? DisplayStyle.None : DisplayStyle.Flex;
+            rotationModeField.style.display = followMovement ? DisplayStyle.None : DisplayStyle.Flex;
+            rotationSpeedField.style.display = rotationMode == RotationMode.Continuous && followMovement == false ? DisplayStyle.Flex : DisplayStyle.None;
+            samplingField.style.display = isDiscrete && followMovement == false ? DisplayStyle.Flex : DisplayStyle.None;
+            bindingsFoldout.style.display = followMovement ? DisplayStyle.None : DisplayStyle.Flex;
+            valuesFoldout.style.display = followMovement ? DisplayStyle.None : DisplayStyle.Flex;
 
-            if (isDiscrete)
+            if (isDiscrete && followMovement == false)
                 SnapOffsetToStep(offsetProperty, countProperty.intValue);
 
             UpdateLookPieChart(pieChart, directionsMode, countProperty.intValue, offsetProperty.floatValue, frontEnabledProperty, frontAngleProperty, backEnabledProperty, backAngleProperty, leftEnabledProperty, leftAngleProperty, rightEnabledProperty, rightAngleProperty);
             UpdateLookLabels(pieChart, directionsMode, samplingMode, countProperty.intValue, offsetProperty.floatValue);
             pieChart.SetOverlayFields(null);
 
-            multipliersSection.style.display = isDiscrete ? DisplayStyle.Flex : DisplayStyle.None;
+            multipliersSection.style.display = isDiscrete && followMovement == false ? DisplayStyle.Flex : DisplayStyle.None;
+            multipliersSection.style.marginLeft = SubSectionMarginLeft;
 
             if (multipliersHeader != null)
             {
@@ -807,6 +866,7 @@ public sealed class PlayerControllerPresetsPanel
             }
         };
 
+        // Register events to update the view when relevant properties change
         directionsModeField.RegisterValueChangedCallback(evt =>
         {
             updateView();
@@ -817,10 +877,10 @@ public sealed class PlayerControllerPresetsPanel
             updateView();
         });
 
-        offsetField.RegisterValueChangedCallback(evt =>
-        {
-            updateView();
-        });
+        //offsetField.RegisterValueChangedCallback(evt =>
+        //{
+        //    updateView();
+        //});
 
         rotationModeField.RegisterValueChangedCallback(evt =>
         {
@@ -832,6 +892,7 @@ public sealed class PlayerControllerPresetsPanel
             updateView();
         });
 
+        // Register events for cone toggles and angle fields
         for (int i = 0; i < coneToggles.Count; i++)
         {
             Toggle toggle = coneToggles[i];
@@ -841,6 +902,7 @@ public sealed class PlayerControllerPresetsPanel
             });
         }
 
+        // Register events for cone angle fields
         for (int i = 0; i < coneAngleFields.Count; i++)
         {
             FloatField angleField = coneAngleFields[i];
@@ -865,37 +927,44 @@ public sealed class PlayerControllerPresetsPanel
     /// <returns>A VisualElement representing the constructed row.</returns>
     private VisualElement BuildConeRow(string label, SerializedProperty enabledProperty, SerializedProperty angleProperty, SerializedProperty maxSpeedProperty, SerializedProperty accelerationProperty, List<Toggle> toggles, List<FloatField> angleFields)
     {
+        // Create row container
         VisualElement row = new VisualElement();
         row.style.flexDirection = FlexDirection.Row;
         row.style.alignItems = Align.Center;
         row.style.marginBottom = MultiplierRowSpacing;
 
+        // Create and configure enabled toggle
         Toggle enabledToggle = new Toggle(label);
         enabledToggle.style.minWidth = 120f;
         enabledToggle.BindProperty(enabledProperty);
         row.Add(enabledToggle);
 
+        // Create and configure angle field
         FloatField angleField = new FloatField("Angle");
         angleField.style.flexGrow = 0f;
         angleField.style.width = 110f;
         angleField.BindProperty(angleProperty);
         row.Add(angleField);
 
+        // Create and configure multiplier fields
         FloatField maxSpeedField = CreatePercentField(maxSpeedProperty, MaxSpeedMultiplierColor, "Max speed multiplier for this cone.", "Max %", MultiplierFieldWidth);
         FloatField accelerationField = CreatePercentField(accelerationProperty, AccelerationMultiplierColor, "Acceleration multiplier for this cone.", "Accel %", MultiplierFieldWidth);
         row.Add(maxSpeedField);
         row.Add(accelerationField);
 
+        // Add to provided lists if applicable
         if (toggles != null)
         {
             toggles.Add(enabledToggle);
         }
 
+        // Add to provided lists if applicable
         if (angleFields != null)
         {
             angleFields.Add(angleField);
         }
 
+        // return the constructed row
         return row;
     }
     #endregion
@@ -959,35 +1028,6 @@ public sealed class PlayerControllerPresetsPanel
     #endregion
 
     #region Helpers
-    private void EnsureDefaultActionId(SerializedProperty actionIdProperty, string actionName)
-    {
-        if (actionIdProperty == null)
-            return;
-
-        if (m_InputAsset == null)
-            return;
-
-        string currentId = actionIdProperty.stringValue;
-
-        if (string.IsNullOrWhiteSpace(currentId) == false)
-        {
-            InputAction existingAction = m_InputAsset.FindAction(currentId, false);
-
-            if (existingAction != null)
-                return;
-        }
-
-        InputAction defaultAction = m_InputAsset.FindAction(actionName, false);
-
-        if (defaultAction == null)
-            return;
-
-        Undo.RecordObject(m_SelectedPreset, "Assign Default Action");
-        m_PresetSerializedObject.Update();
-        actionIdProperty.stringValue = defaultAction.id.ToString();
-        m_PresetSerializedObject.ApplyModifiedProperties();
-    }
-
     private Foldout BuildValuesFoldout(SerializedProperty valuesProperty, string[] fieldNames)
     {
         Foldout foldout = new Foldout();
@@ -1017,13 +1057,42 @@ public sealed class PlayerControllerPresetsPanel
         return foldout;
     }
 
-    private Foldout BuildBindingsFoldout(InputActionAsset inputAsset, SerializedObject presetSerializedObject, SerializedProperty actionIdProperty, SerializedProperty overridesProperty, InputActionBindingOverridesElement.QuickBindingMode mode)
+    private void EnsureDefaultActionId(SerializedProperty actionIdProperty, string actionName)
+    {
+        if (actionIdProperty == null)
+            return;
+
+        if (m_InputAsset == null)
+            return;
+
+        string currentId = actionIdProperty.stringValue;
+
+        if (string.IsNullOrWhiteSpace(currentId) == false)
+        {
+            InputAction existingAction = m_InputAsset.FindAction(currentId, false);
+
+            if (existingAction != null)
+                return;
+        }
+
+        InputAction defaultAction = m_InputAsset.FindAction(actionName, false);
+
+        if (defaultAction == null)
+            return;
+
+        Undo.RecordObject(m_SelectedPreset, "Assign Default Action");
+        m_PresetSerializedObject.Update();
+        actionIdProperty.stringValue = defaultAction.id.ToString();
+        m_PresetSerializedObject.ApplyModifiedProperties();
+    }
+
+    private Foldout BuildBindingsFoldout(InputActionAsset inputAsset, SerializedObject presetSerializedObject, SerializedProperty actionIdProperty, InputActionSelectionElement.SelectionMode mode)
     {
         Foldout foldout = new Foldout();
         foldout.text = "Bindings";
         foldout.value = true;
 
-        InputActionBindingOverridesElement bindingsElement = new InputActionBindingOverridesElement(inputAsset, presetSerializedObject, actionIdProperty, overridesProperty, mode);
+        InputActionSelectionElement bindingsElement = new InputActionSelectionElement(inputAsset, presetSerializedObject, actionIdProperty, mode);
         foldout.Add(bindingsElement);
 
         return foldout;
@@ -1044,39 +1113,39 @@ public sealed class PlayerControllerPresetsPanel
         return slider;
     }
 
-    private VisualElement BuildMultiplierLegend()
-    {
-        VisualElement container = new VisualElement();
-        container.style.flexDirection = FlexDirection.Row;
-        container.style.marginTop = 4f;
-        container.style.marginBottom = 2f;
+    //private VisualElement BuildMultiplierLegend()
+    //{
+    //    VisualElement container = new VisualElement();
+    //    container.style.flexDirection = FlexDirection.Row;
+    //    container.style.marginTop = 4f;
+    //    container.style.marginBottom = 2f;
 
-        container.Add(BuildLegendItem(MaxSpeedMultiplierColor, "Max Speed"));
-        container.Add(BuildLegendItem(AccelerationMultiplierColor, "Acceleration"));
+    //    container.Add(BuildLegendItem(MaxSpeedMultiplierColor, "Max Speed"));
+    //    container.Add(BuildLegendItem(AccelerationMultiplierColor, "Acceleration"));
 
-        return container;
-    }
+    //    return container;
+    //}
 
-    private VisualElement BuildLegendItem(Color color, string label)
-    {
-        VisualElement item = new VisualElement();
-        item.style.flexDirection = FlexDirection.Row;
-        item.style.alignItems = Align.Center;
-        item.style.marginRight = 12f;
+    //private VisualElement BuildLegendItem(Color color, string label)
+    //{
+    //    VisualElement item = new VisualElement();
+    //    item.style.flexDirection = FlexDirection.Row;
+    //    item.style.alignItems = Align.Center;
+    //    item.style.marginRight = 12f;
 
-        VisualElement swatch = new VisualElement();
-        swatch.style.width = 10f;
-        swatch.style.height = 10f;
-        swatch.style.backgroundColor = color;
-        swatch.style.marginRight = 4f;
-        item.Add(swatch);
+    //    VisualElement swatch = new VisualElement();
+    //    swatch.style.width = 10f;
+    //    swatch.style.height = 10f;
+    //    swatch.style.backgroundColor = color;
+    //    swatch.style.marginRight = 4f;
+    //    item.Add(swatch);
 
-        Label text = new Label(label);
-        text.style.fontSize = 10f;
-        item.Add(text);
+    //    Label text = new Label(label);
+    //    text.style.fontSize = 10f;
+    //    item.Add(text);
 
-        return item;
-    }
+    //    return item;
+    //}
 
     private VisualElement BuildDiscreteMultipliersSection(out VisualElement tableRoot, out Label headerLabel)
     {
@@ -1147,6 +1216,11 @@ public sealed class PlayerControllerPresetsPanel
         }
     }
 
+    /// <summary>
+    /// Creates a header row for multipliers based on the specified sampling mode.
+    /// </summary>
+    /// <param name="samplingMode">The sampling mode that determines which header labels are displayed.</param>
+    /// <returns>A VisualElement representing the header row.</returns>
     private VisualElement BuildMultipliersHeaderRow(LookMultiplierSampling samplingMode)
     {
         VisualElement row = new VisualElement();
@@ -1334,7 +1408,7 @@ public sealed class PlayerControllerPresetsPanel
                 Angle = angle,
                 Text = prefix + " " + (i + 1),
                 RadiusOffset = 0f,
-                TextColor = DirectionMarkerColor,
+                TextColor = DirectionLabelColor,
                 UseTextColor = true
             };
 
@@ -1368,6 +1442,13 @@ public sealed class PlayerControllerPresetsPanel
         m_PresetSerializedObject.ApplyModifiedProperties();
     }
 
+    /// <summary>
+    /// Updates the specified pie chart with discrete slices, alternating colors, directional labels, and direction
+    /// markers based on the given count and offset.
+    /// </summary>
+    /// <param name="pieChart">The pie chart element to update.</param>
+    /// <param name="count">The number of slices to display in the pie chart.</param>
+    /// <param name="offset">The angular offset to apply to the starting position of the slices.</param>
     private void UpdateDiscretePieChart(PieChartElement pieChart, int count, float offset)
     {
         int sliceCount = Mathf.Max(1, count);
@@ -1390,6 +1471,22 @@ public sealed class PlayerControllerPresetsPanel
         pieChart.SetDirectionMarkers(directionAngles, DirectionMarkerColor, ForwardMarkerColor, 0f, true);
     }
 
+    /// <summary>
+    /// Updates the pie chart visualization to reflect look direction settings based on the specified mode, count,
+    /// offset, and cone parameters.
+    /// </summary>
+    /// <param name="pieChart">The pie chart element to update.</param>
+    /// <param name="mode">The mode determining how look directions are represented.</param>
+    /// <param name="count">The number of discrete look directions.</param>
+    /// <param name="offset">The angular offset for direction placement.</param>
+    /// <param name="frontEnabled">Serialized property indicating if the front cone is enabled.</param>
+    /// <param name="frontAngle">Serialized property specifying the angle of the front cone.</param>
+    /// <param name="backEnabled">Serialized property indicating if the back cone is enabled.</param>
+    /// <param name="backAngle">Serialized property specifying the angle of the back cone.</param>
+    /// <param name="leftEnabled">Serialized property indicating if the left cone is enabled.</param>
+    /// <param name="leftAngle">Serialized property specifying the angle of the left cone.</param>
+    /// <param name="rightEnabled">Serialized property indicating if the right cone is enabled.</param>
+    /// <param name="rightAngle">Serialized property specifying the angle of the right cone.</param>
     private void UpdateLookPieChart(PieChartElement pieChart, LookDirectionsMode mode, int count, float offset, SerializedProperty frontEnabled, SerializedProperty frontAngle, SerializedProperty backEnabled, SerializedProperty backAngle, SerializedProperty leftEnabled, SerializedProperty leftAngle, SerializedProperty rightEnabled, SerializedProperty rightAngle)
     {
         List<PieChartElement.PieSlice> slices = new List<PieChartElement.PieSlice>();
@@ -1431,6 +1528,15 @@ public sealed class PlayerControllerPresetsPanel
         pieChart.SetSlices(slices);
     }
 
+    /// <summary>
+    /// Adds a pie slice to the collection representing a cone segment if enabled, using the specified center angle,
+    /// angle property, and color.
+    /// </summary>
+    /// <param name="slices">The list to which the new pie slice will be added.</param>
+    /// <param name="centerAngle">The central angle around which the cone slice is positioned.</param>
+    /// <param name="enabledProperty">Serialized property indicating whether the cone slice is enabled.</param>
+    /// <param name="angleProperty">Serialized property specifying the angle span of the cone slice.</param>
+    /// <param name="color">The color to assign to the cone slice.</param>
     private void AddConeSlices(List<PieChartElement.PieSlice> slices, float centerAngle, SerializedProperty enabledProperty, SerializedProperty angleProperty, Color color)
     {
         if (enabledProperty == null || angleProperty == null)
@@ -1512,5 +1618,7 @@ public sealed class PlayerControllerPresetsPanel
             m_PresetSerializedObject.ApplyModifiedProperties();
         }
     }
+    #endregion
+
     #endregion
 }

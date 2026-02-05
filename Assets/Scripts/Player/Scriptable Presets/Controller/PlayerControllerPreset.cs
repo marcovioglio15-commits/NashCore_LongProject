@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "PlayerControllerPreset", menuName = "Player/Controller Preset", order = 10)]
@@ -36,8 +35,6 @@ public sealed class PlayerControllerPreset : ScriptableObject
     [Tooltip("Selected action ID for look input.")]
     [SerializeField] private string m_LookActionId;
 
-    [Tooltip("Per-binding overrides applied on top of the global input actions asset.")]
-    [SerializeField] private List<InputBindingOverride> m_InputOverrides = new List<InputBindingOverride>();
     #endregion
 
     #region Properties
@@ -113,13 +110,6 @@ public sealed class PlayerControllerPreset : ScriptableObject
         }
     }
 
-    public IReadOnlyList<InputBindingOverride> InputOverrides
-    {
-        get
-        {
-            return m_InputOverrides;
-        }
-    }
     #endregion
 
     #region Unity Methods
@@ -136,9 +126,6 @@ public sealed class PlayerControllerPreset : ScriptableObject
 
         if (m_CameraSettings == null)
             m_CameraSettings = new CameraSettings();
-
-        if (m_InputOverrides == null)
-            m_InputOverrides = new List<InputBindingOverride>();
 
         m_MovementSettings.Validate();
         m_LookSettings.Validate();

@@ -194,6 +194,17 @@ public sealed class PlayerMasterPresetsPanel
         Label label = new Label();
         label.style.unityTextAlign = TextAnchor.MiddleLeft;
         label.style.marginLeft = 4f;
+        label.AddManipulator(new ContextualMenuManipulator(evt =>
+        {
+            PlayerMasterPreset preset = label.userData as PlayerMasterPreset;
+
+            if (preset == null)
+                return;
+
+            evt.menu.AppendAction("Duplicate", action => DuplicatePreset(preset), DropdownMenuAction.AlwaysEnabled);
+            evt.menu.AppendAction("Delete", action => DeletePreset(preset), DropdownMenuAction.AlwaysEnabled);
+            evt.menu.AppendAction("Rename", action => ShowRenamePopup(label, preset), DropdownMenuAction.AlwaysEnabled);
+        }));
         return label;
     }
 
@@ -207,6 +218,7 @@ public sealed class PlayerMasterPresetsPanel
         if (index < 0 || index >= m_FilteredPresets.Count)
         {
             label.text = string.Empty;
+            label.userData = null;
             return;
         }
 
@@ -216,9 +228,11 @@ public sealed class PlayerMasterPresetsPanel
         {
             label.text = "<Missing Preset>";
             label.tooltip = string.Empty;
+            label.userData = null;
             return;
         }
 
+        label.userData = preset;
         label.text = GetPresetDisplayName(preset);
         label.tooltip = string.IsNullOrWhiteSpace(preset.Description) ? string.Empty : preset.Description;
     }
@@ -312,14 +326,19 @@ public sealed class PlayerMasterPresetsPanel
 
     private void DuplicatePreset()
     {
-        if (m_SelectedPreset == null)
+        DuplicatePreset(m_SelectedPreset);
+    }
+
+    private void DuplicatePreset(PlayerMasterPreset preset)
+    {
+        if (preset == null)
             return;
 
         PlayerMasterPreset duplicatedPreset = ScriptableObject.CreateInstance<PlayerMasterPreset>();
-        EditorUtility.CopySerialized(m_SelectedPreset, duplicatedPreset);
-        duplicatedPreset.name = m_SelectedPreset.name + " Copy";
+        EditorUtility.CopySerialized(preset, duplicatedPreset);
+        duplicatedPreset.name = preset.name + " Copy";
 
-        string originalPath = AssetDatabase.GetAssetPath(m_SelectedPreset);
+        string originalPath = AssetDatabase.GetAssetPath(preset);
         string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
@@ -349,7 +368,12 @@ public sealed class PlayerMasterPresetsPanel
 
     private void DeletePreset()
     {
-        if (m_SelectedPreset == null)
+        DeletePreset(m_SelectedPreset);
+    }
+
+    private void DeletePreset(PlayerMasterPreset preset)
+    {
+        if (preset == null)
             return;
 
         bool confirmed = EditorUtility.DisplayDialog("Delete Master Preset", "Delete the selected master preset asset?", "Delete", "Cancel");
@@ -357,10 +381,10 @@ public sealed class PlayerMasterPresetsPanel
         if (confirmed == false)
             return;
 
-        string assetPath = AssetDatabase.GetAssetPath(m_SelectedPreset);
+        string assetPath = AssetDatabase.GetAssetPath(preset);
 
         Undo.RecordObject(m_Library, "Delete Master Preset");
-        m_Library.RemovePreset(m_SelectedPreset);
+        m_Library.RemovePreset(preset);
         EditorUtility.SetDirty(m_Library);
         AssetDatabase.SaveAssets();
 
@@ -474,13 +498,18 @@ public sealed class PlayerMasterPresetsPanel
 
     private void HandlePresetNameChanged(string newName)
     {
-        if (m_SelectedPreset == null)
+        RenamePreset(m_SelectedPreset, newName);
+    }
+
+    private void RenamePreset(PlayerMasterPreset preset, string newName)
+    {
+        if (preset == null)
             return;
 
         if (string.IsNullOrWhiteSpace(newName))
             return;
 
-        string assetPath = AssetDatabase.GetAssetPath(m_SelectedPreset);
+        string assetPath = AssetDatabase.GetAssetPath(preset);
 
         if (string.IsNullOrWhiteSpace(assetPath) == false)
         {
@@ -490,10 +519,20 @@ public sealed class PlayerMasterPresetsPanel
                 Debug.LogWarning("Preset rename failed: " + error);
         }
 
-        m_SelectedPreset.name = newName;
-        EditorUtility.SetDirty(m_SelectedPreset);
+        preset.name = newName;
+        EditorUtility.SetDirty(preset);
         AssetDatabase.SaveAssets();
         RefreshPresetList();
+    }
+
+    private void ShowRenamePopup(VisualElement anchor, PlayerMasterPreset preset)
+    {
+        if (anchor == null || preset == null)
+            return;
+
+        Rect anchorRect = anchor.worldBound;
+        string title = "Rename Master Preset";
+        PresetRenamePopup.Show(anchorRect, title, preset.PresetName, newName => RenamePreset(preset, newName));
     }
 
     private void BuildSubPresetsSection()

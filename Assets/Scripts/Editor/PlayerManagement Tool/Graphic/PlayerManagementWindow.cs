@@ -5,17 +5,6 @@ using UnityEngine.UIElements;
 
 public sealed class PlayerManagementWindow : EditorWindow
 {
-    #region Nested Types
-    public enum PanelType
-    {
-        PlayerMasterPresets = 0,
-        PlayerControllerPresets = 1,
-        LevelUpProgression = 2,
-        CraftablePowerUps = 3,
-        AnimationBindings = 4
-    }
-    #endregion
-
     #region Fields
     private PlayerMasterPresetsPanel m_MasterPresetsPanel;
     private PlayerControllerPresetsPanel m_PresetsPanel;
@@ -151,5 +140,16 @@ public sealed class PlayerManagementWindow : EditorWindow
         return "Animations Bindings";
     }
 
+    #endregion
+    
+    #region Nested Types
+    public enum PanelType
+    {
+        PlayerMasterPresets = 0,
+        PlayerControllerPresets = 1,
+        LevelUpProgression = 2,
+        CraftablePowerUps = 3,
+        AnimationBindings = 4
+    }
     #endregion
 }

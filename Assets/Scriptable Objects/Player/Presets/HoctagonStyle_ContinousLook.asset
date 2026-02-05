@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4c5ed84bdc257044839a6d901f81512, type: 3}
+  m_Name: HoctagonStyle_ContinousLook
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPreset
+  m_PresetId: 9289d46afc8c4db88a8d06845deb718b
+  m_PresetName: HoctagonStyle_ContinousLook
+  m_Description: What an awesome description!
+  m_Version: 1.0.0
+  m_MovementSettings:
+    m_DirectionsMode: 0
+    m_DiscreteDirectionCount: 8
+    m_DirectionOffsetDegrees: 0
+    m_MovementReference: 1
+    m_Values:
+      m_BaseSpeed: 4
+      m_MaxSpeed: 6
+      m_Acceleration: -1
+      m_Deceleration: -1
+      m_InputDeadZone: 0.1
+      m_DigitalReleaseGraceSeconds: 0.09
+  m_LookSettings:
+    m_DirectionsMode: 1
+    m_DiscreteDirectionCount: 8
+    m_DirectionOffsetDegrees: 0
+    m_FrontConeEnabled: 1
+    m_FrontConeAngle: 90
+    m_FrontConeMaxSpeedMultiplier: 1
+    m_FrontConeAccelerationMultiplier: 1
+    m_BackConeEnabled: 0
+    m_BackConeAngle: 90
+    m_BackConeMaxSpeedMultiplier: 1
+    m_BackConeAccelerationMultiplier: 1
+    m_LeftConeEnabled: 0
+    m_LeftConeAngle: 90
+    m_LeftConeMaxSpeedMultiplier: 1
+    m_LeftConeAccelerationMultiplier: 1
+    m_RightConeEnabled: 0
+    m_RightConeAngle: 90
+    m_RightConeMaxSpeedMultiplier: 1
+    m_RightConeAccelerationMultiplier: 1
+    m_RotationMode: 1
+    m_RotationSpeed: 540
+    m_MultiplierSampling: 0
+    m_DiscreteDirectionMaxSpeedMultipliers:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    m_DiscreteDirectionAccelerationMultipliers:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    m_Values:
+      m_RotationDamping: 0.1
+      m_RotationMaxSpeed: 720
+      m_RotationDeadZone: 0.1
+      m_DigitalReleaseGraceSeconds: 0.09
+  m_CameraSettings:
+    m_Behavior: 2
+    m_FollowOffset: {x: 0, y: 10, z: -8}
+    m_RoomAnchor: {fileID: 0}
+    m_Values:
+      m_FollowSpeed: 8
+      m_CameraLag: 0.1
+      m_Damping: 0.15
+      m_MaxFollowDistance: 60000
+      m_DeadZoneRadius: 0
+  m_MoveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+  m_LookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8

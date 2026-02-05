@@ -1,0 +1,209 @@
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
+
+#region Systems
+[UpdateInGroup(typeof(PlayerControllerSystemGroup))]
+[UpdateAfter(typeof(PlayerInputBridgeSystem))]
+public partial struct PlayerLookDirectionSystem : ISystem
+{
+    #region Constants
+    private const float DigitalInputThreshold = 0.5f;
+    private const float DigitalLikeTolerance = 0.12f;
+    #endregion
+
+    #region Lifecycle
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<PlayerInputState>();
+        state.RequireForUpdate<PlayerMovementState>();
+        state.RequireForUpdate<PlayerLookState>();
+        state.RequireForUpdate<PlayerControllerConfig>();
+    }
+    #endregion
+
+    #region Update
+    /// <summary>
+    /// Processes player look input and updates the desired look direction for each player entity based on input,
+    /// configuration, and current orientation.
+    /// </summary>
+    /// <param name="state">Provides access to the current system state for querying and updating entities.</param>
+    public void OnUpdate(ref SystemState state)
+    {
+        float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+
+        foreach ((RefRO<PlayerInputState> inputState,
+                  RefRO<PlayerMovementState> movementState,
+                  RefRW<PlayerLookState> lookState,
+                  RefRO<PlayerControllerConfig> controllerConfig,
+                  RefRO<LocalTransform> localTransform)
+                 in SystemAPI.Query<RefRO<PlayerInputState>,
+                                    RefRO<PlayerMovementState>,
+                                    RefRW<PlayerLookState>,
+                                    RefRO<PlayerControllerConfig>,
+                                    RefRO<LocalTransform>>())
+        {
+            ref LookConfig lookConfig = ref controllerConfig.ValueRO.Config.Value.Look;
+
+            if (lookConfig.DirectionsMode == LookDirectionsMode.FollowMovementDirection)
+            {
+                float3 movementDirection = movementState.ValueRO.DesiredDirection;
+
+                if (math.lengthsq(movementDirection) > 1e-6f)
+                {
+                    lookState.ValueRW.DesiredDirection = PlayerControllerMath.NormalizePlanar(movementDirection, new float3(0f, 0f, 1f));
+                    continue;
+                }
+
+                float3 fallback_direction = lookState.ValueRO.CurrentDirection;
+
+                if (math.lengthsq(fallback_direction) < 1e-6f)
+                    fallback_direction = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
+
+                lookState.ValueRW.DesiredDirection = fallback_direction;
+                continue;
+            }
+
+            float2 lookInput = inputState.ValueRO.Look;
+            float deadZone = lookConfig.Values.RotationDeadZone;
+            float releaseGraceSeconds = math.max(0f, lookConfig.Values.DigitalReleaseGraceSeconds);
+
+            float3 playerForward = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
+            PlayerControllerMath.GetReferenceBasis(ReferenceFrame.WorldForward, playerForward, new float3(0f, 0f, 1f), false, out float3 forward, out float3 right);
+
+            float3 fallbackDirection = lookState.ValueRO.CurrentDirection;
+
+            if (math.lengthsq(fallbackDirection) < 1e-6f)
+                fallbackDirection = forward;
+
+            float2 resolvedInput = lookInput;
+
+            bool digitalLike = PlayerControllerMath.IsDigitalLike(lookInput, DigitalLikeTolerance);
+
+            if (digitalLike)
+                resolvedInput = ResolveDigitalInput(ref lookState.ValueRW, lookInput, elapsedTime, releaseGraceSeconds);
+
+            if (math.lengthsq(resolvedInput) <= deadZone * deadZone)
+            {
+                lookState.ValueRW.DesiredDirection = PlayerControllerMath.NormalizePlanar(fallbackDirection, forward);
+                continue;
+            }
+
+            float2 inputDir = PlayerControllerMath.NormalizeSafe(resolvedInput);
+            float3 desiredDirection;
+
+            switch (lookConfig.DirectionsMode)
+            {
+                case LookDirectionsMode.DiscreteCount:
+                    int count = math.max(1, lookConfig.DiscreteDirectionCount);
+                    float step = (math.PI * 2f) / count;
+                    float offset = math.radians(lookConfig.DirectionOffsetDegrees);
+                    float angle = math.atan2(inputDir.x, inputDir.y);
+                    float snappedAngle = PlayerControllerMath.QuantizeAngle(angle, step, offset);
+                    float3 localDirection = PlayerControllerMath.DirectionFromAngle(snappedAngle);
+                    desiredDirection = right * localDirection.x + forward * localDirection.z;
+                    break;
+                case LookDirectionsMode.Cones:
+                    float coneAngle = math.atan2(inputDir.x, inputDir.y);
+                    if (TryClampToCones(coneAngle, ref lookConfig, out float clampedAngle))
+                        coneAngle = clampedAngle;
+
+                    float3 clampedDirection = PlayerControllerMath.DirectionFromAngle(coneAngle);
+                    desiredDirection = right * clampedDirection.x + forward * clampedDirection.z;
+                    break;
+                default:
+                    desiredDirection = right * inputDir.x + forward * inputDir.y;
+                    break;
+            }
+
+            lookState.ValueRW.DesiredDirection = math.normalizesafe(desiredDirection, forward);
+        }
+    }
+    #endregion
+
+    #region Helpers
+    private static float2 ResolveDigitalInput(ref PlayerLookState lookState, float2 rawInput, float elapsedTime, float releaseGraceSeconds)
+    {
+        byte prevMask = lookState.CurrLookMask;
+        byte currMask = PlayerControllerMath.BuildDigitalMask(rawInput, DigitalInputThreshold);
+        lookState.PrevLookMask = prevMask;
+        lookState.CurrLookMask = currMask;
+
+        float4 pressTimes = lookState.LookPressTimes;
+        PlayerControllerMath.UpdateDigitalPressTimes(prevMask, currMask, elapsedTime, ref pressTimes);
+        lookState.LookPressTimes = pressTimes;
+
+        bool releaseOnly = PlayerControllerMath.IsReleaseOnly(prevMask, currMask);
+        bool prevDiagonal = PlayerControllerMath.IsDiagonalMask(prevMask);
+        bool currSingle = PlayerControllerMath.IsSingleAxisMask(currMask);
+
+        if (lookState.ReleaseHoldUntilTime > elapsedTime)
+        {
+            if (currMask != 0 && (currMask & ~lookState.ReleaseHoldMask) == 0)
+                return PlayerControllerMath.ResolveDigitalMask(lookState.ReleaseHoldMask, pressTimes);
+
+            lookState.ReleaseHoldUntilTime = 0f;
+        }
+
+        if (prevDiagonal && currSingle && releaseOnly && releaseGraceSeconds > 0f)
+        {
+            lookState.ReleaseHoldMask = prevMask;
+            lookState.ReleaseHoldUntilTime = elapsedTime + releaseGraceSeconds;
+            return PlayerControllerMath.ResolveDigitalMask(prevMask, pressTimes);
+        }
+
+        return PlayerControllerMath.ResolveDigitalMask(currMask, pressTimes);
+    }
+
+    private static bool TryClampToCones(float angle, ref LookConfig lookConfig, out float clampedAngle)
+    {
+        bool anyEnabled = false;
+        bool insideCone = false;
+        float bestBoundary = angle;
+        float bestBoundaryDelta = float.MaxValue;
+
+        EvaluateCone(angle, ref lookConfig.FrontCone, 0f, ref anyEnabled, ref insideCone, ref bestBoundary, ref bestBoundaryDelta);
+        EvaluateCone(angle, ref lookConfig.RightCone, 90f, ref anyEnabled, ref insideCone, ref bestBoundary, ref bestBoundaryDelta);
+        EvaluateCone(angle, ref lookConfig.BackCone, 180f, ref anyEnabled, ref insideCone, ref bestBoundary, ref bestBoundaryDelta);
+        EvaluateCone(angle, ref lookConfig.LeftCone, 270f, ref anyEnabled, ref insideCone, ref bestBoundary, ref bestBoundaryDelta);
+
+        if (insideCone)
+        {
+            clampedAngle = angle;
+            return true;
+        }
+
+        clampedAngle = bestBoundary;
+        return anyEnabled;
+    }
+
+    private static void EvaluateCone(float angle, ref ConeConfig cone, float centerDegrees, ref bool anyEnabled, ref bool insideCone, ref float bestBoundary, ref float bestBoundaryDelta)
+    {
+        if (cone.Enabled == false)
+            return;
+
+        anyEnabled = true;
+
+        float center = math.radians(centerDegrees);
+        float halfAngle = math.radians(cone.AngleDegrees * 0.5f);
+        float diff = PlayerControllerMath.WrapAngleRadians(angle - center);
+        float absDiff = math.abs(diff);
+
+        if (absDiff <= halfAngle)
+        {
+            insideCone = true;
+            return;
+        }
+
+        float boundary = center + math.sign(diff) * halfAngle;
+        float boundaryDelta = math.abs(PlayerControllerMath.WrapAngleRadians(angle - boundary));
+
+        if (boundaryDelta < bestBoundaryDelta)
+        {
+            bestBoundaryDelta = boundaryDelta;
+            bestBoundary = boundary;
+        }
+    }
+    #endregion
+}
+#endregion

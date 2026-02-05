@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPresetLibrary
   m_Presets:
   - {fileID: 11400000, guid: 5a3703589c6fd994ea8b4502a6cc4437, type: 2}
+  - {fileID: 11400000, guid: f070f2dae679b034381193d127b77c51, type: 2}
+  - {fileID: 11400000, guid: dc3b239fd2ad96745bcf7dcbb6e3fd0a, type: 2}

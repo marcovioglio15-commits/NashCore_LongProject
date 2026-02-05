@@ -21,7 +21,8 @@ public enum LookDirectionsMode
 {
     AllDirections = 0,
     DiscreteCount = 1,
-    Cones = 2
+    Cones = 2,
+    FollowMovementDirection = 3
 }
 
 [Serializable]

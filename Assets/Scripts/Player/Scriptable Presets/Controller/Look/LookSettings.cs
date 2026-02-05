@@ -70,14 +70,11 @@ public sealed class LookSettings
     [Tooltip("Acceleration multiplier while the look direction is inside the right cone.")]
     [SerializeField] private float m_RightConeAccelerationMultiplier = 1f;
 
-    [Tooltip("Reference frame used to orient look directions.")]
-    [SerializeField] private ReferenceFrame m_LookReference = ReferenceFrame.PlayerForward;
-
     [Tooltip("Defines how rotation should transition between allowed directions.")]
     [Header("Rotation")]
     [SerializeField] private RotationMode m_RotationMode = RotationMode.SnapToAllowedDirections;
 
-    [Tooltip("Rotation speed when continuous rotation is enabled.")]
+    [Tooltip("Rotation speed when continuous rotation is enabled (degrees per second).")]
     [SerializeField] private float m_RotationSpeed = 540f;
 
     [Tooltip("Defines how max speed and acceleration multipliers are sampled for discrete look arcs.")]
@@ -249,14 +246,6 @@ public sealed class LookSettings
         }
     }
 
-    public ReferenceFrame LookReference
-    {
-        get
-        {
-            return m_LookReference;
-        }
-    }
-
     public RotationMode RotationMode
     {
         get
@@ -395,6 +384,7 @@ public sealed class LookSettings
 
         return angle;
     }
+
     #endregion
 }
 
@@ -402,7 +392,7 @@ public sealed class LookSettings
 public sealed class LookValues
 {
     #region Serialized Fields
-    [Tooltip("Damping applied to rotation changes.")]
+    [Tooltip("Damping time (seconds) used to smooth rotation speed changes.")]
     [SerializeField] private float m_RotationDamping = 0.1f;
 
     [Tooltip("Maximum allowed rotation speed.")]
@@ -410,6 +400,10 @@ public sealed class LookValues
 
     [Tooltip("Input dead zone applied to look vectors.")]
     [SerializeField] private float m_RotationDeadZone = 0.1f;
+
+    [Tooltip("Grace time (seconds) to keep the last diagonal look direction when releasing keys.")]
+    [SerializeField] private float m_DigitalReleaseGraceSeconds = 0.08f;
+
     #endregion
 
     #region Properties
@@ -436,6 +430,15 @@ public sealed class LookValues
             return m_RotationDeadZone;
         }
     }
+
+    public float DigitalReleaseGraceSeconds
+    {
+        get
+        {
+            return m_DigitalReleaseGraceSeconds;
+        }
+    }
+
     #endregion
 
     #region Validation
@@ -449,6 +452,10 @@ public sealed class LookValues
 
         if (m_RotationDeadZone < 0f)
             m_RotationDeadZone = 0f;
+
+        if (m_DigitalReleaseGraceSeconds < 0f)
+            m_DigitalReleaseGraceSeconds = 0f;
+
     }
     #endregion
 }

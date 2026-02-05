@@ -88,6 +88,7 @@ public sealed class MovementSettings
         float snapped = Mathf.Round(normalized / step) * step;
         return Mathf.Repeat(snapped, 360f);
     }
+
     #endregion
 }
 
@@ -101,14 +102,17 @@ public sealed class MovementValues
     [Tooltip("Maximum allowed movement speed.")]
     [SerializeField] private float m_MaxSpeed = 6f;
 
-    [Tooltip("Acceleration applied while input is active.")]
+    [Tooltip("Acceleration applied while input is active. Negative values snap to max speed instantly.")]
     [SerializeField] private float m_Acceleration = 12f;
 
-    [Tooltip("Deceleration applied when input is released.")]
+    [Tooltip("Deceleration applied when input is released. Negative values stop instantly.")]
     [SerializeField] private float m_Deceleration = 14f;
 
     [Tooltip("Input dead zone applied to movement vectors.")]
     [SerializeField] private float m_InputDeadZone = 0.1f;
+
+    [Tooltip("Grace time (seconds) to keep the last diagonal movement direction when releasing keys.")]
+    [SerializeField] private float m_DigitalReleaseGraceSeconds = 0.08f;
     #endregion
 
     #region Properties
@@ -151,6 +155,14 @@ public sealed class MovementValues
             return m_InputDeadZone;
         }
     }
+
+    public float DigitalReleaseGraceSeconds
+    {
+        get
+        {
+            return m_DigitalReleaseGraceSeconds;
+        }
+    }
     #endregion
 
     #region Validation
@@ -162,14 +174,11 @@ public sealed class MovementValues
         if (m_MaxSpeed < 0f)
             m_MaxSpeed = 0f;
 
-        if (m_Acceleration < 0f)
-            m_Acceleration = 0f;
-
-        if (m_Deceleration < 0f)
-            m_Deceleration = 0f;
-
         if (m_InputDeadZone < 0f)
             m_InputDeadZone = 0f;
+
+        if (m_DigitalReleaseGraceSeconds < 0f)
+            m_DigitalReleaseGraceSeconds = 0f;
     }
     #endregion
 }

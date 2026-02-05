@@ -9,80 +9,21 @@ using UnityEngine.UIElements;
 /// </summary>
 public sealed class PieChartElement : VisualElement
 {
-    #region Nested Types
-    /// <summary>
-    /// Represents a slice of a pie chart, defined by its start angle, end angle, midpoint angle, and color.
-    /// </summary>
-    public struct PieSlice
-    {
-        public float StartAngle;
-        public float EndAngle;
-        public float MidAngle;
-        public Color Color;
-    }
-
-    /// <summary>
-    /// Represents a descriptor for an overlay, containing angle, property, and tooltip information.
-    /// </summary>
-    public sealed class OverlayDescriptor
-    {
-        public float Angle;
-        public SerializedProperty Property;
-        public string Tooltip;
-        public float RadiusOffset;
-        public Color FieldColor;
-        public bool UseFieldColor;
-        public bool DisplayAsPercent;
-    }
-
-    /// <summary>
-    /// Represents a descriptor for a text label displayed at a specific angle around the pie chart.
-    /// </summary>
-    public sealed class LabelDescriptor
-    {
-        public float Angle;
-        public string Text;
-        public float RadiusOffset;
-        public Color TextColor;
-        public bool UseTextColor;
-    }
-
-    /// <summary>
-    /// Represents a binding between a float angle, a FloatField, and a SerializedProperty for overlay operations.
-    /// </summary>
-    private sealed class OverlayBinding
-    {
-        public float Angle;
-        public FloatField Field;
-        public SerializedProperty Property;
-        public float RadiusOffset;
-        public bool DisplayAsPercent;
-    }
-
-    /// <summary>
-    /// Represents a binding between a float angle and a Label for display around the pie chart.
-    /// </summary>
-    private sealed class LabelBinding
-    {
-        public float Angle;
-        public Label Label;
-        public float RadiusOffset;
-    }
-    #endregion
-
     #region Constants
     private const float FieldWidth = 46f;
     private const float FieldHeight = 16f;
     private const float ForwardLabelSize = 14f;
     private const float ForwardLabelPadding = 2f;
     private const float DirectionLineWidth = 2f;
-    private const float DirectionLineRadiusFactor = 0.9f;
+    private const float DirectionLineRadiusFactor = 0.5f;
     private const float PieRadiusFactor = 0.48f;
     private const float OverlayRadiusFactor = 0.34f;
     private const float LabelWidth = 52f;
     private const float LabelHeight = 14f;
     private const float LabelFontSize = 9f;
-    private const float LabelRadiusFactor = 0.62f;
+    private const float DirectionLabelFontSize = 24f;
+    private const float LabelRadiusFactor = 0.55f;
+    private const float LabelRadiusFactorMultiplier = 1.3f;
     private const float BaseMinSize = 220f;
     private const float OverlayGroupPadding = 6f;
     private const float OverlayAngleKeyScale = 1000f;
@@ -103,7 +44,7 @@ public sealed class PieChartElement : VisualElement
     private Color m_LabelColor = new Color(1f, 1f, 1f, 0.85f);
     private float m_ForwardAngle;
     private bool m_ShowForwardLabel;
-    private float m_Zoom = 1f;
+    private float pieZoom = 1f;
     #endregion
 
     #region Constructors
@@ -113,12 +54,14 @@ public sealed class PieChartElement : VisualElement
     /// </summary>
     public PieChartElement()
     {
+        // style
         style.flexGrow = 1f;
         style.minHeight = BaseMinSize;
         style.minWidth = BaseMinSize;
-        style.marginTop = 6f;
+        style.marginTop = 12f;
         style.marginBottom = 6f;
 
+        // overlay root
         m_OverlayRoot = new VisualElement();
         m_OverlayRoot.style.position = Position.Absolute;
         m_OverlayRoot.style.left = 0f;
@@ -126,6 +69,7 @@ public sealed class PieChartElement : VisualElement
         m_OverlayRoot.style.right = 0f;
         m_OverlayRoot.style.bottom = 0f;
 
+        // field root
         m_FieldRoot = new VisualElement();
         m_FieldRoot.style.position = Position.Absolute;
         m_FieldRoot.style.left = 0f;
@@ -135,6 +79,7 @@ public sealed class PieChartElement : VisualElement
         m_FieldRoot.pickingMode = PickingMode.Ignore;
         m_OverlayRoot.Add(m_FieldRoot);
 
+        // label root
         m_LabelRoot = new VisualElement();
         m_LabelRoot.style.position = Position.Absolute;
         m_LabelRoot.style.left = 0f;
@@ -144,6 +89,7 @@ public sealed class PieChartElement : VisualElement
         m_LabelRoot.pickingMode = PickingMode.Ignore;
         m_OverlayRoot.Add(m_LabelRoot);
 
+        // forward label
         m_ForwardLabel = new Label("F");
         m_ForwardLabel.style.position = Position.Absolute;
         m_ForwardLabel.style.width = ForwardLabelSize;
@@ -155,8 +101,10 @@ public sealed class PieChartElement : VisualElement
         m_ForwardLabel.pickingMode = PickingMode.Ignore;
         m_OverlayRoot.Add(m_ForwardLabel);
 
+        // add overlay root
         Add(m_OverlayRoot);
 
+        // events
         generateVisualContent += OnGenerateVisualContent;
         RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
     }
@@ -343,7 +291,7 @@ public sealed class PieChartElement : VisualElement
     /// <param name="zoom">Zoom multiplier applied to the pie and overlay radii.</param>
     public void SetZoom(float zoom)
     {
-        m_Zoom = Mathf.Max(0.1f, zoom);
+        pieZoom = Mathf.Max(0.1f, zoom);
         UpdateSizeForZoom();
         MarkDirtyRepaint();
         UpdateOverlayLayout();
@@ -357,17 +305,20 @@ public sealed class PieChartElement : VisualElement
     /// <param name="mgc">The mesh generation context used for drawing visual content.</param>
     private void OnGenerateVisualContent(MeshGenerationContext mgc)
     {
+        // early out
         Rect rect = contentRect;
-
         if (rect.width <= 0f || rect.height <= 0f)
             return;
 
+        // Center and radius
         Vector2 center = rect.center;
         float radius = Mathf.Min(rect.width, rect.height) * PieRadiusFactor;
 
+        // Painter
         Painter2D painter = mgc.painter2D;
         painter.lineWidth = 1f;
 
+        //for each slice in the pie, draw the corresponding arc segment with fill and stroke
         for (int i = 0; i < m_Slices.Count; i++)
         {
             PieSlice slice = m_Slices[i];
@@ -428,6 +379,7 @@ public sealed class PieChartElement : VisualElement
         UpdateOverlayLayout();
     }
 
+    #region Update Layout
     /// <summary>
     /// Arranges overlay fields in a circular layout around the content rectangle and updates their positions and
     /// values.
@@ -537,6 +489,11 @@ public sealed class PieChartElement : VisualElement
         m_ForwardLabel.style.top = position.y - (ForwardLabelSize * 0.5f);
     }
 
+    /// <summary>
+    /// Positions pie chart labels around the specified center point using the given pie radius.
+    /// </summary>
+    /// <param name="center">The center point of the pie chart.</param>
+    /// <param name="pieRadius">The radius of the pie chart.</param>
     private void UpdateLabelLayout(Vector2 center, float pieRadius)
     {
         if (m_LabelBindings.Count == 0)
@@ -544,8 +501,10 @@ public sealed class PieChartElement : VisualElement
             return;
         }
 
-        float labelRadius = pieRadius * LabelRadiusFactor;
+        float labelRadius = pieRadius * LabelRadiusFactor * LabelRadiusFactorMultiplier;
 
+        // for each label binding, calculate its position based on its angle and radius offset,
+        // and update its style
         for (int i = 0; i < m_LabelBindings.Count; i++)
         {
             LabelBinding binding = m_LabelBindings[i];
@@ -559,10 +518,24 @@ public sealed class PieChartElement : VisualElement
             Vector2 dir = GetDirectionVector(binding.Angle);
             Vector2 position = center + (dir * (labelRadius + binding.RadiusOffset));
 
+
+
             label.style.left = position.x - (LabelWidth * 0.5f);
             label.style.top = position.y - (LabelHeight * 0.5f);
+            label.style.fontSize = DirectionLabelFontSize * pieZoom;
         }
     }
+
+    /// <summary>
+    /// Adjusts the minimum width and height of the style based on the current zoom level.
+    /// </summary>
+    private void UpdateSizeForZoom()
+    {
+        float scaledSize = BaseMinSize * pieZoom;
+        style.minHeight = scaledSize;
+        style.minWidth = scaledSize;
+    }
+    #endregion
 
     /// <summary>
     /// Determines whether the specified angle is within 0.5 degrees of the forward angle.
@@ -574,31 +547,48 @@ public sealed class PieChartElement : VisualElement
         return Mathf.Abs(Mathf.DeltaAngle(angle, m_ForwardAngle)) < 0.5f;
     }
 
-    private void UpdateSizeForZoom()
-    {
-        float scaledSize = BaseMinSize * m_Zoom;
-        style.minHeight = scaledSize;
-        style.minWidth = scaledSize;
-    }
 
+    #region Get
+    /// <summary>
+    /// Calculates a scaled integer key based on the normalized angle value.
+    /// </summary>
+    /// <param name="angle">The angle in degrees to be normalized and converted.</param>
+    /// <returns>An integer key representing the scaled normalized angle.</returns>
     private int GetAngleKey(float angle)
     {
         float normalized = Mathf.Repeat(angle, 360f);
         return Mathf.RoundToInt(normalized * OverlayAngleKeyScale);
     }
 
+    /// <summary>
+    /// Calculates a 2D unit vector representing the direction of the given angle in degrees.
+    /// </summary>
+    /// <param name="angle">Angle in degrees to convert to a direction vector.</param>
+    /// <returns>A Vector2 representing the direction of the specified angle.</returns>
     private Vector2 GetDirectionVector(float angle)
     {
         float radians = (angle - 90f) * Mathf.Deg2Rad;
         return new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
     }
 
+    /// <summary>
+    /// Calculates the normalized painter start angle by subtracting 90 degrees from the input angle and wrapping it
+    /// within the 0 to 360 degree range.
+    /// </summary>
+    /// <param name="angle">The original angle in degrees.</param>
+    /// <returns>The adjusted and wrapped angle in degrees.</returns>
     private float GetPainterStartAngle(float angle)
     {
         float adjusted = angle - 90f;
         return Mathf.Repeat(adjusted, 360f);
     }
 
+    /// <summary>
+    /// Calculates the spacing required for an overlay group based on the field dimensions and the provided tangent
+    /// vector.
+    /// </summary>
+    /// <param name="tangent">The tangent vector used to determine the projection direction for spacing calculation.</param>
+    /// <returns>The computed overlay group spacing as a float value.</returns>
     private float GetOverlayGroupSpacing(Vector2 tangent)
     {
         float halfWidth = FieldWidth * 0.5f;
@@ -606,9 +596,17 @@ public sealed class PieChartElement : VisualElement
         float projectedHalf = (halfWidth * Mathf.Abs(tangent.x)) + (halfHeight * Mathf.Abs(tangent.y));
         return (projectedHalf * 2f) + OverlayGroupPadding;
     }
+    #endregion
 
+    /// <summary>
+    /// Compares two OverlayBinding instances based on their RadiusOffset values for sorting purposes.
+    /// </summary>
+    /// <param name="left">The first OverlayBinding to compare.</param>
+    /// <param name="right">The second OverlayBinding to compare.</param>
+    /// <returns>A signed integer indicating the relative order of the bindings by RadiusOffset.</returns>
     private static int CompareBindingsByRadiusOffset(OverlayBinding left, OverlayBinding right)
     {
+        // Handle null cases to ensure consistent sorting when radius offsets are not defined.
         if (left == null && right == null)
         {
             return 0;
@@ -624,7 +622,69 @@ public sealed class PieChartElement : VisualElement
             return 1;
         }
 
+        // Compare the RadiusOffset values of the two bindings to determine their order in sorting.
         return left.RadiusOffset.CompareTo(right.RadiusOffset);
+    }
+    #endregion
+    
+    #region Nested Types
+    /// <summary>
+    /// Represents a slice of a pie chart, defined by its start angle, end angle, midpoint angle, and color.
+    /// </summary>
+    public struct PieSlice
+    {
+        public float StartAngle;
+        public float EndAngle;
+        public float MidAngle;
+        public Color Color;
+    }
+
+    /// <summary>
+    /// Represents a descriptor for an overlay, containing angle, property, and tooltip information.
+    /// </summary>
+    public sealed class OverlayDescriptor
+    {
+        public float Angle;
+        public SerializedProperty Property;
+        public string Tooltip;
+        public float RadiusOffset;
+        public Color FieldColor;
+        public bool UseFieldColor;
+        public bool DisplayAsPercent;
+    }
+
+    /// <summary>
+    /// Represents a descriptor for a text label displayed at a specific angle around the pie chart.
+    /// </summary>
+    public sealed class LabelDescriptor
+    {
+        public float Angle;
+        public string Text;
+        public float RadiusOffset;
+        public Color TextColor;
+        public bool UseTextColor;
+    }
+
+    /// <summary>
+    /// Represents a binding between a float angle, a FloatField, and a SerializedProperty for overlay operations.
+    /// </summary>
+    private sealed class OverlayBinding
+    {
+        public float Angle;
+        public FloatField Field;
+        public SerializedProperty Property;
+        public float RadiusOffset;
+        public bool DisplayAsPercent;
+    }
+
+    /// <summary>
+    /// Represents a binding between a float angle and a Label for display around the pie chart.
+    /// </summary>
+    private sealed class LabelBinding
+    {
+        public float Angle;
+        public Label Label;
+        public float RadiusOffset;
     }
     #endregion
 }

@@ -6,8 +6,11 @@ using UnityEngine;
 /// Authoring component for configuring player settings and visualizing player-related gizmos in 
 /// the Unity editor.
 /// </summary>
+[DisallowMultipleComponent]
 public sealed class PlayerAuthoring : MonoBehaviour
 {
+    #region Fields
+
     #region Serialized Fields
     [Tooltip("Master preset used to configure this player instance.")]
     [Header("Preset")]
@@ -16,6 +19,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
     [Tooltip("Optional radius for gizmo previews in the editor.")]
     [Header("Gizmos")]
     [SerializeField] private float m_GizmoRadius = 2f;
+    #endregion
+
     #endregion
 
     #region Properties
@@ -36,19 +41,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     }
     #endregion
 
-    #region Unity Methods
-    private void OnDrawGizmosSelected()
-    {
-        PlayerControllerPreset controllerPreset = GetControllerPreset();
-
-        if (controllerPreset == null)
-            return;
-
-        DrawMovementGizmo(controllerPreset);
-        DrawLookGizmo(controllerPreset);
-        DrawCameraGizmo(controllerPreset);
-    }
-    #endregion
+    #region Methods
 
     #region Preset
     /// <summary>
@@ -65,6 +58,21 @@ public sealed class PlayerAuthoring : MonoBehaviour
     #endregion
 
     #region Gizmos
+    /// <summary>
+    /// Draws movement, look, and camera gizmos in the editor when the object is selected.
+    /// </summary>
+    private void OnDrawGizmosSelected()
+    {
+        PlayerControllerPreset controllerPreset = GetControllerPreset();
+
+        if (controllerPreset == null)
+            return;
+
+        DrawMovementGizmo(controllerPreset);
+        DrawLookGizmo(controllerPreset);
+        DrawCameraGizmo(controllerPreset);
+    }
+
     /// <summary>
     /// Draws a movement gizmo in the scene view based on the specified player movement settings.
     /// </summary>
@@ -193,6 +201,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
         }
     }
     #endregion
+
+    #endregion
 }
 
 /// <summary>
@@ -200,6 +210,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
 /// </summary>
 public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 {
+    #region Bake
     /// <summary>
     /// Configures and adds player controller and camera anchor components to the entity based on the provided authoring
     /// data.
@@ -219,6 +230,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         // Create entity and build configuration blob
         Entity entity = GetEntity(TransformUsageFlags.Dynamic);
         BlobAssetReference<PlayerControllerConfigBlob> blob = BuildConfigBlob(controllerPreset);
+        AddBlobAsset(ref blob, out Unity.Entities.Hash128 _);
 
         PlayerControllerConfig config = new PlayerControllerConfig
         {
@@ -241,7 +253,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         AddComponent(entity, cameraAnchor);
     }
+    #endregion
 
+    #region Blob Building
     /// <summary>
     /// Creates a blob asset reference containing player controller configuration data based on the specified preset.
     /// </summary>
@@ -261,7 +275,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         return blob;
     }
-
+    
+    #region Config Filling
     /// <summary>
     /// Populates the Movement configuration in the specified PlayerControllerConfigBlob using values from the provided
     /// MovementSettings.
@@ -282,7 +297,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 MaxSpeed = movementSettings.Values.MaxSpeed,
                 Acceleration = movementSettings.Values.Acceleration,
                 Deceleration = movementSettings.Values.Deceleration,
-                InputDeadZone = movementSettings.Values.InputDeadZone
+                InputDeadZone = movementSettings.Values.InputDeadZone,
+                DigitalReleaseGraceSeconds = movementSettings.Values.DigitalReleaseGraceSeconds
             }
         };
 
@@ -303,7 +319,6 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         lookConfig.DirectionsMode = lookSettings.DirectionsMode;
         lookConfig.DiscreteDirectionCount = lookSettings.DiscreteDirectionCount;
         lookConfig.DirectionOffsetDegrees = lookSettings.DirectionOffsetDegrees;
-        lookConfig.LookReference = lookSettings.LookReference;
         lookConfig.RotationMode = lookSettings.RotationMode;
         lookConfig.RotationSpeed = lookSettings.RotationSpeed;
         lookConfig.MultiplierSampling = lookSettings.MultiplierSampling;
@@ -339,7 +354,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         {
             RotationDamping = lookSettings.Values.RotationDamping,
             RotationMaxSpeed = lookSettings.Values.RotationMaxSpeed,
-            RotationDeadZone = lookSettings.Values.RotationDeadZone
+            RotationDeadZone = lookSettings.Values.RotationDeadZone,
+            DigitalReleaseGraceSeconds = lookSettings.Values.DigitalReleaseGraceSeconds
         };
 
         int maxSpeedCount = lookSettings.DiscreteDirectionMaxSpeedMultipliers.Count;
@@ -382,4 +398,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         root.Camera = cameraConfig;
     }
+    #endregion
+
+    #endregion
+
 }

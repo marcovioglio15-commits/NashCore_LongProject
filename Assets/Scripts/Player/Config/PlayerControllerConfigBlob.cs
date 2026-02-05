@@ -28,6 +28,7 @@ public struct MovementValuesBlob
     public float Acceleration;
     public float Deceleration;
     public float InputDeadZone;
+    public float DigitalReleaseGraceSeconds;
 }
 #endregion
 
@@ -37,7 +38,6 @@ public struct LookConfig
     public LookDirectionsMode DirectionsMode;
     public int DiscreteDirectionCount;
     public float DirectionOffsetDegrees;
-    public ReferenceFrame LookReference;
     public RotationMode RotationMode;
     public float RotationSpeed;
     public LookMultiplierSampling MultiplierSampling;
@@ -55,6 +55,7 @@ public struct LookValuesBlob
     public float RotationDamping;
     public float RotationMaxSpeed;
     public float RotationDeadZone;
+    public float DigitalReleaseGraceSeconds;
 }
 
 public struct ConeConfig
