@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -37,6 +38,22 @@ public sealed class PlayerManagementWindow : EditorWindow
 
         BuildPanels();
         ShowPanel(m_ActivePanel);
+    }
+
+    private void OnDisable()
+    {
+        SaveOpenScenes();
+    }
+    #endregion
+
+    #region Scene Save
+    private void SaveOpenScenes()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+            return;
+
+        EditorSceneManager.SaveOpenScenes();
+        AssetDatabase.SaveAssets();
     }
     #endregion
 

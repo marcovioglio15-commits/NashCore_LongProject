@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4c5ed84bdc257044839a6d901f81512, type: 3}
-  m_Name: HoctagonStyle_ContinousLook
+  m_Name: ConeVision_ForwardAndBarckward
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPreset
-  m_PresetId: 9289d46afc8c4db88a8d06845deb718b
-  m_PresetName: HoctagonStyle_ContinousLook
+  m_PresetId: 599feb82d65d48b2a730e1677fcb7b56
+  m_PresetName: ConeVision_ForwardAndBarckward
   m_Description: What an awesome description!
   m_Version: 1.0.0
   m_MovementSettings:
@@ -29,14 +29,14 @@ MonoBehaviour:
       m_InputDeadZone: 0.1
       m_DigitalReleaseGraceSeconds: 0.09
   m_LookSettings:
-    m_DirectionsMode: 1
+    m_DirectionsMode: 2
     m_DiscreteDirectionCount: 8
     m_DirectionOffsetDegrees: 0
     m_FrontConeEnabled: 1
     m_FrontConeAngle: 90
     m_FrontConeMaxSpeedMultiplier: 1
     m_FrontConeAccelerationMultiplier: 1
-    m_BackConeEnabled: 0
+    m_BackConeEnabled: 1
     m_BackConeAngle: 90
     m_BackConeMaxSpeedMultiplier: 1
     m_BackConeAccelerationMultiplier: 1
@@ -49,7 +49,7 @@ MonoBehaviour:
     m_RightConeMaxSpeedMultiplier: 1
     m_RightConeAccelerationMultiplier: 1
     m_RotationMode: 1
-    m_RotationSpeed: 1080
+    m_RotationSpeed: 540
     m_MultiplierSampling: 0
     m_DiscreteDirectionMaxSpeedMultipliers:
     - 1

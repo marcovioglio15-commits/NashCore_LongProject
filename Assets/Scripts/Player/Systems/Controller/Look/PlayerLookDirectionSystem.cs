@@ -85,8 +85,18 @@ public partial struct PlayerLookDirectionSystem : ISystem
 
             if (math.lengthsq(resolvedInput) <= deadZone * deadZone)
             {
-                lookState.ValueRW.DesiredDirection = PlayerControllerMath.NormalizePlanar(fallbackDirection, forward);
-                continue;
+                switch (lookConfig.DirectionsMode)
+                {
+                    case LookDirectionsMode.DiscreteCount:
+                        lookState.ValueRW.DesiredDirection = GetSnappedDirectionFromWorld(fallbackDirection, forward, right, lookConfig.DiscreteDirectionCount, lookConfig.DirectionOffsetDegrees);
+                        continue;
+                    case LookDirectionsMode.Cones:
+                        lookState.ValueRW.DesiredDirection = GetClampedDirectionFromWorld(fallbackDirection, forward, right, ref lookConfig);
+                        continue;
+                    default:
+                        lookState.ValueRW.DesiredDirection = PlayerControllerMath.NormalizePlanar(fallbackDirection, forward);
+                        continue;
+                }
             }
 
             float2 inputDir = PlayerControllerMath.NormalizeSafe(resolvedInput);
@@ -122,6 +132,41 @@ public partial struct PlayerLookDirectionSystem : ISystem
     #endregion
 
     #region Helpers
+    private static float3 GetSnappedDirectionFromWorld(float3 worldDirection, float3 forward, float3 right, int directionCount, float offsetDegrees)
+    {
+        float3 planar = PlayerControllerMath.NormalizePlanar(worldDirection, forward);
+        float2 local = new float2(math.dot(planar, right), math.dot(planar, forward));
+
+        if (math.lengthsq(local) < 1e-6f)
+            return forward;
+
+        int count = math.max(1, directionCount);
+        float step = (math.PI * 2f) / count;
+        float offset = math.radians(offsetDegrees);
+        float angle = math.atan2(local.x, local.y);
+        float snappedAngle = PlayerControllerMath.QuantizeAngle(angle, step, offset);
+        float3 snappedLocal = PlayerControllerMath.DirectionFromAngle(snappedAngle);
+        float3 snappedWorld = right * snappedLocal.x + forward * snappedLocal.z;
+        return math.normalizesafe(snappedWorld, forward);
+    }
+
+    private static float3 GetClampedDirectionFromWorld(float3 worldDirection, float3 forward, float3 right, ref LookConfig lookConfig)
+    {
+        float3 planar = PlayerControllerMath.NormalizePlanar(worldDirection, forward);
+        float2 local = new float2(math.dot(planar, right), math.dot(planar, forward));
+
+        if (math.lengthsq(local) < 1e-6f)
+            return forward;
+
+        float angle = math.atan2(local.x, local.y);
+
+        if (TryClampToCones(angle, ref lookConfig, out float clampedAngle) == false)
+            return planar;
+
+        float3 clampedLocal = PlayerControllerMath.DirectionFromAngle(clampedAngle);
+        float3 clampedWorld = right * clampedLocal.x + forward * clampedLocal.z;
+        return math.normalizesafe(clampedWorld, forward);
+    }
     private static float2 ResolveDigitalInput(ref PlayerLookState lookState, float2 rawInput, float elapsedTime, float releaseGraceSeconds)
     {
         byte prevMask = lookState.CurrLookMask;

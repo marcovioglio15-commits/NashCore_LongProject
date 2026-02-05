@@ -32,11 +32,13 @@ public partial struct PlayerMovementSpeedSystem : ISystem
 
             float speedMultiplier = math.max(0f, modifiers.ValueRO.MaxSpeedMultiplier);
             float accelerationMultiplier = math.max(0f, modifiers.ValueRO.AccelerationMultiplier);
+            bool forceZeroSpeed = speedMultiplier <= 0f;
 
             float baseSpeed = movementConfig.Values.BaseSpeed * speedMultiplier;
             float maxSpeed = movementConfig.Values.MaxSpeed * speedMultiplier;
             float acceleration = movementConfig.Values.Acceleration * accelerationMultiplier;
             float deceleration = movementConfig.Values.Deceleration;
+            bool hasMaxSpeed = movementConfig.Values.MaxSpeed > 0f;
 
             if (maxSpeed > 0f && baseSpeed > maxSpeed)
                 baseSpeed = maxSpeed;
@@ -50,36 +52,50 @@ public partial struct PlayerMovementSpeedSystem : ISystem
 
             if (hasInput)
             {
-                if (baseSpeed > 0f && currentSpeed < baseSpeed)
-                    currentSpeed = baseSpeed;
-
-                if (acceleration < 0f)
+                if (forceZeroSpeed)
                 {
-                    if (maxSpeed > 0f)
-                        currentSpeed = maxSpeed;
+                    currentSpeed = 0f;
                 }
                 else
                 {
-                    currentSpeed += acceleration * deltaTime;
+                    if (baseSpeed > 0f && currentSpeed < baseSpeed)
+                        currentSpeed = baseSpeed;
 
-                    if (maxSpeed > 0f)
-                        currentSpeed = math.min(currentSpeed, maxSpeed);
+                    if (acceleration < 0f)
+                    {
+                        if (hasMaxSpeed)
+                            currentSpeed = maxSpeed;
+                    }
+                    else
+                    {
+                        currentSpeed += acceleration * deltaTime;
+
+                        if (hasMaxSpeed)
+                            currentSpeed = math.min(currentSpeed, maxSpeed);
+                    }
                 }
 
                 currentDirection = desiredDirection;
             }
             else
             {
-                if (deceleration < 0f)
+                if (forceZeroSpeed)
                 {
                     currentSpeed = 0f;
                 }
                 else
                 {
-                    currentSpeed -= deceleration * deltaTime;
-
-                    if (currentSpeed < 0f)
+                    if (deceleration < 0f)
+                    {
                         currentSpeed = 0f;
+                    }
+                    else
+                    {
+                        currentSpeed -= deceleration * deltaTime;
+
+                        if (currentSpeed < 0f)
+                            currentSpeed = 0f;
+                    }
                 }
             }
 

@@ -47,6 +47,7 @@ public sealed class PlayerMasterPresetsPanel
         public VisualElement TabContainer;
         public Button TabButton;
         public VisualElement Content;
+        public PlayerControllerPresetsPanel ControllerPanel;
     }
     #endregion
 
@@ -116,7 +117,7 @@ public sealed class PlayerMasterPresetsPanel
         m_Root.Add(m_TabBar);
         m_Root.Add(m_ContentHost);
 
-        AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot);
+        AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot, null);
         SetActivePanel(PlayerManagementWindow.PanelType.PlayerMasterPresets);
     }
 
@@ -417,6 +418,7 @@ public sealed class PlayerMasterPresetsPanel
         BuildActivePresetSection();
         BuildNavigationSection();
         RefreshActiveStatus();
+        SyncOpenSidePanels();
     }
 
     private void BuildMetadataSection()
@@ -548,13 +550,13 @@ public sealed class PlayerMasterPresetsPanel
         SerializedProperty powerUpsProperty = m_PresetSerializedObject.FindProperty("m_PowerUpsPreset");
         SerializedProperty animationProperty = m_PresetSerializedObject.FindProperty("m_AnimationBindingsPreset");
 
-        m_DetailsRoot.Add(BuildSubPresetRow("Controller Preset", typeof(PlayerControllerPreset), controllerProperty, CreateControllerPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.PlayerControllerPresets)));
-        m_DetailsRoot.Add(BuildSubPresetRow("Level-Up & Progression Preset", typeof(PlayerProgressionPreset), progressionProperty, CreateProgressionPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.LevelUpProgression)));
-        m_DetailsRoot.Add(BuildSubPresetRow("Craftable Power-Ups Preset", typeof(PlayerCraftablePowerUpsPreset), powerUpsProperty, CreatePowerUpsPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.CraftablePowerUps)));
-        m_DetailsRoot.Add(BuildSubPresetRow("Animation Bindings Preset", typeof(PlayerAnimationBindingsPreset), animationProperty, CreateAnimationPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.AnimationBindings)));
+        m_DetailsRoot.Add(BuildSubPresetRow("Controller Preset", typeof(PlayerControllerPreset), controllerProperty, CreateControllerPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.PlayerControllerPresets), PlayerManagementWindow.PanelType.PlayerControllerPresets));
+        m_DetailsRoot.Add(BuildSubPresetRow("Level-Up & Progression Preset", typeof(PlayerProgressionPreset), progressionProperty, CreateProgressionPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.LevelUpProgression), PlayerManagementWindow.PanelType.LevelUpProgression));
+        m_DetailsRoot.Add(BuildSubPresetRow("Craftable Power-Ups Preset", typeof(PlayerCraftablePowerUpsPreset), powerUpsProperty, CreatePowerUpsPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.CraftablePowerUps), PlayerManagementWindow.PanelType.CraftablePowerUps));
+        m_DetailsRoot.Add(BuildSubPresetRow("Animation Bindings Preset", typeof(PlayerAnimationBindingsPreset), animationProperty, CreateAnimationPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.AnimationBindings), PlayerManagementWindow.PanelType.AnimationBindings));
     }
 
-    private VisualElement BuildSubPresetRow(string label, Type presetType, SerializedProperty presetProperty, Action createAction, Action openSectionAction)
+    private VisualElement BuildSubPresetRow(string label, Type presetType, SerializedProperty presetProperty, Action createAction, Action openSectionAction, PlayerManagementWindow.PanelType panelType)
     {
         VisualElement container = new VisualElement();
         container.style.marginBottom = 6f;
@@ -562,6 +564,13 @@ public sealed class PlayerMasterPresetsPanel
         ObjectField presetField = new ObjectField(label);
         presetField.objectType = presetType;
         presetField.BindProperty(presetProperty);
+        presetField.RegisterValueChangedCallback(evt =>
+        {
+            if (panelType != PlayerManagementWindow.PanelType.PlayerControllerPresets)
+                return;
+
+            SyncOpenSidePanels();
+        });
         container.Add(presetField);
 
         VisualElement buttonsRow = new VisualElement();
@@ -871,16 +880,19 @@ public sealed class PlayerMasterPresetsPanel
 
             if (existingEntry != null)
                 SetActivePanel(panelType);
+            SyncSidePanelSelection(panelType, existingEntry);
             return;
         }
 
-        VisualElement content = BuildSidePanelContent(panelType);
+        PlayerControllerPresetsPanel controllerPanel;
+        VisualElement content = BuildSidePanelContent(panelType, out controllerPanel);
 
         if (content == null)
             return;
 
-        AddTab(panelType, GetPanelTitle(panelType), content);
+        AddTab(panelType, GetPanelTitle(panelType), content, controllerPanel);
         SetActivePanel(panelType);
+        SyncSidePanelSelection(panelType, m_SidePanels[panelType]);
     }
 
     private void CloseSidePanel(PlayerManagementWindow.PanelType panelType)
@@ -914,8 +926,9 @@ public sealed class PlayerMasterPresetsPanel
         return "Animations Bindings";
     }
 
-    private VisualElement BuildSidePanelContent(PlayerManagementWindow.PanelType panelType)
+    private VisualElement BuildSidePanelContent(PlayerManagementWindow.PanelType panelType, out PlayerControllerPresetsPanel controllerPanel)
     {
+        controllerPanel = null;
         VisualElement panelRoot = new VisualElement();
         panelRoot.style.flexDirection = FlexDirection.Column;
         panelRoot.style.flexGrow = 1f;
@@ -940,7 +953,7 @@ public sealed class PlayerMasterPresetsPanel
 
         if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets)
         {
-            PlayerControllerPresetsPanel controllerPanel = new PlayerControllerPresetsPanel();
+            controllerPanel = new PlayerControllerPresetsPanel();
             panelRoot.Add(controllerPanel.Root);
             return panelRoot;
         }
@@ -957,7 +970,7 @@ public sealed class PlayerMasterPresetsPanel
         return panelRoot;
     }
 
-    private void AddTab(PlayerManagementWindow.PanelType panelType, string label, VisualElement content)
+    private void AddTab(PlayerManagementWindow.PanelType panelType, string label, VisualElement content, PlayerControllerPresetsPanel controllerPanel)
     {
         if (m_TabBar == null)
             return;
@@ -978,8 +991,34 @@ public sealed class PlayerMasterPresetsPanel
         {
             TabContainer = tabContainer,
             TabButton = tabButton,
-            Content = content
+            Content = content,
+            ControllerPanel = controllerPanel
         };
+    }
+
+    private void SyncSidePanelSelection(PlayerManagementWindow.PanelType panelType, SidePanelEntry entry)
+    {
+        if (panelType != PlayerManagementWindow.PanelType.PlayerControllerPresets)
+            return;
+
+        if (entry == null || entry.ControllerPanel == null)
+            return;
+
+        if (m_SelectedPreset == null)
+            return;
+
+        PlayerControllerPreset controllerPreset = m_SelectedPreset.ControllerPreset;
+
+        if (controllerPreset == null)
+            return;
+
+        entry.ControllerPanel.SelectPresetFromExternal(controllerPreset);
+    }
+
+    private void SyncOpenSidePanels()
+    {
+        foreach (KeyValuePair<PlayerManagementWindow.PanelType, SidePanelEntry> entry in m_SidePanels)
+            SyncSidePanelSelection(entry.Key, entry.Value);
     }
 
     private void SetActivePanel(PlayerManagementWindow.PanelType panelType)
