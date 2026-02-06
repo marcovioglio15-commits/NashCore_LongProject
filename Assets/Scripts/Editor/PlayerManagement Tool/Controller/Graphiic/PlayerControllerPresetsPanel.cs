@@ -73,34 +73,6 @@ public sealed class PlayerControllerPresetsPanel
     }
     #endregion
 
-    #region Public API
-    public void SelectPresetFromExternal(PlayerControllerPreset preset)
-    {
-        if (preset == null)
-            return;
-
-        RefreshPresetList();
-
-        int index = m_FilteredPresets.IndexOf(preset);
-
-        if (index < 0)
-            return;
-
-        if (m_ListView == null)
-        {
-            SelectPreset(preset);
-            return;
-        }
-
-        if (m_ListView.selectedIndex != index)
-        {
-            m_ListView.SetSelection(index);
-            return;
-        }
-
-        SelectPreset(preset);
-    }
-    #endregion
 
     #region Methods
 
@@ -223,6 +195,33 @@ public sealed class PlayerControllerPresetsPanel
     #endregion
 
     #region Preset List
+    public void SelectPresetFromExternal(PlayerControllerPreset preset)
+    {
+        if (preset == null)
+            return;
+
+        RefreshPresetList();
+
+        int index = m_FilteredPresets.IndexOf(preset);
+
+        if (index < 0)
+            return;
+
+        if (m_ListView == null)
+        {
+            SelectPreset(preset);
+            return;
+        }
+
+        if (m_ListView.selectedIndex != index)
+        {
+            m_ListView.SetSelection(index);
+            return;
+        }
+
+        SelectPreset(preset);
+    }
+
     /// <summary>
     /// Creates and returns a left-aligned label with a left margin for use as a preset item.
     /// </summary>

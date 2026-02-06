@@ -41,16 +41,6 @@ public sealed class PlayerMasterPresetsPanel
     private GameObject m_SelectedPlayerPrefab;
     #endregion
 
-    #region Nested Types
-    private sealed class SidePanelEntry
-    {
-        public VisualElement TabContainer;
-        public Button TabButton;
-        public VisualElement Content;
-        public PlayerControllerPresetsPanel ControllerPanel;
-    }
-    #endregion
-
     #region Properties
     public VisualElement Root
     {
@@ -74,6 +64,8 @@ public sealed class PlayerMasterPresetsPanel
         RefreshPresetList();
     }
     #endregion
+
+    #region Methods
 
     #region UI Construction
     private void BuildUI()
@@ -1077,6 +1069,21 @@ public sealed class PlayerMasterPresetsPanel
             EnsureFolder(parentFolder);
 
         AssetDatabase.CreateFolder(parentFolder, folderName);
+    }
+    #endregion
+
+    #endregion
+
+    #region Nested Types
+    /// <summary>
+    /// Represents an entry in the side panel, containing UI elements and a controller presets panel.
+    /// </summary>
+    private sealed class SidePanelEntry
+    {
+        public VisualElement TabContainer;
+        public Button TabButton;
+        public VisualElement Content;
+        public PlayerControllerPresetsPanel ControllerPanel;
     }
     #endregion
 }

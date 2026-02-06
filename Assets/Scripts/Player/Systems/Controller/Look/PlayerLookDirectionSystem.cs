@@ -32,6 +32,8 @@ public partial struct PlayerLookDirectionSystem : ISystem
     {
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
 
+        // Iterate over all player entities with the required components
+        // (input, movement, look state, controller config, and transform)
         foreach ((RefRO<PlayerInputState> inputState,
                   RefRO<PlayerMovementState> movementState,
                   RefRW<PlayerLookState> lookState,
@@ -43,12 +45,16 @@ public partial struct PlayerLookDirectionSystem : ISystem
                                     RefRO<PlayerControllerConfig>,
                                     RefRO<LocalTransform>>())
         {
+            // Retrieve the look configuration from the controller config
             ref LookConfig lookConfig = ref controllerConfig.ValueRO.Config.Value.Look;
 
+            // Handle the FollowMovementDirection mode
             if (lookConfig.DirectionsMode == LookDirectionsMode.FollowMovementDirection)
             {
+                // Get the desired movement direction
                 float3 movementDirection = movementState.ValueRO.DesiredDirection;
 
+                // If there's significant movement, set the desired look direction to match
                 if (math.lengthsq(movementDirection) > 1e-6f)
                 {
                     lookState.ValueRW.DesiredDirection = PlayerControllerMath.NormalizePlanar(movementDirection, new float3(0f, 0f, 1f));
@@ -57,6 +63,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
 
                 float3 fallback_direction = lookState.ValueRO.CurrentDirection;
 
+                // If the current direction is invalid, use the player's forward direction
                 if (math.lengthsq(fallback_direction) < 1e-6f)
                     fallback_direction = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
 
@@ -64,6 +71,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
                 continue;
             }
 
+            // Retrieve the look input and configuration parameters
             float2 lookInput = inputState.ValueRO.Look;
             float deadZone = lookConfig.Values.RotationDeadZone;
             float releaseGraceSeconds = math.max(0f, lookConfig.Values.DigitalReleaseGraceSeconds);
@@ -78,11 +86,14 @@ public partial struct PlayerLookDirectionSystem : ISystem
 
             float2 resolvedInput = lookInput;
 
+            // Check if the input is digital-like (meaning close to digital directions)
             bool digitalLike = PlayerControllerMath.IsDigitalLike(lookInput, DigitalLikeTolerance);
 
+            // Snap to digital if input is close to digital
             if (digitalLike)
                 resolvedInput = ResolveDigitalInput(ref lookState.ValueRW, lookInput, elapsedTime, releaseGraceSeconds);
 
+            // If the resolved input is within the dead zone, use fallback direction based on mode
             if (math.lengthsq(resolvedInput) <= deadZone * deadZone)
             {
                 switch (lookConfig.DirectionsMode)
@@ -104,6 +115,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
 
             switch (lookConfig.DirectionsMode)
             {
+                // Handle discrete direction snapping
                 case LookDirectionsMode.DiscreteCount:
                     int count = math.max(1, lookConfig.DiscreteDirectionCount);
                     float step = (math.PI * 2f) / count;
@@ -113,6 +125,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
                     float3 localDirection = PlayerControllerMath.DirectionFromAngle(snappedAngle);
                     desiredDirection = right * localDirection.x + forward * localDirection.z;
                     break;
+                // Handle clamping to defined cones
                 case LookDirectionsMode.Cones:
                     float coneAngle = math.atan2(inputDir.x, inputDir.y);
                     if (TryClampToCones(coneAngle, ref lookConfig, out float clampedAngle))
@@ -121,6 +134,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
                     float3 clampedDirection = PlayerControllerMath.DirectionFromAngle(coneAngle);
                     desiredDirection = right * clampedDirection.x + forward * clampedDirection.z;
                     break;
+                // Handle free look
                 default:
                     desiredDirection = right * inputDir.x + forward * inputDir.y;
                     break;

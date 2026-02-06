@@ -17,7 +17,7 @@ MonoBehaviour:
   m_Description: What an awesome description!
   m_Version: 1.0.0
   m_MovementSettings:
-    m_DirectionsMode: 0
+    m_DirectionsMode: 1
     m_DiscreteDirectionCount: 8
     m_DirectionOffsetDegrees: 0
     m_MovementReference: 1
@@ -71,7 +71,7 @@ MonoBehaviour:
     - 1
     m_Values:
       m_RotationDamping: 0.1
-      m_RotationMaxSpeed: 720
+      m_RotationMaxSpeed: 1080
       m_RotationDeadZone: 0.1
       m_DigitalReleaseGraceSeconds: 0.09
   m_CameraSettings:
