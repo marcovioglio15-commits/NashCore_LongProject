@@ -25,21 +25,21 @@ namespace UnityExtensions
         // Sets the x component of the transform's position.
         public static void SetX(this Transform transform, float x)
         {
-            var position = transform.position;
+            Vector3 position = transform.position;
             transform.position = new Vector3(x, position.y, position.z);
         }
 
         // Sets the y component of the transform's position.
         public static void SetY(this Transform transform, float y)
         {
-            var position = transform.position;
+            Vector3 position = transform.position;
             transform.position = new Vector3(position.x, y, position.z);
         }
 
         // Sets the z component of the transform's position.
         public static void SetZ(this Transform transform, float z)
         {
-            var position = transform.position;
+            Vector3 position = transform.position;
             transform.position = new Vector3(position.x, position.y, z);
         }
         #endregion
@@ -48,7 +48,7 @@ namespace UnityExtensions
         // Sets the layer of the transform's children.
         public static void SetChildLayers(this Transform transform, string layerName, bool recursive = false)
         {
-            var layer = LayerMask.NameToLayer(layerName);
+            int layer = LayerMask.NameToLayer(layerName);
             SetChildLayersHelper(transform, layer, recursive);
         }
 

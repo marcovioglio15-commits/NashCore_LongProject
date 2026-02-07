@@ -42,14 +42,16 @@ public sealed class InputAuthoring : MonoBehaviour
         PlayerControllerPreset controllerPreset = ResolveControllerPreset();
         string moveActionId = string.Empty;
         string lookActionId = string.Empty;
+        string shootActionId = string.Empty;
 
         if (controllerPreset != null)
         {
             moveActionId = controllerPreset.MoveActionId;
             lookActionId = controllerPreset.LookActionId;
+            shootActionId = controllerPreset.ShootActionId;
         }
 
-        PlayerInputRuntime.Initialize(inputActionsAsset, moveActionId, lookActionId);
+        PlayerInputRuntime.Initialize(inputActionsAsset, moveActionId, lookActionId, shootActionId);
 
         #if UNITY_EDITOR
         LogPlayerEntitiesPresence();

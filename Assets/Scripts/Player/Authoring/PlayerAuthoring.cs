@@ -1,6 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Authoring component for configuring player settings and visualizing player-related gizmos in 
@@ -9,16 +10,31 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class PlayerAuthoring : MonoBehaviour
 {
+    #region Constants
+    private static readonly Color MovementGizmoColor = new Color(0.2f, 0.8f, 0.4f, 0.9f);
+    private static readonly Color LookGizmoColor = new Color(0.2f, 0.6f, 1f, 0.9f);
+    private static readonly Color CameraFollowGizmoColor = new Color(1f, 0.8f, 0.2f, 0.9f);
+    private static readonly Color CameraRoomGizmoColor = new Color(1f, 0.5f, 0.2f, 0.9f);
+    private static readonly Color ShootingGizmoColor = new Color(1f, 0.25f, 0.25f, 0.9f);
+    private const float LookRadiusScale = 0.9f;
+    #endregion
+
     #region Fields
 
     #region Serialized Fields
-    [Tooltip("Master preset used to configure this player instance.")]
     [Header("Preset")]
-    [SerializeField] private PlayerMasterPreset m_MasterPreset;
+    [Tooltip("Master preset used to configure this player instance.")]
+    [FormerlySerializedAs("m_MasterPreset")]
+    [SerializeField] private PlayerMasterPreset masterPreset;
 
-    [Tooltip("Optional radius for gizmo previews in the editor.")]
     [Header("Gizmos")]
-    [SerializeField] private float m_GizmoRadius = 2f;
+    [Tooltip("Optional radius for gizmo previews in the editor.")]
+    [FormerlySerializedAs("m_GizmoRadius")]
+    [SerializeField] private float gizmoRadius = 2f;
+
+    [Header("Shooting")]
+    [Tooltip("Optional muzzle transform used as shooting reference for spawn orientation and offset.")]
+    [SerializeField] private Transform weaponReference;
     #endregion
 
     #endregion
@@ -28,7 +44,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return m_MasterPreset;
+            return masterPreset;
         }
     }
 
@@ -36,7 +52,15 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return m_GizmoRadius;
+            return gizmoRadius;
+        }
+    }
+
+    public Transform WeaponReference
+    {
+        get
+        {
+            return weaponReference;
         }
     }
     #endregion
@@ -50,10 +74,10 @@ public sealed class PlayerAuthoring : MonoBehaviour
     /// <returns>The PlayerControllerPreset from the master preset, or null if the master preset is not set.</returns>
     public PlayerControllerPreset GetControllerPreset()
     {
-        if (m_MasterPreset == null)
+        if (masterPreset == null)
             return null;
 
-        return m_MasterPreset.ControllerPreset;
+        return masterPreset.ControllerPreset;
     }
     #endregion
 
@@ -70,6 +94,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
 
         DrawMovementGizmo(controllerPreset);
         DrawLookGizmo(controllerPreset);
+        DrawShootingGizmo(controllerPreset);
         DrawCameraGizmo(controllerPreset);
     }
 
@@ -84,12 +109,12 @@ public sealed class PlayerAuthoring : MonoBehaviour
         if (movementSettings == null)
             return;
 
-        Gizmos.color = new Color(0.2f, 0.8f, 0.4f, 0.9f);
+        Gizmos.color = MovementGizmoColor;
         Vector3 center = transform.position;
 
         if (movementSettings.DirectionsMode == MovementDirectionsMode.AllDirections)
         {
-            Gizmos.DrawWireSphere(center, m_GizmoRadius);
+            Gizmos.DrawWireSphere(center, gizmoRadius);
             return;
         }
 
@@ -101,10 +126,10 @@ public sealed class PlayerAuthoring : MonoBehaviour
         {
             float angle = (i * step) + offset;
             Vector3 dir = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
-            Gizmos.DrawLine(center, center + dir * m_GizmoRadius);
+            Gizmos.DrawLine(center, center + dir * gizmoRadius);
         }
 
-        Gizmos.DrawWireSphere(center, m_GizmoRadius);
+        Gizmos.DrawWireSphere(center, gizmoRadius);
     }
 
     /// <summary>
@@ -120,29 +145,30 @@ public sealed class PlayerAuthoring : MonoBehaviour
             return;
 
         Vector3 center = transform.position + Vector3.up * 0.05f;
-        Gizmos.color = new Color(0.2f, 0.6f, 1f, 0.9f);
+        Gizmos.color = LookGizmoColor;
 
         if (lookSettings.DirectionsMode == LookDirectionsMode.AllDirections)
         {
-            Gizmos.DrawWireSphere(center, m_GizmoRadius * 0.9f);
+            Gizmos.DrawWireSphere(center, gizmoRadius * LookRadiusScale);
             return;
         }
 
         if (lookSettings.DirectionsMode == LookDirectionsMode.DiscreteCount)
         {
-            int count = Mathf.Max(1, lookSettings.DiscreteDirectionCount);
-            float step = 360f / count;
-            float offset = lookSettings.DirectionOffsetDegrees;
+                int count = Mathf.Max(1, lookSettings.DiscreteDirectionCount);
+                float step = 360f / count;
+                float offset = lookSettings.DirectionOffsetDegrees;
+                float lookRadius = gizmoRadius * LookRadiusScale;
 
-            for (int i = 0; i < count; i++)
-            {
-                float angle = (i * step) + offset;
-                Vector3 dir = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
-                Gizmos.DrawLine(center, center + dir * m_GizmoRadius * 0.9f);
-            }
+                for (int i = 0; i < count; i++)
+                {
+                    float angle = (i * step) + offset;
+                    Vector3 dir = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
+                    Gizmos.DrawLine(center, center + dir * lookRadius);
+                }
 
-            Gizmos.DrawWireSphere(center, m_GizmoRadius * 0.9f);
-            return;
+                Gizmos.DrawWireSphere(center, lookRadius);
+                return;
         }
 
         DrawConeGizmo(center, lookSettings.FrontConeEnabled, 0f, lookSettings.FrontConeAngle);
@@ -167,8 +193,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
         Vector3 left = Quaternion.Euler(0f, centerAngle - halfAngle, 0f) * Vector3.forward;
         Vector3 right = Quaternion.Euler(0f, centerAngle + halfAngle, 0f) * Vector3.forward;
 
-        Gizmos.DrawLine(center, center + left * m_GizmoRadius);
-        Gizmos.DrawLine(center, center + right * m_GizmoRadius);
+        Gizmos.DrawLine(center, center + left * gizmoRadius);
+        Gizmos.DrawLine(center, center + right * gizmoRadius);
     }
 
     /// <summary>
@@ -183,22 +209,46 @@ public sealed class PlayerAuthoring : MonoBehaviour
         if (cameraSettings == null)
             return;
 
-        if (cameraSettings.Behavior == CameraBehavior.FollowWithOffset)
+        switch (cameraSettings.Behavior)
         {
-            Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.9f);
-            Vector3 offsetPosition = transform.position + cameraSettings.FollowOffset;
-            Gizmos.DrawLine(transform.position, offsetPosition);
-            Gizmos.DrawWireSphere(offsetPosition, 0.2f);
-            return;
-        }
+            case CameraBehavior.FollowWithOffset:
+                Gizmos.color = CameraFollowGizmoColor;
+                Vector3 offsetPosition = transform.position + cameraSettings.FollowOffset;
+                Gizmos.DrawLine(transform.position, offsetPosition);
+                Gizmos.DrawWireSphere(offsetPosition, 0.2f);
+                return;
+            case CameraBehavior.RoomFixed:
+                if (cameraSettings.RoomAnchor == null)
+                    return;
 
-        if (cameraSettings.Behavior == CameraBehavior.RoomFixed && cameraSettings.RoomAnchor != null)
-        {
-            Gizmos.color = new Color(1f, 0.5f, 0.2f, 0.9f);
-            Vector3 anchorPosition = cameraSettings.RoomAnchor.position;
-            Gizmos.DrawLine(transform.position, anchorPosition);
-            Gizmos.DrawWireSphere(anchorPosition, 0.25f);
+                Gizmos.color = CameraRoomGizmoColor;
+                Vector3 anchorPosition = cameraSettings.RoomAnchor.position;
+                Gizmos.DrawLine(transform.position, anchorPosition);
+                Gizmos.DrawWireSphere(anchorPosition, 0.25f);
+                return;
         }
+    }
+
+    /// <summary>
+    /// Draws shooting-related gizmos in the scene view, including muzzle reference and spawn offset.
+    /// </summary>
+    /// <param name="preset">The player controller preset containing shooting settings to visualize.</param>
+    private void DrawShootingGizmo(PlayerControllerPreset preset)
+    {
+        ShootingSettings shootingSettings = preset.ShootingSettings;
+
+        if (shootingSettings == null)
+            return;
+
+        Transform referenceTransform = weaponReference != null ? weaponReference : transform;
+        Vector3 referencePosition = referenceTransform.position;
+        Vector3 spawnPosition = referencePosition + referenceTransform.rotation * shootingSettings.ShootOffset;
+        Vector3 forward = referenceTransform.forward;
+
+        Gizmos.color = ShootingGizmoColor;
+        Gizmos.DrawLine(referencePosition, spawnPosition);
+        Gizmos.DrawWireSphere(spawnPosition, 0.12f);
+        Gizmos.DrawLine(spawnPosition, spawnPosition + forward * 0.5f);
     }
     #endregion
 
@@ -240,6 +290,50 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         //  Add player controller config component to entity
         AddComponent(entity, config);
 
+        ShootingSettings shootingSettings = controllerPreset.ShootingSettings;
+
+        if (shootingSettings != null && shootingSettings.ProjectilePrefab != null)
+        {
+            GameObject projectilePrefabObject = shootingSettings.ProjectilePrefab;
+
+            if (IsInvalidProjectilePrefab(authoring, projectilePrefabObject))
+            {
+#if UNITY_EDITOR
+                Debug.LogError(string.Format("[PlayerAuthoringBaker] Invalid projectile prefab '{0}' on '{1}'. Assign a dedicated projectile prefab without PlayerAuthoring.", projectilePrefabObject.name, authoring.name), authoring);
+#endif
+            }
+            else
+            {
+                Entity projectilePrefabEntity = GetEntity(projectilePrefabObject, TransformUsageFlags.Dynamic);
+                ShooterProjectilePrefab projectilePrefab = new ShooterProjectilePrefab
+                {
+                    PrefabEntity = projectilePrefabEntity
+                };
+
+                AddComponent(entity, projectilePrefab);
+                AddComponent(entity, new ProjectilePoolState
+                {
+                    InitialCapacity = math.max(0, shootingSettings.InitialPoolCapacity),
+                    ExpandBatch = math.max(1, shootingSettings.PoolExpandBatch),
+                    Initialized = 0
+                });
+
+                AddBuffer<ShootRequest>(entity);
+                AddBuffer<ProjectilePoolElement>(entity);
+            }
+        }
+
+        if (authoring.WeaponReference != null)
+        {
+            Entity muzzleAnchorEntity = GetEntity(authoring.WeaponReference, TransformUsageFlags.Dynamic);
+            ShooterMuzzleAnchor muzzleAnchor = new ShooterMuzzleAnchor
+            {
+                AnchorEntity = muzzleAnchorEntity
+            };
+
+            AddComponent(entity, muzzleAnchor);
+        }
+
         Transform roomAnchor = controllerPreset.CameraSettings.RoomAnchor;
 
         if (roomAnchor == null)
@@ -252,6 +346,22 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         };
 
         AddComponent(entity, cameraAnchor);
+    }
+    #endregion
+
+    #region Validation
+    private static bool IsInvalidProjectilePrefab(PlayerAuthoring authoring, GameObject projectilePrefabObject)
+    {
+        if (projectilePrefabObject == null)
+            return true;
+
+        if (projectilePrefabObject == authoring.gameObject)
+            return true;
+
+        if (projectilePrefabObject.GetComponent<PlayerAuthoring>() != null)
+            return true;
+
+        return false;
     }
     #endregion
 
@@ -269,6 +379,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         FillMovementConfig(ref root, preset.MovementSettings);
         FillLookConfig(ref root, preset.LookSettings, ref builder);
         FillCameraConfig(ref root, preset.CameraSettings);
+        FillShootingConfig(ref root, preset.ShootingSettings);
 
         BlobAssetReference<PlayerControllerConfigBlob> blob = builder.CreateBlobAssetReference<PlayerControllerConfigBlob>(Unity.Collections.Allocator.Persistent);
         builder.Dispose();
@@ -397,6 +508,37 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         };
 
         root.Camera = cameraConfig;
+    }
+
+    /// <summary>
+    /// Populates the shooting configuration in the player controller config blob using the specified shooting settings.
+    /// </summary>
+    /// <param name="root">Reference to the player controller config blob to update with shooting configuration.</param>
+    /// <param name="shootingSettings">Shooting settings used to fill the shooting configuration.</param>
+    private void FillShootingConfig(ref PlayerControllerConfigBlob root, ShootingSettings shootingSettings)
+    {
+        if (shootingSettings == null)
+        {
+            root.Shooting = default;
+            return;
+        }
+
+        ShootingConfig shootingConfig = new ShootingConfig
+        {
+            TriggerMode = shootingSettings.TriggerMode,
+            ProjectilesInheritPlayerSpeed = shootingSettings.ProjectilesInheritPlayerSpeed ? (byte)1 : (byte)0,
+            ShootOffset = new float3(shootingSettings.ShootOffset.x, shootingSettings.ShootOffset.y, shootingSettings.ShootOffset.z),
+            Values = new ShootingValuesBlob
+            {
+                ShootSpeed = shootingSettings.Values.ShootSpeed,
+                RateOfFire = shootingSettings.Values.RateOfFire,
+                Range = shootingSettings.Values.Range,
+                Lifetime = shootingSettings.Values.Lifetime,
+                Damage = shootingSettings.Values.Damage
+            }
+        };
+
+        root.Shooting = shootingConfig;
     }
     #endregion
 

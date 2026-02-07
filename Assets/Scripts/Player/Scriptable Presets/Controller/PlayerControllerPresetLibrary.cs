@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "PlayerControllerPresetLibrary", menuName = "Player/Controller Preset Library", order = 11)]
@@ -7,7 +8,8 @@ public sealed class PlayerControllerPresetLibrary : ScriptableObject
     #region Serialized Fields
     [Tooltip("List of registered player controller presets.")]
     [Header("Presets")]
-    [SerializeField] private List<PlayerControllerPreset> m_Presets = new List<PlayerControllerPreset>();
+    [FormerlySerializedAs("m_Presets")]
+    [SerializeField] private List<PlayerControllerPreset> presets = new List<PlayerControllerPreset>();
     #endregion
 
     #region Properties
@@ -15,7 +17,7 @@ public sealed class PlayerControllerPresetLibrary : ScriptableObject
     {
         get
         {
-            return m_Presets;
+            return presets;
         }
     }
     #endregion
@@ -26,10 +28,10 @@ public sealed class PlayerControllerPresetLibrary : ScriptableObject
         if (preset == null)
             return;
 
-        if (m_Presets.Contains(preset))
+        if (presets.Contains(preset))
             return;
 
-        m_Presets.Add(preset);
+        presets.Add(preset);
     }
 
     public void RemovePreset(PlayerControllerPreset preset)
@@ -37,10 +39,10 @@ public sealed class PlayerControllerPresetLibrary : ScriptableObject
         if (preset == null)
             return;
 
-        if (m_Presets.Contains(preset) == false)
+        if (presets.Contains(preset) == false)
             return;
 
-        m_Presets.Remove(preset);
+        presets.Remove(preset);
     }
     #endregion
 }

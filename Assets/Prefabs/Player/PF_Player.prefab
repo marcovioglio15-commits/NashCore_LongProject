@@ -47,8 +47,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9140e0cf7a7e2c341991ee9e00dc4eaa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAuthoring
-  m_MasterPreset: {fileID: 11400000, guid: 2aa7920f2d0dab444bbb97e34b3f90d8, type: 2}
-  m_GizmoRadius: 2
+  masterPreset: {fileID: 11400000, guid: 2aa7920f2d0dab444bbb97e34b3f90d8, type: 2}
+  gizmoRadius: 2
+  weaponReference: {fileID: 6701674403326256358}
 --- !u!33 &-5754263909563620324
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -119,7 +120,7 @@ GameObject:
   - component: {fileID: 7269478996105369871}
   - component: {fileID: 8540589041304199780}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: Weapon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

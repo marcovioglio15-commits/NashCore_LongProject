@@ -8,11 +8,13 @@ using UnityEngine;
 [UpdateAfter(typeof(PlayerMovementApplySystem))]
 public partial struct PlayerCameraFollowSystem : ISystem
 {
-    private bool m_HasAutoOffset;
-    private float3 m_AutoOffset;
-    private bool m_HasChildOffset;
-    private float3 m_ChildLocalOffset;
-    private CameraBehavior m_LastBehavior;
+    #region Fields
+    private bool hasAutoOffset;
+    private float3 autoOffset;
+    private bool hasChildOffset;
+    private float3 childLocalOffset;
+    private CameraBehavior lastBehavior;
+    #endregion
 
     #region Lifecycle
     public void OnCreate(ref SystemState state)
@@ -37,11 +39,11 @@ public partial struct PlayerCameraFollowSystem : ISystem
             if (cameraConfig.Behavior == CameraBehavior.RoomFixed)
                 continue;
 
-            if (cameraConfig.Behavior != m_LastBehavior)
+            if (cameraConfig.Behavior != lastBehavior)
             {
-                m_HasAutoOffset = false;
-                m_HasChildOffset = false;
-                m_LastBehavior = cameraConfig.Behavior;
+                hasAutoOffset = false;
+                hasChildOffset = false;
+                lastBehavior = cameraConfig.Behavior;
             }
 
             float3 offset = cameraConfig.FollowOffset;
@@ -49,24 +51,24 @@ public partial struct PlayerCameraFollowSystem : ISystem
             switch (cameraConfig.Behavior)
             {
                 case CameraBehavior.FollowWithAutoOffset:
-                    if (m_HasAutoOffset == false)
+                    if (hasAutoOffset == false)
                     {
-                        m_AutoOffset = (float3)camera.transform.position - localTransform.ValueRO.Position;
-                        m_HasAutoOffset = true;
+                        autoOffset = (float3)camera.transform.position - localTransform.ValueRO.Position;
+                        hasAutoOffset = true;
                     }
 
-                    offset = m_AutoOffset;
+                    offset = autoOffset;
                     break;
                 case CameraBehavior.ChildOfPlayer:
-                    if (m_HasChildOffset == false)
+                    if (hasChildOffset == false)
                     {
                         float3 worldOffset = (float3)camera.transform.position - localTransform.ValueRO.Position;
                         quaternion inverseRotation = math.inverse(localTransform.ValueRO.Rotation);
-                        m_ChildLocalOffset = math.rotate(inverseRotation, worldOffset);
-                        m_HasChildOffset = true;
+                        childLocalOffset = math.rotate(inverseRotation, worldOffset);
+                        hasChildOffset = true;
                     }
 
-                    offset = m_ChildLocalOffset;
+                    offset = childLocalOffset;
                     break;
             }
 

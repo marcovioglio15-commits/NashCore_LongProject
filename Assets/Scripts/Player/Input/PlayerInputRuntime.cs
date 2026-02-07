@@ -9,12 +9,14 @@ using UnityEngine.InputSystem;
 public static class PlayerInputRuntime
 {
     #region Fields
-    private static InputActionAsset s_RuntimeAsset; // Active runtime input asset instance.
-    private static InputActionAsset s_SourceAsset; // Source asset used to build the runtime instance.
-    private static InputAction s_MoveAction; // Cached move action.
-    private static InputAction s_LookAction; // Cached look action.
-    private static string s_MoveActionId; // Cached move action id.
-    private static string s_LookActionId; // Cached look action id.
+    private static InputActionAsset runtimeAsset; // Active runtime input asset instance.
+    private static InputActionAsset sourceAsset; // Source asset used to build the runtime instance.
+    private static InputAction moveAction; // Cached move action.
+    private static InputAction lookAction; // Cached look action.
+    private static InputAction shootAction; // Cached shoot action.
+    private static string moveActionId; // Cached move action id.
+    private static string lookActionId; // Cached look action id.
+    private static string shootActionId; // Cached shoot action id.
     #endregion
 
     #region Properties
@@ -22,7 +24,7 @@ public static class PlayerInputRuntime
     {
         get
         {
-            return s_RuntimeAsset != null;
+            return runtimeAsset != null;
         }
     }
 
@@ -30,7 +32,7 @@ public static class PlayerInputRuntime
     {
         get
         {
-            return s_MoveAction;
+            return moveAction;
         }
     }
 
@@ -38,7 +40,15 @@ public static class PlayerInputRuntime
     {
         get
         {
-            return s_LookAction;
+            return lookAction;
+        }
+    }
+
+    public static InputAction ShootAction
+    {
+        get
+        {
+            return shootAction;
         }
     }
     #endregion
@@ -50,7 +60,8 @@ public static class PlayerInputRuntime
     /// <param name="sourceAsset">The input action asset to use as the source.</param>
     /// <param name="moveActionId">The identifier for the move action.</param>
     /// <param name="lookActionId">The identifier for the look action.</param>
-    public static void Initialize(InputActionAsset sourceAsset, string moveActionId, string lookActionId)
+    /// <param name="shootActionId">The identifier for the shoot action.</param>
+    public static void Initialize(InputActionAsset sourceAsset, string moveActionId, string lookActionId, string shootActionId)
     {
         if (sourceAsset == null)
         {
@@ -58,7 +69,7 @@ public static class PlayerInputRuntime
             return;
         }
 
-        if (ShouldReuseRuntime(sourceAsset, moveActionId, lookActionId))
+        if (ShouldReuseRuntime(sourceAsset, moveActionId, lookActionId, shootActionId))
             return;
 
         Shutdown();
@@ -73,15 +84,17 @@ public static class PlayerInputRuntime
 
         runtimeAsset.Enable();
 
-        s_RuntimeAsset = runtimeAsset;
-        s_SourceAsset = sourceAsset;
-        s_MoveActionId = moveActionId;
-        s_LookActionId = lookActionId;
-        s_MoveAction = ResolveAction(runtimeAsset, moveActionId, "Move");
-        s_LookAction = ResolveAction(runtimeAsset, lookActionId, "Look");
+        PlayerInputRuntime.runtimeAsset = runtimeAsset;
+        PlayerInputRuntime.sourceAsset = sourceAsset;
+        PlayerInputRuntime.moveActionId = moveActionId;
+        PlayerInputRuntime.lookActionId = lookActionId;
+        PlayerInputRuntime.shootActionId = shootActionId;
+        moveAction = ResolveAction(runtimeAsset, moveActionId, "Move");
+        lookAction = ResolveAction(runtimeAsset, lookActionId, "Look");
+        shootAction = ResolveAction(runtimeAsset, shootActionId, "Shoot");
 
 #if UNITY_EDITOR
-        LogInitializationStatus(runtimeAsset, s_MoveAction, s_LookAction);
+        LogInitializationStatus(runtimeAsset, moveAction, lookAction, shootAction);
 #endif
     }
 
@@ -90,18 +103,20 @@ public static class PlayerInputRuntime
     /// </summary>
     public static void Shutdown()
     {
-        if (s_RuntimeAsset != null)
+        if (runtimeAsset != null)
         {
-            s_RuntimeAsset.Disable();
-            Object.Destroy(s_RuntimeAsset);
+            runtimeAsset.Disable();
+            Object.Destroy(runtimeAsset);
         }
 
-        s_RuntimeAsset = null;
-        s_SourceAsset = null;
-        s_MoveAction = null;
-        s_LookAction = null;
-        s_MoveActionId = null;
-        s_LookActionId = null;
+        runtimeAsset = null;
+        sourceAsset = null;
+        moveAction = null;
+        lookAction = null;
+        shootAction = null;
+        moveActionId = null;
+        lookActionId = null;
+        shootActionId = null;
     }
     #endregion
 
@@ -113,19 +128,23 @@ public static class PlayerInputRuntime
     /// <param name="sourceAsset">The input action asset to compare against the current runtime.</param>
     /// <param name="moveActionId">The identifier for the move action to compare.</param>
     /// <param name="lookActionId">The identifier for the look action to compare.</param>
+    /// <param name="shootActionId">The identifier for the shoot action to compare.</param>
     /// <returns>True if the runtime can be reused with the specified asset and action IDs; otherwise, false.</returns>
-    private static bool ShouldReuseRuntime(InputActionAsset sourceAsset, string moveActionId, string lookActionId)
+    private static bool ShouldReuseRuntime(InputActionAsset sourceAsset, string moveActionId, string lookActionId, string shootActionId)
     {
-        if (s_RuntimeAsset == null)
+        if (runtimeAsset == null)
             return false;
 
-        if (s_SourceAsset != sourceAsset)
+        if (PlayerInputRuntime.sourceAsset != sourceAsset)
             return false;
 
-        if (string.Equals(s_MoveActionId, moveActionId) == false)
+        if (string.Equals(PlayerInputRuntime.moveActionId, moveActionId) == false)
             return false;
 
-        if (string.Equals(s_LookActionId, lookActionId) == false)
+        if (string.Equals(PlayerInputRuntime.lookActionId, lookActionId) == false)
+            return false;
+
+        if (string.Equals(PlayerInputRuntime.shootActionId, shootActionId) == false)
             return false;
 
         return true;
@@ -158,7 +177,7 @@ public static class PlayerInputRuntime
 
 #if UNITY_EDITOR
     #region Editor Debug
-    private static void LogInitializationStatus(InputActionAsset asset, InputAction moveAction, InputAction lookAction)
+    private static void LogInitializationStatus(InputActionAsset asset, InputAction moveAction, InputAction lookAction, InputAction shootAction)
     {
         if (asset == null)
             return;
@@ -166,7 +185,8 @@ public static class PlayerInputRuntime
         string assetName = asset.name;
         string moveStatus = BuildActionStatus(moveAction);
         string lookStatus = BuildActionStatus(lookAction);
-        string message = string.Format("[PlayerInputRuntime] Initialized asset '{0}'. Move: {1} | Look: {2}", assetName, moveStatus, lookStatus);
+        string shootStatus = BuildActionStatus(shootAction);
+        string message = string.Format("[PlayerInputRuntime] Initialized asset '{0}'. Move: {1} | Look: {2} | Shoot: {3}", assetName, moveStatus, lookStatus, shootStatus);
         Debug.Log(message, asset);
     }
 

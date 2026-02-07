@@ -46,8 +46,9 @@ public static class PlayerInputActionsAssetUtility
             changed = true;
         }
 
-        changed |= EnsureAction(map, "Move", AddDefaultMoveBindings);
-        changed |= EnsureAction(map, "Look", AddDefaultLookBindings);
+        changed |= EnsureAction(map, "Move", InputActionType.Value, "Vector2", AddDefaultMoveBindings);
+        changed |= EnsureAction(map, "Look", InputActionType.Value, "Vector2", AddDefaultLookBindings);
+        changed |= EnsureAction(map, "Shoot", InputActionType.Button, "Button", AddDefaultShootBindings);
 
         if (changed)
         {
@@ -56,7 +57,7 @@ public static class PlayerInputActionsAssetUtility
         }
     }
 
-    private static bool EnsureAction(InputActionMap map, string actionName, Action<InputAction> configureBindings)
+    private static bool EnsureAction(InputActionMap map, string actionName, InputActionType actionType, string expectedControlLayout, Action<InputAction> configureBindings)
     {
         if (map == null)
             return false;
@@ -66,7 +67,7 @@ public static class PlayerInputActionsAssetUtility
         if (action != null)
             return false;
 
-        InputAction createdAction = map.AddAction(actionName, InputActionType.Value, null, null, null, "Vector2");
+        InputAction createdAction = map.AddAction(actionName, actionType, null, null, null, null, expectedControlLayout);
         configureBindings?.Invoke(createdAction);
         return true;
     }
@@ -103,6 +104,16 @@ public static class PlayerInputActionsAssetUtility
             .With("Right", "<Keyboard>/rightArrow");
     }
 
+    private static void AddDefaultShootBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Mouse>/leftButton");
+        action.AddBinding("<Gamepad>/rightTrigger");
+        action.AddBinding("<Keyboard>/space");
+    }
+
     private static InputActionAsset CreateDefaultAsset()
     {
         InputActionAsset asset = ScriptableObject.CreateInstance<InputActionAsset>();
@@ -110,11 +121,14 @@ public static class PlayerInputActionsAssetUtility
 
         InputActionMap map = new InputActionMap("Player");
 
-        InputAction move = map.AddAction("Move", InputActionType.Value, null, null, null, "Vector2");
+        InputAction move = map.AddAction("Move", InputActionType.Value, null, null, null, null, "Vector2");
         AddDefaultMoveBindings(move);
 
-        InputAction look = map.AddAction("Look", InputActionType.Value, null, null, null, "Vector2");
+        InputAction look = map.AddAction("Look", InputActionType.Value, null, null, null, null, "Vector2");
         AddDefaultLookBindings(look);
+
+        InputAction shoot = map.AddAction("Shoot", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultShootBindings(shoot);
 
         asset.AddActionMap(map);
 

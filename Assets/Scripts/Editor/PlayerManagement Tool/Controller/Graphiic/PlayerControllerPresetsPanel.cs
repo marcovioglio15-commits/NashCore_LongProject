@@ -409,8 +409,8 @@ public sealed class PlayerControllerPresetsPanel
         AssetDatabase.SaveAssets();
 
         SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
-        SerializedProperty idProperty = duplicatedSerialized.FindProperty("m_PresetId");
-        SerializedProperty nameProperty = duplicatedSerialized.FindProperty("m_PresetName");
+        SerializedProperty idProperty = duplicatedSerialized.FindProperty("presetId");
+        SerializedProperty nameProperty = duplicatedSerialized.FindProperty("presetName");
         if (idProperty != null)
             idProperty.stringValue = Guid.NewGuid().ToString("N");
         if (nameProperty != null)
@@ -485,6 +485,7 @@ public sealed class PlayerControllerPresetsPanel
         BuildMetadataSection();
         BuildMovementSection();
         BuildLookSection();
+        BuildShootingSection();
         BuildCameraSection();
     }
 
@@ -499,10 +500,10 @@ public sealed class PlayerControllerPresetsPanel
         header.style.marginBottom = 4f;
         m_DetailsRoot.Add(header);
 
-        SerializedProperty idProperty = m_PresetSerializedObject.FindProperty("m_PresetId");
-        SerializedProperty nameProperty = m_PresetSerializedObject.FindProperty("m_PresetName");
-        SerializedProperty descriptionProperty = m_PresetSerializedObject.FindProperty("m_Description");
-        SerializedProperty versionProperty = m_PresetSerializedObject.FindProperty("m_Version");
+        SerializedProperty idProperty = m_PresetSerializedObject.FindProperty("presetId");
+        SerializedProperty nameProperty = m_PresetSerializedObject.FindProperty("presetName");
+        SerializedProperty descriptionProperty = m_PresetSerializedObject.FindProperty("description");
+        SerializedProperty versionProperty = m_PresetSerializedObject.FindProperty("version");
 
         TextField nameField = new TextField("Preset Name");
         nameField.isDelayed = true;
@@ -561,7 +562,7 @@ public sealed class PlayerControllerPresetsPanel
         if (m_SelectedPreset == null)
             return;
 
-        SerializedProperty idProperty = m_PresetSerializedObject.FindProperty("m_PresetId");
+        SerializedProperty idProperty = m_PresetSerializedObject.FindProperty("presetId");
 
         if (idProperty == null)
             return;
@@ -648,12 +649,12 @@ public sealed class PlayerControllerPresetsPanel
         foldout.style.marginTop = 8f;
         m_DetailsRoot.Add(foldout);
 
-        SerializedProperty movementProperty = m_PresetSerializedObject.FindProperty("m_MovementSettings");
-        SerializedProperty modeProperty = movementProperty.FindPropertyRelative("m_DirectionsMode");
-        SerializedProperty countProperty = movementProperty.FindPropertyRelative("m_DiscreteDirectionCount");
-        SerializedProperty offsetProperty = movementProperty.FindPropertyRelative("m_DirectionOffsetDegrees");
-        SerializedProperty referenceProperty = movementProperty.FindPropertyRelative("m_MovementReference");
-        SerializedProperty valuesProperty = movementProperty.FindPropertyRelative("m_Values");
+        SerializedProperty movementProperty = m_PresetSerializedObject.FindProperty("movementSettings");
+        SerializedProperty modeProperty = movementProperty.FindPropertyRelative("directionsMode");
+        SerializedProperty countProperty = movementProperty.FindPropertyRelative("discreteDirectionCount");
+        SerializedProperty offsetProperty = movementProperty.FindPropertyRelative("directionOffsetDegrees");
+        SerializedProperty referenceProperty = movementProperty.FindPropertyRelative("movementReference");
+        SerializedProperty valuesProperty = movementProperty.FindPropertyRelative("values");
 
         EnumField modeField = new EnumField("Allowed Directions");
         modeField.BindProperty(modeProperty);
@@ -677,7 +678,7 @@ public sealed class PlayerControllerPresetsPanel
         referenceField.BindProperty(referenceProperty);
         foldout.Add(referenceField);
 
-        SerializedProperty moveActionProperty = m_PresetSerializedObject.FindProperty("m_MoveActionId");
+        SerializedProperty moveActionProperty = m_PresetSerializedObject.FindProperty("moveActionId");
         EnsureDefaultActionId(moveActionProperty, "Move");
 
         Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, moveActionProperty, InputActionSelectionElement.SelectionMode.Movement);
@@ -685,12 +686,12 @@ public sealed class PlayerControllerPresetsPanel
 
         Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
         {
-            "m_BaseSpeed",
-            "m_MaxSpeed",
-            "m_Acceleration",
-            "m_Deceleration",
-            "m_InputDeadZone",
-            "m_DigitalReleaseGraceSeconds"
+            "baseSpeed",
+            "maxSpeed",
+            "acceleration",
+            "deceleration",
+            "inputDeadZone",
+            "digitalReleaseGraceSeconds"
         });
         foldout.Add(valuesFoldout);
 
@@ -736,7 +737,7 @@ public sealed class PlayerControllerPresetsPanel
         m_DetailsRoot.Add(foldout);
 
         // Look Settings Properties
-        SerializedProperty lookProperty = m_PresetSerializedObject.FindProperty("m_LookSettings");
+        SerializedProperty lookProperty = m_PresetSerializedObject.FindProperty("lookSettings");
         SerializedProperty directionsModeProperty = lookProperty.FindPropertyRelative("m_DirectionsMode");
         SerializedProperty countProperty = lookProperty.FindPropertyRelative("m_DiscreteDirectionCount");
         SerializedProperty offsetProperty = lookProperty.FindPropertyRelative("m_DirectionOffsetDegrees");
@@ -833,7 +834,7 @@ public sealed class PlayerControllerPresetsPanel
         foldout.Add(samplingField);
 
         // Input Bindings
-        SerializedProperty lookActionProperty = m_PresetSerializedObject.FindProperty("m_LookActionId");
+        SerializedProperty lookActionProperty = m_PresetSerializedObject.FindProperty("lookActionId");
         EnsureDefaultActionId(lookActionProperty, "Look");
 
         // Bindings Foldout
@@ -997,6 +998,85 @@ public sealed class PlayerControllerPresetsPanel
     }
     #endregion
 
+    #region Shooting Section
+    /// <summary>
+    /// Constructs and configures the shooting settings section, including trigger mode, projectile references, action
+    /// binding, and shooting values.
+    /// </summary>
+    private void BuildShootingSection()
+    {
+        Foldout foldout = new Foldout();
+        foldout.text = "Shooting Settings";
+        foldout.value = true;
+        foldout.style.marginTop = 8f;
+        m_DetailsRoot.Add(foldout);
+
+        SerializedProperty shootingProperty = m_PresetSerializedObject.FindProperty("shootingSettings");
+
+        if (shootingProperty == null)
+            return;
+
+        SerializedProperty triggerModeProperty = shootingProperty.FindPropertyRelative("triggerMode");
+        SerializedProperty inheritPlayerSpeedProperty = shootingProperty.FindPropertyRelative("projectilesInheritPlayerSpeed");
+        SerializedProperty projectilePrefabProperty = shootingProperty.FindPropertyRelative("projectilePrefab");
+        SerializedProperty shootOffsetProperty = shootingProperty.FindPropertyRelative("shootOffset");
+        SerializedProperty valuesProperty = shootingProperty.FindPropertyRelative("values");
+        SerializedProperty initialPoolCapacityProperty = shootingProperty.FindPropertyRelative("initialPoolCapacity");
+        SerializedProperty poolExpandBatchProperty = shootingProperty.FindPropertyRelative("poolExpandBatch");
+
+        EnumField triggerModeField = new EnumField("Trigger Mode");
+        triggerModeField.BindProperty(triggerModeProperty);
+        foldout.Add(triggerModeField);
+
+        Toggle inheritPlayerSpeedField = new Toggle("Projectiles Inherit Player Speed");
+        inheritPlayerSpeedField.tooltip = "When enabled, projectiles inherit the player's horizontal velocity while they are active.";
+        inheritPlayerSpeedField.BindProperty(inheritPlayerSpeedProperty);
+        foldout.Add(inheritPlayerSpeedField);
+
+        ObjectField projectilePrefabField = new ObjectField("Projectile Prefab");
+        projectilePrefabField.objectType = typeof(GameObject);
+        projectilePrefabField.BindProperty(projectilePrefabProperty);
+        foldout.Add(projectilePrefabField);
+
+        Vector3Field shootOffsetField = new Vector3Field("Shoot Offset");
+        shootOffsetField.tooltip = "Offset applied from the Weapon Reference set on PlayerAuthoring (fallback: player transform).";
+        shootOffsetField.BindProperty(shootOffsetProperty);
+        foldout.Add(shootOffsetField);
+
+        SerializedProperty shootActionProperty = m_PresetSerializedObject.FindProperty("shootActionId");
+        EnsureDefaultActionId(shootActionProperty, "Shoot");
+
+        Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, shootActionProperty, InputActionSelectionElement.SelectionMode.Shooting);
+        foldout.Add(bindingsFoldout);
+
+        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
+        {
+            "shootSpeed",
+            "rateOfFire",
+            "range",
+            "lifetime",
+            "damage"
+        });
+        foldout.Add(valuesFoldout);
+
+        Foldout objectPoolFoldout = new Foldout();
+        objectPoolFoldout.text = "Object Pool";
+        objectPoolFoldout.value = true;
+
+        IntegerField initialPoolCapacityField = new IntegerField("Initial Capacity");
+        initialPoolCapacityField.tooltip = "Number of projectiles pre-created when the pool initializes.";
+        initialPoolCapacityField.BindProperty(initialPoolCapacityProperty);
+        objectPoolFoldout.Add(initialPoolCapacityField);
+
+        IntegerField poolExpandBatchField = new IntegerField("Expand Batch");
+        poolExpandBatchField.tooltip = "Number of projectiles created each time the pool needs expansion.";
+        poolExpandBatchField.BindProperty(poolExpandBatchProperty);
+        objectPoolFoldout.Add(poolExpandBatchField);
+
+        foldout.Add(objectPoolFoldout);
+    }
+    #endregion
+
     #region Camera Section
     /// <summary>
     /// Constructs and configures the camera settings section of the UI, including controls for camera behavior, follow
@@ -1010,11 +1090,11 @@ public sealed class PlayerControllerPresetsPanel
         foldout.style.marginTop = 8f;
         m_DetailsRoot.Add(foldout);
 
-        SerializedProperty cameraProperty = m_PresetSerializedObject.FindProperty("m_CameraSettings");
-        SerializedProperty behaviorProperty = cameraProperty.FindPropertyRelative("m_Behavior");
-        SerializedProperty offsetProperty = cameraProperty.FindPropertyRelative("m_FollowOffset");
-        SerializedProperty anchorProperty = cameraProperty.FindPropertyRelative("m_RoomAnchor");
-        SerializedProperty valuesProperty = cameraProperty.FindPropertyRelative("m_Values");
+        SerializedProperty cameraProperty = m_PresetSerializedObject.FindProperty("cameraSettings");
+        SerializedProperty behaviorProperty = cameraProperty.FindPropertyRelative("behavior");
+        SerializedProperty offsetProperty = cameraProperty.FindPropertyRelative("followOffset");
+        SerializedProperty anchorProperty = cameraProperty.FindPropertyRelative("roomAnchor");
+        SerializedProperty valuesProperty = cameraProperty.FindPropertyRelative("values");
 
         EnumField behaviorField = new EnumField("Camera Behavior");
         behaviorField.BindProperty(behaviorProperty);
@@ -1031,11 +1111,11 @@ public sealed class PlayerControllerPresetsPanel
 
         Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
         {
-            "m_FollowSpeed",
-            "m_CameraLag",
-            "m_Damping",
-            "m_MaxFollowDistance",
-            "m_DeadZoneRadius"
+            "followSpeed",
+            "cameraLag",
+            "damping",
+            "maxFollowDistance",
+            "deadZoneRadius"
         });
         foldout.Add(valuesFoldout);
 

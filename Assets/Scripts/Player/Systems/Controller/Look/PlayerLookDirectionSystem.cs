@@ -61,13 +61,13 @@ public partial struct PlayerLookDirectionSystem : ISystem
                     continue;
                 }
 
-                float3 fallback_direction = lookState.ValueRO.CurrentDirection;
+                float3 FallbackDirection = lookState.ValueRO.CurrentDirection;
 
                 // If the current direction is invalid, use the player's forward direction
-                if (math.lengthsq(fallback_direction) < 1e-6f)
-                    fallback_direction = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
+                if (math.lengthsq(FallbackDirection) < 1e-6f)
+                    FallbackDirection = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
 
-                lookState.ValueRW.DesiredDirection = fallback_direction;
+                lookState.ValueRW.DesiredDirection = FallbackDirection;
                 continue;
             }
 

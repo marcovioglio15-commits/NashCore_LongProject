@@ -12,23 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4c5ed84bdc257044839a6d901f81512, type: 3}
   m_Name: HoctagonStyle_ContinousLook
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPreset
-  m_PresetId: 9289d46afc8c4db88a8d06845deb718b
-  m_PresetName: HoctagonStyle_ContinousLook
-  m_Description: What an awesome description!
-  m_Version: 1.0.0
-  m_MovementSettings:
-    m_DirectionsMode: 1
-    m_DiscreteDirectionCount: 8
-    m_DirectionOffsetDegrees: 0
-    m_MovementReference: 1
-    m_Values:
-      m_BaseSpeed: 4
-      m_MaxSpeed: 6
-      m_Acceleration: -1
-      m_Deceleration: -1
-      m_InputDeadZone: 0.1
-      m_DigitalReleaseGraceSeconds: 0.09
-  m_LookSettings:
+  presetId: 9289d46afc8c4db88a8d06845deb718b
+  presetName: HoctagonStyle_ContinousLook
+  description: What an awesome description!
+  version: 1.0.0
+  movementSettings:
+    directionsMode: 1
+    discreteDirectionCount: 8
+    directionOffsetDegrees: 0
+    movementReference: 1
+    values:
+      baseSpeed: 4
+      maxSpeed: 6
+      acceleration: -1
+      deceleration: -1
+      inputDeadZone: 0.1
+      digitalReleaseGraceSeconds: 0.09
+  lookSettings:
     m_DirectionsMode: 1
     m_DiscreteDirectionCount: 8
     m_DirectionOffsetDegrees: 0
@@ -74,15 +74,29 @@ MonoBehaviour:
       m_RotationMaxSpeed: 1080
       m_RotationDeadZone: 0.1
       m_DigitalReleaseGraceSeconds: 0.09
-  m_CameraSettings:
-    m_Behavior: 2
-    m_FollowOffset: {x: 0, y: 10, z: -8}
-    m_RoomAnchor: {fileID: 0}
-    m_Values:
-      m_FollowSpeed: 8
-      m_CameraLag: 0.1
-      m_Damping: 0.15
-      m_MaxFollowDistance: 60000
-      m_DeadZoneRadius: 0
-  m_MoveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
-  m_LookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
+  cameraSettings:
+    behavior: 2
+    followOffset: {x: 0, y: 10, z: -8}
+    roomAnchor: {fileID: 0}
+    values:
+      followSpeed: 8
+      cameraLag: 0.1
+      damping: 0.15
+      maxFollowDistance: 60000
+      deadZoneRadius: 0
+  shootingSettings:
+    triggerMode: 0
+    projectilesInheritPlayerSpeed: 1
+    projectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
+    shootOffset: {x: 0, y: 0, z: 0.5}
+    values:
+      shootSpeed: 24
+      rateOfFire: 8
+      range: 20
+      lifetime: 2
+      damage: 1
+    initialPoolCapacity: 512
+    poolExpandBatch: 128
+  moveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
+  lookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
+  shootActionId: 852140f2-7766-474d-8707-702459ba45f3

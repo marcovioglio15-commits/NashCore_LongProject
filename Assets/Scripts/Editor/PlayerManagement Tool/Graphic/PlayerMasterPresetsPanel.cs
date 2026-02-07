@@ -815,7 +815,7 @@ public sealed class PlayerMasterPresetsPanel
         }
 
         SerializedObject serializedAuthoring = new SerializedObject(authoring);
-        SerializedProperty presetProperty = serializedAuthoring.FindProperty("m_MasterPreset");
+        SerializedProperty presetProperty = serializedAuthoring.FindProperty("masterPreset");
 
         if (presetProperty == null)
             return;

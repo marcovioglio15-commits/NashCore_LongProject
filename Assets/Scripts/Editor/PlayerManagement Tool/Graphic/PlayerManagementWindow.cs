@@ -7,11 +7,11 @@ using UnityEngine.UIElements;
 public sealed class PlayerManagementWindow : EditorWindow
 {
     #region Fields
-    private PlayerMasterPresetsPanel m_MasterPresetsPanel;
-    private PlayerControllerPresetsPanel m_PresetsPanel;
-    private VisualElement m_ContentRoot;
-    private VisualElement m_PlaceholderPanel;
-    private PanelType m_ActivePanel = PanelType.PlayerMasterPresets;
+    private PlayerMasterPresetsPanel masterPresetsPanel;
+    private PlayerControllerPresetsPanel presetsPanel;
+    private VisualElement contentRoot;
+    private VisualElement placeholderPanel;
+    private PanelType activePanel = PanelType.PlayerMasterPresets;
     #endregion
 
     #region Menu
@@ -32,12 +32,12 @@ public sealed class PlayerManagementWindow : EditorWindow
         VisualElement toolbar = BuildToolbar();
         rootVisualElement.Add(toolbar);
 
-        m_ContentRoot = new VisualElement();
-        m_ContentRoot.style.flexGrow = 1f;
-        rootVisualElement.Add(m_ContentRoot);
+        contentRoot = new VisualElement();
+        contentRoot.style.flexGrow = 1f;
+        rootVisualElement.Add(contentRoot);
 
         BuildPanels();
-        ShowPanel(m_ActivePanel);
+        ShowPanel(activePanel);
     }
 
     private void OnDisable()
@@ -108,36 +108,36 @@ public sealed class PlayerManagementWindow : EditorWindow
 
     private void BuildPanels()
     {
-        m_MasterPresetsPanel = new PlayerMasterPresetsPanel();
-        m_PresetsPanel = new PlayerControllerPresetsPanel();
+        masterPresetsPanel = new PlayerMasterPresetsPanel();
+        presetsPanel = new PlayerControllerPresetsPanel();
 
-        m_PlaceholderPanel = new VisualElement();
-        m_PlaceholderPanel.style.flexGrow = 1f;
-        m_PlaceholderPanel.style.justifyContent = Justify.Center;
-        m_PlaceholderPanel.style.alignItems = Align.Center;
+        placeholderPanel = new VisualElement();
+        placeholderPanel.style.flexGrow = 1f;
+        placeholderPanel.style.justifyContent = Justify.Center;
+        placeholderPanel.style.alignItems = Align.Center;
         Label placeholderLabel = new Label("Section not implemented yet.");
         placeholderLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-        m_PlaceholderPanel.Add(placeholderLabel);
+        placeholderPanel.Add(placeholderLabel);
     }
 
     private void ShowPanel(PanelType panelType)
     {
-        m_ActivePanel = panelType;
-        m_ContentRoot.Clear();
+        activePanel = panelType;
+        contentRoot.Clear();
 
         if (panelType == PanelType.PlayerMasterPresets)
         {
-            m_ContentRoot.Add(m_MasterPresetsPanel.Root);
+            contentRoot.Add(masterPresetsPanel.Root);
             return;
         }
 
         if (panelType == PanelType.PlayerControllerPresets)
         {
-            m_ContentRoot.Add(m_PresetsPanel.Root);
+            contentRoot.Add(presetsPanel.Root);
             return;
         }
 
-        m_ContentRoot.Add(m_PlaceholderPanel);
+        contentRoot.Add(placeholderPanel);
     }
 
     private string GetPanelLabel(PanelType panelType)

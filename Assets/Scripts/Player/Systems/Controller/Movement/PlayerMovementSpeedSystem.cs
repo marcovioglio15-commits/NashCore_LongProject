@@ -50,13 +50,13 @@ public partial struct PlayerMovementSpeedSystem : ISystem
             if (currentSpeed > 1e-6f)
                 currentDirection = currentVelocity / currentSpeed;
 
-            if (hasInput)
+            if (forceZeroSpeed)
             {
-                if (forceZeroSpeed)
-                {
-                    currentSpeed = 0f;
-                }
-                else
+                currentSpeed = 0f;
+            }
+            else
+            {
+                if (hasInput)
                 {
                     if (baseSpeed > 0f && currentSpeed < baseSpeed)
                         currentSpeed = baseSpeed;
@@ -73,15 +73,8 @@ public partial struct PlayerMovementSpeedSystem : ISystem
                         if (hasMaxSpeed)
                             currentSpeed = math.min(currentSpeed, maxSpeed);
                     }
-                }
 
-                currentDirection = desiredDirection;
-            }
-            else
-            {
-                if (forceZeroSpeed)
-                {
-                    currentSpeed = 0f;
+                    currentDirection = desiredDirection;
                 }
                 else
                 {

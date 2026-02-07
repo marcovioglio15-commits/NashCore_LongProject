@@ -34,7 +34,7 @@ public class ColoredFolderAutoApplyPostprocessor : AssetPostprocessor
                 continue; // parent is not colored
 
             // get parent's mode too
-            var parentMode = settings.GetModeForFolder(parentDir);
+            ColoredFolderSettings.ApplyMode parentMode = settings.GetModeForFolder(parentDir);
 
             // assign same values to the new folder
             settings.SetFolderData(assetPath, parentColor, parentMode);

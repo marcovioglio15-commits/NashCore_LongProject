@@ -121,7 +121,7 @@ public class ColoredFoldersWindow : EditorWindow
     {
         string path = AssetDatabase.GetAssetPath(Selection.activeObject);
         ShowWindow();
-        var window = (ColoredFoldersWindow)GetWindow(typeof(ColoredFoldersWindow));
+        ColoredFoldersWindow window = (ColoredFoldersWindow)GetWindow(typeof(ColoredFoldersWindow));
         window.SetSelectedFolder(path);
     }
 
@@ -175,7 +175,7 @@ public class ColoredFoldersWindow : EditorWindow
         if (!Directory.Exists(folderPath))
             return new string[0];
 
-        var roots = new List<string>();
+        List<string> roots = new List<string>();
         string[] files = Directory.GetFiles(folderPath, "ColoredFolderSettings_*.asset");
 
         // extract root name from filename
@@ -337,7 +337,7 @@ public class ColoredFoldersWindow : EditorWindow
             return; // folder not colored
 
         // get how color must be applied
-        var mode = rootSettings.GetModeForFolder(path);
+        ColoredFolderSettings.ApplyMode mode = rootSettings.GetModeForFolder(path);
 
         // draw small colored square over the icon
         if (mode == ColoredFolderSettings.ApplyMode.IconOnly ||

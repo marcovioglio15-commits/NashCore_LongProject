@@ -1,39 +1,55 @@
 using System;
+using UnityEngine.Serialization;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "PlayerControllerPreset", menuName = "Player/Controller Preset", order = 10)]
 public sealed class PlayerControllerPreset : ScriptableObject
 {
     #region Serialized Fields
-    [Tooltip("Unique ID for this preset, used for stable references.")]
     [Header("Metadata")]
-    [SerializeField] private string m_PresetId;
+    [Tooltip("Unique ID for this preset, used for stable references.")]
+    [FormerlySerializedAs("m_PresetId")]
+    [SerializeField] private string presetId;
 
     [Tooltip("Human-readable preset name for designers.")]
-    [SerializeField] private string m_PresetName = "New Player Preset";
+    [FormerlySerializedAs("m_PresetName")]
+    [SerializeField] private string presetName = "New Player Preset";
 
     [Tooltip("Short description of the preset use case.")]
-    [SerializeField] private string m_Description;
+    [FormerlySerializedAs("m_Description")]
+    [SerializeField] private string description;
 
     [Tooltip("Optional semantic version string for this preset.")]
-    [SerializeField] private string m_Version = "1.0.0";
+    [FormerlySerializedAs("m_Version")]
+    [SerializeField] private string version = "1.0.0";
 
-    [Tooltip("Movement configuration block.")]
     [Header("Controller Settings")]
-    [SerializeField] private MovementSettings m_MovementSettings = new MovementSettings();
+    [Tooltip("Movement configuration block.")]
+    [FormerlySerializedAs("m_MovementSettings")]
+    [SerializeField] private MovementSettings movementSettings = new MovementSettings();
 
     [Tooltip("Look configuration block.")]
-    [SerializeField] private LookSettings m_LookSettings = new LookSettings();
+    [FormerlySerializedAs("m_LookSettings")]
+    [SerializeField] private LookSettings lookSettings = new LookSettings();
 
     [Tooltip("Camera configuration block.")]
-    [SerializeField] private CameraSettings m_CameraSettings = new CameraSettings();
+    [FormerlySerializedAs("m_CameraSettings")]
+    [SerializeField] private CameraSettings cameraSettings = new CameraSettings();
 
-    [Tooltip("Selected action ID for movement input.")]
+    [Tooltip("Shooting configuration block.")]
+    [SerializeField] private ShootingSettings shootingSettings = new ShootingSettings();
+
     [Header("Input Actions")]
-    [SerializeField] private string m_MoveActionId;
+    [Tooltip("Selected action ID for movement input.")]
+    [FormerlySerializedAs("m_MoveActionId")]
+    [SerializeField] private string moveActionId;
 
     [Tooltip("Selected action ID for look input.")]
-    [SerializeField] private string m_LookActionId;
+    [FormerlySerializedAs("m_LookActionId")]
+    [SerializeField] private string lookActionId;
+
+    [Tooltip("Selected action ID for shooting input.")]
+    [SerializeField] private string shootActionId;
 
     #endregion
 
@@ -42,7 +58,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_PresetId;
+            return presetId;
         }
     }
 
@@ -50,7 +66,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_PresetName;
+            return presetName;
         }
     }
 
@@ -58,7 +74,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_Description;
+            return description;
         }
     }
 
@@ -66,7 +82,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_Version;
+            return version;
         }
     }
 
@@ -74,7 +90,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_MovementSettings;
+            return movementSettings;
         }
     }
 
@@ -82,7 +98,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_LookSettings;
+            return lookSettings;
         }
     }
 
@@ -90,7 +106,15 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_CameraSettings;
+            return cameraSettings;
+        }
+    }
+
+    public ShootingSettings ShootingSettings
+    {
+        get
+        {
+            return shootingSettings;
         }
     }
 
@@ -98,7 +122,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_MoveActionId;
+            return moveActionId;
         }
     }
 
@@ -106,7 +130,15 @@ public sealed class PlayerControllerPreset : ScriptableObject
     {
         get
         {
-            return m_LookActionId;
+            return lookActionId;
+        }
+    }
+
+    public string ShootActionId
+    {
+        get
+        {
+            return shootActionId;
         }
     }
 
@@ -115,21 +147,25 @@ public sealed class PlayerControllerPreset : ScriptableObject
     #region Unity Methods
     private void OnValidate()
     {
-        if (string.IsNullOrWhiteSpace(m_PresetId))
-            m_PresetId = Guid.NewGuid().ToString("N");
+        if (string.IsNullOrWhiteSpace(presetId))
+            presetId = Guid.NewGuid().ToString("N");
 
-        if (m_MovementSettings == null)
-            m_MovementSettings = new MovementSettings();
+        if (movementSettings == null)
+            movementSettings = new MovementSettings();
 
-        if (m_LookSettings == null)
-            m_LookSettings = new LookSettings();
+        if (lookSettings == null)
+            lookSettings = new LookSettings();
 
-        if (m_CameraSettings == null)
-            m_CameraSettings = new CameraSettings();
+        if (cameraSettings == null)
+            cameraSettings = new CameraSettings();
 
-        m_MovementSettings.Validate();
-        m_LookSettings.Validate();
-        m_CameraSettings.Validate();
+        if (shootingSettings == null)
+            shootingSettings = new ShootingSettings();
+
+        movementSettings.Validate();
+        lookSettings.Validate();
+        cameraSettings.Validate();
+        shootingSettings.Validate();
     }
     #endregion
 }

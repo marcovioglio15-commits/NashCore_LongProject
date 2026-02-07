@@ -47,4 +47,11 @@ public enum CameraBehavior
     FollowWithAutoOffset = 2,
     RoomFixed = 3
 }
+
+[Serializable]
+public enum ShootingTriggerMode
+{
+    AutomaticToggle = 0,
+    ManualSingleShot = 1
+}
 #endregion

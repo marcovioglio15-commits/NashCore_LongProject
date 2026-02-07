@@ -15,7 +15,9 @@ namespace UnityExtensions
         // If one isn't found, a new one is attached and returned.
         public static T GetOrAddComponent<T>(this Component component) where T : Component
         {
-            if (!component.TryGetComponent<T>(out var attachedComponent))
+            T attachedComponent;
+
+            if (component.TryGetComponent(out attachedComponent) == false)
             {
                 attachedComponent = component.AddComponent<T>();
             }

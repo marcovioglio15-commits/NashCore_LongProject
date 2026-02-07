@@ -15,7 +15,8 @@ public sealed class InputActionSelectionElement : VisualElement
     {
         Movement = 0,
         Look = 1,
-        Generic = 2
+        Shooting = 2,
+        Generic = 3
     }
 
     private enum ActionTypeFilter
@@ -173,6 +174,10 @@ public sealed class InputActionSelectionElement : VisualElement
             case SelectionMode.Look:
                 m_ActionTypeFilter = ActionTypeFilter.Value;
                 m_ControlTypeFilter = "Vector2";
+                break;
+            case SelectionMode.Shooting:
+                m_ActionTypeFilter = ActionTypeFilter.Button;
+                m_ControlTypeFilter = "Button";
                 break;
             default:
                 m_ActionTypeFilter = ActionTypeFilter.Any;

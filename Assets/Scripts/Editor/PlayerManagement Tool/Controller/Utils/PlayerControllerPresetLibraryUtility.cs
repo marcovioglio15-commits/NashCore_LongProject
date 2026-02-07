@@ -53,7 +53,7 @@ public static class PlayerControllerPresetLibraryUtility
         AssetDatabase.SaveAssets();
 
         SerializedObject serializedPreset = new SerializedObject(preset);
-        SerializedProperty nameProperty = serializedPreset.FindProperty("m_PresetName");
+        SerializedProperty nameProperty = serializedPreset.FindProperty("presetName");
 
         if (nameProperty != null)
             nameProperty.stringValue = presetName;

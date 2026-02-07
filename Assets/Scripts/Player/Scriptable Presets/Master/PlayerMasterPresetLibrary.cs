@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "PlayerMasterPresetLibrary", menuName = "Player/Master Preset Library", order = 15)]
@@ -7,7 +8,8 @@ public sealed class PlayerMasterPresetLibrary : ScriptableObject
     #region Serialized Fields
     [Tooltip("List of registered player master presets.")]
     [Header("Presets")]
-    [SerializeField] private List<PlayerMasterPreset> m_Presets = new List<PlayerMasterPreset>();
+    [FormerlySerializedAs("m_Presets")]
+    [SerializeField] private List<PlayerMasterPreset> presets = new List<PlayerMasterPreset>();
     #endregion
 
     #region Properties
@@ -15,7 +17,7 @@ public sealed class PlayerMasterPresetLibrary : ScriptableObject
     {
         get
         {
-            return m_Presets;
+            return presets;
         }
     }
     #endregion
@@ -26,10 +28,10 @@ public sealed class PlayerMasterPresetLibrary : ScriptableObject
         if (preset == null)
             return;
 
-        if (m_Presets.Contains(preset))
+        if (presets.Contains(preset))
             return;
 
-        m_Presets.Add(preset);
+        presets.Add(preset);
     }
 
     public void RemovePreset(PlayerMasterPreset preset)
@@ -37,10 +39,10 @@ public sealed class PlayerMasterPresetLibrary : ScriptableObject
         if (preset == null)
             return;
 
-        if (m_Presets.Contains(preset) == false)
+        if (presets.Contains(preset) == false)
             return;
 
-        m_Presets.Remove(preset);
+        presets.Remove(preset);
     }
     #endregion
 }

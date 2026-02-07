@@ -8,6 +8,7 @@ public struct PlayerControllerConfigBlob
     public MovementConfig Movement;
     public LookConfig Look;
     public CameraConfig Camera;
+    public ShootingConfig Shooting;
 }
 #endregion
 
@@ -29,6 +30,25 @@ public struct MovementValuesBlob
     public float Deceleration;
     public float InputDeadZone;
     public float DigitalReleaseGraceSeconds;
+}
+#endregion
+
+#region Shooting
+public struct ShootingConfig
+{
+    public ShootingTriggerMode TriggerMode;
+    public byte ProjectilesInheritPlayerSpeed;
+    public float3 ShootOffset;
+    public ShootingValuesBlob Values;
+}
+
+public struct ShootingValuesBlob
+{
+    public float ShootSpeed;
+    public float RateOfFire;
+    public float Range;
+    public float Lifetime;
+    public float Damage;
 }
 #endregion
 

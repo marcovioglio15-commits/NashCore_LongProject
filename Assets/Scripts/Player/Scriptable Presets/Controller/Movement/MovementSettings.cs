@@ -1,26 +1,32 @@
 using System;
+using UnityEngine.Serialization;
 using UnityEngine;
 
 [Serializable]
 public sealed class MovementSettings
 {
     #region Serialized Fields
-    [Tooltip("Defines how many movement directions are allowed.")]
     [Header("Movement Directions")]
-    [SerializeField] private MovementDirectionsMode m_DirectionsMode = MovementDirectionsMode.AllDirections;
+    [Tooltip("Defines how many movement directions are allowed.")]
+    [FormerlySerializedAs("m_DirectionsMode")]
+    [SerializeField] private MovementDirectionsMode directionsMode = MovementDirectionsMode.AllDirections;
 
     [Tooltip("Number of discrete movement directions distributed over 360 degrees.")]
-    [SerializeField] private int m_DiscreteDirectionCount = 8;
+    [FormerlySerializedAs("m_DiscreteDirectionCount")]
+    [SerializeField] private int discreteDirectionCount = 8;
 
     [Tooltip("Angular offset applied to the discrete direction grid (degrees).")]
-    [SerializeField] private float m_DirectionOffsetDegrees = 0f;
+    [FormerlySerializedAs("m_DirectionOffsetDegrees")]
+    [SerializeField] private float directionOffsetDegrees = 0f;
 
     [Tooltip("Reference frame used to orient movement directions.")]
-    [SerializeField] private ReferenceFrame m_MovementReference = ReferenceFrame.PlayerForward;
+    [FormerlySerializedAs("m_MovementReference")]
+    [SerializeField] private ReferenceFrame movementReference = ReferenceFrame.PlayerForward;
 
-    [Tooltip("Numeric movement tuning values.")]
     [Header("Movement Values")]
-    [SerializeField] private MovementValues m_Values = new MovementValues();
+    [Tooltip("Numeric movement tuning values.")]
+    [FormerlySerializedAs("m_Values")]
+    [SerializeField] private MovementValues values = new MovementValues();
     #endregion
 
     #region Properties
@@ -28,7 +34,7 @@ public sealed class MovementSettings
     {
         get
         {
-            return m_DirectionsMode;
+            return directionsMode;
         }
     }
 
@@ -36,7 +42,7 @@ public sealed class MovementSettings
     {
         get
         {
-            return m_DiscreteDirectionCount;
+            return discreteDirectionCount;
         }
     }
 
@@ -44,7 +50,7 @@ public sealed class MovementSettings
     {
         get
         {
-            return m_DirectionOffsetDegrees;
+            return directionOffsetDegrees;
         }
     }
 
@@ -52,7 +58,7 @@ public sealed class MovementSettings
     {
         get
         {
-            return m_MovementReference;
+            return movementReference;
         }
     }
 
@@ -60,7 +66,7 @@ public sealed class MovementSettings
     {
         get
         {
-            return m_Values;
+            return values;
         }
     }
     #endregion
@@ -68,16 +74,16 @@ public sealed class MovementSettings
     #region Validation
     public void Validate()
     {
-        if (m_DiscreteDirectionCount < 1)
-            m_DiscreteDirectionCount = 1;
+        if (discreteDirectionCount < 1)
+            discreteDirectionCount = 1;
 
-        if (m_DirectionsMode == MovementDirectionsMode.DiscreteCount)
-            m_DirectionOffsetDegrees = SnapOffsetToStep(m_DirectionOffsetDegrees, m_DiscreteDirectionCount);
+        if (directionsMode == MovementDirectionsMode.DiscreteCount)
+            directionOffsetDegrees = SnapOffsetToStep(directionOffsetDegrees, discreteDirectionCount);
 
-        if (m_Values == null)
-            m_Values = new MovementValues();
+        if (values == null)
+            values = new MovementValues();
 
-        m_Values.Validate();
+        values.Validate();
     }
 
     private float SnapOffsetToStep(float offset, int count)
@@ -97,22 +103,28 @@ public sealed class MovementValues
 {
     #region Serialized Fields
     [Tooltip("Base movement speed before modifiers.")]
-    [SerializeField] private float m_BaseSpeed = 4f;
+    [FormerlySerializedAs("m_BaseSpeed")]
+    [SerializeField] private float baseSpeed = 4f;
 
     [Tooltip("Maximum allowed movement speed.")]
-    [SerializeField] private float m_MaxSpeed = 6f;
+    [FormerlySerializedAs("m_MaxSpeed")]
+    [SerializeField] private float maxSpeed = 6f;
 
     [Tooltip("Acceleration applied while input is active. Negative values snap to max speed instantly.")]
-    [SerializeField] private float m_Acceleration = 12f;
+    [FormerlySerializedAs("m_Acceleration")]
+    [SerializeField] private float acceleration = 12f;
 
     [Tooltip("Deceleration applied when input is released. Negative values stop instantly.")]
-    [SerializeField] private float m_Deceleration = 14f;
+    [FormerlySerializedAs("m_Deceleration")]
+    [SerializeField] private float deceleration = 14f;
 
     [Tooltip("Input dead zone applied to movement vectors.")]
-    [SerializeField] private float m_InputDeadZone = 0.1f;
+    [FormerlySerializedAs("m_InputDeadZone")]
+    [SerializeField] private float inputDeadZone = 0.1f;
 
     [Tooltip("Grace time (seconds) to keep the last diagonal movement direction when releasing keys.")]
-    [SerializeField] private float m_DigitalReleaseGraceSeconds = 0.08f;
+    [FormerlySerializedAs("m_DigitalReleaseGraceSeconds")]
+    [SerializeField] private float digitalReleaseGraceSeconds = 0.08f;
     #endregion
 
     #region Properties
@@ -120,7 +132,7 @@ public sealed class MovementValues
     {
         get
         {
-            return m_BaseSpeed;
+            return baseSpeed;
         }
     }
 
@@ -128,7 +140,7 @@ public sealed class MovementValues
     {
         get
         {
-            return m_MaxSpeed;
+            return maxSpeed;
         }
     }
 
@@ -136,7 +148,7 @@ public sealed class MovementValues
     {
         get
         {
-            return m_Acceleration;
+            return acceleration;
         }
     }
 
@@ -144,7 +156,7 @@ public sealed class MovementValues
     {
         get
         {
-            return m_Deceleration;
+            return deceleration;
         }
     }
 
@@ -152,7 +164,7 @@ public sealed class MovementValues
     {
         get
         {
-            return m_InputDeadZone;
+            return inputDeadZone;
         }
     }
 
@@ -160,7 +172,7 @@ public sealed class MovementValues
     {
         get
         {
-            return m_DigitalReleaseGraceSeconds;
+            return digitalReleaseGraceSeconds;
         }
     }
     #endregion
@@ -168,17 +180,17 @@ public sealed class MovementValues
     #region Validation
     public void Validate()
     {
-        if (m_BaseSpeed < 0f)
-            m_BaseSpeed = 0f;
+        if (baseSpeed < 0f)
+            baseSpeed = 0f;
 
-        if (m_MaxSpeed < 0f)
-            m_MaxSpeed = 0f;
+        if (maxSpeed < 0f)
+            maxSpeed = 0f;
 
-        if (m_InputDeadZone < 0f)
-            m_InputDeadZone = 0f;
+        if (inputDeadZone < 0f)
+            inputDeadZone = 0f;
 
-        if (m_DigitalReleaseGraceSeconds < 0f)
-            m_DigitalReleaseGraceSeconds = 0f;
+        if (digitalReleaseGraceSeconds < 0f)
+            digitalReleaseGraceSeconds = 0f;
     }
     #endregion
 }

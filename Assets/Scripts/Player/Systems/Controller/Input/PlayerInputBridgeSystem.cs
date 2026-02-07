@@ -9,7 +9,7 @@ public partial struct PlayerInputBridgeSystem : ISystem
 {
     #if UNITY_EDITOR
     #region Editor Debug
-    private static bool s_LoggedInput;
+    private static bool loggedInput;
     #endregion
     #endif
 
@@ -25,10 +25,13 @@ public partial struct PlayerInputBridgeSystem : ISystem
     {
         InputAction moveAction = PlayerInputRuntime.MoveAction;
         InputAction lookAction = PlayerInputRuntime.LookAction;
+        InputAction shootAction = PlayerInputRuntime.ShootAction;
         float2 move = float2.zero;
         float2 look = float2.zero;
+        float shoot = 0f;
+        bool isInputReady = PlayerInputRuntime.IsReady;
 
-        if (PlayerInputRuntime.IsReady)
+        if (isInputReady)
         {
             if (moveAction != null)
             {
@@ -41,21 +44,25 @@ public partial struct PlayerInputBridgeSystem : ISystem
                 Vector2 lookValue = lookAction.ReadValue<Vector2>();
                 look = new float2(lookValue.x, lookValue.y);
             }
+
+            if (shootAction != null)
+            {
+                shoot = shootAction.IsPressed() ? 1f : 0f;
+            }
         }
 
         foreach (RefRW<PlayerInputState> inputState in SystemAPI.Query<RefRW<PlayerInputState>>())
         {
             inputState.ValueRW.Move = move;
             inputState.ValueRW.Look = look;
-            inputState.ValueRW.PrimaryAction = 0f;
-            inputState.ValueRW.SecondaryAction = 0f;
+            inputState.ValueRW.Shoot = shoot;
         }
 
         #if UNITY_EDITOR
-        if (s_LoggedInput == false && (math.lengthsq(move) > 0f || math.lengthsq(look) > 0f))
+        if (loggedInput == false && (math.lengthsq(move) > 0f || math.lengthsq(look) > 0f || shoot > 0f))
         {
-            s_LoggedInput = true;
-            Debug.Log(string.Format("[PlayerInputBridgeSystem] Input detected. Move: {0} | Look: {1}", move, look));
+            loggedInput = true;
+            Debug.Log(string.Format("[PlayerInputBridgeSystem] Input detected. Move: {0} | Look: {1} | Shoot: {2}", move, look, shoot));
         }
 
         #endif

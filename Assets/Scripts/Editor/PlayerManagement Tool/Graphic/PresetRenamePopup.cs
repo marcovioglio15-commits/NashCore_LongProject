@@ -5,19 +5,19 @@ using UnityEngine;
 public sealed class PresetRenamePopup : PopupWindowContent
 {
     #region Fields
-    private readonly string m_Title;
-    private readonly string m_InitialName;
-    private readonly Action<string> m_OnConfirm;
-    private string m_NewName;
+    private readonly string title;
+    private readonly string initialName;
+    private readonly Action<string> onConfirm;
+    private string newName;
     #endregion
 
     #region Constructors
     public PresetRenamePopup(string title, string initialName, Action<string> onConfirm)
     {
-        m_Title = string.IsNullOrWhiteSpace(title) ? "Rename Preset" : title;
-        m_InitialName = initialName ?? string.Empty;
-        m_OnConfirm = onConfirm;
-        m_NewName = m_InitialName;
+        this.title = string.IsNullOrWhiteSpace(title) ? "Rename Preset" : title;
+        this.initialName = initialName ?? string.Empty;
+        this.onConfirm = onConfirm;
+        newName = this.initialName;
     }
     #endregion
 
@@ -37,16 +37,16 @@ public sealed class PresetRenamePopup : PopupWindowContent
 
     public override void OnOpen()
     {
-        m_NewName = m_InitialName;
+        newName = initialName;
         EditorApplication.delayCall += () => EditorGUI.FocusTextInControl("PresetRenameField");
     }
 
     public override void OnGUI(Rect rect)
     {
-        GUILayout.Label(m_Title, EditorStyles.boldLabel);
+        GUILayout.Label(title, EditorStyles.boldLabel);
 
         GUI.SetNextControlName("PresetRenameField");
-        m_NewName = EditorGUILayout.TextField("Name", m_NewName);
+        newName = EditorGUILayout.TextField("Name", newName);
 
         GUILayout.Space(6f);
 
@@ -58,8 +58,8 @@ public sealed class PresetRenamePopup : PopupWindowContent
 
         if (GUILayout.Button("Rename", GUILayout.Width(80f)))
         {
-            if (string.IsNullOrWhiteSpace(m_NewName) == false)
-                m_OnConfirm?.Invoke(m_NewName.Trim());
+            if (string.IsNullOrWhiteSpace(newName) == false)
+                onConfirm?.Invoke(newName.Trim());
 
             editorWindow.Close();
         }

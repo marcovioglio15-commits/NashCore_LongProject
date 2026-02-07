@@ -1,23 +1,28 @@
 using System;
+using UnityEngine.Serialization;
 using UnityEngine;
 
 [Serializable]
 public sealed class CameraSettings
 {
     #region Serialized Fields
-    [Tooltip("Defines the overall camera behavior for the player.")]
     [Header("Camera Behavior")]
-    [SerializeField] private CameraBehavior m_Behavior = CameraBehavior.FollowWithAutoOffset;
+    [Tooltip("Defines the overall camera behavior for the player.")]
+    [FormerlySerializedAs("m_Behavior")]
+    [SerializeField] private CameraBehavior behavior = CameraBehavior.FollowWithAutoOffset;
 
     [Tooltip("Fixed follow offset when using FollowWithOffset behavior.")]
-    [SerializeField] private Vector3 m_FollowOffset = new Vector3(0f, 10f, -8f);
+    [FormerlySerializedAs("m_FollowOffset")]
+    [SerializeField] private Vector3 followOffset = new Vector3(0f, 10f, -8f);
 
     [Tooltip("Anchor used when RoomFixed behavior is selected.")]
-    [SerializeField] private Transform m_RoomAnchor;
+    [FormerlySerializedAs("m_RoomAnchor")]
+    [SerializeField] private Transform roomAnchor;
 
-    [Tooltip("Numeric camera tuning values.")]
     [Header("Camera Values")]
-    [SerializeField] private CameraValues m_Values = new CameraValues();
+    [Tooltip("Numeric camera tuning values.")]
+    [FormerlySerializedAs("m_Values")]
+    [SerializeField] private CameraValues values = new CameraValues();
     #endregion
 
     #region Properties
@@ -25,7 +30,7 @@ public sealed class CameraSettings
     {
         get
         {
-            return m_Behavior;
+            return behavior;
         }
     }
 
@@ -33,7 +38,7 @@ public sealed class CameraSettings
     {
         get
         {
-            return m_FollowOffset;
+            return followOffset;
         }
     }
 
@@ -41,7 +46,7 @@ public sealed class CameraSettings
     {
         get
         {
-            return m_RoomAnchor;
+            return roomAnchor;
         }
     }
 
@@ -49,7 +54,7 @@ public sealed class CameraSettings
     {
         get
         {
-            return m_Values;
+            return values;
         }
     }
     #endregion
@@ -57,10 +62,10 @@ public sealed class CameraSettings
     #region Validation
     public void Validate()
     {
-        if (m_Values == null)
-            m_Values = new CameraValues();
+        if (values == null)
+            values = new CameraValues();
 
-        m_Values.Validate();
+        values.Validate();
     }
     #endregion
 }
@@ -70,19 +75,24 @@ public sealed class CameraValues
 {
     #region Serialized Fields
     [Tooltip("Follow speed for camera target tracking.")]
-    [SerializeField] private float m_FollowSpeed = 8f;
+    [FormerlySerializedAs("m_FollowSpeed")]
+    [SerializeField] private float followSpeed = 8f;
 
     [Tooltip("Lag applied to the camera when following the target.")]
-    [SerializeField] private float m_CameraLag = 0.1f;
+    [FormerlySerializedAs("m_CameraLag")]
+    [SerializeField] private float cameraLag = 0.1f;
 
     [Tooltip("Damping applied to camera movement smoothing.")]
-    [SerializeField] private float m_Damping = 0.15f;
+    [FormerlySerializedAs("m_Damping")]
+    [SerializeField] private float damping = 0.15f;
 
     [Tooltip("Maximum distance the camera can lag behind.")]
-    [SerializeField] private float m_MaxFollowDistance = 6f;
+    [FormerlySerializedAs("m_MaxFollowDistance")]
+    [SerializeField] private float maxFollowDistance = 6f;
 
     [Tooltip("Radius around the target where the camera stays still.")]
-    [SerializeField] private float m_DeadZoneRadius = 0.2f;
+    [FormerlySerializedAs("m_DeadZoneRadius")]
+    [SerializeField] private float deadZoneRadius = 0.2f;
     #endregion
 
     #region Properties
@@ -90,7 +100,7 @@ public sealed class CameraValues
     {
         get
         {
-            return m_FollowSpeed;
+            return followSpeed;
         }
     }
 
@@ -98,7 +108,7 @@ public sealed class CameraValues
     {
         get
         {
-            return m_CameraLag;
+            return cameraLag;
         }
     }
 
@@ -106,7 +116,7 @@ public sealed class CameraValues
     {
         get
         {
-            return m_Damping;
+            return damping;
         }
     }
 
@@ -114,7 +124,7 @@ public sealed class CameraValues
     {
         get
         {
-            return m_MaxFollowDistance;
+            return maxFollowDistance;
         }
     }
 
@@ -122,7 +132,7 @@ public sealed class CameraValues
     {
         get
         {
-            return m_DeadZoneRadius;
+            return deadZoneRadius;
         }
     }
     #endregion
@@ -130,20 +140,20 @@ public sealed class CameraValues
     #region Validation
     public void Validate()
     {
-        if (m_FollowSpeed < 0f)
-            m_FollowSpeed = 0f;
+        if (followSpeed < 0f)
+            followSpeed = 0f;
 
-        if (m_CameraLag < 0f)
-            m_CameraLag = 0f;
+        if (cameraLag < 0f)
+            cameraLag = 0f;
 
-        if (m_Damping < 0f)
-            m_Damping = 0f;
+        if (damping < 0f)
+            damping = 0f;
 
-        if (m_MaxFollowDistance < 0f)
-            m_MaxFollowDistance = 0f;
+        if (maxFollowDistance < 0f)
+            maxFollowDistance = 0f;
 
-        if (m_DeadZoneRadius < 0f)
-            m_DeadZoneRadius = 0f;
+        if (deadZoneRadius < 0f)
+            deadZoneRadius = 0f;
     }
     #endregion
 }
