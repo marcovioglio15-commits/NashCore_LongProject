@@ -1,11 +1,22 @@
 using Unity.Entities;
 
-#region Systems
+/// <summary>
+/// This system handles the despawning of projectile entities when they exceed their maximum range 
+/// or lifetime. It runs after the ProjectileSimulationSystem to ensure that projectile movement 
+/// and state updates have been processed before checking for despawn conditions. 
+/// When a projectile is despawned, 
+/// it is parked and returned to the shooter's projectile pool for reuse.
+/// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(ProjectileSimulationSystem))]
 public partial struct ProjectileDespawnSystem : ISystem
 {
     #region Lifecycle
+    /// <summary>
+    /// Configures the system to require updates for entities that have the Projectile,
+    /// ProjectileRuntimeState, and ProjectileOwner components, as well as the ProjectileActive tag component. 
+    /// This ensures that the system
+    /// </summary>
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<Projectile>();
@@ -13,9 +24,12 @@ public partial struct ProjectileDespawnSystem : ISystem
         state.RequireForUpdate<ProjectileOwner>();
         state.RequireForUpdate<ProjectileActive>();
     }
-    #endregion
 
-    #region Update
+    /// <summary>
+    /// updates the system by iterating through all active projectile entities 
+    /// and checking if they have exceeded their maximum range or lifetime.
+    /// </summary>
+    /// <param name="state"></param>
     public void OnUpdate(ref SystemState state)
     {
         BufferLookup<ProjectilePoolElement> poolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
@@ -49,5 +63,6 @@ public partial struct ProjectileDespawnSystem : ISystem
         }
     }
     #endregion
+
+
 }
-#endregion

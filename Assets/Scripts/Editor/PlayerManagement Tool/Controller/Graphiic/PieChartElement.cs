@@ -110,6 +110,8 @@ public sealed class PieChartElement : VisualElement
     }
     #endregion
 
+    #region Methods
+
     #region Public Methods
     /// <summary>
     /// Replaces the current collection of pie slices with the specified list and updates the layout.
@@ -369,7 +371,7 @@ public sealed class PieChartElement : VisualElement
     }
     #endregion
 
-    #region Private Methods
+    #region Layout Methods
     /// <summary>
     /// Handles geometry change events by updating the overlay layout.
     /// </summary>
@@ -626,7 +628,9 @@ public sealed class PieChartElement : VisualElement
         return left.RadiusOffset.CompareTo(right.RadiusOffset);
     }
     #endregion
-    
+
+    #endregion
+
     #region Nested Types
     /// <summary>
     /// Represents a slice of a pie chart, defined by its start angle, end angle, midpoint angle, and color.

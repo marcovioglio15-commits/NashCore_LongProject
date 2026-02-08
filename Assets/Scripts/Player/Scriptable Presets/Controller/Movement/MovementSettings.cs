@@ -2,6 +2,10 @@ using System;
 using UnityEngine.Serialization;
 using UnityEngine;
 
+/// <summary>
+/// Represents configuration settings for character movement, including direction modes, discrete direction count,
+/// angular offset, movement reference frame, and movement tuning values.
+/// </summary>
 [Serializable]
 public sealed class MovementSettings
 {
@@ -98,6 +102,11 @@ public sealed class MovementSettings
     #endregion
 }
 
+/// <summary>
+/// Represents configurable movement parameters such as speed, 
+/// acceleration, deceleration, input dead zone, and release
+/// grace time.
+/// </summary>
 [Serializable]
 public sealed class MovementValues
 {

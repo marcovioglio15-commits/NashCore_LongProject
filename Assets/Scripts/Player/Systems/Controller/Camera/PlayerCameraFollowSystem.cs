@@ -3,7 +3,10 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-#region Systems
+/// <summary>
+/// This system is responsible for updating the main camera's position to follow the 
+/// player based on the configuration specified in the PlayerControllerConfig component.
+/// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerMovementApplySystem))]
 public partial struct PlayerCameraFollowSystem : ISystem
@@ -17,13 +20,27 @@ public partial struct PlayerCameraFollowSystem : ISystem
     #endregion
 
     #region Lifecycle
+    /// <summary>
+    /// Configures the system to require updates 
+    /// for entities that have the PlayerControllerConfig component, which contains
+    /// a reference to the camera configuration that determines how the camera should follow the player.
+    /// </summary>
+    /// <param name="state"></param>
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerControllerConfig>();
     }
-    #endregion
 
-    #region Update
+    /// <summary>
+    /// Updates the main camera's position based on the player's position and the specified camera behavior 
+    /// in the PlayerControllerConfig. In detail it calculates the desired camera position using 
+    /// the player's position and the configured follow offset,
+    /// then smoothly moves the camera towards that position using the SmoothCameraPosition method from 
+    /// PlayerControllerMath. It also handles different camera behaviors, such as maintaining
+    /// a fixed offset or being a child of the player, 
+    /// and ensures that the camera's position is updated accordingly.
+    /// </summary>
+    /// <param name="state"></param>
     public void OnUpdate(ref SystemState state)
     {
         Camera camera = Camera.main;
@@ -32,6 +49,7 @@ public partial struct PlayerCameraFollowSystem : ISystem
 
         float deltaTime = SystemAPI.Time.DeltaTime;
 
+        // Only support one player camera config at a time, so breaks after the first iteration.
         foreach ((RefRO<LocalTransform> localTransform, RefRO<PlayerControllerConfig> controllerConfig) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerControllerConfig>>())
         {
             ref CameraConfig cameraConfig = ref controllerConfig.ValueRO.Config.Value.Camera;
@@ -48,6 +66,8 @@ public partial struct PlayerCameraFollowSystem : ISystem
 
             float3 offset = cameraConfig.FollowOffset;
 
+            // For FollowWithAutoOffset, we calculate the initial offset from the camera to the player
+            // and maintain that offset.
             switch (cameraConfig.Behavior)
             {
                 case CameraBehavior.FollowWithAutoOffset:
@@ -74,6 +94,7 @@ public partial struct PlayerCameraFollowSystem : ISystem
 
             float3 targetPosition = localTransform.ValueRO.Position + offset;
 
+            // Handle camera behavior modes. For ChildOfPlayer, directly sets the camera's position and rotation
             switch (cameraConfig.Behavior)
             {
                 case CameraBehavior.ChildOfPlayer:
@@ -91,5 +112,6 @@ public partial struct PlayerCameraFollowSystem : ISystem
         }
     }
     #endregion
+
+
 }
-#endregion

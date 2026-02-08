@@ -73,9 +73,6 @@ public sealed class PlayerControllerPresetsPanel
     }
     #endregion
 
-
-    #region Methods
-
     #region Constructors
     /// <summary>
     /// Initializes a new instance of the PlayerControllerPresetsPanel class, setting up the UI and loading required
@@ -93,6 +90,9 @@ public sealed class PlayerControllerPresetsPanel
         RefreshPresetList();
     }
     #endregion
+
+    #region Methods
+
 
     #region UI Construction
     /// <summary>
@@ -1005,6 +1005,7 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void BuildShootingSection()
     {
+        // Shooting Settings Foldout
         Foldout foldout = new Foldout();
         foldout.text = "Shooting Settings";
         foldout.value = true;
@@ -1016,6 +1017,7 @@ public sealed class PlayerControllerPresetsPanel
         if (shootingProperty == null)
             return;
 
+        // Shooting Settings Properties
         SerializedProperty triggerModeProperty = shootingProperty.FindPropertyRelative("triggerMode");
         SerializedProperty inheritPlayerSpeedProperty = shootingProperty.FindPropertyRelative("projectilesInheritPlayerSpeed");
         SerializedProperty projectilePrefabProperty = shootingProperty.FindPropertyRelative("projectilePrefab");
@@ -1024,6 +1026,7 @@ public sealed class PlayerControllerPresetsPanel
         SerializedProperty initialPoolCapacityProperty = shootingProperty.FindPropertyRelative("initialPoolCapacity");
         SerializedProperty poolExpandBatchProperty = shootingProperty.FindPropertyRelative("poolExpandBatch");
 
+        // Build Shooting Settings UI
         EnumField triggerModeField = new EnumField("Trigger Mode");
         triggerModeField.BindProperty(triggerModeProperty);
         foldout.Add(triggerModeField);
@@ -1136,6 +1139,16 @@ public sealed class PlayerControllerPresetsPanel
     #endregion
 
     #region Helpers
+    /// <summary>
+    /// This method constructs a foldout containing a scrollable list of property fields 
+    /// based on the provided serialized property, and binds each field to the corresponding property 
+    /// in the serialized object. 
+    /// The foldout is titled "Values" and is designed to display a set of related properties in a compact, 
+    /// organized manner.
+    /// </summary>
+    /// <param name="valuesProperty"></param>
+    /// <param name="fieldNames"></param>
+    /// <returns></returns>
     private Foldout BuildValuesFoldout(SerializedProperty valuesProperty, string[] fieldNames)
     {
         Foldout foldout = new Foldout();
@@ -1165,6 +1178,14 @@ public sealed class PlayerControllerPresetsPanel
         return foldout;
     }
 
+    /// <summary>
+    /// This method checks if the provided action ID is valid and corresponds to an existing action in the input asset.
+    /// If it does not, the method attempts to find a default action by name and assigns its ID to the property. 
+    /// This ensures that the preset always has a valid action reference, preventing potential issues with missing 
+    /// or invalid action bindings in the UI.
+    /// </summary>
+    /// <param name="actionIdProperty"></param>
+    /// <param name="actionName"></param>
     private void EnsureDefaultActionId(SerializedProperty actionIdProperty, string actionName)
     {
         if (actionIdProperty == null)
@@ -1194,6 +1215,15 @@ public sealed class PlayerControllerPresetsPanel
         m_PresetSerializedObject.ApplyModifiedProperties();
     }
 
+    /// <summary>
+    /// This methpd constructs a foldout containing an InputActionSelectionElement, 
+    /// which allows the user to select and bind input actions from the provided input asset.
+    /// </summary>
+    /// <param name="inputAsset"></param>
+    /// <param name="presetSerializedObject"></param>
+    /// <param name="actionIdProperty"></param>
+    /// <param name="mode"></param>
+    /// <returns></returns>
     private Foldout BuildBindingsFoldout(InputActionAsset inputAsset, SerializedObject presetSerializedObject, SerializedProperty actionIdProperty, InputActionSelectionElement.SelectionMode mode)
     {
         Foldout foldout = new Foldout();
@@ -1206,6 +1236,13 @@ public sealed class PlayerControllerPresetsPanel
         return foldout;
     }
 
+    /// <summary>
+    /// This method creates a slider control for adjusting the zoom level of a pie chart, 
+    /// binding its value change event to update the zoom level 
+    /// of the provided PieChartElement.
+    /// </summary>
+    /// <param name="pieChart"></param>
+    /// <returns></returns>
     private Slider CreatePieZoomSlider(PieChartElement pieChart)
     {
         Slider slider = new Slider("Pie Zoom", 0.6f, 1.6f);
@@ -1255,6 +1292,15 @@ public sealed class PlayerControllerPresetsPanel
     //    return item;
     //}
 
+    /// <summary>
+    /// This method constructs a UI section for displaying and editing discrete multipliers based on the specified sampling mode.
+    /// in detail, it creates a container with a header label and a root element for the multipliers table, 
+    /// which will be populated dynamically 
+    /// based on the current settings of the preset.
+    /// </summary>
+    /// <param name="tableRoot"></param>
+    /// <param name="headerLabel"></param>
+    /// <returns></returns>
     private VisualElement BuildDiscreteMultipliersSection(out VisualElement tableRoot, out Label headerLabel)
     {
         VisualElement container = new VisualElement();
@@ -1273,8 +1319,21 @@ public sealed class PlayerControllerPresetsPanel
         return container;
     }
 
+    /// <summary>
+    /// This method updates the discrete multipliers table based on the current sampling mode, 
+    /// count, and offset. In detail, it clears the existing table and repopulates it with rows 
+    /// corresponding to each discrete direction or arc,
+    /// and binds the max speed and acceleration multiplier fields to the appropriate serialized properties.
+    /// </summary>
+    /// <param name="tableRoot"></param>
+    /// <param name="samplingMode"></param>
+    /// <param name="count"></param>
+    /// <param name="offset"></param>
+    /// <param name="maxSpeedMultipliersProperty"></param>
+    /// <param name="accelerationMultipliersProperty"></param>
     private void UpdateDiscreteMultipliersTable(VisualElement tableRoot, LookMultiplierSampling samplingMode, int count, float offset, SerializedProperty maxSpeedMultipliersProperty, SerializedProperty accelerationMultipliersProperty)
     {
+        // Validate inputs
         if (tableRoot == null)
         {
             return;
@@ -1287,10 +1346,12 @@ public sealed class PlayerControllerPresetsPanel
             return;
         }
 
+        // Ensure the multiplier arrays have the correct size based on the count
         int sliceCount = Mathf.Max(1, count);
         EnsureArraySize(maxSpeedMultipliersProperty, sliceCount);
         EnsureArraySize(accelerationMultipliersProperty, sliceCount);
 
+        // if the properties are arrays, ensure they have the correct size
         string maxSpeedTooltip = samplingMode == LookMultiplierSampling.ArcConstant
             ? "Max speed multiplier for this look arc (constant across the arc)."
             : "Max speed multiplier for this look direction (blended by alignment).";
@@ -1302,6 +1363,7 @@ public sealed class PlayerControllerPresetsPanel
 
         float step = 360f / sliceCount;
 
+        // Build rows for each discrete direction or arc
         for (int i = 0; i < sliceCount; i++)
         {
             SerializedProperty maxSpeedElement = maxSpeedMultipliersProperty.GetArrayElementAtIndex(i);
@@ -1331,6 +1393,7 @@ public sealed class PlayerControllerPresetsPanel
     /// <returns>A VisualElement representing the header row.</returns>
     private VisualElement BuildMultipliersHeaderRow(LookMultiplierSampling samplingMode)
     {
+        // Create a row container for the header
         VisualElement row = new VisualElement();
         row.style.flexDirection = FlexDirection.Row;
         row.style.alignItems = Align.Center;
@@ -1338,6 +1401,7 @@ public sealed class PlayerControllerPresetsPanel
         row.style.flexWrap = Wrap.NoWrap;
         row.style.marginBottom = MultiplierRowSpacing;
 
+        // Add header labels based on the sampling mode
         if (samplingMode == LookMultiplierSampling.ArcConstant)
         {
             row.Add(BuildHeaderLabel("Arc", MultiplierLabelWidth));
@@ -1355,6 +1419,19 @@ public sealed class PlayerControllerPresetsPanel
         return row;
     }
 
+    /// <summary>
+    /// This method constructs a UI row for a discrete direction, 
+    /// including labels for the direction index and angle,
+    /// and float fields for max speed and acceleration multipliers,
+    /// which are bound to the provided serialized properties.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="angle"></param>
+    /// <param name="maxSpeedProperty"></param>
+    /// <param name="accelerationProperty"></param>
+    /// <param name="maxSpeedTooltip"></param>
+    /// <param name="accelerationTooltip"></param>
+    /// <returns></returns>
     private VisualElement BuildDirectionRow(int index, float angle, SerializedProperty maxSpeedProperty, SerializedProperty accelerationProperty, string maxSpeedTooltip, string accelerationTooltip)
     {
         VisualElement row = new VisualElement();
@@ -1378,6 +1455,18 @@ public sealed class PlayerControllerPresetsPanel
         return row;
     }
 
+    /// <summary>
+    /// This method constructs a UI row for a look arc, including labels for the arc index and angle range,
+    /// and float fields for max speed and acceleration multipliers, 
+    /// which are bound to the provided serialized properties.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="range"></param>
+    /// <param name="maxSpeedProperty"></param>
+    /// <param name="accelerationProperty"></param>
+    /// <param name="maxSpeedTooltip"></param>
+    /// <param name="accelerationTooltip"></param>
+    /// <returns></returns>
     private VisualElement BuildArcRow(int index, string range, SerializedProperty maxSpeedProperty, SerializedProperty accelerationProperty, string maxSpeedTooltip, string accelerationTooltip)
     {
         VisualElement row = new VisualElement();
@@ -1401,6 +1490,14 @@ public sealed class PlayerControllerPresetsPanel
         return row;
     }
 
+    /// <summary>
+    /// Creates a styled Label element for use as a header in the multipliers table,
+    /// and configures its width, font size, weight, and text alignment to ensure a consistent 
+    /// appearance across the table.
+    /// </summary>
+    /// <param name="text"></param>
+    /// <param name="width"></param>
+    /// <returns></returns>
     private Label BuildHeaderLabel(string text, float width)
     {
         Label label = new Label(text);
@@ -1415,6 +1512,13 @@ public sealed class PlayerControllerPresetsPanel
         return label;
     }
 
+    /// <summary>
+    /// Builds a styled Label element for a row in the multipliers table, 
+    /// configuring its width and text alignment
+    /// </summary>
+    /// <param name="text"></param>
+    /// <param name="width"></param>
+    /// <returns></returns>
     private Label BuildRowLabel(string text, float width)
     {
         Label label = new Label(text);
@@ -1427,6 +1531,16 @@ public sealed class PlayerControllerPresetsPanel
         return label;
     }
 
+    /// <summary>
+    /// This method creates a FloatField configured to represent a percentage value, 
+    /// binding it to the specified serialized property.
+    /// </summary>
+    /// <param name="property"></param>
+    /// <param name="color"></param>
+    /// <param name="tooltip"></param>
+    /// <param name="label"></param>
+    /// <param name="width"></param>
+    /// <returns></returns>
     private FloatField CreatePercentField(SerializedProperty property, Color color, string tooltip, string label, float width)
     {
         FloatField field = new FloatField(label);
@@ -1470,6 +1584,13 @@ public sealed class PlayerControllerPresetsPanel
         return field;
     }
 
+    /// <summary>
+    /// Formats a range of angles into a human-readable string, normalizing the angles to the [0, 360) range 
+    /// and indicating if the range wraps around the 360-degree point.
+    /// </summary>
+    /// <param name="startAngle"></param>
+    /// <param name="endAngle"></param>
+    /// <returns></returns>
     private string FormatAngleRange(float startAngle, float endAngle)
     {
         float normalizedStart = Mathf.Repeat(startAngle, 360f);
@@ -1485,6 +1606,15 @@ public sealed class PlayerControllerPresetsPanel
         return startText + " - " + endText;
     }
 
+    /// <summary>
+    /// This method updates the segment labels of the provided pie chart based
+    /// on the current look directions mode and sampling mode.
+    /// </summary>
+    /// <param name="pieChart"></param>
+    /// <param name="directionsMode"></param>
+    /// <param name="samplingMode"></param>
+    /// <param name="count"></param>
+    /// <param name="offset"></param>
     private void UpdateLookLabels(PieChartElement pieChart, LookDirectionsMode directionsMode, LookMultiplierSampling samplingMode, int count, float offset)
     {
         if (pieChart == null)
@@ -1502,6 +1632,14 @@ public sealed class PlayerControllerPresetsPanel
         pieChart.SetSegmentLabels(BuildDirectionalLabels(count, offset, prefix));
     }
 
+    /// <summary>
+    /// Builds a list of label descriptors for directional labels based on the specified count, 
+    /// offset, and prefix.
+    /// </summary>
+    /// <param name="count"></param>
+    /// <param name="offset"></param>
+    /// <param name="prefix"></param>
+    /// <returns></returns>
     private List<PieChartElement.LabelDescriptor> BuildDirectionalLabels(int count, float offset, string prefix)
     {
         int sliceCount = Mathf.Max(1, count);
@@ -1526,6 +1664,14 @@ public sealed class PlayerControllerPresetsPanel
         return labels;
     }
 
+    /// <summary>
+    /// This method snaps the provided offset property to the nearest step based on the count of discrete directions,
+    /// and applies the change to the serialized object if necessary. This ensures that the offset aligns with the discrete
+    /// and symmetrical nature of the look directions when in DiscreteCount mode, 
+    /// preventing misalignment between the visual representations.
+    /// </summary>
+    /// <param name="offsetProperty"></param>
+    /// <param name="count"></param>
     private void SnapOffsetToStep(SerializedProperty offsetProperty, int count)
     {
         if (offsetProperty == null)
@@ -1665,6 +1811,16 @@ public sealed class PlayerControllerPresetsPanel
         AddSlice(slices, start, end, color);
     }
 
+
+
+    /// <summary>
+    /// This method adds a pie slice to the provided list of slices based on a starting angle and a step value, 
+    /// which determines the size of the slice.
+    /// </summary>
+    /// <param name="slices"></param>
+    /// <param name="startAngle"></param>
+    /// <param name="step"></param>
+    /// <param name="color"></param>
     private void AddSliceByStep(List<PieChartElement.PieSlice> slices, float startAngle, float step, Color color)
     {
         if (step >= 359.99f)
@@ -1677,6 +1833,13 @@ public sealed class PlayerControllerPresetsPanel
         AddSlice(slices, startAngle, endAngle, color);
     }
 
+    /// <summary>
+    /// Adds a pie slice to the provided list of slices with the specified start and end angles, and color.
+    /// </summary>
+    /// <param name="slices"></param>
+    /// <param name="startAngle"></param>
+    /// <param name="endAngle"></param>
+    /// <param name="color"></param>
     private void AddSlice(List<PieChartElement.PieSlice> slices, float startAngle, float endAngle, Color color)
     {
         PieChartElement.PieSlice slice = new PieChartElement.PieSlice
@@ -1690,6 +1853,12 @@ public sealed class PlayerControllerPresetsPanel
         slices.Add(slice);
     }
 
+    /// <summary>
+    /// Ensures that the provided serialized property, which is expected to be an array, 
+    /// has the specified size.
+    /// </summary>
+    /// <param name="arrayProperty"></param>
+    /// <param name="size"></param>
     private void EnsureArraySize(SerializedProperty arrayProperty, int size)
     {
         if (arrayProperty == null)

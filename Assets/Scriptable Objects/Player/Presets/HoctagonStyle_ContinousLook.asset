@@ -85,7 +85,7 @@ MonoBehaviour:
       maxFollowDistance: 60000
       deadZoneRadius: 0
   shootingSettings:
-    triggerMode: 0
+    triggerMode: 1
     projectilesInheritPlayerSpeed: 1
     projectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
     shootOffset: {x: 0, y: 0, z: 0.5}

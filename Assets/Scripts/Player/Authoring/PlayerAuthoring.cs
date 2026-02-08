@@ -350,6 +350,14 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     #endregion
 
     #region Validation
+    /// <summary>
+    /// This method checks if the assigned projectile prefab is invalid for use in the shooting system. 
+    /// It ensures that the projectile prefab is not null, is not the same GameObject as the player, 
+    /// and does not contain a PlayerAuthoring component to prevent recursive nesting of player prefabs.
+    /// </summary>
+    /// <param name="authoring"></param>
+    /// <param name="projectilePrefabObject"></param>
+    /// <returns></returns>
     private static bool IsInvalidProjectilePrefab(PlayerAuthoring authoring, GameObject projectilePrefabObject)
     {
         if (projectilePrefabObject == null)

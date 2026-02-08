@@ -4,6 +4,10 @@ using Unity.Mathematics;
 using Unity.Transforms;
 
 #region Utilities
+/// <summary>
+/// Provides utility methods for managing projectile entity pools, including pool expansion, 
+/// component setup, and parking logic.
+/// </summary>
 public static class ProjectilePoolUtility
 {
     #region Constants
@@ -11,6 +15,15 @@ public static class ProjectilePoolUtility
     #endregion
 
     #region Public Methods
+    /// <summary>
+    /// Expands the projectile pool for a shooter entity by instantiating additional projectile entities and
+    /// adding them to the pool buffer. Also ensures that each new projectile entity has the necessary components 
+    /// and is parked at a designated position.
+    /// </summary>
+    /// <param name="entityManager">The EntityManager used to manage entities and components.</param>
+    /// <param name="shooterEntity">The entity representing the shooter whose projectile pool is to be expanded.</param>
+    /// <param name="projectilePrefab">The prefab entity used to instantiate new projectile entities.</param>
+    /// <param name="count">The number of projectile entities to add to the pool.</param>
     public static void ExpandPool(EntityManager entityManager, Entity shooterEntity, Entity projectilePrefab, int count)
     {
         if (count <= 0)
@@ -41,6 +54,13 @@ public static class ProjectilePoolUtility
         spawnedProjectiles.Dispose();
     }
 
+
+    /// <summary>
+    /// Ensures that the specified projectile entity has all required projectile-related components, adding any that are
+    /// missing.
+    /// </summary>
+    /// <param name="entityManager">The EntityManager used to query and add components.</param>
+    /// <param name="projectileEntity">The entity representing the projectile to check and update.</param>
     public static void EnsureProjectileComponents(EntityManager entityManager, Entity projectileEntity)
     {
         if (entityManager.HasComponent<LocalTransform>(projectileEntity) == false)
@@ -59,6 +79,12 @@ public static class ProjectilePoolUtility
             entityManager.AddComponent<ProjectileActive>(projectileEntity);
     }
 
+    /// <summary>
+    /// Sets the position of the specified projectile entity to the designated parking position if it has a
+    /// LocalTransform component.
+    /// </summary>
+    /// <param name="entityManager">The EntityManager used to access and modify entity components.</param>
+    /// <param name="projectileEntity">The projectile entity whose position will be set.</param>
     public static void SetProjectileParked(EntityManager entityManager, Entity projectileEntity)
     {
         if (entityManager.HasComponent<LocalTransform>(projectileEntity) == false)

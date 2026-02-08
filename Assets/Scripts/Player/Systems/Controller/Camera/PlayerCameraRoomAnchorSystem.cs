@@ -3,7 +3,6 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-#region Systems
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerCameraFollowSystem))]
 public partial struct PlayerCameraRoomAnchorSystem : ISystem
@@ -13,9 +12,7 @@ public partial struct PlayerCameraRoomAnchorSystem : ISystem
     {
         state.RequireForUpdate<PlayerCameraAnchor>();
     }
-    #endregion
 
-    #region Update
     public void OnUpdate(ref SystemState state)
     {
         Camera camera = Camera.main;
@@ -50,6 +47,7 @@ public partial struct PlayerCameraRoomAnchorSystem : ISystem
             break;
         }
     }
+
     #endregion
+
 }
-#endregion

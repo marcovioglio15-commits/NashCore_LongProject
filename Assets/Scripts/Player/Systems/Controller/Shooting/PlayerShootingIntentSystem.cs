@@ -3,6 +3,15 @@ using Unity.Mathematics;
 using Unity.Transforms;
 
 #region Systems
+/// <summary>
+/// This system processes player input and shooting state to determine when players should shoot 
+/// and enqueues shoot requests accordingly. 
+/// It runs after the PlayerLookDirectionSystem to ensure that the player's look direction is updated
+/// before processing shooting logic, and after the PlayerMovementApplySystem to ensure that player movement is applied before 
+/// determining shooting parameters like spawn position and projectile speed inheritance. Updates after these systems allows the PlayerShootingIntentSystem to have access to the most up-to-date player state information when generating
+/// shoot requests, ensuring that shooting behavior is responsive and consistent with player input 
+/// and movement.
+/// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerLookDirectionSystem))]
 [UpdateAfter(typeof(PlayerMovementApplySystem))]
@@ -13,6 +22,13 @@ public partial struct PlayerShootingIntentSystem : ISystem
     #endregion
 
     #region Lifecycle
+    /// <summary>
+    /// Configures the system to require updates for player entities that have 
+    /// the necessary components for processing shooting logic,
+    /// as well as the ShootRequest buffer to ensure that the system only runs when 
+    /// there are relevant entities to process.
+    /// </summary>
+    /// <param name="state"></param>
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerControllerConfig>();
@@ -77,7 +93,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
                 continue;
 
             // compute how many shots to fire this frame based on the elapsed time and the player's rate of fire,
-            // ensuring we don't exceed the maximum allowed shots per frame for automatic fire
+            // ensuring don't exceed the maximum allowed shots per frame for automatic fire
             float shotInterval = 1f / values.RateOfFire;
             int shotsToFire = ComputeShotsToFire(ref shootingState.ValueRW, shootingConfig.TriggerMode, elapsedTime, shotInterval);
 
@@ -112,6 +128,14 @@ public partial struct PlayerShootingIntentSystem : ISystem
     #endregion
 
     #region Helpers
+    /// <summary>
+    /// This method determines whether the player should shoot 
+    /// based on their shooting trigger mode and current input state.
+    /// </summary>
+    /// <param name="shootingState"></param>
+    /// <param name="triggerMode"></param>
+    /// <param name="shootPressedThisFrame"></param>
+    /// <returns></returns>
     private static bool ResolveShootingTrigger(ref PlayerShootingState shootingState, ShootingTriggerMode triggerMode, bool shootPressedThisFrame)
     {
         switch (triggerMode)
@@ -128,6 +152,17 @@ public partial struct PlayerShootingIntentSystem : ISystem
         }
     }
 
+    /// <summary>
+    /// This method computes how many shots the player should fire 
+    /// in the current frame based on their shooting state,
+    /// and the elapsed time since the last shot, ensuring that the number of shots fired 
+    /// does not exceed the maximum allowed for automatic fire.
+    /// </summary>
+    /// <param name="shootingState"></param>
+    /// <param name="triggerMode"></param>
+    /// <param name="elapsedTime"></param>
+    /// <param name="shotInterval"></param>
+    /// <returns></returns>
     private static int ComputeShotsToFire(ref PlayerShootingState shootingState, ShootingTriggerMode triggerMode, float elapsedTime, float shotInterval)
     {
         float nextShotTime = shootingState.NextShotTime;
@@ -161,6 +196,22 @@ public partial struct PlayerShootingIntentSystem : ISystem
         return shotsToFire;
     }
 
+    /// <summary>
+    /// This method resolves the spawn position for projectiles based on the shooter's position and rotation,
+    /// and an optional shoot offset defined in the shooting config. If the shooter has a muzzle anchor component,
+    /// and the referenced muzzle entity has a LocalToWorld or LocalTransform component, 
+    /// those will be used as the reference for calculating the spawn position and rotation instead of the shooter's transform. 
+    /// This allows projectiles to spawn from the muzzle position and orientation, 
+    /// which can be different from the shooter's main transform, 
+    /// enabling more accurate and visually consistent shooting behavior.
+    /// </summary>
+    /// <param name="shooterEntity"></param>
+    /// <param name="shooterTransform"></param>
+    /// <param name="shootOffset"></param>
+    /// <param name="muzzleLookup"></param>
+    /// <param name="transformLookup"></param>
+    /// <param name="localToWorldLookup"></param>
+    /// <returns></returns>
     private static float3 ResolveSpawnPosition(Entity shooterEntity,
                                                in LocalTransform shooterTransform,
                                                in float3 shootOffset,

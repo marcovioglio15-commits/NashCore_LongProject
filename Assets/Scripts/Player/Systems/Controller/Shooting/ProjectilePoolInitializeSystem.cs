@@ -2,7 +2,12 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
 
-#region Systems
+/// <summary>
+/// This system initializes projectile pools for shooter entities by instantiating 
+/// projectile entities from a specified prefab and adding them to the pool buffer.
+/// It runs after the PlayerControllerInitializeSystem to ensure that shooter entities 
+/// are set up before attempting to initialize their projectile pools.
+/// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerControllerInitializeSystem))]
 public partial struct ProjectilePoolInitializeSystem : ISystem
@@ -17,6 +22,11 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
     #endregion
 
     #region Lifecycle
+    /// <summary>
+    /// Configures the system to require updates for shooter entities that have a ShooterProjectilePrefab, 
+    /// ProjectilePoolState, and ProjectilePoolElement buffer.
+    /// </summary>
+    /// <param name="state"></param>
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<ShooterProjectilePrefab>();
@@ -26,11 +36,17 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
     #endregion
 
     #region Update
+    /// <summary>
+    /// Initializes projectile pools for shooter entities that have not yet been initialized, expanding their capacity
+    /// as needed based on configuration.
+    /// </summary>
+    /// <param name="state">The current system state used to access entities and components.</param>
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
         NativeList<PoolInitializationRequest> initializationRequests = new NativeList<PoolInitializationRequest>(Allocator.Temp);
 
+        // Gather initialization requests for shooter entities that have not yet initialized their projectile pools.
         foreach ((RefRW<ProjectilePoolState> poolState,
                   RefRO<ShooterProjectilePrefab> projectilePrefab,
                   Entity shooterEntity) in SystemAPI.Query<RefRW<ProjectilePoolState>,
@@ -52,6 +68,7 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
             });
         }
 
+        // Process each initialization request, expanding the projectile pool for each shooter entity as needed.
         for (int requestIndex = 0; requestIndex < initializationRequests.Length; requestIndex++)
         {
             PoolInitializationRequest request = initializationRequests[requestIndex];
@@ -76,8 +93,8 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
             }
         }
 
+        // Dispose of the temporary list of initialization requests to free up memory.
         initializationRequests.Dispose();
     }
     #endregion
 }
-#endregion

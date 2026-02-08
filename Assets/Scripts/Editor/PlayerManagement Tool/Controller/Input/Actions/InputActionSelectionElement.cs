@@ -10,35 +10,6 @@ using UnityEngine.UIElements;
 
 public sealed class InputActionSelectionElement : VisualElement
 {
-    #region Types
-    public enum SelectionMode
-    {
-        Movement = 0,
-        Look = 1,
-        Shooting = 2,
-        Generic = 3
-    }
-
-    private enum ActionTypeFilter
-    {
-        Any = 0,
-        Value = 1,
-        Button = 2,
-        PassThrough = 3
-    }
-
-    private sealed class ActionOption
-    {
-        public readonly InputAction Action;
-        public readonly string Label;
-
-        public ActionOption(InputAction action, string label)
-        {
-            Action = action;
-            Label = label;
-        }
-    }
-    #endregion
 
     #region Constants
     private const string AnyControlTypeOption = "<Any>";
@@ -71,6 +42,19 @@ public sealed class InputActionSelectionElement : VisualElement
     #endregion
 
     #region Constructors
+    /// <summary>
+    /// This constructor initializes a new instance of the InputActionSelectionElement class, 
+    /// which provides a UI for selecting an InputAction from a given InputActionAsset. 
+    /// It sets up filters for action name, type, and control type, and allows opening the Input Actions 
+    /// editor for the selected action. 
+    /// The constructor takes in the input asset to pull actions from, 
+    /// a serialized object and property to store the selected action's ID, and a selection mode 
+    /// that applies default filters based on common use cases (e.g., movement, look, shooting).
+    /// </summary>
+    /// <param name="inputAsset"></param>
+    /// <param name="presetSerializedObject"></param>
+    /// <param name="actionIdProperty"></param>
+    /// <param name="mode"></param>
     public InputActionSelectionElement(InputActionAsset inputAsset, SerializedObject presetSerializedObject, SerializedProperty actionIdProperty, SelectionMode mode)
     {
         m_InputAsset = inputAsset;
@@ -516,6 +500,36 @@ public sealed class InputActionSelectionElement : VisualElement
         setAssetMethod.Invoke(window, parameters);
         window.Focus();
         return true;
+    }
+    #endregion
+    
+    #region Nested Types
+    public enum SelectionMode
+    {
+        Movement = 0,
+        Look = 1,
+        Shooting = 2,
+        Generic = 3
+    }
+
+    private enum ActionTypeFilter
+    {
+        Any = 0,
+        Value = 1,
+        Button = 2,
+        PassThrough = 3
+    }
+
+    private sealed class ActionOption
+    {
+        public readonly InputAction Action;
+        public readonly string Label;
+
+        public ActionOption(InputAction action, string label)
+        {
+            Action = action;
+            Label = label;
+        }
     }
     #endregion
 }

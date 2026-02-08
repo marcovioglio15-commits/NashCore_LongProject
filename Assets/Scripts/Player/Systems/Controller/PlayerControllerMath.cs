@@ -1,14 +1,20 @@
-using Unity.Mathematics;
+﻿using Unity.Mathematics;
 
-#region Utilities
+/// <summary>
+/// Provides a collection of mathematical helper methods for player controller systems,
+/// </summary>
 public static class PlayerControllerMath
 {
     #region Direction Helpers
+    // Digital input flags for building a bitmask representation of directional inputs.
     public const byte DigitalUpFlag = 1;
     public const byte DigitalDownFlag = 2;
     public const byte DigitalLeftFlag = 4;
     public const byte DigitalRightFlag = 8;
     public const float DigitalNormalizedDiagonal = 0.70710678f;
+
+    /// Normalizes a direction vector while ignoring the vertical component, 
+    /// returning a fallback direction if the input is too small.
     public static float3 NormalizePlanar(float3 direction, float3 fallback)
     {
         direction.y = 0f;
@@ -19,6 +25,16 @@ public static class PlayerControllerMath
         return math.normalize(direction);
     }
 
+    /// <summary>
+    /// Determines the forward and right basis vectors for movement based on the specified reference frame 
+    /// and available directional inputs.
+    /// </summary>
+    /// <param name="reference"></param>
+    /// <param name="playerForward"></param>
+    /// <param name="cameraForward"></param>
+    /// <param name="hasCamera"></param>
+    /// <param name="forward"></param>
+    /// <param name="right"></param>
     public static void GetReferenceBasis(ReferenceFrame reference, float3 playerForward, float3 cameraForward, bool hasCamera, out float3 forward, out float3 right)
     {
         float3 baseForward;
@@ -39,15 +55,27 @@ public static class PlayerControllerMath
                 break;
         }
 
+        // Project the base forward onto the horizontal plane and compute the right vector.
         forward = NormalizePlanar(baseForward, new float3(0f, 0f, 1f));
         right = math.normalize(math.cross(new float3(0f, 1f, 0f), forward));
     }
 
+    /// <summary>
+    /// Wraps an angle in radians to the range [-π, π], 
+    /// ensuring a consistent representation of angles for calculations and comparisons.
+    /// </summary>
+    /// <param name="angle"></param>
+    /// <returns></returns>
     public static float WrapAngleRadians(float angle)
     {
         return math.atan2(math.sin(angle), math.cos(angle));
     }
 
+    /// <summary>
+    /// Wraps an angle in radians to the range [0, 2π], ensuring a positive representation of the angle.
+    /// </summary>
+    /// <param name="angle"></param>
+    /// <returns></returns>
     public static float WrapAnglePositive(float angle)
     {
         float wrapped = WrapAngleRadians(angle);
@@ -58,6 +86,13 @@ public static class PlayerControllerMath
         return wrapped;
     }
 
+    /// <summary>
+    /// Quantizes an angle in radians to the nearest multiple of a specified step, 
+    /// with an optional offset.
+    /// </summary>
+    /// <param name="angle"></param>
+    /// <param name="step"></param>
+    /// <param name="offset"></param>
     public static float QuantizeAngle(float angle, float step, float offset)
     {
         float relative = WrapAngleRadians(angle - offset);
@@ -65,11 +100,22 @@ public static class PlayerControllerMath
         return WrapAngleRadians(snapped);
     }
 
+    /// <summary>
+    /// Converts an angle in radians to a directional vector on the horizontal plane.
+    /// </summary>
+    /// <param name="angle"></param>
+    /// <returns></returns>
     public static float3 DirectionFromAngle(float angle)
     {
         return new float3(math.sin(angle), 0f, math.cos(angle));
     }
 
+    /// <summary>
+    /// Normalizes a 2D vector while providing a fallback to zero if the input is too small, 
+    /// preventing issues with near-zero vectors.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
     public static float2 NormalizeSafe(float2 value)
     {
         if (math.lengthsq(value) < 1e-6f)
@@ -78,6 +124,12 @@ public static class PlayerControllerMath
         return math.normalize(value);
     }
 
+    /// <summary>
+    /// Determines if a 2D input vector is effectively digital, 
+    /// meaning that each component is close to -1, 0, or 1 within a specified epsilon tolerance.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="epsilon"></param>
     public static bool IsDigitalInput(float2 value, float epsilon)
     {
         float xRounded = math.round(value.x);
@@ -98,11 +150,23 @@ public static class PlayerControllerMath
         return true;
     }
 
+    /// <summary>
+    /// Snaps a 2D input vector to the nearest digital values (-1, 0, or 1) for each component,
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
     public static float2 SnapToDigital(float2 value)
     {
         return new float2(math.round(value.x), math.round(value.y));
     }
 
+    /// <summary>
+    /// Determines if a 2D input vector is "digital-like", 
+    /// meaning that each component is close to -1, 0, or 1 within a specified tolerance,
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="tolerance"></param>
+    /// <returns></returns>
     public static bool IsDigitalLike(float2 value, float tolerance)
     {
         float absX = math.abs(value.x);
@@ -120,6 +184,14 @@ public static class PlayerControllerMath
         return true;
     }
 
+    /// <summary>
+    /// Builds a digital input mask from a 2D input vector by checking each component against a specified threshold.
+    /// In defining the mask, it sets specific bits for up, down, left, and right directions based on whether 
+    /// the input exceeds the threshold in either direction.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="threshold"></param>
+    /// <returns></returns>
     public static byte BuildDigitalMask(float2 input, float threshold)
     {
         byte mask = 0;
@@ -137,6 +209,14 @@ public static class PlayerControllerMath
         return mask;
     }
 
+    /// <summary>
+    /// Updates the press times for each directional input based on the transition 
+    /// from a previous digital mask to a current digital mask.
+    /// </summary>
+    /// <param name="prevMask"></param>
+    /// <param name="currMask"></param>
+    /// <param name="elapsedTime"></param>
+    /// <param name="pressTimes"></param>
     public static void UpdateDigitalPressTimes(byte prevMask, byte currMask, float elapsedTime, ref float4 pressTimes)
     {
         if (WasPressed(prevMask, currMask, DigitalUpFlag))
@@ -152,6 +232,13 @@ public static class PlayerControllerMath
             pressTimes.w = elapsedTime;
     }
 
+    /// <summary>
+    /// Decodes a directional input from a digital mask, resolving conflicts 
+    /// when opposite directions are pressed simultaneously by comparing their press times.
+    /// </summary>
+    /// <param name="mask"></param>
+    /// <param name="pressTimes"></param>
+    /// <returns></returns>
     public static float2 ResolveDigitalMask(byte mask, float4 pressTimes)
     {
         int horizontal = 0;
@@ -190,6 +277,13 @@ public static class PlayerControllerMath
         return new float2(horizontal, vertical);
     }
 
+
+    /// <summary>
+    /// Determines if the given directional input mask represents a diagonal input, 
+    /// meaning it has both horizontal and vertical components active simultaneously.
+    /// </summary>
+    /// <param name="mask"></param>
+    /// <returns></returns>
     public static bool IsDiagonalMask(byte mask)
     {
         if (HasHorizontal(mask) == false)
@@ -201,6 +295,12 @@ public static class PlayerControllerMath
         return true;
     }
 
+    /// <summary>
+    /// Determines if the given directional input mask represents 
+    /// a single axis input (either horizontal or vertical) without any diagonal components.
+    /// </summary>
+    /// <param name="mask"></param>
+    /// <returns></returns>
     public static bool IsSingleAxisMask(byte mask)
     {
         if (mask == 0)
@@ -212,6 +312,13 @@ public static class PlayerControllerMath
         return hasHorizontal ^ hasVertical;
     }
 
+    /// <summary>
+    /// Determines if the transition from prevMask to currMask represents 
+    /// a release of one or more directional inputs without any new presses.
+    /// </summary>
+    /// <param name="prevMask"></param>
+    /// <param name="currMask"></param>
+    /// <returns></returns>
     public static bool IsReleaseOnly(byte prevMask, byte currMask)
     {
         if (prevMask == currMask)
@@ -223,6 +330,16 @@ public static class PlayerControllerMath
         return true;
     }
 
+    /// <summary>
+    /// Tries to quantize an angle to the nearest discrete step and checks if the original angle is 
+    /// within a specified epsilon tolerance of the quantized angle.
+    /// </summary>
+    /// <param name="angle"></param>
+    /// <param name="step"></param>
+    /// <param name="offset"></param>
+    /// <param name="epsilon"></param>
+    /// <param name="alignedAngle"></param>
+    /// <returns></returns>
     public static bool TryGetAlignedDiscreteAngle(float angle, float step, float offset, float epsilon, out float alignedAngle)
     {
         alignedAngle = QuantizeAngle(angle, step, offset);
@@ -236,6 +353,12 @@ public static class PlayerControllerMath
     #endregion
 
     #region Digital Helpers
+    /// <summary>
+    /// Determines if a single axis value is close enough to -1, 0, or 1 to be considered a digital input,
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="tolerance"></param>
+    /// <returns></returns>
     private static bool IsDigitalAxisValue(float value, float tolerance)
     {
         if (value <= tolerance)
@@ -250,6 +373,15 @@ public static class PlayerControllerMath
         return false;
     }
 
+
+    /// <summary>
+    /// Determines if a specific directional input represented by the flag was newly pressed 
+    /// in the transition from prevMask to currMask,
+    /// </summary>
+    /// <param name="prevMask"></param>
+    /// <param name="currMask"></param>
+    /// <param name="flag"></param>
+    /// <returns></returns>
     private static bool WasPressed(byte prevMask, byte currMask, byte flag)
     {
         if ((prevMask & flag) != 0)
@@ -261,6 +393,11 @@ public static class PlayerControllerMath
         return true;
     }
 
+    /// <summary>
+    /// Determines if the given directional input mask has any horizontal components active (left or right),
+    /// </summary>
+    /// <param name="mask"></param>
+    /// <returns></returns>
     private static bool HasHorizontal(byte mask)
     {
         if ((mask & DigitalLeftFlag) != 0)
@@ -272,6 +409,11 @@ public static class PlayerControllerMath
         return false;
     }
 
+    /// <summary>
+    /// Determines if the given directional input mask has any vertical components active (up or down),
+    /// </summary>
+    /// <param name="mask"></param>
+    /// <returns></returns>
     private static bool HasVertical(byte mask)
     {
         if ((mask & DigitalUpFlag) != 0)
@@ -285,6 +427,17 @@ public static class PlayerControllerMath
     #endregion
 
     #region Camera Helpers
+    /// <summary>
+    /// This method calculates a smoothed camera position by interpolating between 
+    /// the current position and a target position,
+    /// accounting for factors such as follow speed, camera lag, damping, 
+    /// and constraints like dead zones and maximum follow distance.
+    /// </summary>
+    /// <param name="current"></param>
+    /// <param name="target"></param>
+    /// <param name="values"></param>
+    /// <param name="deltaTime"></param>
+    /// <returns> The new smoothed camera position after applying the interpolation and constraints.</returns>
     public static float3 SmoothCameraPosition(float3 current, float3 target, in CameraValuesBlob values, float deltaTime)
     {
         float3 toTarget = target - current;
@@ -308,4 +461,3 @@ public static class PlayerControllerMath
     }
     #endregion
 }
-#endregion

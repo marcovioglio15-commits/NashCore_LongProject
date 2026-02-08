@@ -1,7 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-#region Components
 /// <summary>
 /// Represents the look direction and angular speed state for a player entity.
 /// </summary>
@@ -16,4 +15,3 @@ public struct PlayerLookState : IComponentData
     public byte ReleaseHoldMask; // Last diagonal mask held during release stabilization.
     public float ReleaseHoldUntilTime; // Time (seconds) until the release stabilization ends.
 }
-#endregion

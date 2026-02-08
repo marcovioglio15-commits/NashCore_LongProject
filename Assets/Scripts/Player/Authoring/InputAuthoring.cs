@@ -2,6 +2,15 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// This MonoBehaviour serves as the authoring component for player input configuration. 
+/// It initializes the PlayerInputRuntime with the specified InputActionAsset and resolves 
+/// the appropriate PlayerControllerPreset based on a defined priority order 
+/// (PlayerAuthoring source, master preset override, controller preset override). 
+/// The component also includes editor-only functionality to log the presence of 
+/// PlayerControllerConfig entities in the default world, aiding in debugging player 
+/// baking/spawning issues.
+/// </summary>
 [DisallowMultipleComponent]
 public sealed class InputAuthoring : MonoBehaviour
 {
