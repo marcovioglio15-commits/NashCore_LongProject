@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39f6405cc1a3aae4a9b325626981352f, type: 3}
   m_Name: PlayerProgressionPreset
   m_EditorClassIdentifier: Assembly-CSharp::PlayerProgressionPreset
-  m_PresetId: a12bb87a72624927a3ff2c988d1087ee
-  m_PresetName: PlayerProgressionPreset
-  m_Description: 
-  m_Version: 1.0.0
+  presetId: 7de2ebfa24d34acf9c2c030604b2d8e4
+  presetName: PlayerProgressionPreset
+  description: 
+  version: 1.0.0
+  baseStats:
+    health: 100
+    experience: 0

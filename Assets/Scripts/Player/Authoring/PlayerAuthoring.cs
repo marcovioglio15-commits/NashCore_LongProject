@@ -79,6 +79,18 @@ public sealed class PlayerAuthoring : MonoBehaviour
 
         return masterPreset.ControllerPreset;
     }
+
+    /// <summary>
+    /// Retrieves the progression preset from the master preset.
+    /// </summary>
+    /// <returns>The PlayerProgressionPreset from the master preset, or null if the master preset is not set.</returns>
+    public PlayerProgressionPreset GetProgressionPreset()
+    {
+        if (masterPreset == null)
+            return null;
+
+        return masterPreset.ProgressionPreset;
+    }
     #endregion
 
     #region Gizmos
@@ -290,6 +302,21 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         //  Add player controller config component to entity
         AddComponent(entity, config);
 
+        PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
+
+        if (progressionPreset != null)
+        {
+            BlobAssetReference<PlayerProgressionConfigBlob> progressionBlob = BuildProgressionConfigBlob(progressionPreset);
+            AddBlobAsset(ref progressionBlob, out Unity.Entities.Hash128 _);
+
+            PlayerProgressionConfig progressionConfig = new PlayerProgressionConfig
+            {
+                Config = progressionBlob
+            };
+
+            AddComponent(entity, progressionConfig);
+        }
+
         ShootingSettings shootingSettings = controllerPreset.ShootingSettings;
 
         if (shootingSettings != null && shootingSettings.ProjectilePrefab != null)
@@ -390,6 +417,38 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         FillShootingConfig(ref root, preset.ShootingSettings);
 
         BlobAssetReference<PlayerControllerConfigBlob> blob = builder.CreateBlobAssetReference<PlayerControllerConfigBlob>(Unity.Collections.Allocator.Persistent);
+        builder.Dispose();
+
+        return blob;
+    }
+
+    /// <summary>
+    /// Creates a blob asset reference containing player progression configuration data based on the specified preset.
+    /// </summary>
+    /// <param name="preset">The player progression preset used to populate the configuration blob.</param>
+    /// <returns>A persistent blob asset reference to the constructed player progression configuration blob.</returns>
+    private BlobAssetReference<PlayerProgressionConfigBlob> BuildProgressionConfigBlob(PlayerProgressionPreset preset)
+    {
+        BlobBuilder builder = new BlobBuilder(Unity.Collections.Allocator.Temp);
+        ref PlayerProgressionConfigBlob root = ref builder.ConstructRoot<PlayerProgressionConfigBlob>();
+
+        PlayerProgressionBaseStats progressionBaseStats = preset.BaseStats;
+        float health = progressionBaseStats != null ? progressionBaseStats.Health : 100f;
+        float experience = progressionBaseStats != null ? progressionBaseStats.Experience : 0f;
+
+        if (health < 1f)
+            health = 1f;
+
+        if (experience < 0f)
+            experience = 0f;
+
+        root.BaseStats = new PlayerProgressionBaseStatsBlob
+        {
+            Health = health,
+            Experience = experience
+        };
+
+        BlobAssetReference<PlayerProgressionConfigBlob> blob = builder.CreateBlobAssetReference<PlayerProgressionConfigBlob>(Unity.Collections.Allocator.Persistent);
         builder.Dispose();
 
         return blob;

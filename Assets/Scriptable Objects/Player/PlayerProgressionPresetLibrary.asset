@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68f1cca1177a4693930866144f9aaae2, type: 3}
+  m_Name: PlayerProgressionPresetLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerProgressionPresetLibrary
+  presets:
+  - {fileID: 0}
+  - {fileID: 11400000, guid: 5492e432323a98f4b96e8883254e695d, type: 2}
+  - {fileID: 11400000, guid: 28011fec0de976b488e06fd6c9965d1f, type: 2}

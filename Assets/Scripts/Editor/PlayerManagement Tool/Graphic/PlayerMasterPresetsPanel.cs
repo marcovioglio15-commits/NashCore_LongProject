@@ -109,7 +109,7 @@ public sealed class PlayerMasterPresetsPanel
         m_Root.Add(m_TabBar);
         m_Root.Add(m_ContentHost);
 
-        AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot, null);
+        AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot, null, null);
         SetActivePanel(PlayerManagementWindow.PanelType.PlayerMasterPresets);
     }
 
@@ -558,10 +558,8 @@ public sealed class PlayerMasterPresetsPanel
         presetField.BindProperty(presetProperty);
         presetField.RegisterValueChangedCallback(evt =>
         {
-            if (panelType != PlayerManagementWindow.PanelType.PlayerControllerPresets)
-                return;
-
-            SyncOpenSidePanels();
+            if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets || panelType == PlayerManagementWindow.PanelType.LevelUpProgression)
+                SyncOpenSidePanels();
         });
         container.Add(presetField);
 
@@ -706,6 +704,16 @@ public sealed class PlayerMasterPresetsPanel
     private void CreateProgressionPreset()
     {
         PlayerProgressionPreset newPreset = CreateSubPresetAsset<PlayerProgressionPreset>("PlayerProgressionPreset", ProgressionPresetsFolder);
+
+        if (newPreset != null)
+        {
+            PlayerProgressionPresetLibrary progressionLibrary = PlayerProgressionPresetLibraryUtility.GetOrCreateLibrary();
+            Undo.RecordObject(progressionLibrary, "Add Progression Preset");
+            progressionLibrary.AddPreset(newPreset);
+            EditorUtility.SetDirty(progressionLibrary);
+            AssetDatabase.SaveAssets();
+        }
+
         AssignSubPreset("m_ProgressionPreset", newPreset);
     }
 
@@ -734,6 +742,9 @@ public sealed class PlayerMasterPresetsPanel
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("m_PresetName");
+
+        if (nameProperty == null)
+            nameProperty = serializedPreset.FindProperty("presetName");
 
         if (nameProperty != null)
             nameProperty.stringValue = presetName;
@@ -877,12 +888,13 @@ public sealed class PlayerMasterPresetsPanel
         }
 
         PlayerControllerPresetsPanel controllerPanel;
-        VisualElement content = BuildSidePanelContent(panelType, out controllerPanel);
+        PlayerProgressionPresetsPanel progressionPanel;
+        VisualElement content = BuildSidePanelContent(panelType, out controllerPanel, out progressionPanel);
 
         if (content == null)
             return;
 
-        AddTab(panelType, GetPanelTitle(panelType), content, controllerPanel);
+        AddTab(panelType, GetPanelTitle(panelType), content, controllerPanel, progressionPanel);
         SetActivePanel(panelType);
         SyncSidePanelSelection(panelType, m_SidePanels[panelType]);
     }
@@ -918,9 +930,10 @@ public sealed class PlayerMasterPresetsPanel
         return "Animations Bindings";
     }
 
-    private VisualElement BuildSidePanelContent(PlayerManagementWindow.PanelType panelType, out PlayerControllerPresetsPanel controllerPanel)
+    private VisualElement BuildSidePanelContent(PlayerManagementWindow.PanelType panelType, out PlayerControllerPresetsPanel controllerPanel, out PlayerProgressionPresetsPanel progressionPanel)
     {
         controllerPanel = null;
+        progressionPanel = null;
         VisualElement panelRoot = new VisualElement();
         panelRoot.style.flexDirection = FlexDirection.Column;
         panelRoot.style.flexGrow = 1f;
@@ -950,6 +963,13 @@ public sealed class PlayerMasterPresetsPanel
             return panelRoot;
         }
 
+        if (panelType == PlayerManagementWindow.PanelType.LevelUpProgression)
+        {
+            progressionPanel = new PlayerProgressionPresetsPanel();
+            panelRoot.Add(progressionPanel.Root);
+            return panelRoot;
+        }
+
         VisualElement placeholder = new VisualElement();
         placeholder.style.flexGrow = 1f;
         placeholder.style.minHeight = 220f;
@@ -962,7 +982,7 @@ public sealed class PlayerMasterPresetsPanel
         return panelRoot;
     }
 
-    private void AddTab(PlayerManagementWindow.PanelType panelType, string label, VisualElement content, PlayerControllerPresetsPanel controllerPanel)
+    private void AddTab(PlayerManagementWindow.PanelType panelType, string label, VisualElement content, PlayerControllerPresetsPanel controllerPanel, PlayerProgressionPresetsPanel progressionPanel)
     {
         if (m_TabBar == null)
             return;
@@ -984,27 +1004,45 @@ public sealed class PlayerMasterPresetsPanel
             TabContainer = tabContainer,
             TabButton = tabButton,
             Content = content,
-            ControllerPanel = controllerPanel
+            ControllerPanel = controllerPanel,
+            ProgressionPanel = progressionPanel
         };
     }
 
     private void SyncSidePanelSelection(PlayerManagementWindow.PanelType panelType, SidePanelEntry entry)
     {
-        if (panelType != PlayerManagementWindow.PanelType.PlayerControllerPresets)
-            return;
-
-        if (entry == null || entry.ControllerPanel == null)
+        if (entry == null)
             return;
 
         if (m_SelectedPreset == null)
             return;
 
-        PlayerControllerPreset controllerPreset = m_SelectedPreset.ControllerPreset;
+        if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets)
+        {
+            if (entry.ControllerPanel == null)
+                return;
 
-        if (controllerPreset == null)
+            PlayerControllerPreset controllerPreset = m_SelectedPreset.ControllerPreset;
+
+            if (controllerPreset == null)
+                return;
+
+            entry.ControllerPanel.SelectPresetFromExternal(controllerPreset);
             return;
+        }
 
-        entry.ControllerPanel.SelectPresetFromExternal(controllerPreset);
+        if (panelType == PlayerManagementWindow.PanelType.LevelUpProgression)
+        {
+            if (entry.ProgressionPanel == null)
+                return;
+
+            PlayerProgressionPreset progressionPreset = m_SelectedPreset.ProgressionPreset;
+
+            if (progressionPreset == null)
+                return;
+
+            entry.ProgressionPanel.SelectPresetFromExternal(progressionPreset);
+        }
     }
 
     private void SyncOpenSidePanels()
@@ -1084,6 +1122,7 @@ public sealed class PlayerMasterPresetsPanel
         public Button TabButton;
         public VisualElement Content;
         public PlayerControllerPresetsPanel ControllerPanel;
+        public PlayerProgressionPresetsPanel ProgressionPanel;
     }
     #endregion
 }
