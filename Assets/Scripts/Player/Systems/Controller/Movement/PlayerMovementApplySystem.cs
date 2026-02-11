@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 
 #region Systems
@@ -16,6 +17,7 @@ public partial struct PlayerMovementApplySystem : ISystem
     {
         state.RequireForUpdate<PlayerMovementState>();
         state.RequireForUpdate<LocalTransform>();
+        state.RequireForUpdate<PhysicsWorldSingleton>();
     }
     #endregion
 
@@ -23,6 +25,7 @@ public partial struct PlayerMovementApplySystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
+        PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
         int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
 
         if (SystemAPI.TryGetSingleton<PlayerWorldLayersConfig>(out PlayerWorldLayersConfig worldLayersConfig) && worldLayersConfig.WallsLayerMask != 0)
@@ -40,7 +43,8 @@ public partial struct PlayerMovementApplySystem : ISystem
             if (wallsEnabled)
             {
                 float3 currentPosition = localTransform.ValueRO.Position;
-                bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(currentPosition,
+                bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                                                                       currentPosition,
                                                                                        displacement,
                                                                                        PlayerCollisionRadius,
                                                                                        wallsLayerMask,

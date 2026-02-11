@@ -41,6 +41,7 @@ public struct MovementValuesBlob
     public float MaxSpeed;
     public float Acceleration;
     public float Deceleration;
+    public float OppositeDirectionBrakeMultiplier;
     public float InputDeadZone;
     public float DigitalReleaseGraceSeconds;
 }

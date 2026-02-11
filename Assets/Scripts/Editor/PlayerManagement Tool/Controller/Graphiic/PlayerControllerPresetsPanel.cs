@@ -617,10 +617,22 @@ public sealed class PlayerControllerPresetsPanel
         if (preset == null)
             return;
 
-        if (string.IsNullOrWhiteSpace(newName))
+        string normalizedName = PlayerManagementDraftSession.NormalizeAssetName(newName);
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
             return;
 
-        preset.name = newName;
+        SerializedObject presetSerialized = new SerializedObject(preset);
+        SerializedProperty presetNameProperty = presetSerialized.FindProperty("presetName");
+
+        if (presetNameProperty != null)
+        {
+            presetSerialized.Update();
+            presetNameProperty.stringValue = normalizedName;
+            presetSerialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        preset.name = normalizedName;
         EditorUtility.SetDirty(preset);
         PlayerManagementDraftSession.MarkDirty();
         RefreshPresetList();
@@ -786,6 +798,7 @@ public sealed class PlayerControllerPresetsPanel
             "maxSpeed",
             "acceleration",
             "deceleration",
+            "oppositeDirectionBrakeMultiplier",
             "inputDeadZone",
             "digitalReleaseGraceSeconds"
         });

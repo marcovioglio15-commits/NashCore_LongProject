@@ -15,6 +15,10 @@ using Unity.Mathematics;
 [UpdateAfter(typeof(PlayerLookMultiplierSystem))]
 public partial struct PlayerMovementSpeedSystem : ISystem
 {
+    #region Constants
+    private const float OppositeDirectionDotThreshold = -0.2f;
+    #endregion
+
     #region Lifecycle
     /// <summary>
     /// Configures the system to require updates for entities that have 
@@ -38,105 +42,102 @@ public partial struct PlayerMovementSpeedSystem : ISystem
     /// <param name="state"></param>
     public void OnUpdate(ref SystemState state)
     {
-        // Get the time delta for this frame to ensure smooth acceleration and deceleration
         float deltaTime = SystemAPI.Time.DeltaTime;
 
-        // Iterate through all entities that have the required components for movement speed calculation
         foreach ((RefRW<PlayerMovementState> movementState,
                   RefRO<PlayerMovementModifiers> modifiers,
                   RefRO<PlayerControllerConfig> controllerConfig) in SystemAPI.Query<RefRW<PlayerMovementState>, RefRO<PlayerMovementModifiers>, RefRO<PlayerControllerConfig>>())
         {
-            // Get the movement configuration from the controller config blob asset
             ref MovementConfig movementConfig = ref controllerConfig.ValueRO.Config.Value.Movement;
-
-            // Get the desired movement direction from the movement state
             float3 desiredDirection = movementState.ValueRO.DesiredDirection;
             bool hasInput = math.lengthsq(desiredDirection) > 1e-6f;
-
-            // Calculate the effective speed and acceleration multipliers from the modifiers, ensuring they are not negative
             float speedMultiplier = math.max(0f, modifiers.ValueRO.MaxSpeedMultiplier);
             float accelerationMultiplier = math.max(0f, modifiers.ValueRO.AccelerationMultiplier);
             bool forceZeroSpeed = speedMultiplier <= 0f;
-
-
-            // Calculate the base speed, maximum speed, acceleration,
-            // and deceleration values from the movement configuration,
-            // applying the multipliers
             float baseSpeed = movementConfig.Values.BaseSpeed * speedMultiplier;
             float maxSpeed = movementConfig.Values.MaxSpeed * speedMultiplier;
             float acceleration = movementConfig.Values.Acceleration * accelerationMultiplier;
             float deceleration = movementConfig.Values.Deceleration;
+            float oppositeDirectionBrakeMultiplier = math.max(0.01f, movementConfig.Values.OppositeDirectionBrakeMultiplier);
             bool hasMaxSpeed = movementConfig.Values.MaxSpeed > 0f;
 
-            // Ensure that the base speed does not exceed the maximum speed if a maximum speed is defined
             if (maxSpeed > 0f && baseSpeed > maxSpeed)
                 baseSpeed = maxSpeed;
 
-
-            // Get the current velocity from the movement state and calculate the current speed and direction
             float3 currentVelocity = movementState.ValueRO.Velocity;
-            float currentSpeed = math.length(currentVelocity);
-            float3 currentDirection = float3.zero;
+            float3 nextVelocity = currentVelocity;
 
-            // If the current speed is above a small threshold,
-            // calculate the current direction as a normalized vector of the velocity
-            if (currentSpeed > 1e-6f)
-                currentDirection = currentVelocity / currentSpeed;
-
-            // If the speed multiplier is zero or negative, force the current speed to zero
             if (forceZeroSpeed)
             {
-                currentSpeed = 0f;
+                nextVelocity = float3.zero;
             }
-            // Otherwise, if there is input, apply acceleration towards the desired direction,
-            else
+            else if (hasInput)
             {
-                if (hasInput)
-                {
-                    if (baseSpeed > 0f && currentSpeed < baseSpeed)
-                        currentSpeed = baseSpeed;
+                float currentSpeed = math.length(currentVelocity);
+                float3 currentDirection = PlayerControllerMath.NormalizePlanar(currentVelocity, desiredDirection);
+                float directionDot = math.dot(currentDirection, desiredDirection);
+                bool isOppositeDirection = currentSpeed > 1e-6f && directionDot < OppositeDirectionDotThreshold;
 
-                    if (acceleration < 0f)
-                    {
-                        if (hasMaxSpeed)
-                            currentSpeed = maxSpeed;
-                    }
-                    else
-                    {
-                        currentSpeed += acceleration * deltaTime;
-
-                        if (hasMaxSpeed)
-                            currentSpeed = math.min(currentSpeed, maxSpeed);
-                    }
-
-                    currentDirection = desiredDirection;
-                }
-                else
+                if (isOppositeDirection)
                 {
                     if (deceleration < 0f)
                     {
-                        currentSpeed = 0f;
+                        nextVelocity = float3.zero;
                     }
                     else
                     {
-                        currentSpeed -= deceleration * deltaTime;
-
-                        if (currentSpeed < 0f)
-                            currentSpeed = 0f;
+                        float reverseBrakeDelta = math.max(0f, deceleration * oppositeDirectionBrakeMultiplier * deltaTime);
+                        nextVelocity = PlayerControllerMath.MoveTowards(currentVelocity, float3.zero, reverseBrakeDelta);
                     }
+
+                    movementState.ValueRW.Velocity = nextVelocity;
+                    continue;
+                }
+
+                float targetSpeed = currentSpeed;
+
+                if (baseSpeed > 0f && targetSpeed < baseSpeed)
+                    targetSpeed = baseSpeed;
+
+                if (acceleration <= 0f)
+                {
+                    if (hasMaxSpeed)
+                        targetSpeed = maxSpeed;
+                }
+                else
+                {
+                    targetSpeed += acceleration * deltaTime;
+
+                    if (hasMaxSpeed)
+                        targetSpeed = math.min(targetSpeed, maxSpeed);
+                }
+
+                float3 targetVelocity = desiredDirection * targetSpeed;
+
+                if (acceleration <= 0f)
+                {
+                    nextVelocity = targetVelocity;
+                }
+                else
+                {
+                    float maxVelocityDelta = math.max(0f, acceleration * deltaTime);
+                    nextVelocity = PlayerControllerMath.MoveTowards(currentVelocity, targetVelocity, maxVelocityDelta);
+                }
+            }
+            else
+            {
+                if (deceleration < 0f)
+                {
+                    nextVelocity = float3.zero;
+                }
+                else
+                {
+                    float maxVelocityDelta = math.max(0f, deceleration * deltaTime);
+                    nextVelocity = PlayerControllerMath.MoveTowards(currentVelocity, float3.zero, maxVelocityDelta);
                 }
             }
 
-            // Calculate the new velocity based on the current direction and speed,
-            float3 velocity = float3.zero;
-
-            // If the current speed is above a small threshold and the current direction is valid,
-            // calculate the new velocity as the current direction multiplied by the current speed
-            if (currentSpeed > 1e-6f && math.lengthsq(currentDirection) > 1e-6f)
-                velocity = currentDirection * currentSpeed;
-
-            // Update the movement state with the new velocity
-            movementState.ValueRW.Velocity = velocity;
+            movementState.ValueRW.Velocity = nextVelocity;
         }
     }
     #endregion

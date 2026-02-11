@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -159,6 +161,7 @@ public static class PlayerManagementDraftSession
     public static void Apply()
     {
         ExecuteStagedDeletions();
+        ExecutePresetAssetRenames();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         CaptureBaseline();
@@ -333,6 +336,122 @@ public static class PlayerManagementDraftSession
 
             AssetDatabase.DeleteAsset(stagedPath);
         }
+    }
+
+    private static void ExecutePresetAssetRenames()
+    {
+        List<string> assetPaths = CollectTrackedAssetPaths();
+
+        for (int pathIndex = 0; pathIndex < assetPaths.Count; pathIndex++)
+        {
+            string assetPath = assetPaths[pathIndex];
+
+            if (string.IsNullOrWhiteSpace(assetPath))
+                continue;
+
+            if (stagedDeletePaths.Contains(assetPath))
+                continue;
+
+            UnityEngine.Object assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+
+            if (IsRenamablePresetAsset(assetObject) == false)
+                continue;
+
+            string currentFileName = Path.GetFileNameWithoutExtension(assetPath);
+            string targetFileName = NormalizeAssetName(assetObject.name);
+
+            if (string.IsNullOrWhiteSpace(targetFileName))
+                continue;
+
+            if (string.Equals(currentFileName, targetFileName, StringComparison.Ordinal))
+                continue;
+
+            string directoryPath = Path.GetDirectoryName(assetPath);
+
+            if (string.IsNullOrWhiteSpace(directoryPath))
+                continue;
+
+            string normalizedDirectoryPath = directoryPath.Replace('\\', '/');
+            string extension = Path.GetExtension(assetPath);
+            string requestedPath = Path.Combine(normalizedDirectoryPath, targetFileName + extension).Replace('\\', '/');
+            string uniquePath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
+            string renameError = AssetDatabase.MoveAsset(assetPath, uniquePath);
+
+            if (string.IsNullOrWhiteSpace(renameError))
+                continue;
+
+            Debug.LogWarning(string.Format("PlayerManagementDraftSession: failed to rename asset '{0}' to '{1}'. Error: {2}", assetPath, targetFileName, renameError));
+        }
+    }
+
+    private static bool IsRenamablePresetAsset(UnityEngine.Object assetObject)
+    {
+        if (assetObject == null)
+            return false;
+
+        if (assetObject is PlayerMasterPreset)
+            return true;
+
+        if (assetObject is PlayerControllerPreset)
+            return true;
+
+        if (assetObject is PlayerProgressionPreset)
+            return true;
+
+        if (assetObject is PlayerPowerUpsPreset)
+            return true;
+
+        if (assetObject is PlayerAnimationBindingsPreset)
+            return true;
+
+        return false;
+    }
+
+    public static string NormalizeAssetName(string rawName)
+    {
+        if (string.IsNullOrWhiteSpace(rawName))
+            return string.Empty;
+
+        string trimmedName = rawName.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmedName))
+            return string.Empty;
+
+        char[] invalidFileNameChars = Path.GetInvalidFileNameChars();
+        StringBuilder builder = new StringBuilder(trimmedName.Length);
+
+        for (int charIndex = 0; charIndex < trimmedName.Length; charIndex++)
+        {
+            char currentChar = trimmedName[charIndex];
+            bool isInvalidCharacter = false;
+
+            for (int invalidIndex = 0; invalidIndex < invalidFileNameChars.Length; invalidIndex++)
+            {
+                if (currentChar != invalidFileNameChars[invalidIndex])
+                    continue;
+
+                isInvalidCharacter = true;
+                break;
+            }
+
+            if (isInvalidCharacter)
+            {
+                builder.Append('_');
+                continue;
+            }
+
+            builder.Append(currentChar);
+        }
+
+        string normalizedName = builder.ToString().Trim();
+
+        while (normalizedName.EndsWith(".", StringComparison.Ordinal))
+            normalizedName = normalizedName.Substring(0, normalizedName.Length - 1).TrimEnd();
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            return string.Empty;
+
+        return normalizedName;
     }
 
     private static void SyncStagedDeletePaths()

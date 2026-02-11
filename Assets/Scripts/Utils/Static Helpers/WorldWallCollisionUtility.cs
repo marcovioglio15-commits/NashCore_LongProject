@@ -1,8 +1,9 @@
 using Unity.Mathematics;
+using Unity.Physics;
 using UnityEngine;
 
 /// <summary>
-/// Provides shared wall-collision helpers using 3D physics queries on a dedicated wall layer.
+/// Provides shared wall-collision helpers using DOTS Unity Physics queries on a dedicated wall layer.
 /// </summary>
 public static class WorldWallCollisionUtility
 {
@@ -51,7 +52,8 @@ public static class WorldWallCollisionUtility
     #endregion
 
     #region Collision Queries
-    public static bool TryResolveBlockedDisplacement(float3 startPosition,
+    public static bool TryResolveBlockedDisplacement(in PhysicsWorldSingleton physicsWorldSingleton,
+                                                     float3 startPosition,
                                                      float3 desiredDisplacement,
                                                      float collisionRadius,
                                                      int wallsLayerMask,
@@ -71,25 +73,24 @@ public static class WorldWallCollisionUtility
 
         float3 direction = desiredDisplacement / distance;
         float radius = math.max(MinimumSweepRadius, collisionRadius);
-        Vector3 rayOrigin = new Vector3(startPosition.x, startPosition.y, startPosition.z);
-        Vector3 rayDirection = new Vector3(direction.x, direction.y, direction.z);
+        CollisionFilter filter = BuildWallsCollisionFilter(wallsLayerMask);
+        float maxDistance = distance + ContactSkinWidth;
 
-        if (Physics.SphereCast(rayOrigin,
-                               radius,
-                               rayDirection,
-                               out RaycastHit hitInfo,
-                               distance + ContactSkinWidth,
-                               wallsLayerMask,
-                               QueryTriggerInteraction.Ignore) == false)
+        if (physicsWorldSingleton.SphereCast(startPosition,
+                                             radius,
+                                             direction,
+                                             maxDistance,
+                                             out ColliderCastHit hitInfo,
+                                             filter,
+                                             QueryInteraction.IgnoreTriggers) == false)
         {
             return false;
         }
 
-        float travelDistance = math.max(0f, hitInfo.distance - ContactSkinWidth);
+        float hitDistance = hitInfo.Fraction * maxDistance;
+        float travelDistance = math.max(0f, hitDistance - ContactSkinWidth);
         allowedDisplacement = direction * travelDistance;
-
-        Vector3 normal = hitInfo.normal;
-        hitNormal = new float3(normal.x, normal.y, normal.z);
+        hitNormal = hitInfo.SurfaceNormal;
         return true;
     }
 
@@ -107,6 +108,23 @@ public static class WorldWallCollisionUtility
             return velocity;
 
         return velocity - normalizedSurfaceNormal * normalVelocity;
+    }
+    #endregion
+
+    #region Filter Helpers
+    public static CollisionFilter BuildWallsCollisionFilter(int wallsLayerMask)
+    {
+        uint collidesWithMask = wallsLayerMask > 0 ? (uint)wallsLayerMask : 0u;
+
+        if (collidesWithMask == 0u)
+            return CollisionFilter.Zero;
+
+        return new CollisionFilter
+        {
+            BelongsTo = uint.MaxValue,
+            CollidesWith = collidesWithMask,
+            GroupIndex = 0
+        };
     }
     #endregion
 

@@ -109,7 +109,7 @@
                     "name": "PowerUpSecondary",
                     "type": "Button",
                     "id": "348a94c1-2df4-48f8-82f6-83416ff0bd17",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -541,17 +541,6 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "PowerUpPrimary",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "77f12093-2429-4a46-b8a0-8fb109584f4e",
-                    "path": "<Keyboard>/f",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Keyboard&Mouse",
                     "action": "PowerUpPrimary",
                     "isComposite": false,
                     "isPartOfComposite": false

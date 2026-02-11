@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -44,6 +45,7 @@ public partial struct EnemySteeringSystem : ISystem
 
         state.RequireForUpdate(activeEnemiesQuery);
         state.RequireForUpdate(playerQuery);
+        state.RequireForUpdate<PhysicsWorldSingleton>();
     }
 
     public void OnUpdate(ref SystemState state)
@@ -168,6 +170,7 @@ public partial struct EnemySteeringSystem : ISystem
         }
 
         float deltaTime = SystemAPI.Time.DeltaTime;
+        PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
         int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
 
         if (SystemAPI.TryGetSingleton<PlayerWorldLayersConfig>(out PlayerWorldLayersConfig worldLayersConfig) && worldLayersConfig.WallsLayerMask != 0)
@@ -225,7 +228,8 @@ public partial struct EnemySteeringSystem : ISystem
             if (wallsEnabled)
             {
                 float collisionRadius = math.max(0.01f, enemyData.BodyRadius);
-                bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(position,
+                bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                                                                       position,
                                                                                        desiredDisplacement,
                                                                                        collisionRadius,
                                                                                        wallsLayerMask,

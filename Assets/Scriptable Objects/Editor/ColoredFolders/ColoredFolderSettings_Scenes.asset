@@ -21,6 +21,7 @@ MonoBehaviour:
   - Assets/Scenes/Testing/Main Scenes
   - Assets/Scenes/Testing/SubScenes
   - Assets/Scenes/Testing/Main Scenes/SCN_PlayerControllerTesting
+  - Assets/Scenes/Testing/Main Scenes/SCN_PlayerControllerTesting/SCN_PlayerControllerTesting
   folderColors:
   - {r: 1, g: 0.53611743, b: 0, a: 0}
   - {r: 1, g: 0.53611743, b: 0, a: 0}
@@ -30,5 +31,6 @@ MonoBehaviour:
   - {r: 1, g: 0.53611743, b: 0, a: 0}
   - {r: 1, g: 0.53611743, b: 0, a: 0}
   - {r: 1, g: 0.53611743, b: 0, a: 0}
-  folderApplyModes: 0100000001000000010000000100000001000000010000000100000001000000
+  - {r: 1, g: 0.53611743, b: 0, a: 0}
+  folderApplyModes: 010000000100000001000000010000000100000001000000010000000100000001000000
   autoInheritColors: 1

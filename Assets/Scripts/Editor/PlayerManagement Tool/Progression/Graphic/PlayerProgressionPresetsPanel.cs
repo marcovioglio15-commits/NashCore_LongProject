@@ -649,12 +649,24 @@ public sealed class PlayerProgressionPresetsPanel
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(newName))
+        string normalizedName = PlayerManagementDraftSession.NormalizeAssetName(newName);
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
         {
             return;
         }
 
-        preset.name = newName;
+        SerializedObject serializedPreset = new SerializedObject(preset);
+        SerializedProperty presetNameProperty = serializedPreset.FindProperty("presetName");
+
+        if (presetNameProperty != null)
+        {
+            serializedPreset.Update();
+            presetNameProperty.stringValue = normalizedName;
+            serializedPreset.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        preset.name = normalizedName;
         EditorUtility.SetDirty(preset);
         PlayerManagementDraftSession.MarkDirty();
         RefreshPresetList();

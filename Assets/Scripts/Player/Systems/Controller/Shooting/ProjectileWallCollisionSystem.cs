@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 
 /// <summary>
@@ -24,10 +25,12 @@ public partial struct ProjectileWallCollisionSystem : ISystem
         state.RequireForUpdate<ProjectileOwner>();
         state.RequireForUpdate<ProjectileActive>();
         state.RequireForUpdate<LocalTransform>();
+        state.RequireForUpdate<PhysicsWorldSingleton>();
     }
 
     public void OnUpdate(ref SystemState state)
     {
+        PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
         int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
 
         if (SystemAPI.TryGetSingleton<PlayerWorldLayersConfig>(out PlayerWorldLayersConfig worldLayersConfig) && worldLayersConfig.WallsLayerMask != 0)
@@ -60,7 +63,8 @@ public partial struct ProjectileWallCollisionSystem : ISystem
 
             float3 endPosition = projectileTransform.ValueRO.Position;
             float3 startPosition = endPosition - displacement;
-            bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(startPosition,
+            bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                                                                   startPosition,
                                                                                    displacement,
                                                                                    ProjectileCollisionRadius,
                                                                                    wallsLayerMask,

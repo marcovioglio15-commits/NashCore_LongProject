@@ -26,6 +26,27 @@ public static class PlayerControllerMath
     }
 
     /// <summary>
+    /// Moves a vector towards a target by a maximum delta length.
+    /// </summary>
+    /// <param name="current">Current vector.</param>
+    /// <param name="target">Target vector.</param>
+    /// <param name="maxDelta">Maximum allowed delta magnitude.</param>
+    /// <returns>Moved vector clamped by the specified delta.</returns>
+    public static float3 MoveTowards(float3 current, float3 target, float maxDelta)
+    {
+        if (maxDelta <= 0f)
+            return current;
+
+        float3 delta = target - current;
+        float distance = math.length(delta);
+
+        if (distance <= maxDelta || distance <= 1e-6f)
+            return target;
+
+        return current + delta * (maxDelta / distance);
+    }
+
+    /// <summary>
     /// Determines the forward and right basis vectors for movement based on the specified reference frame 
     /// and available directional inputs.
     /// </summary>

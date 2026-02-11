@@ -530,10 +530,22 @@ public sealed class PlayerMasterPresetsPanel
         if (preset == null)
             return;
 
-        if (string.IsNullOrWhiteSpace(newName))
+        string normalizedName = PlayerManagementDraftSession.NormalizeAssetName(newName);
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
             return;
 
-        preset.name = newName;
+        SerializedObject presetSerialized = new SerializedObject(preset);
+        SerializedProperty presetNameProperty = presetSerialized.FindProperty("m_PresetName");
+
+        if (presetNameProperty != null)
+        {
+            presetSerialized.Update();
+            presetNameProperty.stringValue = normalizedName;
+            presetSerialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        preset.name = normalizedName;
         EditorUtility.SetDirty(preset);
         PlayerManagementDraftSession.MarkDirty();
         RefreshPresetList();

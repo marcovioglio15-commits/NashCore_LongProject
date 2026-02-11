@@ -870,6 +870,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 MaxSpeed = movementSettings.Values.MaxSpeed,
                 Acceleration = movementSettings.Values.Acceleration,
                 Deceleration = movementSettings.Values.Deceleration,
+                OppositeDirectionBrakeMultiplier = movementSettings.Values.OppositeDirectionBrakeMultiplier,
                 InputDeadZone = movementSettings.Values.InputDeadZone,
                 DigitalReleaseGraceSeconds = movementSettings.Values.DigitalReleaseGraceSeconds
             }

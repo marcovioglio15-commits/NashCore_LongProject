@@ -127,6 +127,9 @@ public sealed class MovementValues
     [FormerlySerializedAs("m_Deceleration")]
     [SerializeField] private float deceleration = 14f;
 
+    [Tooltip("Multiplier applied to deceleration when reversing direction with opposite input.")]
+    [SerializeField] private float oppositeDirectionBrakeMultiplier = 2.25f;
+
     [Tooltip("Input dead zone applied to movement vectors.")]
     [FormerlySerializedAs("m_InputDeadZone")]
     [SerializeField] private float inputDeadZone = 0.1f;
@@ -177,6 +180,14 @@ public sealed class MovementValues
         }
     }
 
+    public float OppositeDirectionBrakeMultiplier
+    {
+        get
+        {
+            return oppositeDirectionBrakeMultiplier;
+        }
+    }
+
     public float DigitalReleaseGraceSeconds
     {
         get
@@ -194,6 +205,9 @@ public sealed class MovementValues
 
         if (maxSpeed < 0f)
             maxSpeed = 0f;
+
+        if (oppositeDirectionBrakeMultiplier < 0.01f)
+            oppositeDirectionBrakeMultiplier = 0.01f;
 
         if (inputDeadZone < 0f)
             inputDeadZone = 0f;

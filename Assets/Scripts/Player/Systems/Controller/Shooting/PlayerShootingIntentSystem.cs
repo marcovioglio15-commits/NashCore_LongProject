@@ -85,16 +85,33 @@ public partial struct PlayerShootingIntentSystem : ISystem
             bool isShootPressed = inputState.ValueRO.Shoot > 0.5f;
             bool shootPressedThisFrame = isShootPressed && shootingState.ValueRO.PreviousShootPressed == 0;
             shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
+            bool automaticWasEnabled = shootingState.ValueRO.AutomaticEnabled != 0;
+            float shotInterval = 1f / values.RateOfFire;
 
             // based on the shooting trigger mode, determine if the player should shoot this frame
             bool shouldShoot = ResolveShootingTrigger(ref shootingState.ValueRW, shootingConfig.TriggerMode, shootPressedThisFrame);
+            bool automaticIsEnabled = shootingState.ValueRO.AutomaticEnabled != 0;
+
+            if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle)
+            {
+                bool automaticEnabledThisFrame = automaticWasEnabled == false && automaticIsEnabled;
+                bool automaticDisabledThisFrame = automaticWasEnabled && automaticIsEnabled == false;
+
+                if (automaticDisabledThisFrame)
+                {
+                    shootingState.ValueRW.NextShotTime = elapsedTime + shotInterval;
+                    continue;
+                }
+
+                if (automaticEnabledThisFrame)
+                    shootingState.ValueRW.NextShotTime = elapsedTime;
+            }
 
             if (shouldShoot == false)
                 continue;
 
             // compute how many shots to fire this frame based on the elapsed time and the player's rate of fire,
             // ensuring don't exceed the maximum allowed shots per frame for automatic fire
-            float shotInterval = 1f / values.RateOfFire;
             int shotsToFire = ComputeShotsToFire(ref shootingState.ValueRW, shootingConfig.TriggerMode, elapsedTime, shotInterval);
 
             if (shotsToFire <= 0)

@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 
 /// <summary>
@@ -21,11 +22,13 @@ public partial struct PlayerBombMovementSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<BombFuseState>();
+        state.RequireForUpdate<PhysicsWorldSingleton>();
     }
 
     public void OnUpdate(ref SystemState state)
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
+        PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
         int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
 
         if (SystemAPI.TryGetSingleton<PlayerWorldLayersConfig>(out PlayerWorldLayersConfig worldLayersConfig) && worldLayersConfig.WallsLayerMask != 0)
@@ -49,7 +52,8 @@ public partial struct PlayerBombMovementSystem : ISystem
                 if (wallsEnabled)
                 {
                     float collisionRadius = math.max(0.01f, fuseState.ValueRO.CollisionRadius);
-                    hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(position,
+                    hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                                                                     position,
                                                                                      displacement,
                                                                                      collisionRadius,
                                                                                      wallsLayerMask,

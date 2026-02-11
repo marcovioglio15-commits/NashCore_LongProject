@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4c5ed84bdc257044839a6d901f81512, type: 3}
-  m_Name: LucaTesting
+  m_Name: MarcoTesting
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPreset
-  presetId: 500e6105dcef4533adc4397ef12bd002
-  presetName: LucaTesting
+  presetId: 0181b5f78b7a41fabbaa1b1e4dfee06f
+  presetName: 'MarcoTesting '
   description: Ohhhhh Testing
   version: 0.0.1
   movementSettings:
@@ -22,10 +22,11 @@ MonoBehaviour:
     directionOffsetDegrees: 0
     movementReference: 1
     values:
-      baseSpeed: 8
+      baseSpeed: 2
       maxSpeed: 10
       acceleration: 50
       deceleration: 50
+      oppositeDirectionBrakeMultiplier: 2.25
       inputDeadZone: 0.1
       digitalReleaseGraceSeconds: 0.08
   lookSettings:
