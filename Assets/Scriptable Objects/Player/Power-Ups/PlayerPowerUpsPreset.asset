@@ -82,11 +82,11 @@ MonoBehaviour:
     bombData:
       bombPrefab: {fileID: 7369153295349678932, guid: dca4840ccd694c04299341737a490946, type: 3}
       spawnOffset: {x: 0, y: 0, z: 0}
-      deploySpeed: 6
+      deploySpeed: 8
       collisionRadius: 0.18
       bounceOnWalls: 1
       bounceDamping: 0.65
-      linearDampingPerSecond: 0.6
+      linearDampingPerSecond: 0.15
       fuseSeconds: 5
       radius: 10
       damage: 10

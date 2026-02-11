@@ -42,6 +42,8 @@ public struct MovementValuesBlob
     public float Acceleration;
     public float Deceleration;
     public float OppositeDirectionBrakeMultiplier;
+    public float WallBounceCoefficient;
+    public float WallCollisionSkinWidth;
     public float InputDeadZone;
     public float DigitalReleaseGraceSeconds;
 }

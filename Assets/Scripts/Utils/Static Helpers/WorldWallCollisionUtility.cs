@@ -12,7 +12,8 @@ public static class WorldWallCollisionUtility
 
     private const float MinimumTravelDistance = 1e-6f;
     private const float MinimumSweepRadius = 0.001f;
-    private const float ContactSkinWidth = 0.01f;
+    private const float ContactSkinWidth = 0.02f;
+    private const float BlockingDotThreshold = -1e-4f;
     #endregion
 
     #region Fields
@@ -60,6 +61,25 @@ public static class WorldWallCollisionUtility
                                                      out float3 allowedDisplacement,
                                                      out float3 hitNormal)
     {
+        return TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                             startPosition,
+                                             desiredDisplacement,
+                                             collisionRadius,
+                                             wallsLayerMask,
+                                             ContactSkinWidth,
+                                             out allowedDisplacement,
+                                             out hitNormal);
+    }
+
+    public static bool TryResolveBlockedDisplacement(in PhysicsWorldSingleton physicsWorldSingleton,
+                                                     float3 startPosition,
+                                                     float3 desiredDisplacement,
+                                                     float collisionRadius,
+                                                     int wallsLayerMask,
+                                                     float contactSkinWidth,
+                                                     out float3 allowedDisplacement,
+                                                     out float3 hitNormal)
+    {
         allowedDisplacement = desiredDisplacement;
         hitNormal = float3.zero;
 
@@ -73,8 +93,9 @@ public static class WorldWallCollisionUtility
 
         float3 direction = desiredDisplacement / distance;
         float radius = math.max(MinimumSweepRadius, collisionRadius);
+        float clampedContactSkinWidth = math.max(0f, contactSkinWidth);
         CollisionFilter filter = BuildWallsCollisionFilter(wallsLayerMask);
-        float maxDistance = distance + ContactSkinWidth;
+        float maxDistance = distance + clampedContactSkinWidth;
 
         if (physicsWorldSingleton.SphereCast(startPosition,
                                              radius,
@@ -88,9 +109,61 @@ public static class WorldWallCollisionUtility
         }
 
         float hitDistance = hitInfo.Fraction * maxDistance;
-        float travelDistance = math.max(0f, hitDistance - ContactSkinWidth);
-        allowedDisplacement = direction * travelDistance;
+        float approachDot = math.dot(direction, hitInfo.SurfaceNormal);
+
+        if (approachDot >= BlockingDotThreshold)
+            return false;
+
+        float travelDistance = math.max(0f, hitDistance - clampedContactSkinWidth);
+        float depenetrationDistance = math.max(0f, clampedContactSkinWidth - hitDistance);
+        allowedDisplacement = direction * travelDistance + hitInfo.SurfaceNormal * depenetrationDistance;
         hitNormal = hitInfo.SurfaceNormal;
+        return true;
+    }
+
+    public static bool TryResolveMinimumClearance(in PhysicsWorldSingleton physicsWorldSingleton,
+                                                  float3 position,
+                                                  float minimumClearanceDistance,
+                                                  int wallsLayerMask,
+                                                  out float3 correctionDisplacement,
+                                                  out float3 hitNormal)
+    {
+        correctionDisplacement = float3.zero;
+        hitNormal = float3.zero;
+
+        if (wallsLayerMask == 0)
+            return false;
+
+        float clampedMinimumClearance = math.max(0f, minimumClearanceDistance);
+
+        if (clampedMinimumClearance <= 1e-6f)
+            return false;
+
+        PointDistanceInput distanceInput = new PointDistanceInput
+        {
+            Position = position,
+            MaxDistance = clampedMinimumClearance,
+            Filter = BuildWallsCollisionFilter(wallsLayerMask)
+        };
+
+        if (physicsWorldSingleton.CalculateDistance(distanceInput, out DistanceHit distanceHit) == false)
+            return false;
+
+        float requiredCorrectionDistance = clampedMinimumClearance - distanceHit.Distance;
+
+        if (requiredCorrectionDistance <= 1e-6f)
+            return false;
+
+        float3 normal = math.normalizesafe(distanceHit.SurfaceNormal, float3.zero);
+
+        if (math.lengthsq(normal) <= 1e-6f)
+            normal = math.normalizesafe(position - distanceHit.Position, float3.zero);
+
+        if (math.lengthsq(normal) <= 1e-6f)
+            return false;
+
+        correctionDisplacement = normal * requiredCorrectionDistance;
+        hitNormal = normal;
         return true;
     }
 
@@ -108,6 +181,29 @@ public static class WorldWallCollisionUtility
             return velocity;
 
         return velocity - normalizedSurfaceNormal * normalVelocity;
+    }
+
+    public static float3 ComputeBounceVelocity(float3 velocity, float3 surfaceNormal, float bounceCoefficient)
+    {
+        float normalLengthSquared = math.lengthsq(surfaceNormal);
+
+        if (normalLengthSquared <= 1e-6f)
+            return velocity;
+
+        float clampedBounceCoefficient = math.clamp(bounceCoefficient, 0f, 1f);
+
+        if (clampedBounceCoefficient <= 1e-6f)
+            return RemoveVelocityIntoSurface(velocity, surfaceNormal);
+
+        float3 normalizedSurfaceNormal = math.normalize(surfaceNormal);
+        float normalVelocity = math.dot(velocity, normalizedSurfaceNormal);
+
+        if (normalVelocity >= 0f)
+            return velocity;
+
+        float3 tangentialVelocity = velocity - normalizedSurfaceNormal * normalVelocity;
+        float bouncedNormalVelocity = -normalVelocity * clampedBounceCoefficient;
+        return tangentialVelocity + normalizedSurfaceNormal * bouncedNormalVelocity;
     }
     #endregion
 

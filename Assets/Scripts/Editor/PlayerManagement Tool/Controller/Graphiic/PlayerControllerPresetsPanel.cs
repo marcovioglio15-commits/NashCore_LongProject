@@ -799,6 +799,8 @@ public sealed class PlayerControllerPresetsPanel
             "acceleration",
             "deceleration",
             "oppositeDirectionBrakeMultiplier",
+            "wallBounceCoefficient",
+            "wallCollisionSkinWidth",
             "inputDeadZone",
             "digitalReleaseGraceSeconds"
         });

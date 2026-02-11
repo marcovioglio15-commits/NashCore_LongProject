@@ -17,6 +17,7 @@ public partial struct PlayerMovementApplySystem : ISystem
     {
         state.RequireForUpdate<PlayerMovementState>();
         state.RequireForUpdate<LocalTransform>();
+        state.RequireForUpdate<PlayerControllerConfig>();
         state.RequireForUpdate<PhysicsWorldSingleton>();
     }
     #endregion
@@ -33,33 +34,64 @@ public partial struct PlayerMovementApplySystem : ISystem
 
         bool wallsEnabled = wallsLayerMask != 0;
 
-        foreach ((RefRW<LocalTransform> localTransform, RefRW<PlayerMovementState> movementState) in SystemAPI.Query<RefRW<LocalTransform>, RefRW<PlayerMovementState>>())
+        foreach ((RefRW<LocalTransform> localTransform,
+                  RefRW<PlayerMovementState> movementState,
+                  RefRO<PlayerControllerConfig> controllerConfig) in SystemAPI.Query<RefRW<LocalTransform>, RefRW<PlayerMovementState>, RefRO<PlayerControllerConfig>>())
         {
-            float3 displacement = movementState.ValueRO.Velocity * deltaTime;
-
-            if (math.lengthsq(displacement) < 1e-8f)
-                continue;
+            float wallCollisionSkinWidth = math.max(0f, controllerConfig.ValueRO.Config.Value.Movement.Values.WallCollisionSkinWidth);
+            float3 currentPosition = localTransform.ValueRO.Position;
+            float3 resolvedPosition = currentPosition;
+            float3 resolvedVelocity = movementState.ValueRO.Velocity;
+            float3 displacement = resolvedVelocity * deltaTime;
+            bool hasDisplacement = math.lengthsq(displacement) >= 1e-8f;
 
             if (wallsEnabled)
             {
-                float3 currentPosition = localTransform.ValueRO.Position;
-                bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
-                                                                                       currentPosition,
-                                                                                       displacement,
-                                                                                       PlayerCollisionRadius,
-                                                                                       wallsLayerMask,
-                                                                                       out float3 allowedDisplacement,
-                                                                                       out float3 hitNormal);
+                if (hasDisplacement)
+                {
+                    bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                                                                           currentPosition,
+                                                                                           displacement,
+                                                                                           PlayerCollisionRadius,
+                                                                                           wallsLayerMask,
+                                                                                           wallCollisionSkinWidth,
+                                                                                           out float3 allowedDisplacement,
+                                                                                           out float3 hitNormal);
+                    resolvedPosition = currentPosition + allowedDisplacement;
 
-                localTransform.ValueRW.Position = currentPosition + allowedDisplacement;
+                    if (hitWall)
+                    {
+                        float wallBounceCoefficient = controllerConfig.ValueRO.Config.Value.Movement.Values.WallBounceCoefficient;
+                        resolvedVelocity = WorldWallCollisionUtility.ComputeBounceVelocity(resolvedVelocity, hitNormal, wallBounceCoefficient);
+                    }
+                }
 
-                if (hitWall)
-                    movementState.ValueRW.Velocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(movementState.ValueRO.Velocity, hitNormal);
+                float minimumClearanceDistance = PlayerCollisionRadius + wallCollisionSkinWidth;
+
+                for (int solverIteration = 0; solverIteration < 2; solverIteration++)
+                {
+                    bool hasCorrection = WorldWallCollisionUtility.TryResolveMinimumClearance(physicsWorldSingleton,
+                                                                                              resolvedPosition,
+                                                                                              minimumClearanceDistance,
+                                                                                              wallsLayerMask,
+                                                                                              out float3 correctionDisplacement,
+                                                                                              out float3 correctionNormal);
+
+                    if (hasCorrection == false)
+                        break;
+
+                    resolvedPosition += correctionDisplacement;
+                    resolvedVelocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(resolvedVelocity, correctionNormal);
+                }
+
+                localTransform.ValueRW.Position = resolvedPosition;
+                movementState.ValueRW.Velocity = resolvedVelocity;
 
                 continue;
             }
 
-            localTransform.ValueRW.Position += displacement;
+            if (hasDisplacement)
+                localTransform.ValueRW.Position = currentPosition + displacement;
         }
     }
     #endregion

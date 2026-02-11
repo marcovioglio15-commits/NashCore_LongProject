@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MarcoTesting
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPreset
   presetId: 0181b5f78b7a41fabbaa1b1e4dfee06f
-  presetName: 'MarcoTesting '
+  presetName: MarcoTesting
   description: Ohhhhh Testing
   version: 0.0.1
   movementSettings:
@@ -27,6 +27,8 @@ MonoBehaviour:
       acceleration: 50
       deceleration: 50
       oppositeDirectionBrakeMultiplier: 2.25
+      wallBounceCoefficient: 0.35
+      wallCollisionSkinWidth: 0.3
       inputDeadZone: 0.1
       digitalReleaseGraceSeconds: 0.08
   lookSettings:
@@ -103,9 +105,9 @@ MonoBehaviour:
       deadZoneRadius: 0.2
   shootingSettings:
     triggerMode: 0
-    projectilesInheritPlayerSpeed: 0
+    projectilesInheritPlayerSpeed: 1
     projectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
-    shootOffset: {x: 0, y: 0.5, z: 0.8}
+    shootOffset: {x: 0, y: 0, z: 0}
     values:
       shootSpeed: 24
       rateOfFire: 8

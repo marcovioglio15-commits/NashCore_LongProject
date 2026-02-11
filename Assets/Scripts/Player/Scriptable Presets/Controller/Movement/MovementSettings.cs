@@ -130,6 +130,12 @@ public sealed class MovementValues
     [Tooltip("Multiplier applied to deceleration when reversing direction with opposite input.")]
     [SerializeField] private float oppositeDirectionBrakeMultiplier = 2.25f;
 
+    [Tooltip("Bounce coefficient applied to movement velocity when colliding with walls. 0 = slide/stop, 1 = full elastic bounce.")]
+    [SerializeField] private float wallBounceCoefficient = 0.35f;
+
+    [Tooltip("Collision skin width used for wall sweep tests. Higher values avoid clipping but keep more distance from walls.")]
+    [SerializeField] private float wallCollisionSkinWidth = 0.02f;
+
     [Tooltip("Input dead zone applied to movement vectors.")]
     [FormerlySerializedAs("m_InputDeadZone")]
     [SerializeField] private float inputDeadZone = 0.1f;
@@ -188,6 +194,22 @@ public sealed class MovementValues
         }
     }
 
+    public float WallBounceCoefficient
+    {
+        get
+        {
+            return wallBounceCoefficient;
+        }
+    }
+
+    public float WallCollisionSkinWidth
+    {
+        get
+        {
+            return wallCollisionSkinWidth;
+        }
+    }
+
     public float DigitalReleaseGraceSeconds
     {
         get
@@ -208,6 +230,11 @@ public sealed class MovementValues
 
         if (oppositeDirectionBrakeMultiplier < 0.01f)
             oppositeDirectionBrakeMultiplier = 0.01f;
+
+        wallBounceCoefficient = Mathf.Clamp01(wallBounceCoefficient);
+
+        if (wallCollisionSkinWidth < 0f)
+            wallCollisionSkinWidth = 0f;
 
         if (inputDeadZone < 0f)
             inputDeadZone = 0f;

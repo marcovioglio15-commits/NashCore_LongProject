@@ -871,6 +871,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 Acceleration = movementSettings.Values.Acceleration,
                 Deceleration = movementSettings.Values.Deceleration,
                 OppositeDirectionBrakeMultiplier = movementSettings.Values.OppositeDirectionBrakeMultiplier,
+                WallBounceCoefficient = movementSettings.Values.WallBounceCoefficient,
+                WallCollisionSkinWidth = movementSettings.Values.WallCollisionSkinWidth,
                 InputDeadZone = movementSettings.Values.InputDeadZone,
                 DigitalReleaseGraceSeconds = movementSettings.Values.DigitalReleaseGraceSeconds
             }
