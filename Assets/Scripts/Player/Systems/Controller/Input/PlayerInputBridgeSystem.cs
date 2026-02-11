@@ -26,9 +26,13 @@ public partial struct PlayerInputBridgeSystem : ISystem
         InputAction moveAction = PlayerInputRuntime.MoveAction;
         InputAction lookAction = PlayerInputRuntime.LookAction;
         InputAction shootAction = PlayerInputRuntime.ShootAction;
+        InputAction powerUpPrimaryAction = PlayerInputRuntime.PowerUpPrimaryAction;
+        InputAction powerUpSecondaryAction = PlayerInputRuntime.PowerUpSecondaryAction;
         float2 move = float2.zero;
         float2 look = float2.zero;
         float shoot = 0f;
+        float powerUpPrimary = 0f;
+        float powerUpSecondary = 0f;
         bool isInputReady = PlayerInputRuntime.IsReady;
 
         if (isInputReady)
@@ -49,6 +53,16 @@ public partial struct PlayerInputBridgeSystem : ISystem
             {
                 shoot = shootAction.IsPressed() ? 1f : 0f;
             }
+
+            if (powerUpPrimaryAction != null)
+            {
+                powerUpPrimary = powerUpPrimaryAction.IsPressed() ? 1f : 0f;
+            }
+
+            if (powerUpSecondaryAction != null)
+            {
+                powerUpSecondary = powerUpSecondaryAction.IsPressed() ? 1f : 0f;
+            }
         }
 
         foreach (RefRW<PlayerInputState> inputState in SystemAPI.Query<RefRW<PlayerInputState>>())
@@ -56,6 +70,8 @@ public partial struct PlayerInputBridgeSystem : ISystem
             inputState.ValueRW.Move = move;
             inputState.ValueRW.Look = look;
             inputState.ValueRW.Shoot = shoot;
+            inputState.ValueRW.PowerUpPrimary = powerUpPrimary;
+            inputState.ValueRW.PowerUpSecondary = powerUpSecondary;
         }
 
         #if UNITY_EDITOR

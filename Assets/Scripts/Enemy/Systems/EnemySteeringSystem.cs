@@ -168,6 +168,12 @@ public partial struct EnemySteeringSystem : ISystem
         }
 
         float deltaTime = SystemAPI.Time.DeltaTime;
+        int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
+
+        if (SystemAPI.TryGetSingleton<PlayerWorldLayersConfig>(out PlayerWorldLayersConfig worldLayersConfig) && worldLayersConfig.WallsLayerMask != 0)
+            wallsLayerMask = worldLayersConfig.WallsLayerMask;
+
+        bool wallsEnabled = wallsLayerMask != 0;
 
         for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
         {
@@ -213,7 +219,29 @@ public partial struct EnemySteeringSystem : ISystem
             if (velocityMaxSpeed > 0f && velocityMagnitude > velocityMaxSpeed && velocityMagnitude > 1e-6f)
                 runtimeState.Velocity *= velocityMaxSpeed / velocityMagnitude;
 
-            float3 position = enemyTransform.Position + runtimeState.Velocity * deltaTime;
+            float3 desiredDisplacement = runtimeState.Velocity * deltaTime;
+            float3 position = enemyTransform.Position;
+
+            if (wallsEnabled)
+            {
+                float collisionRadius = math.max(0.01f, enemyData.BodyRadius);
+                bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(position,
+                                                                                       desiredDisplacement,
+                                                                                       collisionRadius,
+                                                                                       wallsLayerMask,
+                                                                                       out float3 allowedDisplacement,
+                                                                                       out float3 hitNormal);
+
+                position += allowedDisplacement;
+
+                if (hitWall)
+                    runtimeState.Velocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(runtimeState.Velocity, hitNormal);
+            }
+            else
+            {
+                position += desiredDisplacement;
+            }
+
             position.y = enemyTransform.Position.y;
             enemyTransform.Position = position;
 

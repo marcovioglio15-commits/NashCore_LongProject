@@ -30,6 +30,9 @@ public sealed class InputAuthoring : MonoBehaviour
 
     [Tooltip("Optional controller preset override used when neither a PlayerAuthoring source nor a master preset is available.")]
     [SerializeField] private PlayerControllerPreset controllerPresetOverride;
+
+    [Tooltip("Optional power ups preset override used when no source/master preset provides power-up input bindings.")]
+    [SerializeField] private PlayerPowerUpsPreset powerUpsPresetOverride;
     #endregion
 
     #region Private
@@ -52,6 +55,9 @@ public sealed class InputAuthoring : MonoBehaviour
         string moveActionId = string.Empty;
         string lookActionId = string.Empty;
         string shootActionId = string.Empty;
+        string primaryPowerUpActionId = string.Empty;
+        string secondaryPowerUpActionId = string.Empty;
+        PlayerPowerUpsPreset powerUpsPreset = ResolvePowerUpsPreset();
 
         if (controllerPreset != null)
         {
@@ -60,7 +66,18 @@ public sealed class InputAuthoring : MonoBehaviour
             shootActionId = controllerPreset.ShootActionId;
         }
 
-        PlayerInputRuntime.Initialize(inputActionsAsset, moveActionId, lookActionId, shootActionId);
+        if (powerUpsPreset != null)
+        {
+            primaryPowerUpActionId = powerUpsPreset.PrimaryToolActionId;
+            secondaryPowerUpActionId = powerUpsPreset.SecondaryToolActionId;
+        }
+
+        PlayerInputRuntime.Initialize(inputActionsAsset,
+                                      moveActionId,
+                                      lookActionId,
+                                      shootActionId,
+                                      primaryPowerUpActionId,
+                                      secondaryPowerUpActionId);
 
         #if UNITY_EDITOR
         LogPlayerEntitiesPresence();
@@ -112,6 +129,48 @@ public sealed class InputAuthoring : MonoBehaviour
 
         if (controllerPresetOverride != null)
             return controllerPresetOverride;
+
+        return null;
+    }
+
+    private PlayerPowerUpsPreset ResolvePowerUpsPreset()
+    {
+        PlayerAuthoring authoringSource = playerAuthoringSource;
+
+        if (authoringSource != null)
+        {
+            PlayerPowerUpsPreset presetFromSource = authoringSource.GetPowerUpsPreset();
+
+            if (presetFromSource != null)
+                return presetFromSource;
+        }
+
+        PlayerAuthoring authoring = playerAuthoring;
+
+        if (authoring == null)
+            authoring = GetComponent<PlayerAuthoring>();
+
+        if (authoring != null)
+        {
+            playerAuthoring = authoring;
+            PlayerPowerUpsPreset presetFromAuthoring = authoring.GetPowerUpsPreset();
+
+            if (presetFromAuthoring != null)
+                return presetFromAuthoring;
+        }
+
+        PlayerMasterPreset masterPreset = masterPresetOverride;
+
+        if (masterPreset != null)
+        {
+            PlayerPowerUpsPreset presetFromMaster = masterPreset.PowerUpsPreset;
+
+            if (presetFromMaster != null)
+                return presetFromMaster;
+        }
+
+        if (powerUpsPresetOverride != null)
+            return powerUpsPresetOverride;
 
         return null;
     }

@@ -54,6 +54,9 @@ public sealed class PlayerControllerPresetsPanel
     private ListView m_ListView;
     private ToolbarSearchField m_SearchField;
     private VisualElement m_DetailsRoot;
+    private VisualElement m_SectionButtonsRoot;
+    private VisualElement m_SectionContentRoot;
+    private SectionType m_ActiveSection = SectionType.Metadata;
 
     // Currently selected preset and its serialized object
     private PlayerControllerPreset m_SelectedPreset;
@@ -222,6 +225,25 @@ public sealed class PlayerControllerPresetsPanel
         SelectPreset(preset);
     }
 
+    public void RefreshFromSessionChange()
+    {
+        PlayerControllerPreset previouslySelectedPreset = m_SelectedPreset;
+        RefreshPresetList();
+
+        if (previouslySelectedPreset == null)
+            return;
+
+        int presetIndex = m_FilteredPresets.IndexOf(previouslySelectedPreset);
+
+        if (presetIndex < 0)
+            return;
+
+        if (m_ListView != null)
+            m_ListView.SetSelectionWithoutNotify(new int[] { presetIndex });
+
+        SelectPreset(previouslySelectedPreset);
+    }
+
     /// <summary>
     /// Creates and returns a left-aligned label with a left margin for use as a preset item.
     /// </summary>
@@ -318,6 +340,9 @@ public sealed class PlayerControllerPresetsPanel
                 if (preset == null)
                     continue;
 
+                if (PlayerManagementDraftSession.IsAssetStagedForDeletion(preset))
+                    continue;
+
                 if (IsMatchingSearch(preset, searchText))
                     m_FilteredPresets.Add(preset);
             }
@@ -335,7 +360,9 @@ public sealed class PlayerControllerPresetsPanel
         if (m_SelectedPreset == null || m_FilteredPresets.Contains(m_SelectedPreset) == false)
         {
             SelectPreset(m_FilteredPresets[0]);
-            m_ListView.SetSelection(0);
+
+            if (m_ListView != null)
+                m_ListView.SetSelectionWithoutNotify(new int[] { 0 });
         }
     }
 
@@ -371,10 +398,11 @@ public sealed class PlayerControllerPresetsPanel
         if (newPreset == null)
             return;
 
+        Undo.RegisterCreatedObjectUndo(newPreset, "Create Controller Preset Asset");
         Undo.RecordObject(m_Library, "Add Preset");
         m_Library.AddPreset(newPreset);
         EditorUtility.SetDirty(m_Library);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
 
         RefreshPresetList();
         SelectPreset(newPreset);
@@ -406,7 +434,7 @@ public sealed class PlayerControllerPresetsPanel
         string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
-        AssetDatabase.SaveAssets();
+        Undo.RegisterCreatedObjectUndo(duplicatedPreset, "Duplicate Controller Preset Asset");
 
         SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
         SerializedProperty idProperty = duplicatedSerialized.FindProperty("presetId");
@@ -420,7 +448,7 @@ public sealed class PlayerControllerPresetsPanel
         Undo.RecordObject(m_Library, "Duplicate Preset");
         m_Library.AddPreset(duplicatedPreset);
         EditorUtility.SetDirty(m_Library);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
 
         RefreshPresetList();
         SelectPreset(duplicatedPreset);
@@ -448,15 +476,10 @@ public sealed class PlayerControllerPresetsPanel
         if (confirmed == false)
             return;
 
-        string assetPath = AssetDatabase.GetAssetPath(preset);
-
         Undo.RecordObject(m_Library, "Delete Preset");
         m_Library.RemovePreset(preset);
         EditorUtility.SetDirty(m_Library);
-        AssetDatabase.SaveAssets();
-
-        if (string.IsNullOrWhiteSpace(assetPath) == false)
-            AssetDatabase.DeleteAsset(assetPath);
+        PlayerManagementDraftSession.StageDeleteAsset(preset);
 
         RefreshPresetList();
     }
@@ -471,6 +494,8 @@ public sealed class PlayerControllerPresetsPanel
     {
         m_SelectedPreset = preset;
         m_DetailsRoot.Clear();
+        m_SectionButtonsRoot = null;
+        m_SectionContentRoot = null;
 
         if (m_SelectedPreset == null)
         {
@@ -481,12 +506,14 @@ public sealed class PlayerControllerPresetsPanel
         }
 
         m_PresetSerializedObject = new SerializedObject(m_SelectedPreset);
+        m_SectionButtonsRoot = BuildSectionButtons();
+        m_SectionContentRoot = new VisualElement();
+        m_SectionContentRoot.style.flexDirection = FlexDirection.Column;
+        m_SectionContentRoot.style.flexGrow = 1f;
 
-        BuildMetadataSection();
-        BuildMovementSection();
-        BuildLookSection();
-        BuildShootingSection();
-        BuildCameraSection();
+        m_DetailsRoot.Add(m_SectionButtonsRoot);
+        m_DetailsRoot.Add(m_SectionContentRoot);
+        BuildActiveSection();
     }
 
     /// <summary>
@@ -495,10 +522,13 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void BuildMetadataSection()
     {
+        if (m_SectionContentRoot == null)
+            return;
+
         Label header = new Label("Preset Details");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
-        m_DetailsRoot.Add(header);
+        m_SectionContentRoot.Add(header);
 
         SerializedProperty idProperty = m_PresetSerializedObject.FindProperty("presetId");
         SerializedProperty nameProperty = m_PresetSerializedObject.FindProperty("presetName");
@@ -512,7 +542,7 @@ public sealed class PlayerControllerPresetsPanel
         {
             HandlePresetNameChanged(evt.newValue);
         });
-        m_DetailsRoot.Add(nameField);
+        m_SectionContentRoot.Add(nameField);
 
         TextField versionField = new TextField("Version");
         versionField.isDelayed = true;
@@ -521,7 +551,7 @@ public sealed class PlayerControllerPresetsPanel
         {
             RefreshPresetList();
         });
-        m_DetailsRoot.Add(versionField);
+        m_SectionContentRoot.Add(versionField);
 
         TextField descriptionField = new TextField("Description");
         descriptionField.multiline = true;
@@ -532,7 +562,7 @@ public sealed class PlayerControllerPresetsPanel
         {
             RefreshPresetList();
         });
-        m_DetailsRoot.Add(descriptionField);
+        m_SectionContentRoot.Add(descriptionField);
 
         VisualElement idRow = new VisualElement();
         idRow.style.flexDirection = FlexDirection.Row;
@@ -551,7 +581,7 @@ public sealed class PlayerControllerPresetsPanel
         regenerateButton.style.marginLeft = 6f;
         idRow.Add(regenerateButton);
 
-        m_DetailsRoot.Add(idRow);
+        m_SectionContentRoot.Add(idRow);
     }
 
     /// <summary>
@@ -590,19 +620,9 @@ public sealed class PlayerControllerPresetsPanel
         if (string.IsNullOrWhiteSpace(newName))
             return;
 
-        string assetPath = AssetDatabase.GetAssetPath(preset);
-
-        if (string.IsNullOrWhiteSpace(assetPath) == false)
-        {
-            string error = AssetDatabase.RenameAsset(assetPath, newName);
-
-            if (string.IsNullOrWhiteSpace(error) == false)
-                Debug.LogWarning("Preset rename failed: " + error);
-        }
-
         preset.name = newName;
         EditorUtility.SetDirty(preset);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
         RefreshPresetList();
     }
 
@@ -634,6 +654,79 @@ public sealed class PlayerControllerPresetsPanel
 
         return name + " v. " + version;
     }
+
+    private VisualElement BuildSectionButtons()
+    {
+        VisualElement buttonsRoot = new VisualElement();
+        buttonsRoot.style.flexDirection = FlexDirection.Row;
+        buttonsRoot.style.flexWrap = Wrap.Wrap;
+        buttonsRoot.style.marginBottom = 6f;
+
+        AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
+        AddSectionButton(buttonsRoot, SectionType.Movement, "Movement");
+        AddSectionButton(buttonsRoot, SectionType.Look, "Look");
+        AddSectionButton(buttonsRoot, SectionType.Shooting, "Shooting");
+        AddSectionButton(buttonsRoot, SectionType.Camera, "Camera");
+        return buttonsRoot;
+    }
+
+    private void AddSectionButton(VisualElement parent, SectionType sectionType, string buttonLabel)
+    {
+        Button sectionButton = new Button(() => SetActiveSection(sectionType));
+        sectionButton.text = buttonLabel;
+        sectionButton.style.marginRight = 4f;
+        sectionButton.style.marginBottom = 4f;
+        parent.Add(sectionButton);
+    }
+
+    private void SetActiveSection(SectionType sectionType)
+    {
+        m_ActiveSection = sectionType;
+        BuildActiveSection();
+    }
+
+    private void BuildActiveSection()
+    {
+        if (m_SectionContentRoot == null)
+            return;
+
+        m_SectionContentRoot.Clear();
+
+        switch (m_ActiveSection)
+        {
+            case SectionType.Metadata:
+                BuildMetadataSection();
+                return;
+            case SectionType.Movement:
+                BuildMovementSection();
+                return;
+            case SectionType.Look:
+                BuildLookSection();
+                return;
+            case SectionType.Shooting:
+                BuildShootingSection();
+                return;
+            case SectionType.Camera:
+                BuildCameraSection();
+                return;
+        }
+    }
+
+    private VisualElement CreateSectionContainer(string sectionTitle)
+    {
+        if (m_SectionContentRoot == null)
+            return null;
+
+        VisualElement container = new VisualElement();
+        container.style.marginTop = SectionMarginTop;
+
+        Label header = new Label(sectionTitle);
+        header.style.unityFontStyleAndWeight = FontStyle.Bold;
+        header.style.marginBottom = 4f;
+        container.Add(header);
+        m_SectionContentRoot.Add(container);
+        return container;
+    }
     #endregion
 
     #region Movement Section
@@ -643,13 +736,16 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void BuildMovementSection()
     {
-        Foldout foldout = new Foldout();
-        foldout.text = "Movement Settings";
-        foldout.value = true;
-        foldout.style.marginTop = 8f;
-        m_DetailsRoot.Add(foldout);
+        VisualElement section = CreateSectionContainer("Movement Settings");
+
+        if (section == null)
+            return;
 
         SerializedProperty movementProperty = m_PresetSerializedObject.FindProperty("movementSettings");
+
+        if (movementProperty == null)
+            return;
+
         SerializedProperty modeProperty = movementProperty.FindPropertyRelative("directionsMode");
         SerializedProperty countProperty = movementProperty.FindPropertyRelative("discreteDirectionCount");
         SerializedProperty offsetProperty = movementProperty.FindPropertyRelative("directionOffsetDegrees");
@@ -658,7 +754,7 @@ public sealed class PlayerControllerPresetsPanel
 
         EnumField modeField = new EnumField("Allowed Directions");
         modeField.BindProperty(modeProperty);
-        foldout.Add(modeField);
+        section.Add(modeField);
 
         VisualElement discreteContainer = new VisualElement();
         discreteContainer.style.marginLeft = 8f;
@@ -672,17 +768,17 @@ public sealed class PlayerControllerPresetsPanel
         discreteContainer.Add(pieChart);
         discreteContainer.Add(movementZoomSlider);
 
-        foldout.Add(discreteContainer);
+        section.Add(discreteContainer);
 
         EnumField referenceField = new EnumField("Movement Reference");
         referenceField.BindProperty(referenceProperty);
-        foldout.Add(referenceField);
+        section.Add(referenceField);
 
         SerializedProperty moveActionProperty = m_PresetSerializedObject.FindProperty("moveActionId");
         EnsureDefaultActionId(moveActionProperty, "Move");
 
         Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, moveActionProperty, InputActionSelectionElement.SelectionMode.Movement);
-        foldout.Add(bindingsFoldout);
+        section.Add(bindingsFoldout);
 
         Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
         {
@@ -693,7 +789,7 @@ public sealed class PlayerControllerPresetsPanel
             "inputDeadZone",
             "digitalReleaseGraceSeconds"
         });
-        foldout.Add(valuesFoldout);
+        section.Add(valuesFoldout);
 
         Action updateView = () =>
         {
@@ -729,15 +825,17 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void BuildLookSection()
     {
-        // Look Settings Foldout
-        Foldout foldout = new Foldout();
-        foldout.text = "Look Settings";
-        foldout.value = true;
-        foldout.style.marginTop = 8f;
-        m_DetailsRoot.Add(foldout);
+        VisualElement section = CreateSectionContainer("Look Settings");
+
+        if (section == null)
+            return;
 
         // Look Settings Properties
         SerializedProperty lookProperty = m_PresetSerializedObject.FindProperty("lookSettings");
+
+        if (lookProperty == null)
+            return;
+
         SerializedProperty directionsModeProperty = lookProperty.FindPropertyRelative("m_DirectionsMode");
         SerializedProperty countProperty = lookProperty.FindPropertyRelative("m_DiscreteDirectionCount");
         SerializedProperty offsetProperty = lookProperty.FindPropertyRelative("m_DirectionOffsetDegrees");
@@ -774,7 +872,7 @@ public sealed class PlayerControllerPresetsPanel
         // Build Look Settings UI
         EnumField directionsModeField = new EnumField("Allowed Directions");
         directionsModeField.BindProperty(directionsModeProperty);
-        foldout.Add(directionsModeField);
+        section.Add(directionsModeField);
 
         // Discrete Directions Container
         VisualElement discreteContainer = new VisualElement();
@@ -811,27 +909,27 @@ public sealed class PlayerControllerPresetsPanel
         Slider lookZoomSlider = CreatePieZoomSlider(pieChart);
         VisualElement multipliersSection = BuildDiscreteMultipliersSection(out VisualElement multipliersTableRoot, out Label multipliersHeader);
 
-        foldout.Add(discreteContainer);
-        foldout.Add(conesContainer);
+        section.Add(discreteContainer);
+        section.Add(conesContainer);
         //foldout.Add(multiplierLegend);
-        foldout.Add(pieChart);
-        foldout.Add(lookZoomSlider);
-        foldout.Add(multipliersSection);
+        section.Add(pieChart);
+        section.Add(lookZoomSlider);
+        section.Add(multipliersSection);
 
         // Rotation Mode Field
         EnumField rotationModeField = new EnumField("Rotation Mode");
         rotationModeField.BindProperty(rotationModeProperty);
-        foldout.Add(rotationModeField);
+        section.Add(rotationModeField);
 
         // Rotation Speed Field
         FloatField rotationSpeedField = new FloatField("Rotation Speed");
         rotationSpeedField.BindProperty(rotationSpeedProperty);
-        foldout.Add(rotationSpeedField);
+        section.Add(rotationSpeedField);
 
         // Multiplier Sampling Field
         EnumField samplingField = new EnumField("Multiplier Sampling");
         samplingField.BindProperty(samplingProperty);
-        foldout.Add(samplingField);
+        section.Add(samplingField);
 
         // Input Bindings
         SerializedProperty lookActionProperty = m_PresetSerializedObject.FindProperty("lookActionId");
@@ -839,7 +937,7 @@ public sealed class PlayerControllerPresetsPanel
 
         // Bindings Foldout
         Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, lookActionProperty, InputActionSelectionElement.SelectionMode.Look);
-        foldout.Add(bindingsFoldout);
+        section.Add(bindingsFoldout);
 
         // Values Foldout
         SerializedProperty valuesProperty = lookProperty.FindPropertyRelative("m_Values");
@@ -850,7 +948,7 @@ public sealed class PlayerControllerPresetsPanel
             "m_RotationDeadZone",
             "m_DigitalReleaseGraceSeconds"
         });
-        foldout.Add(valuesFoldout);
+        section.Add(valuesFoldout);
 
         // Update View Action
         Action updateView = () =>
@@ -1005,12 +1103,10 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void BuildShootingSection()
     {
-        // Shooting Settings Foldout
-        Foldout foldout = new Foldout();
-        foldout.text = "Shooting Settings";
-        foldout.value = true;
-        foldout.style.marginTop = 8f;
-        m_DetailsRoot.Add(foldout);
+        VisualElement section = CreateSectionContainer("Shooting Settings");
+
+        if (section == null)
+            return;
 
         SerializedProperty shootingProperty = m_PresetSerializedObject.FindProperty("shootingSettings");
 
@@ -1029,28 +1125,28 @@ public sealed class PlayerControllerPresetsPanel
         // Build Shooting Settings UI
         EnumField triggerModeField = new EnumField("Trigger Mode");
         triggerModeField.BindProperty(triggerModeProperty);
-        foldout.Add(triggerModeField);
+        section.Add(triggerModeField);
 
         Toggle inheritPlayerSpeedField = new Toggle("Projectiles Inherit Player Speed");
         inheritPlayerSpeedField.tooltip = "When enabled, projectiles inherit the player's horizontal velocity while they are active.";
         inheritPlayerSpeedField.BindProperty(inheritPlayerSpeedProperty);
-        foldout.Add(inheritPlayerSpeedField);
+        section.Add(inheritPlayerSpeedField);
 
         ObjectField projectilePrefabField = new ObjectField("Projectile Prefab");
         projectilePrefabField.objectType = typeof(GameObject);
         projectilePrefabField.BindProperty(projectilePrefabProperty);
-        foldout.Add(projectilePrefabField);
+        section.Add(projectilePrefabField);
 
         Vector3Field shootOffsetField = new Vector3Field("Shoot Offset");
         shootOffsetField.tooltip = "Offset applied from the Weapon Reference set on PlayerAuthoring (fallback: player transform).";
         shootOffsetField.BindProperty(shootOffsetProperty);
-        foldout.Add(shootOffsetField);
+        section.Add(shootOffsetField);
 
         SerializedProperty shootActionProperty = m_PresetSerializedObject.FindProperty("shootActionId");
         EnsureDefaultActionId(shootActionProperty, "Shoot");
 
         Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, shootActionProperty, InputActionSelectionElement.SelectionMode.Shooting);
-        foldout.Add(bindingsFoldout);
+        section.Add(bindingsFoldout);
 
         Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
         {
@@ -1060,7 +1156,7 @@ public sealed class PlayerControllerPresetsPanel
             "lifetime",
             "damage"
         });
-        foldout.Add(valuesFoldout);
+        section.Add(valuesFoldout);
 
         Foldout objectPoolFoldout = new Foldout();
         objectPoolFoldout.text = "Object Pool";
@@ -1076,7 +1172,7 @@ public sealed class PlayerControllerPresetsPanel
         poolExpandBatchField.BindProperty(poolExpandBatchProperty);
         objectPoolFoldout.Add(poolExpandBatchField);
 
-        foldout.Add(objectPoolFoldout);
+        section.Add(objectPoolFoldout);
     }
     #endregion
 
@@ -1087,13 +1183,16 @@ public sealed class PlayerControllerPresetsPanel
     /// </summary>
     private void BuildCameraSection()
     {
-        Foldout foldout = new Foldout();
-        foldout.text = "Camera Settings";
-        foldout.value = true;
-        foldout.style.marginTop = 8f;
-        m_DetailsRoot.Add(foldout);
+        VisualElement section = CreateSectionContainer("Camera Settings");
+
+        if (section == null)
+            return;
 
         SerializedProperty cameraProperty = m_PresetSerializedObject.FindProperty("cameraSettings");
+
+        if (cameraProperty == null)
+            return;
+
         SerializedProperty behaviorProperty = cameraProperty.FindPropertyRelative("behavior");
         SerializedProperty offsetProperty = cameraProperty.FindPropertyRelative("followOffset");
         SerializedProperty anchorProperty = cameraProperty.FindPropertyRelative("roomAnchor");
@@ -1101,16 +1200,16 @@ public sealed class PlayerControllerPresetsPanel
 
         EnumField behaviorField = new EnumField("Camera Behavior");
         behaviorField.BindProperty(behaviorProperty);
-        foldout.Add(behaviorField);
+        section.Add(behaviorField);
 
         Vector3Field offsetField = new Vector3Field("Follow Offset");
         offsetField.BindProperty(offsetProperty);
-        foldout.Add(offsetField);
+        section.Add(offsetField);
 
         ObjectField anchorField = new ObjectField("Room Anchor");
         anchorField.objectType = typeof(Transform);
         anchorField.BindProperty(anchorProperty);
-        foldout.Add(anchorField);
+        section.Add(anchorField);
 
         Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
         {
@@ -1120,7 +1219,7 @@ public sealed class PlayerControllerPresetsPanel
             "maxFollowDistance",
             "deadZoneRadius"
         });
-        foldout.Add(valuesFoldout);
+        section.Add(valuesFoldout);
 
         Action updateView = () =>
         {
@@ -1897,5 +1996,16 @@ public sealed class PlayerControllerPresetsPanel
     }
     #endregion
 
+    #endregion
+
+    #region Nested Types
+    private enum SectionType
+    {
+        Metadata = 0,
+        Movement = 1,
+        Look = 2,
+        Shooting = 3,
+        Camera = 4
+    }
     #endregion
 }

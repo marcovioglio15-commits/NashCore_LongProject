@@ -28,10 +28,13 @@ public sealed class PlayerMasterPresetsPanel
     private ListView m_ListView;
     private ToolbarSearchField m_SearchField;
     private VisualElement m_DetailsRoot;
+    private VisualElement m_DetailSectionButtonsRoot;
+    private VisualElement m_DetailSectionContentRoot;
     private VisualElement m_MainContentRoot;
     private VisualElement m_TabBar;
     private VisualElement m_ContentHost;
     private PlayerManagementWindow.PanelType m_ActivePanel;
+    private DetailsSectionType m_ActiveDetailsSection = DetailsSectionType.Metadata;
 
     private PlayerMasterPreset m_SelectedPreset;
     private SerializedObject m_PresetSerializedObject;
@@ -62,6 +65,27 @@ public sealed class PlayerMasterPresetsPanel
 
         BuildUI();
         RefreshPresetList();
+    }
+
+    public void RefreshFromSessionChange()
+    {
+        PlayerMasterPreset previouslySelectedPreset = m_SelectedPreset;
+        RefreshPresetList();
+
+        if (previouslySelectedPreset != null)
+        {
+            int presetIndex = m_FilteredPresets.IndexOf(previouslySelectedPreset);
+
+            if (presetIndex >= 0)
+            {
+                if (m_ListView != null)
+                    m_ListView.SetSelectionWithoutNotify(new int[] { presetIndex });
+
+                SelectPreset(previouslySelectedPreset);
+            }
+        }
+
+        RefreshOpenSidePanels();
     }
     #endregion
 
@@ -109,7 +133,7 @@ public sealed class PlayerMasterPresetsPanel
         m_Root.Add(m_TabBar);
         m_Root.Add(m_ContentHost);
 
-        AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot, null, null);
+        AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot, null, null, null);
         SetActivePanel(PlayerManagementWindow.PanelType.PlayerMasterPresets);
     }
 
@@ -261,6 +285,9 @@ public sealed class PlayerMasterPresetsPanel
                 if (preset == null)
                     continue;
 
+                if (PlayerManagementDraftSession.IsAssetStagedForDeletion(preset))
+                    continue;
+
                 if (IsMatchingSearch(preset, searchText))
                     m_FilteredPresets.Add(preset);
             }
@@ -278,7 +305,9 @@ public sealed class PlayerMasterPresetsPanel
         if (m_SelectedPreset == null || m_FilteredPresets.Contains(m_SelectedPreset) == false)
         {
             SelectPreset(m_FilteredPresets[0]);
-            m_ListView.SetSelection(0);
+
+            if (m_ListView != null)
+                m_ListView.SetSelectionWithoutNotify(new int[] { 0 });
         }
     }
 
@@ -304,10 +333,11 @@ public sealed class PlayerMasterPresetsPanel
         if (newPreset == null)
             return;
 
+        Undo.RegisterCreatedObjectUndo(newPreset, "Create Master Preset Asset");
         Undo.RecordObject(m_Library, "Add Master Preset");
         m_Library.AddPreset(newPreset);
         EditorUtility.SetDirty(m_Library);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
 
         RefreshPresetList();
         SelectPreset(newPreset);
@@ -335,7 +365,7 @@ public sealed class PlayerMasterPresetsPanel
         string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
-        AssetDatabase.SaveAssets();
+        Undo.RegisterCreatedObjectUndo(duplicatedPreset, "Duplicate Master Preset Asset");
 
         SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
         SerializedProperty idProperty = duplicatedSerialized.FindProperty("m_PresetId");
@@ -349,7 +379,7 @@ public sealed class PlayerMasterPresetsPanel
         Undo.RecordObject(m_Library, "Duplicate Master Preset");
         m_Library.AddPreset(duplicatedPreset);
         EditorUtility.SetDirty(m_Library);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
 
         RefreshPresetList();
         SelectPreset(duplicatedPreset);
@@ -374,15 +404,10 @@ public sealed class PlayerMasterPresetsPanel
         if (confirmed == false)
             return;
 
-        string assetPath = AssetDatabase.GetAssetPath(preset);
-
         Undo.RecordObject(m_Library, "Delete Master Preset");
         m_Library.RemovePreset(preset);
         EditorUtility.SetDirty(m_Library);
-        AssetDatabase.SaveAssets();
-
-        if (string.IsNullOrWhiteSpace(assetPath) == false)
-            AssetDatabase.DeleteAsset(assetPath);
+        PlayerManagementDraftSession.StageDeleteAsset(preset);
 
         RefreshPresetList();
     }
@@ -393,6 +418,8 @@ public sealed class PlayerMasterPresetsPanel
     {
         m_SelectedPreset = preset;
         m_DetailsRoot.Clear();
+        m_DetailSectionButtonsRoot = null;
+        m_DetailSectionContentRoot = null;
 
         if (m_SelectedPreset == null)
         {
@@ -404,21 +431,24 @@ public sealed class PlayerMasterPresetsPanel
         }
 
         m_PresetSerializedObject = new SerializedObject(m_SelectedPreset);
+        m_DetailSectionButtonsRoot = BuildDetailsSectionButtons();
+        m_DetailSectionContentRoot = new VisualElement();
+        m_DetailSectionContentRoot.style.flexDirection = FlexDirection.Column;
+        m_DetailSectionContentRoot.style.flexGrow = 1f;
+        m_DetailsRoot.Add(m_DetailSectionButtonsRoot);
+        m_DetailsRoot.Add(m_DetailSectionContentRoot);
 
-        BuildMetadataSection();
-        BuildSubPresetsSection();
-        BuildActivePresetSection();
-        BuildNavigationSection();
+        BuildActiveDetailsSection();
         RefreshActiveStatus();
         SyncOpenSidePanels();
     }
 
     private void BuildMetadataSection()
     {
-        Label header = new Label("Preset Details");
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginBottom = 4f;
-        m_DetailsRoot.Add(header);
+        VisualElement sectionContainer = CreateDetailsSectionContainer("Preset Details");
+
+        if (sectionContainer == null)
+            return;
 
         SerializedProperty idProperty = m_PresetSerializedObject.FindProperty("m_PresetId");
         SerializedProperty nameProperty = m_PresetSerializedObject.FindProperty("m_PresetName");
@@ -432,7 +462,7 @@ public sealed class PlayerMasterPresetsPanel
         {
             HandlePresetNameChanged(evt.newValue);
         });
-        m_DetailsRoot.Add(nameField);
+        sectionContainer.Add(nameField);
 
         TextField versionField = new TextField("Version");
         versionField.isDelayed = true;
@@ -441,7 +471,7 @@ public sealed class PlayerMasterPresetsPanel
         {
             RefreshPresetList();
         });
-        m_DetailsRoot.Add(versionField);
+        sectionContainer.Add(versionField);
 
         TextField descriptionField = new TextField("Description");
         descriptionField.multiline = true;
@@ -452,7 +482,7 @@ public sealed class PlayerMasterPresetsPanel
         {
             RefreshPresetList();
         });
-        m_DetailsRoot.Add(descriptionField);
+        sectionContainer.Add(descriptionField);
 
         VisualElement idRow = new VisualElement();
         idRow.style.flexDirection = FlexDirection.Row;
@@ -471,7 +501,7 @@ public sealed class PlayerMasterPresetsPanel
         regenerateButton.style.marginLeft = 6f;
         idRow.Add(regenerateButton);
 
-        m_DetailsRoot.Add(idRow);
+        sectionContainer.Add(idRow);
     }
 
     private void RegeneratePresetId()
@@ -503,19 +533,9 @@ public sealed class PlayerMasterPresetsPanel
         if (string.IsNullOrWhiteSpace(newName))
             return;
 
-        string assetPath = AssetDatabase.GetAssetPath(preset);
-
-        if (string.IsNullOrWhiteSpace(assetPath) == false)
-        {
-            string error = AssetDatabase.RenameAsset(assetPath, newName);
-
-            if (string.IsNullOrWhiteSpace(error) == false)
-                Debug.LogWarning("Preset rename failed: " + error);
-        }
-
         preset.name = newName;
         EditorUtility.SetDirty(preset);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
         RefreshPresetList();
     }
 
@@ -531,21 +551,20 @@ public sealed class PlayerMasterPresetsPanel
 
     private void BuildSubPresetsSection()
     {
-        Label header = new Label("Sub Presets");
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginTop = 8f;
-        header.style.marginBottom = 4f;
-        m_DetailsRoot.Add(header);
+        VisualElement sectionContainer = CreateDetailsSectionContainer("Sub Presets");
+
+        if (sectionContainer == null)
+            return;
 
         SerializedProperty controllerProperty = m_PresetSerializedObject.FindProperty("m_ControllerPreset");
         SerializedProperty progressionProperty = m_PresetSerializedObject.FindProperty("m_ProgressionPreset");
         SerializedProperty powerUpsProperty = m_PresetSerializedObject.FindProperty("m_PowerUpsPreset");
         SerializedProperty animationProperty = m_PresetSerializedObject.FindProperty("m_AnimationBindingsPreset");
 
-        m_DetailsRoot.Add(BuildSubPresetRow("Controller Preset", typeof(PlayerControllerPreset), controllerProperty, CreateControllerPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.PlayerControllerPresets), PlayerManagementWindow.PanelType.PlayerControllerPresets));
-        m_DetailsRoot.Add(BuildSubPresetRow("Level-Up & Progression Preset", typeof(PlayerProgressionPreset), progressionProperty, CreateProgressionPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.LevelUpProgression), PlayerManagementWindow.PanelType.LevelUpProgression));
-        m_DetailsRoot.Add(BuildSubPresetRow("Craftable Power-Ups Preset", typeof(PlayerCraftablePowerUpsPreset), powerUpsProperty, CreatePowerUpsPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.CraftablePowerUps), PlayerManagementWindow.PanelType.CraftablePowerUps));
-        m_DetailsRoot.Add(BuildSubPresetRow("Animation Bindings Preset", typeof(PlayerAnimationBindingsPreset), animationProperty, CreateAnimationPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.AnimationBindings), PlayerManagementWindow.PanelType.AnimationBindings));
+        sectionContainer.Add(BuildSubPresetRow("Controller Preset", typeof(PlayerControllerPreset), controllerProperty, CreateControllerPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.PlayerControllerPresets), PlayerManagementWindow.PanelType.PlayerControllerPresets));
+        sectionContainer.Add(BuildSubPresetRow("Level-Up & Progression Preset", typeof(PlayerProgressionPreset), progressionProperty, CreateProgressionPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.LevelUpProgression), PlayerManagementWindow.PanelType.LevelUpProgression));
+        sectionContainer.Add(BuildSubPresetRow("Power-Ups Preset", typeof(PlayerPowerUpsPreset), powerUpsProperty, CreatePowerUpsPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.PowerUps), PlayerManagementWindow.PanelType.PowerUps));
+        sectionContainer.Add(BuildSubPresetRow("Animation Bindings Preset", typeof(PlayerAnimationBindingsPreset), animationProperty, CreateAnimationPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.AnimationBindings), PlayerManagementWindow.PanelType.AnimationBindings));
     }
 
     private VisualElement BuildSubPresetRow(string label, Type presetType, SerializedProperty presetProperty, Action createAction, Action openSectionAction, PlayerManagementWindow.PanelType panelType)
@@ -558,7 +577,9 @@ public sealed class PlayerMasterPresetsPanel
         presetField.BindProperty(presetProperty);
         presetField.RegisterValueChangedCallback(evt =>
         {
-            if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets || panelType == PlayerManagementWindow.PanelType.LevelUpProgression)
+            if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets ||
+                panelType == PlayerManagementWindow.PanelType.LevelUpProgression ||
+                panelType == PlayerManagementWindow.PanelType.PowerUps)
                 SyncOpenSidePanels();
         });
         container.Add(presetField);
@@ -605,11 +626,10 @@ public sealed class PlayerMasterPresetsPanel
 
     private void BuildActivePresetSection()
     {
-        Label header = new Label("Active on Player Prefab");
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginTop = 8f;
-        header.style.marginBottom = 4f;
-        m_DetailsRoot.Add(header);
+        VisualElement sectionContainer = CreateDetailsSectionContainer("Active on Player Prefab");
+
+        if (sectionContainer == null)
+            return;
 
         m_PlayerPrefabField = new ObjectField("Player Prefab");
         m_PlayerPrefabField.objectType = typeof(GameObject);
@@ -618,7 +638,7 @@ public sealed class PlayerMasterPresetsPanel
             m_SelectedPlayerPrefab = evt.newValue as GameObject;
             RefreshActiveStatus();
         });
-        m_DetailsRoot.Add(m_PlayerPrefabField);
+        sectionContainer.Add(m_PlayerPrefabField);
 
         VisualElement buttonRow = new VisualElement();
         buttonRow.style.flexDirection = FlexDirection.Row;
@@ -637,21 +657,20 @@ public sealed class PlayerMasterPresetsPanel
         setActiveButton.clicked += AssignPresetToPrefab;
         buttonRow.Add(setActiveButton);
 
-        m_DetailsRoot.Add(buttonRow);
+        sectionContainer.Add(buttonRow);
 
         m_ActiveStatusLabel = new Label();
         m_ActiveStatusLabel.style.marginTop = 2f;
         m_ActiveStatusLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-        m_DetailsRoot.Add(m_ActiveStatusLabel);
+        sectionContainer.Add(m_ActiveStatusLabel);
     }
 
     private void BuildNavigationSection()
     {
-        Label header = new Label("Open Sections");
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginTop = 8f;
-        header.style.marginBottom = 4f;
-        m_DetailsRoot.Add(header);
+        VisualElement sectionContainer = CreateDetailsSectionContainer("Open Sections");
+
+        if (sectionContainer == null)
+            return;
 
         VisualElement row = new VisualElement();
         row.style.flexDirection = FlexDirection.Row;
@@ -671,7 +690,7 @@ public sealed class PlayerMasterPresetsPanel
         Button powerUpsButton = new Button();
         powerUpsButton.text = "Open Power-Ups";
         powerUpsButton.style.marginLeft = 4f;
-        powerUpsButton.clicked += () => OpenSidePanel(PlayerManagementWindow.PanelType.CraftablePowerUps);
+        powerUpsButton.clicked += () => OpenSidePanel(PlayerManagementWindow.PanelType.PowerUps);
         row.Add(powerUpsButton);
 
         Button animationButton = new Button();
@@ -680,7 +699,132 @@ public sealed class PlayerMasterPresetsPanel
         animationButton.clicked += () => OpenSidePanel(PlayerManagementWindow.PanelType.AnimationBindings);
         row.Add(animationButton);
 
-        m_DetailsRoot.Add(row);
+        sectionContainer.Add(row);
+    }
+
+    private void BuildLayersSection()
+    {
+        VisualElement sectionContainer = CreateDetailsSectionContainer("World Layers");
+
+        if (sectionContainer == null)
+            return;
+
+        SerializedProperty wallsLayerNameProperty = m_PresetSerializedObject.FindProperty("wallsLayerName");
+
+        if (wallsLayerNameProperty == null)
+            return;
+
+        string configuredLayerName = wallsLayerNameProperty.stringValue;
+        int configuredLayerIndex = LayerMask.NameToLayer(configuredLayerName);
+        int defaultLayerIndex = LayerMask.NameToLayer(WorldWallCollisionUtility.DefaultWallsLayerName);
+        int initialLayerIndex = configuredLayerIndex >= 0 ? configuredLayerIndex : defaultLayerIndex;
+
+        if (initialLayerIndex < 0)
+            initialLayerIndex = 0;
+
+        LayerField wallsLayerField = new LayerField("Walls Layer");
+        wallsLayerField.tooltip = "Layer considered as solid map walls for player, enemies, bombs and projectiles.";
+        wallsLayerField.SetValueWithoutNotify(initialLayerIndex);
+        wallsLayerField.RegisterValueChangedCallback(evt =>
+        {
+            string selectedLayerName = LayerMask.LayerToName(evt.newValue);
+
+            if (string.IsNullOrWhiteSpace(selectedLayerName))
+                return;
+
+            SerializedProperty updatedProperty = m_PresetSerializedObject.FindProperty("wallsLayerName");
+
+            if (updatedProperty == null)
+                return;
+
+            if (m_SelectedPreset != null)
+                Undo.RecordObject(m_SelectedPreset, "Change Walls Layer");
+
+            m_PresetSerializedObject.Update();
+            updatedProperty.stringValue = selectedLayerName;
+            m_PresetSerializedObject.ApplyModifiedProperties();
+            PlayerManagementDraftSession.MarkDirty();
+        });
+        sectionContainer.Add(wallsLayerField);
+
+        if (configuredLayerIndex < 0 && string.IsNullOrWhiteSpace(configuredLayerName) == false)
+        {
+            HelpBox warningBox = new HelpBox(string.Format("Layer '{0}' does not exist. Select an existing layer.", configuredLayerName), HelpBoxMessageType.Warning);
+            sectionContainer.Add(warningBox);
+        }
+    }
+
+    private VisualElement BuildDetailsSectionButtons()
+    {
+        VisualElement buttonsRoot = new VisualElement();
+        buttonsRoot.style.flexDirection = FlexDirection.Row;
+        buttonsRoot.style.flexWrap = Wrap.Wrap;
+        buttonsRoot.style.marginBottom = 6f;
+
+        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.Metadata, "Metadata");
+        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.SubPresets, "Sub Presets");
+        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.ActivePreset, "Active Preset");
+        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.Navigation, "Navigation");
+        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.Layers, "Layers");
+        return buttonsRoot;
+    }
+
+    private void AddDetailsSectionButton(VisualElement parent, DetailsSectionType sectionType, string buttonLabel)
+    {
+        Button sectionButton = new Button(() => SetActiveDetailsSection(sectionType));
+        sectionButton.text = buttonLabel;
+        sectionButton.style.marginRight = 4f;
+        sectionButton.style.marginBottom = 4f;
+        parent.Add(sectionButton);
+    }
+
+    private void SetActiveDetailsSection(DetailsSectionType sectionType)
+    {
+        m_ActiveDetailsSection = sectionType;
+        BuildActiveDetailsSection();
+    }
+
+    private void BuildActiveDetailsSection()
+    {
+        if (m_DetailSectionContentRoot == null)
+            return;
+
+        m_DetailSectionContentRoot.Clear();
+
+        switch (m_ActiveDetailsSection)
+        {
+            case DetailsSectionType.Metadata:
+                BuildMetadataSection();
+                return;
+            case DetailsSectionType.SubPresets:
+                BuildSubPresetsSection();
+                return;
+            case DetailsSectionType.ActivePreset:
+                BuildActivePresetSection();
+                return;
+            case DetailsSectionType.Navigation:
+                BuildNavigationSection();
+                return;
+            case DetailsSectionType.Layers:
+                BuildLayersSection();
+                return;
+        }
+    }
+
+    private VisualElement CreateDetailsSectionContainer(string sectionTitle)
+    {
+        if (m_DetailSectionContentRoot == null)
+            return null;
+
+        VisualElement container = new VisualElement();
+        container.style.marginTop = 8f;
+
+        Label header = new Label(sectionTitle);
+        header.style.unityFontStyleAndWeight = FontStyle.Bold;
+        header.style.marginBottom = 4f;
+        container.Add(header);
+        m_DetailSectionContentRoot.Add(container);
+        return container;
     }
     #endregion
 
@@ -693,10 +837,11 @@ public sealed class PlayerMasterPresetsPanel
             return;
 
         PlayerControllerPresetLibrary controllerLibrary = PlayerControllerPresetLibraryUtility.GetOrCreateLibrary();
+        Undo.RegisterCreatedObjectUndo(newPreset, "Create Controller Preset Asset");
         Undo.RecordObject(controllerLibrary, "Add Controller Preset");
         controllerLibrary.AddPreset(newPreset);
         EditorUtility.SetDirty(controllerLibrary);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
 
         AssignSubPreset("m_ControllerPreset", newPreset);
     }
@@ -708,10 +853,11 @@ public sealed class PlayerMasterPresetsPanel
         if (newPreset != null)
         {
             PlayerProgressionPresetLibrary progressionLibrary = PlayerProgressionPresetLibraryUtility.GetOrCreateLibrary();
+            Undo.RegisterCreatedObjectUndo(newPreset, "Create Progression Preset Asset");
             Undo.RecordObject(progressionLibrary, "Add Progression Preset");
             progressionLibrary.AddPreset(newPreset);
             EditorUtility.SetDirty(progressionLibrary);
-            AssetDatabase.SaveAssets();
+            PlayerManagementDraftSession.MarkDirty();
         }
 
         AssignSubPreset("m_ProgressionPreset", newPreset);
@@ -719,7 +865,18 @@ public sealed class PlayerMasterPresetsPanel
 
     private void CreatePowerUpsPreset()
     {
-        PlayerCraftablePowerUpsPreset newPreset = CreateSubPresetAsset<PlayerCraftablePowerUpsPreset>("PlayerCraftablePowerUpsPreset", PowerUpsPresetsFolder);
+        PlayerPowerUpsPreset newPreset = CreateSubPresetAsset<PlayerPowerUpsPreset>("PlayerPowerUpsPreset", PowerUpsPresetsFolder);
+
+        if (newPreset != null)
+        {
+            PlayerPowerUpsPresetLibrary powerUpsLibrary = PlayerPowerUpsPresetLibraryUtility.GetOrCreateLibrary();
+            Undo.RegisterCreatedObjectUndo(newPreset, "Create Power Ups Preset Asset");
+            Undo.RecordObject(powerUpsLibrary, "Add Power Ups Preset");
+            powerUpsLibrary.AddPreset(newPreset);
+            EditorUtility.SetDirty(powerUpsLibrary);
+            PlayerManagementDraftSession.MarkDirty();
+        }
+
         AssignSubPreset("m_PowerUpsPreset", newPreset);
     }
 
@@ -738,7 +895,7 @@ public sealed class PlayerMasterPresetsPanel
 
         string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(folderPath, presetName + ".asset"));
         AssetDatabase.CreateAsset(preset, assetPath);
-        AssetDatabase.SaveAssets();
+        Undo.RegisterCreatedObjectUndo(preset, "Create Sub Preset Asset");
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("m_PresetName");
@@ -751,7 +908,7 @@ public sealed class PlayerMasterPresetsPanel
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(preset);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
 
         return preset;
     }
@@ -770,6 +927,7 @@ public sealed class PlayerMasterPresetsPanel
         m_PresetSerializedObject.Update();
         property.objectReferenceValue = preset;
         m_PresetSerializedObject.ApplyModifiedProperties();
+        PlayerManagementDraftSession.MarkDirty();
     }
     #endregion
 
@@ -840,7 +998,7 @@ public sealed class PlayerMasterPresetsPanel
         if (PrefabUtility.IsPartOfPrefabInstance(authoring))
             PrefabUtility.RecordPrefabInstancePropertyModifications(authoring);
 
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
         RefreshActiveStatus();
     }
 
@@ -889,12 +1047,13 @@ public sealed class PlayerMasterPresetsPanel
 
         PlayerControllerPresetsPanel controllerPanel;
         PlayerProgressionPresetsPanel progressionPanel;
-        VisualElement content = BuildSidePanelContent(panelType, out controllerPanel, out progressionPanel);
+        PlayerPowerUpsPresetsPanel powerUpsPanel;
+        VisualElement content = BuildSidePanelContent(panelType, out controllerPanel, out progressionPanel, out powerUpsPanel);
 
         if (content == null)
             return;
 
-        AddTab(panelType, GetPanelTitle(panelType), content, controllerPanel, progressionPanel);
+        AddTab(panelType, GetPanelTitle(panelType), content, controllerPanel, progressionPanel, powerUpsPanel);
         SetActivePanel(panelType);
         SyncSidePanelSelection(panelType, m_SidePanels[panelType]);
     }
@@ -924,16 +1083,17 @@ public sealed class PlayerMasterPresetsPanel
         if (panelType == PlayerManagementWindow.PanelType.LevelUpProgression)
             return "Level-Up & Progression";
 
-        if (panelType == PlayerManagementWindow.PanelType.CraftablePowerUps)
-            return "Craftable Power-Ups";
+        if (panelType == PlayerManagementWindow.PanelType.PowerUps)
+            return "Power-Ups";
 
         return "Animations Bindings";
     }
 
-    private VisualElement BuildSidePanelContent(PlayerManagementWindow.PanelType panelType, out PlayerControllerPresetsPanel controllerPanel, out PlayerProgressionPresetsPanel progressionPanel)
+    private VisualElement BuildSidePanelContent(PlayerManagementWindow.PanelType panelType, out PlayerControllerPresetsPanel controllerPanel, out PlayerProgressionPresetsPanel progressionPanel, out PlayerPowerUpsPresetsPanel powerUpsPanel)
     {
         controllerPanel = null;
         progressionPanel = null;
+        powerUpsPanel = null;
         VisualElement panelRoot = new VisualElement();
         panelRoot.style.flexDirection = FlexDirection.Column;
         panelRoot.style.flexGrow = 1f;
@@ -970,6 +1130,13 @@ public sealed class PlayerMasterPresetsPanel
             return panelRoot;
         }
 
+        if (panelType == PlayerManagementWindow.PanelType.PowerUps)
+        {
+            powerUpsPanel = new PlayerPowerUpsPresetsPanel();
+            panelRoot.Add(powerUpsPanel.Root);
+            return panelRoot;
+        }
+
         VisualElement placeholder = new VisualElement();
         placeholder.style.flexGrow = 1f;
         placeholder.style.minHeight = 220f;
@@ -982,7 +1149,7 @@ public sealed class PlayerMasterPresetsPanel
         return panelRoot;
     }
 
-    private void AddTab(PlayerManagementWindow.PanelType panelType, string label, VisualElement content, PlayerControllerPresetsPanel controllerPanel, PlayerProgressionPresetsPanel progressionPanel)
+    private void AddTab(PlayerManagementWindow.PanelType panelType, string label, VisualElement content, PlayerControllerPresetsPanel controllerPanel, PlayerProgressionPresetsPanel progressionPanel, PlayerPowerUpsPresetsPanel powerUpsPanel)
     {
         if (m_TabBar == null)
             return;
@@ -1005,7 +1172,8 @@ public sealed class PlayerMasterPresetsPanel
             TabButton = tabButton,
             Content = content,
             ControllerPanel = controllerPanel,
-            ProgressionPanel = progressionPanel
+            ProgressionPanel = progressionPanel,
+            PowerUpsPanel = powerUpsPanel
         };
     }
 
@@ -1042,6 +1210,20 @@ public sealed class PlayerMasterPresetsPanel
                 return;
 
             entry.ProgressionPanel.SelectPresetFromExternal(progressionPreset);
+            return;
+        }
+
+        if (panelType == PlayerManagementWindow.PanelType.PowerUps)
+        {
+            if (entry.PowerUpsPanel == null)
+                return;
+
+            PlayerPowerUpsPreset powerUpsPreset = m_SelectedPreset.PowerUpsPreset;
+
+            if (powerUpsPreset == null)
+                return;
+
+            entry.PowerUpsPanel.SelectPresetFromExternal(powerUpsPreset);
         }
     }
 
@@ -1049,6 +1231,28 @@ public sealed class PlayerMasterPresetsPanel
     {
         foreach (KeyValuePair<PlayerManagementWindow.PanelType, SidePanelEntry> entry in m_SidePanels)
             SyncSidePanelSelection(entry.Key, entry.Value);
+    }
+
+    private void RefreshOpenSidePanels()
+    {
+        foreach (KeyValuePair<PlayerManagementWindow.PanelType, SidePanelEntry> panelEntry in m_SidePanels)
+        {
+            SidePanelEntry entry = panelEntry.Value;
+
+            if (entry == null)
+                continue;
+
+            if (entry.ControllerPanel != null)
+                entry.ControllerPanel.RefreshFromSessionChange();
+
+            if (entry.ProgressionPanel != null)
+                entry.ProgressionPanel.RefreshFromSessionChange();
+
+            if (entry.PowerUpsPanel != null)
+                entry.PowerUpsPanel.RefreshFromSessionChange();
+        }
+
+        SyncOpenSidePanels();
     }
 
     private void SetActivePanel(PlayerManagementWindow.PanelType panelType)
@@ -1113,6 +1317,15 @@ public sealed class PlayerMasterPresetsPanel
     #endregion
 
     #region Nested Types
+    private enum DetailsSectionType
+    {
+        Metadata = 0,
+        SubPresets = 1,
+        ActivePreset = 2,
+        Navigation = 3,
+        Layers = 4
+    }
+
     /// <summary>
     /// Represents an entry in the side panel, containing UI elements and a controller presets panel.
     /// </summary>
@@ -1123,6 +1336,7 @@ public sealed class PlayerMasterPresetsPanel
         public VisualElement Content;
         public PlayerControllerPresetsPanel ControllerPanel;
         public PlayerProgressionPresetsPanel ProgressionPanel;
+        public PlayerPowerUpsPresetsPanel PowerUpsPanel;
     }
     #endregion
 }

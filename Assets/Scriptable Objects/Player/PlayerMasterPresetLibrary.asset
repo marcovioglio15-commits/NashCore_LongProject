@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5748aa1845bd49647b71e40238457d03, type: 3}
   m_Name: PlayerMasterPresetLibrary
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMasterPresetLibrary
-  m_Presets:
+  presets:
   - {fileID: 11400000, guid: 2aa7920f2d0dab444bbb97e34b3f90d8, type: 2}

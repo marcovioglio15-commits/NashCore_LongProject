@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10910fec561694a45ad2b09a5ad9bbba, type: 3}
+  m_Name: PlayerPowerUpsPreset
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerPowerUpsPreset
+  presetId: 780bde0072904df3a87793ed6799b56e
+  presetName: PlayerPowerUpsPreset
+  description: 
+  version: 1.0.0
+  primaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
+  secondaryToolActionId: 348a94c1-2df4-48f8-82f6-83416ff0bd17
+  dropPoolCatalog:
+  - Milestone
+  - Shop
+  - Boss
+  passiveModifiers: []
+  activeTools:
+  - commonData:
+      powerUpId: Dash
+      displayName: Dash
+      description: Dash
+      dropPools: []
+      dropTier: 1
+      purchaseCost: 0
+    toolKind: 1
+    maximumEnergy: 0
+    toggleable: 0
+    activationResource: 0
+    activationCost: 0
+    maintenanceResource: 0
+    maintenanceCostPerSecond: 0
+    chargeType: 0
+    chargePerTrigger: 0
+    fullChargeRequirement: 0
+    unreplaceable: 0
+    bombData:
+      bombPrefab: {fileID: 0}
+      spawnOffset: {x: 0, y: 0, z: 1.2}
+      deploySpeed: 4.5
+      collisionRadius: 0.18
+      bounceOnWalls: 1
+      bounceDamping: 0.65
+      linearDampingPerSecond: 1.2
+      fuseSeconds: 0.05
+      radius: 0.1
+      damage: 0
+      affectAllEnemiesInRadius: 0
+    dashData:
+      distance: 6
+      duration: 0.3
+      speedTransitionInSeconds: 0.1
+      speedTransitionOutSeconds: 0.12
+      grantsInvulnerability: 1
+      invulnerabilityExtraTime: 0.05
+  - commonData:
+      powerUpId: Bomb
+      displayName: Bomb
+      description: Bomb
+      dropPools: []
+      dropTier: 1
+      purchaseCost: 0
+    toolKind: 0
+    maximumEnergy: 0
+    toggleable: 0
+    activationResource: 0
+    activationCost: 0
+    maintenanceResource: 0
+    maintenanceCostPerSecond: 0
+    chargeType: 0
+    chargePerTrigger: 0
+    fullChargeRequirement: 0
+    unreplaceable: 0
+    bombData:
+      bombPrefab: {fileID: 7369153295349678932, guid: dca4840ccd694c04299341737a490946, type: 3}
+      spawnOffset: {x: 0, y: 0, z: 0}
+      deploySpeed: 6
+      collisionRadius: 0.18
+      bounceOnWalls: 1
+      bounceDamping: 0.65
+      linearDampingPerSecond: 0.6
+      fuseSeconds: 5
+      radius: 10
+      damage: 10
+      affectAllEnemiesInRadius: 1
+    dashData:
+      distance: 0
+      duration: 0.01
+      speedTransitionInSeconds: 0.06
+      speedTransitionOutSeconds: 0.08
+      grantsInvulnerability: 0
+      invulnerabilityExtraTime: 0
+  primaryActiveToolId: Dash
+  secondaryActiveToolId: Bomb

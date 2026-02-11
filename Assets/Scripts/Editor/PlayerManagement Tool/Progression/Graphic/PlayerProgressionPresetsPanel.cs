@@ -22,9 +22,12 @@ public sealed class PlayerProgressionPresetsPanel
     private ListView listView;
     private ToolbarSearchField searchField;
     private VisualElement detailsRoot;
+    private VisualElement sectionButtonsRoot;
+    private VisualElement sectionContentRoot;
 
     private PlayerProgressionPreset selectedPreset;
     private SerializedObject presetSerializedObject;
+    private SectionType activeSection = SectionType.Metadata;
     #endregion
 
     #region Properties
@@ -82,6 +85,31 @@ public sealed class PlayerProgressionPresetsPanel
         }
 
         SelectPreset(preset);
+    }
+
+    public void RefreshFromSessionChange()
+    {
+        PlayerProgressionPreset previouslySelectedPreset = selectedPreset;
+        RefreshPresetList();
+
+        if (previouslySelectedPreset == null)
+        {
+            return;
+        }
+
+        int presetIndex = filteredPresets.IndexOf(previouslySelectedPreset);
+
+        if (presetIndex < 0)
+        {
+            return;
+        }
+
+        if (listView != null)
+        {
+            listView.SetSelectionWithoutNotify(new int[] { presetIndex });
+        }
+
+        SelectPreset(previouslySelectedPreset);
     }
     #endregion
 
@@ -253,6 +281,11 @@ public sealed class PlayerProgressionPresetsPanel
                     continue;
                 }
 
+                if (PlayerManagementDraftSession.IsAssetStagedForDeletion(preset))
+                {
+                    continue;
+                }
+
                 if (IsMatchingSearch(preset, searchText))
                 {
                     filteredPresets.Add(preset);
@@ -274,7 +307,11 @@ public sealed class PlayerProgressionPresetsPanel
         if (selectedPreset == null || filteredPresets.Contains(selectedPreset) == false)
         {
             SelectPreset(filteredPresets[0]);
-            listView.SetSelection(0);
+
+            if (listView != null)
+            {
+                listView.SetSelectionWithoutNotify(new int[] { 0 });
+            }
         }
     }
 
@@ -306,10 +343,11 @@ public sealed class PlayerProgressionPresetsPanel
             return;
         }
 
+        Undo.RegisterCreatedObjectUndo(newPreset, "Create Progression Preset Asset");
         Undo.RecordObject(library, "Add Progression Preset");
         library.AddPreset(newPreset);
         EditorUtility.SetDirty(library);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
 
         RefreshPresetList();
         SelectPreset(newPreset);
@@ -342,7 +380,7 @@ public sealed class PlayerProgressionPresetsPanel
         string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
-        AssetDatabase.SaveAssets();
+        Undo.RegisterCreatedObjectUndo(duplicatedPreset, "Duplicate Progression Preset Asset");
 
         SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
         SerializedProperty idProperty = duplicatedSerialized.FindProperty("presetId");
@@ -363,7 +401,7 @@ public sealed class PlayerProgressionPresetsPanel
         Undo.RecordObject(library, "Duplicate Progression Preset");
         library.AddPreset(duplicatedPreset);
         EditorUtility.SetDirty(library);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
 
         RefreshPresetList();
         SelectPreset(duplicatedPreset);
@@ -395,17 +433,10 @@ public sealed class PlayerProgressionPresetsPanel
             return;
         }
 
-        string assetPath = AssetDatabase.GetAssetPath(preset);
-
         Undo.RecordObject(library, "Delete Progression Preset");
         library.RemovePreset(preset);
         EditorUtility.SetDirty(library);
-        AssetDatabase.SaveAssets();
-
-        if (string.IsNullOrWhiteSpace(assetPath) == false)
-        {
-            AssetDatabase.DeleteAsset(assetPath);
-        }
+        PlayerManagementDraftSession.StageDeleteAsset(preset);
 
         RefreshPresetList();
     }
@@ -416,6 +447,8 @@ public sealed class PlayerProgressionPresetsPanel
     {
         selectedPreset = preset;
         detailsRoot.Clear();
+        sectionButtonsRoot = null;
+        sectionContentRoot = null;
 
         if (selectedPreset == null)
         {
@@ -426,9 +459,14 @@ public sealed class PlayerProgressionPresetsPanel
         }
 
         presetSerializedObject = new SerializedObject(selectedPreset);
+        sectionButtonsRoot = BuildSectionButtons();
+        sectionContentRoot = new VisualElement();
+        sectionContentRoot.style.flexGrow = 1f;
 
-        BuildMetadataSection();
-        BuildBaseStatsSection();
+        detailsRoot.Add(sectionButtonsRoot);
+        detailsRoot.Add(sectionContentRoot);
+
+        BuildActiveSection();
     }
 
     private void BuildMetadataSection()
@@ -436,7 +474,7 @@ public sealed class PlayerProgressionPresetsPanel
         Label header = new Label("Preset Details");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
-        detailsRoot.Add(header);
+        sectionContentRoot.Add(header);
 
         SerializedProperty idProperty = presetSerializedObject.FindProperty("presetId");
         SerializedProperty nameProperty = presetSerializedObject.FindProperty("presetName");
@@ -450,7 +488,7 @@ public sealed class PlayerProgressionPresetsPanel
         {
             HandlePresetNameChanged(evt.newValue);
         });
-        detailsRoot.Add(nameField);
+        sectionContentRoot.Add(nameField);
 
         TextField versionField = new TextField("Version");
         versionField.isDelayed = true;
@@ -459,7 +497,7 @@ public sealed class PlayerProgressionPresetsPanel
         {
             RefreshPresetList();
         });
-        detailsRoot.Add(versionField);
+        sectionContentRoot.Add(versionField);
 
         TextField descriptionField = new TextField("Description");
         descriptionField.multiline = true;
@@ -470,7 +508,7 @@ public sealed class PlayerProgressionPresetsPanel
         {
             RefreshPresetList();
         });
-        detailsRoot.Add(descriptionField);
+        sectionContentRoot.Add(descriptionField);
 
         VisualElement idRow = new VisualElement();
         idRow.style.flexDirection = FlexDirection.Row;
@@ -489,16 +527,12 @@ public sealed class PlayerProgressionPresetsPanel
         regenerateButton.style.marginLeft = 6f;
         idRow.Add(regenerateButton);
 
-        detailsRoot.Add(idRow);
+        sectionContentRoot.Add(idRow);
     }
 
     private void BuildBaseStatsSection()
     {
-        Foldout baseStatsFoldout = new Foldout();
-        baseStatsFoldout.text = "Base Stats";
-        baseStatsFoldout.value = true;
-        baseStatsFoldout.style.marginTop = 8f;
-        detailsRoot.Add(baseStatsFoldout);
+        VisualElement baseStatsContainer = CreateSectionContainer("Base Stats");
 
         SerializedProperty baseStatsProperty = presetSerializedObject.FindProperty("baseStats");
 
@@ -506,7 +540,7 @@ public sealed class PlayerProgressionPresetsPanel
         {
             Label missingLabel = new Label("Base stats data is missing on this preset.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-            baseStatsFoldout.Add(missingLabel);
+            baseStatsContainer.Add(missingLabel);
             return;
         }
 
@@ -515,11 +549,72 @@ public sealed class PlayerProgressionPresetsPanel
 
         PropertyField healthField = new PropertyField(healthProperty);
         healthField.BindProperty(healthProperty);
-        baseStatsFoldout.Add(healthField);
+        baseStatsContainer.Add(healthField);
 
         PropertyField experienceField = new PropertyField(experienceProperty);
         experienceField.BindProperty(experienceProperty);
-        baseStatsFoldout.Add(experienceField);
+        baseStatsContainer.Add(experienceField);
+    }
+
+    private VisualElement BuildSectionButtons()
+    {
+        VisualElement buttonsRoot = new VisualElement();
+        buttonsRoot.style.flexDirection = FlexDirection.Row;
+        buttonsRoot.style.flexWrap = Wrap.Wrap;
+        buttonsRoot.style.marginBottom = 6f;
+
+        AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
+        AddSectionButton(buttonsRoot, SectionType.BaseStats, "Base Stats");
+        return buttonsRoot;
+    }
+
+    private void AddSectionButton(VisualElement parent, SectionType sectionType, string label)
+    {
+        Button button = new Button(() => SetActiveSection(sectionType));
+        button.text = label;
+        button.style.marginRight = 4f;
+        button.style.marginBottom = 4f;
+        parent.Add(button);
+    }
+
+    private void SetActiveSection(SectionType sectionType)
+    {
+        activeSection = sectionType;
+        BuildActiveSection();
+    }
+
+    private void BuildActiveSection()
+    {
+        if (sectionContentRoot == null)
+            return;
+
+        sectionContentRoot.Clear();
+
+        switch (activeSection)
+        {
+            case SectionType.Metadata:
+                BuildMetadataSection();
+                return;
+            case SectionType.BaseStats:
+                BuildBaseStatsSection();
+                return;
+        }
+    }
+
+    private VisualElement CreateSectionContainer(string sectionTitle)
+    {
+        VisualElement container = new VisualElement();
+        container.style.marginTop = 8f;
+
+        Label header = new Label(sectionTitle);
+        header.style.unityFontStyleAndWeight = FontStyle.Bold;
+        header.style.marginBottom = 4f;
+        container.Add(header);
+
+        if (sectionContentRoot != null)
+            sectionContentRoot.Add(container);
+
+        return container;
     }
 
     private void RegeneratePresetId()
@@ -559,21 +654,9 @@ public sealed class PlayerProgressionPresetsPanel
             return;
         }
 
-        string assetPath = AssetDatabase.GetAssetPath(preset);
-
-        if (string.IsNullOrWhiteSpace(assetPath) == false)
-        {
-            string error = AssetDatabase.RenameAsset(assetPath, newName);
-
-            if (string.IsNullOrWhiteSpace(error) == false)
-            {
-                Debug.LogWarning("Preset rename failed: " + error);
-            }
-        }
-
         preset.name = newName;
         EditorUtility.SetDirty(preset);
-        AssetDatabase.SaveAssets();
+        PlayerManagementDraftSession.MarkDirty();
         RefreshPresetList();
     }
 
@@ -607,5 +690,13 @@ public sealed class PlayerProgressionPresetsPanel
     }
     #endregion
 
+    #endregion
+
+    #region Nested Types
+    private enum SectionType
+    {
+        Metadata = 0,
+        BaseStats = 1
+    }
     #endregion
 }

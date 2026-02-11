@@ -86,8 +86,8 @@ MonoBehaviour:
       deadZoneRadius: 0
   shootingSettings:
     triggerMode: 0
+    projectilesInheritPlayerSpeed: 0
     projectilePrefab: {fileID: 0}
-    weaponReference: {fileID: 0}
     shootOffset: {x: 0, y: 0.5, z: 0.8}
     values:
       shootSpeed: 24
@@ -95,6 +95,8 @@ MonoBehaviour:
       range: 0
       lifetime: 0
       damage: 1
+    initialPoolCapacity: 512
+    poolExpandBatch: 128
   moveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
   lookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
   shootActionId: 852140f2-7766-474d-8707-702459ba45f3

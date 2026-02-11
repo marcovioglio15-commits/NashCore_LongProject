@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -16,6 +17,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
     private static readonly Color CameraFollowGizmoColor = new Color(1f, 0.8f, 0.2f, 0.9f);
     private static readonly Color CameraRoomGizmoColor = new Color(1f, 0.5f, 0.2f, 0.9f);
     private static readonly Color ShootingGizmoColor = new Color(1f, 0.25f, 0.25f, 0.9f);
+    private static readonly Color PowerUpBombGizmoColor = new Color(1f, 0.35f, 0.15f, 0.75f);
+    private static readonly Color PowerUpDashGizmoColor = new Color(0.25f, 0.85f, 1f, 0.85f);
     private const float LookRadiusScale = 0.9f;
     #endregion
 
@@ -91,6 +94,18 @@ public sealed class PlayerAuthoring : MonoBehaviour
 
         return masterPreset.ProgressionPreset;
     }
+
+    /// <summary>
+    /// Retrieves the power-ups preset from the master preset.
+    /// </summary>
+    /// <returns>The PlayerPowerUpsPreset from the master preset, or null if the master preset is not set.</returns>
+    public PlayerPowerUpsPreset GetPowerUpsPreset()
+    {
+        if (masterPreset == null)
+            return null;
+
+        return masterPreset.PowerUpsPreset;
+    }
     #endregion
 
     #region Gizmos
@@ -108,6 +123,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
         DrawLookGizmo(controllerPreset);
         DrawShootingGizmo(controllerPreset);
         DrawCameraGizmo(controllerPreset);
+        DrawPowerUpsGizmos();
     }
 
     /// <summary>
@@ -262,6 +278,136 @@ public sealed class PlayerAuthoring : MonoBehaviour
         Gizmos.DrawWireSphere(spawnPosition, 0.12f);
         Gizmos.DrawLine(spawnPosition, spawnPosition + forward * 0.5f);
     }
+
+    /// <summary>
+    /// Draws preview gizmos for currently loaded Bomb and Dash active tools.
+    /// </summary>
+    private void DrawPowerUpsGizmos()
+    {
+        PlayerPowerUpsPreset powerUpsPreset = GetPowerUpsPreset();
+
+        if (powerUpsPreset == null)
+            return;
+
+        ActiveToolDefinition primaryTool = ResolveActiveToolById(powerUpsPreset, powerUpsPreset.PrimaryActiveToolId);
+        ActiveToolDefinition secondaryTool = ResolveActiveToolById(powerUpsPreset, powerUpsPreset.SecondaryActiveToolId);
+        ActiveToolDefinition bombTool = ResolveToolByKind(primaryTool, secondaryTool, ActiveToolKind.Bomb);
+        ActiveToolDefinition dashTool = ResolveToolByKind(primaryTool, secondaryTool, ActiveToolKind.Dash);
+
+        if (bombTool != null)
+            DrawBombGizmo(bombTool);
+
+        if (dashTool != null)
+            DrawDashGizmo(dashTool);
+    }
+
+    /// <summary>
+    /// Draws the bomb spawn and explosion preview.
+    /// </summary>
+    /// <param name="bombTool">Tool definition used for visualization.</param>
+    private void DrawBombGizmo(ActiveToolDefinition bombTool)
+    {
+        BombToolData bombData = bombTool.BombData;
+
+        if (bombData == null)
+            return;
+
+        Vector3 spawnOffset = bombData.SpawnOffset;
+        float radius = Mathf.Max(0.1f, bombData.Radius);
+        Vector3 origin = transform.position;
+        Vector3 spawnPoint = transform.TransformPoint(spawnOffset);
+        float deploySpeed = Mathf.Max(0f, bombData.DeploySpeed);
+        Vector3 throwDirection = transform.forward;
+        Vector3 throwEnd = spawnPoint + throwDirection * Mathf.Max(0.25f, deploySpeed * 0.2f);
+
+        Gizmos.color = PowerUpBombGizmoColor;
+        Gizmos.DrawLine(origin, spawnPoint);
+        Gizmos.DrawWireSphere(spawnPoint, 0.15f);
+        Gizmos.DrawWireSphere(spawnPoint, radius);
+        Gizmos.DrawLine(spawnPoint, throwEnd);
+    }
+
+    /// <summary>
+    /// Draws the dash direction and distance preview.
+    /// </summary>
+    /// <param name="dashTool">Tool definition used for visualization.</param>
+    private void DrawDashGizmo(ActiveToolDefinition dashTool)
+    {
+        DashToolData dashData = dashTool.DashData;
+
+        if (dashData == null)
+            return;
+
+        float distance = Mathf.Max(0f, dashData.Distance);
+
+        if (distance <= 0f)
+            return;
+
+        Vector3 origin = transform.position + Vector3.up * 0.05f;
+        Vector3 endPoint = origin + transform.forward * distance;
+
+        Gizmos.color = PowerUpDashGizmoColor;
+        Gizmos.DrawLine(origin, endPoint);
+        Gizmos.DrawWireSphere(endPoint, 0.12f);
+    }
+
+    /// <summary>
+    /// Resolves an active tool by PowerUpId from the specified preset.
+    /// </summary>
+    /// <param name="preset">Power-ups preset used for lookup.</param>
+    /// <param name="powerUpId">Requested tool ID.</param>
+    /// <returns>Matching tool definition or null if no match exists.</returns>
+    private static ActiveToolDefinition ResolveActiveToolById(PlayerPowerUpsPreset preset, string powerUpId)
+    {
+        if (preset == null)
+            return null;
+
+        IReadOnlyList<ActiveToolDefinition> activeTools = preset.ActiveTools;
+
+        if (activeTools == null || activeTools.Count == 0)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(powerUpId))
+            return null;
+
+        for (int index = 0; index < activeTools.Count; index++)
+        {
+            ActiveToolDefinition activeTool = activeTools[index];
+
+            if (activeTool == null)
+                continue;
+
+            PowerUpCommonData commonData = activeTool.CommonData;
+
+            if (commonData == null)
+                continue;
+
+            if (string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase) == false)
+                continue;
+
+            return activeTool;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Picks the first tool that matches the requested kind from the provided candidates.
+    /// </summary>
+    /// <param name="firstCandidate">First candidate tool.</param>
+    /// <param name="secondCandidate">Second candidate tool.</param>
+    /// <param name="requestedKind">Requested active tool kind.</param>
+    /// <returns>Matching tool definition or null.</returns>
+    private static ActiveToolDefinition ResolveToolByKind(ActiveToolDefinition firstCandidate, ActiveToolDefinition secondCandidate, ActiveToolKind requestedKind)
+    {
+        if (firstCandidate != null && firstCandidate.ToolKind == requestedKind)
+            return firstCandidate;
+
+        if (secondCandidate != null && secondCandidate.ToolKind == requestedKind)
+            return secondCandidate;
+
+        return null;
+    }
     #endregion
 
     #endregion
@@ -302,6 +448,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         //  Add player controller config component to entity
         AddComponent(entity, config);
 
+        PlayerWorldLayersConfig worldLayersConfig = BuildWorldLayersConfig(authoring.MasterPreset);
+        AddComponent(entity, worldLayersConfig);
+
         PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
 
         if (progressionPreset != null)
@@ -315,6 +464,14 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             };
 
             AddComponent(entity, progressionConfig);
+        }
+
+        PlayerPowerUpsPreset powerUpsPreset = authoring.GetPowerUpsPreset();
+
+        if (powerUpsPreset != null)
+        {
+            PlayerPowerUpsConfig powerUpsConfig = BuildPowerUpsConfig(authoring, powerUpsPreset);
+            AddComponent(entity, powerUpsConfig);
         }
 
         ShootingSettings shootingSettings = controllerPreset.ShootingSettings;
@@ -423,6 +580,61 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     }
 
     /// <summary>
+    /// Builds runtime world-layer configuration from the selected master preset.
+    /// </summary>
+    /// <param name="masterPreset">Master preset containing layer names.</param>
+    /// <returns>Runtime world-layer config with resolved masks.</returns>
+    private static PlayerWorldLayersConfig BuildWorldLayersConfig(PlayerMasterPreset masterPreset)
+    {
+        string wallsLayerName = ResolveWallsLayerName(masterPreset);
+        int wallsLayerMask = ResolveLayerMaskByName(wallsLayerName);
+
+        if (wallsLayerMask == 0)
+            wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
+
+        return new PlayerWorldLayersConfig
+        {
+            WallsLayerMask = wallsLayerMask
+        };
+    }
+
+    /// <summary>
+    /// Resolves the walls layer name configured in the master preset.
+    /// </summary>
+    /// <param name="masterPreset">Preset source.</param>
+    /// <returns>Configured layer name, or the project default walls layer name.</returns>
+    private static string ResolveWallsLayerName(PlayerMasterPreset masterPreset)
+    {
+        if (masterPreset == null)
+            return WorldWallCollisionUtility.DefaultWallsLayerName;
+
+        string wallsLayerName = masterPreset.WallsLayerName;
+
+        if (string.IsNullOrWhiteSpace(wallsLayerName))
+            return WorldWallCollisionUtility.DefaultWallsLayerName;
+
+        return wallsLayerName.Trim();
+    }
+
+    /// <summary>
+    /// Resolves a single layer name to its bitmask value.
+    /// </summary>
+    /// <param name="layerName">Layer name to resolve.</param>
+    /// <returns>Layer mask for the resolved layer, or zero when not found.</returns>
+    private static int ResolveLayerMaskByName(string layerName)
+    {
+        if (string.IsNullOrWhiteSpace(layerName))
+            return 0;
+
+        int layerIndex = LayerMask.NameToLayer(layerName);
+
+        if (layerIndex < 0)
+            return 0;
+
+        return 1 << layerIndex;
+    }
+
+    /// <summary>
     /// Creates a blob asset reference containing player progression configuration data based on the specified preset.
     /// </summary>
     /// <param name="preset">The player progression preset used to populate the configuration blob.</param>
@@ -452,6 +664,189 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         builder.Dispose();
 
         return blob;
+    }
+
+    /// <summary>
+    /// Builds runtime power-up config from the selected power-ups preset.
+    /// </summary>
+    /// <param name="preset">Source power-ups preset.</param>
+    /// <returns>Runtime power-up config with resolved primary/secondary loadout slots.</returns>
+    private PlayerPowerUpsConfig BuildPowerUpsConfig(PlayerAuthoring authoring, PlayerPowerUpsPreset preset)
+    {
+        if (preset == null)
+        {
+            return new PlayerPowerUpsConfig
+            {
+                PrimarySlot = default,
+                SecondarySlot = default
+            };
+        }
+
+        ActiveToolDefinition primaryTool = ResolveLoadoutTool(preset, preset.PrimaryActiveToolId, 0);
+        ActiveToolDefinition secondaryTool = ResolveLoadoutTool(preset, preset.SecondaryActiveToolId, 1);
+        PlayerPowerUpSlotConfig primarySlotConfig = BuildSlotConfig(authoring, primaryTool);
+        PlayerPowerUpSlotConfig secondarySlotConfig = BuildSlotConfig(authoring, secondaryTool);
+
+        return new PlayerPowerUpsConfig
+        {
+            PrimarySlot = primarySlotConfig,
+            SecondarySlot = secondarySlotConfig
+        };
+    }
+
+    /// <summary>
+    /// Resolves a loadout tool by ID with fallback to a positional index.
+    /// </summary>
+    /// <param name="preset">Source preset.</param>
+    /// <param name="toolId">Requested PowerUpId.</param>
+    /// <param name="fallbackIndex">Fallback index inside active tools list.</param>
+    /// <returns>Resolved tool definition or null if no tool can be resolved.</returns>
+    private static ActiveToolDefinition ResolveLoadoutTool(PlayerPowerUpsPreset preset, string toolId, int fallbackIndex)
+    {
+        if (preset == null)
+            return null;
+
+        IReadOnlyList<ActiveToolDefinition> activeTools = preset.ActiveTools;
+
+        if (activeTools == null)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(toolId) == false)
+        {
+            for (int index = 0; index < activeTools.Count; index++)
+            {
+                ActiveToolDefinition activeTool = activeTools[index];
+
+                if (activeTool == null)
+                    continue;
+
+                PowerUpCommonData commonData = activeTool.CommonData;
+
+                if (commonData == null)
+                    continue;
+
+                if (string.Equals(commonData.PowerUpId, toolId, System.StringComparison.OrdinalIgnoreCase) == false)
+                    continue;
+
+                return activeTool;
+            }
+        }
+
+        if (fallbackIndex >= 0 && fallbackIndex < activeTools.Count)
+            return activeTools[fallbackIndex];
+
+        return null;
+    }
+
+    /// <summary>
+    /// Converts an active tool definition into a blittable runtime slot config.
+    /// </summary>
+    /// <param name="authoring">Owning player authoring instance.</param>
+    /// <param name="activeTool">Tool definition to convert.</param>
+    /// <returns>Baked slot config.</returns>
+    private PlayerPowerUpSlotConfig BuildSlotConfig(PlayerAuthoring authoring, ActiveToolDefinition activeTool)
+    {
+        if (activeTool == null)
+            return default;
+
+        BombToolData bombData = activeTool.BombData;
+        DashToolData dashData = activeTool.DashData;
+        Entity bombPrefabEntity = Entity.Null;
+
+        if (activeTool.ToolKind == ActiveToolKind.Bomb && bombData != null && bombData.BombPrefab != null)
+        {
+            GameObject bombPrefab = bombData.BombPrefab;
+
+            if (IsInvalidBombPrefab(authoring, bombPrefab) == false)
+                bombPrefabEntity = GetEntity(bombPrefab, TransformUsageFlags.Dynamic);
+            else
+            {
+#if UNITY_EDITOR
+                if (authoring != null)
+                    Debug.LogError(string.Format("[PlayerAuthoringBaker] Invalid bomb prefab '{0}' on '{1}'. Assign a dedicated bomb prefab without PlayerAuthoring.", bombPrefab.name, authoring.name), authoring);
+#endif
+            }
+        }
+
+        float maximumEnergy = math.max(0f, activeTool.MaximumEnergy);
+        float activationCost = math.max(0f, activeTool.ActivationCost);
+        float maintenanceCostPerSecond = math.max(0f, activeTool.MaintenanceCostPerSecond);
+        float chargePerTrigger = math.max(0f, activeTool.ChargePerTrigger);
+        float3 bombSpawnOffset = bombData != null ? new float3(bombData.SpawnOffset.x, bombData.SpawnOffset.y, bombData.SpawnOffset.z) : float3.zero;
+        float bombDeploySpeed = bombData != null ? math.max(0f, bombData.DeploySpeed) : 0f;
+        float bombCollisionRadius = bombData != null ? math.max(0.01f, bombData.CollisionRadius) : 0.1f;
+        byte bombBounceOnWalls = bombData != null && bombData.BounceOnWalls ? (byte)1 : (byte)0;
+        float bombBounceDamping = bombData != null ? math.clamp(bombData.BounceDamping, 0f, 1f) : 0f;
+        float bombLinearDampingPerSecond = bombData != null ? math.max(0f, bombData.LinearDampingPerSecond) : 0f;
+        float bombFuseSeconds = bombData != null ? math.max(0.05f, bombData.FuseSeconds) : 0.05f;
+        float bombRadius = bombData != null ? math.max(0.1f, bombData.Radius) : 0.1f;
+        float bombDamage = bombData != null ? math.max(0f, bombData.Damage) : 0f;
+        byte bombAffectAll = bombData != null && bombData.AffectAllEnemiesInRadius ? (byte)1 : (byte)0;
+        float dashDistance = dashData != null ? math.max(0f, dashData.Distance) : 0f;
+        float dashDuration = dashData != null ? math.max(0.01f, dashData.Duration) : 0.01f;
+        float dashSpeedTransitionInSeconds = dashData != null ? math.max(0f, dashData.SpeedTransitionInSeconds) : 0f;
+        float dashSpeedTransitionOutSeconds = dashData != null ? math.max(0f, dashData.SpeedTransitionOutSeconds) : 0f;
+        byte dashInvulnerability = dashData != null && dashData.GrantsInvulnerability ? (byte)1 : (byte)0;
+        float dashInvulnerabilityExtraTime = dashData != null ? math.max(0f, dashData.InvulnerabilityExtraTime) : 0f;
+
+        return new PlayerPowerUpSlotConfig
+        {
+            IsDefined = 1,
+            ToolKind = activeTool.ToolKind,
+            ActivationResource = activeTool.ActivationResource,
+            MaintenanceResource = activeTool.MaintenanceResource,
+            ChargeType = activeTool.ChargeType,
+            MaximumEnergy = maximumEnergy,
+            ActivationCost = activationCost,
+            MaintenanceCostPerSecond = maintenanceCostPerSecond,
+            ChargePerTrigger = chargePerTrigger,
+            Toggleable = activeTool.Toggleable ? (byte)1 : (byte)0,
+            FullChargeRequirement = activeTool.FullChargeRequirement ? (byte)1 : (byte)0,
+            Unreplaceable = activeTool.Unreplaceable ? (byte)1 : (byte)0,
+            BombPrefabEntity = bombPrefabEntity,
+            Bomb = new BombPowerUpConfig
+            {
+                SpawnOffset = bombSpawnOffset,
+                DeploySpeed = bombDeploySpeed,
+                CollisionRadius = bombCollisionRadius,
+                BounceOnWalls = bombBounceOnWalls,
+                BounceDamping = bombBounceDamping,
+                LinearDampingPerSecond = bombLinearDampingPerSecond,
+                FuseSeconds = bombFuseSeconds,
+                Radius = bombRadius,
+                Damage = bombDamage,
+                AffectAllEnemiesInRadius = bombAffectAll
+            },
+            Dash = new DashPowerUpConfig
+            {
+                Distance = dashDistance,
+                Duration = dashDuration,
+                SpeedTransitionInSeconds = dashSpeedTransitionInSeconds,
+                SpeedTransitionOutSeconds = dashSpeedTransitionOutSeconds,
+                GrantsInvulnerability = dashInvulnerability,
+                InvulnerabilityExtraTime = dashInvulnerabilityExtraTime
+            }
+        };
+    }
+
+    /// <summary>
+    /// Validates bomb prefab references used by active tools.
+    /// </summary>
+    /// <param name="authoring">Owning player authoring instance.</param>
+    /// <param name="bombPrefab">Bomb prefab candidate.</param>
+    /// <returns>True when prefab is invalid for runtime usage.</returns>
+    private static bool IsInvalidBombPrefab(PlayerAuthoring authoring, GameObject bombPrefab)
+    {
+        if (bombPrefab == null)
+            return true;
+
+        if (authoring != null && bombPrefab == authoring.gameObject)
+            return true;
+
+        if (bombPrefab.GetComponent<PlayerAuthoring>() != null)
+            return true;
+
+        return false;
     }
     
     #region Config Filling

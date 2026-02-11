@@ -152,6 +152,8 @@ public sealed class InputActionSelectionElement : VisualElement
     #region Filters
     private void ApplyDefaultFilters()
     {
+        string defaultActionNameFilter = string.Empty;
+
         switch (m_Mode)
         {
             case SelectionMode.Movement:
@@ -163,11 +165,21 @@ public sealed class InputActionSelectionElement : VisualElement
                 m_ActionTypeFilter = ActionTypeFilter.Button;
                 m_ControlTypeFilter = "Button";
                 break;
+            case SelectionMode.PowerUps:
+                m_ActionTypeFilter = ActionTypeFilter.Button;
+                m_ControlTypeFilter = "Button";
+                defaultActionNameFilter = "PowerUp";
+                break;
             default:
                 m_ActionTypeFilter = ActionTypeFilter.Any;
                 m_ControlTypeFilter = AnyControlTypeOption;
                 break;
         }
+
+        m_ActionNameFilter = defaultActionNameFilter;
+
+        if (m_ActionNameField != null)
+            m_ActionNameField.SetValueWithoutNotify(m_ActionNameFilter);
 
         if (m_ActionTypeField != null)
             m_ActionTypeField.SetValueWithoutNotify(m_ActionTypeFilter);
@@ -509,7 +521,8 @@ public sealed class InputActionSelectionElement : VisualElement
         Movement = 0,
         Look = 1,
         Shooting = 2,
-        Generic = 3
+        PowerUps = 3,
+        Generic = 4
     }
 
     private enum ActionTypeFilter

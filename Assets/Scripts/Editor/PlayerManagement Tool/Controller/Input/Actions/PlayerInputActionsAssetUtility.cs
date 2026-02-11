@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot) are present in the asset, and if not, it creates them with default bindings. 
+/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary) are present in the asset, and if not, it creates them with default bindings. 
 /// The utility also handles asset creation and folder management within the Unity Editor.
 /// </summary>
 public static class PlayerInputActionsAssetUtility
@@ -42,7 +42,7 @@ public static class PlayerInputActionsAssetUtility
     #region Private Methods
     /// <summary>
     /// This method checks the provided input action asset for the presence of required actions 
-    /// (Move, Look, Shoot) within a "Player" action map. If any of the required actions are missing, 
+    /// (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary) within a "Player" action map. If any of the required actions are missing, 
     /// it creates them with default configurations and bindings. If any changes are made to the asset, 
     /// it marks it as dirty and saves the changes to ensure they persist in the Unity Editor.
     /// </summary>
@@ -65,6 +65,8 @@ public static class PlayerInputActionsAssetUtility
         changed |= EnsureAction(map, "Move", InputActionType.Value, "Vector2", AddDefaultMoveBindings);
         changed |= EnsureAction(map, "Look", InputActionType.Value, "Vector2", AddDefaultLookBindings);
         changed |= EnsureAction(map, "Shoot", InputActionType.Button, "Button", AddDefaultShootBindings);
+        changed |= EnsureAction(map, "PowerUpPrimary", InputActionType.Button, "Button", AddDefaultPowerUpPrimaryBindings);
+        changed |= EnsureAction(map, "PowerUpSecondary", InputActionType.Button, "Button", AddDefaultPowerUpSecondaryBindings);
 
         if (changed)
         {
@@ -156,12 +158,39 @@ public static class PlayerInputActionsAssetUtility
         action.AddBinding("<Keyboard>/space");
     }
 
+    /// <summary>
+    /// Adds default bindings for the primary power-up action.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultPowerUpPrimaryBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Mouse>/rightButton");
+        action.AddBinding("<Gamepad>/leftShoulder");
+        action.AddBinding("<Keyboard>/leftShift");
+    }
+
+    /// <summary>
+    /// Adds default bindings for the secondary power-up action.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultPowerUpSecondaryBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Gamepad>/rightShoulder");
+        action.AddBinding("<Keyboard>/e");
+    }
+
 
 
 
     /// <summary>
     /// This method creates a new input action asset with a "Player" action map containing 
-    /// the required actions (Move, Look, Shoot) and their default bindings.
+    /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary) and their default bindings.
     /// </summary>
     /// <returns></returns>
     private static InputActionAsset CreateDefaultAsset()
@@ -179,6 +208,12 @@ public static class PlayerInputActionsAssetUtility
 
         InputAction shoot = map.AddAction("Shoot", InputActionType.Button, null, null, null, null, "Button");
         AddDefaultShootBindings(shoot);
+
+        InputAction powerUpPrimary = map.AddAction("PowerUpPrimary", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultPowerUpPrimaryBindings(powerUpPrimary);
+
+        InputAction powerUpSecondary = map.AddAction("PowerUpSecondary", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultPowerUpSecondaryBindings(powerUpSecondary);
 
         asset.AddActionMap(map);
 

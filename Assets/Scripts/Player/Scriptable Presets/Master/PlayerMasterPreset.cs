@@ -26,10 +26,14 @@ public sealed class PlayerMasterPreset : ScriptableObject
     [SerializeField] private PlayerProgressionPreset m_ProgressionPreset;
 
     [Tooltip("Craftable power-ups preset reference.")]
-    [SerializeField] private PlayerCraftablePowerUpsPreset m_PowerUpsPreset;
+    [SerializeField] private PlayerPowerUpsPreset m_PowerUpsPreset;
 
     [Tooltip("Animation bindings preset reference.")]
     [SerializeField] private PlayerAnimationBindingsPreset m_AnimationBindingsPreset;
+
+    [Tooltip("Layer used by gameplay systems to identify solid world walls.")]
+    [Header("Layers")]
+    [SerializeField] private string wallsLayerName = "Walls";
     #endregion
 
     #region Properties
@@ -81,7 +85,7 @@ public sealed class PlayerMasterPreset : ScriptableObject
         }
     }
 
-    public PlayerCraftablePowerUpsPreset PowerUpsPreset
+    public PlayerPowerUpsPreset PowerUpsPreset
     {
         get
         {
@@ -96,6 +100,14 @@ public sealed class PlayerMasterPreset : ScriptableObject
             return m_AnimationBindingsPreset;
         }
     }
+
+    public string WallsLayerName
+    {
+        get
+        {
+            return wallsLayerName;
+        }
+    }
     #endregion
 
     #region Unity Methods
@@ -103,6 +115,9 @@ public sealed class PlayerMasterPreset : ScriptableObject
     {
         if (string.IsNullOrWhiteSpace(m_PresetId))
             m_PresetId = Guid.NewGuid().ToString("N");
+
+        if (string.IsNullOrWhiteSpace(wallsLayerName))
+            wallsLayerName = "Walls";
     }
     #endregion
 }

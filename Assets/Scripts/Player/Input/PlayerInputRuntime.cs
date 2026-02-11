@@ -3,20 +3,25 @@ using UnityEngine.InputSystem;
 
 #region Runtime
 /// <summary>
-/// Provides runtime management for player input actions, including initialization, shutdown, and access to move and
-/// look actions.
+/// Provides runtime management for player input actions, including initialization, shutdown, and access to gameplay
+/// actions.
 /// </summary>
 public static class PlayerInputRuntime
 {
     #region Fields
-    private static InputActionAsset runtimeAsset; // Active runtime input asset instance.
-    private static InputActionAsset sourceAsset; // Source asset used to build the runtime instance.
-    private static InputAction moveAction; // Cached move action.
-    private static InputAction lookAction; // Cached look action.
-    private static InputAction shootAction; // Cached shoot action.
-    private static string moveActionId; // Cached move action id.
-    private static string lookActionId; // Cached look action id.
-    private static string shootActionId; // Cached shoot action id.
+    private static InputActionAsset runtimeAsset;
+    private static InputActionAsset sourceAsset;
+    private static InputAction moveAction;
+    private static InputAction lookAction;
+    private static InputAction shootAction;
+    private static InputAction powerUpPrimaryAction;
+    private static InputAction powerUpSecondaryAction;
+
+    private static string moveActionId;
+    private static string lookActionId;
+    private static string shootActionId;
+    private static string powerUpPrimaryActionId;
+    private static string powerUpSecondaryActionId;
     #endregion
 
     #region Properties
@@ -51,17 +56,33 @@ public static class PlayerInputRuntime
             return shootAction;
         }
     }
+
+    public static InputAction PowerUpPrimaryAction
+    {
+        get
+        {
+            return powerUpPrimaryAction;
+        }
+    }
+
+    public static InputAction PowerUpSecondaryAction
+    {
+        get
+        {
+            return powerUpSecondaryAction;
+        }
+    }
     #endregion
 
+    #region Methods
+
     #region Lifecycle
-    /// <summary>
-    /// Initializes the input system with the specified input action asset and action identifiers.
-    /// </summary>
-    /// <param name="sourceAsset">The input action asset to use as the source.</param>
-    /// <param name="moveActionId">The identifier for the move action.</param>
-    /// <param name="lookActionId">The identifier for the look action.</param>
-    /// <param name="shootActionId">The identifier for the shoot action.</param>
-    public static void Initialize(InputActionAsset sourceAsset, string moveActionId, string lookActionId, string shootActionId)
+    public static void Initialize(InputActionAsset sourceAsset,
+                                  string moveActionId,
+                                  string lookActionId,
+                                  string shootActionId,
+                                  string powerUpPrimaryActionId,
+                                  string powerUpSecondaryActionId)
     {
         if (sourceAsset == null)
         {
@@ -69,38 +90,45 @@ public static class PlayerInputRuntime
             return;
         }
 
-        if (ShouldReuseRuntime(sourceAsset, moveActionId, lookActionId, shootActionId))
+        if (ShouldReuseRuntime(sourceAsset,
+                               moveActionId,
+                               lookActionId,
+                               shootActionId,
+                               powerUpPrimaryActionId,
+                               powerUpSecondaryActionId))
             return;
 
         Shutdown();
 
-        InputActionAsset runtimeAsset = Object.Instantiate(sourceAsset);
+        InputActionAsset instantiatedAsset = Object.Instantiate(sourceAsset);
 
-        if (runtimeAsset == null)
+        if (instantiatedAsset == null)
         {
             Shutdown();
             return;
         }
 
-        runtimeAsset.Enable();
+        instantiatedAsset.Enable();
 
-        PlayerInputRuntime.runtimeAsset = runtimeAsset;
+        runtimeAsset = instantiatedAsset;
         PlayerInputRuntime.sourceAsset = sourceAsset;
         PlayerInputRuntime.moveActionId = moveActionId;
         PlayerInputRuntime.lookActionId = lookActionId;
         PlayerInputRuntime.shootActionId = shootActionId;
-        moveAction = ResolveAction(runtimeAsset, moveActionId, "Move");
-        lookAction = ResolveAction(runtimeAsset, lookActionId, "Look");
-        shootAction = ResolveAction(runtimeAsset, shootActionId, "Shoot");
+        PlayerInputRuntime.powerUpPrimaryActionId = powerUpPrimaryActionId;
+        PlayerInputRuntime.powerUpSecondaryActionId = powerUpSecondaryActionId;
+
+        moveAction = ResolveAction(instantiatedAsset, moveActionId, "Move");
+        lookAction = ResolveAction(instantiatedAsset, lookActionId, "Look");
+        shootAction = ResolveAction(instantiatedAsset, shootActionId, "Shoot");
+        powerUpPrimaryAction = ResolveAction(instantiatedAsset, powerUpPrimaryActionId, "PowerUpPrimary");
+        powerUpSecondaryAction = ResolveAction(instantiatedAsset, powerUpSecondaryActionId, "PowerUpSecondary");
 
 #if UNITY_EDITOR
-        LogInitializationStatus(runtimeAsset, moveAction, lookAction, shootAction);
+        LogInitializationStatus(instantiatedAsset);
 #endif
     }
 
-    /// <summary>
-    /// Releases and cleans up all runtime input assets and related resources.
-    /// </summary>
     public static void Shutdown()
     {
         if (runtimeAsset != null)
@@ -114,23 +142,24 @@ public static class PlayerInputRuntime
         moveAction = null;
         lookAction = null;
         shootAction = null;
+        powerUpPrimaryAction = null;
+        powerUpSecondaryAction = null;
+
         moveActionId = null;
         lookActionId = null;
         shootActionId = null;
+        powerUpPrimaryActionId = null;
+        powerUpSecondaryActionId = null;
     }
     #endregion
 
     #region Helpers
-    /// <summary>
-    /// Determines whether the existing runtime should be reused based on the provided input action asset and action
-    /// IDs.
-    /// </summary>
-    /// <param name="sourceAsset">The input action asset to compare against the current runtime.</param>
-    /// <param name="moveActionId">The identifier for the move action to compare.</param>
-    /// <param name="lookActionId">The identifier for the look action to compare.</param>
-    /// <param name="shootActionId">The identifier for the shoot action to compare.</param>
-    /// <returns>True if the runtime can be reused with the specified asset and action IDs; otherwise, false.</returns>
-    private static bool ShouldReuseRuntime(InputActionAsset sourceAsset, string moveActionId, string lookActionId, string shootActionId)
+    private static bool ShouldReuseRuntime(InputActionAsset sourceAsset,
+                                           string moveActionId,
+                                           string lookActionId,
+                                           string shootActionId,
+                                           string powerUpPrimaryActionId,
+                                           string powerUpSecondaryActionId)
     {
         if (runtimeAsset == null)
             return false;
@@ -147,16 +176,15 @@ public static class PlayerInputRuntime
         if (string.Equals(PlayerInputRuntime.shootActionId, shootActionId) == false)
             return false;
 
+        if (string.Equals(PlayerInputRuntime.powerUpPrimaryActionId, powerUpPrimaryActionId) == false)
+            return false;
+
+        if (string.Equals(PlayerInputRuntime.powerUpSecondaryActionId, powerUpSecondaryActionId) == false)
+            return false;
+
         return true;
     }
 
-    /// <summary>
-    /// Finds and returns an InputAction from the given asset by action ID, or by fallback name if not found.
-    /// </summary>
-    /// <param name="asset">The InputActionAsset to search for the action.</param>
-    /// <param name="actionId">The unique identifier of the action to find.</param>
-    /// <param name="fallbackName">The fallback name to use if the action ID is not found.</param>
-    /// <returns>The resolved InputAction if found; otherwise, null.</returns>
     private static InputAction ResolveAction(InputActionAsset asset, string actionId, string fallbackName)
     {
         if (asset == null)
@@ -165,6 +193,7 @@ public static class PlayerInputRuntime
         if (string.IsNullOrWhiteSpace(actionId) == false)
         {
             InputAction action = asset.FindAction(actionId, false);
+
             if (action != null)
                 return action;
         }
@@ -174,19 +203,22 @@ public static class PlayerInputRuntime
 
         return asset.FindAction(fallbackName, false);
     }
+    #endregion
 
 #if UNITY_EDITOR
     #region Editor Debug
-    private static void LogInitializationStatus(InputActionAsset asset, InputAction moveAction, InputAction lookAction, InputAction shootAction)
+    private static void LogInitializationStatus(InputActionAsset asset)
     {
         if (asset == null)
             return;
 
-        string assetName = asset.name;
-        string moveStatus = BuildActionStatus(moveAction);
-        string lookStatus = BuildActionStatus(lookAction);
-        string shootStatus = BuildActionStatus(shootAction);
-        string message = string.Format("[PlayerInputRuntime] Initialized asset '{0}'. Move: {1} | Look: {2} | Shoot: {3}", assetName, moveStatus, lookStatus, shootStatus);
+        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5}",
+                                       asset.name,
+                                       BuildActionStatus(moveAction),
+                                       BuildActionStatus(lookAction),
+                                       BuildActionStatus(shootAction),
+                                       BuildActionStatus(powerUpPrimaryAction),
+                                       BuildActionStatus(powerUpSecondaryAction));
         Debug.Log(message, asset);
     }
 
@@ -204,6 +236,7 @@ public static class PlayerInputRuntime
     }
     #endregion
 #endif
+
     #endregion
 }
 #endregion

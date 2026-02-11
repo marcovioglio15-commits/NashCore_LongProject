@@ -26,7 +26,6 @@ public static class PlayerProgressionPresetLibraryUtility
 
         PlayerProgressionPresetLibrary createdLibrary = ScriptableObject.CreateInstance<PlayerProgressionPresetLibrary>();
         AssetDatabase.CreateAsset(createdLibrary, DefaultLibraryPath);
-        AssetDatabase.SaveAssets();
 
         return createdLibrary;
     }
@@ -40,7 +39,6 @@ public static class PlayerProgressionPresetLibraryUtility
 
         string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, presetName + ".asset"));
         AssetDatabase.CreateAsset(preset, assetPath);
-        AssetDatabase.SaveAssets();
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("presetName");
@@ -50,7 +48,6 @@ public static class PlayerProgressionPresetLibraryUtility
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(preset);
-        AssetDatabase.SaveAssets();
 
         return preset;
     }

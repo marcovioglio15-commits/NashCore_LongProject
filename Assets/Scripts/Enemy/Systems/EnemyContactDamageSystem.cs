@@ -33,6 +33,7 @@ public partial struct EnemyContactDamageSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
+        ComponentLookup<PlayerDashState> dashStateLookup = SystemAPI.GetComponentLookup<PlayerDashState>(true);
         NativeArray<Entity> playerEntities = playerQuery.ToEntityArray(Allocator.Temp);
 
         if (playerEntities.Length == 0)
@@ -46,6 +47,14 @@ public partial struct EnemyContactDamageSystem : ISystem
 
         if (entityManager.Exists(playerEntity) == false)
             return;
+
+        if (dashStateLookup.HasComponent(playerEntity))
+        {
+            PlayerDashState dashState = dashStateLookup[playerEntity];
+
+            if (dashState.RemainingInvulnerability > 0f)
+                return;
+        }
 
         LocalTransform playerTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
         PlayerHealth playerHealth = entityManager.GetComponentData<PlayerHealth>(playerEntity);

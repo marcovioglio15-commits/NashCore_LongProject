@@ -31,7 +31,6 @@ public static class PlayerMasterPresetLibraryUtility
 
         PlayerMasterPresetLibrary createdLibrary = ScriptableObject.CreateInstance<PlayerMasterPresetLibrary>();
         AssetDatabase.CreateAsset(createdLibrary, DefaultLibraryPath);
-        AssetDatabase.SaveAssets();
 
         return createdLibrary;
     }
@@ -50,7 +49,6 @@ public static class PlayerMasterPresetLibraryUtility
 
         string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, presetName + ".asset"));
         AssetDatabase.CreateAsset(preset, assetPath);
-        AssetDatabase.SaveAssets();
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("m_PresetName");
@@ -60,7 +58,6 @@ public static class PlayerMasterPresetLibraryUtility
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(preset);
-        AssetDatabase.SaveAssets();
 
         return preset;
     }
