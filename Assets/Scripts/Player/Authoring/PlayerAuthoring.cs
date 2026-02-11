@@ -768,6 +768,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             }
         }
 
+        // Clamp and sanitize values to ensure stability.
+        // Invalid values in the authoring data (e.g. negative costs or durations)
+        //  will be clamped to reasonable defaults instead.
         float maximumEnergy = math.max(0f, activeTool.MaximumEnergy);
         float activationCost = math.max(0f, activeTool.ActivationCost);
         float maintenanceCostPerSecond = math.max(0f, activeTool.MaintenanceCostPerSecond);

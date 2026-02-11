@@ -37,6 +37,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .Build();
     }
 
+    /// <summary>
+    /// Updates the system, adding missing PlayerPowerUpsState, PlayerDashState components 
+    /// and PlayerBombSpawnRequest buffers to entities with a PlayerPowerUpsConfig.
+    /// </summary>
+    /// <param name="state"></param>
     public void OnUpdate(ref SystemState state)
     {
         bool hasMissingState = missingStateQuery.IsEmptyIgnoreFilter == false;
@@ -50,6 +55,8 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         uint currentKillCount = 0u;
 
+        // if the total kill count is available (meaning the GlobalEnemyKillCounter singleton exists),
+        // use it to initialize the LastObservedGlobalKillCount in PlayerPowerUpsState,
         if (SystemAPI.TryGetSingleton<GlobalEnemyKillCounter>(out GlobalEnemyKillCounter killCounter))
             currentKillCount = killCounter.TotalKilled;
 

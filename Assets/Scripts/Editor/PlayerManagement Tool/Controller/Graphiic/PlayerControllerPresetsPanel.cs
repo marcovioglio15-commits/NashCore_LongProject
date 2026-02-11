@@ -96,7 +96,6 @@ public sealed class PlayerControllerPresetsPanel
 
     #region Methods
 
-
     #region UI Construction
     /// <summary>
     /// Constructs the user interface by creating a horizontal split view with left and right panes and adds it to the

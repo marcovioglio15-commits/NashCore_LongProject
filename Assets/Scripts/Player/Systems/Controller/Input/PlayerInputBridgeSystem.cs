@@ -3,7 +3,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#region Systems
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 public partial struct PlayerInputBridgeSystem : ISystem
 {
@@ -18,8 +17,7 @@ public partial struct PlayerInputBridgeSystem : ISystem
     {
         state.RequireForUpdate<PlayerInputState>();
     }
-    #endregion
-
+    
     #region Update
     public void OnUpdate(ref SystemState state)
     {
@@ -84,5 +82,6 @@ public partial struct PlayerInputBridgeSystem : ISystem
         #endif
     }
     #endregion
+    #endregion
+
 }
-#endregion

@@ -3,7 +3,6 @@ using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
 
-#region Systems
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerMovementSpeedSystem))]
 public partial struct PlayerMovementApplySystem : ISystem
@@ -20,9 +19,7 @@ public partial struct PlayerMovementApplySystem : ISystem
         state.RequireForUpdate<PlayerControllerConfig>();
         state.RequireForUpdate<PhysicsWorldSingleton>();
     }
-    #endregion
 
-    #region Update
     public void OnUpdate(ref SystemState state)
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
@@ -95,5 +92,6 @@ public partial struct PlayerMovementApplySystem : ISystem
         }
     }
     #endregion
+
+
 }
-#endregion
