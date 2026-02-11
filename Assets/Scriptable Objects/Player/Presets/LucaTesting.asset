@@ -10,33 +10,33 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4c5ed84bdc257044839a6d901f81512, type: 3}
-  m_Name: ConeVision_ForwardAndBarckward
+  m_Name: LucaTesting
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPreset
-  presetId: 599feb82d65d48b2a730e1677fcb7b56
-  presetName: ConeVision_ForwardAndBarckward
-  description: What an awesome description!
-  version: 1.0.0
+  presetId: 500e6105dcef4533adc4397ef12bd002
+  presetName: LucaTesting
+  description: Ohhhhh Testing
+  version: 0.0.1
   movementSettings:
-    directionsMode: 0
-    discreteDirectionCount: 8
+    directionsMode: 1
+    discreteDirectionCount: 16
     directionOffsetDegrees: 0
     movementReference: 1
     values:
-      baseSpeed: 4
-      maxSpeed: 6
-      acceleration: -1
-      deceleration: -1
+      baseSpeed: 8
+      maxSpeed: 10
+      acceleration: 50
+      deceleration: 50
       inputDeadZone: 0.1
-      digitalReleaseGraceSeconds: 0.09
+      digitalReleaseGraceSeconds: 0.08
   lookSettings:
-    m_DirectionsMode: 2
-    m_DiscreteDirectionCount: 8
+    m_DirectionsMode: 0
+    m_DiscreteDirectionCount: 16
     m_DirectionOffsetDegrees: 0
-    m_FrontConeEnabled: 1
+    m_FrontConeEnabled: 0
     m_FrontConeAngle: 90
     m_FrontConeMaxSpeedMultiplier: 1
     m_FrontConeAccelerationMultiplier: 1
-    m_BackConeEnabled: 1
+    m_BackConeEnabled: 0
     m_BackConeAngle: 90
     m_BackConeMaxSpeedMultiplier: 1
     m_BackConeAccelerationMultiplier: 1
@@ -49,9 +49,17 @@ MonoBehaviour:
     m_RightConeMaxSpeedMultiplier: 1
     m_RightConeAccelerationMultiplier: 1
     m_RotationMode: 1
-    m_RotationSpeed: 540
+    m_RotationSpeed: 1620
     m_MultiplierSampling: 0
     m_DiscreteDirectionMaxSpeedMultipliers:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
     - 1
     - 1
     - 1
@@ -69,11 +77,19 @@ MonoBehaviour:
     - 1
     - 1
     - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
     m_Values:
       m_RotationDamping: 0.1
-      m_RotationMaxSpeed: 720
+      m_RotationMaxSpeed: 1620
       m_RotationDeadZone: 0.1
-      m_DigitalReleaseGraceSeconds: 0.09
+      m_DigitalReleaseGraceSeconds: 0.08
   cameraSettings:
     behavior: 2
     followOffset: {x: 0, y: 10, z: -8}
@@ -82,18 +98,18 @@ MonoBehaviour:
       followSpeed: 8
       cameraLag: 0.1
       damping: 0.15
-      maxFollowDistance: 60000
-      deadZoneRadius: 0
+      maxFollowDistance: 6
+      deadZoneRadius: 0.2
   shootingSettings:
     triggerMode: 0
     projectilesInheritPlayerSpeed: 0
-    projectilePrefab: {fileID: 0}
+    projectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
     shootOffset: {x: 0, y: 0.5, z: 0.8}
     values:
       shootSpeed: 24
       rateOfFire: 8
-      range: 0
-      lifetime: 0
+      range: 20
+      lifetime: 2
       damage: 1
     initialPoolCapacity: 512
     poolExpandBatch: 128

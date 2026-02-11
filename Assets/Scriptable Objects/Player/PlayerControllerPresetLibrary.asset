@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31d145e0805082846b7d1a2e0ee115c7, type: 3}
   m_Name: PlayerControllerPresetLibrary
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerPresetLibrary
-  m_Presets:
+  presets:
   - {fileID: 11400000, guid: 5a3703589c6fd994ea8b4502a6cc4437, type: 2}
   - {fileID: 11400000, guid: f070f2dae679b034381193d127b77c51, type: 2}
   - {fileID: 11400000, guid: dc3b239fd2ad96745bcf7dcbb6e3fd0a, type: 2}
   - {fileID: 11400000, guid: aa65d236feea8ab4c8c34e2d8c4b50f3, type: 2}
+  - {fileID: 11400000, guid: 688dc5de1a2792d4f8a44523a2efd11d, type: 2}
