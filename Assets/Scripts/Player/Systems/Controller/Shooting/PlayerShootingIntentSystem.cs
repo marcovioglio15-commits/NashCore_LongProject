@@ -2,7 +2,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-#region Systems
 /// <summary>
 /// This system processes player input and shooting state to determine when players should shoot 
 /// and enqueues shoot requests accordingly. 
@@ -38,9 +37,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
         state.RequireForUpdate<ShooterProjectilePrefab>();
         state.RequireForUpdate<ShootRequest>();
     }
-    #endregion
 
-    #region Update
     /// <summary>
     /// Processes player input and shooting state to enqueue shoot requests for each player entity based on their
     /// shooting configuration and current input.
@@ -84,12 +81,13 @@ public partial struct PlayerShootingIntentSystem : ISystem
             // determine if the shoot button is currently pressed and if it was just pressed this frame
             bool isShootPressed = inputState.ValueRO.Shoot > 0.5f;
             bool shootPressedThisFrame = isShootPressed && shootingState.ValueRO.PreviousShootPressed == 0;
+            bool shootReleasedThisFrame = isShootPressed == false && shootingState.ValueRO.PreviousShootPressed != 0;
             shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
             bool automaticWasEnabled = shootingState.ValueRO.AutomaticEnabled != 0;
             float shotInterval = 1f / values.RateOfFire;
 
             // based on the shooting trigger mode, determine if the player should shoot this frame
-            bool shouldShoot = ResolveShootingTrigger(ref shootingState.ValueRW, shootingConfig.TriggerMode, shootPressedThisFrame);
+            bool shouldShoot = ResolveShootingTrigger(ref shootingState.ValueRW, shootingConfig.TriggerMode, shootPressedThisFrame, shootReleasedThisFrame);
             bool automaticIsEnabled = shootingState.ValueRO.AutomaticEnabled != 0;
 
             if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle)
@@ -142,7 +140,9 @@ public partial struct PlayerShootingIntentSystem : ISystem
             }
         }
     }
+
     #endregion
+
 
     #region Helpers
     /// <summary>
@@ -153,7 +153,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
     /// <param name="triggerMode"></param>
     /// <param name="shootPressedThisFrame"></param>
     /// <returns></returns>
-    private static bool ResolveShootingTrigger(ref PlayerShootingState shootingState, ShootingTriggerMode triggerMode, bool shootPressedThisFrame)
+    private static bool ResolveShootingTrigger(ref PlayerShootingState shootingState, ShootingTriggerMode triggerMode, bool shootPressedThisFrame,bool shootReleasedThisFrame)
     {
         switch (triggerMode)
         {
@@ -164,6 +164,11 @@ public partial struct PlayerShootingIntentSystem : ISystem
                 return shootingState.AutomaticEnabled != 0;
             case ShootingTriggerMode.ManualSingleShot:
                 return shootPressedThisFrame;
+            case ShootingTriggerMode.ManualContinousShot:
+                if (shootPressedThisFrame || shootReleasedThisFrame)
+                    shootingState.AutomaticEnabled = shootingState.AutomaticEnabled == 0 ? (byte)1 : (byte)0;
+
+                return shootPressedThisFrame || shootingState.AutomaticEnabled != 0;
             default:
                 return false;
         }
@@ -191,6 +196,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
 
         switch (triggerMode)
         {
+            case ShootingTriggerMode.ManualContinousShot:
             case ShootingTriggerMode.AutomaticToggle:
                 if (elapsedTime < nextShotTime)
                     break;
@@ -205,6 +211,10 @@ public partial struct PlayerShootingIntentSystem : ISystem
                     break;
 
                 shotsToFire = 1;
+                nextShotTime = elapsedTime + shotInterval;
+                break;
+            default:
+                shotsToFire = 0;
                 nextShotTime = elapsedTime + shotInterval;
                 break;
         }
@@ -262,4 +272,3 @@ public partial struct PlayerShootingIntentSystem : ISystem
     }
     #endregion
 }
-#endregion

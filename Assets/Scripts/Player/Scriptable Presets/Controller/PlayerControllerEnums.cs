@@ -52,6 +52,7 @@ public enum CameraBehavior
 public enum ShootingTriggerMode
 {
     AutomaticToggle = 0,
-    ManualSingleShot = 1
+    ManualSingleShot = 1,
+    ManualContinousShot = 2
 }
 #endregion

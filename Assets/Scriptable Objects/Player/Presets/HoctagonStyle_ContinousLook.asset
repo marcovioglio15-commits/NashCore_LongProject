@@ -26,6 +26,9 @@ MonoBehaviour:
       maxSpeed: 6
       acceleration: -1
       deceleration: -1
+      oppositeDirectionBrakeMultiplier: 2.25
+      wallBounceCoefficient: 0.35
+      wallCollisionSkinWidth: 0.02
       inputDeadZone: 0.1
       digitalReleaseGraceSeconds: 0.09
   lookSettings:
