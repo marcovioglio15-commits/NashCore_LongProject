@@ -90,7 +90,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
             bool shouldShoot = ResolveShootingTrigger(ref shootingState.ValueRW, shootingConfig.TriggerMode, shootPressedThisFrame, shootReleasedThisFrame);
             bool automaticIsEnabled = shootingState.ValueRO.AutomaticEnabled != 0;
 
-            if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle)
+            if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle || shootingConfig.TriggerMode == ShootingTriggerMode.ManualContinousShot)
             {
                 bool automaticEnabledThisFrame = automaticWasEnabled == false && automaticIsEnabled;
                 bool automaticDisabledThisFrame = automaticWasEnabled && automaticIsEnabled == false;

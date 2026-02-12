@@ -1,7 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-#region Components
 /// <summary>
 /// Holds runtime state for power-up slots and activation inputs.
 /// </summary>
@@ -74,4 +73,3 @@ public struct BombFuseState : IComponentData
 public struct BombExplodeRequest : IComponentData
 {
 }
-#endregion

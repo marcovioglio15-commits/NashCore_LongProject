@@ -6,6 +6,18 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// This class manages a draft session for player-related assets in the Unity Editor. 
+/// It allows tracking changes made to player presets and related assets, 
+/// staging deletions, and applying or discarding changes as needed. 
+/// The session captures a baseline state of relevant assets and compares it against 
+/// the current state to determine if there are pending changes that need to be applied or discarded. 
+/// It also handles asset renaming based on preset names and ensures that assets referenced by libraries
+/// cannot be deleted without first removing the reference.
+/// In details, the session provides methods to begin and end a draft session,
+/// stage and unstage asset deletions, perform undo and redo operations,
+/// mark the session as dirty, recompute pending changes, apply changes, and discard changes.
+/// </summary>
 public static class PlayerManagementDraftSession
 {
     #region Constants
@@ -14,7 +26,11 @@ public static class PlayerManagementDraftSession
     #endregion
 
     #region Fields
+    // This dictionary holds the baseline JSON representation of relevant assets, keyed by their asset paths.
+    // Those JSON representations are used to compare the current state of assets against the baseline to determine if there are pending changes.
+    // If pending changes are detected, the session can be applied to save those changes or discarded to revert to the baseline state.
     private static readonly Dictionary<string, string> baselineJsonByPath = new Dictionary<string, string>();
+    // This hash set holds the asset paths that are staged for deletion during the draft session.
     private static readonly HashSet<string> stagedDeletePaths = new HashSet<string>();
 
     private static bool isInitialized;
@@ -42,6 +58,10 @@ public static class PlayerManagementDraftSession
     #region Methods
 
     #region Public Methods
+    /// <summary>
+    /// This method initializes the draft session by capturing the baseline state of relevant player assets, 
+    /// setting the session as initialized, and clearing any staged deletions.
+    /// </summary>
     public static void BeginSession()
     {
         CaptureBaseline();
@@ -72,6 +92,11 @@ public static class PlayerManagementDraftSession
         hasPendingChanges = true;
     }
 
+    /// <summary>
+    /// This method removes the specified asset from the staged deletions, 
+    /// allowing it to be retained in the project.
+    /// </summary>
+    /// <param name="asset"></param>
     public static void UnstageDeleteAsset(UnityEngine.Object asset)
     {
         if (asset == null)
@@ -185,6 +210,10 @@ public static class PlayerManagementDraftSession
     #endregion
 
     #region Session Helpers
+    /// <summary>
+    /// This method captures the baseline state of relevant player assets by building 
+    /// a dictionary that maps asset paths to their serialized JSON representations.
+    /// </summary>
     private static void CaptureBaseline()
     {
         baselineJsonByPath.Clear();
