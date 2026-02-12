@@ -2,7 +2,7 @@ Shader "Cel Shader/Toon Outline"
 {
 	Properties
 	{
-		_OutlineThickness("Outline Thickness", Range(0,5)) = 1
+		_OutlineThickness("Outline Thickness", Range(0,10)) = 1
 		_OutlineColor("Outline Color", Color) = (0, 0, 0, 1)
 	}
 
@@ -45,7 +45,7 @@ Shader "Cel Shader/Toon Outline"
 
 			v2f vert(appdata v)
 			{
-				float outlineThickness = _OutlineThickness / 1000; // diving OutlineThickness value to have more precise control over the slider in inspector.
+				float outlineThickness = _OutlineThickness / 250; // diving OutlineThickness value to have more precise control over the slider in inspector.
 				
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex + outlineThickness * v.normal);
