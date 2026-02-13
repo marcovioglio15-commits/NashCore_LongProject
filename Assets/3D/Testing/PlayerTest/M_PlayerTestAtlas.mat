@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-3929682699484373449
+--- !u!114 &-8993081380770908502
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_PlayerAtlas
+  m_Name: M_PlayerTestAtlas
   m_Shader: {fileID: 4800000, guid: c06d2317c8cda6d49aa62bc6fc1810e9, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
