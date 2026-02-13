@@ -25,7 +25,7 @@ MonoBehaviour:
       baseSpeed: 2
       maxSpeed: 10
       acceleration: 50
-      deceleration: 50
+      deceleration: -1
       oppositeDirectionBrakeMultiplier: 2.25
       wallBounceCoefficient: 0.35
       wallCollisionSkinWidth: 0.3
