@@ -14,6 +14,10 @@ using Unity.Collections;
 [UpdateAfter(typeof(ProjectilePoolInitializeSystem))]
 public partial struct ProjectileSpawnSystem : ISystem
 {
+    #region Constants
+    private const float MinimumProjectileScale = 0.0001f;
+    #endregion
+
     #region Fields
     private EntityQuery shootersWithRequestsQuery;
     #endregion
@@ -37,9 +41,7 @@ public partial struct ProjectileSpawnSystem : ISystem
         // Require the query for updates to ensure the system only runs when there are shooter entities with shoot requests to process
         state.RequireForUpdate(shootersWithRequestsQuery);
     }
-    #endregion
-
-    #region Update
+    
     /// <summary>
     /// Processes shooter entities with pending shoot requests, expands projectile pools as needed, and spawns and
     /// initializes projectiles based on the requests.
@@ -127,6 +129,22 @@ public partial struct ProjectileSpawnSystem : ISystem
                 LocalTransform projectileTransform = entityManager.GetComponentData<LocalTransform>(projectileEntity);
                 projectileTransform.Position = request.Position;
                 projectileTransform.Rotation = quaternion.LookRotationSafe(direction, new float3(0f, 1f, 0f));
+
+                float baseScale = 1f;
+
+                if (entityManager.HasComponent<ProjectileBaseScale>(projectileEntity))
+                    baseScale = math.max(MinimumProjectileScale, entityManager.GetComponentData<ProjectileBaseScale>(projectileEntity).Value);
+                else
+                {
+                    baseScale = math.max(MinimumProjectileScale, projectileTransform.Scale);
+                    entityManager.AddComponentData(projectileEntity, new ProjectileBaseScale
+                    {
+                        Value = baseScale
+                    });
+                } 
+
+                float scaleMultiplier = math.max(0.01f, request.ProjectileScaleMultiplier);
+                projectileTransform.Scale = baseScale * scaleMultiplier;
                 entityManager.SetComponentData(projectileEntity, projectileTransform);
 
                 Projectile projectileData = new Projectile
@@ -160,5 +178,7 @@ public partial struct ProjectileSpawnSystem : ISystem
         // Dispose of the temporary array of shooter entities to free up memory
         shooterEntities.Dispose();
     }
+    
     #endregion
+
 }

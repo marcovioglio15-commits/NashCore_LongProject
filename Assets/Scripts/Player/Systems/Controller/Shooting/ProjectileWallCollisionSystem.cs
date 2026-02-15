@@ -12,7 +12,7 @@ using Unity.Transforms;
 public partial struct ProjectileWallCollisionSystem : ISystem
 {
     #region Constants
-    private const float ProjectileCollisionRadius = 0.05f;
+    private const float BaseProjectileCollisionRadius = 0.05f;
     private const float MovementEpsilon = 1e-6f;
     #endregion
 
@@ -63,10 +63,12 @@ public partial struct ProjectileWallCollisionSystem : ISystem
 
             float3 endPosition = projectileTransform.ValueRO.Position;
             float3 startPosition = endPosition - displacement;
+            float projectileScale = math.max(0.01f, projectileTransform.ValueRO.Scale);
+            float collisionRadius = math.max(0.005f, BaseProjectileCollisionRadius * projectileScale);
             bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
                                                                                    startPosition,
                                                                                    displacement,
-                                                                                   ProjectileCollisionRadius,
+                                                                                   collisionRadius,
                                                                                    wallsLayerMask,
                                                                                    out float3 _,
                                                                                    out float3 _);

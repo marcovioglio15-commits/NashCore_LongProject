@@ -18,6 +18,10 @@ public sealed class InputActionSelectionElement : VisualElement
     private const string ControlTypeTooltip = "Filter actions by expected control type.";
     private const string EditButtonTooltip = "Open the Input Actions editor with the selected action focused.";
     private const string NoActionsMessage = "No actions match the current filters.";
+    private const string FilterPrefsPrefix = "NashCore.PlayerManagement.InputActionFilters";
+    private const string ActionTypeFilterPrefsSuffix = ".ActionType";
+    private const string ControlTypeFilterPrefsSuffix = ".ControlType";
+    private const string ActionNameFilterPrefsSuffix = ".ActionName";
     #endregion
 
     #region Fields
@@ -71,7 +75,7 @@ public sealed class InputActionSelectionElement : VisualElement
         BuildEditSection();
 
         RefreshControlTypeOptions();
-        ApplyDefaultFilters();
+        ApplyDefaultOrPersistedFilters();
         RefreshActionOptions();
     }
     #endregion
@@ -90,6 +94,7 @@ public sealed class InputActionSelectionElement : VisualElement
         m_ActionNameField.RegisterValueChangedCallback(evt =>
         {
             m_ActionNameFilter = evt.newValue;
+            SaveCurrentFilters();
             RefreshActionOptions();
         });
 
@@ -99,6 +104,7 @@ public sealed class InputActionSelectionElement : VisualElement
         {
             ActionTypeFilter newValue = (ActionTypeFilter)evt.newValue;
             m_ActionTypeFilter = newValue;
+            SaveCurrentFilters();
             RefreshActionOptions();
         });
 
@@ -107,6 +113,7 @@ public sealed class InputActionSelectionElement : VisualElement
         m_ControlTypeField.RegisterValueChangedCallback(evt =>
         {
             m_ControlTypeFilter = evt.newValue;
+            SaveCurrentFilters();
             RefreshActionOptions();
         });
 
@@ -150,6 +157,19 @@ public sealed class InputActionSelectionElement : VisualElement
     #endregion
 
     #region Filters
+    private void ApplyDefaultOrPersistedFilters()
+    {
+        if (TryLoadPersistedFilters())
+        {
+            ApplyCurrentFiltersToFields();
+            SaveCurrentFilters();
+            return;
+        }
+
+        ApplyDefaultFilters();
+        SaveCurrentFilters();
+    }
+
     private void ApplyDefaultFilters()
     {
         string defaultActionNameFilter = string.Empty;
@@ -177,6 +197,16 @@ public sealed class InputActionSelectionElement : VisualElement
         }
 
         m_ActionNameFilter = defaultActionNameFilter;
+        ApplyCurrentFiltersToFields();
+    }
+
+    private void ApplyCurrentFiltersToFields()
+    {
+        if (string.IsNullOrWhiteSpace(m_ControlTypeFilter))
+            m_ControlTypeFilter = AnyControlTypeOption;
+
+        if (m_ControlTypeOptions.Contains(m_ControlTypeFilter) == false)
+            m_ControlTypeFilter = AnyControlTypeOption;
 
         if (m_ActionNameField != null)
             m_ActionNameField.SetValueWithoutNotify(m_ActionNameFilter);
@@ -185,12 +215,67 @@ public sealed class InputActionSelectionElement : VisualElement
             m_ActionTypeField.SetValueWithoutNotify(m_ActionTypeFilter);
 
         if (m_ControlTypeField != null)
-        {
-            if (m_ControlTypeOptions.Contains(m_ControlTypeFilter) == false)
-                m_ControlTypeFilter = AnyControlTypeOption;
-
             m_ControlTypeField.SetValueWithoutNotify(m_ControlTypeFilter);
-        }
+    }
+
+    private bool TryLoadPersistedFilters()
+    {
+        string filterStateKeyPrefix = GetFilterStateKeyPrefix();
+
+        if (string.IsNullOrWhiteSpace(filterStateKeyPrefix))
+            return false;
+
+        string actionTypeKey = filterStateKeyPrefix + ActionTypeFilterPrefsSuffix;
+
+        if (EditorPrefs.HasKey(actionTypeKey) == false)
+            return false;
+
+        int actionTypeValue = EditorPrefs.GetInt(actionTypeKey, (int)ActionTypeFilter.Any);
+
+        if (Enum.IsDefined(typeof(ActionTypeFilter), actionTypeValue) == false)
+            actionTypeValue = (int)ActionTypeFilter.Any;
+
+        m_ActionTypeFilter = (ActionTypeFilter)actionTypeValue;
+        m_ControlTypeFilter = EditorPrefs.GetString(filterStateKeyPrefix + ControlTypeFilterPrefsSuffix, AnyControlTypeOption);
+        m_ActionNameFilter = EditorPrefs.GetString(filterStateKeyPrefix + ActionNameFilterPrefsSuffix, string.Empty);
+        return true;
+    }
+
+    private void SaveCurrentFilters()
+    {
+        string filterStateKeyPrefix = GetFilterStateKeyPrefix();
+
+        if (string.IsNullOrWhiteSpace(filterStateKeyPrefix))
+            return;
+
+        EditorPrefs.SetInt(filterStateKeyPrefix + ActionTypeFilterPrefsSuffix, (int)m_ActionTypeFilter);
+        EditorPrefs.SetString(filterStateKeyPrefix + ControlTypeFilterPrefsSuffix, m_ControlTypeFilter);
+        EditorPrefs.SetString(filterStateKeyPrefix + ActionNameFilterPrefsSuffix, m_ActionNameFilter);
+    }
+
+    private string GetFilterStateKeyPrefix()
+    {
+        if (m_ActionIdProperty == null)
+            return string.Empty;
+
+        if (m_PresetSerializedObject == null)
+            return string.Empty;
+
+        UnityEngine.Object targetObject = m_PresetSerializedObject.targetObject;
+
+        if (targetObject == null)
+            return string.Empty;
+
+        string assetPath = AssetDatabase.GetAssetPath(targetObject);
+        string assetGuid = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(assetPath) == false)
+            assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
+
+        if (string.IsNullOrWhiteSpace(assetGuid))
+            assetGuid = targetObject.GetInstanceID().ToString();
+
+        return string.Concat(FilterPrefsPrefix, ".", m_Mode.ToString(), ".", assetGuid, ".", m_ActionIdProperty.propertyPath);
     }
 
     private void RefreshControlTypeOptions()

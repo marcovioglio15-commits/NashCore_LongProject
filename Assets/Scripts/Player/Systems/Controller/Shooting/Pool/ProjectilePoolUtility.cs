@@ -12,6 +12,7 @@ public static class ProjectilePoolUtility
 {
     #region Constants
     private static readonly float3 ParkingPosition = new float3(0f, -10000f, 0f);
+    private const float MinimumBaseScale = 0.0001f;
     #endregion
 
     #region Public Methods
@@ -39,6 +40,7 @@ public static class ProjectilePoolUtility
         {
             Entity projectileEntity = spawnedProjectiles[index];
             EnsureProjectileComponents(entityManager, projectileEntity);
+            EnsureProjectileBaseScale(entityManager, projectileEntity);
             SetProjectileParked(entityManager, projectileEntity);
             entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, false);
         }
@@ -77,6 +79,33 @@ public static class ProjectilePoolUtility
 
         if (entityManager.HasComponent<ProjectileActive>(projectileEntity) == false)
             entityManager.AddComponent<ProjectileActive>(projectileEntity);
+
+        if (entityManager.HasComponent<ProjectileBaseScale>(projectileEntity) == false)
+            entityManager.AddComponentData(projectileEntity, new ProjectileBaseScale
+            {
+                Value = 1f
+            });
+    }
+
+    /// <summary>
+    /// Synchronizes the cached base scale component with the current projectile transform scale.
+    /// </summary>
+    /// <param name="entityManager">The EntityManager used to access and modify entity components.</param>
+    /// <param name="projectileEntity">The entity representing the projectile to update.</param>
+    public static void EnsureProjectileBaseScale(EntityManager entityManager, Entity projectileEntity)
+    {
+        if (entityManager.HasComponent<LocalTransform>(projectileEntity) == false)
+            return;
+
+        if (entityManager.HasComponent<ProjectileBaseScale>(projectileEntity) == false)
+            return;
+
+        LocalTransform localTransform = entityManager.GetComponentData<LocalTransform>(projectileEntity);
+        float baseScale = math.max(MinimumBaseScale, localTransform.Scale);
+        entityManager.SetComponentData(projectileEntity, new ProjectileBaseScale
+        {
+            Value = baseScale
+        });
     }
 
     /// <summary>

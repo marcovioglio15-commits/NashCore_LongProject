@@ -49,6 +49,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
         ComponentLookup<ShooterMuzzleAnchor> muzzleLookup = SystemAPI.GetComponentLookup<ShooterMuzzleAnchor>(true);
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
+        ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
 
         // for each player,
         // determine if they should shoot based on their input and shooting mode,
@@ -70,9 +71,15 @@ public partial struct PlayerShootingIntentSystem : ISystem
             ref ShootingConfig shootingConfig = ref controllerConfig.ValueRO.Config.Value.Shooting;
             ref ShootingValuesBlob values = ref shootingConfig.Values;
             byte inheritPlayerSpeed = shootingConfig.ProjectilesInheritPlayerSpeed;
+            PlayerPassiveToolsState passiveToolsState = ResolvePassiveToolsState(entity, in passiveToolsLookup);
+            float projectileScaleMultiplier = math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier);
+            float projectileSpeed = math.max(0f, values.ShootSpeed * math.max(0f, passiveToolsState.ProjectileSpeedMultiplier));
+            float projectileDamage = math.max(0f, values.Damage * math.max(0f, passiveToolsState.ProjectileDamageMultiplier));
+            float projectileLifetime = ApplyLifetimeMultiplier(values.Lifetime, passiveToolsState.ProjectileLifetimeSecondsMultiplier);
+            float projectileRange = ApplyLifetimeMultiplier(values.Range, passiveToolsState.ProjectileLifetimeRangeMultiplier);
 
             // if rate of fire or shoot speed is zero or negative, treat as shooting disabled and skip shooting logic
-            if (values.RateOfFire <= 0f || values.ShootSpeed <= 0f)
+            if (values.RateOfFire <= 0f || projectileSpeed <= 0f)
             {
                 shootingState.ValueRW.PreviousShootPressed = inputState.ValueRO.Shoot > 0.5f ? (byte)1 : (byte)0;
                 continue;
@@ -129,10 +136,11 @@ public partial struct PlayerShootingIntentSystem : ISystem
                 {
                     Position = spawnPosition,
                     Direction = shootDirection,
-                    Speed = values.ShootSpeed,
-                    Range = values.Range,
-                    Lifetime = values.Lifetime,
-                    Damage = values.Damage,
+                    Speed = projectileSpeed,
+                    Range = projectileRange,
+                    Lifetime = projectileLifetime,
+                    Damage = projectileDamage,
+                    ProjectileScaleMultiplier = projectileScaleMultiplier,
                     InheritPlayerSpeed = inheritPlayerSpeed
                 };
 
@@ -269,6 +277,30 @@ public partial struct PlayerShootingIntentSystem : ISystem
 
         float3 rotatedOffset = math.rotate(referenceRotation, shootOffset);
         return referencePosition + rotatedOffset;
+    }
+
+    private static PlayerPassiveToolsState ResolvePassiveToolsState(Entity shooterEntity,
+                                                                    in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup)
+    {
+        if (passiveToolsLookup.HasComponent(shooterEntity))
+            return passiveToolsLookup[shooterEntity];
+
+        return new PlayerPassiveToolsState
+        {
+            ProjectileSizeMultiplier = 1f,
+            ProjectileDamageMultiplier = 1f,
+            ProjectileSpeedMultiplier = 1f,
+            ProjectileLifetimeSecondsMultiplier = 1f,
+            ProjectileLifetimeRangeMultiplier = 1f
+        };
+    }
+
+    private static float ApplyLifetimeMultiplier(float baseLifetimeValue, float lifetimeMultiplier)
+    {
+        if (baseLifetimeValue <= 0f)
+            return baseLifetimeValue;
+
+        return math.max(0f, baseLifetimeValue * math.max(0f, lifetimeMultiplier));
     }
     #endregion
 }

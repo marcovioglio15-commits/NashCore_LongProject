@@ -478,7 +478,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
         AddSectionButton(buttonsRoot, SectionType.DropPools, "Drop Pools");
-        AddSectionButton(buttonsRoot, SectionType.PassiveModifiers, "Passive Modifiers");
+        AddSectionButton(buttonsRoot, SectionType.PassiveTools, "Passive Tools");
         AddSectionButton(buttonsRoot, SectionType.ActiveTools, "Active Tools");
         AddSectionButton(buttonsRoot, SectionType.LoadoutInput, "Loadout & Input");
 
@@ -515,8 +515,8 @@ public sealed class PlayerPowerUpsPresetsPanel
             case SectionType.DropPools:
                 BuildDropPoolsSection();
                 return;
-            case SectionType.PassiveModifiers:
-                BuildPassiveModifiersSection();
+            case SectionType.PassiveTools:
+                BuildPassiveToolsSection();
                 return;
             case SectionType.ActiveTools:
                 BuildActiveToolsSection();
@@ -608,26 +608,26 @@ public sealed class PlayerPowerUpsPresetsPanel
         sectionContentRoot.Add(catalogField);
     }
 
-    private void BuildPassiveModifiersSection()
+    private void BuildPassiveToolsSection()
     {
-        Label header = new Label("Passive Modifiers");
+        Label header = new Label("Passive Tools");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
         sectionContentRoot.Add(header);
 
-        SerializedProperty passiveModifiersProperty = presetSerializedObject.FindProperty("passiveModifiers");
+        SerializedProperty passiveToolsProperty = presetSerializedObject.FindProperty("passiveTools");
 
-        if (passiveModifiersProperty == null)
+        if (passiveToolsProperty == null)
         {
-            Label missingLabel = new Label("Passive modifiers property is missing.");
+            Label missingLabel = new Label("Passive tools property is missing.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
             sectionContentRoot.Add(missingLabel);
             return;
         }
 
-        PropertyField passiveModifiersField = new PropertyField(passiveModifiersProperty);
-        passiveModifiersField.BindProperty(passiveModifiersProperty);
-        sectionContentRoot.Add(passiveModifiersField);
+        PropertyField passiveToolsField = new PropertyField(passiveToolsProperty);
+        passiveToolsField.BindProperty(passiveToolsProperty);
+        sectionContentRoot.Add(passiveToolsField);
     }
 
     private void BuildActiveToolsSection()
@@ -663,7 +663,9 @@ public sealed class PlayerPowerUpsPresetsPanel
         SerializedProperty secondaryToolActionIdProperty = presetSerializedObject.FindProperty("secondaryToolActionId");
         SerializedProperty primaryActiveToolIdProperty = presetSerializedObject.FindProperty("primaryActiveToolId");
         SerializedProperty secondaryActiveToolIdProperty = presetSerializedObject.FindProperty("secondaryActiveToolId");
+        SerializedProperty equippedPassiveToolIdsProperty = presetSerializedObject.FindProperty("equippedPassiveToolIds");
         SerializedProperty activeToolsProperty = presetSerializedObject.FindProperty("activeTools");
+        SerializedProperty passiveToolsProperty = presetSerializedObject.FindProperty("passiveTools");
 
         if (primaryToolActionIdProperty == null)
         {
@@ -705,6 +707,22 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
+        if (equippedPassiveToolIdsProperty == null)
+        {
+            Label missingLabel = new Label("Passive loadout properties are missing on this preset.");
+            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            sectionContentRoot.Add(missingLabel);
+            return;
+        }
+
+        if (passiveToolsProperty == null)
+        {
+            Label missingLabel = new Label("Passive tools list is missing on this preset.");
+            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            sectionContentRoot.Add(missingLabel);
+            return;
+        }
+
         EnsureDefaultActionId(primaryToolActionIdProperty, "PowerUpPrimary");
         EnsureDefaultActionId(secondaryToolActionIdProperty, "PowerUpSecondary");
 
@@ -732,20 +750,38 @@ public sealed class PlayerPowerUpsPresetsPanel
         {
             HelpBox missingToolsHelpBox = new HelpBox("No valid active tools found. Add Bomb or Dash tools in Active Tools first.", HelpBoxMessageType.Warning);
             sectionContentRoot.Add(missingToolsHelpBox);
+        }
+        else
+        {
+            BuildLoadoutSelector("Primary Tool", primaryActiveToolIdProperty, loadoutOptions);
+            BuildLoadoutSelector("Secondary Tool", secondaryActiveToolIdProperty, loadoutOptions);
+
+            ActiveToolKind primarySelectedKind = ResolveSelectedKind(primaryActiveToolIdProperty.stringValue, loadoutOptions);
+            ActiveToolKind secondarySelectedKind = ResolveSelectedKind(secondaryActiveToolIdProperty.stringValue, loadoutOptions);
+
+            if (primarySelectedKind == secondarySelectedKind)
+            {
+                HelpBox sameSlotWarning = new HelpBox("Primary and Secondary currently use the same tool type.", HelpBoxMessageType.Warning);
+                sectionContentRoot.Add(sameSlotWarning);
+            }
+        }
+
+        Label passiveLoadoutHeader = new Label("Passive Tools Loadout (IDs)");
+        passiveLoadoutHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
+        passiveLoadoutHeader.style.marginTop = 8f;
+        passiveLoadoutHeader.style.marginBottom = 2f;
+        sectionContentRoot.Add(passiveLoadoutHeader);
+
+        List<string> passiveToolIds = BuildPassiveLoadoutOptions(passiveToolsProperty);
+
+        if (passiveToolIds.Count == 0)
+        {
+            HelpBox missingPassiveToolsHelpBox = new HelpBox("No valid passive tools found. Add passive tools first.", HelpBoxMessageType.Warning);
+            sectionContentRoot.Add(missingPassiveToolsHelpBox);
             return;
         }
 
-        BuildLoadoutSelector("Primary Tool", primaryActiveToolIdProperty, loadoutOptions);
-        BuildLoadoutSelector("Secondary Tool", secondaryActiveToolIdProperty, loadoutOptions);
-
-        ActiveToolKind primarySelectedKind = ResolveSelectedKind(primaryActiveToolIdProperty.stringValue, loadoutOptions);
-        ActiveToolKind secondarySelectedKind = ResolveSelectedKind(secondaryActiveToolIdProperty.stringValue, loadoutOptions);
-
-        if (primarySelectedKind == secondarySelectedKind)
-        {
-            HelpBox sameSlotWarning = new HelpBox("Primary and Secondary currently use the same tool type.", HelpBoxMessageType.Warning);
-            sectionContentRoot.Add(sameSlotWarning);
-        }
+        BuildPassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
     }
 
     private void BuildLoadoutSelector(string label, SerializedProperty slotToolIdProperty, List<LoadoutToolOption> loadoutOptions)
@@ -902,6 +938,333 @@ public sealed class PlayerPowerUpsPresetsPanel
         return string.Empty;
     }
 
+    private void BuildPassiveLoadoutArray(SerializedProperty equippedPassiveToolIdsProperty, List<string> passiveToolIds)
+    {
+        if (equippedPassiveToolIdsProperty == null)
+            return;
+
+        if (passiveToolIds == null || passiveToolIds.Count == 0)
+            return;
+
+        bool normalized = NormalizePassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
+
+        if (normalized)
+        {
+            presetSerializedObject.ApplyModifiedPropertiesWithoutUndo();
+            presetSerializedObject.Update();
+        }
+
+        for (int index = 0; index < equippedPassiveToolIdsProperty.arraySize; index++)
+        {
+            SerializedProperty passiveToolIdProperty = equippedPassiveToolIdsProperty.GetArrayElementAtIndex(index);
+
+            if (passiveToolIdProperty == null)
+                continue;
+
+            string selectedToolId = ResolveSelectedPassiveToolId(passiveToolIdProperty.stringValue, passiveToolIds);
+            VisualElement row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            row.style.marginBottom = 4f;
+
+            PopupField<string> passiveSelector = new PopupField<string>("Passive Tool " + (index + 1), passiveToolIds, selectedToolId);
+            passiveSelector.tooltip = "Select a passive tool by its PowerUpId.";
+            passiveSelector.style.flexGrow = 1f;
+            int capturedIndex = index;
+            passiveSelector.RegisterValueChangedCallback(evt =>
+            {
+                SetPassiveLoadoutEntry(equippedPassiveToolIdsProperty, capturedIndex, evt.newValue, passiveToolIds);
+            });
+            row.Add(passiveSelector);
+
+            Button removeButton = new Button(() =>
+            {
+                RemovePassiveLoadoutEntry(equippedPassiveToolIdsProperty, capturedIndex, passiveToolIds);
+            });
+            removeButton.text = "Remove";
+            removeButton.tooltip = "Remove this passive tool from the startup loadout.";
+            removeButton.style.marginLeft = 6f;
+            row.Add(removeButton);
+
+            sectionContentRoot.Add(row);
+        }
+
+        if (equippedPassiveToolIdsProperty.arraySize == 0)
+        {
+            HelpBox emptyLoadoutHelpBox = new HelpBox("No passive tools are currently equipped in startup loadout.", HelpBoxMessageType.Info);
+            sectionContentRoot.Add(emptyLoadoutHelpBox);
+        }
+
+        Button addButton = new Button(() =>
+        {
+            AddPassiveLoadoutEntry(equippedPassiveToolIdsProperty, passiveToolIds);
+        });
+        addButton.text = "Add Passive Tool";
+        addButton.tooltip = "Add one passive tool ID to the startup loadout.";
+        addButton.style.marginTop = 2f;
+        addButton.SetEnabled(CanAddPassiveLoadoutEntry(equippedPassiveToolIdsProperty, passiveToolIds));
+        sectionContentRoot.Add(addButton);
+    }
+
+    private void AddPassiveLoadoutEntry(SerializedProperty equippedPassiveToolIdsProperty, List<string> passiveToolIds)
+    {
+        if (equippedPassiveToolIdsProperty == null)
+            return;
+
+        if (passiveToolIds == null || passiveToolIds.Count == 0)
+            return;
+
+        string nextPassiveToolId = ResolveNextPassiveLoadoutId(equippedPassiveToolIdsProperty, passiveToolIds);
+
+        if (string.IsNullOrWhiteSpace(nextPassiveToolId))
+            return;
+
+        if (selectedPreset != null)
+            Undo.RecordObject(selectedPreset, "Add Passive Tool Loadout Entry");
+
+        presetSerializedObject.Update();
+        int insertIndex = equippedPassiveToolIdsProperty.arraySize;
+        equippedPassiveToolIdsProperty.InsertArrayElementAtIndex(insertIndex);
+        SerializedProperty insertedProperty = equippedPassiveToolIdsProperty.GetArrayElementAtIndex(insertIndex);
+
+        if (insertedProperty != null)
+            insertedProperty.stringValue = nextPassiveToolId;
+
+        NormalizePassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
+        presetSerializedObject.ApplyModifiedProperties();
+        PlayerManagementDraftSession.MarkDirty();
+        BuildActiveSection();
+    }
+
+    private void RemovePassiveLoadoutEntry(SerializedProperty equippedPassiveToolIdsProperty, int entryIndex, List<string> passiveToolIds)
+    {
+        if (equippedPassiveToolIdsProperty == null)
+            return;
+
+        if (entryIndex < 0 || entryIndex >= equippedPassiveToolIdsProperty.arraySize)
+            return;
+
+        if (selectedPreset != null)
+            Undo.RecordObject(selectedPreset, "Remove Passive Tool Loadout Entry");
+
+        presetSerializedObject.Update();
+        equippedPassiveToolIdsProperty.DeleteArrayElementAtIndex(entryIndex);
+        NormalizePassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
+        presetSerializedObject.ApplyModifiedProperties();
+        PlayerManagementDraftSession.MarkDirty();
+        BuildActiveSection();
+    }
+
+    private void SetPassiveLoadoutEntry(SerializedProperty equippedPassiveToolIdsProperty, int entryIndex, string passiveToolId, List<string> passiveToolIds)
+    {
+        if (equippedPassiveToolIdsProperty == null)
+            return;
+
+        if (entryIndex < 0 || entryIndex >= equippedPassiveToolIdsProperty.arraySize)
+            return;
+
+        if (string.IsNullOrWhiteSpace(passiveToolId))
+            return;
+
+        SerializedProperty passiveToolIdProperty = equippedPassiveToolIdsProperty.GetArrayElementAtIndex(entryIndex);
+
+        if (passiveToolIdProperty == null)
+            return;
+
+        if (string.Equals(passiveToolIdProperty.stringValue, passiveToolId, StringComparison.Ordinal))
+            return;
+
+        if (selectedPreset != null)
+            Undo.RecordObject(selectedPreset, "Change Passive Tool Loadout Entry");
+
+        presetSerializedObject.Update();
+        passiveToolIdProperty.stringValue = passiveToolId;
+        NormalizePassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
+        presetSerializedObject.ApplyModifiedProperties();
+        PlayerManagementDraftSession.MarkDirty();
+        BuildActiveSection();
+    }
+
+    private static bool NormalizePassiveLoadoutArray(SerializedProperty equippedPassiveToolIdsProperty, List<string> passiveToolIds)
+    {
+        if (equippedPassiveToolIdsProperty == null)
+            return false;
+
+        if (passiveToolIds == null || passiveToolIds.Count == 0)
+            return false;
+
+        bool changed = false;
+        HashSet<string> uniqueToolIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < equippedPassiveToolIdsProperty.arraySize; index++)
+        {
+            SerializedProperty passiveToolIdProperty = equippedPassiveToolIdsProperty.GetArrayElementAtIndex(index);
+            string passiveToolId = passiveToolIdProperty != null ? passiveToolIdProperty.stringValue : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(passiveToolId))
+            {
+                equippedPassiveToolIdsProperty.DeleteArrayElementAtIndex(index);
+                changed = true;
+                index--;
+                continue;
+            }
+
+            if (ContainsPassiveToolId(passiveToolIds, passiveToolId) == false)
+            {
+                equippedPassiveToolIdsProperty.DeleteArrayElementAtIndex(index);
+                changed = true;
+                index--;
+                continue;
+            }
+
+            if (uniqueToolIds.Add(passiveToolId))
+                continue;
+
+            equippedPassiveToolIdsProperty.DeleteArrayElementAtIndex(index);
+            changed = true;
+            index--;
+        }
+
+        return changed;
+    }
+
+    private static string ResolveNextPassiveLoadoutId(SerializedProperty equippedPassiveToolIdsProperty, List<string> passiveToolIds)
+    {
+        if (equippedPassiveToolIdsProperty == null)
+            return string.Empty;
+
+        if (passiveToolIds == null || passiveToolIds.Count == 0)
+            return string.Empty;
+
+        for (int passiveToolIndex = 0; passiveToolIndex < passiveToolIds.Count; passiveToolIndex++)
+        {
+            string passiveToolId = passiveToolIds[passiveToolIndex];
+
+            if (ContainsPassiveLoadoutId(equippedPassiveToolIdsProperty, passiveToolId))
+                continue;
+
+            return passiveToolId;
+        }
+
+        return string.Empty;
+    }
+
+    private static bool CanAddPassiveLoadoutEntry(SerializedProperty equippedPassiveToolIdsProperty, List<string> passiveToolIds)
+    {
+        if (equippedPassiveToolIdsProperty == null)
+            return false;
+
+        if (passiveToolIds == null || passiveToolIds.Count == 0)
+            return false;
+
+        for (int passiveToolIndex = 0; passiveToolIndex < passiveToolIds.Count; passiveToolIndex++)
+        {
+            string passiveToolId = passiveToolIds[passiveToolIndex];
+
+            if (ContainsPassiveLoadoutId(equippedPassiveToolIdsProperty, passiveToolId))
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool ContainsPassiveToolId(List<string> passiveToolIds, string passiveToolId)
+    {
+        if (passiveToolIds == null)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(passiveToolId))
+            return false;
+
+        for (int index = 0; index < passiveToolIds.Count; index++)
+        {
+            if (string.Equals(passiveToolIds[index], passiveToolId, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool ContainsPassiveLoadoutId(SerializedProperty equippedPassiveToolIdsProperty, string passiveToolId)
+    {
+        if (equippedPassiveToolIdsProperty == null)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(passiveToolId))
+            return false;
+
+        for (int index = 0; index < equippedPassiveToolIdsProperty.arraySize; index++)
+        {
+            SerializedProperty passiveToolIdProperty = equippedPassiveToolIdsProperty.GetArrayElementAtIndex(index);
+
+            if (passiveToolIdProperty == null)
+                continue;
+
+            if (string.Equals(passiveToolIdProperty.stringValue, passiveToolId, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static List<string> BuildPassiveLoadoutOptions(SerializedProperty passiveToolsProperty)
+    {
+        List<string> options = new List<string>();
+        HashSet<string> uniqueToolIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (passiveToolsProperty == null)
+            return options;
+
+        for (int index = 0; index < passiveToolsProperty.arraySize; index++)
+        {
+            SerializedProperty passiveToolProperty = passiveToolsProperty.GetArrayElementAtIndex(index);
+
+            if (passiveToolProperty == null)
+                continue;
+
+            SerializedProperty commonDataProperty = passiveToolProperty.FindPropertyRelative("commonData");
+
+            if (commonDataProperty == null)
+                continue;
+
+            SerializedProperty toolIdProperty = commonDataProperty.FindPropertyRelative("powerUpId");
+
+            if (toolIdProperty == null)
+                continue;
+
+            string toolId = toolIdProperty.stringValue;
+
+            if (string.IsNullOrWhiteSpace(toolId))
+                continue;
+
+            if (uniqueToolIds.Add(toolId) == false)
+                continue;
+
+            options.Add(toolId);
+        }
+
+        return options;
+    }
+
+    private static string ResolveSelectedPassiveToolId(string selectedToolId, List<string> passiveToolIds)
+    {
+        if (passiveToolIds == null || passiveToolIds.Count == 0)
+            return string.Empty;
+
+        if (string.IsNullOrWhiteSpace(selectedToolId) == false)
+        {
+            for (int index = 0; index < passiveToolIds.Count; index++)
+            {
+                if (string.Equals(passiveToolIds[index], selectedToolId, StringComparison.OrdinalIgnoreCase))
+                    return passiveToolIds[index];
+            }
+        }
+
+        return passiveToolIds[0];
+    }
+
     private Foldout BuildBindingsFoldout(string foldoutTitle, SerializedProperty actionIdProperty)
     {
         Foldout foldout = new Foldout();
@@ -1019,7 +1382,7 @@ public sealed class PlayerPowerUpsPresetsPanel
     {
         Metadata = 0,
         DropPools = 1,
-        PassiveModifiers = 2,
+        PassiveTools = 2,
         ActiveTools = 3,
         LoadoutInput = 4
     }

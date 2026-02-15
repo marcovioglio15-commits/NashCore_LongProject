@@ -48,6 +48,12 @@ public enum PowerUpChargeType
     DamageInflicted = 4,
     DamageTaken = 5
 }
+
+public enum PassiveToolKind
+{
+    ProjectileSize = 0,
+    Custom = 1
+}
 #endregion
 
 #region Common Data Structures
@@ -278,6 +284,166 @@ public sealed class PassiveModifierDefinition
 
             modifier.Validate();
         }
+    }
+    #endregion
+
+    #endregion
+}
+
+[Serializable]
+public sealed class ProjectileSizePassiveToolData
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Header("Projectile Size Passive")]
+    [Tooltip("Multiplier applied to projectile transform scale and collision radius. 1 keeps default size.")]
+    [SerializeField] private float projectileSizeMultiplier = 1f;
+
+    [Tooltip("Multiplier applied to projectile damage. 1 keeps default damage.")]
+    [SerializeField] private float damageMultiplier = 1f;
+
+    [Tooltip("Multiplier applied to projectile speed. 1 keeps default speed.")]
+    [SerializeField] private float speedMultiplier = 1f;
+
+    [Tooltip("Multiplier applied to projectile lifetime in seconds. 1 keeps default temporal lifetime.")]
+    [SerializeField] private float lifetimeSecondsMultiplier = 1f;
+
+    [Tooltip("Multiplier applied to projectile max range distance. 1 keeps default distance lifetime.")]
+    [SerializeField] private float lifetimeRangeMultiplier = 1f;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public float ProjectileSizeMultiplier
+    {
+        get
+        {
+            return projectileSizeMultiplier;
+        }
+    }
+
+    public float DamageMultiplier
+    {
+        get
+        {
+            return damageMultiplier;
+        }
+    }
+
+    public float SpeedMultiplier
+    {
+        get
+        {
+            return speedMultiplier;
+        }
+    }
+
+    public float LifetimeSecondsMultiplier
+    {
+        get
+        {
+            return lifetimeSecondsMultiplier;
+        }
+    }
+
+    public float LifetimeRangeMultiplier
+    {
+        get
+        {
+            return lifetimeRangeMultiplier;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Validation
+    public void Validate()
+    {
+        if (projectileSizeMultiplier < 0.01f)
+            projectileSizeMultiplier = 0.01f;
+
+        if (damageMultiplier < 0f)
+            damageMultiplier = 0f;
+
+        if (speedMultiplier < 0f)
+            speedMultiplier = 0f;
+
+        if (lifetimeSecondsMultiplier < 0f)
+            lifetimeSecondsMultiplier = 0f;
+
+        if (lifetimeRangeMultiplier < 0f)
+            lifetimeRangeMultiplier = 0f;
+    }
+    #endregion
+
+    #endregion
+}
+
+[Serializable]
+public sealed class PassiveToolDefinition
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Common metadata and drop data for this passive tool.")]
+    [SerializeField] private PowerUpCommonData commonData = new PowerUpCommonData();
+
+    [Tooltip("Passive tool behavior type.")]
+    [SerializeField] private PassiveToolKind toolKind = PassiveToolKind.ProjectileSize;
+
+    [Header("Tool Specific")]
+    [Tooltip("Projectile size passive settings.")]
+    [SerializeField] private ProjectileSizePassiveToolData projectileSizeData = new ProjectileSizePassiveToolData();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public PowerUpCommonData CommonData
+    {
+        get
+        {
+            return commonData;
+        }
+    }
+
+    public PassiveToolKind ToolKind
+    {
+        get
+        {
+            return toolKind;
+        }
+    }
+
+    public ProjectileSizePassiveToolData ProjectileSizeData
+    {
+        get
+        {
+            return projectileSizeData;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Validation
+    public void Validate()
+    {
+        if (commonData == null)
+            commonData = new PowerUpCommonData();
+
+        commonData.Validate();
+
+        if (toolKind == PassiveToolKind.Custom)
+            toolKind = PassiveToolKind.ProjectileSize;
+
+        if (projectileSizeData == null)
+            projectileSizeData = new ProjectileSizePassiveToolData();
+
+        projectileSizeData.Validate();
     }
     #endregion
 
@@ -813,9 +979,10 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         "Boss"
     };
 
-    [Header("Passive Modifiers")]
-    [Tooltip("Passive modifiers available in this preset.")]
-    [SerializeField] private List<PassiveModifierDefinition> passiveModifiers = new List<PassiveModifierDefinition>();
+    [Header("Passive Tools")]
+    [Tooltip("Passive tools available in this preset.")]
+    [FormerlySerializedAs("passiveModifiers")]
+    [SerializeField] private List<PassiveToolDefinition> passiveTools = new List<PassiveToolDefinition>();
 
     [Header("Active Tools")]
     [Tooltip("Active tools available in this preset.")]
@@ -827,6 +994,19 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     [Tooltip("PowerUpId assigned to secondary slot at runtime initialization.")]
     [SerializeField] private string secondaryActiveToolId;
+
+    [Tooltip("PowerUpId list assigned as equipped passive tools at runtime initialization.")]
+    [SerializeField] private List<string> equippedPassiveToolIds = new List<string>();
+
+    [Tooltip("Legacy field used to migrate old primary passive loadout data.")]
+    [FormerlySerializedAs("primaryPassiveToolId")]
+    [HideInInspector]
+    [SerializeField] private string legacyPrimaryPassiveToolId;
+
+    [Tooltip("Legacy field used to migrate old secondary passive loadout data.")]
+    [FormerlySerializedAs("secondaryPassiveToolId")]
+    [HideInInspector]
+    [SerializeField] private string legacySecondaryPassiveToolId;
     #endregion
 
     #endregion
@@ -888,11 +1068,11 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         }
     }
 
-    public IReadOnlyList<PassiveModifierDefinition> PassiveModifiers
+    public IReadOnlyList<PassiveToolDefinition> PassiveTools
     {
         get
         {
-            return passiveModifiers;
+            return passiveTools;
         }
     }
 
@@ -917,6 +1097,14 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         get
         {
             return secondaryActiveToolId;
+        }
+    }
+
+    public IReadOnlyList<string> EquippedPassiveToolIds
+    {
+        get
+        {
+            return equippedPassiveToolIds;
         }
     }
     #endregion
@@ -956,11 +1144,14 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         if (dropPoolCatalog == null)
             dropPoolCatalog = new List<string>();
 
-        if (passiveModifiers == null)
-            passiveModifiers = new List<PassiveModifierDefinition>();
+        if (passiveTools == null)
+            passiveTools = new List<PassiveToolDefinition>();
 
         if (activeTools == null)
             activeTools = new List<ActiveToolDefinition>();
+
+        if (equippedPassiveToolIds == null)
+            equippedPassiveToolIds = new List<string>();
 
         if (dropPoolCatalog.Count == 0)
         {
@@ -972,14 +1163,14 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     private void ValidateEntries()
     {
-        for (int index = 0; index < passiveModifiers.Count; index++)
+        for (int index = 0; index < passiveTools.Count; index++)
         {
-            PassiveModifierDefinition passiveModifier = passiveModifiers[index];
+            PassiveToolDefinition passiveTool = passiveTools[index];
 
-            if (passiveModifier == null)
+            if (passiveTool == null)
                 continue;
 
-            passiveModifier.Validate();
+            passiveTool.Validate();
         }
 
         for (int index = 0; index < activeTools.Count; index++)
@@ -1005,6 +1196,8 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
         if (string.IsNullOrWhiteSpace(secondaryActiveToolId) && activeTools.Count > 1)
             secondaryActiveToolId = GetSecondValidActiveToolId();
+
+        ValidateEquippedPassiveToolIds();
     }
 
     private bool HasActiveToolWithId(string powerUpId)
@@ -1084,6 +1277,139 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         }
 
         return string.Empty;
+    }
+
+    private bool HasPassiveToolWithId(string powerUpId)
+    {
+        if (string.IsNullOrWhiteSpace(powerUpId))
+            return false;
+
+        for (int index = 0; index < passiveTools.Count; index++)
+        {
+            PassiveToolDefinition passiveTool = passiveTools[index];
+
+            if (passiveTool == null)
+                continue;
+
+            PowerUpCommonData commonData = passiveTool.CommonData;
+
+            if (commonData == null)
+                continue;
+
+            if (string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase) == false)
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private string GetFirstValidPassiveToolId()
+    {
+        for (int index = 0; index < passiveTools.Count; index++)
+        {
+            PassiveToolDefinition passiveTool = passiveTools[index];
+
+            if (passiveTool == null)
+                continue;
+
+            PowerUpCommonData commonData = passiveTool.CommonData;
+
+            if (commonData == null)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(commonData.PowerUpId))
+                continue;
+
+            return commonData.PowerUpId;
+        }
+
+        return string.Empty;
+    }
+
+    private void ValidateEquippedPassiveToolIds()
+    {
+        MigrateLegacyPassiveToolIds();
+
+        if (equippedPassiveToolIds == null)
+            equippedPassiveToolIds = new List<string>();
+
+        HashSet<string> equippedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < equippedPassiveToolIds.Count; index++)
+        {
+            string equippedPassiveToolId = equippedPassiveToolIds[index];
+
+            if (string.IsNullOrWhiteSpace(equippedPassiveToolId))
+            {
+                equippedPassiveToolIds.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            if (HasPassiveToolWithId(equippedPassiveToolId) == false)
+            {
+                equippedPassiveToolIds.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            if (equippedIds.Add(equippedPassiveToolId))
+                continue;
+
+            equippedPassiveToolIds.RemoveAt(index);
+            index--;
+        }
+
+        if (equippedPassiveToolIds.Count > 0)
+            return;
+
+        string firstValidPassiveToolId = GetFirstValidPassiveToolId();
+
+        if (string.IsNullOrWhiteSpace(firstValidPassiveToolId))
+            return;
+
+        equippedPassiveToolIds.Add(firstValidPassiveToolId);
+    }
+
+    private void MigrateLegacyPassiveToolIds()
+    {
+        if (equippedPassiveToolIds == null)
+            equippedPassiveToolIds = new List<string>();
+
+        if (equippedPassiveToolIds.Count > 0)
+        {
+            ClearLegacyPassiveToolIds();
+            return;
+        }
+
+        TryAppendLegacyPassiveToolId(legacyPrimaryPassiveToolId);
+        TryAppendLegacyPassiveToolId(legacySecondaryPassiveToolId);
+        ClearLegacyPassiveToolIds();
+    }
+
+    private void TryAppendLegacyPassiveToolId(string legacyPassiveToolId)
+    {
+        if (string.IsNullOrWhiteSpace(legacyPassiveToolId))
+            return;
+
+        if (HasPassiveToolWithId(legacyPassiveToolId) == false)
+            return;
+
+        for (int index = 0; index < equippedPassiveToolIds.Count; index++)
+        {
+            if (string.Equals(equippedPassiveToolIds[index], legacyPassiveToolId, StringComparison.OrdinalIgnoreCase))
+                return;
+        }
+
+        equippedPassiveToolIds.Add(legacyPassiveToolId);
+    }
+
+    private void ClearLegacyPassiveToolIds()
+    {
+        legacyPrimaryPassiveToolId = string.Empty;
+        legacySecondaryPassiveToolId = string.Empty;
     }
     #endregion
 

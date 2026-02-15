@@ -53,6 +53,7 @@ public struct ShootRequest : IBufferElementData
     public float Range;
     public float Lifetime;
     public float Damage;
+    public float ProjectileScaleMultiplier;
     public byte InheritPlayerSpeed;
 }
 
@@ -102,4 +103,12 @@ public struct ProjectileOwner : IComponentData
 /// </summary>
 public struct ProjectileActive : IComponentData, IEnableableComponent
 {
+}
+
+/// <summary>
+/// Stores the projectile prefab base scale so runtime modifiers can be reapplied without cumulative drift.
+/// </summary>
+public struct ProjectileBaseScale : IComponentData
+{
+    public float Value;
 }

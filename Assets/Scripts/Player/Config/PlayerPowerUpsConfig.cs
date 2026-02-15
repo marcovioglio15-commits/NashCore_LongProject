@@ -62,4 +62,34 @@ public struct DashPowerUpConfig
     public byte GrantsInvulnerability;
     public float InvulnerabilityExtraTime;
 }
+
+/// <summary>
+/// Holds baked runtime configuration for a single passive-tool slot.
+/// </summary>
+public struct PlayerPassiveToolConfig
+{
+    public byte IsDefined;
+    public PassiveToolKind ToolKind;
+    public ProjectileSizePassiveConfig ProjectileSize;
+}
+
+/// <summary>
+/// Buffer entry representing one equipped passive tool in the player's startup loadout.
+/// </summary>
+public struct EquippedPassiveToolElement : IBufferElementData
+{
+    public PlayerPassiveToolConfig Tool;
+}
+
+/// <summary>
+/// Holds baked runtime configuration for the Projectile Size passive tool.
+/// </summary>
+public struct ProjectileSizePassiveConfig
+{
+    public float SizeMultiplier;
+    public float DamageMultiplier;
+    public float SpeedMultiplier;
+    public float LifetimeSecondsMultiplier;
+    public float LifetimeRangeMultiplier;
+}
 #endregion

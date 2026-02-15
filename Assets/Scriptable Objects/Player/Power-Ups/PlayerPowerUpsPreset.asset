@@ -22,7 +22,35 @@ MonoBehaviour:
   - Milestone
   - Shop
   - Boss
-  passiveModifiers: []
+  passiveTools:
+  - commonData:
+      powerUpId: BIG SHOT
+      displayName: 
+      description: 
+      dropPools: []
+      dropTier: 1
+      purchaseCost: 0
+    toolKind: 0
+    projectileSizeData:
+      projectileSizeMultiplier: 2
+      damageMultiplier: 2
+      speedMultiplier: 0.5
+      lifetimeSecondsMultiplier: 1
+      lifetimeRangeMultiplier: 1
+  - commonData:
+      powerUpId: Tiny Shots
+      displayName: 
+      description: 
+      dropPools: []
+      dropTier: 1
+      purchaseCost: 0
+    toolKind: 0
+    projectileSizeData:
+      projectileSizeMultiplier: 0.7
+      damageMultiplier: 0.5
+      speedMultiplier: 2
+      lifetimeSecondsMultiplier: 1
+      lifetimeRangeMultiplier: 1
   activeTools:
   - commonData:
       powerUpId: Dash
@@ -100,3 +128,7 @@ MonoBehaviour:
       invulnerabilityExtraTime: 0
   primaryActiveToolId: Dash
   secondaryActiveToolId: Bomb
+  equippedPassiveToolIds:
+  - BIG SHOT
+  legacyPrimaryPassiveToolId: 
+  legacySecondaryPassiveToolId: 

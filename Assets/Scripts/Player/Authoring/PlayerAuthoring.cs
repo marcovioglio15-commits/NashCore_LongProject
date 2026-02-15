@@ -472,6 +472,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         {
             PlayerPowerUpsConfig powerUpsConfig = BuildPowerUpsConfig(authoring, powerUpsPreset);
             AddComponent(entity, powerUpsConfig);
+
+            DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer = AddBuffer<EquippedPassiveToolElement>(entity);
+            PopulateEquippedPassiveToolsBuffer(equippedPassiveToolsBuffer, powerUpsPreset);
         }
 
         ShootingSettings shootingSettings = controllerPreset.ShootingSettings;
@@ -674,13 +677,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     private PlayerPowerUpsConfig BuildPowerUpsConfig(PlayerAuthoring authoring, PlayerPowerUpsPreset preset)
     {
         if (preset == null)
-        {
-            return new PlayerPowerUpsConfig
-            {
-                PrimarySlot = default,
-                SecondarySlot = default
-            };
-        }
+            return default;
 
         ActiveToolDefinition primaryTool = ResolveLoadoutTool(preset, preset.PrimaryActiveToolId, 0);
         ActiveToolDefinition secondaryTool = ResolveLoadoutTool(preset, preset.SecondaryActiveToolId, 1);
@@ -692,6 +689,50 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             PrimarySlot = primarySlotConfig,
             SecondarySlot = secondarySlotConfig
         };
+    }
+
+    /// <summary>
+    /// Populates the equipped passive-tools runtime buffer from loadout IDs.
+    /// </summary>
+    /// <param name="equippedPassiveToolsBuffer">Target runtime buffer.</param>
+    /// <param name="preset">Source power-ups preset.</param>
+    private static void PopulateEquippedPassiveToolsBuffer(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer, PlayerPowerUpsPreset preset)
+    {
+        if (preset == null)
+            return;
+
+        IReadOnlyList<string> equippedPassiveToolIds = preset.EquippedPassiveToolIds;
+
+        if (equippedPassiveToolIds == null || equippedPassiveToolIds.Count == 0)
+            return;
+
+        HashSet<string> visitedPassiveToolIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < equippedPassiveToolIds.Count; index++)
+        {
+            string passiveToolId = equippedPassiveToolIds[index];
+
+            if (string.IsNullOrWhiteSpace(passiveToolId))
+                continue;
+
+            if (visitedPassiveToolIds.Add(passiveToolId) == false)
+                continue;
+
+            PassiveToolDefinition passiveTool = ResolveLoadoutPassiveTool(preset, passiveToolId);
+
+            if (passiveTool == null)
+                continue;
+
+            PlayerPassiveToolConfig passiveToolConfig = BuildPassiveToolConfig(passiveTool);
+
+            if (passiveToolConfig.IsDefined == 0)
+                continue;
+
+            equippedPassiveToolsBuffer.Add(new EquippedPassiveToolElement
+            {
+                Tool = passiveToolConfig
+            });
+        }
     }
 
     /// <summary>
@@ -736,6 +777,104 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             return activeTools[fallbackIndex];
 
         return null;
+    }
+
+    /// <summary>
+    /// Resolves a passive loadout tool by ID.
+    /// </summary>
+    /// <param name="preset">Source preset.</param>
+    /// <param name="toolId">Requested PowerUpId.</param>
+    /// <returns>Resolved passive tool definition or null if no tool can be resolved.</returns>
+    private static PassiveToolDefinition ResolveLoadoutPassiveTool(PlayerPowerUpsPreset preset, string toolId)
+    {
+        if (preset == null)
+            return null;
+
+        IReadOnlyList<PassiveToolDefinition> passiveTools = preset.PassiveTools;
+
+        if (passiveTools == null)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(toolId) == false)
+        {
+            for (int index = 0; index < passiveTools.Count; index++)
+            {
+                PassiveToolDefinition passiveTool = passiveTools[index];
+
+                if (passiveTool == null)
+                    continue;
+
+                PowerUpCommonData commonData = passiveTool.CommonData;
+
+                if (commonData == null)
+                    continue;
+
+                if (string.Equals(commonData.PowerUpId, toolId, System.StringComparison.OrdinalIgnoreCase) == false)
+                    continue;
+
+                return passiveTool;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Converts a passive tool definition into a blittable runtime slot config.
+    /// </summary>
+    /// <param name="passiveTool">Passive tool definition to convert.</param>
+    /// <returns>Baked passive slot config.</returns>
+    private static PlayerPassiveToolConfig BuildPassiveToolConfig(PassiveToolDefinition passiveTool)
+    {
+        if (passiveTool == null)
+            return default;
+
+        PassiveToolKind toolKind = passiveTool.ToolKind;
+
+        if (toolKind == PassiveToolKind.Custom)
+            toolKind = PassiveToolKind.ProjectileSize;
+
+        ProjectileSizePassiveToolData projectileSizeData = passiveTool.ProjectileSizeData;
+        ProjectileSizePassiveConfig projectileSizeConfig = BuildProjectileSizePassiveConfig(projectileSizeData);
+
+        return new PlayerPassiveToolConfig
+        {
+            IsDefined = 1,
+            ToolKind = toolKind,
+            ProjectileSize = projectileSizeConfig
+        };
+    }
+
+    /// <summary>
+    /// Converts projectile-size passive authoring data into runtime-safe values.
+    /// </summary>
+    /// <param name="projectileSizeData">Source projectile passive data.</param>
+    /// <returns>Baked projectile passive config.</returns>
+    private static ProjectileSizePassiveConfig BuildProjectileSizePassiveConfig(ProjectileSizePassiveToolData projectileSizeData)
+    {
+        float sizeMultiplier = 1f;
+        float damageMultiplier = 1f;
+        float speedMultiplier = 1f;
+        float lifetimeSecondsMultiplier = 1f;
+        float lifetimeRangeMultiplier = 1f;
+
+        if (projectileSizeData != null)
+        {
+            sizeMultiplier = math.max(0.01f, projectileSizeData.ProjectileSizeMultiplier);
+            damageMultiplier = math.max(0f, projectileSizeData.DamageMultiplier);
+            speedMultiplier = math.max(0f, projectileSizeData.SpeedMultiplier);
+            lifetimeSecondsMultiplier = math.max(0f, projectileSizeData.LifetimeSecondsMultiplier);
+            lifetimeRangeMultiplier = math.max(0f, projectileSizeData.LifetimeRangeMultiplier);
+        }
+
+        return new ProjectileSizePassiveConfig
+        {
+            SizeMultiplier = sizeMultiplier,
+            DamageMultiplier = damageMultiplier,
+            SpeedMultiplier = speedMultiplier,
+            LifetimeSecondsMultiplier = lifetimeSecondsMultiplier,
+            LifetimeRangeMultiplier = lifetimeRangeMultiplier
+        };
     }
 
     /// <summary>

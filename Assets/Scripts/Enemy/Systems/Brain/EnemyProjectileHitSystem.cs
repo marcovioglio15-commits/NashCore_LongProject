@@ -12,6 +12,10 @@ using Unity.Transforms;
 [UpdateAfter(typeof(EnemySteeringSystem))]
 public partial struct EnemyProjectileHitSystem : ISystem
 {
+    #region Constants
+    private const float BaseProjectileHitRadius = 0.05f;
+    #endregion
+
     #region Fields
     private EntityQuery enemyQuery;
     private EntityQuery projectileQuery;
@@ -86,15 +90,21 @@ public partial struct EnemyProjectileHitSystem : ISystem
         }
 
         NativeArray<float3> projectilePositions = new NativeArray<float3>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> projectileRadii = new NativeArray<float>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
+        {
             projectilePositions[projectileIndex] = projectileTransforms[projectileIndex].Position;
+            float projectileScale = math.max(0.01f, projectileTransforms[projectileIndex].Scale);
+            projectileRadii[projectileIndex] = math.max(0.005f, BaseProjectileHitRadius * projectileScale);
+        }
 
         NativeArray<int> hitEnemyIndices = new NativeArray<int>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
         EnemyProjectileHitJob hitJob = new EnemyProjectileHitJob
         {
             ProjectilePositions = projectilePositions,
+            ProjectileRadii = projectileRadii,
             EnemyPositions = enemyPositions,
             EnemyRadii = enemyRadii,
             CellMap = enemyCellMap,
@@ -173,6 +183,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         enemyPositions.Dispose();
         enemyRadii.Dispose();
         projectilePositions.Dispose();
+        projectileRadii.Dispose();
         hitEnemyIndices.Dispose();
         enemyCellMap.Dispose();
         damageByEnemy.Dispose();
@@ -216,6 +227,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
     private struct EnemyProjectileHitJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<float3> ProjectilePositions;
+        [ReadOnly] public NativeArray<float> ProjectileRadii;
         [ReadOnly] public NativeArray<float3> EnemyPositions;
         [ReadOnly] public NativeArray<float> EnemyRadii;
         [ReadOnly] public NativeParallelMultiHashMap<int, int> CellMap;
@@ -225,6 +237,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         public void Execute(int index)
         {
             float3 projectilePosition = ProjectilePositions[index];
+            float projectileRadius = math.max(0.005f, ProjectileRadii[index]);
             int centerCellX = (int)math.floor(projectilePosition.x * InverseCellSize);
             int centerCellY = (int)math.floor(projectilePosition.z * InverseCellSize);
 
@@ -247,7 +260,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                         float3 delta = projectilePosition - EnemyPositions[enemyIndex];
                         delta.y = 0f;
                         float sqrDistance = math.lengthsq(delta);
-                        float radius = math.max(0.01f, EnemyRadii[enemyIndex]);
+                        float radius = math.max(0.01f, EnemyRadii[enemyIndex] + projectileRadius);
                         float radiusSquared = radius * radius;
 
                         if (sqrDistance > radiusSquared)

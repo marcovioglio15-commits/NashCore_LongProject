@@ -15,6 +15,18 @@ public struct PlayerPowerUpsState : IComponentData
 }
 
 /// <summary>
+/// Holds aggregated runtime multipliers from equipped passive tools.
+/// </summary>
+public struct PlayerPassiveToolsState : IComponentData
+{
+    public float ProjectileSizeMultiplier;
+    public float ProjectileDamageMultiplier;
+    public float ProjectileSpeedMultiplier;
+    public float ProjectileLifetimeSecondsMultiplier;
+    public float ProjectileLifetimeRangeMultiplier;
+}
+
+/// <summary>
 /// Holds runtime dash motion and invulnerability state.
 /// </summary>
 public struct PlayerDashState : IComponentData
