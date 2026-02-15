@@ -51,7 +51,7 @@ MonoBehaviour:
   acceleration: 8
   separationRadius: 1.1
   separationWeight: 2
-  bodyRadius: 0.55
+  bodyRadius: 1
   contactRadius: 1.2
   contactDamage: 5
   contactInterval: 0.75

@@ -71,6 +71,13 @@ public partial struct EnemySteeringSystem : ISystem
             return;
 
         float3 playerPosition = entityManager.GetComponentData<LocalTransform>(playerEntity).Position;
+        float enemyTimeScale = 1f;
+
+        if (SystemAPI.TryGetSingleton<EnemyGlobalTimeScale>(out EnemyGlobalTimeScale enemyGlobalTimeScale))
+            enemyTimeScale = math.clamp(enemyGlobalTimeScale.Scale, 0f, 1f);
+
+        if (enemyTimeScale <= 0f)
+            return;
 
         NativeArray<Entity> enemyEntities = activeEnemiesQuery.ToEntityArray(Allocator.TempJob);
         NativeArray<LocalTransform> enemyTransforms = activeEnemiesQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
@@ -86,6 +93,7 @@ public partial struct EnemySteeringSystem : ISystem
 
         NativeList<int> evaluatedEnemyIndices = new NativeList<int>(enemyCount, Allocator.TempJob);
         NativeList<byte> evaluatedSeparationEnabled = new NativeList<byte>(enemyCount, Allocator.TempJob);
+        ComponentLookup<EnemyElementalRuntimeState> elementalRuntimeLookup = SystemAPI.GetComponentLookup<EnemyElementalRuntimeState>(true);
 
         float maxSeparationRadius = 0.25f;
         int frameCount = Time.frameCount;
@@ -96,7 +104,14 @@ public partial struct EnemySteeringSystem : ISystem
             LocalTransform enemyTransform = enemyTransforms[index];
 
             positions[index] = enemyTransform.Position;
-            speedData[index] = new float2(math.max(0f, enemyData.MoveSpeed), math.max(0f, enemyData.MaxSpeed));
+            Entity enemyEntity = enemyEntities[index];
+            float elementalSlowPercent = 0f;
+
+            if (elementalRuntimeLookup.HasComponent(enemyEntity))
+                elementalSlowPercent = math.clamp(elementalRuntimeLookup[enemyEntity].SlowPercent, 0f, 100f);
+
+            float slowMultiplier = math.saturate(1f - elementalSlowPercent * 0.01f);
+            speedData[index] = new float2(math.max(0f, enemyData.MoveSpeed) * slowMultiplier, math.max(0f, enemyData.MaxSpeed) * slowMultiplier);
             contactRadii[index] = math.max(0f, enemyData.ContactRadius);
 
             float separationRadius = math.max(0.05f, enemyData.SeparationRadius);
@@ -107,7 +122,6 @@ public partial struct EnemySteeringSystem : ISystem
 
             enemyToEvaluatedIndex[index] = -1;
 
-            Entity enemyEntity = enemyEntities[index];
             SteeringLodLevel lodLevel = EvaluateLod(playerPosition, enemyTransform.Position);
             bool shouldEvaluate = ShouldEvaluateLod(lodLevel, frameCount, enemyEntity.Index);
 
@@ -169,7 +183,7 @@ public partial struct EnemySteeringSystem : ISystem
             combinedHandle.Complete();
         }
 
-        float deltaTime = SystemAPI.Time.DeltaTime;
+        float deltaTime = SystemAPI.Time.DeltaTime * enemyTimeScale;
         PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
         int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
 
@@ -199,7 +213,7 @@ public partial struct EnemySteeringSystem : ISystem
                 if (evaluatedSeparationEnabled[evaluatedIndex] != 0)
                     desiredVelocity += separationResults[evaluatedIndex] * separationWeight;
 
-                float maxSpeed = math.max(0f, enemyData.MaxSpeed);
+                float maxSpeed = math.max(0f, speedData[enemyIndex].y);
                 float desiredSpeed = math.length(desiredVelocity);
 
                 if (maxSpeed > 0f && desiredSpeed > maxSpeed && desiredSpeed > 1e-6f)
@@ -217,7 +231,7 @@ public partial struct EnemySteeringSystem : ISystem
             }
 
             float velocityMagnitude = math.length(runtimeState.Velocity);
-            float velocityMaxSpeed = math.max(0f, enemyData.MaxSpeed);
+            float velocityMaxSpeed = math.max(0f, speedData[enemyIndex].y);
 
             if (velocityMaxSpeed > 0f && velocityMagnitude > velocityMaxSpeed && velocityMagnitude > 1e-6f)
                 runtimeState.Velocity *= velocityMaxSpeed / velocityMagnitude;

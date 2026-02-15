@@ -22,6 +22,7 @@ public partial struct ProjectileDespawnSystem : ISystem
         state.RequireForUpdate<Projectile>();
         state.RequireForUpdate<ProjectileRuntimeState>();
         state.RequireForUpdate<ProjectileOwner>();
+        state.RequireForUpdate<ProjectilePerfectCircleState>();
         state.RequireForUpdate<ProjectileActive>();
     }
 
@@ -36,15 +37,25 @@ public partial struct ProjectileDespawnSystem : ISystem
 
         foreach ((RefRO<Projectile> projectile,
                   RefRO<ProjectileRuntimeState> runtimeState,
+                  RefRO<ProjectilePerfectCircleState> perfectCircleState,
                   RefRO<ProjectileOwner> owner,
-                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileRuntimeState>, RefRO<ProjectileOwner>>()
+                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileRuntimeState>, RefRO<ProjectilePerfectCircleState>, RefRO<ProjectileOwner>>()
                                                       .WithAll<ProjectileActive>()
                                                       .WithEntityAccess())
         {
             bool reachedRange = projectile.ValueRO.MaxRange > 0f && runtimeState.ValueRO.TraveledDistance >= projectile.ValueRO.MaxRange;
             bool reachedLifetime = projectile.ValueRO.MaxLifetime > 0f && runtimeState.ValueRO.ElapsedLifetime >= projectile.ValueRO.MaxLifetime;
+            bool isPerfectCircleProjectile = perfectCircleState.ValueRO.Enabled != 0;
+            bool completedOrbit = isPerfectCircleProjectile &&
+                                  perfectCircleState.ValueRO.HasEnteredOrbit != 0 &&
+                                  perfectCircleState.ValueRO.CompletedFullOrbit != 0;
 
-            if (reachedRange == false && reachedLifetime == false)
+            if (isPerfectCircleProjectile)
+            {
+                if (completedOrbit == false)
+                    continue;
+            }
+            else if (reachedRange == false && reachedLifetime == false)
                 continue;
 
             ProjectilePoolUtility.SetProjectileParked(state.EntityManager, projectileEntity);

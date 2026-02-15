@@ -748,7 +748,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         if (loadoutOptions.Count == 0)
         {
-            HelpBox missingToolsHelpBox = new HelpBox("No valid active tools found. Add Bomb or Dash tools in Active Tools first.", HelpBoxMessageType.Warning);
+            HelpBox missingToolsHelpBox = new HelpBox("No valid active tools found. Add Bomb, Dash or Bullet Time tools in Active Tools first.", HelpBoxMessageType.Warning);
             sectionContentRoot.Add(missingToolsHelpBox);
         }
         else
@@ -832,6 +832,8 @@ public sealed class PlayerPowerUpsPresetsPanel
                 return "Bomb";
             case ActiveToolKind.Dash:
                 return "Dash";
+            case ActiveToolKind.BulletTime:
+                return "Bullet Time";
             default:
                 return "Bomb";
         }
@@ -864,7 +866,9 @@ public sealed class PlayerPowerUpsPresetsPanel
 
             ActiveToolKind toolKind = (ActiveToolKind)toolKindProperty.enumValueIndex;
 
-            if (toolKind != ActiveToolKind.Bomb && toolKind != ActiveToolKind.Dash)
+            if (toolKind != ActiveToolKind.Bomb &&
+                toolKind != ActiveToolKind.Dash &&
+                toolKind != ActiveToolKind.BulletTime)
                 continue;
 
             string toolId = toolIdProperty.stringValue;

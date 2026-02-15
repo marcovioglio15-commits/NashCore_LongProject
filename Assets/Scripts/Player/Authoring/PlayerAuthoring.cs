@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -474,7 +475,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             AddComponent(entity, powerUpsConfig);
 
             DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer = AddBuffer<EquippedPassiveToolElement>(entity);
-            PopulateEquippedPassiveToolsBuffer(equippedPassiveToolsBuffer, powerUpsPreset);
+            PopulateEquippedPassiveToolsBuffer(authoring, equippedPassiveToolsBuffer, powerUpsPreset);
         }
 
         ShootingSettings shootingSettings = controllerPreset.ShootingSettings;
@@ -696,7 +697,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     /// </summary>
     /// <param name="equippedPassiveToolsBuffer">Target runtime buffer.</param>
     /// <param name="preset">Source power-ups preset.</param>
-    private static void PopulateEquippedPassiveToolsBuffer(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer, PlayerPowerUpsPreset preset)
+    private void PopulateEquippedPassiveToolsBuffer(PlayerAuthoring authoring, DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer, PlayerPowerUpsPreset preset)
     {
         if (preset == null)
             return;
@@ -723,7 +724,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             if (passiveTool == null)
                 continue;
 
-            PlayerPassiveToolConfig passiveToolConfig = BuildPassiveToolConfig(passiveTool);
+            PlayerPassiveToolConfig passiveToolConfig = BuildPassiveToolConfig(authoring, passiveTool);
 
             if (passiveToolConfig.IsDefined == 0)
                 continue;
@@ -824,7 +825,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     /// </summary>
     /// <param name="passiveTool">Passive tool definition to convert.</param>
     /// <returns>Baked passive slot config.</returns>
-    private static PlayerPassiveToolConfig BuildPassiveToolConfig(PassiveToolDefinition passiveTool)
+    private PlayerPassiveToolConfig BuildPassiveToolConfig(PlayerAuthoring authoring, PassiveToolDefinition passiveTool)
     {
         if (passiveTool == null)
             return default;
@@ -834,14 +835,25 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (toolKind == PassiveToolKind.Custom)
             toolKind = PassiveToolKind.ProjectileSize;
 
-        ProjectileSizePassiveToolData projectileSizeData = passiveTool.ProjectileSizeData;
-        ProjectileSizePassiveConfig projectileSizeConfig = BuildProjectileSizePassiveConfig(projectileSizeData);
+        ProjectileSizePassiveConfig projectileSizeConfig = BuildProjectileSizePassiveConfig(passiveTool.ProjectileSizeData);
+        ElementalProjectilesPassiveConfig elementalProjectilesConfig = BuildElementalProjectilesPassiveConfig(authoring, passiveTool.ElementalProjectilesData);
+        PerfectCirclePassiveConfig perfectCircleConfig = BuildPerfectCirclePassiveConfig(passiveTool.PerfectCircleData);
+        BouncingProjectilesPassiveConfig bouncingProjectilesConfig = BuildBouncingProjectilesPassiveConfig(passiveTool.BouncingProjectilesData);
+        SplittingProjectilesPassiveConfig splittingProjectilesConfig = BuildSplittingProjectilesPassiveConfig(passiveTool.SplittingProjectilesData);
+        ExplosionPassiveConfig explosionConfig = BuildExplosionPassiveConfig(authoring, passiveTool.ExplosionData);
+        ElementalTrailPassiveConfig elementalTrailConfig = BuildElementalTrailPassiveConfig(authoring, passiveTool.ElementalTrailData);
 
         return new PlayerPassiveToolConfig
         {
             IsDefined = 1,
             ToolKind = toolKind,
-            ProjectileSize = projectileSizeConfig
+            ProjectileSize = projectileSizeConfig,
+            ElementalProjectiles = elementalProjectilesConfig,
+            PerfectCircle = perfectCircleConfig,
+            BouncingProjectiles = bouncingProjectilesConfig,
+            SplittingProjectiles = splittingProjectilesConfig,
+            Explosion = explosionConfig,
+            ElementalTrail = elementalTrailConfig
         };
     }
 
@@ -877,6 +889,181 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         };
     }
 
+    private ElementalProjectilesPassiveConfig BuildElementalProjectilesPassiveConfig(PlayerAuthoring authoring, ElementalProjectilesPassiveToolData elementalProjectilesData)
+    {
+        ElementalEffectConfig effectConfig = BuildElementalEffectConfig(elementalProjectilesData != null ? elementalProjectilesData.EffectData : null);
+        float stacksPerHit = elementalProjectilesData != null ? math.max(0f, elementalProjectilesData.StacksPerHit) : 0f;
+        byte spawnStackVfx = elementalProjectilesData != null && elementalProjectilesData.SpawnStackVfx ? (byte)1 : (byte)0;
+        Entity stackVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, elementalProjectilesData != null ? elementalProjectilesData.StackVfxPrefab : null, "Elemental Projectile Stack VFX");
+        float stackVfxScaleMultiplier = elementalProjectilesData != null ? math.max(0.01f, elementalProjectilesData.StackVfxScaleMultiplier) : 1f;
+        byte spawnProcVfx = elementalProjectilesData != null && elementalProjectilesData.SpawnProcVfx ? (byte)1 : (byte)0;
+        Entity procVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, elementalProjectilesData != null ? elementalProjectilesData.ProcVfxPrefab : null, "Elemental Projectile Proc VFX");
+        float procVfxScaleMultiplier = elementalProjectilesData != null ? math.max(0.01f, elementalProjectilesData.ProcVfxScaleMultiplier) : 1f;
+
+        return new ElementalProjectilesPassiveConfig
+        {
+            Effect = effectConfig,
+            StacksPerHit = stacksPerHit,
+            SpawnStackVfx = spawnStackVfx,
+            StackVfxPrefabEntity = stackVfxPrefabEntity,
+            StackVfxScaleMultiplier = stackVfxScaleMultiplier,
+            SpawnProcVfx = spawnProcVfx,
+            ProcVfxPrefabEntity = procVfxPrefabEntity,
+            ProcVfxScaleMultiplier = procVfxScaleMultiplier
+        };
+    }
+
+    private static PerfectCirclePassiveConfig BuildPerfectCirclePassiveConfig(PerfectCirclePassiveToolData perfectCircleData)
+    {
+        return new PerfectCirclePassiveConfig
+        {
+            RadialEntrySpeed = perfectCircleData != null ? math.max(0f, perfectCircleData.RadialEntrySpeed) : 0f,
+            OrbitalSpeed = perfectCircleData != null ? math.max(0f, perfectCircleData.OrbitalSpeed) : 0f,
+            OrbitRadiusMin = perfectCircleData != null ? math.max(0f, perfectCircleData.OrbitRadiusMin) : 0f,
+            OrbitRadiusMax = perfectCircleData != null ? math.max(0f, perfectCircleData.OrbitRadiusMax) : 0f,
+            OrbitPulseFrequency = perfectCircleData != null ? math.max(0f, perfectCircleData.OrbitPulseFrequency) : 0f,
+            OrbitEntryRatio = perfectCircleData != null ? math.clamp(perfectCircleData.OrbitEntryRatio, 0f, 1f) : 0f,
+            OrbitBlendDuration = perfectCircleData != null ? math.max(0f, perfectCircleData.OrbitBlendDuration) : 0f,
+            HeightOffset = perfectCircleData != null ? perfectCircleData.HeightOffset : 0f,
+            GoldenAngleDegrees = perfectCircleData != null ? math.max(0f, perfectCircleData.GoldenAngleDegrees) : 137.5f
+        };
+    }
+
+    private static BouncingProjectilesPassiveConfig BuildBouncingProjectilesPassiveConfig(BouncingProjectilesPassiveToolData bouncingProjectilesData)
+    {
+        return new BouncingProjectilesPassiveConfig
+        {
+            MaxBounces = bouncingProjectilesData != null ? math.max(0, bouncingProjectilesData.MaxBounces) : 0,
+            SpeedPercentChangePerBounce = bouncingProjectilesData != null ? bouncingProjectilesData.SpeedPercentChangePerBounce : 0f,
+            MinimumSpeedMultiplierAfterBounce = bouncingProjectilesData != null ? math.max(0f, bouncingProjectilesData.MinimumSpeedMultiplierAfterBounce) : 0f,
+            MaximumSpeedMultiplierAfterBounce = bouncingProjectilesData != null ? math.max(0f, bouncingProjectilesData.MaximumSpeedMultiplierAfterBounce) : 0f
+        };
+    }
+
+    private static SplittingProjectilesPassiveConfig BuildSplittingProjectilesPassiveConfig(SplittingProjectilesPassiveToolData splittingProjectilesData)
+    {
+        SplittingProjectilesPassiveConfig config = default;
+
+        if (splittingProjectilesData == null)
+            return config;
+
+        FixedList128Bytes<float> customAngles = default;
+        IReadOnlyList<float> customAnglesSource = splittingProjectilesData.CustomAnglesDegrees;
+
+        if (customAnglesSource != null)
+        {
+            for (int index = 0; index < customAnglesSource.Count; index++)
+            {
+                if (customAngles.Length >= customAngles.Capacity)
+                    break;
+
+                customAngles.Add(customAnglesSource[index]);
+            }
+        }
+
+        config.DirectionMode = splittingProjectilesData.DirectionMode;
+        config.SplitProjectileCount = math.max(1, splittingProjectilesData.SplitProjectileCount);
+        config.SplitOffsetDegrees = splittingProjectilesData.SplitOffsetDegrees;
+        config.CustomAnglesDegrees = customAngles;
+        config.SplitDamageMultiplier = math.max(0f, splittingProjectilesData.SplitDamagePercentFromOriginal * 0.01f);
+        config.SplitSizeMultiplier = math.max(0f, splittingProjectilesData.SplitSizePercentFromOriginal * 0.01f);
+        config.SplitSpeedMultiplier = math.max(0f, splittingProjectilesData.SplitSpeedPercentFromOriginal * 0.01f);
+        config.SplitLifetimeMultiplier = math.max(0f, splittingProjectilesData.SplitLifetimePercentFromOriginal * 0.01f);
+
+        return config;
+    }
+
+    private ExplosionPassiveConfig BuildExplosionPassiveConfig(PlayerAuthoring authoring, ExplosionPassiveToolData explosionData)
+    {
+        if (explosionData == null)
+            return default;
+
+        Entity explosionVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, explosionData.ExplosionVfxPrefab, "Passive Explosion VFX");
+
+        return new ExplosionPassiveConfig
+        {
+            TriggerMode = explosionData.TriggerMode,
+            CooldownSeconds = math.max(0f, explosionData.CooldownSeconds),
+            Radius = math.max(0f, explosionData.Radius),
+            Damage = math.max(0f, explosionData.Damage),
+            AffectAllEnemiesInRadius = explosionData.AffectAllEnemiesInRadius ? (byte)1 : (byte)0,
+            TriggerOffset = new float3(explosionData.TriggerOffset.x, explosionData.TriggerOffset.y, explosionData.TriggerOffset.z),
+            ExplosionVfxPrefabEntity = explosionVfxPrefabEntity,
+            ScaleVfxToRadius = explosionData.ScaleVfxToRadius ? (byte)1 : (byte)0,
+            VfxScaleMultiplier = math.max(0.01f, explosionData.VfxScaleMultiplier)
+        };
+    }
+
+    private ElementalTrailPassiveConfig BuildElementalTrailPassiveConfig(PlayerAuthoring authoring, ElementalTrailPassiveToolData elementalTrailData)
+    {
+        if (elementalTrailData == null)
+            return default;
+
+        ElementalEffectConfig effectConfig = BuildElementalEffectConfig(elementalTrailData.EffectData);
+        Entity trailSegmentVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, elementalTrailData.TrailSegmentVfxPrefab, "Elemental Trail Segment VFX");
+
+        return new ElementalTrailPassiveConfig
+        {
+            Effect = effectConfig,
+            TrailSegmentLifetimeSeconds = math.max(0.05f, elementalTrailData.TrailSegmentLifetimeSeconds),
+            TrailSpawnDistance = math.max(0f, elementalTrailData.TrailSpawnDistance),
+            TrailSpawnIntervalSeconds = math.max(0.01f, elementalTrailData.TrailSpawnIntervalSeconds),
+            TrailRadius = math.max(0f, elementalTrailData.TrailRadius),
+            MaxActiveSegmentsPerPlayer = math.max(1, elementalTrailData.MaxActiveSegmentsPerPlayer),
+            StacksPerTick = math.max(0f, elementalTrailData.StacksPerTick),
+            ApplyIntervalSeconds = math.max(0.01f, elementalTrailData.ApplyIntervalSeconds),
+            TrailSegmentVfxPrefabEntity = trailSegmentVfxPrefabEntity,
+            TrailSegmentVfxScaleMultiplier = math.max(0.01f, elementalTrailData.TrailSegmentVfxScaleMultiplier)
+        };
+    }
+
+    private static ElementalEffectConfig BuildElementalEffectConfig(ElementalEffectDefinitionData effectData)
+    {
+        if (effectData == null)
+            return default;
+
+        float procThresholdStacks = math.max(0.1f, effectData.ProcThresholdStacks);
+        float maximumStacks = math.max(0.1f, effectData.MaximumStacks);
+
+        if (maximumStacks < procThresholdStacks)
+            maximumStacks = procThresholdStacks;
+
+        return new ElementalEffectConfig
+        {
+            ElementType = effectData.ElementType,
+            EffectKind = effectData.EffectKind,
+            ProcMode = effectData.ProcMode,
+            ProcThresholdStacks = procThresholdStacks,
+            MaximumStacks = maximumStacks,
+            StackDecayPerSecond = math.max(0f, effectData.StackDecayPerSecond),
+            ConsumeStacksOnProc = effectData.ConsumeStacksOnProc ? (byte)1 : (byte)0,
+            DotDamagePerTick = math.max(0f, effectData.DotDamagePerTick),
+            DotTickInterval = math.max(0.01f, effectData.DotTickInterval),
+            DotDurationSeconds = math.max(0.05f, effectData.DotDurationSeconds),
+            ImpedimentSlowPercentPerStack = math.clamp(effectData.ImpedimentSlowPercentPerStack, 0f, 100f),
+            ImpedimentProcSlowPercent = math.clamp(effectData.ImpedimentProcSlowPercent, 0f, 100f),
+            ImpedimentMaxSlowPercent = math.clamp(effectData.ImpedimentMaxSlowPercent, 0f, 100f),
+            ImpedimentDurationSeconds = math.max(0.05f, effectData.ImpedimentDurationSeconds)
+        };
+    }
+
+    private Entity ResolveOptionalPowerUpPrefabEntity(PlayerAuthoring authoring, GameObject optionalPrefab, string contextLabel)
+    {
+        if (optionalPrefab == null)
+            return Entity.Null;
+
+        if (IsInvalidPowerUpPrefab(authoring, optionalPrefab))
+        {
+#if UNITY_EDITOR
+            if (authoring != null)
+                Debug.LogError(string.Format("[PlayerAuthoringBaker] Invalid prefab '{0}' in '{1}' on '{2}'. Assign a dedicated prefab without PlayerAuthoring.", optionalPrefab.name, contextLabel, authoring.name), authoring);
+#endif
+            return Entity.Null;
+        }
+
+        return GetEntity(optionalPrefab, TransformUsageFlags.Dynamic);
+    }
+
     /// <summary>
     /// Converts an active tool definition into a blittable runtime slot config.
     /// </summary>
@@ -890,6 +1077,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         BombToolData bombData = activeTool.BombData;
         DashToolData dashData = activeTool.DashData;
+        BulletTimeToolData bulletTimeData = activeTool.BulletTimeData;
         Entity bombPrefabEntity = Entity.Null;
 
         if (activeTool.ToolKind == ActiveToolKind.Bomb && bombData != null && bombData.BombPrefab != null)
@@ -930,11 +1118,17 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         float dashSpeedTransitionOutSeconds = dashData != null ? math.max(0f, dashData.SpeedTransitionOutSeconds) : 0f;
         byte dashInvulnerability = dashData != null && dashData.GrantsInvulnerability ? (byte)1 : (byte)0;
         float dashInvulnerabilityExtraTime = dashData != null ? math.max(0f, dashData.InvulnerabilityExtraTime) : 0f;
+        float bulletTimeDuration = bulletTimeData != null ? math.max(0.05f, bulletTimeData.Duration) : 0.05f;
+        float bulletTimeEnemySlowPercent = bulletTimeData != null ? math.clamp(bulletTimeData.EnemySlowPercent, 0f, 100f) : 0f;
+        ActiveToolKind toolKind = activeTool.ToolKind;
+
+        if (toolKind == ActiveToolKind.Custom)
+            toolKind = ActiveToolKind.Bomb;
 
         return new PlayerPowerUpSlotConfig
         {
             IsDefined = 1,
-            ToolKind = activeTool.ToolKind,
+            ToolKind = toolKind,
             ActivationResource = activeTool.ActivationResource,
             MaintenanceResource = activeTool.MaintenanceResource,
             ChargeType = activeTool.ChargeType,
@@ -967,6 +1161,11 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 SpeedTransitionOutSeconds = dashSpeedTransitionOutSeconds,
                 GrantsInvulnerability = dashInvulnerability,
                 InvulnerabilityExtraTime = dashInvulnerabilityExtraTime
+            },
+            BulletTime = new BulletTimePowerUpConfig
+            {
+                Duration = bulletTimeDuration,
+                EnemySlowPercent = bulletTimeEnemySlowPercent
             }
         };
     }
@@ -986,6 +1185,20 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             return true;
 
         if (bombPrefab.GetComponent<PlayerAuthoring>() != null)
+            return true;
+
+        return false;
+    }
+
+    private static bool IsInvalidPowerUpPrefab(PlayerAuthoring authoring, GameObject optionalPrefab)
+    {
+        if (optionalPrefab == null)
+            return true;
+
+        if (authoring != null && optionalPrefab == authoring.gameObject)
+            return true;
+
+        if (optionalPrefab.GetComponent<PlayerAuthoring>() != null)
             return true;
 
         return false;

@@ -186,7 +186,7 @@ public static class PlayerManagementDraftSession
     public static void Apply()
     {
         ExecuteStagedDeletions();
-        ExecutePresetAssetRenames();
+        ExecuteRenames();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         CaptureBaseline();
@@ -224,6 +224,11 @@ public static class PlayerManagementDraftSession
             baselineJsonByPath[stateEntry.Key] = stateEntry.Value;
     }
 
+    /// <summary>
+    /// Builds a dictionary that maps asset paths to their serialized JSON representations
+    /// for all relevant player assets.
+    /// </summary>
+    /// <returns></returns>
     private static Dictionary<string, string> BuildStateDictionary()
     {
         Dictionary<string, string> stateByPath = new Dictionary<string, string>();
@@ -248,6 +253,10 @@ public static class PlayerManagementDraftSession
         return stateByPath;
     }
 
+    /// <summary>
+    /// Collects the asset paths of all relevant player assets that should be tracked during the draft session.
+    /// </summary>
+    /// <returns></returns>
     private static List<string> CollectTrackedAssetPaths()
     {
         HashSet<string> uniquePaths = new HashSet<string>();
@@ -268,6 +277,13 @@ public static class PlayerManagementDraftSession
         return paths;
     }
 
+    /// <summary>
+    /// Adds the asset paths of all assets of the specified type that are located 
+    /// within the specified search root folder to the provided hash set.
+    /// </summary>
+    /// <typeparam name="TAsset"></typeparam>
+    /// <param name="uniquePaths"></param>
+    /// <param name="searchRoot"></param>
     private static void AddAssetPathsOfType<TAsset>(HashSet<string> uniquePaths, string searchRoot) where TAsset : UnityEngine.Object
     {
         if (string.IsNullOrWhiteSpace(searchRoot))
@@ -288,6 +304,10 @@ public static class PlayerManagementDraftSession
         }
     }
 
+    /// <summary>
+    /// Adds the asset paths of all player prefab assets that are located within the project to the provided hash set.
+    /// </summary>
+    /// <param name="uniquePaths"></param>
     private static void AddPlayerPrefabPaths(HashSet<string> uniquePaths)
     {
         string[] searchFolders = new string[] { TrackedProjectRoot };
@@ -313,6 +333,12 @@ public static class PlayerManagementDraftSession
         }
     }
 
+    /// <summary>
+    /// Restores the state of relevant player assets to match the baseline captured at the beginning 
+    /// of the draft session by 
+    /// overwriting their properties with the serialized JSON representations stored 
+    /// in the baseline dictionary.
+    /// </summary>
     private static void RestoreBaselineAssets()
     {
         foreach (KeyValuePair<string, string> baselineEntry in baselineJsonByPath)
@@ -367,7 +393,10 @@ public static class PlayerManagementDraftSession
         }
     }
 
-    private static void ExecutePresetAssetRenames()
+    /// <summary>
+    /// Renames player preset assets based on their preset names during the apply phase of the draft session.
+    /// </summary>
+    private static void ExecuteRenames()
     {
         List<string> assetPaths = CollectTrackedAssetPaths();
 
@@ -413,6 +442,12 @@ public static class PlayerManagementDraftSession
         }
     }
 
+    /// <summary>
+    /// Checks if the specified asset object is a type of player preset asset that should be renamed 
+    /// based on its name during the apply phase of the draft session.
+    /// </summary>
+    /// <param name="assetObject"></param>
+    /// <returns> True if the asset object is a player preset asset that should be renamed; otherwise, false.</returns>
     private static bool IsRenamablePresetAsset(UnityEngine.Object assetObject)
     {
         if (assetObject == null)
@@ -436,6 +471,12 @@ public static class PlayerManagementDraftSession
         return false;
     }
 
+    /// <summary>
+    /// Normalizes the specified raw name to create a valid asset name by trimming whitespace,
+    /// placing underscores in place of invalid file name characters, and removing trailing dots.
+    /// </summary>
+    /// <param name="rawName"></param>
+    /// <returns> A normalized asset name that can be used as a file name in the Unity project.</returns>
     public static string NormalizeAssetName(string rawName)
     {
         if (string.IsNullOrWhiteSpace(rawName))
@@ -483,6 +524,9 @@ public static class PlayerManagementDraftSession
         return normalizedName;
     }
 
+    /// <summary>
+    /// Synchronizes the staged delete paths with the current asset references in the player preset libraries.
+    /// </summary>
     private static void SyncStagedDeletePaths()
     {
         if (stagedDeletePaths.Count == 0)
@@ -501,6 +545,11 @@ public static class PlayerManagementDraftSession
         }
     }
 
+    /// <summary>
+    /// Checks if the specified asset path is referenced by any of the player preset libraries.
+    /// </summary>
+    /// <param name="assetPath"></param>
+    /// <returns> True if the asset path is referenced by any of the player preset libraries; otherwise, false.</returns>
     private static bool IsPathReferencedByLibraries(string assetPath)
     {
         if (string.IsNullOrWhiteSpace(assetPath))
@@ -529,6 +578,13 @@ public static class PlayerManagementDraftSession
         return false;
     }
 
+    /// <summary>
+    /// Checks if the specified asset path is referenced by any of the provided presets in the library.
+    /// </summary>
+    /// <typeparam name="TAsset"></typeparam>
+    /// <param name="presets"></param>
+    /// <param name="assetPath"></param>
+    /// <returns> True if the asset path is referenced by any preset in the library; otherwise, false.</returns>
     private static bool LibraryContainsPath<TAsset>(IReadOnlyList<TAsset> presets, string assetPath) where TAsset : UnityEngine.Object
     {
         for (int index = 0; index < presets.Count; index++)

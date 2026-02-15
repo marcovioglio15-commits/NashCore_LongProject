@@ -32,12 +32,14 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         state.RequireForUpdate<PlayerControllerConfig>();
         state.RequireForUpdate<LocalTransform>();
         state.RequireForUpdate<PlayerBombSpawnRequest>();
+        state.RequireForUpdate<PlayerBulletTimeState>();
     }
 
     public void OnUpdate(ref SystemState state)
     {
         ComponentLookup<PlayerHealth> healthLookup = SystemAPI.GetComponentLookup<PlayerHealth>(false);
         ComponentLookup<LocalTransform> localTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
+        ComponentLookup<PlayerBulletTimeState> bulletTimeLookup = SystemAPI.GetComponentLookup<PlayerBulletTimeState>(false);
 
         foreach ((RefRO<PlayerInputState> inputState,
                   RefRO<PlayerMovementState> movementState,
@@ -56,11 +58,16 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                     DynamicBuffer<PlayerBombSpawnRequest>>().WithEntityAccess())
         {
             LocalTransform localTransform = default;
+            PlayerBulletTimeState bulletTimeState = default;
 
             if (localTransformLookup.HasComponent(entity) == false)
                 continue;
 
+            if (bulletTimeLookup.HasComponent(entity) == false)
+                continue;
+
             localTransform = localTransformLookup[entity];
+            bulletTimeState = bulletTimeLookup[entity];
 
             bool primaryPressed = inputState.ValueRO.PowerUpPrimary > InputPressThreshold;
             bool secondaryPressed = inputState.ValueRO.PowerUpSecondary > InputPressThreshold;
@@ -89,6 +96,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                 inputState.ValueRO.Move,
                                 powerUpsState.ValueRO.LastValidMovementDirection,
                                 ref dashState.ValueRW,
+                                ref bulletTimeState,
                                 bombRequests,
                                 entity,
                                 ref healthLookup,
@@ -106,6 +114,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                 inputState.ValueRO.Move,
                                 powerUpsState.ValueRO.LastValidMovementDirection,
                                 ref dashState.ValueRW,
+                                ref bulletTimeState,
                                 bombRequests,
                                 entity,
                                 ref healthLookup,
@@ -118,6 +127,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
             powerUpsState.ValueRW.PrimaryEnergy = primaryEnergy;
             powerUpsState.ValueRW.SecondaryEnergy = secondaryEnergy;
+            bulletTimeLookup[entity] = bulletTimeState;
         }
     }
     #endregion
@@ -131,6 +141,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                         float2 moveInput,
                                         float3 lastValidMovementDirection,
                                         ref PlayerDashState dashState,
+                                        ref PlayerBulletTimeState bulletTimeState,
                                         DynamicBuffer<PlayerBombSpawnRequest> bombRequests,
                                         Entity playerEntity,
                                         ref ComponentLookup<PlayerHealth> healthLookup,
@@ -142,6 +153,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
         if (CanExecuteTool(slotConfig,
                            dashState,
+                           bulletTimeState,
                            movementState,
                            controllerConfig,
                            localTransform,
@@ -171,11 +183,13 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                     moveInput,
                     lastValidMovementDirection,
                     ref dashState,
+                    ref bulletTimeState,
                     bombRequests);
     }
 
     private static bool CanExecuteTool(in PlayerPowerUpSlotConfig slotConfig,
                                        in PlayerDashState dashState,
+                                       in PlayerBulletTimeState bulletTimeState,
                                        in PlayerMovementState movementState,
                                        in PlayerControllerConfig controllerConfig,
                                        in LocalTransform localTransform,
@@ -202,6 +216,17 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                       moveInput,
                                                       lastValidMovementDirection,
                                                       out float3 _) == false)
+                    return false;
+
+                return true;
+            case ActiveToolKind.BulletTime:
+                if (slotConfig.BulletTime.Duration <= 0f)
+                    return false;
+
+                if (slotConfig.BulletTime.EnemySlowPercent <= 0f)
+                    return false;
+
+                if (bulletTimeState.RemainingDuration > 0f)
                     return false;
 
                 return true;
@@ -315,6 +340,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                     float2 moveInput,
                                     float3 lastValidMovementDirection,
                                     ref PlayerDashState dashState,
+                                    ref PlayerBulletTimeState bulletTimeState,
                                     DynamicBuffer<PlayerBombSpawnRequest> bombRequests)
     {
         switch (slotConfig.ToolKind)
@@ -330,6 +356,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                             moveInput,
                             lastValidMovementDirection,
                             ref dashState);
+                return;
+            case ActiveToolKind.BulletTime:
+                ExecuteBulletTime(slotConfig, ref bulletTimeState);
                 return;
         }
     }
@@ -416,6 +445,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             float invulnerabilityDuration = dashDuration + math.max(0f, slotConfig.Dash.InvulnerabilityExtraTime);
             dashState.RemainingInvulnerability = invulnerabilityDuration;
         }
+    }
+
+    private static void ExecuteBulletTime(in PlayerPowerUpSlotConfig slotConfig, ref PlayerBulletTimeState bulletTimeState)
+    {
+        bulletTimeState.RemainingDuration = math.max(0.05f, slotConfig.BulletTime.Duration);
+        bulletTimeState.SlowPercent = math.clamp(slotConfig.BulletTime.EnemySlowPercent, 0f, 100f);
     }
 
     private static float3 ResolveBombActivationDirection(in PlayerMovementState movementState, in LocalTransform localTransform)

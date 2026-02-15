@@ -85,6 +85,18 @@ public static class ProjectilePoolUtility
             {
                 Value = 1f
             });
+
+        if (entityManager.HasComponent<ProjectilePerfectCircleState>(projectileEntity) == false)
+            entityManager.AddComponentData(projectileEntity, default(ProjectilePerfectCircleState));
+
+        if (entityManager.HasComponent<ProjectileBounceState>(projectileEntity) == false)
+            entityManager.AddComponentData(projectileEntity, default(ProjectileBounceState));
+
+        if (entityManager.HasComponent<ProjectileSplitState>(projectileEntity) == false)
+            entityManager.AddComponentData(projectileEntity, default(ProjectileSplitState));
+
+        if (entityManager.HasComponent<ProjectileElementalPayload>(projectileEntity) == false)
+            entityManager.AddComponentData(projectileEntity, default(ProjectileElementalPayload));
     }
 
     /// <summary>

@@ -7,6 +7,7 @@ using Unity.Transforms;
 
 /// <summary>
 /// Resolves projectile hits against active enemies using a spatial hash.
+/// Applies damage, elemental payloads and split-projectile generation.
 /// </summary>
 [UpdateInGroup(typeof(EnemySystemGroup))]
 [UpdateAfter(typeof(EnemySteeringSystem))]
@@ -14,6 +15,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 {
     #region Constants
     private const float BaseProjectileHitRadius = 0.05f;
+    private const float DirectionEpsilon = 1e-6f;
     #endregion
 
     #region Fields
@@ -32,7 +34,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             .Build();
 
         projectileQuery = SystemAPI.QueryBuilder()
-            .WithAll<Projectile, ProjectileOwner, LocalTransform, ProjectileActive>()
+            .WithAll<Projectile, ProjectileOwner, ProjectileSplitState, ProjectileElementalPayload, LocalTransform, ProjectileActive>()
             .Build();
 
         state.RequireForUpdate(enemyQuery);
@@ -60,6 +62,8 @@ public partial struct EnemyProjectileHitSystem : ISystem
         NativeArray<Entity> projectileEntities = projectileQuery.ToEntityArray(Allocator.TempJob);
         NativeArray<Projectile> projectileDataArray = projectileQuery.ToComponentDataArray<Projectile>(Allocator.TempJob);
         NativeArray<ProjectileOwner> projectileOwnerArray = projectileQuery.ToComponentDataArray<ProjectileOwner>(Allocator.TempJob);
+        NativeArray<ProjectileSplitState> projectileSplitArray = projectileQuery.ToComponentDataArray<ProjectileSplitState>(Allocator.TempJob);
+        NativeArray<ProjectileElementalPayload> projectileElementalArray = projectileQuery.ToComponentDataArray<ProjectileElementalPayload>(Allocator.TempJob);
         NativeArray<LocalTransform> projectileTransforms = projectileQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
 
         NativeArray<float3> enemyPositions = new NativeArray<float3>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -117,6 +121,10 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
         NativeArray<float> damageByEnemy = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
         BufferLookup<ProjectilePoolElement> projectilePoolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
+        BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
+        BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
+        BufferLookup<EnemyElementStackElement> elementalStackLookup = SystemAPI.GetBufferLookup<EnemyElementStackElement>(false);
+        ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
 
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
@@ -128,8 +136,31 @@ public partial struct EnemyProjectileHitSystem : ISystem
             if (enemyIndex >= enemyCount)
                 continue;
 
-            damageByEnemy[enemyIndex] += math.max(0f, projectileDataArray[projectileIndex].Damage);
-            DespawnProjectile(entityManager, projectileEntities[projectileIndex], projectileOwnerArray[projectileIndex], ref projectilePoolLookup);
+            Projectile projectileData = projectileDataArray[projectileIndex];
+            ProjectileOwner projectileOwner = projectileOwnerArray[projectileIndex];
+            ProjectileSplitState splitState = projectileSplitArray[projectileIndex];
+            ProjectileElementalPayload elementalPayload = projectileElementalArray[projectileIndex];
+            LocalTransform projectileTransform = projectileTransforms[projectileIndex];
+            float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntities[projectileIndex],
+                                                                        projectileTransform.Scale,
+                                                                        in projectileBaseScaleLookup);
+            Entity enemyEntity = enemyEntities[enemyIndex];
+            float3 enemyPosition = enemyTransforms[enemyIndex].Position;
+
+            damageByEnemy[enemyIndex] += math.max(0f, projectileData.Damage);
+            TryEnqueueSplitRequests(in projectileData,
+                                   in splitState,
+                                   in projectileTransform,
+                                   currentScaleMultiplier,
+                                   in projectileOwner,
+                                   ref shootRequestLookup);
+            TryApplyElementalPayload(enemyEntity,
+                                     enemyPosition,
+                                     in elementalPayload,
+                                     in projectileOwner,
+                                     ref elementalStackLookup,
+                                     ref vfxRequestLookup);
+            DespawnProjectile(entityManager, projectileEntities[projectileIndex], projectileOwner, ref projectilePoolLookup);
         }
 
         ComponentLookup<EnemyDespawnRequest> despawnLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
@@ -178,6 +209,8 @@ public partial struct EnemyProjectileHitSystem : ISystem
         projectileEntities.Dispose();
         projectileDataArray.Dispose();
         projectileOwnerArray.Dispose();
+        projectileSplitArray.Dispose();
+        projectileElementalArray.Dispose();
         projectileTransforms.Dispose();
 
         enemyPositions.Dispose();
@@ -199,7 +232,247 @@ public partial struct EnemyProjectileHitSystem : ISystem
         }
     }
 
-    private static void DespawnProjectile(EntityManager entityManager, Entity projectileEntity, ProjectileOwner projectileOwner, ref BufferLookup<ProjectilePoolElement> projectilePoolLookup)
+    private static void TryEnqueueSplitRequests(in Projectile projectileData,
+                                                in ProjectileSplitState splitState,
+                                                in LocalTransform projectileTransform,
+                                                float currentScaleMultiplier,
+                                                in ProjectileOwner projectileOwner,
+                                                ref BufferLookup<ShootRequest> shootRequestLookup)
+    {
+        if (splitState.CanSplit == 0)
+            return;
+
+        Entity shooterEntity = projectileOwner.ShooterEntity;
+
+        if (shootRequestLookup.HasBuffer(shooterEntity) == false)
+            return;
+
+        DynamicBuffer<ShootRequest> shootRequests = shootRequestLookup[shooterEntity];
+        float3 baseDirection = projectileData.Velocity;
+        baseDirection.y = 0f;
+
+        if (math.lengthsq(baseDirection) <= DirectionEpsilon)
+            baseDirection = math.forward(projectileTransform.Rotation);
+
+        baseDirection.y = 0f;
+        baseDirection = math.normalizesafe(baseDirection, new float3(0f, 0f, 1f));
+
+        float projectileSpeed = math.length(projectileData.Velocity);
+        float splitSpeed = math.max(0f, projectileSpeed * math.max(0f, splitState.SplitSpeedMultiplier));
+        float splitRange = math.max(0f, projectileData.MaxRange * math.max(0f, splitState.SplitLifetimeMultiplier));
+        float splitLifetime = math.max(0f, projectileData.MaxLifetime * math.max(0f, splitState.SplitLifetimeMultiplier));
+        float splitDamage = math.max(0f, projectileData.Damage * math.max(0f, splitState.SplitDamageMultiplier));
+        float splitScaleMultiplier = math.max(0.01f, currentScaleMultiplier * math.max(0f, splitState.SplitSizeMultiplier));
+
+        switch (splitState.DirectionMode)
+        {
+            case ProjectileSplitDirectionMode.Uniform:
+                AddUniformSplitRequests(ref shootRequests,
+                                        in splitState,
+                                        projectileTransform.Position,
+                                        baseDirection,
+                                        splitSpeed,
+                                        splitRange,
+                                        splitLifetime,
+                                        splitDamage,
+                                        splitScaleMultiplier,
+                                        projectileData.InheritPlayerSpeed);
+                return;
+            case ProjectileSplitDirectionMode.CustomAngles:
+                if (splitState.CustomAnglesDegrees.Length <= 0)
+                {
+                    AddUniformSplitRequests(ref shootRequests,
+                                            in splitState,
+                                            projectileTransform.Position,
+                                            baseDirection,
+                                            splitSpeed,
+                                            splitRange,
+                                            splitLifetime,
+                                            splitDamage,
+                                            splitScaleMultiplier,
+                                            projectileData.InheritPlayerSpeed);
+                    return;
+                }
+
+                AddCustomAngleSplitRequests(ref shootRequests,
+                                            in splitState,
+                                            projectileTransform.Position,
+                                            baseDirection,
+                                            splitSpeed,
+                                            splitRange,
+                                            splitLifetime,
+                                            splitDamage,
+                                            splitScaleMultiplier,
+                                            projectileData.InheritPlayerSpeed);
+                return;
+        }
+    }
+
+    private static void AddUniformSplitRequests(ref DynamicBuffer<ShootRequest> shootRequests,
+                                                in ProjectileSplitState splitState,
+                                                float3 spawnPosition,
+                                                float3 baseDirection,
+                                                float splitSpeed,
+                                                float splitRange,
+                                                float splitLifetime,
+                                                float splitDamage,
+                                                float splitScaleMultiplier,
+                                                byte inheritPlayerSpeed)
+    {
+        int splitCount = math.max(1, splitState.SplitProjectileCount);
+        float stepDegrees = 360f / splitCount;
+
+        for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
+        {
+            float angleDegrees = splitState.SplitOffsetDegrees + stepDegrees * splitIndex;
+            float3 direction = RotateDirection(baseDirection, angleDegrees);
+            AddSplitShootRequest(ref shootRequests,
+                                 spawnPosition,
+                                 direction,
+                                 splitSpeed,
+                                 splitRange,
+                                 splitLifetime,
+                                 splitDamage,
+                                 splitScaleMultiplier,
+                                 inheritPlayerSpeed);
+        }
+    }
+
+    private static void AddCustomAngleSplitRequests(ref DynamicBuffer<ShootRequest> shootRequests,
+                                                    in ProjectileSplitState splitState,
+                                                    float3 spawnPosition,
+                                                    float3 baseDirection,
+                                                    float splitSpeed,
+                                                    float splitRange,
+                                                    float splitLifetime,
+                                                    float splitDamage,
+                                                    float splitScaleMultiplier,
+                                                    byte inheritPlayerSpeed)
+    {
+        for (int splitIndex = 0; splitIndex < splitState.CustomAnglesDegrees.Length; splitIndex++)
+        {
+            float angleDegrees = splitState.CustomAnglesDegrees[splitIndex] + splitState.SplitOffsetDegrees;
+            float3 direction = RotateDirection(baseDirection, angleDegrees);
+            AddSplitShootRequest(ref shootRequests,
+                                 spawnPosition,
+                                 direction,
+                                 splitSpeed,
+                                 splitRange,
+                                 splitLifetime,
+                                 splitDamage,
+                                 splitScaleMultiplier,
+                                 inheritPlayerSpeed);
+        }
+    }
+
+    private static void AddSplitShootRequest(ref DynamicBuffer<ShootRequest> shootRequests,
+                                             float3 spawnPosition,
+                                             float3 direction,
+                                             float splitSpeed,
+                                             float splitRange,
+                                             float splitLifetime,
+                                             float splitDamage,
+                                             float splitScaleMultiplier,
+                                             byte inheritPlayerSpeed)
+    {
+        shootRequests.Add(new ShootRequest
+        {
+            Position = spawnPosition,
+            Direction = direction,
+            Speed = splitSpeed,
+            Range = splitRange,
+            Lifetime = splitLifetime,
+            Damage = splitDamage,
+            ProjectileScaleMultiplier = splitScaleMultiplier,
+            InheritPlayerSpeed = inheritPlayerSpeed,
+            IsSplitChild = 1
+        });
+    }
+
+    private static float ResolveCurrentScaleMultiplier(Entity projectileEntity,
+                                                       float currentScale,
+                                                       in ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup)
+    {
+        if (projectileBaseScaleLookup.HasComponent(projectileEntity) == false)
+            return math.max(0.01f, currentScale);
+
+        float baseScale = math.max(0.0001f, projectileBaseScaleLookup[projectileEntity].Value);
+        return math.max(0.01f, currentScale / baseScale);
+    }
+
+    private static float3 RotateDirection(float3 baseDirection, float angleDegrees)
+    {
+        quaternion rotation = quaternion.AxisAngle(new float3(0f, 1f, 0f), math.radians(angleDegrees));
+        float3 rotatedDirection = math.mul(rotation, baseDirection);
+        rotatedDirection.y = 0f;
+        return math.normalizesafe(rotatedDirection, new float3(0f, 0f, 1f));
+    }
+
+    private static void TryApplyElementalPayload(Entity enemyEntity,
+                                                 float3 enemyPosition,
+                                                 in ProjectileElementalPayload elementalPayload,
+                                                 in ProjectileOwner projectileOwner,
+                                                 ref BufferLookup<EnemyElementStackElement> elementalStackLookup,
+                                                 ref BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup)
+    {
+        if (elementalPayload.Enabled == 0)
+            return;
+
+        if (elementalPayload.StacksPerHit <= 0f)
+            return;
+
+        bool procTriggered;
+        bool applied = EnemyElementalStackUtility.TryApplyStacks(enemyEntity,
+                                                                 math.max(0f, elementalPayload.StacksPerHit),
+                                                                 elementalPayload.Effect,
+                                                                 ref elementalStackLookup,
+                                                                 out procTriggered);
+
+        if (applied == false)
+            return;
+
+        Entity shooterEntity = projectileOwner.ShooterEntity;
+
+        if (vfxRequestLookup.HasBuffer(shooterEntity) == false)
+            return;
+
+        DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests = vfxRequestLookup[shooterEntity];
+
+        if (elementalPayload.SpawnStackVfx != 0)
+            EnqueueElementalVfx(ref vfxRequests,
+                                elementalPayload.StackVfxPrefabEntity,
+                                enemyPosition,
+                                elementalPayload.StackVfxScaleMultiplier);
+
+        if (procTriggered && elementalPayload.SpawnProcVfx != 0)
+            EnqueueElementalVfx(ref vfxRequests,
+                                elementalPayload.ProcVfxPrefabEntity,
+                                enemyPosition,
+                                elementalPayload.ProcVfxScaleMultiplier);
+    }
+
+    private static void EnqueueElementalVfx(ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
+                                            Entity prefabEntity,
+                                            float3 position,
+                                            float scaleMultiplier)
+    {
+        if (prefabEntity == Entity.Null)
+            return;
+
+        vfxRequests.Add(new PlayerPowerUpVfxSpawnRequest
+        {
+            PrefabEntity = prefabEntity,
+            Position = position,
+            Rotation = quaternion.identity,
+            UniformScale = math.max(0.01f, scaleMultiplier),
+            LifetimeSeconds = 2f
+        });
+    }
+
+    private static void DespawnProjectile(EntityManager entityManager,
+                                          Entity projectileEntity,
+                                          ProjectileOwner projectileOwner,
+                                          ref BufferLookup<ProjectilePoolElement> projectilePoolLookup)
     {
         if (entityManager.Exists(projectileEntity) == false)
             return;

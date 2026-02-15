@@ -141,7 +141,8 @@ public partial struct PlayerShootingIntentSystem : ISystem
                     Lifetime = projectileLifetime,
                     Damage = projectileDamage,
                     ProjectileScaleMultiplier = projectileScaleMultiplier,
-                    InheritPlayerSpeed = inheritPlayerSpeed
+                    InheritPlayerSpeed = inheritPlayerSpeed,
+                    IsSplitChild = 0
                 };
 
                 shootRequests.Add(request);

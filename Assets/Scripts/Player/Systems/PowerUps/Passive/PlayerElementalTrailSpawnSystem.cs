@@ -1,0 +1,186 @@
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
+
+/// <summary>
+/// Spawns elemental trail segment entities while players move with Elemental Trail passive enabled.
+/// </summary>
+[UpdateInGroup(typeof(PlayerControllerSystemGroup))]
+[UpdateAfter(typeof(PlayerPowerUpsInitializeSystem))]
+[UpdateAfter(typeof(PlayerMovementApplySystem))]
+public partial struct PlayerElementalTrailSpawnSystem : ISystem
+{
+    #region Methods
+
+    #region Lifecycle
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<PlayerPassiveToolsState>();
+        state.RequireForUpdate<PlayerElementalTrailState>();
+        state.RequireForUpdate<PlayerElementalTrailSegmentElement>();
+        state.RequireForUpdate<LocalTransform>();
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        float deltaTime = SystemAPI.Time.DeltaTime;
+        EntityManager entityManager = state.EntityManager;
+        EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+
+        foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
+                  RefRW<PlayerElementalTrailState> trailState,
+                  RefRO<LocalTransform> playerTransform,
+                  DynamicBuffer<PlayerElementalTrailSegmentElement> trailSegments,
+                  DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
+                  Entity playerEntity)
+                 in SystemAPI.Query<RefRO<PlayerPassiveToolsState>,
+                                    RefRW<PlayerElementalTrailState>,
+                                    RefRO<LocalTransform>,
+                                    DynamicBuffer<PlayerElementalTrailSegmentElement>,
+                                    DynamicBuffer<PlayerPowerUpVfxSpawnRequest>>()
+                             .WithEntityAccess())
+        {
+            PlayerElementalTrailState currentTrailState = trailState.ValueRO;
+            CompactSegments(entityManager, trailSegments, ref currentTrailState);
+
+            if (passiveToolsState.ValueRO.HasElementalTrail == 0)
+            {
+                currentTrailState.Initialized = 0;
+                currentTrailState.SpawnTimer = 0f;
+                trailState.ValueRW = currentTrailState;
+                continue;
+            }
+
+            ElementalTrailPassiveConfig trailConfig = passiveToolsState.ValueRO.ElementalTrail;
+            bool hasValidPayload = trailConfig.TrailRadius > 0f && trailConfig.StacksPerTick > 0f;
+
+            if (hasValidPayload == false)
+            {
+                trailState.ValueRW = currentTrailState;
+                continue;
+            }
+
+            float3 playerPosition = playerTransform.ValueRO.Position;
+
+            if (currentTrailState.Initialized == 0)
+            {
+                currentTrailState.Initialized = 1;
+                currentTrailState.LastSpawnPosition = playerPosition;
+                currentTrailState.SpawnTimer = 0f;
+            }
+
+            float nextSpawnTimer = currentTrailState.SpawnTimer - deltaTime;
+            float3 delta = playerPosition - currentTrailState.LastSpawnPosition;
+            delta.y = 0f;
+            float movedDistance = math.length(delta);
+            bool distanceTriggered = trailConfig.TrailSpawnDistance > 0f && movedDistance >= trailConfig.TrailSpawnDistance;
+            bool timerTriggered = nextSpawnTimer <= 0f;
+
+            if (distanceTriggered == false && timerTriggered == false)
+            {
+                currentTrailState.SpawnTimer = nextSpawnTimer;
+                trailState.ValueRW = currentTrailState;
+                continue;
+            }
+
+            int maxSegments = math.max(1, trailConfig.MaxActiveSegmentsPerPlayer);
+
+            while (trailSegments.Length >= maxSegments)
+            {
+                Entity oldestSegment = trailSegments[0].SegmentEntity;
+                trailSegments.RemoveAt(0);
+
+                if (entityManager.Exists(oldestSegment))
+                    commandBuffer.DestroyEntity(oldestSegment);
+            }
+
+            Entity segmentEntity = commandBuffer.CreateEntity();
+            commandBuffer.AddComponent(segmentEntity, LocalTransform.FromPositionRotationScale(playerPosition, quaternion.identity, 1f));
+            commandBuffer.AddComponent(segmentEntity, new ElementalTrailSegment
+            {
+                OwnerEntity = playerEntity,
+                Radius = math.max(0f, trailConfig.TrailRadius),
+                RemainingLifetime = math.max(0.05f, trailConfig.TrailSegmentLifetimeSeconds),
+                ApplyIntervalSeconds = math.max(0.01f, trailConfig.ApplyIntervalSeconds),
+                ApplyTimer = 0f,
+                StacksPerTick = math.max(0f, trailConfig.StacksPerTick),
+                Effect = trailConfig.Effect
+            });
+
+            trailSegments.Add(new PlayerElementalTrailSegmentElement
+            {
+                SegmentEntity = segmentEntity
+            });
+
+            currentTrailState.ActiveSegments = trailSegments.Length;
+            currentTrailState.LastSpawnPosition = playerPosition;
+            currentTrailState.SpawnTimer = math.max(0.01f, trailConfig.TrailSpawnIntervalSeconds);
+
+            if (trailConfig.TrailSegmentVfxPrefabEntity != Entity.Null)
+            {
+                float vfxScale = math.max(0.01f, trailConfig.TrailSegmentVfxScaleMultiplier * math.max(0.1f, trailConfig.TrailRadius));
+
+                vfxRequests.Add(new PlayerPowerUpVfxSpawnRequest
+                {
+                    PrefabEntity = trailConfig.TrailSegmentVfxPrefabEntity,
+                    Position = playerPosition,
+                    Rotation = quaternion.identity,
+                    UniformScale = vfxScale,
+                    LifetimeSeconds = math.max(0.05f, trailConfig.TrailSegmentLifetimeSeconds)
+                });
+            }
+
+            trailState.ValueRW = currentTrailState;
+        }
+
+        commandBuffer.Playback(entityManager);
+        commandBuffer.Dispose();
+    }
+    #endregion
+
+    #region Helpers
+    private static void CompactSegments(EntityManager entityManager,
+                                        DynamicBuffer<PlayerElementalTrailSegmentElement> trailSegments,
+                                        ref PlayerElementalTrailState trailState)
+    {
+        for (int index = 0; index < trailSegments.Length; index++)
+        {
+            Entity segmentEntity = trailSegments[index].SegmentEntity;
+
+            if (segmentEntity == Entity.Null)
+            {
+                trailSegments.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            if (entityManager.Exists(segmentEntity) == false)
+            {
+                trailSegments.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            if (entityManager.HasComponent<ElementalTrailSegment>(segmentEntity) == false)
+            {
+                trailSegments.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            ElementalTrailSegment segment = entityManager.GetComponentData<ElementalTrailSegment>(segmentEntity);
+
+            if (segment.RemainingLifetime > 0f)
+                continue;
+
+            trailSegments.RemoveAt(index);
+            index--;
+        }
+
+        trailState.ActiveSegments = trailSegments.Length;
+    }
+    #endregion
+
+    #endregion
+}

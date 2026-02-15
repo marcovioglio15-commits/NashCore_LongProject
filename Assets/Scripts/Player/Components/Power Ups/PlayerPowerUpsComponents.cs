@@ -24,6 +24,18 @@ public struct PlayerPassiveToolsState : IComponentData
     public float ProjectileSpeedMultiplier;
     public float ProjectileLifetimeSecondsMultiplier;
     public float ProjectileLifetimeRangeMultiplier;
+    public byte HasElementalProjectiles;
+    public ElementalProjectilesPassiveConfig ElementalProjectiles;
+    public byte HasPerfectCircle;
+    public PerfectCirclePassiveConfig PerfectCircle;
+    public byte HasBouncingProjectiles;
+    public BouncingProjectilesPassiveConfig BouncingProjectiles;
+    public byte HasSplittingProjectiles;
+    public SplittingProjectilesPassiveConfig SplittingProjectiles;
+    public byte HasExplosion;
+    public ExplosionPassiveConfig Explosion;
+    public byte HasElementalTrail;
+    public ElementalTrailPassiveConfig ElementalTrail;
 }
 
 /// <summary>
@@ -41,6 +53,15 @@ public struct PlayerDashState : IComponentData
     public float Speed;
     public float TransitionInDuration;
     public float TransitionOutDuration;
+}
+
+/// <summary>
+/// Holds runtime state for the Bullet Time active tool.
+/// </summary>
+public struct PlayerBulletTimeState : IComponentData
+{
+    public float RemainingDuration;
+    public float SlowPercent;
 }
 
 /// <summary>
@@ -84,4 +105,80 @@ public struct BombFuseState : IComponentData
 /// </summary>
 public struct BombExplodeRequest : IComponentData
 {
+}
+
+/// <summary>
+/// Holds runtime timers for passive explosion logic.
+/// </summary>
+public struct PlayerPassiveExplosionState : IComponentData
+{
+    public float CooldownRemaining;
+    public float PreviousObservedHealth;
+}
+
+/// <summary>
+/// Stores runtime trail spawning state for elemental trail passive.
+/// </summary>
+public struct PlayerElementalTrailState : IComponentData
+{
+    public float3 LastSpawnPosition;
+    public float SpawnTimer;
+    public int ActiveSegments;
+    public byte Initialized;
+}
+
+/// <summary>
+/// Tracks trail segment entities currently owned by one player.
+/// </summary>
+public struct PlayerElementalTrailSegmentElement : IBufferElementData
+{
+    public Entity SegmentEntity;
+}
+
+/// <summary>
+/// Runtime payload of one elemental trail segment entity.
+/// </summary>
+public struct ElementalTrailSegment : IComponentData
+{
+    public Entity OwnerEntity;
+    public float Radius;
+    public float RemainingLifetime;
+    public float ApplyIntervalSeconds;
+    public float ApplyTimer;
+    public float StacksPerTick;
+    public ElementalEffectConfig Effect;
+}
+
+/// <summary>
+/// Request to apply an explosion payload at a specific world position.
+/// </summary>
+public struct PlayerExplosionRequest : IBufferElementData
+{
+    public float3 Position;
+    public float Radius;
+    public float Damage;
+    public byte AffectAllEnemiesInRadius;
+    public Entity ExplosionVfxPrefabEntity;
+    public byte ScaleVfxToRadius;
+    public float VfxScaleMultiplier;
+}
+
+/// <summary>
+/// Request to spawn one-shot VFX entities for passive/elemental feedback.
+/// </summary>
+public struct PlayerPowerUpVfxSpawnRequest : IBufferElementData
+{
+    public Entity PrefabEntity;
+    public float3 Position;
+    public quaternion Rotation;
+    public float UniformScale;
+    public float LifetimeSeconds;
+}
+
+/// <summary>
+/// Lifetime tracker for temporary spawned VFX entities.
+/// </summary>
+public struct PlayerPowerUpVfxLifetime : IComponentData
+{
+    public float RemainingSeconds;
 }

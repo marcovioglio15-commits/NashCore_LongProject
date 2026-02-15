@@ -63,7 +63,12 @@ public partial struct EnemyContactDamageSystem : ISystem
             return;
 
         float3 playerPosition = playerTransform.Position;
-        float deltaTime = SystemAPI.Time.DeltaTime;
+        float enemyTimeScale = 1f;
+
+        if (SystemAPI.TryGetSingleton<EnemyGlobalTimeScale>(out EnemyGlobalTimeScale enemyGlobalTimeScale))
+            enemyTimeScale = math.clamp(enemyGlobalTimeScale.Scale, 0f, 1f);
+
+        float deltaTime = SystemAPI.Time.DeltaTime * enemyTimeScale;
         float accumulatedDamage = 0f;
 
         foreach ((RefRO<EnemyData> enemyData,

@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Collections;
 using Unity.Mathematics;
 
 /// <summary>
@@ -55,6 +56,7 @@ public struct ShootRequest : IBufferElementData
     public float Damage;
     public float ProjectileScaleMultiplier;
     public byte InheritPlayerSpeed;
+    public byte IsSplitChild;
 }
 
 public struct ProjectilePoolElement : IBufferElementData
@@ -111,4 +113,65 @@ public struct ProjectileActive : IComponentData, IEnableableComponent
 public struct ProjectileBaseScale : IComponentData
 {
     public float Value;
+}
+
+/// <summary>
+/// Runtime state used by the Perfect Circle passive to move projectiles around the player.
+/// </summary>
+public struct ProjectilePerfectCircleState : IComponentData
+{
+    public byte Enabled;
+    public byte HasEnteredOrbit;
+    public byte CompletedFullOrbit;
+    public float3 EntryOrigin;
+    public float OrbitAngle;
+    public float OrbitBlendProgress;
+    public float CurrentRadius;
+    public float AccumulatedOrbitRadians;
+    public float3 RadialDirection;
+    public float3 EntryVelocity;
+}
+
+/// <summary>
+/// Runtime state used by bouncing projectiles to keep bounce counters and speed scaling.
+/// </summary>
+public struct ProjectileBounceState : IComponentData
+{
+    public int RemainingBounces;
+    public float SpeedPercentChangePerBounce;
+    public float MinimumSpeedMultiplierAfterBounce;
+    public float MaximumSpeedMultiplierAfterBounce;
+    public float CurrentSpeedMultiplier;
+}
+
+/// <summary>
+/// Runtime split payload stored on original projectiles.
+/// </summary>
+public struct ProjectileSplitState : IComponentData
+{
+    public byte CanSplit;
+    public ProjectileSplitDirectionMode DirectionMode;
+    public int SplitProjectileCount;
+    public float SplitOffsetDegrees;
+    public FixedList128Bytes<float> CustomAnglesDegrees;
+    public float SplitDamageMultiplier;
+    public float SplitSizeMultiplier;
+    public float SplitSpeedMultiplier;
+    public float SplitLifetimeMultiplier;
+}
+
+/// <summary>
+/// Runtime elemental payload carried by projectiles.
+/// </summary>
+public struct ProjectileElementalPayload : IComponentData
+{
+    public byte Enabled;
+    public ElementalEffectConfig Effect;
+    public float StacksPerHit;
+    public byte SpawnStackVfx;
+    public Entity StackVfxPrefabEntity;
+    public float StackVfxScaleMultiplier;
+    public byte SpawnProcVfx;
+    public Entity ProcVfxPrefabEntity;
+    public float ProcVfxScaleMultiplier;
 }

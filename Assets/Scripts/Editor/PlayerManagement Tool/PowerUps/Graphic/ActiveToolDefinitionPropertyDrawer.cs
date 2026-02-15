@@ -11,7 +11,8 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
     private static readonly List<ActiveToolKind> SupportedKinds = new List<ActiveToolKind>
     {
         ActiveToolKind.Bomb,
-        ActiveToolKind.Dash
+        ActiveToolKind.Dash,
+        ActiveToolKind.BulletTime
     };
     #endregion
 
@@ -33,6 +34,7 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
         SerializedProperty unreplaceableProperty = property.FindPropertyRelative("unreplaceable");
         SerializedProperty bombDataProperty = property.FindPropertyRelative("bombData");
         SerializedProperty dashDataProperty = property.FindPropertyRelative("dashData");
+        SerializedProperty bulletTimeDataProperty = property.FindPropertyRelative("bulletTimeData");
 
         if (commonDataProperty == null ||
             toolKindProperty == null ||
@@ -47,7 +49,8 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
             fullChargeRequirementProperty == null ||
             unreplaceableProperty == null ||
             bombDataProperty == null ||
-            dashDataProperty == null)
+            dashDataProperty == null ||
+            bulletTimeDataProperty == null)
         {
             Label errorLabel = new Label("Active tool data is missing serialized fields.");
             errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -85,7 +88,7 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
         toolKindField.RegisterValueChangedCallback(evt =>
         {
             SetToolKind(toolKindProperty, evt.newValue);
-            RefreshToolSpecific(toolSpecificContainer, toolKindProperty, bombDataProperty, dashDataProperty);
+            RefreshToolSpecific(toolSpecificContainer, toolKindProperty, bombDataProperty, dashDataProperty, bulletTimeDataProperty);
         });
 
         root.TrackPropertyValue(toolKindProperty, changedProperty =>
@@ -95,10 +98,10 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
             if (toolKindField.value != selectedKind)
                 toolKindField.SetValueWithoutNotify(selectedKind);
 
-            RefreshToolSpecific(toolSpecificContainer, changedProperty, bombDataProperty, dashDataProperty);
+            RefreshToolSpecific(toolSpecificContainer, changedProperty, bombDataProperty, dashDataProperty, bulletTimeDataProperty);
         });
 
-        RefreshToolSpecific(toolSpecificContainer, toolKindProperty, bombDataProperty, dashDataProperty);
+        RefreshToolSpecific(toolSpecificContainer, toolKindProperty, bombDataProperty, dashDataProperty, bulletTimeDataProperty);
         return root;
     }
 
@@ -121,6 +124,8 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
                 return "Bomb";
             case ActiveToolKind.Dash:
                 return "Dash";
+            case ActiveToolKind.BulletTime:
+                return "Bullet Time";
             default:
                 return "Bomb";
         }
@@ -139,6 +144,9 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
         if (currentKind == ActiveToolKind.Dash)
             return ActiveToolKind.Dash;
 
+        if (currentKind == ActiveToolKind.BulletTime)
+            return ActiveToolKind.BulletTime;
+
         toolKindProperty.serializedObject.Update();
         toolKindProperty.enumValueIndex = (int)ActiveToolKind.Bomb;
         toolKindProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
@@ -152,7 +160,9 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
 
         ActiveToolKind sanitizedKind = selectedKind;
 
-        if (sanitizedKind != ActiveToolKind.Bomb && sanitizedKind != ActiveToolKind.Dash)
+        if (sanitizedKind != ActiveToolKind.Bomb &&
+            sanitizedKind != ActiveToolKind.Dash &&
+            sanitizedKind != ActiveToolKind.BulletTime)
             sanitizedKind = ActiveToolKind.Bomb;
 
         if (toolKindProperty.enumValueIndex == (int)sanitizedKind)
@@ -166,7 +176,8 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
     private static void RefreshToolSpecific(VisualElement container,
                                             SerializedProperty toolKindProperty,
                                             SerializedProperty bombDataProperty,
-                                            SerializedProperty dashDataProperty)
+                                            SerializedProperty dashDataProperty,
+                                            SerializedProperty bulletTimeDataProperty)
     {
         if (container == null)
             return;
@@ -181,6 +192,9 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
                 return;
             case ActiveToolKind.Dash:
                 AddField(container, dashDataProperty, "Dash Settings");
+                return;
+            case ActiveToolKind.BulletTime:
+                AddField(container, bulletTimeDataProperty, "Bullet Time Settings");
                 return;
         }
     }

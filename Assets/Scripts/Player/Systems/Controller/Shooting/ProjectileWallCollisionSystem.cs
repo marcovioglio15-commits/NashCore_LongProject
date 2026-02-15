@@ -23,6 +23,7 @@ public partial struct ProjectileWallCollisionSystem : ISystem
     {
         state.RequireForUpdate<Projectile>();
         state.RequireForUpdate<ProjectileOwner>();
+        state.RequireForUpdate<ProjectilePerfectCircleState>();
         state.RequireForUpdate<ProjectileActive>();
         state.RequireForUpdate<LocalTransform>();
         state.RequireForUpdate<PhysicsWorldSingleton>();
@@ -46,15 +47,18 @@ public partial struct ProjectileWallCollisionSystem : ISystem
 
         foreach ((RefRO<Projectile> projectile,
                   RefRO<ProjectileOwner> owner,
-                  RefRO<LocalTransform> projectileTransform,
-                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileOwner>, RefRO<LocalTransform>>()
+                  RefRO<ProjectilePerfectCircleState> perfectCircleState,
+                  RefRW<ProjectileBounceState> bounceState,
+                  RefRW<LocalTransform> projectileTransform,
+                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileOwner>, RefRO<ProjectilePerfectCircleState>, RefRW<ProjectileBounceState>, RefRW<LocalTransform>>()
                                                        .WithAll<ProjectileActive>()
                                                        .WithEntityAccess())
         {
-            float3 velocity = projectile.ValueRO.Velocity;
+            Projectile projectileData = projectile.ValueRO;
+            float3 velocity = projectileData.Velocity;
 
-            if (projectile.ValueRO.InheritPlayerSpeed != 0)
-                velocity += ResolveInheritedVelocity(in projectile.ValueRO, in owner.ValueRO, in movementStateLookup);
+            if (perfectCircleState.ValueRO.Enabled == 0 && projectileData.InheritPlayerSpeed != 0)
+                velocity += ResolveInheritedVelocity(in projectileData, in owner.ValueRO, in movementStateLookup);
 
             float3 displacement = velocity * deltaTime;
 
@@ -70,11 +74,22 @@ public partial struct ProjectileWallCollisionSystem : ISystem
                                                                                    displacement,
                                                                                    collisionRadius,
                                                                                    wallsLayerMask,
-                                                                                   out float3 _,
-                                                                                   out float3 _);
+                                                                                   out float3 allowedDisplacement,
+                                                                                   out float3 wallNormal);
 
             if (hitWall == false)
                 continue;
+
+            float3 resolvedPosition = startPosition + allowedDisplacement;
+            LocalTransform resolvedTransform = projectileTransform.ValueRO;
+            resolvedTransform.Position = resolvedPosition;
+            projectileTransform.ValueRW = resolvedTransform;
+
+            if (TryApplyBounce(ref projectileData, ref bounceState.ValueRW, wallNormal))
+            {
+                entityManager.SetComponentData(projectileEntity, projectileData);
+                continue;
+            }
 
             ProjectilePoolUtility.SetProjectileParked(entityManager, projectileEntity);
             entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, false);
@@ -102,7 +117,6 @@ public partial struct ProjectileWallCollisionSystem : ISystem
             return float3.zero;
 
         float3 inheritedVelocity = movementStateLookup[owner.ShooterEntity].Velocity;
-        inheritedVelocity.y = 0f;
         float speedSquared = math.lengthsq(projectile.Velocity);
 
         if (speedSquared <= 1e-6f)
@@ -111,6 +125,37 @@ public partial struct ProjectileWallCollisionSystem : ISystem
         float projectionScale = math.dot(inheritedVelocity, projectile.Velocity) / speedSquared;
         inheritedVelocity -= projectile.Velocity * projectionScale;
         return inheritedVelocity;
+    }
+
+    private static bool TryApplyBounce(ref Projectile projectile, ref ProjectileBounceState bounceState, float3 wallNormal)
+    {
+        if (bounceState.RemainingBounces <= 0)
+            return false;
+
+        float3 normalizedNormal = math.normalizesafe(wallNormal, float3.zero);
+
+        if (math.lengthsq(normalizedNormal) <= MovementEpsilon)
+            return false;
+
+        float3 reflectedVelocity = math.reflect(projectile.Velocity, normalizedNormal);
+
+        if (math.lengthsq(reflectedVelocity) <= MovementEpsilon)
+            return false;
+
+        float oldMultiplier = bounceState.CurrentSpeedMultiplier;
+
+        if (oldMultiplier <= 0f)
+            oldMultiplier = 1f;
+
+        float multiplierStep = 1f + bounceState.SpeedPercentChangePerBounce * 0.01f;
+        float minimumMultiplier = math.max(0f, bounceState.MinimumSpeedMultiplierAfterBounce);
+        float maximumMultiplier = math.max(minimumMultiplier, bounceState.MaximumSpeedMultiplierAfterBounce);
+        float nextMultiplier = math.clamp(oldMultiplier * multiplierStep, minimumMultiplier, maximumMultiplier);
+        float speedRatio = oldMultiplier > 1e-6f ? nextMultiplier / oldMultiplier : 1f;
+        projectile.Velocity = reflectedVelocity * speedRatio;
+        bounceState.CurrentSpeedMultiplier = nextMultiplier;
+        bounceState.RemainingBounces--;
+        return true;
     }
     #endregion
 

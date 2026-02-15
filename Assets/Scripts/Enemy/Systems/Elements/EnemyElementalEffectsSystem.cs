@@ -1,0 +1,181 @@
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+
+/// <summary>
+/// Updates elemental stacks, over-time effects and impediment slow values on enemies.
+/// </summary>
+[UpdateInGroup(typeof(EnemySystemGroup))]
+[UpdateAfter(typeof(EnemyProjectileHitSystem))]
+public partial struct EnemyElementalEffectsSystem : ISystem
+{
+    #region Methods
+
+    #region Lifecycle
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<EnemyElementalRuntimeState>();
+        state.RequireForUpdate<EnemyElementStackElement>();
+        state.RequireForUpdate<EnemyHealth>();
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        float enemyTimeScale = 1f;
+
+        if (SystemAPI.TryGetSingleton<EnemyGlobalTimeScale>(out EnemyGlobalTimeScale enemyGlobalTimeScale))
+            enemyTimeScale = math.clamp(enemyGlobalTimeScale.Scale, 0f, 1f);
+
+        float deltaTime = SystemAPI.Time.DeltaTime * enemyTimeScale;
+
+        if (deltaTime <= 0f)
+            return;
+
+        EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+        ComponentLookup<EnemyDespawnRequest> despawnRequestLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
+
+        foreach ((RefRW<EnemyHealth> enemyHealth,
+                  RefRW<EnemyElementalRuntimeState> elementalRuntimeState,
+                  DynamicBuffer<EnemyElementStackElement> elementalStacks,
+                  Entity enemyEntity)
+                 in SystemAPI.Query<RefRW<EnemyHealth>, RefRW<EnemyElementalRuntimeState>, DynamicBuffer<EnemyElementStackElement>>()
+                             .WithAll<EnemyActive>()
+                             .WithNone<EnemyDespawnRequest>()
+                             .WithEntityAccess())
+        {
+            float accumulatedDotDamage = 0f;
+            float maximumSlowPercent = 0f;
+            DynamicBuffer<EnemyElementStackElement> mutableElementalStacks = elementalStacks;
+
+            for (int stackIndex = 0; stackIndex < mutableElementalStacks.Length; stackIndex++)
+            {
+                EnemyElementStackElement stackElement = mutableElementalStacks[stackIndex];
+                UpdateStackDecay(ref stackElement, deltaTime);
+                UpdateDotState(ref stackElement, deltaTime, ref accumulatedDotDamage);
+                UpdateImpedimentState(ref stackElement, deltaTime, ref maximumSlowPercent);
+
+                if (CanRemoveStack(in stackElement))
+                {
+                    mutableElementalStacks.RemoveAt(stackIndex);
+                    stackIndex--;
+                    continue;
+                }
+
+                mutableElementalStacks[stackIndex] = stackElement;
+            }
+
+            elementalRuntimeState.ValueRW.SlowPercent = math.clamp(maximumSlowPercent, 0f, 100f);
+
+            if (accumulatedDotDamage <= 0f)
+                continue;
+
+            EnemyHealth nextHealth = enemyHealth.ValueRO;
+            nextHealth.Current -= accumulatedDotDamage;
+
+            if (nextHealth.Current < 0f)
+                nextHealth.Current = 0f;
+
+            enemyHealth.ValueRW = nextHealth;
+
+            if (nextHealth.Current > 0f)
+                continue;
+
+            if (despawnRequestLookup.HasComponent(enemyEntity))
+                continue;
+
+            commandBuffer.AddComponent(enemyEntity, new EnemyDespawnRequest
+            {
+                Reason = EnemyDespawnReason.Killed
+            });
+        }
+
+        commandBuffer.Playback(state.EntityManager);
+        commandBuffer.Dispose();
+    }
+    #endregion
+
+    #region Helpers
+    private static void UpdateStackDecay(ref EnemyElementStackElement stackElement, float deltaTime)
+    {
+        if (stackElement.StackDecayPerSecond <= 0f)
+            return;
+
+        if (stackElement.CurrentStacks <= 0f)
+            return;
+
+        stackElement.CurrentStacks -= stackElement.StackDecayPerSecond * deltaTime;
+
+        if (stackElement.CurrentStacks < 0f)
+            stackElement.CurrentStacks = 0f;
+    }
+
+    private static void UpdateDotState(ref EnemyElementStackElement stackElement, float deltaTime, ref float accumulatedDotDamage)
+    {
+        if (stackElement.DotRemainingSeconds <= 0f)
+            return;
+
+        if (stackElement.DotTickInterval <= 0f)
+            stackElement.DotTickInterval = 0.01f;
+
+        stackElement.DotRemainingSeconds -= deltaTime;
+        stackElement.DotTickTimer -= deltaTime;
+
+        while (stackElement.DotTickTimer <= 0f && stackElement.DotRemainingSeconds > 0f)
+        {
+            accumulatedDotDamage += math.max(0f, stackElement.DotDamagePerTick);
+            stackElement.DotTickTimer += stackElement.DotTickInterval;
+        }
+
+        if (stackElement.DotRemainingSeconds > 0f)
+            return;
+
+        stackElement.DotRemainingSeconds = 0f;
+        stackElement.DotTickTimer = 0f;
+    }
+
+    private static void UpdateImpedimentState(ref EnemyElementStackElement stackElement, float deltaTime, ref float maximumSlowPercent)
+    {
+        float progressiveSlowPercent = 0f;
+
+        if (stackElement.EffectKind == ElementalEffectKind.Impediment &&
+            stackElement.ProcMode == ElementalProcMode.ProgressiveUntilThreshold &&
+            stackElement.CurrentStacks > 0f)
+        {
+            progressiveSlowPercent = stackElement.CurrentStacks * math.max(0f, stackElement.ImpedimentSlowPercentPerStack);
+            progressiveSlowPercent = math.clamp(progressiveSlowPercent, 0f, math.max(0f, stackElement.ImpedimentMaxSlowPercent));
+        }
+
+        if (stackElement.ImpedimentRemainingSeconds > 0f)
+        {
+            stackElement.ImpedimentRemainingSeconds -= deltaTime;
+
+            if (stackElement.ImpedimentRemainingSeconds <= 0f)
+            {
+                stackElement.ImpedimentRemainingSeconds = 0f;
+                stackElement.CurrentImpedimentSlowPercent = 0f;
+            }
+        }
+
+        float activeSlowPercent = math.max(progressiveSlowPercent, stackElement.CurrentImpedimentSlowPercent);
+
+        if (activeSlowPercent > maximumSlowPercent)
+            maximumSlowPercent = activeSlowPercent;
+    }
+
+    private static bool CanRemoveStack(in EnemyElementStackElement stackElement)
+    {
+        if (stackElement.CurrentStacks > 0f)
+            return false;
+
+        if (stackElement.DotRemainingSeconds > 0f)
+            return false;
+
+        if (stackElement.ImpedimentRemainingSeconds > 0f)
+            return false;
+
+        return true;
+    }
+    #endregion
+
+    #endregion
+}

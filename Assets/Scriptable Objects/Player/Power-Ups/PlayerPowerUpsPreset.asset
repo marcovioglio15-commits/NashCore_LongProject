@@ -37,6 +37,90 @@ MonoBehaviour:
       speedMultiplier: 0.5
       lifetimeSecondsMultiplier: 1
       lifetimeRangeMultiplier: 1
+    elementalProjectilesData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      stacksPerHit: 1
+      spawnStackVfx: 0
+      stackVfxPrefab: {fileID: 0}
+      stackVfxScaleMultiplier: 1
+      spawnProcVfx: 0
+      procVfxPrefab: {fileID: 0}
+      procVfxScaleMultiplier: 1
+    perfectCircleData:
+      radialEntrySpeed: 12
+      orbitalSpeed: 8
+      orbitRadiusMin: 4
+      orbitRadiusMax: 6
+      orbitPulseFrequency: 0.7
+      orbitEntryRatio: 0.9
+      orbitBlendDuration: 0.3
+      heightOffset: 0
+      goldenAngleDegrees: 137.5
+    bouncingProjectilesData:
+      maxBounces: 2
+      speedPercentChangePerBounce: -5
+      minimumSpeedMultiplierAfterBounce: 0.1
+      maximumSpeedMultiplierAfterBounce: 3
+    splittingProjectilesData:
+      directionMode: 0
+      splitProjectileCount: 2
+      splitOffsetDegrees: 0
+      customAnglesDegrees:
+      - -20
+      - 20
+      splitDamagePercentFromOriginal: 50
+      splitSizePercentFromOriginal: 75
+      splitSpeedPercentFromOriginal: 85
+      splitLifetimePercentFromOriginal: 65
+    explosionData:
+      triggerMode: 0
+      cooldownSeconds: 2
+      radius: 4
+      damage: 20
+      affectAllEnemiesInRadius: 1
+      triggerOffset: {x: 0, y: 0, z: 0}
+      explosionVfxPrefab: {fileID: 0}
+      scaleVfxToRadius: 1
+      vfxScaleMultiplier: 1
+    elementalTrailData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      trailSegmentLifetimeSeconds: 1.5
+      trailSpawnDistance: 0.6
+      trailSpawnIntervalSeconds: 0.1
+      trailRadius: 1.2
+      maxActiveSegmentsPerPlayer: 30
+      stacksPerTick: 1
+      applyIntervalSeconds: 0.2
+      trailSegmentVfxPrefab: {fileID: 0}
+      trailSegmentVfxScaleMultiplier: 1
   - commonData:
       powerUpId: Tiny Shots
       displayName: 
@@ -51,6 +135,482 @@ MonoBehaviour:
       speedMultiplier: 2
       lifetimeSecondsMultiplier: 1
       lifetimeRangeMultiplier: 1
+    elementalProjectilesData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      stacksPerHit: 1
+      spawnStackVfx: 0
+      stackVfxPrefab: {fileID: 0}
+      stackVfxScaleMultiplier: 1
+      spawnProcVfx: 0
+      procVfxPrefab: {fileID: 0}
+      procVfxScaleMultiplier: 1
+    perfectCircleData:
+      radialEntrySpeed: 12
+      orbitalSpeed: 8
+      orbitRadiusMin: 4
+      orbitRadiusMax: 6
+      orbitPulseFrequency: 0.7
+      orbitEntryRatio: 0.9
+      orbitBlendDuration: 0.3
+      heightOffset: 0
+      goldenAngleDegrees: 137.5
+    bouncingProjectilesData:
+      maxBounces: 2
+      speedPercentChangePerBounce: -5
+      minimumSpeedMultiplierAfterBounce: 0.1
+      maximumSpeedMultiplierAfterBounce: 3
+    splittingProjectilesData:
+      directionMode: 0
+      splitProjectileCount: 2
+      splitOffsetDegrees: 0
+      customAnglesDegrees:
+      - -20
+      - 20
+      splitDamagePercentFromOriginal: 50
+      splitSizePercentFromOriginal: 75
+      splitSpeedPercentFromOriginal: 85
+      splitLifetimePercentFromOriginal: 65
+    explosionData:
+      triggerMode: 0
+      cooldownSeconds: 2
+      radius: 4
+      damage: 20
+      affectAllEnemiesInRadius: 1
+      triggerOffset: {x: 0, y: 0, z: 0}
+      explosionVfxPrefab: {fileID: 0}
+      scaleVfxToRadius: 1
+      vfxScaleMultiplier: 1
+    elementalTrailData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      trailSegmentLifetimeSeconds: 1.5
+      trailSpawnDistance: 0.6
+      trailSpawnIntervalSeconds: 0.1
+      trailRadius: 1.2
+      maxActiveSegmentsPerPlayer: 30
+      stacksPerTick: 1
+      applyIntervalSeconds: 0.2
+      trailSegmentVfxPrefab: {fileID: 0}
+      trailSegmentVfxScaleMultiplier: 1
+  - commonData:
+      powerUpId: Fire Shots
+      displayName: Fire Shots
+      description: Fire Shots
+      dropPools: []
+      dropTier: 1
+      purchaseCost: 0
+    toolKind: 1
+    projectileSizeData:
+      projectileSizeMultiplier: 0.7
+      damageMultiplier: 0.5
+      speedMultiplier: 2
+      lifetimeSecondsMultiplier: 1
+      lifetimeRangeMultiplier: 1
+    elementalProjectilesData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      stacksPerHit: 1
+      spawnStackVfx: 0
+      stackVfxPrefab: {fileID: 0}
+      stackVfxScaleMultiplier: 1
+      spawnProcVfx: 0
+      procVfxPrefab: {fileID: 0}
+      procVfxScaleMultiplier: 1
+    perfectCircleData:
+      radialEntrySpeed: 12
+      orbitalSpeed: 8
+      orbitRadiusMin: 4
+      orbitRadiusMax: 6
+      orbitPulseFrequency: 0.7
+      orbitEntryRatio: 0.9
+      orbitBlendDuration: 0.3
+      heightOffset: 0
+      goldenAngleDegrees: 137.5
+    bouncingProjectilesData:
+      maxBounces: 2
+      speedPercentChangePerBounce: -5
+      minimumSpeedMultiplierAfterBounce: 0.1
+      maximumSpeedMultiplierAfterBounce: 3
+    splittingProjectilesData:
+      directionMode: 0
+      splitProjectileCount: 2
+      splitOffsetDegrees: 0
+      customAnglesDegrees:
+      - -20
+      - 20
+      splitDamagePercentFromOriginal: 50
+      splitSizePercentFromOriginal: 75
+      splitSpeedPercentFromOriginal: 85
+      splitLifetimePercentFromOriginal: 65
+    explosionData:
+      triggerMode: 0
+      cooldownSeconds: 2
+      radius: 4
+      damage: 20
+      affectAllEnemiesInRadius: 1
+      triggerOffset: {x: 0, y: 0, z: 0}
+      explosionVfxPrefab: {fileID: 0}
+      scaleVfxToRadius: 1
+      vfxScaleMultiplier: 1
+    elementalTrailData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      trailSegmentLifetimeSeconds: 1.5
+      trailSpawnDistance: 0.6
+      trailSpawnIntervalSeconds: 0.1
+      trailRadius: 1.2
+      maxActiveSegmentsPerPlayer: 30
+      stacksPerTick: 1
+      applyIntervalSeconds: 0.2
+      trailSegmentVfxPrefab: {fileID: 0}
+      trailSegmentVfxScaleMultiplier: 1
+  - commonData:
+      powerUpId: Perfect Circle
+      displayName: Perfect Circle
+      description: Perfect Circle
+      dropPools: []
+      dropTier: 1
+      purchaseCost: 0
+    toolKind: 2
+    projectileSizeData:
+      projectileSizeMultiplier: 0.7
+      damageMultiplier: 0.5
+      speedMultiplier: 2
+      lifetimeSecondsMultiplier: 1
+      lifetimeRangeMultiplier: 1
+    elementalProjectilesData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      stacksPerHit: 1
+      spawnStackVfx: 0
+      stackVfxPrefab: {fileID: 0}
+      stackVfxScaleMultiplier: 1
+      spawnProcVfx: 0
+      procVfxPrefab: {fileID: 0}
+      procVfxScaleMultiplier: 1
+    perfectCircleData:
+      radialEntrySpeed: 12
+      orbitalSpeed: 8
+      orbitRadiusMin: 4
+      orbitRadiusMax: 6
+      orbitPulseFrequency: 0.2
+      orbitEntryRatio: 0.9
+      orbitBlendDuration: 0.3
+      heightOffset: 0
+      goldenAngleDegrees: 137.5
+    bouncingProjectilesData:
+      maxBounces: 2
+      speedPercentChangePerBounce: -5
+      minimumSpeedMultiplierAfterBounce: 0.1
+      maximumSpeedMultiplierAfterBounce: 3
+    splittingProjectilesData:
+      directionMode: 0
+      splitProjectileCount: 2
+      splitOffsetDegrees: 0
+      customAnglesDegrees:
+      - -20
+      - 20
+      splitDamagePercentFromOriginal: 50
+      splitSizePercentFromOriginal: 75
+      splitSpeedPercentFromOriginal: 85
+      splitLifetimePercentFromOriginal: 65
+    explosionData:
+      triggerMode: 0
+      cooldownSeconds: 2
+      radius: 4
+      damage: 20
+      affectAllEnemiesInRadius: 1
+      triggerOffset: {x: 0, y: 0, z: 0}
+      explosionVfxPrefab: {fileID: 0}
+      scaleVfxToRadius: 1
+      vfxScaleMultiplier: 1
+    elementalTrailData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      trailSegmentLifetimeSeconds: 1.5
+      trailSpawnDistance: 0.6
+      trailSpawnIntervalSeconds: 0.1
+      trailRadius: 1.2
+      maxActiveSegmentsPerPlayer: 30
+      stacksPerTick: 1
+      applyIntervalSeconds: 0.2
+      trailSegmentVfxPrefab: {fileID: 0}
+      trailSegmentVfxScaleMultiplier: 1
+  - commonData:
+      powerUpId: Bouncing Projectiles
+      displayName: Bouncing Projectiles
+      description: Bouncing Projectiles
+      dropPools: []
+      dropTier: 1
+      purchaseCost: 0
+    toolKind: 3
+    projectileSizeData:
+      projectileSizeMultiplier: 0.7
+      damageMultiplier: 0.5
+      speedMultiplier: 2
+      lifetimeSecondsMultiplier: 1
+      lifetimeRangeMultiplier: 1
+    elementalProjectilesData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      stacksPerHit: 1
+      spawnStackVfx: 0
+      stackVfxPrefab: {fileID: 0}
+      stackVfxScaleMultiplier: 1
+      spawnProcVfx: 0
+      procVfxPrefab: {fileID: 0}
+      procVfxScaleMultiplier: 1
+    perfectCircleData:
+      radialEntrySpeed: 12
+      orbitalSpeed: 8
+      orbitRadiusMin: 4
+      orbitRadiusMax: 6
+      orbitPulseFrequency: 0.2
+      orbitEntryRatio: 0.9
+      orbitBlendDuration: 0.3
+      heightOffset: 0
+      goldenAngleDegrees: 137.5
+    bouncingProjectilesData:
+      maxBounces: 2
+      speedPercentChangePerBounce: 0
+      minimumSpeedMultiplierAfterBounce: 1
+      maximumSpeedMultiplierAfterBounce: 1
+    splittingProjectilesData:
+      directionMode: 0
+      splitProjectileCount: 2
+      splitOffsetDegrees: 0
+      customAnglesDegrees:
+      - -20
+      - 20
+      splitDamagePercentFromOriginal: 50
+      splitSizePercentFromOriginal: 75
+      splitSpeedPercentFromOriginal: 85
+      splitLifetimePercentFromOriginal: 65
+    explosionData:
+      triggerMode: 0
+      cooldownSeconds: 2
+      radius: 4
+      damage: 20
+      affectAllEnemiesInRadius: 1
+      triggerOffset: {x: 0, y: 0, z: 0}
+      explosionVfxPrefab: {fileID: 0}
+      scaleVfxToRadius: 1
+      vfxScaleMultiplier: 1
+    elementalTrailData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      trailSegmentLifetimeSeconds: 1.5
+      trailSpawnDistance: 0.6
+      trailSpawnIntervalSeconds: 0.1
+      trailRadius: 1.2
+      maxActiveSegmentsPerPlayer: 30
+      stacksPerTick: 1
+      applyIntervalSeconds: 0.2
+      trailSegmentVfxPrefab: {fileID: 0}
+      trailSegmentVfxScaleMultiplier: 1
+  - commonData:
+      powerUpId: Splitting Projectiles
+      displayName: Splitting Projectiles
+      description: Splitting Projectiles
+      dropPools: []
+      dropTier: 1
+      purchaseCost: 0
+    toolKind: 4
+    projectileSizeData:
+      projectileSizeMultiplier: 0.7
+      damageMultiplier: 0.5
+      speedMultiplier: 2
+      lifetimeSecondsMultiplier: 1
+      lifetimeRangeMultiplier: 1
+    elementalProjectilesData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      stacksPerHit: 1
+      spawnStackVfx: 0
+      stackVfxPrefab: {fileID: 0}
+      stackVfxScaleMultiplier: 1
+      spawnProcVfx: 0
+      procVfxPrefab: {fileID: 0}
+      procVfxScaleMultiplier: 1
+    perfectCircleData:
+      radialEntrySpeed: 12
+      orbitalSpeed: 8
+      orbitRadiusMin: 4
+      orbitRadiusMax: 6
+      orbitPulseFrequency: 0.2
+      orbitEntryRatio: 0.9
+      orbitBlendDuration: 0.3
+      heightOffset: 0
+      goldenAngleDegrees: 137.5
+    bouncingProjectilesData:
+      maxBounces: 2
+      speedPercentChangePerBounce: 0
+      minimumSpeedMultiplierAfterBounce: 1
+      maximumSpeedMultiplierAfterBounce: 1
+    splittingProjectilesData:
+      directionMode: 0
+      splitProjectileCount: 4
+      splitOffsetDegrees: 0
+      customAnglesDegrees:
+      - -20
+      - -20
+      splitDamagePercentFromOriginal: 50
+      splitSizePercentFromOriginal: 75
+      splitSpeedPercentFromOriginal: 85
+      splitLifetimePercentFromOriginal: 65
+    explosionData:
+      triggerMode: 0
+      cooldownSeconds: 2
+      radius: 4
+      damage: 20
+      affectAllEnemiesInRadius: 1
+      triggerOffset: {x: 0, y: 0, z: 0}
+      explosionVfxPrefab: {fileID: 0}
+      scaleVfxToRadius: 1
+      vfxScaleMultiplier: 1
+    elementalTrailData:
+      effectData:
+        elementType: 0
+        effectKind: 0
+        procMode: 0
+        procThresholdStacks: 5
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 0
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      trailSegmentLifetimeSeconds: 1.5
+      trailSpawnDistance: 0.6
+      trailSpawnIntervalSeconds: 0.1
+      trailRadius: 1.2
+      maxActiveSegmentsPerPlayer: 30
+      stacksPerTick: 1
+      applyIntervalSeconds: 0.2
+      trailSegmentVfxPrefab: {fileID: 0}
+      trailSegmentVfxScaleMultiplier: 1
   activeTools:
   - commonData:
       powerUpId: Dash
@@ -89,6 +649,9 @@ MonoBehaviour:
       speedTransitionOutSeconds: 0.12
       grantsInvulnerability: 1
       invulnerabilityExtraTime: 0.05
+    bulletTimeData:
+      duration: 3
+      enemySlowPercent: 40
   - commonData:
       powerUpId: Bomb
       displayName: Bomb
@@ -126,9 +689,13 @@ MonoBehaviour:
       speedTransitionOutSeconds: 0.08
       grantsInvulnerability: 0
       invulnerabilityExtraTime: 0
+    bulletTimeData:
+      duration: 3
+      enemySlowPercent: 40
   primaryActiveToolId: Dash
   secondaryActiveToolId: Bomb
   equippedPassiveToolIds:
   - BIG SHOT
+  - Splitting Projectiles
   legacyPrimaryPassiveToolId: 
   legacySecondaryPassiveToolId: 

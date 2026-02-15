@@ -51,6 +51,7 @@ public partial struct ProjectileSpawnSystem : ISystem
     {
         // Get the EntityManager and the array of shooter entities that have shoot requests
         EntityManager entityManager = state.EntityManager;
+        ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
         NativeArray<Entity> shooterEntities = shootersWithRequestsQuery.ToEntityArray(Allocator.Temp);
 
         // Iterate through each shooter entity that has shoot requests
@@ -88,6 +89,7 @@ public partial struct ProjectileSpawnSystem : ISystem
             }
 
             DynamicBuffer<ProjectilePoolElement> projectilePool = entityManager.GetBuffer<ProjectilePoolElement>(shooterEntity);
+            PlayerPassiveToolsState passiveToolsState = ResolvePassiveToolsState(shooterEntity, in passiveToolsLookup);
             int missingProjectiles = shootRequests.Length - projectilePool.Length;
 
             // If there are more shoot requests than available projectiles in the pool, expand the pool
@@ -123,6 +125,10 @@ public partial struct ProjectileSpawnSystem : ISystem
                 // Get the shoot request data and calculate the projectile's initial direction
                 ShootRequest request = shootRequests[requestIndex];
                 float3 direction = math.normalizesafe(request.Direction, new float3(0f, 0f, 1f));
+                float speed = math.max(0f, request.Speed);
+
+                if (passiveToolsState.HasPerfectCircle != 0)
+                    speed = math.max(0f, passiveToolsState.PerfectCircle.RadialEntrySpeed);
 
 
                 // Set the projectile's initial position and rotation based on the shoot request data
@@ -149,7 +155,7 @@ public partial struct ProjectileSpawnSystem : ISystem
 
                 Projectile projectileData = new Projectile
                 {
-                    Velocity = direction * math.max(0f, request.Speed),
+                    Velocity = direction * speed,
                     Damage = math.max(0f, request.Damage),
                     MaxRange = request.Range,
                     MaxLifetime = request.Lifetime,
@@ -169,6 +175,25 @@ public partial struct ProjectileSpawnSystem : ISystem
                 {
                     ShooterEntity = shooterEntity
                 });
+
+                ProjectilePerfectCircleState perfectCircleState = BuildPerfectCircleState(in passiveToolsState.PerfectCircle,
+                                                                                          requestIndex,
+                                                                                          shooterEntity,
+                                                                                          request.Position,
+                                                                                          direction,
+                                                                                          projectileData.Velocity,
+                                                                                          passiveToolsState.HasPerfectCircle != 0);
+                entityManager.SetComponentData(projectileEntity, perfectCircleState);
+
+                ProjectileBounceState bounceState = BuildBounceState(in passiveToolsState.BouncingProjectiles, passiveToolsState.HasBouncingProjectiles != 0);
+                entityManager.SetComponentData(projectileEntity, bounceState);
+
+                ProjectileSplitState splitState = BuildSplitState(in passiveToolsState.SplittingProjectiles, passiveToolsState.HasSplittingProjectiles != 0, request.IsSplitChild != 0);
+                entityManager.SetComponentData(projectileEntity, splitState);
+
+                ProjectileElementalPayload elementalPayload = BuildElementalPayload(in passiveToolsState.ElementalProjectiles, passiveToolsState.HasElementalProjectiles != 0);
+                entityManager.SetComponentData(projectileEntity, elementalPayload);
+
                 // Enable the ProjectileActive component to mark the projectile as active in the simulation
                 entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, true);
             }
@@ -178,7 +203,106 @@ public partial struct ProjectileSpawnSystem : ISystem
         // Dispose of the temporary array of shooter entities to free up memory
         shooterEntities.Dispose();
     }
-    
+
+    private static PlayerPassiveToolsState ResolvePassiveToolsState(Entity shooterEntity, in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup)
+    {
+        if (passiveToolsLookup.HasComponent(shooterEntity))
+            return passiveToolsLookup[shooterEntity];
+
+        return default;
+    }
+
+    private static ProjectilePerfectCircleState BuildPerfectCircleState(in PerfectCirclePassiveConfig perfectCircleConfig,
+                                                                        int requestIndex,
+                                                                        Entity shooterEntity,
+                                                                        float3 spawnPosition,
+                                                                        float3 direction,
+                                                                        float3 entryVelocity,
+                                                                        bool isEnabled)
+    {
+        if (isEnabled == false)
+            return default;
+
+        float seed = requestIndex + shooterEntity.Index * 13f;
+        float angleRadians = math.radians(math.max(0f, perfectCircleConfig.GoldenAngleDegrees) * seed);
+        float3 radialDirection = direction;
+
+        if (math.lengthsq(radialDirection) <= 1e-6f)
+            radialDirection = new float3(math.cos(angleRadians), 0f, math.sin(angleRadians));
+
+        radialDirection = math.normalizesafe(radialDirection, new float3(0f, 0f, 1f));
+
+        return new ProjectilePerfectCircleState
+        {
+            Enabled = 1,
+            HasEnteredOrbit = 0,
+            CompletedFullOrbit = 0,
+            EntryOrigin = spawnPosition,
+            OrbitAngle = angleRadians,
+            OrbitBlendProgress = 0f,
+            CurrentRadius = 0f,
+            AccumulatedOrbitRadians = 0f,
+            RadialDirection = radialDirection,
+            EntryVelocity = entryVelocity
+        };
+    }
+
+    private static ProjectileBounceState BuildBounceState(in BouncingProjectilesPassiveConfig bouncingProjectilesConfig, bool isEnabled)
+    {
+        if (isEnabled == false || bouncingProjectilesConfig.MaxBounces <= 0)
+            return default;
+
+        float minimumSpeedMultiplier = math.max(0f, bouncingProjectilesConfig.MinimumSpeedMultiplierAfterBounce);
+        float maximumSpeedMultiplier = math.max(minimumSpeedMultiplier, bouncingProjectilesConfig.MaximumSpeedMultiplierAfterBounce);
+
+        return new ProjectileBounceState
+        {
+            RemainingBounces = math.max(0, bouncingProjectilesConfig.MaxBounces),
+            SpeedPercentChangePerBounce = bouncingProjectilesConfig.SpeedPercentChangePerBounce,
+            MinimumSpeedMultiplierAfterBounce = minimumSpeedMultiplier,
+            MaximumSpeedMultiplierAfterBounce = maximumSpeedMultiplier,
+            CurrentSpeedMultiplier = 1f
+        };
+    }
+
+    private static ProjectileSplitState BuildSplitState(in SplittingProjectilesPassiveConfig splittingProjectilesConfig, bool isEnabled, bool isSplitChild)
+    {
+        if (isEnabled == false || isSplitChild)
+            return default;
+
+        return new ProjectileSplitState
+        {
+            CanSplit = 1,
+            DirectionMode = splittingProjectilesConfig.DirectionMode,
+            SplitProjectileCount = math.max(1, splittingProjectilesConfig.SplitProjectileCount),
+            SplitOffsetDegrees = splittingProjectilesConfig.SplitOffsetDegrees,
+            CustomAnglesDegrees = splittingProjectilesConfig.CustomAnglesDegrees,
+            SplitDamageMultiplier = math.max(0f, splittingProjectilesConfig.SplitDamageMultiplier),
+            SplitSizeMultiplier = math.max(0f, splittingProjectilesConfig.SplitSizeMultiplier),
+            SplitSpeedMultiplier = math.max(0f, splittingProjectilesConfig.SplitSpeedMultiplier),
+            SplitLifetimeMultiplier = math.max(0f, splittingProjectilesConfig.SplitLifetimeMultiplier)
+        };
+    }
+
+    private static ProjectileElementalPayload BuildElementalPayload(in ElementalProjectilesPassiveConfig elementalProjectilesConfig, bool isEnabled)
+    {
+        if (isEnabled == false || elementalProjectilesConfig.StacksPerHit <= 0f)
+            return default;
+
+        return new ProjectileElementalPayload
+        {
+            Enabled = 1,
+            Effect = elementalProjectilesConfig.Effect,
+            StacksPerHit = math.max(0f, elementalProjectilesConfig.StacksPerHit),
+            SpawnStackVfx = elementalProjectilesConfig.SpawnStackVfx,
+            StackVfxPrefabEntity = elementalProjectilesConfig.StackVfxPrefabEntity,
+            StackVfxScaleMultiplier = math.max(0.01f, elementalProjectilesConfig.StackVfxScaleMultiplier),
+            SpawnProcVfx = elementalProjectilesConfig.SpawnProcVfx,
+            ProcVfxPrefabEntity = elementalProjectilesConfig.ProcVfxPrefabEntity,
+            ProcVfxScaleMultiplier = math.max(0.01f, elementalProjectilesConfig.ProcVfxScaleMultiplier)
+        };
+    }
+
     #endregion
 
 }
