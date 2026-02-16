@@ -293,13 +293,7 @@ public partial struct ProjectileSpawnSystem : ISystem
         {
             Enabled = 1,
             Effect = elementalProjectilesConfig.Effect,
-            StacksPerHit = math.max(0f, elementalProjectilesConfig.StacksPerHit),
-            SpawnStackVfx = elementalProjectilesConfig.SpawnStackVfx,
-            StackVfxPrefabEntity = elementalProjectilesConfig.StackVfxPrefabEntity,
-            StackVfxScaleMultiplier = math.max(0.01f, elementalProjectilesConfig.StackVfxScaleMultiplier),
-            SpawnProcVfx = elementalProjectilesConfig.SpawnProcVfx,
-            ProcVfxPrefabEntity = elementalProjectilesConfig.ProcVfxPrefabEntity,
-            ProcVfxScaleMultiplier = math.max(0.01f, elementalProjectilesConfig.ProcVfxScaleMultiplier)
+            StacksPerHit = math.max(0f, elementalProjectilesConfig.StacksPerHit)
         };
     }
 

@@ -26,11 +26,13 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
         foreach ((DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
-                 DynamicBuffer<PlayerPowerUpVfxPoolElement> vfxPool,
-                  RefRO<PlayerPowerUpVfxCapConfig> vfxCapConfig)
+                  DynamicBuffer<PlayerPowerUpVfxPoolElement> vfxPool,
+                  RefRO<PlayerPowerUpVfxCapConfig> vfxCapConfig,
+                  Entity playerEntity)
                  in SystemAPI.Query<DynamicBuffer<PlayerPowerUpVfxSpawnRequest>,
                                     DynamicBuffer<PlayerPowerUpVfxPoolElement>,
-                                    RefRO<PlayerPowerUpVfxCapConfig>>())
+                                    RefRO<PlayerPowerUpVfxCapConfig>>()
+                             .WithEntityAccess())
         {
             if (vfxRequests.Length <= 0)
                 continue;
@@ -98,6 +100,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
                 bool reusedInstance;
                 Entity vfxEntity = PlayerPowerUpVfxPoolUtility.AcquireVfxEntity(entityManager,
                                                                                 ref commandBuffer,
+                                                                                playerEntity,
                                                                                 vfxPool,
                                                                                 request.PrefabEntity,
                                                                                 out reusedInstance);

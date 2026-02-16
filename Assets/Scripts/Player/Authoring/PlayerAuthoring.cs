@@ -553,6 +553,16 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             AddComponent(entity, powerUpsConfig);
             PlayerPowerUpVfxCapConfig powerUpVfxCapConfig = BuildPowerUpVfxCapConfig(authoring);
             AddComponent(entity, powerUpVfxCapConfig);
+            PlayerElementalVfxConfig elementalVfxConfig = BuildElementalVfxConfig(authoring, powerUpsPreset);
+            AddComponent(entity, elementalVfxConfig);
+
+            if (authoring.ElementalTrailAttachedVfxPrefab != null)
+            {
+                AddComponentObject(entity, new PlayerElementalTrailAttachedVfxPrefabReference
+                {
+                    Prefab = authoring.ElementalTrailAttachedVfxPrefab
+                });
+            }
 
             DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer = AddBuffer<EquippedPassiveToolElement>(entity);
             PopulateEquippedPassiveToolsBuffer(authoring, equippedPassiveToolsBuffer, powerUpsPreset);
@@ -793,6 +803,73 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     }
 
     /// <summary>
+    /// Builds runtime elemental VFX assignments shared across all elemental passives.
+    /// </summary>
+    /// <param name="authoring">Source authoring component.</param>
+    /// <param name="preset">Source power-ups preset.</param>
+    /// <returns>Baked elemental VFX config.</returns>
+    private PlayerElementalVfxConfig BuildElementalVfxConfig(PlayerAuthoring authoring, PlayerPowerUpsPreset preset)
+    {
+        IReadOnlyList<ElementalVfxByElementData> assignments = preset != null ? preset.ElementalVfxByElement : null;
+
+        return new PlayerElementalVfxConfig
+        {
+            Fire = BuildElementalVfxDefinitionConfig(authoring,
+                                                     ResolveElementalVfxAssignment(assignments, ElementType.Fire),
+                                                     "Elemental Fire"),
+            Ice = BuildElementalVfxDefinitionConfig(authoring,
+                                                    ResolveElementalVfxAssignment(assignments, ElementType.Ice),
+                                                    "Elemental Ice"),
+            Poison = BuildElementalVfxDefinitionConfig(authoring,
+                                                       ResolveElementalVfxAssignment(assignments, ElementType.Poison),
+                                                       "Elemental Poison"),
+            Custom = BuildElementalVfxDefinitionConfig(authoring,
+                                                       ResolveElementalVfxAssignment(assignments, ElementType.Custom),
+                                                       "Elemental Custom")
+        };
+    }
+
+    private static ElementalVfxByElementData ResolveElementalVfxAssignment(IReadOnlyList<ElementalVfxByElementData> assignments, ElementType elementType)
+    {
+        if (assignments == null)
+            return null;
+
+        for (int index = 0; index < assignments.Count; index++)
+        {
+            ElementalVfxByElementData assignment = assignments[index];
+
+            if (assignment == null)
+                continue;
+
+            if (assignment.ElementType != elementType)
+                continue;
+
+            return assignment;
+        }
+
+        return null;
+    }
+
+    private ElementalVfxDefinitionConfig BuildElementalVfxDefinitionConfig(PlayerAuthoring authoring, ElementalVfxByElementData assignment, string labelPrefix)
+    {
+        if (assignment == null)
+            return default;
+
+        Entity stackVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, assignment.StackVfxPrefab, labelPrefix + " Stack VFX");
+        Entity procVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, assignment.ProcVfxPrefab, labelPrefix + " Proc VFX");
+
+        return new ElementalVfxDefinitionConfig
+        {
+            SpawnStackVfx = assignment.SpawnStackVfx ? (byte)1 : (byte)0,
+            StackVfxPrefabEntity = stackVfxPrefabEntity,
+            StackVfxScaleMultiplier = math.max(0.01f, assignment.StackVfxScaleMultiplier),
+            SpawnProcVfx = assignment.SpawnProcVfx ? (byte)1 : (byte)0,
+            ProcVfxPrefabEntity = procVfxPrefabEntity,
+            ProcVfxScaleMultiplier = math.max(0.01f, assignment.ProcVfxScaleMultiplier)
+        };
+    }
+
+    /// <summary>
     /// Populates the equipped passive-tools runtime buffer from loadout IDs.
     /// </summary>
     /// <param name="equippedPassiveToolsBuffer">Target runtime buffer.</param>
@@ -936,7 +1013,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             toolKind = PassiveToolKind.ProjectileSize;
 
         ProjectileSizePassiveConfig projectileSizeConfig = BuildProjectileSizePassiveConfig(passiveTool.ProjectileSizeData);
-        ElementalProjectilesPassiveConfig elementalProjectilesConfig = BuildElementalProjectilesPassiveConfig(authoring, passiveTool.ElementalProjectilesData);
+        ElementalProjectilesPassiveConfig elementalProjectilesConfig = BuildElementalProjectilesPassiveConfig(passiveTool.ElementalProjectilesData);
         PerfectCirclePassiveConfig perfectCircleConfig = BuildPerfectCirclePassiveConfig(passiveTool.PerfectCircleData);
         BouncingProjectilesPassiveConfig bouncingProjectilesConfig = BuildBouncingProjectilesPassiveConfig(passiveTool.BouncingProjectilesData);
         SplittingProjectilesPassiveConfig splittingProjectilesConfig = BuildSplittingProjectilesPassiveConfig(passiveTool.SplittingProjectilesData);
@@ -989,27 +1066,15 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         };
     }
 
-    private ElementalProjectilesPassiveConfig BuildElementalProjectilesPassiveConfig(PlayerAuthoring authoring, ElementalProjectilesPassiveToolData elementalProjectilesData)
+    private ElementalProjectilesPassiveConfig BuildElementalProjectilesPassiveConfig(ElementalProjectilesPassiveToolData elementalProjectilesData)
     {
         ElementalEffectConfig effectConfig = BuildElementalEffectConfig(elementalProjectilesData != null ? elementalProjectilesData.EffectData : null);
         float stacksPerHit = elementalProjectilesData != null ? math.max(0f, elementalProjectilesData.StacksPerHit) : 0f;
-        byte spawnStackVfx = elementalProjectilesData != null && elementalProjectilesData.SpawnStackVfx ? (byte)1 : (byte)0;
-        Entity stackVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, elementalProjectilesData != null ? elementalProjectilesData.StackVfxPrefab : null, "Elemental Projectile Stack VFX");
-        float stackVfxScaleMultiplier = elementalProjectilesData != null ? math.max(0.01f, elementalProjectilesData.StackVfxScaleMultiplier) : 1f;
-        byte spawnProcVfx = elementalProjectilesData != null && elementalProjectilesData.SpawnProcVfx ? (byte)1 : (byte)0;
-        Entity procVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, elementalProjectilesData != null ? elementalProjectilesData.ProcVfxPrefab : null, "Elemental Projectile Proc VFX");
-        float procVfxScaleMultiplier = elementalProjectilesData != null ? math.max(0.01f, elementalProjectilesData.ProcVfxScaleMultiplier) : 1f;
 
         return new ElementalProjectilesPassiveConfig
         {
             Effect = effectConfig,
-            StacksPerHit = stacksPerHit,
-            SpawnStackVfx = spawnStackVfx,
-            StackVfxPrefabEntity = stackVfxPrefabEntity,
-            StackVfxScaleMultiplier = stackVfxScaleMultiplier,
-            SpawnProcVfx = spawnProcVfx,
-            ProcVfxPrefabEntity = procVfxPrefabEntity,
-            ProcVfxScaleMultiplier = procVfxScaleMultiplier
+            StacksPerHit = stacksPerHit
         };
     }
 
@@ -1113,7 +1178,10 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             StacksPerTick = math.max(0f, elementalTrailData.StacksPerTick),
             ApplyIntervalSeconds = math.max(0.01f, elementalTrailData.ApplyIntervalSeconds),
             TrailAttachedVfxPrefabEntity = trailAttachedVfxPrefabEntity,
-            TrailAttachedVfxScaleMultiplier = math.max(0.01f, authoring.ElementalTrailAttachedVfxScaleMultiplier)
+            TrailAttachedVfxScaleMultiplier = math.max(0.01f, authoring.ElementalTrailAttachedVfxScaleMultiplier),
+            TrailAttachedVfxOffset = new float3(elementalTrailData.TrailAttachedVfxOffset.x,
+                                                elementalTrailData.TrailAttachedVfxOffset.y,
+                                                elementalTrailData.TrailAttachedVfxOffset.z)
         };
     }
 

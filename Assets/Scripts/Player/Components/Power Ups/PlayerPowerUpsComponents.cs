@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
 /// <summary>
 /// Holds runtime state for power-up slots and activation inputs.
@@ -242,4 +243,12 @@ public struct PlayerPowerUpVfxVelocity : IComponentData
 /// </summary>
 public struct PlayerPowerUpVfxPooled : IComponentData
 {
+}
+
+/// <summary>
+/// Managed reference to the source prefab used by the Elemental Trail attached VFX fallback.
+/// </summary>
+public sealed class PlayerElementalTrailAttachedVfxPrefabReference : IComponentData
+{
+    public GameObject Prefab;
 }

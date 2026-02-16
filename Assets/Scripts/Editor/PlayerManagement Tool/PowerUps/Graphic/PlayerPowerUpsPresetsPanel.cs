@@ -628,6 +628,21 @@ public sealed class PlayerPowerUpsPresetsPanel
         PropertyField passiveToolsField = new PropertyField(passiveToolsProperty);
         passiveToolsField.BindProperty(passiveToolsProperty);
         sectionContentRoot.Add(passiveToolsField);
+
+        SerializedProperty elementalVfxByElementProperty = presetSerializedObject.FindProperty("elementalVfxByElement");
+
+        if (elementalVfxByElementProperty == null)
+            return;
+
+        Label elementalVfxHeader = new Label("Elemental VFX Assignments");
+        elementalVfxHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
+        elementalVfxHeader.style.marginTop = 8f;
+        elementalVfxHeader.style.marginBottom = 2f;
+        sectionContentRoot.Add(elementalVfxHeader);
+
+        PropertyField elementalVfxField = new PropertyField(elementalVfxByElementProperty);
+        elementalVfxField.BindProperty(elementalVfxByElementProperty);
+        sectionContentRoot.Add(elementalVfxField);
     }
 
     private void BuildActiveToolsSection()

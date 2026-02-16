@@ -168,10 +168,4 @@ public struct ProjectileElementalPayload : IComponentData
     public byte Enabled;
     public ElementalEffectConfig Effect;
     public float StacksPerHit;
-    public byte SpawnStackVfx;
-    public Entity StackVfxPrefabEntity;
-    public float StackVfxScaleMultiplier;
-    public byte SpawnProcVfx;
-    public Entity ProcVfxPrefabEntity;
-    public float ProcVfxScaleMultiplier;
 }

@@ -244,21 +244,9 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
 
         SerializedProperty effectDataProperty = elementalProjectilesDataProperty.FindPropertyRelative("effectData");
         SerializedProperty stacksPerHitProperty = elementalProjectilesDataProperty.FindPropertyRelative("stacksPerHit");
-        SerializedProperty spawnStackVfxProperty = elementalProjectilesDataProperty.FindPropertyRelative("spawnStackVfx");
-        SerializedProperty stackVfxPrefabProperty = elementalProjectilesDataProperty.FindPropertyRelative("stackVfxPrefab");
-        SerializedProperty stackVfxScaleMultiplierProperty = elementalProjectilesDataProperty.FindPropertyRelative("stackVfxScaleMultiplier");
-        SerializedProperty spawnProcVfxProperty = elementalProjectilesDataProperty.FindPropertyRelative("spawnProcVfx");
-        SerializedProperty procVfxPrefabProperty = elementalProjectilesDataProperty.FindPropertyRelative("procVfxPrefab");
-        SerializedProperty procVfxScaleMultiplierProperty = elementalProjectilesDataProperty.FindPropertyRelative("procVfxScaleMultiplier");
 
         if (effectDataProperty == null ||
-            stacksPerHitProperty == null ||
-            spawnStackVfxProperty == null ||
-            stackVfxPrefabProperty == null ||
-            stackVfxScaleMultiplierProperty == null ||
-            spawnProcVfxProperty == null ||
-            procVfxPrefabProperty == null ||
-            procVfxScaleMultiplierProperty == null)
+            stacksPerHitProperty == null)
         {
             Label errorLabel = new Label("Elemental Projectiles settings are missing serialized fields.");
             errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -271,31 +259,10 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
         container.Add(headerLabel);
         AddField(container, stacksPerHitProperty);
         BuildElementalEffectSection(container, effectDataProperty, "Elemental Effect");
-        AddField(container, spawnStackVfxProperty);
 
-        VisualElement stackVfxContainer = new VisualElement();
-        stackVfxContainer.style.marginLeft = 12f;
-        AddField(stackVfxContainer, stackVfxPrefabProperty);
-        AddField(stackVfxContainer, stackVfxScaleMultiplierProperty);
-        container.Add(stackVfxContainer);
-        UpdateBooleanContainerVisibility(stackVfxContainer, spawnStackVfxProperty);
-        container.TrackPropertyValue(spawnStackVfxProperty, changedProperty =>
-        {
-            UpdateBooleanContainerVisibility(stackVfxContainer, changedProperty);
-        });
-
-        AddField(container, spawnProcVfxProperty);
-
-        VisualElement procVfxContainer = new VisualElement();
-        procVfxContainer.style.marginLeft = 12f;
-        AddField(procVfxContainer, procVfxPrefabProperty);
-        AddField(procVfxContainer, procVfxScaleMultiplierProperty);
-        container.Add(procVfxContainer);
-        UpdateBooleanContainerVisibility(procVfxContainer, spawnProcVfxProperty);
-        container.TrackPropertyValue(spawnProcVfxProperty, changedProperty =>
-        {
-            UpdateBooleanContainerVisibility(procVfxContainer, changedProperty);
-        });
+        HelpBox infoHelpBox = new HelpBox("Elemental stack/proc VFX are configured in the preset section \"Elemental VFX Assignments\".", HelpBoxMessageType.Info);
+        infoHelpBox.style.marginTop = 4f;
+        container.Add(infoHelpBox);
     }
 
     private static void BuildElementalTrailToolUI(VisualElement container, SerializedProperty elementalTrailDataProperty)
@@ -311,6 +278,7 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
         SerializedProperty maxActiveSegmentsPerPlayerProperty = elementalTrailDataProperty.FindPropertyRelative("maxActiveSegmentsPerPlayer");
         SerializedProperty stacksPerTickProperty = elementalTrailDataProperty.FindPropertyRelative("stacksPerTick");
         SerializedProperty applyIntervalSecondsProperty = elementalTrailDataProperty.FindPropertyRelative("applyIntervalSeconds");
+        SerializedProperty trailAttachedVfxOffsetProperty = elementalTrailDataProperty.FindPropertyRelative("trailAttachedVfxOffset");
 
         if (effectDataProperty == null ||
             trailSegmentLifetimeSecondsProperty == null ||
@@ -319,7 +287,8 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
             trailRadiusProperty == null ||
             maxActiveSegmentsPerPlayerProperty == null ||
             stacksPerTickProperty == null ||
-            applyIntervalSecondsProperty == null)
+            applyIntervalSecondsProperty == null ||
+            trailAttachedVfxOffsetProperty == null)
         {
             Label errorLabel = new Label("Elemental Trail settings are missing serialized fields.");
             errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -338,6 +307,7 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
         AddField(container, maxActiveSegmentsPerPlayerProperty);
         AddField(container, stacksPerTickProperty);
         AddField(container, applyIntervalSecondsProperty);
+        AddField(container, trailAttachedVfxOffsetProperty);
     }
 
     private static void BuildExplosionToolUI(VisualElement container, SerializedProperty explosionDataProperty)

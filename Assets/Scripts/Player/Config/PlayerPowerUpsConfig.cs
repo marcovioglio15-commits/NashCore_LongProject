@@ -133,18 +133,36 @@ public struct ElementalEffectConfig
 }
 
 /// <summary>
-/// Holds baked runtime configuration for the Elemental Projectiles passive tool.
+/// Holds baked runtime VFX assignment for one elemental type.
 /// </summary>
-public struct ElementalProjectilesPassiveConfig
+public struct ElementalVfxDefinitionConfig
 {
-    public ElementalEffectConfig Effect;
-    public float StacksPerHit;
     public byte SpawnStackVfx;
     public Entity StackVfxPrefabEntity;
     public float StackVfxScaleMultiplier;
     public byte SpawnProcVfx;
     public Entity ProcVfxPrefabEntity;
     public float ProcVfxScaleMultiplier;
+}
+
+/// <summary>
+/// Holds baked runtime VFX assignments for all elemental types.
+/// </summary>
+public struct PlayerElementalVfxConfig : IComponentData
+{
+    public ElementalVfxDefinitionConfig Fire;
+    public ElementalVfxDefinitionConfig Ice;
+    public ElementalVfxDefinitionConfig Poison;
+    public ElementalVfxDefinitionConfig Custom;
+}
+
+/// <summary>
+/// Holds baked runtime configuration for the Elemental Projectiles passive tool.
+/// </summary>
+public struct ElementalProjectilesPassiveConfig
+{
+    public ElementalEffectConfig Effect;
+    public float StacksPerHit;
 }
 
 /// <summary>
@@ -220,5 +238,6 @@ public struct ElementalTrailPassiveConfig
     public float ApplyIntervalSeconds;
     public Entity TrailAttachedVfxPrefabEntity;
     public float TrailAttachedVfxScaleMultiplier;
+    public float3 TrailAttachedVfxOffset;
 }
 #endregion

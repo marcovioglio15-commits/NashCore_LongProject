@@ -26,10 +26,12 @@ public partial struct PlayerPowerUpVfxLifetimeSystem : ISystem
         state.EntityManager.CompleteDependencyBeforeRO<LocalToWorld>();
         state.EntityManager.CompleteDependencyBeforeRO<EnemyRuntimeState>();
         state.EntityManager.CompleteDependencyBeforeRO<EnemyActive>();
+        state.EntityManager.CompleteDependencyBeforeRO<EnemyDespawnRequest>();
         ComponentLookup<LocalTransform> targetLocalTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<LocalToWorld> targetLocalToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
         ComponentLookup<EnemyRuntimeState> enemyRuntimeLookup = SystemAPI.GetComponentLookup<EnemyRuntimeState>(true);
         ComponentLookup<EnemyActive> enemyActiveLookup = SystemAPI.GetComponentLookup<EnemyActive>(true);
+        ComponentLookup<EnemyDespawnRequest> enemyDespawnLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
 
         foreach ((RefRW<PlayerPowerUpVfxLifetime> lifetime,
                   RefRW<LocalTransform> vfxTransform,
@@ -54,6 +56,12 @@ public partial struct PlayerPowerUpVfxLifetimeSystem : ISystem
 
                 if (enemyActiveLookup.HasComponent(validationEntity) == false ||
                     enemyActiveLookup.IsComponentEnabled(validationEntity) == false)
+                {
+                    ReleaseOrDestroyVfxEntity(state.EntityManager, ref commandBuffer, vfxEntity);
+                    continue;
+                }
+
+                if (enemyDespawnLookup.HasComponent(validationEntity))
                 {
                     ReleaseOrDestroyVfxEntity(state.EntityManager, ref commandBuffer, vfxEntity);
                     continue;

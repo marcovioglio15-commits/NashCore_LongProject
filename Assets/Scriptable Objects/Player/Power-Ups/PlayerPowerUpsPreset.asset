@@ -55,12 +55,6 @@ MonoBehaviour:
         impedimentMaxSlowPercent: 100
         impedimentDurationSeconds: 2
       stacksPerHit: 1
-      spawnStackVfx: 0
-      stackVfxPrefab: {fileID: 0}
-      stackVfxScaleMultiplier: 1
-      spawnProcVfx: 0
-      procVfxPrefab: {fileID: 0}
-      procVfxScaleMultiplier: 1
     perfectCircleData:
       radialEntrySpeed: 12
       orbitalSpeed: 8
@@ -121,6 +115,7 @@ MonoBehaviour:
       maxActiveSegmentsPerPlayer: 30
       stacksPerTick: 1
       applyIntervalSeconds: 0.2
+      trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
   - commonData:
       powerUpId: Tiny Shots
       displayName: 
@@ -153,12 +148,6 @@ MonoBehaviour:
         impedimentMaxSlowPercent: 100
         impedimentDurationSeconds: 2
       stacksPerHit: 1
-      spawnStackVfx: 0
-      stackVfxPrefab: {fileID: 0}
-      stackVfxScaleMultiplier: 1
-      spawnProcVfx: 0
-      procVfxPrefab: {fileID: 0}
-      procVfxScaleMultiplier: 1
     perfectCircleData:
       radialEntrySpeed: 12
       orbitalSpeed: 8
@@ -219,6 +208,7 @@ MonoBehaviour:
       maxActiveSegmentsPerPlayer: 30
       stacksPerTick: 1
       applyIntervalSeconds: 0.2
+      trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
   - commonData:
       powerUpId: Perfect Circle
       displayName: Perfect Circle
@@ -251,12 +241,6 @@ MonoBehaviour:
         impedimentMaxSlowPercent: 100
         impedimentDurationSeconds: 2
       stacksPerHit: 1
-      spawnStackVfx: 0
-      stackVfxPrefab: {fileID: 0}
-      stackVfxScaleMultiplier: 1
-      spawnProcVfx: 0
-      procVfxPrefab: {fileID: 0}
-      procVfxScaleMultiplier: 1
     perfectCircleData:
       radialEntrySpeed: 12
       orbitalSpeed: 8
@@ -317,6 +301,7 @@ MonoBehaviour:
       maxActiveSegmentsPerPlayer: 30
       stacksPerTick: 1
       applyIntervalSeconds: 0.2
+      trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
   - commonData:
       powerUpId: Bouncing Projectiles
       displayName: Bouncing Projectiles
@@ -349,12 +334,6 @@ MonoBehaviour:
         impedimentMaxSlowPercent: 100
         impedimentDurationSeconds: 2
       stacksPerHit: 1
-      spawnStackVfx: 0
-      stackVfxPrefab: {fileID: 0}
-      stackVfxScaleMultiplier: 1
-      spawnProcVfx: 0
-      procVfxPrefab: {fileID: 0}
-      procVfxScaleMultiplier: 1
     perfectCircleData:
       radialEntrySpeed: 12
       orbitalSpeed: 8
@@ -415,6 +394,7 @@ MonoBehaviour:
       maxActiveSegmentsPerPlayer: 30
       stacksPerTick: 1
       applyIntervalSeconds: 0.2
+      trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
   - commonData:
       powerUpId: Splitting Projectiles
       displayName: Splitting Projectiles
@@ -447,12 +427,6 @@ MonoBehaviour:
         impedimentMaxSlowPercent: 100
         impedimentDurationSeconds: 2
       stacksPerHit: 1
-      spawnStackVfx: 0
-      stackVfxPrefab: {fileID: 0}
-      stackVfxScaleMultiplier: 1
-      spawnProcVfx: 0
-      procVfxPrefab: {fileID: 0}
-      procVfxScaleMultiplier: 1
     perfectCircleData:
       radialEntrySpeed: 12
       orbitalSpeed: 8
@@ -513,6 +487,7 @@ MonoBehaviour:
       maxActiveSegmentsPerPlayer: 30
       stacksPerTick: 1
       applyIntervalSeconds: 0.2
+      trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
   - commonData:
       powerUpId: Fire Projectiles
       displayName: Fire Projectiles
@@ -545,12 +520,6 @@ MonoBehaviour:
         impedimentMaxSlowPercent: 100
         impedimentDurationSeconds: 2
       stacksPerHit: 1
-      spawnStackVfx: 0
-      stackVfxPrefab: {fileID: 2694951299509519808, guid: 7125792ca8c2d604bbed7dd0d11cba03, type: 3}
-      stackVfxScaleMultiplier: 1
-      spawnProcVfx: 1
-      procVfxPrefab: {fileID: 2694951299509519808, guid: 7125792ca8c2d604bbed7dd0d11cba03, type: 3}
-      procVfxScaleMultiplier: 1
     perfectCircleData:
       radialEntrySpeed: 12
       orbitalSpeed: 8
@@ -611,6 +580,7 @@ MonoBehaviour:
       maxActiveSegmentsPerPlayer: 30
       stacksPerTick: 1
       applyIntervalSeconds: 0.2
+      trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
   - commonData:
       powerUpId: Enemy Explosion
       displayName: Enemy Explosion
@@ -643,12 +613,6 @@ MonoBehaviour:
         impedimentMaxSlowPercent: 100
         impedimentDurationSeconds: 2
       stacksPerHit: 1
-      spawnStackVfx: 0
-      stackVfxPrefab: {fileID: 2694951299509519808, guid: 7125792ca8c2d604bbed7dd0d11cba03, type: 3}
-      stackVfxScaleMultiplier: 1
-      spawnProcVfx: 1
-      procVfxPrefab: {fileID: 2694951299509519808, guid: 7125792ca8c2d604bbed7dd0d11cba03, type: 3}
-      procVfxScaleMultiplier: 1
     perfectCircleData:
       radialEntrySpeed: 12
       orbitalSpeed: 8
@@ -709,6 +673,7 @@ MonoBehaviour:
       maxActiveSegmentsPerPlayer: 30
       stacksPerTick: 1
       applyIntervalSeconds: 0.2
+      trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
   - commonData:
       powerUpId: Elemental Trail
       displayName: Elemental Trail
@@ -741,12 +706,6 @@ MonoBehaviour:
         impedimentMaxSlowPercent: 100
         impedimentDurationSeconds: 2
       stacksPerHit: 1
-      spawnStackVfx: 0
-      stackVfxPrefab: {fileID: 2694951299509519808, guid: 7125792ca8c2d604bbed7dd0d11cba03, type: 3}
-      stackVfxScaleMultiplier: 1
-      spawnProcVfx: 1
-      procVfxPrefab: {fileID: 2694951299509519808, guid: 7125792ca8c2d604bbed7dd0d11cba03, type: 3}
-      procVfxScaleMultiplier: 1
     perfectCircleData:
       radialEntrySpeed: 12
       orbitalSpeed: 8
@@ -792,7 +751,7 @@ MonoBehaviour:
         procThresholdStacks: 1
         maximumStacks: 1
         stackDecayPerSecond: 0
-        consumeStacksOnProc: 0
+        consumeStacksOnProc: 1
         dotDamagePerTick: 4
         dotTickInterval: 0.5
         dotDurationSeconds: 2
@@ -803,10 +762,40 @@ MonoBehaviour:
       trailSegmentLifetimeSeconds: 1.5
       trailSpawnDistance: 0.6
       trailSpawnIntervalSeconds: 0.1
-      trailRadius: 1.2
+      trailRadius: 0.5
       maxActiveSegmentsPerPlayer: 30
       stacksPerTick: 1
       applyIntervalSeconds: 0.2
+      trailAttachedVfxOffset: {x: 0, y: 0, z: 0}
+  elementalVfxByElement:
+  - elementType: 0
+    spawnStackVfx: 0
+    stackVfxPrefab: {fileID: 0}
+    stackVfxScaleMultiplier: 1
+    spawnProcVfx: 1
+    procVfxPrefab: {fileID: 2694951299509519808, guid: 7125792ca8c2d604bbed7dd0d11cba03, type: 3}
+    procVfxScaleMultiplier: 1
+  - elementType: 1
+    spawnStackVfx: 0
+    stackVfxPrefab: {fileID: 0}
+    stackVfxScaleMultiplier: 1
+    spawnProcVfx: 0
+    procVfxPrefab: {fileID: 0}
+    procVfxScaleMultiplier: 1
+  - elementType: 2
+    spawnStackVfx: 0
+    stackVfxPrefab: {fileID: 0}
+    stackVfxScaleMultiplier: 1
+    spawnProcVfx: 0
+    procVfxPrefab: {fileID: 0}
+    procVfxScaleMultiplier: 1
+  - elementType: 3
+    spawnStackVfx: 0
+    stackVfxPrefab: {fileID: 0}
+    stackVfxScaleMultiplier: 1
+    spawnProcVfx: 0
+    procVfxPrefab: {fileID: 0}
+    procVfxScaleMultiplier: 1
   activeTools:
   - commonData:
       powerUpId: Dash

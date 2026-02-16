@@ -672,26 +672,6 @@ public sealed class ElementalProjectilesPassiveToolData
 
     [Tooltip("Stacks added to the hit enemy by each projectile impact.")]
     [SerializeField] private float stacksPerHit = 1f;
-
-    [Header("Stack VFX (Optional)")]
-    [Tooltip("When enabled, a VFX is spawned at each stack application.")]
-    [SerializeField] private bool spawnStackVfx;
-
-    [Tooltip("Optional prefab used for stack application VFX.")]
-    [SerializeField] private GameObject stackVfxPrefab;
-
-    [Tooltip("Scale multiplier applied to stack VFX spawn.")]
-    [SerializeField] private float stackVfxScaleMultiplier = 1f;
-
-    [Header("Proc VFX (Optional)")]
-    [Tooltip("When enabled, a VFX is spawned when threshold proc occurs.")]
-    [SerializeField] private bool spawnProcVfx;
-
-    [Tooltip("Optional prefab used for threshold proc VFX.")]
-    [SerializeField] private GameObject procVfxPrefab;
-
-    [Tooltip("Scale multiplier applied to proc VFX spawn.")]
-    [SerializeField] private float procVfxScaleMultiplier = 1f;
     #endregion
 
     #endregion
@@ -712,54 +692,6 @@ public sealed class ElementalProjectilesPassiveToolData
             return stacksPerHit;
         }
     }
-
-    public bool SpawnStackVfx
-    {
-        get
-        {
-            return spawnStackVfx;
-        }
-    }
-
-    public GameObject StackVfxPrefab
-    {
-        get
-        {
-            return stackVfxPrefab;
-        }
-    }
-
-    public float StackVfxScaleMultiplier
-    {
-        get
-        {
-            return stackVfxScaleMultiplier;
-        }
-    }
-
-    public bool SpawnProcVfx
-    {
-        get
-        {
-            return spawnProcVfx;
-        }
-    }
-
-    public GameObject ProcVfxPrefab
-    {
-        get
-        {
-            return procVfxPrefab;
-        }
-    }
-
-    public float ProcVfxScaleMultiplier
-    {
-        get
-        {
-            return procVfxScaleMultiplier;
-        }
-    }
     #endregion
 
     #region Methods
@@ -774,12 +706,6 @@ public sealed class ElementalProjectilesPassiveToolData
 
         if (stacksPerHit < 0f)
             stacksPerHit = 0f;
-
-        if (stackVfxScaleMultiplier < 0.01f)
-            stackVfxScaleMultiplier = 0.01f;
-
-        if (procVfxScaleMultiplier < 0.01f)
-            procVfxScaleMultiplier = 0.01f;
     }
     #endregion
 
@@ -1314,6 +1240,9 @@ public sealed class ElementalTrailPassiveToolData
 
     [Tooltip("Seconds between two stack applications while an enemy remains inside trail area.")]
     [SerializeField] private float applyIntervalSeconds = 0.2f;
+
+    [Tooltip("Local offset applied to the attached trail VFX position relative to player center.")]
+    [SerializeField] private Vector3 trailAttachedVfxOffset = new Vector3(0f, 0.08f, 0f);
     #endregion
 
     #endregion
@@ -1383,6 +1312,14 @@ public sealed class ElementalTrailPassiveToolData
         }
     }
 
+    public Vector3 TrailAttachedVfxOffset
+    {
+        get
+        {
+            return trailAttachedVfxOffset;
+        }
+    }
+
     #endregion
 
     #region Methods
@@ -1416,6 +1353,130 @@ public sealed class ElementalTrailPassiveToolData
         if (applyIntervalSeconds < 0.01f)
             applyIntervalSeconds = 0.01f;
 
+        if (float.IsNaN(trailAttachedVfxOffset.x) ||
+            float.IsNaN(trailAttachedVfxOffset.y) ||
+            float.IsNaN(trailAttachedVfxOffset.z) ||
+            float.IsInfinity(trailAttachedVfxOffset.x) ||
+            float.IsInfinity(trailAttachedVfxOffset.y) ||
+            float.IsInfinity(trailAttachedVfxOffset.z))
+        {
+            trailAttachedVfxOffset = Vector3.zero;
+        }
+
+    }
+    #endregion
+
+    #endregion
+}
+
+[Serializable]
+public sealed class ElementalVfxByElementData
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Header("Element")]
+    [Tooltip("Element type associated with this VFX assignment.")]
+    [SerializeField] private ElementType elementType = ElementType.Fire;
+
+    [Header("Stack VFX (Optional)")]
+    [Tooltip("When enabled, stack VFX is spawned when this element applies stacks.")]
+    [SerializeField] private bool spawnStackVfx;
+
+    [Tooltip("Optional prefab used for stack VFX of this element.")]
+    [SerializeField] private GameObject stackVfxPrefab;
+
+    [Tooltip("Scale multiplier applied to stack VFX for this element.")]
+    [SerializeField] private float stackVfxScaleMultiplier = 1f;
+
+    [Header("Proc VFX (Optional)")]
+    [Tooltip("When enabled, proc VFX is spawned when this element reaches proc threshold.")]
+    [SerializeField] private bool spawnProcVfx;
+
+    [Tooltip("Optional prefab used for proc VFX of this element.")]
+    [SerializeField] private GameObject procVfxPrefab;
+
+    [Tooltip("Scale multiplier applied to proc VFX for this element.")]
+    [SerializeField] private float procVfxScaleMultiplier = 1f;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public ElementType ElementType
+    {
+        get
+        {
+            return elementType;
+        }
+    }
+
+    public bool SpawnStackVfx
+    {
+        get
+        {
+            return spawnStackVfx;
+        }
+    }
+
+    public GameObject StackVfxPrefab
+    {
+        get
+        {
+            return stackVfxPrefab;
+        }
+    }
+
+    public float StackVfxScaleMultiplier
+    {
+        get
+        {
+            return stackVfxScaleMultiplier;
+        }
+    }
+
+    public bool SpawnProcVfx
+    {
+        get
+        {
+            return spawnProcVfx;
+        }
+    }
+
+    public GameObject ProcVfxPrefab
+    {
+        get
+        {
+            return procVfxPrefab;
+        }
+    }
+
+    public float ProcVfxScaleMultiplier
+    {
+        get
+        {
+            return procVfxScaleMultiplier;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Setup
+    public void SetElementType(ElementType value)
+    {
+        elementType = value;
+    }
+    #endregion
+
+    #region Validation
+    public void Validate()
+    {
+        if (stackVfxScaleMultiplier < 0.01f)
+            stackVfxScaleMultiplier = 0.01f;
+
+        if (procVfxScaleMultiplier < 0.01f)
+            procVfxScaleMultiplier = 0.01f;
     }
     #endregion
 
@@ -2185,6 +2246,10 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     [FormerlySerializedAs("passiveModifiers")]
     [SerializeField] private List<PassiveToolDefinition> passiveTools = new List<PassiveToolDefinition>();
 
+    [Header("Elemental VFX Assignments")]
+    [Tooltip("Per-element VFX assignments shared by all elemental passives.")]
+    [SerializeField] private List<ElementalVfxByElementData> elementalVfxByElement = new List<ElementalVfxByElementData>();
+
     [Header("Active Tools")]
     [Tooltip("Active tools available in this preset.")]
     [SerializeField] private List<ActiveToolDefinition> activeTools = new List<ActiveToolDefinition>();
@@ -2277,6 +2342,14 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         }
     }
 
+    public IReadOnlyList<ElementalVfxByElementData> ElementalVfxByElement
+    {
+        get
+        {
+            return elementalVfxByElement;
+        }
+    }
+
     public IReadOnlyList<ActiveToolDefinition> ActiveTools
     {
         get
@@ -2348,6 +2421,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         if (passiveTools == null)
             passiveTools = new List<PassiveToolDefinition>();
 
+        if (elementalVfxByElement == null)
+            elementalVfxByElement = new List<ElementalVfxByElementData>();
+
         if (activeTools == null)
             activeTools = new List<ActiveToolDefinition>();
 
@@ -2384,6 +2460,8 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             activeTool.Validate();
         }
 
+        ValidateElementalVfxAssignments();
+
         if (string.IsNullOrWhiteSpace(primaryActiveToolId) == false &&
             HasActiveToolWithId(primaryActiveToolId) == false)
             primaryActiveToolId = string.Empty;
@@ -2399,6 +2477,60 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             secondaryActiveToolId = GetSecondValidActiveToolId();
 
         ValidateEquippedPassiveToolIds();
+    }
+
+    private void ValidateElementalVfxAssignments()
+    {
+        if (elementalVfxByElement == null)
+            elementalVfxByElement = new List<ElementalVfxByElementData>();
+
+        EnsureElementalVfxEntry(ElementType.Fire);
+        EnsureElementalVfxEntry(ElementType.Ice);
+        EnsureElementalVfxEntry(ElementType.Poison);
+        EnsureElementalVfxEntry(ElementType.Custom);
+
+        HashSet<ElementType> visitedElements = new HashSet<ElementType>();
+
+        for (int index = 0; index < elementalVfxByElement.Count; index++)
+        {
+            ElementalVfxByElementData entry = elementalVfxByElement[index];
+
+            if (entry == null)
+            {
+                elementalVfxByElement.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            if (visitedElements.Add(entry.ElementType) == false)
+            {
+                elementalVfxByElement.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            entry.Validate();
+        }
+    }
+
+    private void EnsureElementalVfxEntry(ElementType elementType)
+    {
+        for (int index = 0; index < elementalVfxByElement.Count; index++)
+        {
+            ElementalVfxByElementData entry = elementalVfxByElement[index];
+
+            if (entry == null)
+                continue;
+
+            if (entry.ElementType != elementType)
+                continue;
+
+            return;
+        }
+
+        ElementalVfxByElementData newEntry = new ElementalVfxByElementData();
+        newEntry.SetElementType(elementType);
+        elementalVfxByElement.Add(newEntry);
     }
 
     private bool HasActiveToolWithId(string powerUpId)

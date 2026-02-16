@@ -10,6 +10,7 @@ public static class PlayerPowerUpVfxPoolUtility
     #region Public Methods
     public static Entity AcquireVfxEntity(EntityManager entityManager,
                                           ref EntityCommandBuffer commandBuffer,
+                                          Entity poolOwnerEntity,
                                           DynamicBuffer<PlayerPowerUpVfxPoolElement> poolBuffer,
                                           Entity prefabEntity,
                                           out bool reusedInstance)
@@ -58,7 +59,7 @@ public static class PlayerPowerUpVfxPoolUtility
         }
 
         Entity newVfxEntity = commandBuffer.Instantiate(prefabEntity);
-        poolBuffer.Add(new PlayerPowerUpVfxPoolElement
+        commandBuffer.AppendToBuffer(poolOwnerEntity, new PlayerPowerUpVfxPoolElement
         {
             PrefabEntity = prefabEntity,
             VfxEntity = newVfxEntity
