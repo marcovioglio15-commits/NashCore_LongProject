@@ -46,6 +46,21 @@ public sealed class PlayerAuthoring : MonoBehaviour
 
     [Tooltip("Scale multiplier applied to the attached Elemental Trail VFX instance.")]
     [SerializeField] private float elementalTrailAttachedVfxScaleMultiplier = 1f;
+
+    [Tooltip("Maximum number of identical one-shot VFX allowed in the same spatial cell. Set 0 to disable this cap.")]
+    [SerializeField] private int maxIdenticalOneShotVfxPerCell = 6;
+
+    [Tooltip("Cell size in meters used by the one-shot VFX per-cell cap.")]
+    [SerializeField] private float oneShotVfxCellSize = 2.5f;
+
+    [Tooltip("Maximum number of identical attached elemental VFX allowed on the same target. Set 0 to disable this cap.")]
+    [SerializeField] private int maxAttachedElementalVfxPerTarget = 1;
+
+    [Tooltip("Maximum number of active one-shot power-up VFX managed by one player. Set 0 to disable this cap.")]
+    [SerializeField] private int maxActiveOneShotPowerUpVfx = 400;
+
+    [Tooltip("When enabled, hitting the attached-target cap refreshes lifetime of the existing VFX.")]
+    [SerializeField] private bool refreshAttachedElementalVfxLifetimeOnCapHit = true;
     #endregion
 
     #endregion
@@ -88,6 +103,46 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return elementalTrailAttachedVfxScaleMultiplier;
+        }
+    }
+
+    public int MaxIdenticalOneShotVfxPerCell
+    {
+        get
+        {
+            return maxIdenticalOneShotVfxPerCell;
+        }
+    }
+
+    public float OneShotVfxCellSize
+    {
+        get
+        {
+            return oneShotVfxCellSize;
+        }
+    }
+
+    public int MaxAttachedElementalVfxPerTarget
+    {
+        get
+        {
+            return maxAttachedElementalVfxPerTarget;
+        }
+    }
+
+    public int MaxActiveOneShotPowerUpVfx
+    {
+        get
+        {
+            return maxActiveOneShotPowerUpVfx;
+        }
+    }
+
+    public bool RefreshAttachedElementalVfxLifetimeOnCapHit
+    {
+        get
+        {
+            return refreshAttachedElementalVfxLifetimeOnCapHit;
         }
     }
     #endregion
@@ -496,6 +551,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         {
             PlayerPowerUpsConfig powerUpsConfig = BuildPowerUpsConfig(authoring, powerUpsPreset);
             AddComponent(entity, powerUpsConfig);
+            PlayerPowerUpVfxCapConfig powerUpVfxCapConfig = BuildPowerUpVfxCapConfig(authoring);
+            AddComponent(entity, powerUpVfxCapConfig);
 
             DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer = AddBuffer<EquippedPassiveToolElement>(entity);
             PopulateEquippedPassiveToolsBuffer(authoring, equippedPassiveToolsBuffer, powerUpsPreset);
@@ -712,6 +769,26 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         {
             PrimarySlot = primarySlotConfig,
             SecondarySlot = secondarySlotConfig
+        };
+    }
+
+    /// <summary>
+    /// Builds runtime VFX cap settings used by the pooled power-up VFX pipeline.
+    /// </summary>
+    /// <param name="authoring">Source player authoring values.</param>
+    /// <returns>Baked VFX cap config.</returns>
+    private static PlayerPowerUpVfxCapConfig BuildPowerUpVfxCapConfig(PlayerAuthoring authoring)
+    {
+        if (authoring == null)
+            return default;
+
+        return new PlayerPowerUpVfxCapConfig
+        {
+            MaxSamePrefabPerCell = math.max(0, authoring.MaxIdenticalOneShotVfxPerCell),
+            CellSize = math.max(0.1f, authoring.OneShotVfxCellSize),
+            MaxAttachedSamePrefabPerTarget = math.max(0, authoring.MaxAttachedElementalVfxPerTarget),
+            MaxActiveOneShotVfx = math.max(0, authoring.MaxActiveOneShotPowerUpVfx),
+            RefreshAttachedLifetimeOnCapHit = authoring.RefreshAttachedElementalVfxLifetimeOnCapHit ? (byte)1 : (byte)0
         };
     }
 

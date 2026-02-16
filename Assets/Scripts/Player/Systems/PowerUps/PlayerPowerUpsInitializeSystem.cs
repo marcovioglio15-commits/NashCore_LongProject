@@ -21,6 +21,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingExplosionRequestBufferQuery;
     private EntityQuery missingPowerUpVfxRequestBufferQuery;
     private EntityQuery missingPowerUpVfxPoolBufferQuery;
+    private EntityQuery missingPowerUpVfxCapConfigQuery;
     #endregion
 
     #region Methods
@@ -89,6 +90,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerPowerUpVfxPoolElement>()
             .Build();
+
+        missingPowerUpVfxCapConfigQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPowerUpVfxCapConfig>()
+            .Build();
     }
 
     /// <summary>
@@ -110,6 +116,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         bool hasMissingExplosionRequestBuffer = missingExplosionRequestBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPowerUpVfxRequestBuffer = missingPowerUpVfxRequestBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPowerUpVfxPoolBuffer = missingPowerUpVfxPoolBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingPowerUpVfxCapConfig = missingPowerUpVfxCapConfigQuery.IsEmptyIgnoreFilter == false;
 
         if (hasMissingState == false &&
             hasMissingPassiveToolsState == false &&
@@ -122,7 +129,8 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             hasMissingElementalTrailSegmentBuffer == false &&
             hasMissingExplosionRequestBuffer == false &&
             hasMissingPowerUpVfxRequestBuffer == false &&
-            hasMissingPowerUpVfxPoolBuffer == false)
+            hasMissingPowerUpVfxPoolBuffer == false &&
+            hasMissingPowerUpVfxCapConfig == false)
             return;
 
         uint currentKillCount = 0u;
@@ -170,6 +178,9 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         if (hasMissingPowerUpVfxPoolBuffer)
             AddMissingPowerUpVfxPoolBuffers(ref commandBuffer);
+
+        if (hasMissingPowerUpVfxCapConfig)
+            AddMissingPowerUpVfxCapConfig(ref commandBuffer);
 
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
@@ -458,6 +469,25 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         for (int index = 0; index < entities.Length; index++)
             commandBuffer.AddBuffer<PlayerPowerUpVfxPoolElement>(entities[index]);
+
+        entities.Dispose();
+    }
+
+    private void AddMissingPowerUpVfxCapConfig(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingPowerUpVfxCapConfigQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+        {
+            commandBuffer.AddComponent(entities[index], new PlayerPowerUpVfxCapConfig
+            {
+                MaxSamePrefabPerCell = 6,
+                CellSize = 2.5f,
+                MaxAttachedSamePrefabPerTarget = 1,
+                MaxActiveOneShotVfx = 400,
+                RefreshAttachedLifetimeOnCapHit = 1
+            });
+        }
 
         entities.Dispose();
     }

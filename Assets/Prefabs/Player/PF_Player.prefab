@@ -52,6 +52,11 @@ MonoBehaviour:
   weaponReference: {fileID: 6701674403326256358}
   elementalTrailAttachedVfxPrefab: {fileID: 5679156216372977872, guid: 92d93d035892fff40a63205dfd234520, type: 3}
   elementalTrailAttachedVfxScaleMultiplier: 1
+  maxIdenticalOneShotVfxPerCell: 6
+  oneShotVfxCellSize: 2.5
+  maxAttachedElementalVfxPerTarget: 1
+  maxActiveOneShotPowerUpVfx: 400
+  refreshAttachedElementalVfxLifetimeOnCapHit: 1
 --- !u!33 &-5754263909563620324
 MeshFilter:
   m_ObjectHideFlags: 0

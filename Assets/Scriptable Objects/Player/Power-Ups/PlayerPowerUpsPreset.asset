@@ -931,6 +931,6 @@ MonoBehaviour:
   primaryActiveToolId: Dash
   secondaryActiveToolId: Bullet Time
   equippedPassiveToolIds:
-  - Elemental Trail
+  - Enemy Explosion
   legacyPrimaryPassiveToolId: 
   legacySecondaryPassiveToolId: 

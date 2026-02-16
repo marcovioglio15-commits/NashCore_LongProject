@@ -190,6 +190,18 @@ public struct PlayerPowerUpVfxSpawnRequest : IBufferElementData
 }
 
 /// <summary>
+/// Runtime caps applied to power-up VFX spawning.
+/// </summary>
+public struct PlayerPowerUpVfxCapConfig : IComponentData
+{
+    public int MaxSamePrefabPerCell;
+    public float CellSize;
+    public int MaxAttachedSamePrefabPerTarget;
+    public int MaxActiveOneShotVfx;
+    public byte RefreshAttachedLifetimeOnCapHit;
+}
+
+/// <summary>
 /// Pool slot containing one reusable VFX entity instance.
 /// </summary>
 public struct PlayerPowerUpVfxPoolElement : IBufferElementData
