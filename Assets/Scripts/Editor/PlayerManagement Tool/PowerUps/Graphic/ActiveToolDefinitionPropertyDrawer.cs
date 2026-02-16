@@ -85,23 +85,42 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
         root.Add(toolSpecificLabel);
         root.Add(toolSpecificContainer);
 
+        SerializedObject serializedObject = property.serializedObject;
+        string rootPropertyPath = property.propertyPath;
+
         toolKindField.RegisterValueChangedCallback(evt =>
         {
-            SetToolKind(toolKindProperty, evt.newValue);
-            RefreshToolSpecific(toolSpecificContainer, toolKindProperty, bombDataProperty, dashDataProperty, bulletTimeDataProperty);
+            SerializedProperty resolvedRootProperty = TryResolveRootProperty(serializedObject, rootPropertyPath);
+
+            if (resolvedRootProperty == null)
+                return;
+
+            SerializedProperty resolvedToolKindProperty = resolvedRootProperty.FindPropertyRelative("toolKind");
+            SetToolKind(resolvedToolKindProperty, evt.newValue);
+            RefreshToolSpecific(toolSpecificContainer, resolvedRootProperty);
         });
 
         root.TrackPropertyValue(toolKindProperty, changedProperty =>
         {
-            ActiveToolKind selectedKind = SanitizeKind(changedProperty);
+            SerializedProperty resolvedRootProperty = TryResolveRootProperty(changedProperty.serializedObject, rootPropertyPath);
+
+            if (resolvedRootProperty == null)
+                return;
+
+            SerializedProperty resolvedToolKindProperty = resolvedRootProperty.FindPropertyRelative("toolKind");
+
+            if (resolvedToolKindProperty == null)
+                return;
+
+            ActiveToolKind selectedKind = SanitizeKind(resolvedToolKindProperty);
 
             if (toolKindField.value != selectedKind)
                 toolKindField.SetValueWithoutNotify(selectedKind);
 
-            RefreshToolSpecific(toolSpecificContainer, changedProperty, bombDataProperty, dashDataProperty, bulletTimeDataProperty);
+            RefreshToolSpecific(toolSpecificContainer, resolvedRootProperty);
         });
 
-        RefreshToolSpecific(toolSpecificContainer, toolKindProperty, bombDataProperty, dashDataProperty, bulletTimeDataProperty);
+        RefreshToolSpecific(toolSpecificContainer, property);
         return root;
     }
 
@@ -113,6 +132,7 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
         PropertyField field = string.IsNullOrWhiteSpace(labelOverride)
             ? new PropertyField(property)
             : new PropertyField(property, labelOverride);
+        field.BindProperty(property);
         parent.Add(field);
     }
 
@@ -173,16 +193,39 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
         toolKindProperty.serializedObject.ApplyModifiedProperties();
     }
 
-    private static void RefreshToolSpecific(VisualElement container,
-                                            SerializedProperty toolKindProperty,
-                                            SerializedProperty bombDataProperty,
-                                            SerializedProperty dashDataProperty,
-                                            SerializedProperty bulletTimeDataProperty)
+    private static SerializedProperty TryResolveRootProperty(SerializedObject serializedObject, string propertyPath)
     {
-        if (container == null)
+        if (serializedObject == null)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(propertyPath))
+            return null;
+
+        return serializedObject.FindProperty(propertyPath);
+    }
+
+    private static void RefreshToolSpecific(VisualElement container, SerializedProperty rootProperty)
+    {
+        if (container == null || rootProperty == null)
             return;
 
         container.Clear();
+        SerializedProperty toolKindProperty = rootProperty.FindPropertyRelative("toolKind");
+        SerializedProperty bombDataProperty = rootProperty.FindPropertyRelative("bombData");
+        SerializedProperty dashDataProperty = rootProperty.FindPropertyRelative("dashData");
+        SerializedProperty bulletTimeDataProperty = rootProperty.FindPropertyRelative("bulletTimeData");
+
+        if (toolKindProperty == null ||
+            bombDataProperty == null ||
+            dashDataProperty == null ||
+            bulletTimeDataProperty == null)
+        {
+            Label errorLabel = new Label("Tool specific data is missing serialized fields.");
+            errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            container.Add(errorLabel);
+            return;
+        }
+
         ActiveToolKind selectedKind = SanitizeKind(toolKindProperty);
 
         switch (selectedKind)

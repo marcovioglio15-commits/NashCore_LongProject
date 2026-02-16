@@ -12,6 +12,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private static readonly Color ContactGizmoColor = new Color(1f, 0.25f, 0.25f, 0.9f);
     private static readonly Color SeparationGizmoColor = new Color(0.2f, 0.6f, 1f, 0.9f);
     private static readonly Color BodyGizmoColor = new Color(1f, 0.9f, 0.2f, 0.9f);
+    private static readonly Color ElementalAnchorGizmoColor = new Color(1f, 0.4f, 0.8f, 0.9f);
     #endregion
 
     #region Fields
@@ -50,6 +51,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Header("Health")]
     [Tooltip("Maximum and initial health assigned to this enemy when spawned from pool.")]
     [SerializeField] private float maxHealth = 30f;
+
+    [Header("VFX Anchors")]
+    [Tooltip("Optional transform used as anchor for attached elemental status VFX.")]
+    [SerializeField] private Transform elementalVfxAnchor;
 
     [Header("Debug Gizmos")]
     [Tooltip("Draw the contact radius preview when the authoring object is selected.")]
@@ -144,6 +149,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
             return maxHealth;
         }
     }
+
+    public Transform ElementalVfxAnchor
+    {
+        get
+        {
+            return elementalVfxAnchor;
+        }
+    }
     #endregion
 
     #region Methods
@@ -218,6 +231,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
                 Gizmos.DrawWireSphere(center, radius);
             }
         }
+
+        if (elementalVfxAnchor != null)
+        {
+            Gizmos.color = ElementalAnchorGizmoColor;
+            Vector3 anchorPosition = elementalVfxAnchor.position;
+            Gizmos.DrawLine(center, anchorPosition);
+            Gizmos.DrawWireSphere(anchorPosition, 0.14f);
+        }
     }
     #endregion
 
@@ -263,12 +284,23 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         AddComponent(entity, new EnemyRuntimeState
         {
             Velocity = float3.zero,
-            ContactCooldown = 0f
+            ContactCooldown = 0f,
+            SpawnVersion = 0u
         });
 
         AddComponent(entity, new EnemyOwnerSpawner
         {
             SpawnerEntity = Entity.Null
+        });
+
+        Entity anchorEntity = Entity.Null;
+
+        if (authoring.ElementalVfxAnchor != null)
+            anchorEntity = GetEntity(authoring.ElementalVfxAnchor, TransformUsageFlags.Dynamic);
+
+        AddComponent(entity, new EnemyElementalVfxAnchor
+        {
+            AnchorEntity = anchorEntity
         });
 
         AddComponent<EnemyActive>(entity);

@@ -29,6 +29,21 @@ public static class EnemyElementalStackUtility
         EnemyElementStackElement stackElement = stackIndex >= 0 ? stackBuffer[stackIndex] : BuildInitialStack(in effectConfig);
 
         SynchronizeStackDefinition(ref stackElement, in effectConfig);
+        bool isProcActive = IsProcActive(in stackElement);
+
+        if (isProcActive)
+        {
+            switch (stackElement.ReapplyMode)
+            {
+                case ElementalProcReapplyMode.IgnoreWhileProcActive:
+                    return false;
+                case ElementalProcReapplyMode.RefreshActiveProc:
+                    RefreshActiveProc(ref stackElement);
+                    thresholdProcTriggered = false;
+                    WriteStack(ref stackBuffer, stackIndex, in stackElement);
+                    return true;
+            }
+        }
 
         float previousStacks = math.max(0f, stackElement.CurrentStacks);
         float maximumStacks = math.max(0.1f, stackElement.MaximumStacks);
@@ -50,10 +65,7 @@ public static class EnemyElementalStackUtility
                 stackElement.CurrentStacks = math.max(0f, stackElement.CurrentStacks - thresholdStacks);
         }
 
-        if (stackIndex >= 0)
-            stackBuffer[stackIndex] = stackElement;
-        else
-            stackBuffer.Add(stackElement);
+        WriteStack(ref stackBuffer, stackIndex, in stackElement);
 
         return true;
     }
@@ -78,6 +90,7 @@ public static class EnemyElementalStackUtility
             ElementType = effectConfig.ElementType,
             EffectKind = effectConfig.EffectKind,
             ProcMode = effectConfig.ProcMode,
+            ReapplyMode = effectConfig.ReapplyMode,
             CurrentStacks = 0f,
             DotRemainingSeconds = 0f,
             DotTickTimer = 0f,
@@ -100,6 +113,7 @@ public static class EnemyElementalStackUtility
         stackElement.ElementType = effectConfig.ElementType;
         stackElement.EffectKind = effectConfig.EffectKind;
         stackElement.ProcMode = effectConfig.ProcMode;
+        stackElement.ReapplyMode = effectConfig.ReapplyMode;
         stackElement.MaximumStacks = maximumStacks;
         stackElement.ProcThresholdStacks = procThresholdStacks;
         stackElement.StackDecayPerSecond = math.max(0f, effectConfig.StackDecayPerSecond);
@@ -131,6 +145,51 @@ public static class EnemyElementalStackUtility
                 stackElement.ImpedimentRemainingSeconds = math.max(stackElement.ImpedimentRemainingSeconds, stackElement.ImpedimentDurationSeconds);
                 return;
         }
+    }
+
+    private static bool IsProcActive(in EnemyElementStackElement stackElement)
+    {
+        switch (stackElement.EffectKind)
+        {
+            case ElementalEffectKind.Dots:
+                return stackElement.DotRemainingSeconds > 0f;
+            case ElementalEffectKind.Impediment:
+                return stackElement.ImpedimentRemainingSeconds > 0f;
+            default:
+                return false;
+        }
+    }
+
+    private static bool RefreshActiveProc(ref EnemyElementStackElement stackElement)
+    {
+        switch (stackElement.EffectKind)
+        {
+            case ElementalEffectKind.Dots:
+                stackElement.DotRemainingSeconds = math.max(0.05f, stackElement.DotDurationSeconds);
+                stackElement.DotTickTimer = math.max(0.01f, stackElement.DotTickInterval);
+                return true;
+            case ElementalEffectKind.Impediment:
+                float procSlowPercent = math.min(stackElement.ImpedimentProcSlowPercent, stackElement.ImpedimentMaxSlowPercent);
+
+                if (procSlowPercent < 0f)
+                    procSlowPercent = 0f;
+
+                stackElement.CurrentImpedimentSlowPercent = procSlowPercent;
+                stackElement.ImpedimentRemainingSeconds = math.max(0.05f, stackElement.ImpedimentDurationSeconds);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static void WriteStack(ref DynamicBuffer<EnemyElementStackElement> stackBuffer,
+                                   int stackIndex,
+                                   in EnemyElementStackElement stackElement)
+    {
+        if (stackIndex >= 0)
+            stackBuffer[stackIndex] = stackElement;
+        else
+            stackBuffer.Add(stackElement);
     }
     #endregion
 

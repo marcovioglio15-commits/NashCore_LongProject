@@ -217,7 +217,7 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
                 AddField(container, projectileSizeDataProperty, "Projectile Size Settings");
                 return;
             case PassiveToolKind.ElementalProjectiles:
-                AddField(container, elementalProjectilesDataProperty, "Elemental Projectiles Settings");
+                BuildElementalProjectilesToolUI(container, elementalProjectilesDataProperty);
                 return;
             case PassiveToolKind.PerfectCircle:
                 AddField(container, perfectCircleDataProperty, "Perfect Circle Settings");
@@ -229,12 +229,247 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
                 BuildSplittingToolUI(container, splittingProjectilesDataProperty);
                 return;
             case PassiveToolKind.Explosion:
-                AddField(container, explosionDataProperty, "Explosion Settings");
+                BuildExplosionToolUI(container, explosionDataProperty);
                 return;
             case PassiveToolKind.ElementalTrail:
-                AddField(container, elementalTrailDataProperty, "Elemental Trail Settings");
+                BuildElementalTrailToolUI(container, elementalTrailDataProperty);
                 return;
         }
+    }
+
+    private static void BuildElementalProjectilesToolUI(VisualElement container, SerializedProperty elementalProjectilesDataProperty)
+    {
+        if (container == null || elementalProjectilesDataProperty == null)
+            return;
+
+        SerializedProperty effectDataProperty = elementalProjectilesDataProperty.FindPropertyRelative("effectData");
+        SerializedProperty stacksPerHitProperty = elementalProjectilesDataProperty.FindPropertyRelative("stacksPerHit");
+        SerializedProperty spawnStackVfxProperty = elementalProjectilesDataProperty.FindPropertyRelative("spawnStackVfx");
+        SerializedProperty stackVfxPrefabProperty = elementalProjectilesDataProperty.FindPropertyRelative("stackVfxPrefab");
+        SerializedProperty stackVfxScaleMultiplierProperty = elementalProjectilesDataProperty.FindPropertyRelative("stackVfxScaleMultiplier");
+        SerializedProperty spawnProcVfxProperty = elementalProjectilesDataProperty.FindPropertyRelative("spawnProcVfx");
+        SerializedProperty procVfxPrefabProperty = elementalProjectilesDataProperty.FindPropertyRelative("procVfxPrefab");
+        SerializedProperty procVfxScaleMultiplierProperty = elementalProjectilesDataProperty.FindPropertyRelative("procVfxScaleMultiplier");
+
+        if (effectDataProperty == null ||
+            stacksPerHitProperty == null ||
+            spawnStackVfxProperty == null ||
+            stackVfxPrefabProperty == null ||
+            stackVfxScaleMultiplierProperty == null ||
+            spawnProcVfxProperty == null ||
+            procVfxPrefabProperty == null ||
+            procVfxScaleMultiplierProperty == null)
+        {
+            Label errorLabel = new Label("Elemental Projectiles settings are missing serialized fields.");
+            errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            container.Add(errorLabel);
+            return;
+        }
+
+        Label headerLabel = new Label("Elemental Projectiles Settings");
+        headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        container.Add(headerLabel);
+        AddField(container, stacksPerHitProperty);
+        BuildElementalEffectSection(container, effectDataProperty, "Elemental Effect");
+        AddField(container, spawnStackVfxProperty);
+
+        VisualElement stackVfxContainer = new VisualElement();
+        stackVfxContainer.style.marginLeft = 12f;
+        AddField(stackVfxContainer, stackVfxPrefabProperty);
+        AddField(stackVfxContainer, stackVfxScaleMultiplierProperty);
+        container.Add(stackVfxContainer);
+        UpdateBooleanContainerVisibility(stackVfxContainer, spawnStackVfxProperty);
+        container.TrackPropertyValue(spawnStackVfxProperty, changedProperty =>
+        {
+            UpdateBooleanContainerVisibility(stackVfxContainer, changedProperty);
+        });
+
+        AddField(container, spawnProcVfxProperty);
+
+        VisualElement procVfxContainer = new VisualElement();
+        procVfxContainer.style.marginLeft = 12f;
+        AddField(procVfxContainer, procVfxPrefabProperty);
+        AddField(procVfxContainer, procVfxScaleMultiplierProperty);
+        container.Add(procVfxContainer);
+        UpdateBooleanContainerVisibility(procVfxContainer, spawnProcVfxProperty);
+        container.TrackPropertyValue(spawnProcVfxProperty, changedProperty =>
+        {
+            UpdateBooleanContainerVisibility(procVfxContainer, changedProperty);
+        });
+    }
+
+    private static void BuildElementalTrailToolUI(VisualElement container, SerializedProperty elementalTrailDataProperty)
+    {
+        if (container == null || elementalTrailDataProperty == null)
+            return;
+
+        SerializedProperty effectDataProperty = elementalTrailDataProperty.FindPropertyRelative("effectData");
+        SerializedProperty trailSegmentLifetimeSecondsProperty = elementalTrailDataProperty.FindPropertyRelative("trailSegmentLifetimeSeconds");
+        SerializedProperty trailSpawnDistanceProperty = elementalTrailDataProperty.FindPropertyRelative("trailSpawnDistance");
+        SerializedProperty trailSpawnIntervalSecondsProperty = elementalTrailDataProperty.FindPropertyRelative("trailSpawnIntervalSeconds");
+        SerializedProperty trailRadiusProperty = elementalTrailDataProperty.FindPropertyRelative("trailRadius");
+        SerializedProperty maxActiveSegmentsPerPlayerProperty = elementalTrailDataProperty.FindPropertyRelative("maxActiveSegmentsPerPlayer");
+        SerializedProperty stacksPerTickProperty = elementalTrailDataProperty.FindPropertyRelative("stacksPerTick");
+        SerializedProperty applyIntervalSecondsProperty = elementalTrailDataProperty.FindPropertyRelative("applyIntervalSeconds");
+
+        if (effectDataProperty == null ||
+            trailSegmentLifetimeSecondsProperty == null ||
+            trailSpawnDistanceProperty == null ||
+            trailSpawnIntervalSecondsProperty == null ||
+            trailRadiusProperty == null ||
+            maxActiveSegmentsPerPlayerProperty == null ||
+            stacksPerTickProperty == null ||
+            applyIntervalSecondsProperty == null)
+        {
+            Label errorLabel = new Label("Elemental Trail settings are missing serialized fields.");
+            errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            container.Add(errorLabel);
+            return;
+        }
+
+        Label headerLabel = new Label("Elemental Trail Settings");
+        headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        container.Add(headerLabel);
+        BuildElementalEffectSection(container, effectDataProperty, "Elemental Effect");
+        AddField(container, trailSegmentLifetimeSecondsProperty);
+        AddField(container, trailSpawnDistanceProperty);
+        AddField(container, trailSpawnIntervalSecondsProperty);
+        AddField(container, trailRadiusProperty);
+        AddField(container, maxActiveSegmentsPerPlayerProperty);
+        AddField(container, stacksPerTickProperty);
+        AddField(container, applyIntervalSecondsProperty);
+    }
+
+    private static void BuildExplosionToolUI(VisualElement container, SerializedProperty explosionDataProperty)
+    {
+        if (container == null || explosionDataProperty == null)
+            return;
+
+        SerializedProperty triggerModeProperty = explosionDataProperty.FindPropertyRelative("triggerMode");
+        SerializedProperty cooldownSecondsProperty = explosionDataProperty.FindPropertyRelative("cooldownSeconds");
+        SerializedProperty radiusProperty = explosionDataProperty.FindPropertyRelative("radius");
+        SerializedProperty damageProperty = explosionDataProperty.FindPropertyRelative("damage");
+        SerializedProperty affectAllEnemiesInRadiusProperty = explosionDataProperty.FindPropertyRelative("affectAllEnemiesInRadius");
+        SerializedProperty triggerOffsetProperty = explosionDataProperty.FindPropertyRelative("triggerOffset");
+        SerializedProperty explosionVfxPrefabProperty = explosionDataProperty.FindPropertyRelative("explosionVfxPrefab");
+        SerializedProperty scaleVfxToRadiusProperty = explosionDataProperty.FindPropertyRelative("scaleVfxToRadius");
+        SerializedProperty vfxScaleMultiplierProperty = explosionDataProperty.FindPropertyRelative("vfxScaleMultiplier");
+
+        if (triggerModeProperty == null ||
+            cooldownSecondsProperty == null ||
+            radiusProperty == null ||
+            damageProperty == null ||
+            affectAllEnemiesInRadiusProperty == null ||
+            triggerOffsetProperty == null ||
+            explosionVfxPrefabProperty == null ||
+            scaleVfxToRadiusProperty == null ||
+            vfxScaleMultiplierProperty == null)
+        {
+            Label errorLabel = new Label("Explosion settings are missing serialized fields.");
+            errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            container.Add(errorLabel);
+            return;
+        }
+
+        Label headerLabel = new Label("Explosion Settings");
+        headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        container.Add(headerLabel);
+        AddField(container, triggerModeProperty);
+        AddField(container, cooldownSecondsProperty);
+        AddField(container, radiusProperty);
+        AddField(container, damageProperty);
+        AddField(container, affectAllEnemiesInRadiusProperty);
+        AddField(container, triggerOffsetProperty);
+        AddField(container, explosionVfxPrefabProperty);
+
+        VisualElement vfxSettingsContainer = new VisualElement();
+        vfxSettingsContainer.style.marginLeft = 12f;
+        AddField(vfxSettingsContainer, scaleVfxToRadiusProperty);
+        AddField(vfxSettingsContainer, vfxScaleMultiplierProperty);
+        container.Add(vfxSettingsContainer);
+        UpdateObjectContainerVisibility(vfxSettingsContainer, explosionVfxPrefabProperty);
+        container.TrackPropertyValue(explosionVfxPrefabProperty, changedProperty =>
+        {
+            UpdateObjectContainerVisibility(vfxSettingsContainer, changedProperty);
+        });
+    }
+
+    private static void BuildElementalEffectSection(VisualElement container, SerializedProperty effectDataProperty, string title)
+    {
+        if (container == null || effectDataProperty == null)
+            return;
+
+        SerializedProperty elementTypeProperty = effectDataProperty.FindPropertyRelative("elementType");
+        SerializedProperty effectKindProperty = effectDataProperty.FindPropertyRelative("effectKind");
+        SerializedProperty procModeProperty = effectDataProperty.FindPropertyRelative("procMode");
+        SerializedProperty reapplyModeProperty = effectDataProperty.FindPropertyRelative("reapplyMode");
+        SerializedProperty procThresholdStacksProperty = effectDataProperty.FindPropertyRelative("procThresholdStacks");
+        SerializedProperty maximumStacksProperty = effectDataProperty.FindPropertyRelative("maximumStacks");
+        SerializedProperty stackDecayPerSecondProperty = effectDataProperty.FindPropertyRelative("stackDecayPerSecond");
+        SerializedProperty consumeStacksOnProcProperty = effectDataProperty.FindPropertyRelative("consumeStacksOnProc");
+        SerializedProperty dotDamagePerTickProperty = effectDataProperty.FindPropertyRelative("dotDamagePerTick");
+        SerializedProperty dotTickIntervalProperty = effectDataProperty.FindPropertyRelative("dotTickInterval");
+        SerializedProperty dotDurationSecondsProperty = effectDataProperty.FindPropertyRelative("dotDurationSeconds");
+        SerializedProperty impedimentSlowPercentPerStackProperty = effectDataProperty.FindPropertyRelative("impedimentSlowPercentPerStack");
+        SerializedProperty impedimentProcSlowPercentProperty = effectDataProperty.FindPropertyRelative("impedimentProcSlowPercent");
+        SerializedProperty impedimentMaxSlowPercentProperty = effectDataProperty.FindPropertyRelative("impedimentMaxSlowPercent");
+        SerializedProperty impedimentDurationSecondsProperty = effectDataProperty.FindPropertyRelative("impedimentDurationSeconds");
+
+        if (elementTypeProperty == null ||
+            effectKindProperty == null ||
+            procModeProperty == null ||
+            reapplyModeProperty == null ||
+            procThresholdStacksProperty == null ||
+            maximumStacksProperty == null ||
+            stackDecayPerSecondProperty == null ||
+            consumeStacksOnProcProperty == null ||
+            dotDamagePerTickProperty == null ||
+            dotTickIntervalProperty == null ||
+            dotDurationSecondsProperty == null ||
+            impedimentSlowPercentPerStackProperty == null ||
+            impedimentProcSlowPercentProperty == null ||
+            impedimentMaxSlowPercentProperty == null ||
+            impedimentDurationSecondsProperty == null)
+        {
+            Label errorLabel = new Label("Elemental effect settings are missing serialized fields.");
+            errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            container.Add(errorLabel);
+            return;
+        }
+
+        Label sectionLabel = new Label(title);
+        sectionLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        sectionLabel.style.marginTop = 4f;
+        container.Add(sectionLabel);
+        AddField(container, elementTypeProperty);
+        AddField(container, effectKindProperty);
+        AddField(container, procModeProperty);
+        AddField(container, reapplyModeProperty);
+        AddField(container, procThresholdStacksProperty);
+        AddField(container, maximumStacksProperty);
+        AddField(container, stackDecayPerSecondProperty);
+        AddField(container, consumeStacksOnProcProperty);
+
+        VisualElement dotsContainer = new VisualElement();
+        dotsContainer.style.marginLeft = 12f;
+        AddField(dotsContainer, dotDamagePerTickProperty);
+        AddField(dotsContainer, dotTickIntervalProperty);
+        AddField(dotsContainer, dotDurationSecondsProperty);
+        container.Add(dotsContainer);
+
+        VisualElement impedimentContainer = new VisualElement();
+        impedimentContainer.style.marginLeft = 12f;
+        AddField(impedimentContainer, impedimentSlowPercentPerStackProperty);
+        AddField(impedimentContainer, impedimentProcSlowPercentProperty);
+        AddField(impedimentContainer, impedimentMaxSlowPercentProperty);
+        AddField(impedimentContainer, impedimentDurationSecondsProperty);
+        container.Add(impedimentContainer);
+
+        UpdateElementalEffectKindContainers(effectKindProperty, dotsContainer, impedimentContainer);
+        container.TrackPropertyValue(effectKindProperty, changedProperty =>
+        {
+            UpdateElementalEffectKindContainers(changedProperty, dotsContainer, impedimentContainer);
+        });
     }
 
     private static void BuildSplittingToolUI(VisualElement container, SerializedProperty splittingProjectilesDataProperty)
@@ -242,20 +477,54 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
         if (container == null || splittingProjectilesDataProperty == null)
             return;
 
-        PropertyField splitField = new PropertyField(splittingProjectilesDataProperty, "Splitting Projectiles Settings");
-        splitField.BindProperty(splittingProjectilesDataProperty);
-        container.Add(splitField);
-
         SerializedProperty directionModeProperty = splittingProjectilesDataProperty.FindPropertyRelative("directionMode");
         SerializedProperty splitProjectileCountProperty = splittingProjectilesDataProperty.FindPropertyRelative("splitProjectileCount");
         SerializedProperty splitOffsetDegreesProperty = splittingProjectilesDataProperty.FindPropertyRelative("splitOffsetDegrees");
         SerializedProperty customAnglesDegreesProperty = splittingProjectilesDataProperty.FindPropertyRelative("customAnglesDegrees");
+        SerializedProperty splitDamagePercentFromOriginalProperty = splittingProjectilesDataProperty.FindPropertyRelative("splitDamagePercentFromOriginal");
+        SerializedProperty splitSizePercentFromOriginalProperty = splittingProjectilesDataProperty.FindPropertyRelative("splitSizePercentFromOriginal");
+        SerializedProperty splitSpeedPercentFromOriginalProperty = splittingProjectilesDataProperty.FindPropertyRelative("splitSpeedPercentFromOriginal");
+        SerializedProperty splitLifetimePercentFromOriginalProperty = splittingProjectilesDataProperty.FindPropertyRelative("splitLifetimePercentFromOriginal");
 
         if (directionModeProperty == null ||
             splitProjectileCountProperty == null ||
             splitOffsetDegreesProperty == null ||
-            customAnglesDegreesProperty == null)
+            customAnglesDegreesProperty == null ||
+            splitDamagePercentFromOriginalProperty == null ||
+            splitSizePercentFromOriginalProperty == null ||
+            splitSpeedPercentFromOriginalProperty == null ||
+            splitLifetimePercentFromOriginalProperty == null)
+        {
+            Label errorLabel = new Label("Splitting settings are missing serialized fields.");
+            errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            container.Add(errorLabel);
             return;
+        }
+
+        Label headerLabel = new Label("Splitting Projectiles Settings");
+        headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        container.Add(headerLabel);
+        AddField(container, directionModeProperty);
+
+        VisualElement uniformContainer = new VisualElement();
+        uniformContainer.style.marginLeft = 12f;
+        AddField(uniformContainer, splitProjectileCountProperty);
+        container.Add(uniformContainer);
+
+        VisualElement customAnglesContainer = new VisualElement();
+        customAnglesContainer.style.marginLeft = 12f;
+        AddField(customAnglesContainer, customAnglesDegreesProperty);
+        container.Add(customAnglesContainer);
+        AddField(container, splitOffsetDegreesProperty);
+        AddField(container, splitDamagePercentFromOriginalProperty);
+        AddField(container, splitSizePercentFromOriginalProperty);
+        AddField(container, splitSpeedPercentFromOriginalProperty);
+        AddField(container, splitLifetimePercentFromOriginalProperty);
+        UpdateDirectionModeContainers(directionModeProperty, uniformContainer, customAnglesContainer);
+        container.TrackPropertyValue(directionModeProperty, changedProperty =>
+        {
+            UpdateDirectionModeContainers(changedProperty, uniformContainer, customAnglesContainer);
+        });
 
         Label chartLabel = new Label("Split Direction Pie");
         chartLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -268,15 +537,6 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
         pieChart.style.marginBottom = 8f;
         pieChart.SetZoom(0.95f);
         container.Add(pieChart);
-
-        splitField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
-        {
-            UpdateSplitPieChart(pieChart,
-                                directionModeProperty,
-                                splitProjectileCountProperty,
-                                splitOffsetDegreesProperty,
-                                customAnglesDegreesProperty);
-        });
 
         container.TrackPropertyValue(directionModeProperty, changedProperty =>
         {
@@ -319,6 +579,50 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
                             splitProjectileCountProperty,
                             splitOffsetDegreesProperty,
                             customAnglesDegreesProperty);
+    }
+
+    private static void UpdateDirectionModeContainers(SerializedProperty directionModeProperty,
+                                                      VisualElement uniformContainer,
+                                                      VisualElement customAnglesContainer)
+    {
+        if (directionModeProperty == null || uniformContainer == null || customAnglesContainer == null)
+            return;
+
+        ProjectileSplitDirectionMode directionMode = (ProjectileSplitDirectionMode)directionModeProperty.enumValueIndex;
+        bool showUniform = directionMode == ProjectileSplitDirectionMode.Uniform;
+        uniformContainer.style.display = showUniform ? DisplayStyle.Flex : DisplayStyle.None;
+        customAnglesContainer.style.display = showUniform ? DisplayStyle.None : DisplayStyle.Flex;
+    }
+
+    private static void UpdateElementalEffectKindContainers(SerializedProperty effectKindProperty,
+                                                            VisualElement dotsContainer,
+                                                            VisualElement impedimentContainer)
+    {
+        if (effectKindProperty == null || dotsContainer == null || impedimentContainer == null)
+            return;
+
+        ElementalEffectKind effectKind = (ElementalEffectKind)effectKindProperty.enumValueIndex;
+        bool showDots = effectKind == ElementalEffectKind.Dots;
+        dotsContainer.style.display = showDots ? DisplayStyle.Flex : DisplayStyle.None;
+        impedimentContainer.style.display = showDots ? DisplayStyle.None : DisplayStyle.Flex;
+    }
+
+    private static void UpdateBooleanContainerVisibility(VisualElement container, SerializedProperty boolProperty)
+    {
+        if (container == null || boolProperty == null)
+            return;
+
+        bool isEnabled = boolProperty.boolValue;
+        container.style.display = isEnabled ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    private static void UpdateObjectContainerVisibility(VisualElement container, SerializedProperty objectReferenceProperty)
+    {
+        if (container == null || objectReferenceProperty == null)
+            return;
+
+        bool hasPrefab = objectReferenceProperty.objectReferenceValue != null;
+        container.style.display = hasPrefab ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private static void UpdateSplitPieChart(PieChartElement pieChart,
@@ -396,7 +700,7 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
                                start,
                                end,
                                splitIndex % 2 == 0 ? SplitUniformColorA : SplitUniformColorB);
-            directionMarkers.Add(mid);
+            directionMarkers.Add(start);
 
             PieChartElement.LabelDescriptor label = new PieChartElement.LabelDescriptor
             {

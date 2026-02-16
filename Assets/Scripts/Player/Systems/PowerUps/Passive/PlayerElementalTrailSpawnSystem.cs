@@ -28,18 +28,16 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
         EntityManager entityManager = state.EntityManager;
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
-        foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
-                  RefRW<PlayerElementalTrailState> trailState,
-                  RefRO<LocalTransform> playerTransform,
-                  DynamicBuffer<PlayerElementalTrailSegmentElement> trailSegments,
-                  DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
-                  Entity playerEntity)
-                 in SystemAPI.Query<RefRO<PlayerPassiveToolsState>,
-                                    RefRW<PlayerElementalTrailState>,
-                                    RefRO<LocalTransform>,
-                                    DynamicBuffer<PlayerElementalTrailSegmentElement>,
-                                    DynamicBuffer<PlayerPowerUpVfxSpawnRequest>>()
-                             .WithEntityAccess())
+            foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
+                      RefRW<PlayerElementalTrailState> trailState,
+                      RefRO<LocalTransform> playerTransform,
+                      DynamicBuffer<PlayerElementalTrailSegmentElement> trailSegments,
+                      Entity playerEntity)
+                     in SystemAPI.Query<RefRO<PlayerPassiveToolsState>,
+                                        RefRW<PlayerElementalTrailState>,
+                                        RefRO<LocalTransform>,
+                                        DynamicBuffer<PlayerElementalTrailSegmentElement>>()
+                                 .WithEntityAccess())
         {
             PlayerElementalTrailState currentTrailState = trailState.ValueRO;
             CompactSegments(entityManager, trailSegments, ref currentTrailState);
@@ -91,7 +89,7 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
                 Entity oldestSegment = trailSegments[0].SegmentEntity;
                 trailSegments.RemoveAt(0);
 
-                if (entityManager.Exists(oldestSegment))
+                if (oldestSegment.Index >= 0 && entityManager.Exists(oldestSegment))
                     commandBuffer.DestroyEntity(oldestSegment);
             }
 
@@ -108,28 +106,14 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
                 Effect = trailConfig.Effect
             });
 
-            trailSegments.Add(new PlayerElementalTrailSegmentElement
+            commandBuffer.AppendToBuffer(playerEntity, new PlayerElementalTrailSegmentElement
             {
                 SegmentEntity = segmentEntity
             });
 
-            currentTrailState.ActiveSegments = trailSegments.Length;
+            currentTrailState.ActiveSegments = trailSegments.Length + 1;
             currentTrailState.LastSpawnPosition = playerPosition;
             currentTrailState.SpawnTimer = math.max(0.01f, trailConfig.TrailSpawnIntervalSeconds);
-
-            if (trailConfig.TrailSegmentVfxPrefabEntity != Entity.Null)
-            {
-                float vfxScale = math.max(0.01f, trailConfig.TrailSegmentVfxScaleMultiplier * math.max(0.1f, trailConfig.TrailRadius));
-
-                vfxRequests.Add(new PlayerPowerUpVfxSpawnRequest
-                {
-                    PrefabEntity = trailConfig.TrailSegmentVfxPrefabEntity,
-                    Position = playerPosition,
-                    Rotation = quaternion.identity,
-                    UniformScale = vfxScale,
-                    LifetimeSeconds = math.max(0.05f, trailConfig.TrailSegmentLifetimeSeconds)
-                });
-            }
 
             trailState.ValueRW = currentTrailState;
         }
@@ -149,6 +133,13 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
             Entity segmentEntity = trailSegments[index].SegmentEntity;
 
             if (segmentEntity == Entity.Null)
+            {
+                trailSegments.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            if (segmentEntity.Index < 0)
             {
                 trailSegments.RemoveAt(index);
                 index--;

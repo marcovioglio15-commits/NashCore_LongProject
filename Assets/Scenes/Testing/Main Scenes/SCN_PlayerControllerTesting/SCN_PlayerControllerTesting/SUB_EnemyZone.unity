@@ -654,14 +654,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_EnemySpawner
       objectReference: {fileID: 0}
-    - target: {fileID: 9217395983185399253, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9217395983185399253, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
-      propertyPath: m_StaticEditorFlags
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

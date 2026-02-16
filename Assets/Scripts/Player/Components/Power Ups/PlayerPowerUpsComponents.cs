@@ -128,6 +128,15 @@ public struct PlayerElementalTrailState : IComponentData
 }
 
 /// <summary>
+/// Stores runtime handle of the attached elemental trail VFX entity.
+/// </summary>
+public struct PlayerElementalTrailAttachedVfxState : IComponentData
+{
+    public Entity VfxEntity;
+    public Entity PrefabEntity;
+}
+
+/// <summary>
 /// Tracks trail segment entities currently owned by one player.
 /// </summary>
 public struct PlayerElementalTrailSegmentElement : IBufferElementData
@@ -173,6 +182,20 @@ public struct PlayerPowerUpVfxSpawnRequest : IBufferElementData
     public quaternion Rotation;
     public float UniformScale;
     public float LifetimeSeconds;
+    public Entity FollowTargetEntity;
+    public float3 FollowPositionOffset;
+    public Entity FollowValidationEntity;
+    public uint FollowValidationSpawnVersion;
+    public float3 Velocity;
+}
+
+/// <summary>
+/// Pool slot containing one reusable VFX entity instance.
+/// </summary>
+public struct PlayerPowerUpVfxPoolElement : IBufferElementData
+{
+    public Entity PrefabEntity;
+    public Entity VfxEntity;
 }
 
 /// <summary>
@@ -181,4 +204,30 @@ public struct PlayerPowerUpVfxSpawnRequest : IBufferElementData
 public struct PlayerPowerUpVfxLifetime : IComponentData
 {
     public float RemainingSeconds;
+}
+
+/// <summary>
+/// Makes a spawned VFX follow a target entity using LocalTransform.
+/// </summary>
+public struct PlayerPowerUpVfxFollowTarget : IComponentData
+{
+    public Entity TargetEntity;
+    public float3 PositionOffset;
+    public Entity ValidationEntity;
+    public uint ValidationSpawnVersion;
+}
+
+/// <summary>
+/// Moves a spawned VFX with a constant velocity while alive.
+/// </summary>
+public struct PlayerPowerUpVfxVelocity : IComponentData
+{
+    public float3 Value;
+}
+
+/// <summary>
+/// Marks VFX entities managed by the pooled VFX pipeline.
+/// </summary>
+public struct PlayerPowerUpVfxPooled : IComponentData
+{
 }

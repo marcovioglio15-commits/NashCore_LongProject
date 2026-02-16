@@ -82,9 +82,16 @@ public enum ElementalProcMode
     ProgressiveUntilThreshold = 1
 }
 
+public enum ElementalProcReapplyMode
+{
+    AccumulateStacks = 0,
+    RefreshActiveProc = 1,
+    IgnoreWhileProcActive = 2
+}
+
 public enum PassiveExplosionTriggerMode
 {
-    Cooldown = 0,
+    Periodic = 0,
     OnPlayerDamaged = 1,
     OnEnemyKilled = 2
 }
@@ -200,6 +207,9 @@ public sealed class PowerUpCommonData
 
     #endregion
 }
+#endregion
+
+#region Passive
 
 [Serializable]
 public sealed class PassiveStatModifier
@@ -438,6 +448,9 @@ public sealed class ElementalEffectDefinitionData
     [Tooltip("How stacks apply effect strength before threshold.")]
     [SerializeField] private ElementalProcMode procMode = ElementalProcMode.ThresholdOnly;
 
+    [Tooltip("How incoming stacks behave while this element proc is already active on the same target.")]
+    [SerializeField] private ElementalProcReapplyMode reapplyMode = ElementalProcReapplyMode.AccumulateStacks;
+
     [Tooltip("Stacks required to trigger full element proc.")]
     [SerializeField] private float procThresholdStacks = 5f;
 
@@ -498,6 +511,14 @@ public sealed class ElementalEffectDefinitionData
         get
         {
             return procMode;
+        }
+    }
+
+    public ElementalProcReapplyMode ReapplyMode
+    {
+        get
+        {
+            return reapplyMode;
         }
     }
 
@@ -1127,9 +1148,9 @@ public sealed class ExplosionPassiveToolData
     #region Serialized Fields
     [Header("Passive Explosion")]
     [Tooltip("Event that triggers this explosion passive.")]
-    [SerializeField] private PassiveExplosionTriggerMode triggerMode = PassiveExplosionTriggerMode.Cooldown;
+    [SerializeField] private PassiveExplosionTriggerMode triggerMode = PassiveExplosionTriggerMode.Periodic;
 
-    [Tooltip("Cooldown in seconds used when Trigger Mode is Cooldown.")]
+    [Tooltip("Minimum seconds required between two explosion triggers in any trigger mode.")]
     [SerializeField] private float cooldownSeconds = 2f;
 
     [Tooltip("Explosion radius in meters.")]
@@ -1293,13 +1314,6 @@ public sealed class ElementalTrailPassiveToolData
 
     [Tooltip("Seconds between two stack applications while an enemy remains inside trail area.")]
     [SerializeField] private float applyIntervalSeconds = 0.2f;
-
-    [Header("Trail VFX (Optional)")]
-    [Tooltip("Optional VFX prefab spawned for each trail segment.")]
-    [SerializeField] private GameObject trailSegmentVfxPrefab;
-
-    [Tooltip("Scale multiplier applied to spawned trail segment VFX.")]
-    [SerializeField] private float trailSegmentVfxScaleMultiplier = 1f;
     #endregion
 
     #endregion
@@ -1369,21 +1383,6 @@ public sealed class ElementalTrailPassiveToolData
         }
     }
 
-    public GameObject TrailSegmentVfxPrefab
-    {
-        get
-        {
-            return trailSegmentVfxPrefab;
-        }
-    }
-
-    public float TrailSegmentVfxScaleMultiplier
-    {
-        get
-        {
-            return trailSegmentVfxScaleMultiplier;
-        }
-    }
     #endregion
 
     #region Methods
@@ -1417,8 +1416,6 @@ public sealed class ElementalTrailPassiveToolData
         if (applyIntervalSeconds < 0.01f)
             applyIntervalSeconds = 0.01f;
 
-        if (trailSegmentVfxScaleMultiplier < 0.01f)
-            trailSegmentVfxScaleMultiplier = 0.01f;
     }
     #endregion
 
@@ -1582,7 +1579,9 @@ public sealed class PassiveToolDefinition
 
     #endregion
 }
+#endregion
 
+#region Active
 [Serializable]
 public sealed class BombToolData
 {
@@ -2141,6 +2140,7 @@ public sealed class ActiveToolDefinition
 }
 #endregion
 
+#region Preset
 [CreateAssetMenu(fileName = "PlayerPowerUpsPreset", menuName = "Player/Power Ups Preset", order = 13)]
 public sealed class PlayerPowerUpsPreset : ScriptableObject
 {
@@ -2616,3 +2616,4 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     #endregion
 }
+#endregion

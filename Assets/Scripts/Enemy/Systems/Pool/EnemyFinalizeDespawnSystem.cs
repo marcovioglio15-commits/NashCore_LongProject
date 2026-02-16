@@ -57,6 +57,19 @@ public partial struct EnemyFinalizeDespawnSystem : ISystem
                     healthLookup[enemyEntity] = enemyHealth;
                 }
 
+                if (entityManager.HasBuffer<EnemyElementStackElement>(enemyEntity))
+                {
+                    DynamicBuffer<EnemyElementStackElement> elementalStacks = entityManager.GetBuffer<EnemyElementStackElement>(enemyEntity);
+                    elementalStacks.Clear();
+                }
+
+                if (entityManager.HasComponent<EnemyElementalRuntimeState>(enemyEntity))
+                {
+                    EnemyElementalRuntimeState elementalRuntime = entityManager.GetComponentData<EnemyElementalRuntimeState>(enemyEntity);
+                    elementalRuntime.SlowPercent = 0f;
+                    entityManager.SetComponentData(enemyEntity, elementalRuntime);
+                }
+
                 EnemyPoolUtility.ParkEnemy(entityManager, enemyEntity);
                 entityManager.SetComponentEnabled<EnemyActive>(enemyEntity, false);
 

@@ -34,6 +34,7 @@ public struct EnemyRuntimeState : IComponentData
 {
     public float3 Velocity;
     public float ContactCooldown;
+    public uint SpawnVersion;
 }
 
 /// <summary>
@@ -42,6 +43,14 @@ public struct EnemyRuntimeState : IComponentData
 public struct EnemyOwnerSpawner : IComponentData
 {
     public Entity SpawnerEntity;
+}
+
+/// <summary>
+/// Optional transform anchor used as follow target for attached elemental VFX.
+/// </summary>
+public struct EnemyElementalVfxAnchor : IComponentData
+{
+    public Entity AnchorEntity;
 }
 
 /// <summary>

@@ -39,6 +39,13 @@ public sealed class PlayerAuthoring : MonoBehaviour
     [Header("Shooting")]
     [Tooltip("Optional muzzle transform used as shooting reference for spawn orientation and offset.")]
     [SerializeField] private Transform weaponReference;
+
+    [Header("Power-Ups VFX")]
+    [Tooltip("Optional attached VFX prefab activated while Elemental Trail passive is enabled.")]
+    [SerializeField] private GameObject elementalTrailAttachedVfxPrefab;
+
+    [Tooltip("Scale multiplier applied to the attached Elemental Trail VFX instance.")]
+    [SerializeField] private float elementalTrailAttachedVfxScaleMultiplier = 1f;
     #endregion
 
     #endregion
@@ -65,6 +72,22 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return weaponReference;
+        }
+    }
+
+    public GameObject ElementalTrailAttachedVfxPrefab
+    {
+        get
+        {
+            return elementalTrailAttachedVfxPrefab;
+        }
+    }
+
+    public float ElementalTrailAttachedVfxScaleMultiplier
+    {
+        get
+        {
+            return elementalTrailAttachedVfxScaleMultiplier;
         }
     }
     #endregion
@@ -1000,7 +1023,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             return default;
 
         ElementalEffectConfig effectConfig = BuildElementalEffectConfig(elementalTrailData.EffectData);
-        Entity trailSegmentVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, elementalTrailData.TrailSegmentVfxPrefab, "Elemental Trail Segment VFX");
+        Entity trailAttachedVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, authoring.ElementalTrailAttachedVfxPrefab, "Elemental Trail Attached VFX");
 
         return new ElementalTrailPassiveConfig
         {
@@ -1012,8 +1035,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             MaxActiveSegmentsPerPlayer = math.max(1, elementalTrailData.MaxActiveSegmentsPerPlayer),
             StacksPerTick = math.max(0f, elementalTrailData.StacksPerTick),
             ApplyIntervalSeconds = math.max(0.01f, elementalTrailData.ApplyIntervalSeconds),
-            TrailSegmentVfxPrefabEntity = trailSegmentVfxPrefabEntity,
-            TrailSegmentVfxScaleMultiplier = math.max(0.01f, elementalTrailData.TrailSegmentVfxScaleMultiplier)
+            TrailAttachedVfxPrefabEntity = trailAttachedVfxPrefabEntity,
+            TrailAttachedVfxScaleMultiplier = math.max(0.01f, authoring.ElementalTrailAttachedVfxScaleMultiplier)
         };
     }
 
@@ -1033,6 +1056,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             ElementType = effectData.ElementType,
             EffectKind = effectData.EffectKind,
             ProcMode = effectData.ProcMode,
+            ReapplyMode = effectData.ReapplyMode,
             ProcThresholdStacks = procThresholdStacks,
             MaximumStacks = maximumStacks,
             StackDecayPerSecond = math.max(0f, effectData.StackDecayPerSecond),

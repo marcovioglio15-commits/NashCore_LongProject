@@ -26,6 +26,7 @@ public struct EnemyElementStackElement : IBufferElementData
     public ElementType ElementType;
     public ElementalEffectKind EffectKind;
     public ElementalProcMode ProcMode;
+    public ElementalProcReapplyMode ReapplyMode;
     public float CurrentStacks;
     public float MaximumStacks;
     public float ProcThresholdStacks;

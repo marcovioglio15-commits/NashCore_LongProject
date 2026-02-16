@@ -46,6 +46,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+        state.EntityManager.CompleteDependencyBeforeRO<LocalToWorld>();
         ComponentLookup<ShooterMuzzleAnchor> muzzleLookup = SystemAPI.GetComponentLookup<ShooterMuzzleAnchor>(true);
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);

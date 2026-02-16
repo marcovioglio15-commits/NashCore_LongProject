@@ -118,6 +118,7 @@ public struct ElementalEffectConfig
     public ElementType ElementType;
     public ElementalEffectKind EffectKind;
     public ElementalProcMode ProcMode;
+    public ElementalProcReapplyMode ReapplyMode;
     public float ProcThresholdStacks;
     public float MaximumStacks;
     public float StackDecayPerSecond;
@@ -217,7 +218,7 @@ public struct ElementalTrailPassiveConfig
     public int MaxActiveSegmentsPerPlayer;
     public float StacksPerTick;
     public float ApplyIntervalSeconds;
-    public Entity TrailSegmentVfxPrefabEntity;
-    public float TrailSegmentVfxScaleMultiplier;
+    public Entity TrailAttachedVfxPrefabEntity;
+    public float TrailAttachedVfxScaleMultiplier;
 }
 #endregion

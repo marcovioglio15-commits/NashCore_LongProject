@@ -50,6 +50,8 @@ MonoBehaviour:
   masterPreset: {fileID: 11400000, guid: 2aa7920f2d0dab444bbb97e34b3f90d8, type: 2}
   gizmoRadius: 2
   weaponReference: {fileID: 6701674403326256358}
+  elementalTrailAttachedVfxPrefab: {fileID: 5679156216372977872, guid: 92d93d035892fff40a63205dfd234520, type: 3}
+  elementalTrailAttachedVfxScaleMultiplier: 1
 --- !u!33 &-5754263909563620324
 MeshFilter:
   m_ObjectHideFlags: 0

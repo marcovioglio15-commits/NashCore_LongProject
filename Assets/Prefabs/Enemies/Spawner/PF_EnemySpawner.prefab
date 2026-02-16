@@ -46,8 +46,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemySpawnerAuthoring
   enemyPrefab: {fileID: 3091458169621715366, guid: f3f98af1cee6db041942c48b1be7625a, type: 3}
   initialSpawnDelay: 0
-  spawnPerTick: 4
-  spawnInterval: 0.5
+  spawnPerTick: 40
+  spawnInterval: 0.1
   initialPoolCapacity: 1280
   expandBatch: 640
   maxAliveCount: 640

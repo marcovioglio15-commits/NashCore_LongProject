@@ -46,15 +46,15 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
                 continue;
 
             float cooldownRemaining = math.max(0f, passiveExplosionState.ValueRO.CooldownRemaining - deltaTime);
+            float cooldownDuration = math.max(0f, explosionConfig.CooldownSeconds);
+            bool cooldownReady = cooldownRemaining <= 0f;
+            bool shouldTrigger = false;
+            float3 triggerPosition = playerTransform.ValueRO.Position;
 
             switch (explosionConfig.TriggerMode)
             {
-                case PassiveExplosionTriggerMode.Cooldown:
-                    if (cooldownRemaining > 0f)
-                        break;
-
-                    EnqueueExplosion(explosionRequests, in explosionConfig, playerTransform.ValueRO.Position);
-                    cooldownRemaining = math.max(0f, explosionConfig.CooldownSeconds);
+                case PassiveExplosionTriggerMode.Periodic:
+                    shouldTrigger = cooldownReady;
                     break;
                 case PassiveExplosionTriggerMode.OnPlayerDamaged:
                     if (healthLookup.HasComponent(playerEntity) == false)
@@ -67,10 +67,9 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
                     {
                         previousHealth = currentHealth;
                     }
-                    else if (currentHealth < previousHealth - 1e-4f && cooldownRemaining <= 0f)
+                    else if (currentHealth < previousHealth - 1e-4f)
                     {
-                        EnqueueExplosion(explosionRequests, in explosionConfig, playerTransform.ValueRO.Position);
-                        cooldownRemaining = math.max(0f, explosionConfig.CooldownSeconds);
+                        shouldTrigger = cooldownReady;
                     }
 
                     passiveExplosionState.ValueRW.PreviousObservedHealth = currentHealth;
@@ -79,15 +78,18 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
                     if (hasKilledEvents == false)
                         break;
 
-                    if (cooldownRemaining > 0f)
-                        break;
-
                     if (killedEventsBuffer.Length == 0)
                         break;
 
-                    EnqueueExplosion(explosionRequests, in explosionConfig, killedEventsBuffer[0].Position);
-                    cooldownRemaining = math.max(0f, explosionConfig.CooldownSeconds);
+                    triggerPosition = killedEventsBuffer[0].Position;
+                    shouldTrigger = cooldownReady;
                     break;
+            }
+
+            if (shouldTrigger)
+            {
+                EnqueueExplosion(explosionRequests, in explosionConfig, triggerPosition);
+                cooldownRemaining = cooldownDuration;
             }
 
             passiveExplosionState.ValueRW.CooldownRemaining = cooldownRemaining;

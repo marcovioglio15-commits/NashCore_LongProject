@@ -15,10 +15,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingBulletTimeStateQuery;
     private EntityQuery missingPassiveExplosionStateQuery;
     private EntityQuery missingElementalTrailStateQuery;
+    private EntityQuery missingElementalTrailAttachedVfxStateQuery;
     private EntityQuery missingBombRequestBufferQuery;
     private EntityQuery missingElementalTrailSegmentBufferQuery;
     private EntityQuery missingExplosionRequestBufferQuery;
     private EntityQuery missingPowerUpVfxRequestBufferQuery;
+    private EntityQuery missingPowerUpVfxPoolBufferQuery;
     #endregion
 
     #region Methods
@@ -58,6 +60,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithNone<PlayerElementalTrailState>()
             .Build();
 
+        missingElementalTrailAttachedVfxStateQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerElementalTrailAttachedVfxState>()
+            .Build();
+
         missingBombRequestBufferQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerBombSpawnRequest>()
@@ -77,6 +84,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerPowerUpVfxSpawnRequest>()
             .Build();
+
+        missingPowerUpVfxPoolBufferQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPowerUpVfxPoolElement>()
+            .Build();
     }
 
     /// <summary>
@@ -92,10 +104,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         bool hasMissingBulletTimeState = missingBulletTimeStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPassiveExplosionState = missingPassiveExplosionStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingElementalTrailState = missingElementalTrailStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingElementalTrailAttachedVfxState = missingElementalTrailAttachedVfxStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingBombRequestBuffer = missingBombRequestBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingElementalTrailSegmentBuffer = missingElementalTrailSegmentBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingExplosionRequestBuffer = missingExplosionRequestBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPowerUpVfxRequestBuffer = missingPowerUpVfxRequestBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingPowerUpVfxPoolBuffer = missingPowerUpVfxPoolBufferQuery.IsEmptyIgnoreFilter == false;
 
         if (hasMissingState == false &&
             hasMissingPassiveToolsState == false &&
@@ -103,10 +117,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             hasMissingBulletTimeState == false &&
             hasMissingPassiveExplosionState == false &&
             hasMissingElementalTrailState == false &&
+            hasMissingElementalTrailAttachedVfxState == false &&
             hasMissingBombRequestBuffer == false &&
             hasMissingElementalTrailSegmentBuffer == false &&
             hasMissingExplosionRequestBuffer == false &&
-            hasMissingPowerUpVfxRequestBuffer == false)
+            hasMissingPowerUpVfxRequestBuffer == false &&
+            hasMissingPowerUpVfxPoolBuffer == false)
             return;
 
         uint currentKillCount = 0u;
@@ -137,6 +153,9 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         if (hasMissingElementalTrailState)
             AddMissingElementalTrailState(ref commandBuffer);
 
+        if (hasMissingElementalTrailAttachedVfxState)
+            AddMissingElementalTrailAttachedVfxState(ref commandBuffer);
+
         if (hasMissingBombRequestBuffer)
             AddMissingBombRequestBuffers(ref commandBuffer);
 
@@ -148,6 +167,9 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         if (hasMissingPowerUpVfxRequestBuffer)
             AddMissingPowerUpVfxRequestBuffers(ref commandBuffer);
+
+        if (hasMissingPowerUpVfxPoolBuffer)
+            AddMissingPowerUpVfxPoolBuffers(ref commandBuffer);
 
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
@@ -374,6 +396,22 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         entities.Dispose();
     }
 
+    private void AddMissingElementalTrailAttachedVfxState(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingElementalTrailAttachedVfxStateQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+        {
+            commandBuffer.AddComponent(entities[index], new PlayerElementalTrailAttachedVfxState
+            {
+                VfxEntity = Entity.Null,
+                PrefabEntity = Entity.Null
+            });
+        }
+
+        entities.Dispose();
+    }
+
     private void AddMissingBombRequestBuffers(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingBombRequestBufferQuery.ToEntityArray(Allocator.Temp);
@@ -410,6 +448,16 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         for (int index = 0; index < entities.Length; index++)
             commandBuffer.AddBuffer<PlayerPowerUpVfxSpawnRequest>(entities[index]);
+
+        entities.Dispose();
+    }
+
+    private void AddMissingPowerUpVfxPoolBuffers(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingPowerUpVfxPoolBufferQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+            commandBuffer.AddBuffer<PlayerPowerUpVfxPoolElement>(entities[index]);
 
         entities.Dispose();
     }

@@ -247,7 +247,12 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
             Position = explosionRequest.Position,
             Rotation = quaternion.identity,
             UniformScale = scaleMultiplier,
-            LifetimeSeconds = 2f
+            LifetimeSeconds = 2f,
+            FollowTargetEntity = Entity.Null,
+            FollowPositionOffset = float3.zero,
+            FollowValidationEntity = Entity.Null,
+            FollowValidationSpawnVersion = 0u,
+            Velocity = float3.zero
         });
     }
     #endregion

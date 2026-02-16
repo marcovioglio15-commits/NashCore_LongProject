@@ -29,7 +29,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         enemyQuery = SystemAPI.QueryBuilder()
-            .WithAll<EnemyData, EnemyHealth, LocalTransform, EnemyActive>()
+            .WithAll<EnemyData, EnemyHealth, EnemyRuntimeState, LocalTransform, EnemyActive>()
             .WithNone<EnemyDespawnRequest>()
             .Build();
 
@@ -58,6 +58,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         NativeArray<EnemyData> enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.TempJob);
         NativeArray<EnemyHealth> enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.TempJob);
         NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
+        NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.TempJob);
 
         NativeArray<Entity> projectileEntities = projectileQuery.ToEntityArray(Allocator.TempJob);
         NativeArray<Projectile> projectileDataArray = projectileQuery.ToComponentDataArray<Projectile>(Allocator.TempJob);
@@ -125,6 +126,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
         BufferLookup<EnemyElementStackElement> elementalStackLookup = SystemAPI.GetBufferLookup<EnemyElementStackElement>(false);
         ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
+        ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup = SystemAPI.GetComponentLookup<EnemyElementalVfxAnchor>(true);
 
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
@@ -146,6 +148,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                                                         in projectileBaseScaleLookup);
             Entity enemyEntity = enemyEntities[enemyIndex];
             float3 enemyPosition = enemyTransforms[enemyIndex].Position;
+            EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
 
             damageByEnemy[enemyIndex] += math.max(0f, projectileData.Damage);
             TryEnqueueSplitRequests(in projectileData,
@@ -158,6 +161,8 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                      enemyPosition,
                                      in elementalPayload,
                                      in projectileOwner,
+                                     in enemyRuntimeState,
+                                     in elementalVfxAnchorLookup,
                                      ref elementalStackLookup,
                                      ref vfxRequestLookup);
             DespawnProjectile(entityManager, projectileEntities[projectileIndex], projectileOwner, ref projectilePoolLookup);
@@ -205,6 +210,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         enemyDataArray.Dispose();
         enemyHealthArray.Dispose();
         enemyTransforms.Dispose();
+        enemyRuntimeArray.Dispose();
 
         projectileEntities.Dispose();
         projectileDataArray.Dispose();
@@ -321,11 +327,12 @@ public partial struct EnemyProjectileHitSystem : ISystem
     {
         int splitCount = math.max(1, splitState.SplitProjectileCount);
         float stepDegrees = 360f / splitCount;
+        float baseAngleDegrees = ResolveDirectionAngleDegrees(baseDirection);
 
         for (int splitIndex = 0; splitIndex < splitCount; splitIndex++)
         {
-            float angleDegrees = splitState.SplitOffsetDegrees + stepDegrees * splitIndex;
-            float3 direction = RotateDirection(baseDirection, angleDegrees);
+            float angleDegrees = baseAngleDegrees + splitState.SplitOffsetDegrees + stepDegrees * splitIndex;
+            float3 direction = ResolvePlanarDirectionFromAngleDegrees(angleDegrees);
             AddSplitShootRequest(ref shootRequests,
                                  spawnPosition,
                                  direction,
@@ -349,10 +356,12 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                                     float splitScaleMultiplier,
                                                     byte inheritPlayerSpeed)
     {
+        float baseAngleDegrees = ResolveDirectionAngleDegrees(baseDirection);
+
         for (int splitIndex = 0; splitIndex < splitState.CustomAnglesDegrees.Length; splitIndex++)
         {
-            float angleDegrees = splitState.CustomAnglesDegrees[splitIndex] + splitState.SplitOffsetDegrees;
-            float3 direction = RotateDirection(baseDirection, angleDegrees);
+            float angleDegrees = baseAngleDegrees + splitState.CustomAnglesDegrees[splitIndex] + splitState.SplitOffsetDegrees;
+            float3 direction = ResolvePlanarDirectionFromAngleDegrees(angleDegrees);
             AddSplitShootRequest(ref shootRequests,
                                  spawnPosition,
                                  direction,
@@ -400,18 +409,24 @@ public partial struct EnemyProjectileHitSystem : ISystem
         return math.max(0.01f, currentScale / baseScale);
     }
 
-    private static float3 RotateDirection(float3 baseDirection, float angleDegrees)
+    private static float ResolveDirectionAngleDegrees(float3 direction)
     {
-        quaternion rotation = quaternion.AxisAngle(new float3(0f, 1f, 0f), math.radians(angleDegrees));
-        float3 rotatedDirection = math.mul(rotation, baseDirection);
-        rotatedDirection.y = 0f;
-        return math.normalizesafe(rotatedDirection, new float3(0f, 0f, 1f));
+        float3 normalizedDirection = math.normalizesafe(direction, new float3(0f, 0f, 1f));
+        return math.degrees(math.atan2(normalizedDirection.x, normalizedDirection.z));
+    }
+
+    private static float3 ResolvePlanarDirectionFromAngleDegrees(float angleDegrees)
+    {
+        float radians = math.radians(angleDegrees);
+        return new float3(math.sin(radians), 0f, math.cos(radians));
     }
 
     private static void TryApplyElementalPayload(Entity enemyEntity,
                                                  float3 enemyPosition,
                                                  in ProjectileElementalPayload elementalPayload,
                                                  in ProjectileOwner projectileOwner,
+                                                 in EnemyRuntimeState enemyRuntimeState,
+                                                 in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
                                                  ref BufferLookup<EnemyElementStackElement> elementalStackLookup,
                                                  ref BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup)
     {
@@ -437,24 +452,48 @@ public partial struct EnemyProjectileHitSystem : ISystem
             return;
 
         DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests = vfxRequestLookup[shooterEntity];
+        float3 vfxPosition = enemyPosition;
+        Entity followTargetEntity = enemyEntity;
+        float stackVfxLifetimeSeconds = 0.35f;
+        float procVfxLifetimeSeconds = ResolveProcVfxLifetimeSeconds(in elementalPayload.Effect);
+
+        if (elementalVfxAnchorLookup.HasComponent(enemyEntity))
+        {
+            Entity anchorEntity = elementalVfxAnchorLookup[enemyEntity].AnchorEntity;
+
+            if (anchorEntity != Entity.Null)
+                followTargetEntity = anchorEntity;
+        }
 
         if (elementalPayload.SpawnStackVfx != 0)
             EnqueueElementalVfx(ref vfxRequests,
                                 elementalPayload.StackVfxPrefabEntity,
-                                enemyPosition,
-                                elementalPayload.StackVfxScaleMultiplier);
+                                vfxPosition,
+                                elementalPayload.StackVfxScaleMultiplier,
+                                followTargetEntity,
+                                enemyEntity,
+                                enemyRuntimeState.SpawnVersion,
+                                stackVfxLifetimeSeconds);
 
         if (procTriggered && elementalPayload.SpawnProcVfx != 0)
             EnqueueElementalVfx(ref vfxRequests,
                                 elementalPayload.ProcVfxPrefabEntity,
-                                enemyPosition,
-                                elementalPayload.ProcVfxScaleMultiplier);
+                                vfxPosition,
+                                elementalPayload.ProcVfxScaleMultiplier,
+                                followTargetEntity,
+                                enemyEntity,
+                                enemyRuntimeState.SpawnVersion,
+                                procVfxLifetimeSeconds);
     }
 
     private static void EnqueueElementalVfx(ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
                                             Entity prefabEntity,
                                             float3 position,
-                                            float scaleMultiplier)
+                                            float scaleMultiplier,
+                                            Entity followTargetEntity,
+                                            Entity followValidationEntity,
+                                            uint followValidationSpawnVersion,
+                                            float lifetimeSeconds)
     {
         if (prefabEntity == Entity.Null)
             return;
@@ -465,8 +504,26 @@ public partial struct EnemyProjectileHitSystem : ISystem
             Position = position,
             Rotation = quaternion.identity,
             UniformScale = math.max(0.01f, scaleMultiplier),
-            LifetimeSeconds = 2f
+            LifetimeSeconds = math.max(0.05f, lifetimeSeconds),
+            FollowTargetEntity = followTargetEntity,
+            FollowPositionOffset = float3.zero,
+            FollowValidationEntity = followValidationEntity,
+            FollowValidationSpawnVersion = followValidationSpawnVersion,
+            Velocity = float3.zero
         });
+    }
+
+    private static float ResolveProcVfxLifetimeSeconds(in ElementalEffectConfig effectConfig)
+    {
+        switch (effectConfig.EffectKind)
+        {
+            case ElementalEffectKind.Dots:
+                return math.max(0.05f, effectConfig.DotDurationSeconds);
+            case ElementalEffectKind.Impediment:
+                return math.max(0.05f, effectConfig.ImpedimentDurationSeconds);
+            default:
+                return 0.5f;
+        }
     }
 
     private static void DespawnProjectile(EntityManager entityManager,

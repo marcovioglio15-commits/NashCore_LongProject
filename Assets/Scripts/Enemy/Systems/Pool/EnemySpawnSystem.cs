@@ -139,6 +139,15 @@ public partial struct EnemySpawnSystem : ISystem
                 EnemyRuntimeState runtimeState = entityManager.GetComponentData<EnemyRuntimeState>(enemyEntity);
                 runtimeState.Velocity = float3.zero;
                 runtimeState.ContactCooldown = 0f;
+
+                unchecked
+                {
+                    runtimeState.SpawnVersion++;
+                }
+
+                if (runtimeState.SpawnVersion == 0u)
+                    runtimeState.SpawnVersion = 1u;
+
                 entityManager.SetComponentData(enemyEntity, runtimeState);
 
                 EnemyOwnerSpawner ownerSpawner = entityManager.GetComponentData<EnemyOwnerSpawner>(enemyEntity);
@@ -154,6 +163,19 @@ public partial struct EnemySpawnSystem : ISystem
 
                     enemyHealth.Current = enemyHealth.Max;
                     entityManager.SetComponentData(enemyEntity, enemyHealth);
+                }
+
+                if (entityManager.HasBuffer<EnemyElementStackElement>(enemyEntity))
+                {
+                    DynamicBuffer<EnemyElementStackElement> elementalStacks = entityManager.GetBuffer<EnemyElementStackElement>(enemyEntity);
+                    elementalStacks.Clear();
+                }
+
+                if (entityManager.HasComponent<EnemyElementalRuntimeState>(enemyEntity))
+                {
+                    EnemyElementalRuntimeState elementalRuntimeState = entityManager.GetComponentData<EnemyElementalRuntimeState>(enemyEntity);
+                    elementalRuntimeState.SlowPercent = 0f;
+                    entityManager.SetComponentData(enemyEntity, elementalRuntimeState);
                 }
 
                 if (entityManager.HasComponent<EnemyDespawnRequest>(enemyEntity))
