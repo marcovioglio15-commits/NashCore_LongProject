@@ -7,8 +7,7 @@ using UnityEngine;
 /// This system is responsible for updating the main camera's position to follow the 
 /// player based on the configuration specified in the PlayerControllerConfig component.
 /// </summary>
-[UpdateInGroup(typeof(PlayerControllerSystemGroup))]
-[UpdateAfter(typeof(PlayerMovementApplySystem))]
+[UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial struct PlayerCameraFollowSystem : ISystem
 {
     #region Fields
@@ -48,11 +47,18 @@ public partial struct PlayerCameraFollowSystem : ISystem
             return;
 
         float deltaTime = SystemAPI.Time.DeltaTime;
+        ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
 
         // Only support one player camera config at a time, so breaks after the first iteration.
-        foreach ((RefRO<LocalTransform> localTransform, RefRO<PlayerControllerConfig> controllerConfig) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerControllerConfig>>())
+        foreach ((RefRO<LocalTransform> localTransform,
+                  RefRO<PlayerControllerConfig> controllerConfig,
+                  Entity entity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerControllerConfig>>().WithEntityAccess())
         {
             ref CameraConfig cameraConfig = ref controllerConfig.ValueRO.Config.Value.Camera;
+            float3 playerPosition = localTransform.ValueRO.Position;
+
+            if (localToWorldLookup.HasComponent(entity))
+                playerPosition = localToWorldLookup[entity].Position;
 
             if (cameraConfig.Behavior == CameraBehavior.RoomFixed)
                 continue;
@@ -73,7 +79,7 @@ public partial struct PlayerCameraFollowSystem : ISystem
                 case CameraBehavior.FollowWithAutoOffset:
                     if (hasAutoOffset == false)
                     {
-                        autoOffset = (float3)camera.transform.position - localTransform.ValueRO.Position;
+                        autoOffset = (float3)camera.transform.position - playerPosition;
                         hasAutoOffset = true;
                     }
 
@@ -82,7 +88,7 @@ public partial struct PlayerCameraFollowSystem : ISystem
                 case CameraBehavior.ChildOfPlayer:
                     if (hasChildOffset == false)
                     {
-                        float3 worldOffset = (float3)camera.transform.position - localTransform.ValueRO.Position;
+                        float3 worldOffset = (float3)camera.transform.position - playerPosition;
                         quaternion inverseRotation = math.inverse(localTransform.ValueRO.Rotation);
                         childLocalOffset = math.rotate(inverseRotation, worldOffset);
                         hasChildOffset = true;
@@ -92,14 +98,14 @@ public partial struct PlayerCameraFollowSystem : ISystem
                     break;
             }
 
-            float3 targetPosition = localTransform.ValueRO.Position + offset;
+            float3 targetPosition = playerPosition + offset;
 
             // Handle camera behavior modes. For ChildOfPlayer, directly sets the camera's position and rotation
             switch (cameraConfig.Behavior)
             {
                 case CameraBehavior.ChildOfPlayer:
                     float3 rotatedOffset = math.rotate(localTransform.ValueRO.Rotation, offset);
-                    camera.transform.position = localTransform.ValueRO.Position + rotatedOffset;
+                    camera.transform.position = playerPosition + rotatedOffset;
                     camera.transform.rotation = localTransform.ValueRO.Rotation;
                     break;
                 default:

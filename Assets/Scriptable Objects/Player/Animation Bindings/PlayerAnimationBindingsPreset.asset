@@ -16,3 +16,40 @@ MonoBehaviour:
   m_PresetName: PlayerAnimationBindingsPreset
   m_Description: 
   m_Version: 1.0.0
+  animatorController: {fileID: 9100000, guid: d668587abcbd5084f96f693fed712a69, type: 2}
+  upperBodyAvatarMask: {fileID: 31900000, guid: b366f425f1efca34aba1f310df5dc233, type: 2}
+  lowerBodyAvatarMask: {fileID: 31900000, guid: aeb923ceb29199c4696bcc7457d8250f, type: 2}
+  disableRootMotion: 1
+  useFloatDamping: 1
+  floatDampTime: 0.08
+  movingSpeedThreshold: 0.02
+  moveXParameter: MoveX
+  moveYParameter: MoveY
+  moveSpeedParameter: MoveSpeed
+  aimXParameter: AimX
+  aimYParameter: AimY
+  isMovingParameter: IsMoving
+  isShootingParameter: IsShooting
+  isDashingParameter: IsDashing
+  shotPulseParameter: ShotPulse
+  proceduralRecoilEnabled: 1
+  proceduralRecoilKick: 0.2
+  proceduralRecoilRecoveryPerSecond: 7
+  proceduralRecoilParameter: ProcRecoil
+  proceduralAimWeightEnabled: 0
+  proceduralAimWeightSmoothing: 12
+  proceduralAimWeightParameter: ProcAimWeight
+  proceduralLeanEnabled: 0
+  proceduralLeanSmoothing: 10
+  proceduralLeanParameter: ProcLean
+  idleClip: {fileID: 0}
+  moveForwardClip: {fileID: 0}
+  moveBackwardClip: {fileID: 0}
+  moveLeftClip: {fileID: 0}
+  moveRightClip: {fileID: 0}
+  aimForwardClip: {fileID: 0}
+  aimBackwardClip: {fileID: 0}
+  aimLeftClip: {fileID: 0}
+  aimRightClip: {fileID: 0}
+  shootClip: {fileID: 0}
+  dashClip: {fileID: 0}

@@ -219,7 +219,7 @@ public sealed class PlayerManagementWindow : EditorWindow
         if (panelType == PanelType.PowerUps)
             return "Power-Ups";
 
-        return "Animations Bindings";
+        return "Animation Bindings";
     }
     #endregion
 

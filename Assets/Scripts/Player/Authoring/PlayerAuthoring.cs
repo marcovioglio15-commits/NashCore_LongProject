@@ -40,6 +40,16 @@ public sealed class PlayerAuthoring : MonoBehaviour
     [Tooltip("Optional muzzle transform used as shooting reference for spawn orientation and offset.")]
     [SerializeField] private Transform weaponReference;
 
+    [Header("Animation")]
+    [Tooltip("Optional Animator used for ECS-driven visual animation sync.")]
+    [SerializeField] private Animator animatorComponent;
+
+    [Tooltip("When enabled, draws local animation debug axes used by ECS->Animator parameter projection.")]
+    [SerializeField] private bool drawAnimationDebugGizmos = true;
+
+    [Tooltip("Length in meters for animation debug axes in Scene view.")]
+    [SerializeField] private float animationDebugAxisLength = 0.75f;
+
     [Header("Power-Ups VFX")]
     [Tooltip("Optional attached VFX prefab activated while Elemental Trail passive is enabled.")]
     [SerializeField] private GameObject elementalTrailAttachedVfxPrefab;
@@ -87,6 +97,30 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return weaponReference;
+        }
+    }
+
+    public Animator AnimatorComponent
+    {
+        get
+        {
+            return animatorComponent;
+        }
+    }
+
+    public bool DrawAnimationDebugGizmos
+    {
+        get
+        {
+            return drawAnimationDebugGizmos;
+        }
+    }
+
+    public float AnimationDebugAxisLength
+    {
+        get
+        {
+            return animationDebugAxisLength;
         }
     }
 
@@ -203,6 +237,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
         DrawShootingGizmo(controllerPreset);
         DrawCameraGizmo(controllerPreset);
         DrawPowerUpsGizmos();
+        DrawAnimationDebugGizmo();
     }
 
     /// <summary>
@@ -356,6 +391,26 @@ public sealed class PlayerAuthoring : MonoBehaviour
         Gizmos.DrawLine(referencePosition, spawnPosition);
         Gizmos.DrawWireSphere(spawnPosition, 0.12f);
         Gizmos.DrawLine(spawnPosition, spawnPosition + forward * 0.5f);
+    }
+
+    /// <summary>
+    /// Draws local animation axes used by runtime parameter projection (MoveX/MoveY and AimX/AimY).
+    /// </summary>
+    private void DrawAnimationDebugGizmo()
+    {
+        if (drawAnimationDebugGizmos == false)
+            return;
+
+        float axisLength = Mathf.Max(0.1f, animationDebugAxisLength);
+        Vector3 origin = transform.position + Vector3.up * 0.06f;
+        Vector3 forward = transform.forward * axisLength;
+        Vector3 right = transform.right * axisLength;
+
+        Gizmos.color = new Color(0.15f, 0.95f, 0.85f, 0.95f);
+        Gizmos.DrawLine(origin, origin + forward);
+
+        Gizmos.color = new Color(0.95f, 0.7f, 0.2f, 0.95f);
+        Gizmos.DrawLine(origin, origin + right);
     }
 
     /// <summary>
@@ -529,6 +584,25 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         PlayerWorldLayersConfig worldLayersConfig = BuildWorldLayersConfig(authoring.MasterPreset);
         AddComponent(entity, worldLayersConfig);
+        PlayerAnimationBindingsPreset animationBindingsPreset = authoring.MasterPreset != null ? authoring.MasterPreset.AnimationBindingsPreset : null;
+
+        if (authoring.AnimatorComponent != null)
+        {
+            AddComponentObject(entity, new PlayerAnimatorReference
+            {
+                Animator = authoring.AnimatorComponent,
+                AnimatorController = animationBindingsPreset != null ? animationBindingsPreset.AnimatorController : null,
+                ControllerAssigned = 0
+            });
+            AddComponent(entity, BuildAnimatorParameterConfig(animationBindingsPreset));
+            AddComponent(entity, new PlayerAnimatorRuntimeState
+            {
+                PreviousShooting = 0,
+                RecoilValue = 0f,
+                AimWeightValue = 0f,
+                LeanValue = 0f
+            });
+        }
 
         PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
 
@@ -726,6 +800,91 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             return 0;
 
         return 1 << layerIndex;
+    }
+
+    /// <summary>
+    /// Builds runtime animator parameter hash configuration from animation bindings preset.
+    /// Falls back to default parameter names when the preset is missing.
+    /// </summary>
+    /// <param name="preset">Animation bindings preset selected in the master preset.</param>
+    /// <returns>Baked animator parameter config.</returns>
+    private static PlayerAnimatorParameterConfig BuildAnimatorParameterConfig(PlayerAnimationBindingsPreset preset)
+    {
+        string moveXParameter = preset != null ? preset.MoveXParameter : "MoveX";
+        string moveYParameter = preset != null ? preset.MoveYParameter : "MoveY";
+        string moveSpeedParameter = preset != null ? preset.MoveSpeedParameter : "MoveSpeed";
+        string aimXParameter = preset != null ? preset.AimXParameter : "AimX";
+        string aimYParameter = preset != null ? preset.AimYParameter : "AimY";
+        string isMovingParameter = preset != null ? preset.IsMovingParameter : "IsMoving";
+        string isShootingParameter = preset != null ? preset.IsShootingParameter : "IsShooting";
+        string isDashingParameter = preset != null ? preset.IsDashingParameter : "IsDashing";
+        string shotPulseParameter = preset != null ? preset.ShotPulseParameter : "ShotPulse";
+        string proceduralRecoilParameter = preset != null ? preset.ProceduralRecoilParameter : "ProcRecoil";
+        string proceduralAimWeightParameter = preset != null ? preset.ProceduralAimWeightParameter : "ProcAimWeight";
+        string proceduralLeanParameter = preset != null ? preset.ProceduralLeanParameter : "ProcLean";
+
+        PlayerAnimatorParameterConfig config = default;
+        byte hasMoveX;
+        byte hasMoveY;
+        byte hasMoveSpeed;
+        byte hasAimX;
+        byte hasAimY;
+        byte hasIsMoving;
+        byte hasIsShooting;
+        byte hasIsDashing;
+        byte hasShotPulse;
+        byte hasProceduralRecoil;
+        byte hasProceduralAimWeight;
+        byte hasProceduralLean;
+
+        config.MoveXHash = ResolveParameterHash(moveXParameter, out hasMoveX);
+        config.MoveYHash = ResolveParameterHash(moveYParameter, out hasMoveY);
+        config.MoveSpeedHash = ResolveParameterHash(moveSpeedParameter, out hasMoveSpeed);
+        config.AimXHash = ResolveParameterHash(aimXParameter, out hasAimX);
+        config.AimYHash = ResolveParameterHash(aimYParameter, out hasAimY);
+        config.IsMovingHash = ResolveParameterHash(isMovingParameter, out hasIsMoving);
+        config.IsShootingHash = ResolveParameterHash(isShootingParameter, out hasIsShooting);
+        config.IsDashingHash = ResolveParameterHash(isDashingParameter, out hasIsDashing);
+        config.ShotPulseHash = ResolveParameterHash(shotPulseParameter, out hasShotPulse);
+        config.ProceduralRecoilHash = ResolveParameterHash(proceduralRecoilParameter, out hasProceduralRecoil);
+        config.ProceduralAimWeightHash = ResolveParameterHash(proceduralAimWeightParameter, out hasProceduralAimWeight);
+        config.ProceduralLeanHash = ResolveParameterHash(proceduralLeanParameter, out hasProceduralLean);
+        config.HasMoveX = hasMoveX;
+        config.HasMoveY = hasMoveY;
+        config.HasMoveSpeed = hasMoveSpeed;
+        config.HasAimX = hasAimX;
+        config.HasAimY = hasAimY;
+        config.HasIsMoving = hasIsMoving;
+        config.HasIsShooting = hasIsShooting;
+        config.HasIsDashing = hasIsDashing;
+        config.HasShotPulse = hasShotPulse;
+        config.HasProceduralRecoil = hasProceduralRecoil;
+        config.HasProceduralAimWeight = hasProceduralAimWeight;
+        config.HasProceduralLean = hasProceduralLean;
+        config.FloatDampTime = preset != null ? math.max(0f, preset.FloatDampTime) : 0.08f;
+        config.MovingSpeedThreshold = preset != null ? math.max(0f, preset.MovingSpeedThreshold) : 0.02f;
+        config.UseFloatDamping = preset == null || preset.UseFloatDamping ? (byte)1 : (byte)0;
+        config.DisableRootMotion = preset == null || preset.DisableRootMotion ? (byte)1 : (byte)0;
+        config.ProceduralRecoilEnabled = preset != null && preset.ProceduralRecoilEnabled ? (byte)1 : (byte)0;
+        config.ProceduralAimWeightEnabled = preset != null && preset.ProceduralAimWeightEnabled ? (byte)1 : (byte)0;
+        config.ProceduralLeanEnabled = preset != null && preset.ProceduralLeanEnabled ? (byte)1 : (byte)0;
+        config.ProceduralRecoilKick = preset != null ? math.max(0f, preset.ProceduralRecoilKick) : 0f;
+        config.ProceduralRecoilRecoveryPerSecond = preset != null ? math.max(0f, preset.ProceduralRecoilRecoveryPerSecond) : 0f;
+        config.ProceduralAimWeightSmoothing = preset != null ? math.max(0f, preset.ProceduralAimWeightSmoothing) : 0f;
+        config.ProceduralLeanSmoothing = preset != null ? math.max(0f, preset.ProceduralLeanSmoothing) : 0f;
+        return config;
+    }
+
+    private static int ResolveParameterHash(string parameterName, out byte hasParameter)
+    {
+        if (string.IsNullOrWhiteSpace(parameterName))
+        {
+            hasParameter = 0;
+            return 0;
+        }
+
+        hasParameter = 1;
+        return Animator.StringToHash(parameterName.Trim());
     }
 
     /// <summary>

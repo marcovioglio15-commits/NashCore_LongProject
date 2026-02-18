@@ -12,6 +12,7 @@ public static class PlayerControllerMath
     public const byte DigitalLeftFlag = 4;
     public const byte DigitalRightFlag = 8;
     public const float DigitalNormalizedDiagonal = 0.70710678f;
+    private const float CameraFollowNoiseEpsilon = 0.001f;
 
     /// Normalizes a direction vector while ignoring the vertical component, 
     /// returning a fallback direction if the input is too small.
@@ -121,6 +122,43 @@ public static class PlayerControllerMath
         return WrapAngleRadians(snapped);
     }
 
+    /// <summary>
+    /// Quantizes an angle while applying a hysteresis window around direction boundaries.
+    /// The previous snapped angle is preserved until the input angle clearly exits the
+    /// half-step boundary plus hysteresis margin, reducing rapid flip-flops near thresholds.
+    /// </summary>
+    /// <param name="angle"></param>
+    /// <param name="step"></param>
+    /// <param name="offset"></param>
+    /// <param name="previousQuantizedAngle"></param>
+    /// <param name="hasPrevious"></param>
+    /// <param name="hysteresisRadians"></param>
+    /// <returns></returns>
+    public static float QuantizeAngleWithHysteresis(float angle,
+                                                    float step,
+                                                    float offset,
+                                                    float previousQuantizedAngle,
+                                                    bool hasPrevious,
+                                                    float hysteresisRadians)
+    {
+        float quantizedAngle = QuantizeAngle(angle, step, offset);
+
+        if (hasPrevious == false)
+            return quantizedAngle;
+
+        if (step <= 1e-6f)
+            return quantizedAngle;
+
+        float clampedHysteresis = math.clamp(hysteresisRadians, 0f, step * 0.49f);
+        float switchThreshold = (step * 0.5f) + clampedHysteresis;
+        float deltaFromPrevious = math.abs(WrapAngleRadians(angle - previousQuantizedAngle));
+
+        if (deltaFromPrevious <= switchThreshold)
+            return WrapAngleRadians(previousQuantizedAngle);
+
+        return quantizedAngle;
+    }
+	
     /// <summary>
     /// Converts an angle in radians to a directional vector on the horizontal plane.
     /// </summary>
@@ -463,8 +501,12 @@ public static class PlayerControllerMath
     {
         float3 toTarget = target - current;
         float distance = math.length(toTarget);
+        float deadZoneRadius = math.max(0f, values.DeadZoneRadius);
+        float minimumFollowDistance = math.max(deadZoneRadius, CameraFollowNoiseEpsilon);
 
-        if (distance <= values.DeadZoneRadius)
+        // Preserve configured dead zone behavior and additionally filter tiny float-scale oscillations
+        // that can still appear when DeadZoneRadius is zero.
+        if (distance <= minimumFollowDistance)
             return current;
 
         if (values.MaxFollowDistance > 0f && distance > values.MaxFollowDistance)
@@ -472,6 +514,19 @@ public static class PlayerControllerMath
             current = target - (toTarget / distance) * values.MaxFollowDistance;
             toTarget = target - current;
             distance = values.MaxFollowDistance;
+        }
+
+        // Dead-zone softening:
+        // Instead of snapping from "no movement" to full follow right after the threshold,
+        // move only by the excess distance outside the dead zone.
+        // This keeps the dead-zone behavior while removing the visible micro-jump at close camera distances.
+        if (distance > 1e-6f)
+        {
+            float3 direction = toTarget / distance;
+            float effectiveDistance = math.max(0f, distance - deadZoneRadius);
+            target = current + direction * effectiveDistance;
+            toTarget = target - current;
+            distance = effectiveDistance;
         }
 
         float smooth = math.max(0.0001f, values.CameraLag + values.Damping);

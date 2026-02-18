@@ -22,6 +22,7 @@ public partial struct PlayerMovementDirectionSystem : ISystem
     private const float DigitalAngleEpsilon = 0.001f;
     private const float DigitalInputThreshold = 0.5f;
     private const float DigitalLikeTolerance = 0.12f;
+    private const float DiscreteSwitchHysteresisRatio = 0.15f;
     #endregion
 
     #region Lifecycle
@@ -113,7 +114,17 @@ public partial struct PlayerMovementDirectionSystem : ISystem
                         break;
                     }
 
-                    float snappedAngle = PlayerControllerMath.QuantizeAngle(angle, step, offset);
+                    float3 previousDesiredDirection = movementState.ValueRO.DesiredDirection;
+                    float2 previousLocalDirection = new float2(math.dot(previousDesiredDirection, right), math.dot(previousDesiredDirection, forward));
+                    bool hasPreviousLocalDirection = math.lengthsq(previousLocalDirection) > 1e-6f;
+                    float previousAngle = hasPreviousLocalDirection ? math.atan2(previousLocalDirection.x, previousLocalDirection.y) : 0f;
+                    float switchHysteresis = step * DiscreteSwitchHysteresisRatio;
+                    float snappedAngle = PlayerControllerMath.QuantizeAngleWithHysteresis(angle,
+                                                                                          step,
+                                                                                          offset,
+                                                                                          previousAngle,
+                                                                                          hasPreviousLocalDirection,
+                                                                                          switchHysteresis);
                     float3 localDirection = PlayerControllerMath.DirectionFromAngle(snappedAngle);
                     desiredDirection = right * localDirection.x + forward * localDirection.z;
                     break;

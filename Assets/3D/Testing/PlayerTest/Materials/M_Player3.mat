@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_Player3
-  m_Shader: {fileID: 4800000, guid: c06d2317c8cda6d49aa62bc6fc1810e9, type: 3}
+  m_Shader: {fileID: 4800000, guid: 58c4f4976ddd4f18afde353091541bd1, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -91,6 +91,7 @@ Material:
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
+    - _ComputeMeshIndex: 0
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1

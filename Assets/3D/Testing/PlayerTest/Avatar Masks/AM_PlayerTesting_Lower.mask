@@ -1,0 +1,131 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!319 &31900000
+AvatarMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: AM_PlayerTesting_Lower
+  m_Mask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  m_Elements:
+  - m_Path: 
+    m_Weight: 1
+  - m_Path: MeshPlayer
+    m_Weight: 0
+  - m_Path: MeshPlayer/CH_PlayerTest
+    m_Weight: 0
+  - m_Path: MeshPlayer/Gun_Mesh
+    m_Weight: 0
+  - m_Path: Root_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/L_Leg_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/L_Leg_EXP/L_Knee_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/L_Leg_EXP/L_Knee_EXP/L_Ankle_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/L_Leg_EXP/L_Knee_EXP/L_Ankle_EXP/L_Foot_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/L_Leg_EXP/L_Knee_EXP/L_Ankle_EXP/L_Foot_EXP/L_Foot_END_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/R_Leg_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/R_Leg_EXP/R_Knee_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/R_Leg_EXP/R_Knee_EXP/R_Ankle_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/R_Leg_EXP/R_Knee_EXP/R_Ankle_EXP/R_Foot_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/R_Leg_EXP/R_Knee_EXP/R_Ankle_EXP/R_Foot_EXP/R_Foot_END_EXP
+    m_Weight: 1
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Index_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Index_EXP/L_Index_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Index_EXP/L_Index_Mid_EXP/L_Index_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Middle_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Middle_EXP/L_Middle_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Middle_EXP/L_Middle_Mid_EXP/L_Middle_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Pinky_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Pinky_EXP/L_Pinky_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Pinky_EXP/L_Pinky_Mid_EXP/L_Pinky_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Ring_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Ring_EXP/L_Ring_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Ring_EXP/L_Ring_Mid_EXP/L_Ring_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Thumb_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Thumb_EXP/L_Thumb_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/L_Clavicle_EXP/L_Shoulder_EXP/L_Elbow_EXP/L_Wrist_EXP/L_Thumb_EXP/L_Thumb_Mid_EXP/L_Thumb_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/Neck_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/Neck_EXP/Head_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Index_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Index_EXP/R_Index_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Index_EXP/R_Index_Mid_EXP/R_Index_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Middle_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Middle_EXP/R_Middle_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Middle_EXP/R_Middle_Mid_EXP/R_Middle_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Pinky_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Pinky_EXP/R_Pinky_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Pinky_EXP/R_Pinky_Mid_EXP/R_Pinky_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Ring_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Ring_EXP/R_Ring_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Ring_EXP/R_Ring_Mid_EXP/R_Ring_END_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Thumb_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Thumb_EXP/R_Thumb_Mid_EXP
+    m_Weight: 0
+  - m_Path: Root_EXP/Hips_EXP/Spine_01_EXP/Spine_02_EXP/Spine_03_EXP/Chest_EXP/R_Clavicle_EXP/R_Shoulder_EXP/R_Elbow_EXP/R_Wrist_EXP/R_Thumb_EXP/R_Thumb_Mid_EXP/R_Thumb_END_EXP
+    m_Weight: 0
