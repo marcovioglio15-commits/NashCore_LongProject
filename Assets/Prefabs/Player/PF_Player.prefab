@@ -49,15 +49,23 @@ MonoBehaviour:
   masterPreset: {fileID: 11400000, guid: 2aa7920f2d0dab444bbb97e34b3f90d8, type: 2}
   gizmoRadius: 2
   weaponReference: {fileID: 6701674403326256358}
-  animatorComponent: {fileID: 0}
+  animatorComponent: {fileID: 3375395559904907071}
   drawAnimationDebugGizmos: 1
   animationDebugAxisLength: 0.75
+  runtimeVisualBridgePrefab: {fileID: 919132149155446097, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+  spawnRuntimeVisualBridgeWhenAnimatorMissing: 1
+  runtimeVisualBridgeSyncRotation: 1
+  runtimeVisualBridgeOffset: {x: 0, y: 0, z: 0}
+  drawRuntimeVisualBridgeGizmo: 1
+  bakeAnimatorCompanion: 0
+  bakeElementalTrailAttachedVfxReference: 1
+  bakePowerUpVfxEntityPrefabs: 1
   elementalTrailAttachedVfxPrefab: {fileID: 5679156216372977872, guid: 92d93d035892fff40a63205dfd234520, type: 3}
   elementalTrailAttachedVfxScaleMultiplier: 1
-  maxIdenticalOneShotVfxPerCell: 3
+  maxIdenticalOneShotVfxPerCell: 1
   oneShotVfxCellSize: 1.5
   maxAttachedElementalVfxPerTarget: 1
-  maxActiveOneShotPowerUpVfx: 400
+  maxActiveOneShotPowerUpVfx: 300
   refreshAttachedElementalVfxLifetimeOnCapHit: 1
 --- !u!1 &9149674250152697951
 GameObject:
@@ -362,6 +370,22 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+      propertyPath: m_Avatar
+      value: 
+      objectReference: {fileID: 9000000, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+    - target: {fileID: 5866666021909216657, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: d668587abcbd5084f96f693fed712a69, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+      propertyPath: m_WarningMessage
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5963873716064003169, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
       propertyPath: m_Layer
       value: 3
@@ -387,6 +411,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+--- !u!95 &3375395559904907071 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+  m_PrefabInstance: {fileID: 9204589943933940398}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8662670259535074629 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}

@@ -246,9 +246,9 @@ public struct PlayerPowerUpVfxPooled : IComponentData
 }
 
 /// <summary>
-/// Managed reference to the source prefab used by the Elemental Trail attached VFX fallback.
+/// Runtime-safe Unity object reference to the source prefab used by the Elemental Trail attached VFX fallback.
 /// </summary>
-public sealed class PlayerElementalTrailAttachedVfxPrefabReference : IComponentData
+public struct PlayerElementalTrailAttachedVfxPrefabReference : IComponentData
 {
-    public GameObject Prefab;
+    public UnityObjectRef<GameObject> Prefab;
 }

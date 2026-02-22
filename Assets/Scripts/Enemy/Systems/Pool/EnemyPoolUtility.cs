@@ -2,6 +2,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 #region Utilities
 /// <summary>
@@ -37,6 +38,7 @@ public static class EnemyPoolUtility
             entityManager.SetComponentData(enemyEntity, ownerSpawner);
 
             ParkEnemy(entityManager, enemyEntity);
+            ResetVisualRuntimeState(entityManager, enemyEntity, 0);
             entityManager.SetComponentEnabled<EnemyActive>(enemyEntity, false);
         }
 
@@ -77,8 +79,53 @@ public static class EnemyPoolUtility
                 SpawnerEntity = Entity.Null
             });
 
+        if (entityManager.HasComponent<EnemyVisualConfig>(enemyEntity) == false)
+            entityManager.AddComponentData(enemyEntity, new EnemyVisualConfig
+            {
+                Mode = EnemyVisualMode.GpuBaked,
+                AnimationSpeed = 1f,
+                GpuLoopDuration = 1f,
+                MaxVisibleDistance = 55f,
+                VisibleDistanceHysteresis = 6f,
+                UseDistanceCulling = 1
+            });
+
+        if (entityManager.HasComponent<EnemyVisualRuntimeState>(enemyEntity) == false)
+            entityManager.AddComponentData(enemyEntity, new EnemyVisualRuntimeState
+            {
+                AnimationTime = 0f,
+                LastDistanceToPlayer = 0f,
+                IsVisible = 1,
+                CompanionInitialized = 0
+            });
+
         if (entityManager.HasComponent<EnemyActive>(enemyEntity) == false)
             entityManager.AddComponent<EnemyActive>(enemyEntity);
+
+        bool hasCompanionVisualTag = entityManager.HasComponent<EnemyVisualCompanionAnimator>(enemyEntity);
+        bool hasGpuVisualTag = entityManager.HasComponent<EnemyVisualGpuBaked>(enemyEntity);
+
+        if (hasCompanionVisualTag || hasGpuVisualTag)
+            return;
+
+        EnemyVisualMode visualMode = EnemyVisualMode.GpuBaked;
+
+        if (entityManager.HasComponent<EnemyVisualConfig>(enemyEntity))
+            visualMode = entityManager.GetComponentData<EnemyVisualConfig>(enemyEntity).Mode;
+
+        switch (visualMode)
+        {
+            case EnemyVisualMode.CompanionAnimator:
+                if (entityManager.HasComponent<Animator>(enemyEntity))
+                    entityManager.AddComponent<EnemyVisualCompanionAnimator>(enemyEntity);
+                else
+                    entityManager.AddComponent<EnemyVisualGpuBaked>(enemyEntity);
+                break;
+
+            default:
+                entityManager.AddComponent<EnemyVisualGpuBaked>(enemyEntity);
+                break;
+        }
     }
 
     public static void ParkEnemy(EntityManager entityManager, Entity enemyEntity)
@@ -89,6 +136,19 @@ public static class EnemyPoolUtility
         LocalTransform parkedTransform = entityManager.GetComponentData<LocalTransform>(enemyEntity);
         parkedTransform.Position = ParkingPosition;
         entityManager.SetComponentData(enemyEntity, parkedTransform);
+    }
+
+    public static void ResetVisualRuntimeState(EntityManager entityManager, Entity enemyEntity, byte isVisible)
+    {
+        if (entityManager.HasComponent<EnemyVisualRuntimeState>(enemyEntity) == false)
+            return;
+
+        EnemyVisualRuntimeState visualRuntimeState = entityManager.GetComponentData<EnemyVisualRuntimeState>(enemyEntity);
+        visualRuntimeState.AnimationTime = 0f;
+        visualRuntimeState.LastDistanceToPlayer = 0f;
+        visualRuntimeState.IsVisible = isVisible;
+        visualRuntimeState.CompanionInitialized = 0;
+        entityManager.SetComponentData(enemyEntity, visualRuntimeState);
     }
     #endregion
 

@@ -70,6 +70,7 @@ public partial struct EnemyFinalizeDespawnSystem : ISystem
                     entityManager.SetComponentData(enemyEntity, elementalRuntime);
                 }
 
+                EnemyPoolUtility.ResetVisualRuntimeState(entityManager, enemyEntity, 0);
                 EnemyPoolUtility.ParkEnemy(entityManager, enemyEntity);
                 entityManager.SetComponentEnabled<EnemyActive>(enemyEntity, false);
 

@@ -1,0 +1,534 @@
+using System.Collections.Generic;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Rendering;
+using Unity.Transforms;
+using UnityEngine;
+
+/// <summary>
+/// Spawns and synchronizes a managed player visual GameObject when no valid Animator companion is available.
+/// </summary>
+[UpdateInGroup(typeof(PresentationSystemGroup))]
+[UpdateBefore(typeof(PlayerAnimatorSyncSystem))]
+public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
+{
+    #region Fields
+    private static readonly Dictionary<Entity, ManagedPlayerVisualInstance> managedInstances = new Dictionary<Entity, ManagedPlayerVisualInstance>(2);
+    private static readonly Dictionary<Entity, byte> appliedRenderHiddenState = new Dictionary<Entity, byte>(2);
+    private static readonly List<Entity> invalidOwnerEntities = new List<Entity>(4);
+    private static readonly List<Entity> hierarchyTraversalEntities = new List<Entity>(32);
+    private static readonly List<PendingAnimatorAssignment> pendingAnimatorAssignments = new List<PendingAnimatorAssignment>(2);
+    private static readonly List<PendingRenderVisibilityAssignment> pendingRenderVisibilityAssignments = new List<PendingRenderVisibilityAssignment>(2);
+#if UNITY_EDITOR
+    private static readonly HashSet<int> missingPrefabLogCache = new HashSet<int>();
+    private static readonly HashSet<int> missingAnimatorLogCache = new HashSet<int>();
+#endif
+    #endregion
+
+    #region Methods
+
+    #region Lifecycle
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerVisualRuntimeBridgeConfig>();
+        state.RequireForUpdate<LocalTransform>();
+    }
+
+    public void OnDestroy(ref SystemState state)
+    {
+        if (managedInstances.Count > 0)
+        {
+            Dictionary<Entity, ManagedPlayerVisualInstance>.Enumerator enumerator = managedInstances.GetEnumerator();
+
+            while (enumerator.MoveNext())
+            {
+                DestroyManagedInstance(enumerator.Current.Value);
+            }
+
+            enumerator.Dispose();
+        }
+
+        managedInstances.Clear();
+        appliedRenderHiddenState.Clear();
+        invalidOwnerEntities.Clear();
+        hierarchyTraversalEntities.Clear();
+        pendingAnimatorAssignments.Clear();
+        pendingRenderVisibilityAssignments.Clear();
+#if UNITY_EDITOR
+        missingPrefabLogCache.Clear();
+        missingAnimatorLogCache.Clear();
+#endif
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        state.CompleteDependency();
+
+        EntityManager entityManager = state.EntityManager;
+        CleanupInvalidOwnerInstances(entityManager);
+        pendingAnimatorAssignments.Clear();
+        pendingRenderVisibilityAssignments.Clear();
+
+        foreach ((RefRO<PlayerVisualRuntimeBridgeConfig> visualBridgeConfig,
+                  RefRO<LocalTransform> playerTransform,
+                  Entity playerEntity)
+                 in SystemAPI.Query<RefRO<PlayerVisualRuntimeBridgeConfig>,
+                                    RefRO<LocalTransform>>()
+                             .WithEntityAccess())
+        {
+            Animator animatorComponent = ResolveAnimatorComponent(entityManager, playerEntity);
+            bool runtimeBridgeEnabled = visualBridgeConfig.ValueRO.SpawnWhenAnimatorMissing != 0;
+            ManagedPlayerVisualInstance runtimeInstance;
+            bool hasRuntimeInstance = managedInstances.TryGetValue(playerEntity, out runtimeInstance);
+            bool shouldUseRuntimeBridge = false;
+
+            if (runtimeBridgeEnabled)
+            {
+                if (hasRuntimeInstance)
+                {
+                    shouldUseRuntimeBridge = true;
+                }
+                else if (animatorComponent == null)
+                {
+                    shouldUseRuntimeBridge = true;
+                }
+            }
+
+            if (shouldUseRuntimeBridge)
+            {
+                ManagedPlayerVisualInstance managedInstance = GetOrCreateManagedInstance(playerEntity, visualBridgeConfig.ValueRO.VisualPrefab.Value);
+
+                if (managedInstance != null && managedInstance.AnimatorComponent != null)
+                {
+                    QueueAnimatorAssignment(entityManager, playerEntity, managedInstance.AnimatorComponent);
+                }
+
+                runtimeInstance = managedInstance;
+                hasRuntimeInstance = managedInstance != null;
+            }
+            else if (hasRuntimeInstance)
+            {
+                DestroyManagedInstance(runtimeInstance);
+                managedInstances.Remove(playerEntity);
+                runtimeInstance = null;
+                hasRuntimeInstance = false;
+            }
+
+            if (hasRuntimeInstance &&
+                (runtimeInstance == null || runtimeInstance.InstanceObject == null || runtimeInstance.RootTransform == null))
+            {
+                DestroyManagedInstance(runtimeInstance);
+                managedInstances.Remove(playerEntity);
+                runtimeInstance = null;
+                hasRuntimeInstance = false;
+            }
+
+            if (hasRuntimeInstance)
+            {
+                SyncManagedInstanceTransform(runtimeInstance,
+                                             playerTransform.ValueRO,
+                                             visualBridgeConfig.ValueRO);
+            }
+
+            QueueRenderVisibilityAssignment(playerEntity, hasRuntimeInstance);
+        }
+
+        ApplyQueuedAnimatorAssignments(entityManager);
+        ApplyQueuedRenderVisibilityAssignments(entityManager);
+    }
+    #endregion
+
+    #region Helpers
+    private static void QueueAnimatorAssignment(EntityManager entityManager, Entity playerEntity, Animator targetAnimatorComponent)
+    {
+        if (targetAnimatorComponent == null)
+        {
+            return;
+        }
+
+        if (entityManager.HasComponent<Animator>(playerEntity))
+        {
+            Animator currentAnimatorComponent = entityManager.GetComponentObject<Animator>(playerEntity);
+
+            if (currentAnimatorComponent == targetAnimatorComponent)
+            {
+                return;
+            }
+        }
+
+        for (int assignmentIndex = 0; assignmentIndex < pendingAnimatorAssignments.Count; assignmentIndex++)
+        {
+            PendingAnimatorAssignment existingAssignment = pendingAnimatorAssignments[assignmentIndex];
+
+            if (existingAssignment.PlayerEntity != playerEntity)
+            {
+                continue;
+            }
+
+            existingAssignment.AnimatorComponent = targetAnimatorComponent;
+            pendingAnimatorAssignments[assignmentIndex] = existingAssignment;
+            return;
+        }
+
+        pendingAnimatorAssignments.Add(new PendingAnimatorAssignment
+        {
+            PlayerEntity = playerEntity,
+            AnimatorComponent = targetAnimatorComponent
+        });
+    }
+
+    private static void ApplyQueuedAnimatorAssignments(EntityManager entityManager)
+    {
+        if (pendingAnimatorAssignments.Count <= 0)
+        {
+            return;
+        }
+
+        for (int assignmentIndex = 0; assignmentIndex < pendingAnimatorAssignments.Count; assignmentIndex++)
+        {
+            PendingAnimatorAssignment assignment = pendingAnimatorAssignments[assignmentIndex];
+
+            if (entityManager.Exists(assignment.PlayerEntity) == false)
+            {
+                continue;
+            }
+
+            if (assignment.AnimatorComponent == null)
+            {
+                continue;
+            }
+
+            if (entityManager.HasComponent<Animator>(assignment.PlayerEntity))
+            {
+                Animator currentAnimatorComponent = entityManager.GetComponentObject<Animator>(assignment.PlayerEntity);
+
+                if (currentAnimatorComponent == assignment.AnimatorComponent)
+                {
+                    continue;
+                }
+
+                entityManager.RemoveComponent<Animator>(assignment.PlayerEntity);
+            }
+
+            entityManager.AddComponentObject(assignment.PlayerEntity, assignment.AnimatorComponent);
+        }
+
+        pendingAnimatorAssignments.Clear();
+    }
+
+    private static void QueueRenderVisibilityAssignment(Entity playerEntity, bool hideRendering)
+    {
+        byte hideRenderingByte = hideRendering ? (byte)1 : (byte)0;
+
+        for (int assignmentIndex = 0; assignmentIndex < pendingRenderVisibilityAssignments.Count; assignmentIndex++)
+        {
+            PendingRenderVisibilityAssignment existingAssignment = pendingRenderVisibilityAssignments[assignmentIndex];
+
+            if (existingAssignment.PlayerEntity != playerEntity)
+            {
+                continue;
+            }
+
+            existingAssignment.HideRendering = hideRenderingByte;
+            pendingRenderVisibilityAssignments[assignmentIndex] = existingAssignment;
+            return;
+        }
+
+        pendingRenderVisibilityAssignments.Add(new PendingRenderVisibilityAssignment
+        {
+            PlayerEntity = playerEntity,
+            HideRendering = hideRenderingByte
+        });
+    }
+
+    private static void ApplyQueuedRenderVisibilityAssignments(EntityManager entityManager)
+    {
+        if (pendingRenderVisibilityAssignments.Count <= 0)
+        {
+            return;
+        }
+
+        for (int assignmentIndex = 0; assignmentIndex < pendingRenderVisibilityAssignments.Count; assignmentIndex++)
+        {
+            PendingRenderVisibilityAssignment assignment = pendingRenderVisibilityAssignments[assignmentIndex];
+
+            if (entityManager.Exists(assignment.PlayerEntity) == false)
+            {
+                appliedRenderHiddenState.Remove(assignment.PlayerEntity);
+                continue;
+            }
+
+            byte appliedState;
+
+            if (appliedRenderHiddenState.TryGetValue(assignment.PlayerEntity, out appliedState) &&
+                appliedState == assignment.HideRendering)
+            {
+                continue;
+            }
+
+            SetHierarchyRenderingHidden(entityManager, assignment.PlayerEntity, assignment.HideRendering != 0);
+            appliedRenderHiddenState[assignment.PlayerEntity] = assignment.HideRendering;
+        }
+
+        pendingRenderVisibilityAssignments.Clear();
+    }
+
+    private static void SetHierarchyRenderingHidden(EntityManager entityManager, Entity rootEntity, bool hidden)
+    {
+        CollectHierarchyEntities(entityManager, rootEntity, hierarchyTraversalEntities);
+
+        for (int entityIndex = 0; entityIndex < hierarchyTraversalEntities.Count; entityIndex++)
+        {
+            Entity hierarchyEntity = hierarchyTraversalEntities[entityIndex];
+
+            if (entityManager.HasComponent<MaterialMeshInfo>(hierarchyEntity) == false)
+            {
+                continue;
+            }
+
+            bool hasDisableRendering = entityManager.HasComponent<DisableRendering>(hierarchyEntity);
+
+            if (hidden)
+            {
+                if (hasDisableRendering == false)
+                {
+                    entityManager.AddComponent<DisableRendering>(hierarchyEntity);
+                }
+
+                continue;
+            }
+
+            if (hasDisableRendering)
+            {
+                entityManager.RemoveComponent<DisableRendering>(hierarchyEntity);
+            }
+        }
+    }
+
+    private static void CollectHierarchyEntities(EntityManager entityManager, Entity rootEntity, List<Entity> outputEntities)
+    {
+        outputEntities.Clear();
+
+        if (IsValidEntity(entityManager, rootEntity) == false)
+        {
+            return;
+        }
+
+        outputEntities.Add(rootEntity);
+
+        for (int entityIndex = 0; entityIndex < outputEntities.Count; entityIndex++)
+        {
+            Entity currentEntity = outputEntities[entityIndex];
+
+            if (entityManager.HasBuffer<Child>(currentEntity) == false)
+            {
+                continue;
+            }
+
+            DynamicBuffer<Child> childrenBuffer = entityManager.GetBuffer<Child>(currentEntity);
+
+            for (int childIndex = 0; childIndex < childrenBuffer.Length; childIndex++)
+            {
+                Entity childEntity = childrenBuffer[childIndex].Value;
+
+                if (entityManager.Exists(childEntity))
+                {
+                    outputEntities.Add(childEntity);
+                }
+            }
+        }
+    }
+
+    private static Animator ResolveAnimatorComponent(EntityManager entityManager, Entity playerEntity)
+    {
+        if (entityManager.HasComponent<Animator>(playerEntity) == false)
+        {
+            return null;
+        }
+
+        return entityManager.GetComponentObject<Animator>(playerEntity);
+    }
+
+    private static ManagedPlayerVisualInstance GetOrCreateManagedInstance(Entity playerEntity, GameObject runtimeVisualPrefab)
+    {
+        ManagedPlayerVisualInstance managedInstance;
+
+        if (managedInstances.TryGetValue(playerEntity, out managedInstance))
+        {
+            bool requiresRebuild = managedInstance == null ||
+                                   managedInstance.InstanceObject == null ||
+                                   managedInstance.SourcePrefab != runtimeVisualPrefab;
+
+            if (requiresRebuild == false)
+            {
+                return managedInstance;
+            }
+
+            DestroyManagedInstance(managedInstance);
+            managedInstances.Remove(playerEntity);
+        }
+
+        if (runtimeVisualPrefab == null)
+        {
+#if UNITY_EDITOR
+            if (missingPrefabLogCache.Add(playerEntity.Index))
+            {
+                Debug.LogWarning("[PlayerManagedVisualAnimatorBridgeSystem] Runtime visual bridge prefab is missing. Assign a prefab asset on PlayerAuthoring.RuntimeVisualBridgePrefab.");
+            }
+#endif
+            return null;
+        }
+
+        GameObject instanceObject = Object.Instantiate(runtimeVisualPrefab);
+
+        if (instanceObject == null)
+        {
+            return null;
+        }
+
+        Animator animatorComponent = instanceObject.GetComponentInChildren<Animator>(true);
+
+        if (animatorComponent == null)
+        {
+#if UNITY_EDITOR
+            if (missingAnimatorLogCache.Add(playerEntity.Index))
+            {
+                Debug.LogWarning(string.Format("[PlayerManagedVisualAnimatorBridgeSystem] Runtime visual bridge prefab '{0}' has no Animator in hierarchy.", runtimeVisualPrefab.name));
+            }
+#endif
+            Object.Destroy(instanceObject);
+            return null;
+        }
+
+        instanceObject.name = string.Format("{0}_RuntimeVisual", runtimeVisualPrefab.name);
+
+        managedInstance = new ManagedPlayerVisualInstance
+        {
+            SourcePrefab = runtimeVisualPrefab,
+            InstanceObject = instanceObject,
+            RootTransform = instanceObject.transform,
+            AnimatorComponent = animatorComponent
+        };
+
+        managedInstances[playerEntity] = managedInstance;
+        return managedInstance;
+    }
+
+    private static void SyncManagedInstanceTransform(ManagedPlayerVisualInstance runtimeInstance,
+                                                     in LocalTransform playerTransform,
+                                                     in PlayerVisualRuntimeBridgeConfig visualBridgeConfig)
+    {
+        if (runtimeInstance == null || runtimeInstance.RootTransform == null)
+        {
+            return;
+        }
+
+        float3 rotatedOffset = math.rotate(playerTransform.Rotation, visualBridgeConfig.PositionOffset);
+        float3 worldPosition = playerTransform.Position + rotatedOffset;
+        runtimeInstance.RootTransform.position = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
+
+        if (visualBridgeConfig.SyncRotation != 0)
+        {
+            quaternion rotation = playerTransform.Rotation;
+            runtimeInstance.RootTransform.rotation = new Quaternion(rotation.value.x,
+                                                                    rotation.value.y,
+                                                                    rotation.value.z,
+                                                                    rotation.value.w);
+        }
+    }
+
+    private static void CleanupInvalidOwnerInstances(EntityManager entityManager)
+    {
+        if (managedInstances.Count <= 0)
+        {
+            return;
+        }
+
+        invalidOwnerEntities.Clear();
+        Dictionary<Entity, ManagedPlayerVisualInstance>.Enumerator enumerator = managedInstances.GetEnumerator();
+
+        while (enumerator.MoveNext())
+        {
+            Entity ownerEntity = enumerator.Current.Key;
+
+            if (IsValidEntity(entityManager, ownerEntity))
+            {
+                continue;
+            }
+
+            DestroyManagedInstance(enumerator.Current.Value);
+            invalidOwnerEntities.Add(ownerEntity);
+        }
+
+        enumerator.Dispose();
+
+        for (int index = 0; index < invalidOwnerEntities.Count; index++)
+        {
+            Entity invalidOwnerEntity = invalidOwnerEntities[index];
+            managedInstances.Remove(invalidOwnerEntity);
+            appliedRenderHiddenState.Remove(invalidOwnerEntity);
+        }
+
+        invalidOwnerEntities.Clear();
+    }
+
+    private static void DestroyManagedInstance(ManagedPlayerVisualInstance managedInstance)
+    {
+        if (managedInstance == null || managedInstance.InstanceObject == null)
+        {
+            return;
+        }
+
+        Object.Destroy(managedInstance.InstanceObject);
+        managedInstance.InstanceObject = null;
+        managedInstance.RootTransform = null;
+        managedInstance.AnimatorComponent = null;
+        managedInstance.SourcePrefab = null;
+    }
+
+    private static bool IsValidEntity(EntityManager entityManager, Entity entity)
+    {
+        if (entity == Entity.Null)
+        {
+            return false;
+        }
+
+        if (entity.Index < 0)
+        {
+            return false;
+        }
+
+        if (entityManager.Exists(entity) == false)
+        {
+            return false;
+        }
+
+        return true;
+    }
+    #endregion
+
+    #region Nested Types
+    private sealed class ManagedPlayerVisualInstance
+    {
+        public GameObject SourcePrefab;
+        public GameObject InstanceObject;
+        public Transform RootTransform;
+        public Animator AnimatorComponent;
+    }
+
+    private struct PendingAnimatorAssignment
+    {
+        public Entity PlayerEntity;
+        public Animator AnimatorComponent;
+    }
+
+    private struct PendingRenderVisibilityAssignment
+    {
+        public Entity PlayerEntity;
+        public byte HideRendering;
+    }
+    #endregion
+
+    #endregion
+}

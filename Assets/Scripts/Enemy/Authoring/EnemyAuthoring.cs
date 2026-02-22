@@ -12,6 +12,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private static readonly Color ContactGizmoColor = new Color(1f, 0.25f, 0.25f, 0.9f);
     private static readonly Color SeparationGizmoColor = new Color(0.2f, 0.6f, 1f, 0.9f);
     private static readonly Color BodyGizmoColor = new Color(1f, 0.9f, 0.2f, 0.9f);
+    private static readonly Color VisualDistanceGizmoColor = new Color(0.15f, 1f, 0.75f, 0.9f);
     private static readonly Color ElementalAnchorGizmoColor = new Color(1f, 0.4f, 0.8f, 0.9f);
     #endregion
 
@@ -52,6 +53,28 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Tooltip("Maximum and initial health assigned to this enemy when spawned from pool.")]
     [SerializeField] private float maxHealth = 30f;
 
+    [Header("Visual")]
+    [Tooltip("Visual runtime path: managed companion Animator (few actors) or GPU-baked playback (crowd scale).")]
+    [SerializeField] private EnemyVisualMode visualMode = EnemyVisualMode.GpuBaked;
+
+    [Tooltip("Playback speed multiplier used by both companion and GPU-baked visual paths.")]
+    [SerializeField] private float visualAnimationSpeed = 1f;
+
+    [Tooltip("Loop duration in seconds used by GPU-baked playback time wrapping.")]
+    [SerializeField] private float gpuAnimationLoopDuration = 1f;
+
+    [Tooltip("Enable distance-based visual culling while gameplay simulation remains fully active.")]
+    [SerializeField] private bool enableDistanceCulling = true;
+
+    [Tooltip("Maximum planar distance from player where visuals stay visible. Set to 0 to keep always visible.")]
+    [SerializeField] private float maxVisibleDistance = 55f;
+
+    [Tooltip("Additional distance band used to avoid visual popping when crossing the culling boundary.")]
+    [SerializeField] private float visibleDistanceHysteresis = 6f;
+
+    [Tooltip("Optional Animator used when visual mode is CompanionAnimator.")]
+    [SerializeField] private Animator animatorComponent;
+
     [Header("VFX Anchors")]
     [Tooltip("Optional transform used as anchor for attached elemental status VFX.")]
     [SerializeField] private Transform elementalVfxAnchor;
@@ -65,6 +88,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     [Tooltip("Draw the body radius preview used for projectile hit checks.")]
     [SerializeField] private bool drawBodyRadiusGizmo;
+
+    [Tooltip("Draw the visual distance culling radius preview when enabled.")]
+    [SerializeField] private bool drawVisualDistanceGizmo = true;
     #endregion
 
     #endregion
@@ -150,6 +176,62 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public EnemyVisualMode VisualMode
+    {
+        get
+        {
+            return visualMode;
+        }
+    }
+
+    public float VisualAnimationSpeed
+    {
+        get
+        {
+            return visualAnimationSpeed;
+        }
+    }
+
+    public float GpuAnimationLoopDuration
+    {
+        get
+        {
+            return gpuAnimationLoopDuration;
+        }
+    }
+
+    public bool EnableDistanceCulling
+    {
+        get
+        {
+            return enableDistanceCulling;
+        }
+    }
+
+    public float MaxVisibleDistance
+    {
+        get
+        {
+            return maxVisibleDistance;
+        }
+    }
+
+    public float VisibleDistanceHysteresis
+    {
+        get
+        {
+            return visibleDistanceHysteresis;
+        }
+    }
+
+    public Animator AnimatorComponent
+    {
+        get
+        {
+            return animatorComponent;
+        }
+    }
+
     public Transform ElementalVfxAnchor
     {
         get
@@ -193,6 +275,29 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
         if (maxHealth < 1f)
             maxHealth = 1f;
+
+        switch (visualMode)
+        {
+            case EnemyVisualMode.CompanionAnimator:
+            case EnemyVisualMode.GpuBaked:
+                break;
+
+            default:
+                visualMode = EnemyVisualMode.GpuBaked;
+                break;
+        }
+
+        if (visualAnimationSpeed < 0f)
+            visualAnimationSpeed = 0f;
+
+        if (gpuAnimationLoopDuration < 0.05f)
+            gpuAnimationLoopDuration = 0.05f;
+
+        if (maxVisibleDistance < 0f)
+            maxVisibleDistance = 0f;
+
+        if (visibleDistanceHysteresis < 0f)
+            visibleDistanceHysteresis = 0f;
     }
 
     private void OnDrawGizmosSelected()
@@ -228,6 +333,17 @@ public sealed class EnemyAuthoring : MonoBehaviour
             if (radius > 0f)
             {
                 Gizmos.color = BodyGizmoColor;
+                Gizmos.DrawWireSphere(center, radius);
+            }
+        }
+
+        if (drawVisualDistanceGizmo && enableDistanceCulling)
+        {
+            float radius = math.max(0f, maxVisibleDistance);
+
+            if (radius > 0f)
+            {
+                Gizmos.color = VisualDistanceGizmoColor;
                 Gizmos.DrawWireSphere(center, radius);
             }
         }
@@ -288,6 +404,38 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             SpawnVersion = 0u
         });
 
+        EnemyVisualMode bakedVisualMode = ResolveBakedVisualMode(authoring, out Animator resolvedAnimatorComponent);
+
+        AddComponent(entity, new EnemyVisualConfig
+        {
+            Mode = bakedVisualMode,
+            AnimationSpeed = math.max(0f, authoring.VisualAnimationSpeed),
+            GpuLoopDuration = math.max(0.05f, authoring.GpuAnimationLoopDuration),
+            MaxVisibleDistance = math.max(0f, authoring.MaxVisibleDistance),
+            VisibleDistanceHysteresis = math.max(0f, authoring.VisibleDistanceHysteresis),
+            UseDistanceCulling = authoring.EnableDistanceCulling ? (byte)1 : (byte)0
+        });
+
+        AddComponent(entity, new EnemyVisualRuntimeState
+        {
+            AnimationTime = 0f,
+            LastDistanceToPlayer = 0f,
+            IsVisible = 1,
+            CompanionInitialized = 0
+        });
+
+        switch (bakedVisualMode)
+        {
+            case EnemyVisualMode.CompanionAnimator:
+                AddComponentObject(entity, resolvedAnimatorComponent);
+                AddComponent<EnemyVisualCompanionAnimator>(entity);
+                break;
+
+            default:
+                AddComponent<EnemyVisualGpuBaked>(entity);
+                break;
+        }
+
         AddComponent(entity, new EnemyOwnerSpawner
         {
             SpawnerEntity = Entity.Null
@@ -305,6 +453,62 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
         AddComponent<EnemyActive>(entity);
         SetComponentEnabled<EnemyActive>(entity, false);
+    }
+    #endregion
+
+    #region Helpers
+    private static EnemyVisualMode ResolveBakedVisualMode(EnemyAuthoring authoring, out Animator resolvedAnimatorComponent)
+    {
+        resolvedAnimatorComponent = null;
+
+        if (authoring == null)
+            return EnemyVisualMode.GpuBaked;
+
+        EnemyVisualMode requestedMode = authoring.VisualMode;
+
+        switch (requestedMode)
+        {
+            case EnemyVisualMode.CompanionAnimator:
+                resolvedAnimatorComponent = ResolveAnimatorComponent(authoring);
+
+                if (resolvedAnimatorComponent != null)
+                    return EnemyVisualMode.CompanionAnimator;
+
+#if UNITY_EDITOR
+                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] CompanionAnimator requested on '{0}', but no valid scene Animator was resolved. Falling back to GpuBaked mode.",
+                                               authoring.name),
+                                 authoring);
+#endif
+                return EnemyVisualMode.GpuBaked;
+
+            case EnemyVisualMode.GpuBaked:
+                return EnemyVisualMode.GpuBaked;
+
+            default:
+                return EnemyVisualMode.GpuBaked;
+        }
+    }
+
+    private static Animator ResolveAnimatorComponent(EnemyAuthoring authoring)
+    {
+        if (authoring == null)
+            return null;
+
+        Animator assignedAnimator = authoring.AnimatorComponent;
+
+        if (assignedAnimator != null &&
+            assignedAnimator.gameObject != null &&
+            assignedAnimator.gameObject.scene.IsValid())
+            return assignedAnimator;
+
+        Animator fallbackAnimator = authoring.GetComponentInChildren<Animator>(true);
+
+        if (fallbackAnimator != null &&
+            fallbackAnimator.gameObject != null &&
+            fallbackAnimator.gameObject.scene.IsValid())
+            return fallbackAnimator;
+
+        return null;
     }
     #endregion
 

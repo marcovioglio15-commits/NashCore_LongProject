@@ -99,12 +99,8 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
         if (entityManager.HasComponent<PlayerElementalTrailAttachedVfxPrefabReference>(playerEntity) == false)
             return null;
 
-        PlayerElementalTrailAttachedVfxPrefabReference prefabReference = entityManager.GetComponentObject<PlayerElementalTrailAttachedVfxPrefabReference>(playerEntity);
-
-        if (prefabReference == null)
-            return null;
-
-        return prefabReference.Prefab;
+        PlayerElementalTrailAttachedVfxPrefabReference prefabReference = entityManager.GetComponentData<PlayerElementalTrailAttachedVfxPrefabReference>(playerEntity);
+        return prefabReference.Prefab.Value;
     }
 
     private static ManagedTrailVfxInstance GetOrCreateManagedInstance(Entity playerEntity, GameObject trailPrefab)

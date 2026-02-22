@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c22c955f15805040a165c9124d57ccd, type: 3}
   m_Name: PlayerAnimationBindingsPreset
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimationBindingsPreset
-  m_PresetId: 974a47e3b1c8409ead25022795e7bbe2
-  m_PresetName: PlayerAnimationBindingsPreset
-  m_Description: 
-  m_Version: 1.0.0
+  presetId: 974a47e3b1c8409ead25022795e7bbe2
+  presetName: PlayerAnimationBindingsPreset
+  description: 
+  version: 1.0.0
   animatorController: {fileID: 9100000, guid: d668587abcbd5084f96f693fed712a69, type: 2}
   upperBodyAvatarMask: {fileID: 31900000, guid: b366f425f1efca34aba1f310df5dc233, type: 2}
   lowerBodyAvatarMask: {fileID: 31900000, guid: aeb923ceb29199c4696bcc7457d8250f, type: 2}
@@ -43,10 +43,10 @@ MonoBehaviour:
   proceduralLeanSmoothing: 10
   proceduralLeanParameter: ProcLean
   idleClip: {fileID: 0}
-  moveForwardClip: {fileID: 0}
-  moveBackwardClip: {fileID: 0}
-  moveLeftClip: {fileID: 0}
-  moveRightClip: {fileID: 0}
+  moveForwardClip: {fileID: -471824937721752958, guid: a28a3cd21ddaad140a8ed7162f543003, type: 3}
+  moveBackwardClip: {fileID: -3378968417775082844, guid: 73a00f7e2b15d9c48a9e64a530c810cb, type: 3}
+  moveLeftClip: {fileID: 6487320471808982551, guid: 42c00185f23dbaf4d9b02d1deea7d8d7, type: 3}
+  moveRightClip: {fileID: -1092795981883647802, guid: 84d9d54e9b6dcf64191882c1c1fc5465, type: 3}
   aimForwardClip: {fileID: 0}
   aimBackwardClip: {fileID: 0}
   aimLeftClip: {fileID: 0}

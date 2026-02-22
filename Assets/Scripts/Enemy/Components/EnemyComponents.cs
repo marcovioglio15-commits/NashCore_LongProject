@@ -38,6 +38,53 @@ public struct EnemyRuntimeState : IComponentData
 }
 
 /// <summary>
+/// Selects which visual runtime path an enemy should use.
+/// </summary>
+public enum EnemyVisualMode : byte
+{
+    CompanionAnimator = 0,
+    GpuBaked = 1
+}
+
+/// <summary>
+/// Stores immutable visual settings used by presentation systems.
+/// </summary>
+public struct EnemyVisualConfig : IComponentData
+{
+    public EnemyVisualMode Mode;
+    public float AnimationSpeed;
+    public float GpuLoopDuration;
+    public float MaxVisibleDistance;
+    public float VisibleDistanceHysteresis;
+    public byte UseDistanceCulling;
+}
+
+/// <summary>
+/// Stores mutable visual runtime values for culling and animation playback.
+/// </summary>
+public struct EnemyVisualRuntimeState : IComponentData
+{
+    public float AnimationTime;
+    public float LastDistanceToPlayer;
+    public byte IsVisible;
+    public byte CompanionInitialized;
+}
+
+/// <summary>
+/// Tags enemies driven by managed companion Animator components.
+/// </summary>
+public struct EnemyVisualCompanionAnimator : IComponentData
+{
+}
+
+/// <summary>
+/// Tags enemies driven by GPU-baked animation playback data.
+/// </summary>
+public struct EnemyVisualGpuBaked : IComponentData
+{
+}
+
+/// <summary>
 /// Stores the owner spawner of an enemy entity.
 /// </summary>
 public struct EnemyOwnerSpawner : IComponentData

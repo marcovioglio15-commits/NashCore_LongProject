@@ -178,6 +178,8 @@ public partial struct EnemySpawnSystem : ISystem
                     entityManager.SetComponentData(enemyEntity, elementalRuntimeState);
                 }
 
+                EnemyPoolUtility.ResetVisualRuntimeState(entityManager, enemyEntity, 1);
+
                 if (entityManager.HasComponent<EnemyDespawnRequest>(enemyEntity))
                     entityManager.RemoveComponent<EnemyDespawnRequest>(enemyEntity);
 

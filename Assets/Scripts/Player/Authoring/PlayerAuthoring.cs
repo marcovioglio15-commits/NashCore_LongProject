@@ -20,6 +20,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     private static readonly Color ShootingGizmoColor = new Color(1f, 0.25f, 0.25f, 0.9f);
     private static readonly Color PowerUpBombGizmoColor = new Color(1f, 0.35f, 0.15f, 0.75f);
     private static readonly Color PowerUpDashGizmoColor = new Color(0.25f, 0.85f, 1f, 0.85f);
+    private static readonly Color RuntimeVisualBridgeGizmoColor = new Color(1f, 0.35f, 0.85f, 0.9f);
     private const float LookRadiusScale = 0.9f;
     #endregion
 
@@ -49,6 +50,32 @@ public sealed class PlayerAuthoring : MonoBehaviour
 
     [Tooltip("Length in meters for animation debug axes in Scene view.")]
     [SerializeField] private float animationDebugAxisLength = 0.75f;
+
+    [Header("Runtime Visual Bridge")]
+    [Tooltip("Optional prefab asset instantiated at runtime when no valid Animator companion exists. Use a visual-only prefab with Animator and full rig hierarchy.")]
+    [SerializeField] private GameObject runtimeVisualBridgePrefab;
+
+    [Tooltip("When enabled, spawns the runtime visual bridge only if Animator companion is missing or null at runtime.")]
+    [SerializeField] private bool spawnRuntimeVisualBridgeWhenAnimatorMissing = true;
+
+    [Tooltip("When enabled, runtime visual bridge follows ECS player rotation.")]
+    [SerializeField] private bool runtimeVisualBridgeSyncRotation = true;
+
+    [Tooltip("Local-space position offset applied to runtime visual bridge relative to ECS player transform.")]
+    [SerializeField] private Vector3 runtimeVisualBridgeOffset = Vector3.zero;
+
+    [Tooltip("Draws runtime visual bridge offset gizmo from player origin to target visual anchor.")]
+    [SerializeField] private bool drawRuntimeVisualBridgeGizmo = true;
+
+    [Header("Hybrid Bake Safety")]
+    [Tooltip("When enabled, bakes the Animator as a companion component for ECS-driven visual sync. Keep disabled for complex rig hierarchies and use Runtime Visual Bridge instead.")]
+    [SerializeField] private bool bakeAnimatorCompanion = false;
+
+    [Tooltip("When enabled, bakes the attached Elemental Trail prefab reference into ECS. Disable to isolate SubScene object-reference streaming issues.")]
+    [SerializeField] private bool bakeElementalTrailAttachedVfxReference = false;
+
+    [Tooltip("When enabled, converts power-up VFX prefabs into ECS prefab entities (explosion/proc/stack). Disable to isolate SubScene object-reference streaming issues.")]
+    [SerializeField] private bool bakePowerUpVfxEntityPrefabs = false;
 
     [Header("Power-Ups VFX")]
     [Tooltip("Optional attached VFX prefab activated while Elemental Trail passive is enabled.")]
@@ -121,6 +148,62 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return animationDebugAxisLength;
+        }
+    }
+
+    public GameObject RuntimeVisualBridgePrefab
+    {
+        get
+        {
+            return runtimeVisualBridgePrefab;
+        }
+    }
+
+    public bool SpawnRuntimeVisualBridgeWhenAnimatorMissing
+    {
+        get
+        {
+            return spawnRuntimeVisualBridgeWhenAnimatorMissing;
+        }
+    }
+
+    public bool RuntimeVisualBridgeSyncRotation
+    {
+        get
+        {
+            return runtimeVisualBridgeSyncRotation;
+        }
+    }
+
+    public Vector3 RuntimeVisualBridgeOffset
+    {
+        get
+        {
+            return runtimeVisualBridgeOffset;
+        }
+    }
+
+    public bool BakeAnimatorCompanion
+    {
+        get
+        {
+            return bakeAnimatorCompanion;
+        }
+    }
+
+    public bool BakeElementalTrailAttachedVfxReference
+    {
+        get
+        {
+            return bakeElementalTrailAttachedVfxReference;
+        }
+    }
+
+    public bool BakePowerUpVfxEntityPrefabs
+    {
+        get
+        {
+            return bakePowerUpVfxEntityPrefabs;
         }
     }
 
@@ -238,6 +321,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
         DrawCameraGizmo(controllerPreset);
         DrawPowerUpsGizmos();
         DrawAnimationDebugGizmo();
+        DrawRuntimeVisualBridgeGizmo();
     }
 
     /// <summary>
@@ -414,6 +498,23 @@ public sealed class PlayerAuthoring : MonoBehaviour
     }
 
     /// <summary>
+    /// Draws the runtime visual bridge anchor offset used by external animated visuals.
+    /// </summary>
+    private void DrawRuntimeVisualBridgeGizmo()
+    {
+        if (drawRuntimeVisualBridgeGizmo == false)
+            return;
+
+        Vector3 origin = transform.position + Vector3.up * 0.03f;
+        Vector3 rotatedOffset = transform.rotation * runtimeVisualBridgeOffset;
+        Vector3 target = origin + rotatedOffset;
+
+        Gizmos.color = RuntimeVisualBridgeGizmoColor;
+        Gizmos.DrawLine(origin, target);
+        Gizmos.DrawWireSphere(target, 0.08f);
+    }
+
+    /// <summary>
     /// Draws preview gizmos for currently loaded Bomb and Dash active tools.
     /// </summary>
     private void DrawPowerUpsGizmos()
@@ -585,24 +686,58 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         PlayerWorldLayersConfig worldLayersConfig = BuildWorldLayersConfig(authoring.MasterPreset);
         AddComponent(entity, worldLayersConfig);
         PlayerAnimationBindingsPreset animationBindingsPreset = authoring.MasterPreset != null ? authoring.MasterPreset.AnimationBindingsPreset : null;
+        Animator resolvedAnimatorComponent = ResolveAnimatorComponent(authoring);
+        GameObject resolvedRuntimeVisualBridgePrefab = ResolveRuntimeVisualBridgePrefab(authoring);
 
-        if (authoring.AnimatorComponent != null)
+        if (animationBindingsPreset != null)
         {
-            AddComponentObject(entity, new PlayerAnimatorReference
-            {
-                Animator = authoring.AnimatorComponent,
-                AnimatorController = animationBindingsPreset != null ? animationBindingsPreset.AnimatorController : null,
-                ControllerAssigned = 0
-            });
             AddComponent(entity, BuildAnimatorParameterConfig(animationBindingsPreset));
             AddComponent(entity, new PlayerAnimatorRuntimeState
             {
                 PreviousShooting = 0,
+                Initialized = 0,
+                ParametersValidated = 0,
+                BoundAnimatorInstanceId = 0,
                 RecoilValue = 0f,
                 AimWeightValue = 0f,
-                LeanValue = 0f
+                LeanValue = 0f,
+                LastMoveX = 0f,
+                LastMoveY = 1f
             });
+            TryAddAnimatorAssetFallbackComponents(entity, resolvedAnimatorComponent, animationBindingsPreset);
         }
+
+        AddComponent(entity, new PlayerVisualRuntimeBridgeConfig
+        {
+            VisualPrefab = resolvedRuntimeVisualBridgePrefab,
+            PositionOffset = new float3(authoring.RuntimeVisualBridgeOffset.x,
+                                        authoring.RuntimeVisualBridgeOffset.y,
+                                        authoring.RuntimeVisualBridgeOffset.z),
+            SyncRotation = authoring.RuntimeVisualBridgeSyncRotation ? (byte)1 : (byte)0,
+            SpawnWhenAnimatorMissing = authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing ? (byte)1 : (byte)0
+        });
+
+        if (authoring.BakeAnimatorCompanion && resolvedAnimatorComponent != null)
+        {
+            AddComponentObject(entity, resolvedAnimatorComponent);
+        }
+#if UNITY_EDITOR
+        else if (authoring.BakeAnimatorCompanion)
+        {
+            Debug.LogWarning(string.Format("[PlayerAuthoringBaker] Animator companion bake enabled on '{0}', but no valid scene Animator was resolved. Companion Animator was not baked; runtime visual bridge can be used as fallback.",
+                                           authoring.name),
+                             authoring);
+        }
+
+        if (authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing &&
+            authoring.BakeAnimatorCompanion == false &&
+            resolvedRuntimeVisualBridgePrefab == null)
+        {
+            Debug.LogWarning(string.Format("[PlayerAuthoringBaker] Runtime visual bridge spawn is enabled on '{0}', but RuntimeVisualBridgePrefab is missing or invalid.",
+                                           authoring.name),
+                             authoring);
+        }
+#endif
 
         PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
 
@@ -630,13 +765,21 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             PlayerElementalVfxConfig elementalVfxConfig = BuildElementalVfxConfig(authoring, powerUpsPreset);
             AddComponent(entity, elementalVfxConfig);
 
-            if (authoring.ElementalTrailAttachedVfxPrefab != null)
+            if (authoring.BakeElementalTrailAttachedVfxReference && authoring.ElementalTrailAttachedVfxPrefab != null)
             {
-                AddComponentObject(entity, new PlayerElementalTrailAttachedVfxPrefabReference
+                AddComponent(entity, new PlayerElementalTrailAttachedVfxPrefabReference
                 {
                     Prefab = authoring.ElementalTrailAttachedVfxPrefab
                 });
             }
+#if UNITY_EDITOR
+            else if (authoring.BakeElementalTrailAttachedVfxReference && authoring.ElementalTrailAttachedVfxPrefab == null)
+            {
+                Debug.LogWarning(string.Format("[PlayerAuthoringBaker] Attached Elemental Trail prefab reference bake enabled on '{0}', but no prefab is assigned.",
+                                               authoring.name),
+                                 authoring);
+            }
+#endif
 
             DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer = AddBuffer<EquippedPassiveToolElement>(entity);
             PopulateEquippedPassiveToolsBuffer(authoring, equippedPassiveToolsBuffer, powerUpsPreset);
@@ -722,6 +865,128 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             return true;
 
         return false;
+    }
+
+    private static Animator ResolveAnimatorComponent(PlayerAuthoring authoring)
+    {
+        if (authoring == null)
+            return null;
+
+        Animator assignedAnimator = authoring.AnimatorComponent;
+
+        if (assignedAnimator != null &&
+            assignedAnimator.gameObject != null &&
+            assignedAnimator.gameObject.scene.IsValid())
+        {
+            return assignedAnimator;
+        }
+
+        Animator fallbackAnimator = authoring.GetComponentInChildren<Animator>(true);
+
+        if (fallbackAnimator != null &&
+            fallbackAnimator.gameObject != null &&
+            fallbackAnimator.gameObject.scene.IsValid())
+        {
+#if UNITY_EDITOR
+            if (assignedAnimator == null)
+            {
+                Debug.LogWarning(string.Format("[PlayerAuthoringBaker] AnimatorComponent missing on '{0}'. Falling back to child Animator '{1}'.",
+                                               authoring.name,
+                                               fallbackAnimator.name),
+                                 authoring);
+            }
+            else
+            {
+                Debug.LogWarning(string.Format("[PlayerAuthoringBaker] AnimatorComponent on '{0}' points to a non-scene object. Falling back to child Animator '{1}'.",
+                                               authoring.name,
+                                               fallbackAnimator.name),
+                                 authoring);
+            }
+#endif
+            return fallbackAnimator;
+        }
+
+        return null;
+    }
+
+    private static GameObject ResolveRuntimeVisualBridgePrefab(PlayerAuthoring authoring)
+    {
+        if (authoring == null)
+            return null;
+
+        GameObject assignedPrefab = authoring.RuntimeVisualBridgePrefab;
+
+        if (assignedPrefab == null)
+            return null;
+
+        if (assignedPrefab.scene.IsValid())
+        {
+#if UNITY_EDITOR
+            Debug.LogWarning(string.Format("[PlayerAuthoringBaker] RuntimeVisualBridgePrefab on '{0}' points to a scene object. Assign a prefab asset instead.",
+                                           authoring.name),
+                             authoring);
+#endif
+            return null;
+        }
+
+        if (assignedPrefab.GetComponent<PlayerAuthoring>() != null)
+        {
+#if UNITY_EDITOR
+            Debug.LogWarning(string.Format("[PlayerAuthoringBaker] RuntimeVisualBridgePrefab '{0}' contains PlayerAuthoring and is not valid as visual-only runtime prefab.",
+                                           assignedPrefab.name),
+                             authoring);
+#endif
+            return null;
+        }
+
+        return assignedPrefab;
+    }
+
+    private void TryAddAnimatorAssetFallbackComponents(Entity entity,
+                                                       Animator resolvedAnimatorComponent,
+                                                       PlayerAnimationBindingsPreset animationBindingsPreset)
+    {
+        RuntimeAnimatorController resolvedController = ResolveAnimatorController(resolvedAnimatorComponent, animationBindingsPreset);
+
+        if (resolvedController != null)
+        {
+            AddComponent(entity, new PlayerAnimatorControllerReference
+            {
+                Controller = resolvedController
+            });
+        }
+
+        Avatar resolvedAvatar = ResolveAnimatorAvatar(resolvedAnimatorComponent);
+
+        if (resolvedAvatar != null)
+        {
+            AddComponent(entity, new PlayerAnimatorAvatarReference
+            {
+                Avatar = resolvedAvatar
+            });
+        }
+    }
+
+    private static RuntimeAnimatorController ResolveAnimatorController(Animator resolvedAnimatorComponent, PlayerAnimationBindingsPreset animationBindingsPreset)
+    {
+        if (resolvedAnimatorComponent != null && resolvedAnimatorComponent.runtimeAnimatorController != null)
+            return resolvedAnimatorComponent.runtimeAnimatorController;
+
+        if (animationBindingsPreset != null && animationBindingsPreset.AnimatorController != null)
+            return animationBindingsPreset.AnimatorController;
+
+        return null;
+    }
+
+    private static Avatar ResolveAnimatorAvatar(Animator resolvedAnimatorComponent)
+    {
+        if (resolvedAnimatorComponent == null)
+            return null;
+
+        if (resolvedAnimatorComponent.avatar != null)
+            return resolvedAnimatorComponent.avatar;
+
+        return null;
     }
     #endregion
 
@@ -1014,8 +1279,14 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (assignment == null)
             return default;
 
-        Entity stackVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, assignment.StackVfxPrefab, labelPrefix + " Stack VFX");
-        Entity procVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, assignment.ProcVfxPrefab, labelPrefix + " Proc VFX");
+        Entity stackVfxPrefabEntity = Entity.Null;
+        Entity procVfxPrefabEntity = Entity.Null;
+
+        if (authoring != null && authoring.BakePowerUpVfxEntityPrefabs)
+        {
+            stackVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, assignment.StackVfxPrefab, labelPrefix + " Stack VFX");
+            procVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, assignment.ProcVfxPrefab, labelPrefix + " Proc VFX");
+        }
 
         return new ElementalVfxDefinitionConfig
         {
@@ -1302,7 +1573,10 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (explosionData == null)
             return default;
 
-        Entity explosionVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, explosionData.ExplosionVfxPrefab, "Passive Explosion VFX");
+        Entity explosionVfxPrefabEntity = Entity.Null;
+
+        if (authoring != null && authoring.BakePowerUpVfxEntityPrefabs)
+            explosionVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, explosionData.ExplosionVfxPrefab, "Passive Explosion VFX");
 
         return new ExplosionPassiveConfig
         {
@@ -1324,7 +1598,6 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             return default;
 
         ElementalEffectConfig effectConfig = BuildElementalEffectConfig(elementalTrailData.EffectData);
-        Entity trailAttachedVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, authoring.ElementalTrailAttachedVfxPrefab, "Elemental Trail Attached VFX");
 
         return new ElementalTrailPassiveConfig
         {
@@ -1336,7 +1609,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             MaxActiveSegmentsPerPlayer = math.max(1, elementalTrailData.MaxActiveSegmentsPerPlayer),
             StacksPerTick = math.max(0f, elementalTrailData.StacksPerTick),
             ApplyIntervalSeconds = math.max(0.01f, elementalTrailData.ApplyIntervalSeconds),
-            TrailAttachedVfxPrefabEntity = trailAttachedVfxPrefabEntity,
+            TrailAttachedVfxPrefabEntity = Entity.Null,
             TrailAttachedVfxScaleMultiplier = math.max(0.01f, authoring.ElementalTrailAttachedVfxScaleMultiplier),
             TrailAttachedVfxOffset = new float3(elementalTrailData.TrailAttachedVfxOffset.x,
                                                 elementalTrailData.TrailAttachedVfxOffset.y,

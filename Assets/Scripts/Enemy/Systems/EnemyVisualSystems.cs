@@ -1,0 +1,240 @@
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
+using UnityEngine;
+
+/// <summary>
+/// Evaluates enemy visual visibility state based on distance from the player.
+/// </summary>
+[UpdateInGroup(typeof(PresentationSystemGroup))]
+[UpdateBefore(typeof(EnemyCompanionAnimatorVisualSystem))]
+[UpdateBefore(typeof(EnemyGpuBakedVisualPlaybackSystem))]
+public partial struct EnemyVisualDistanceCullingSystem : ISystem
+{
+    #region Fields
+    private EntityQuery playerQuery;
+    #endregion
+
+    #region Methods
+
+    #region Lifecycle
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<EnemyVisualConfig>();
+        state.RequireForUpdate<EnemyVisualRuntimeState>();
+        state.RequireForUpdate<EnemyActive>();
+
+        playerQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerControllerConfig, LocalTransform>()
+            .Build();
+
+        state.RequireForUpdate(playerQuery);
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        EntityManager entityManager = state.EntityManager;
+        Entity playerEntity = playerQuery.GetSingletonEntity();
+        float3 playerPosition = entityManager.GetComponentData<LocalTransform>(playerEntity).Position;
+
+        foreach ((RefRO<EnemyVisualConfig> visualConfig,
+                  RefRW<EnemyVisualRuntimeState> visualRuntimeState,
+                  RefRO<LocalTransform> enemyTransform)
+                 in SystemAPI.Query<RefRO<EnemyVisualConfig>, RefRW<EnemyVisualRuntimeState>, RefRO<LocalTransform>>()
+                             .WithAll<EnemyActive>())
+        {
+            EnemyVisualRuntimeState currentVisualRuntimeState = visualRuntimeState.ValueRO;
+            float planarDistance = ResolvePlanarDistance(enemyTransform.ValueRO.Position, playerPosition);
+            currentVisualRuntimeState.LastDistanceToPlayer = planarDistance;
+            currentVisualRuntimeState.IsVisible = ResolveVisibility(visualConfig.ValueRO,
+                                                                    currentVisualRuntimeState.IsVisible,
+                                                                    planarDistance);
+            visualRuntimeState.ValueRW = currentVisualRuntimeState;
+        }
+    }
+    #endregion
+
+    #region Helpers
+    private static float ResolvePlanarDistance(float3 enemyPosition, float3 playerPosition)
+    {
+        float3 delta = enemyPosition - playerPosition;
+        delta.y = 0f;
+        float squaredDistance = math.lengthsq(delta);
+        return math.sqrt(squaredDistance);
+    }
+
+    private static byte ResolveVisibility(in EnemyVisualConfig visualConfig, byte wasVisible, float planarDistance)
+    {
+        if (visualConfig.UseDistanceCulling == 0 || visualConfig.MaxVisibleDistance <= 0f)
+            return 1;
+
+        float maxVisibleDistance = visualConfig.MaxVisibleDistance;
+        float hysteresisDistance = math.max(0f, visualConfig.VisibleDistanceHysteresis);
+        float hideThreshold = maxVisibleDistance + hysteresisDistance;
+
+        if (wasVisible != 0)
+            return planarDistance <= hideThreshold ? (byte)1 : (byte)0;
+
+        return planarDistance <= maxVisibleDistance ? (byte)1 : (byte)0;
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Applies visual state to companion Animator components used by high-fidelity enemies.
+/// </summary>
+[UpdateInGroup(typeof(PresentationSystemGroup))]
+[UpdateAfter(typeof(EnemyVisualDistanceCullingSystem))]
+public partial struct EnemyCompanionAnimatorVisualSystem : ISystem
+{
+    #region Methods
+
+    #region Lifecycle
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<EnemyVisualCompanionAnimator>();
+        state.RequireForUpdate<EnemyVisualConfig>();
+        state.RequireForUpdate<EnemyVisualRuntimeState>();
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        EntityManager entityManager = state.EntityManager;
+
+        foreach ((RefRO<EnemyVisualConfig> visualConfig,
+                  RefRW<EnemyVisualRuntimeState> visualRuntimeState,
+                  Entity enemyEntity)
+                 in SystemAPI.Query<RefRO<EnemyVisualConfig>, RefRW<EnemyVisualRuntimeState>>()
+                             .WithAll<EnemyVisualCompanionAnimator, EnemyActive>()
+                             .WithEntityAccess())
+        {
+            if (entityManager.HasComponent<Animator>(enemyEntity) == false)
+            {
+                continue;
+            }
+
+            Animator animator = entityManager.GetComponentObject<Animator>(enemyEntity);
+
+            if (animator == null)
+            {
+                continue;
+            }
+
+            EnemyVisualRuntimeState currentVisualRuntimeState = visualRuntimeState.ValueRO;
+
+            if (currentVisualRuntimeState.CompanionInitialized == 0)
+            {
+                InitializeAnimator(animator);
+                currentVisualRuntimeState.CompanionInitialized = 1;
+            }
+
+            bool shouldBeVisible = currentVisualRuntimeState.IsVisible != 0;
+
+            if (animator.enabled != shouldBeVisible)
+            {
+                animator.enabled = shouldBeVisible;
+            }
+
+            if (shouldBeVisible)
+            {
+                float targetAnimationSpeed = math.max(0f, visualConfig.ValueRO.AnimationSpeed);
+
+                if (math.abs(animator.speed - targetAnimationSpeed) > 0.001f)
+                {
+                    animator.speed = targetAnimationSpeed;
+                }
+            }
+
+            visualRuntimeState.ValueRW = currentVisualRuntimeState;
+        }
+    }
+    #endregion
+
+    #region Helpers
+    private static void InitializeAnimator(Animator animator)
+    {
+        if (animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
+        {
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        }
+
+        if (animator.updateMode != AnimatorUpdateMode.Normal)
+        {
+            animator.updateMode = AnimatorUpdateMode.Normal;
+        }
+
+        if (animator.applyRootMotion)
+        {
+            animator.applyRootMotion = false;
+        }
+
+        if (animator.speed <= 0f)
+        {
+            animator.speed = 1f;
+        }
+
+        animator.Rebind();
+        animator.Update(0f);
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Advances GPU-baked enemy visual playback time used by rendering/material animation systems.
+/// </summary>
+[UpdateInGroup(typeof(PresentationSystemGroup))]
+[UpdateAfter(typeof(EnemyVisualDistanceCullingSystem))]
+public partial struct EnemyGpuBakedVisualPlaybackSystem : ISystem
+{
+    #region Methods
+
+    #region Lifecycle
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<EnemyVisualGpuBaked>();
+        state.RequireForUpdate<EnemyVisualConfig>();
+        state.RequireForUpdate<EnemyVisualRuntimeState>();
+    }
+
+    public void OnUpdate(ref SystemState state)
+    {
+        float deltaTime = SystemAPI.Time.DeltaTime;
+
+        foreach ((RefRO<EnemyVisualConfig> visualConfig,
+                  RefRW<EnemyVisualRuntimeState> visualRuntimeState)
+                 in SystemAPI.Query<RefRO<EnemyVisualConfig>, RefRW<EnemyVisualRuntimeState>>()
+                             .WithAll<EnemyVisualGpuBaked, EnemyActive>())
+        {
+            EnemyVisualRuntimeState currentVisualRuntimeState = visualRuntimeState.ValueRO;
+
+            if (currentVisualRuntimeState.IsVisible == 0)
+            {
+                continue;
+            }
+
+            float animationSpeed = math.max(0f, visualConfig.ValueRO.AnimationSpeed);
+
+            if (animationSpeed <= 0f)
+            {
+                continue;
+            }
+
+            float loopDuration = math.max(0.05f, visualConfig.ValueRO.GpuLoopDuration);
+            currentVisualRuntimeState.AnimationTime += deltaTime * animationSpeed;
+
+            if (currentVisualRuntimeState.AnimationTime >= loopDuration)
+            {
+                currentVisualRuntimeState.AnimationTime = math.fmod(currentVisualRuntimeState.AnimationTime, loopDuration);
+            }
+
+            visualRuntimeState.ValueRW = currentVisualRuntimeState;
+        }
+    }
+    #endregion
+
+    #endregion
+}

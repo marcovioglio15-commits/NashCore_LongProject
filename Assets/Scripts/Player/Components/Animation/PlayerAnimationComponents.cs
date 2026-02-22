@@ -1,17 +1,6 @@
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
-
-/// <summary>
-/// Managed bridge reference to the visual Animator used by one player entity.
-/// </summary>
-public sealed class PlayerAnimatorReference : IComponentData
-{
-    #region Fields
-    public Animator Animator;
-    public RuntimeAnimatorController AnimatorController;
-    public byte ControllerAssigned;
-    #endregion
-}
 
 /// <summary>
 /// Runtime hash configuration for animator parameters consumed by ECS animation sync.
@@ -67,8 +56,56 @@ public struct PlayerAnimatorRuntimeState : IComponentData
 {
     #region Fields
     public byte PreviousShooting;
+    public byte Initialized;
+    public byte ParametersValidated;
+    public int BoundAnimatorInstanceId;
     public float RecoilValue;
     public float AimWeightValue;
     public float LeanValue;
+    public float LastMoveX;
+    public float LastMoveY;
+    #endregion
+}
+
+/// <summary>
+/// Runtime configuration used to spawn and sync an external GameObject visual bridge when no companion Animator is available.
+/// </summary>
+public struct PlayerVisualRuntimeBridgeConfig : IComponentData
+{
+    #region Fields
+    public UnityObjectRef<GameObject> VisualPrefab;
+    public float3 PositionOffset;
+    public byte SyncRotation;
+    public byte SpawnWhenAnimatorMissing;
+    #endregion
+}
+
+/// <summary>
+/// Runtime reference to the visual Animator driven by ECS gameplay state.
+/// </summary>
+public struct PlayerAnimatorObjectReference : IComponentData
+{
+    #region Fields
+    public UnityObjectRef<Animator> Animator;
+    #endregion
+}
+
+/// <summary>
+/// Optional runtime animator controller fallback used to recover companion animators with missing controller bindings.
+/// </summary>
+public struct PlayerAnimatorControllerReference : IComponentData
+{
+    #region Fields
+    public UnityObjectRef<RuntimeAnimatorController> Controller;
+    #endregion
+}
+
+/// <summary>
+/// Optional humanoid avatar fallback used to recover companion animators with missing avatar bindings.
+/// </summary>
+public struct PlayerAnimatorAvatarReference : IComponentData
+{
+    #region Fields
+    public UnityObjectRef<Avatar> Avatar;
     #endregion
 }

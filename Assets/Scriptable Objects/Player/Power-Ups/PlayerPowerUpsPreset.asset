@@ -921,5 +921,6 @@ MonoBehaviour:
   secondaryActiveToolId: Bullet Time
   equippedPassiveToolIds:
   - Enemy Explosion
+  - Elemental Trail
   legacyPrimaryPassiveToolId: 
   legacySecondaryPassiveToolId: 
