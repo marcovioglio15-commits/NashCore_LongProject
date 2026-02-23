@@ -46,9 +46,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3597e1a6814d4df49c96f8a7147488ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAuthoring
+  masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
+  brainPreset: {fileID: 11400000, guid: 3ca2ef3fee091ad479164f92b6d9964b, type: 2}
   moveSpeed: 3
   maxSpeed: 4
   acceleration: 8
+  deceleration: 8
   separationRadius: 1.1
   separationWeight: 2
   bodyRadius: 1
@@ -56,10 +59,19 @@ MonoBehaviour:
   contactDamage: 5
   contactInterval: 0.75
   maxHealth: 1
+  maxShield: 0
+  visualMode: 1
+  visualAnimationSpeed: 1
+  gpuAnimationLoopDuration: 1
+  enableDistanceCulling: 1
+  maxVisibleDistance: 55
+  visibleDistanceHysteresis: 6
+  animatorComponent: {fileID: 0}
   elementalVfxAnchor: {fileID: 1506323467520610189}
   drawContactRadiusGizmo: 1
   drawSeparationRadiusGizmo: 0
   drawBodyRadiusGizmo: 0
+  drawVisualDistanceGizmo: 1
 --- !u!33 &2362197013061763177
 MeshFilter:
   m_ObjectHideFlags: 0

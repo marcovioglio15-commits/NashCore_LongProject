@@ -3,7 +3,8 @@ using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
-/// Authoring component that defines ECS enemy movement, separation, and contact-damage settings.
+/// Authoring component that defines ECS enemy movement, steering, contact and visual settings.
+/// Main configuration is sourced from EnemyMasterPreset and its sub-presets.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class EnemyAuthoring : MonoBehaviour
@@ -19,63 +20,89 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #region Fields
 
     #region Serialized Fields
-    [Header("Movement")]
-    [Tooltip("Meters per second used as baseline enemy movement speed toward the player.")]
-    [SerializeField] private float moveSpeed = 3f;
+    [Header("Preset")]
+    [Tooltip("Enemy master preset that resolves sub-presets used by this enemy.")]
+    [SerializeField] private EnemyMasterPreset masterPreset;
 
-    [Tooltip("Hard cap applied to the enemy velocity magnitude.")]
-    [SerializeField] private float maxSpeed = 4f;
+    [Tooltip("Legacy direct brain preset fallback used when MasterPreset is missing or has no Brain preset assigned.")]
+    [SerializeField] private EnemyBrainPreset brainPreset;
 
-    [Tooltip("Meters per second squared used to accelerate toward desired velocity.")]
-    [SerializeField] private float acceleration = 8f;
+    [Tooltip("Legacy fallback move speed used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float moveSpeed = 3f;
 
-    [Header("Separation")]
-    [Tooltip("Radius used to search neighboring enemies for separation steering.")]
-    [SerializeField] private float separationRadius = 1.1f;
+    [Tooltip("Legacy fallback max speed used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float maxSpeed = 4f;
 
-    [Tooltip("Weight applied to the separation vector before velocity clamping.")]
-    [SerializeField] private float separationWeight = 2f;
+    [Tooltip("Legacy fallback acceleration used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float acceleration = 8f;
 
-    [Tooltip("Physical body radius used for projectile hit checks and short-range overlap handling.")]
-    [SerializeField] private float bodyRadius = 0.55f;
+    [Tooltip("Legacy fallback deceleration used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float deceleration = 8f;
 
-    [Header("Contact Damage")]
-    [Tooltip("Distance from enemy center to apply contact damage to the player.")]
-    [SerializeField] private float contactRadius = 1.2f;
+    [Tooltip("Legacy fallback separation radius used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float separationRadius = 1.1f;
 
-    [Tooltip("Damage applied to the player each time contact cooldown expires in range.")]
-    [SerializeField] private float contactDamage = 5f;
+    [Tooltip("Legacy fallback separation weight used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float separationWeight = 2f;
 
-    [Tooltip("Cooldown in seconds between two consecutive contact damage applications.")]
-    [SerializeField] private float contactInterval = 0.75f;
+    [Tooltip("Legacy fallback body radius used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float bodyRadius = 0.55f;
 
-    [Header("Health")]
-    [Tooltip("Maximum and initial health assigned to this enemy when spawned from pool.")]
-    [SerializeField] private float maxHealth = 30f;
+    [Tooltip("Legacy fallback contact radius used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float contactRadius = 1.2f;
 
-    [Header("Visual")]
-    [Tooltip("Visual runtime path: managed companion Animator (few actors) or GPU-baked playback (crowd scale).")]
-    [SerializeField] private EnemyVisualMode visualMode = EnemyVisualMode.GpuBaked;
+    [Tooltip("Legacy fallback contact damage used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float contactDamage = 5f;
 
-    [Tooltip("Playback speed multiplier used by both companion and GPU-baked visual paths.")]
-    [SerializeField] private float visualAnimationSpeed = 1f;
+    [Tooltip("Legacy fallback contact interval used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float contactInterval = 0.75f;
 
-    [Tooltip("Loop duration in seconds used by GPU-baked playback time wrapping.")]
-    [SerializeField] private float gpuAnimationLoopDuration = 1f;
+    [Tooltip("Legacy fallback max health used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float maxHealth = 30f;
 
-    [Tooltip("Enable distance-based visual culling while gameplay simulation remains fully active.")]
-    [SerializeField] private bool enableDistanceCulling = true;
+    [Tooltip("Legacy fallback max shield used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float maxShield;
 
-    [Tooltip("Maximum planar distance from player where visuals stay visible. Set to 0 to keep always visible.")]
-    [SerializeField] private float maxVisibleDistance = 55f;
+    [Tooltip("Legacy fallback visual mode used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private EnemyVisualMode visualMode = EnemyVisualMode.GpuBaked;
 
-    [Tooltip("Additional distance band used to avoid visual popping when crossing the culling boundary.")]
-    [SerializeField] private float visibleDistanceHysteresis = 6f;
+    [Tooltip("Legacy fallback visual animation speed used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float visualAnimationSpeed = 1f;
 
+    [Tooltip("Legacy fallback GPU loop duration used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float gpuAnimationLoopDuration = 1f;
+
+    [Tooltip("Legacy fallback distance culling toggle used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private bool enableDistanceCulling = true;
+
+    [Tooltip("Legacy fallback max visible distance used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float maxVisibleDistance = 55f;
+
+    [Tooltip("Legacy fallback culling hysteresis used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float visibleDistanceHysteresis = 6f;
+
+    [Header("Visual References")]
     [Tooltip("Optional Animator used when visual mode is CompanionAnimator.")]
     [SerializeField] private Animator animatorComponent;
 
-    [Header("VFX Anchors")]
     [Tooltip("Optional transform used as anchor for attached elemental status VFX.")]
     [SerializeField] private Transform elementalVfxAnchor;
 
@@ -96,11 +123,32 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #endregion
 
     #region Properties
+    public EnemyMasterPreset MasterPreset
+    {
+        get
+        {
+            return masterPreset;
+        }
+    }
+
+    public EnemyBrainPreset BrainPreset
+    {
+        get
+        {
+            return brainPreset;
+        }
+    }
+
     public float MoveSpeed
     {
         get
         {
-            return moveSpeed;
+            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+
+            if (movementSettings == null)
+                return moveSpeed;
+
+            return movementSettings.MoveSpeed;
         }
     }
 
@@ -108,7 +156,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return maxSpeed;
+            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+
+            if (movementSettings == null)
+                return maxSpeed;
+
+            return movementSettings.MaxSpeed;
         }
     }
 
@@ -116,7 +169,25 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return acceleration;
+            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+
+            if (movementSettings == null)
+                return acceleration;
+
+            return movementSettings.Acceleration;
+        }
+    }
+
+    public float Deceleration
+    {
+        get
+        {
+            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+
+            if (movementSettings == null)
+                return deceleration;
+
+            return movementSettings.Deceleration;
         }
     }
 
@@ -124,7 +195,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return separationRadius;
+            EnemyBrainSteeringSettings steeringSettings = ResolveSteeringSettings();
+
+            if (steeringSettings == null)
+                return separationRadius;
+
+            return steeringSettings.SeparationRadius;
         }
     }
 
@@ -132,31 +208,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return separationWeight;
-        }
-    }
+            EnemyBrainSteeringSettings steeringSettings = ResolveSteeringSettings();
 
-    public float ContactRadius
-    {
-        get
-        {
-            return contactRadius;
-        }
-    }
+            if (steeringSettings == null)
+                return separationWeight;
 
-    public float ContactDamage
-    {
-        get
-        {
-            return contactDamage;
-        }
-    }
-
-    public float ContactInterval
-    {
-        get
-        {
-            return contactInterval;
+            return steeringSettings.SeparationWeight;
         }
     }
 
@@ -164,7 +221,51 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return bodyRadius;
+            EnemyBrainSteeringSettings steeringSettings = ResolveSteeringSettings();
+
+            if (steeringSettings == null)
+                return bodyRadius;
+
+            return steeringSettings.BodyRadius;
+        }
+    }
+
+    public float ContactRadius
+    {
+        get
+        {
+            EnemyBrainPlayerContactSettings contactSettings = ResolvePlayerContactSettings();
+
+            if (contactSettings == null)
+                return contactRadius;
+
+            return contactSettings.ContactRadius;
+        }
+    }
+
+    public float ContactDamage
+    {
+        get
+        {
+            EnemyBrainPlayerContactSettings contactSettings = ResolvePlayerContactSettings();
+
+            if (contactSettings == null)
+                return contactDamage;
+
+            return contactSettings.ContactDamage;
+        }
+    }
+
+    public float ContactInterval
+    {
+        get
+        {
+            EnemyBrainPlayerContactSettings contactSettings = ResolvePlayerContactSettings();
+
+            if (contactSettings == null)
+                return contactInterval;
+
+            return contactSettings.ContactInterval;
         }
     }
 
@@ -172,7 +273,25 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return maxHealth;
+            EnemyBrainHealthStatisticsSettings healthSettings = ResolveHealthStatisticsSettings();
+
+            if (healthSettings == null)
+                return maxHealth;
+
+            return healthSettings.MaxHealth;
+        }
+    }
+
+    public float MaxShield
+    {
+        get
+        {
+            EnemyBrainHealthStatisticsSettings healthSettings = ResolveHealthStatisticsSettings();
+
+            if (healthSettings == null)
+                return maxShield;
+
+            return healthSettings.MaxShield;
         }
     }
 
@@ -180,7 +299,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return visualMode;
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return visualMode;
+
+            return visualSettings.VisualMode;
         }
     }
 
@@ -188,7 +312,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return visualAnimationSpeed;
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return visualAnimationSpeed;
+
+            return visualSettings.VisualAnimationSpeed;
         }
     }
 
@@ -196,7 +325,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return gpuAnimationLoopDuration;
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return gpuAnimationLoopDuration;
+
+            return visualSettings.GpuAnimationLoopDuration;
         }
     }
 
@@ -204,7 +338,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return enableDistanceCulling;
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return enableDistanceCulling;
+
+            return visualSettings.EnableDistanceCulling;
         }
     }
 
@@ -212,7 +351,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return maxVisibleDistance;
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return maxVisibleDistance;
+
+            return visualSettings.MaxVisibleDistance;
         }
     }
 
@@ -220,7 +364,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return visibleDistanceHysteresis;
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return visibleDistanceHysteresis;
+
+            return visualSettings.VisibleDistanceHysteresis;
         }
     }
 
@@ -246,6 +395,44 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #region Unity Methods
     private void OnValidate()
     {
+        ValidateLegacyFallbackValues();
+
+        if (masterPreset != null)
+            masterPreset.ValidateValues();
+
+        if (brainPreset != null)
+            brainPreset.ValidateValues();
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Vector3 center = transform.position;
+
+        if (drawContactRadiusGizmo)
+            DrawWireRadius(center, math.max(0f, ContactRadius), ContactGizmoColor);
+
+        if (drawSeparationRadiusGizmo)
+            DrawWireRadius(center, math.max(0f, SeparationRadius), SeparationGizmoColor);
+
+        if (drawBodyRadiusGizmo)
+            DrawWireRadius(center, math.max(0f, BodyRadius), BodyGizmoColor);
+
+        if (drawVisualDistanceGizmo && EnableDistanceCulling)
+            DrawWireRadius(center, math.max(0f, MaxVisibleDistance), VisualDistanceGizmoColor);
+
+        if (elementalVfxAnchor == null)
+            return;
+
+        Gizmos.color = ElementalAnchorGizmoColor;
+        Vector3 anchorPosition = elementalVfxAnchor.position;
+        Gizmos.DrawLine(center, anchorPosition);
+        Gizmos.DrawWireSphere(anchorPosition, 0.14f);
+    }
+    #endregion
+
+    #region Validation
+    private void ValidateLegacyFallbackValues()
+    {
         if (moveSpeed < 0f)
             moveSpeed = 0f;
 
@@ -254,6 +441,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
         if (acceleration < 0f)
             acceleration = 0f;
+
+        if (deceleration < 0f)
+            deceleration = 0f;
 
         if (separationRadius < 0.1f)
             separationRadius = 0.1f;
@@ -275,6 +465,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
         if (maxHealth < 1f)
             maxHealth = 1f;
+
+        if (maxShield < 0f)
+            maxShield = 0f;
 
         switch (visualMode)
         {
@@ -299,62 +492,74 @@ public sealed class EnemyAuthoring : MonoBehaviour
         if (visibleDistanceHysteresis < 0f)
             visibleDistanceHysteresis = 0f;
     }
+    #endregion
 
-    private void OnDrawGizmosSelected()
+    #region Helpers
+    private EnemyBrainPreset ResolveBrainPreset()
     {
-        Vector3 center = transform.position;
+        if (masterPreset != null && masterPreset.BrainPreset != null)
+            return masterPreset.BrainPreset;
 
-        if (drawContactRadiusGizmo)
-        {
-            float radius = math.max(0f, contactRadius);
+        return brainPreset;
+    }
 
-            if (radius > 0f)
-            {
-                Gizmos.color = ContactGizmoColor;
-                Gizmos.DrawWireSphere(center, radius);
-            }
-        }
+    private EnemyBrainMovementSettings ResolveMovementSettings()
+    {
+        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
 
-        if (drawSeparationRadiusGizmo)
-        {
-            float radius = math.max(0f, separationRadius);
+        if (resolvedBrainPreset == null)
+            return null;
 
-            if (radius > 0f)
-            {
-                Gizmos.color = SeparationGizmoColor;
-                Gizmos.DrawWireSphere(center, radius);
-            }
-        }
+        return resolvedBrainPreset.Movement;
+    }
 
-        if (drawBodyRadiusGizmo)
-        {
-            float radius = math.max(0f, bodyRadius);
+    private EnemyBrainSteeringSettings ResolveSteeringSettings()
+    {
+        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
 
-            if (radius > 0f)
-            {
-                Gizmos.color = BodyGizmoColor;
-                Gizmos.DrawWireSphere(center, radius);
-            }
-        }
+        if (resolvedBrainPreset == null)
+            return null;
 
-        if (drawVisualDistanceGizmo && enableDistanceCulling)
-        {
-            float radius = math.max(0f, maxVisibleDistance);
+        return resolvedBrainPreset.Steering;
+    }
 
-            if (radius > 0f)
-            {
-                Gizmos.color = VisualDistanceGizmoColor;
-                Gizmos.DrawWireSphere(center, radius);
-            }
-        }
+    private EnemyBrainPlayerContactSettings ResolvePlayerContactSettings()
+    {
+        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
 
-        if (elementalVfxAnchor != null)
-        {
-            Gizmos.color = ElementalAnchorGizmoColor;
-            Vector3 anchorPosition = elementalVfxAnchor.position;
-            Gizmos.DrawLine(center, anchorPosition);
-            Gizmos.DrawWireSphere(anchorPosition, 0.14f);
-        }
+        if (resolvedBrainPreset == null)
+            return null;
+
+        return resolvedBrainPreset.PlayerContact;
+    }
+
+    private EnemyBrainHealthStatisticsSettings ResolveHealthStatisticsSettings()
+    {
+        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
+
+        if (resolvedBrainPreset == null)
+            return null;
+
+        return resolvedBrainPreset.HealthStatistics;
+    }
+
+    private EnemyBrainVisualSettings ResolveVisualSettings()
+    {
+        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
+
+        if (resolvedBrainPreset == null)
+            return null;
+
+        return resolvedBrainPreset.Visual;
+    }
+
+    private static void DrawWireRadius(Vector3 center, float radius, Color color)
+    {
+        if (radius <= 0f)
+            return;
+
+        Gizmos.color = color;
+        Gizmos.DrawWireSphere(center, radius);
     }
     #endregion
 
@@ -381,6 +586,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             MoveSpeed = math.max(0f, authoring.MoveSpeed),
             MaxSpeed = math.max(0f, authoring.MaxSpeed),
             Acceleration = math.max(0f, authoring.Acceleration),
+            Deceleration = math.max(0f, authoring.Deceleration),
             SeparationRadius = math.max(0.1f, authoring.SeparationRadius),
             SeparationWeight = math.max(0f, authoring.SeparationWeight),
             BodyRadius = math.max(0.05f, authoring.BodyRadius),
@@ -390,11 +596,14 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         });
 
         float bakedHealth = math.max(1f, authoring.MaxHealth);
+        float bakedShield = math.max(0f, authoring.MaxShield);
 
         AddComponent(entity, new EnemyHealth
         {
             Current = bakedHealth,
-            Max = bakedHealth
+            Max = bakedHealth,
+            CurrentShield = bakedShield,
+            MaxShield = bakedShield
         });
 
         AddComponent(entity, new EnemyRuntimeState

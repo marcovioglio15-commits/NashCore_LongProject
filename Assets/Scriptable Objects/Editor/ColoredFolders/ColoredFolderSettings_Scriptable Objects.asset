@@ -24,6 +24,9 @@ MonoBehaviour:
   - Assets/Scriptable Objects/Player/Power-Ups
   - Assets/Scriptable Objects/Player/Presets
   - Assets/Scriptable Objects/Player/Progression
+  - Assets/Scriptable Objects/Enemy
+  - Assets/Scriptable Objects/Enemy/Brain
+  - Assets/Scriptable Objects/Enemy/Master Presets
   folderColors:
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
@@ -36,5 +39,8 @@ MonoBehaviour:
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
-  folderApplyModes: 0100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
+  - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
+  - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
+  folderApplyModes: 0100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
   autoInheritColors: 1

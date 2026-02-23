@@ -57,7 +57,7 @@ MonoBehaviour:
   runtimeVisualBridgeSyncRotation: 1
   runtimeVisualBridgeOffset: {x: 0, y: 0, z: 0}
   drawRuntimeVisualBridgeGizmo: 1
-  bakeAnimatorCompanion: 0
+  bakeAnimatorCompanion: 1
   bakeElementalTrailAttachedVfxReference: 1
   bakePowerUpVfxEntityPrefabs: 1
   elementalTrailAttachedVfxPrefab: {fileID: 5679156216372977872, guid: 92d93d035892fff40a63205dfd234520, type: 3}

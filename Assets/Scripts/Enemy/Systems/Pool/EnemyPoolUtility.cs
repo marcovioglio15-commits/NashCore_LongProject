@@ -70,7 +70,9 @@ public static class EnemyPoolUtility
             entityManager.AddComponentData(enemyEntity, new EnemyHealth
             {
                 Current = 1f,
-                Max = 1f
+                Max = 1f,
+                CurrentShield = 0f,
+                MaxShield = 0f
             });
 
         if (entityManager.HasComponent<EnemyOwnerSpawner>(enemyEntity) == false)

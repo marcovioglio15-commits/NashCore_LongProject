@@ -10,6 +10,7 @@ public struct EnemyData : IComponentData
     public float MoveSpeed;
     public float MaxSpeed;
     public float Acceleration;
+    public float Deceleration;
     public float SeparationRadius;
     public float SeparationWeight;
     public float BodyRadius;
@@ -19,12 +20,14 @@ public struct EnemyData : IComponentData
 }
 
 /// <summary>
-/// Stores runtime enemy health values.
+/// Stores runtime enemy health and shield values.
 /// </summary>
 public struct EnemyHealth : IComponentData
 {
     public float Current;
     public float Max;
+    public float CurrentShield;
+    public float MaxShield;
 }
 
 /// <summary>

@@ -53,7 +53,11 @@ public partial struct EnemyFinalizeDespawnSystem : ISystem
                     if (enemyHealth.Max < 1f)
                         enemyHealth.Max = 1f;
 
+                    if (enemyHealth.MaxShield < 0f)
+                        enemyHealth.MaxShield = 0f;
+
                     enemyHealth.Current = enemyHealth.Max;
+                    enemyHealth.CurrentShield = enemyHealth.MaxShield;
                     healthLookup[enemyEntity] = enemyHealth;
                 }
 

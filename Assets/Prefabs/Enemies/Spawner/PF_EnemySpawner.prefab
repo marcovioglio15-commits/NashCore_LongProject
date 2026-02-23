@@ -49,8 +49,8 @@ MonoBehaviour:
   spawnPerTick: 40
   spawnInterval: 0.1
   initialPoolCapacity: 1280
-  expandBatch: 640
-  maxAliveCount: 640
+  expandBatch: 800
+  maxAliveCount: 1800
   spawnRadius: 12
   spawnHeightOffset: 0
   despawnDistance: 85

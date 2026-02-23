@@ -874,18 +874,12 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         Animator assignedAnimator = authoring.AnimatorComponent;
 
-        if (assignedAnimator != null &&
-            assignedAnimator.gameObject != null &&
-            assignedAnimator.gameObject.scene.IsValid())
-        {
+        if (IsAnimatorValidForCompanionBake(authoring, assignedAnimator))
             return assignedAnimator;
-        }
 
         Animator fallbackAnimator = authoring.GetComponentInChildren<Animator>(true);
 
-        if (fallbackAnimator != null &&
-            fallbackAnimator.gameObject != null &&
-            fallbackAnimator.gameObject.scene.IsValid())
+        if (IsAnimatorValidForCompanionBake(authoring, fallbackAnimator))
         {
 #if UNITY_EDITOR
             if (assignedAnimator == null)
@@ -897,7 +891,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             }
             else
             {
-                Debug.LogWarning(string.Format("[PlayerAuthoringBaker] AnimatorComponent on '{0}' points to a non-scene object. Falling back to child Animator '{1}'.",
+                Debug.LogWarning(string.Format("[PlayerAuthoringBaker] AnimatorComponent on '{0}' is not in the PlayerAuthoring hierarchy. Falling back to child Animator '{1}'.",
                                                authoring.name,
                                                fallbackAnimator.name),
                                  authoring);
@@ -907,6 +901,32 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         }
 
         return null;
+    }
+
+    private static bool IsAnimatorValidForCompanionBake(PlayerAuthoring authoring, Animator animator)
+    {
+        if (authoring == null)
+            return false;
+
+        if (animator == null)
+            return false;
+
+        if (animator.gameObject == null)
+            return false;
+
+        Transform authoringTransform = authoring.transform;
+        Transform animatorTransform = animator.transform;
+
+        if (authoringTransform == null || animatorTransform == null)
+            return false;
+
+        if (animatorTransform == authoringTransform)
+            return true;
+
+        if (animatorTransform.IsChildOf(authoringTransform))
+            return true;
+
+        return false;
     }
 
     private static GameObject ResolveRuntimeVisualBridgePrefab(PlayerAuthoring authoring)
