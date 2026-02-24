@@ -12,6 +12,8 @@ public sealed class EnemyBrainPresetsPanel
 {
     #region Constants
     private const float LeftPaneWidth = 280f;
+    private const string ActiveSectionStateKey = "NashCore.EnemyManagement.Brain.ActiveSection";
+    private const string ActiveSubSectionStateKey = "NashCore.EnemyManagement.Brain.ActiveSubSection";
     #endregion
 
     #region Fields
@@ -51,6 +53,8 @@ public sealed class EnemyBrainPresetsPanel
         root.style.flexGrow = 1f;
 
         library = EnemyBrainPresetLibraryUtility.GetOrCreateLibrary();
+        activeSection = ManagementToolStateUtility.LoadEnumValue(ActiveSectionStateKey, SectionType.Metadata);
+        activeBrainSubSection = ManagementToolStateUtility.LoadEnumValue(ActiveSubSectionStateKey, BrainSubSectionType.Movement);
 
         BuildUI();
         RefreshPresetList();
@@ -458,6 +462,7 @@ public sealed class EnemyBrainPresetsPanel
     private void SetActiveSection(SectionType sectionType)
     {
         activeSection = sectionType;
+        ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, activeSection);
         BuildActiveDetailsSection();
     }
 
@@ -586,6 +591,7 @@ public sealed class EnemyBrainPresetsPanel
     private void SetActiveBrainSubSection(BrainSubSectionType subSectionType)
     {
         activeBrainSubSection = subSectionType;
+        ManagementToolStateUtility.SaveEnumValue(ActiveSubSectionStateKey, activeBrainSubSection);
         ShowActiveBrainSubSection();
     }
 

@@ -12,6 +12,10 @@ public sealed class EnemyMasterPresetsPanel
 {
     #region Constants
     private const float LeftPaneWidth = 280f;
+    private const string ActivePanelStateKey = "NashCore.EnemyManagement.Master.ActivePanel";
+    private const string OpenPanelsStateKey = "NashCore.EnemyManagement.Master.OpenPanels";
+    private const string ActiveDetailsSectionStateKey = "NashCore.EnemyManagement.Master.ActiveDetailsSection";
+    private const string SelectedPrefabPathStateKey = "NashCore.EnemyManagement.Master.SelectedPrefabPath";
     #endregion
 
     #region Fields
@@ -37,6 +41,7 @@ public sealed class EnemyMasterPresetsPanel
     private ObjectField enemyPrefabField;
     private Label activeStatusLabel;
     private GameObject selectedEnemyPrefab;
+    private bool suppressStateWrite;
     #endregion
 
     #region Properties
@@ -57,6 +62,7 @@ public sealed class EnemyMasterPresetsPanel
         root.style.flexDirection = FlexDirection.Column;
 
         library = EnemyMasterPresetLibraryUtility.GetOrCreateLibrary();
+        RestorePersistedState();
 
         BuildUI();
         RefreshPresetList();
@@ -131,11 +137,20 @@ public sealed class EnemyMasterPresetsPanel
         root.Add(tabBar);
         root.Add(contentHost);
 
+        suppressStateWrite = true;
         AddTab(EnemyManagementWindow.PanelType.EnemyMasterPresets,
                "Enemy Master Presets",
                mainContentRoot,
                null);
-        SetActivePanel(EnemyManagementWindow.PanelType.EnemyMasterPresets);
+        RestoreOpenSidePanels();
+
+        if (sidePanels.ContainsKey(activePanel) == false)
+            activePanel = EnemyManagementWindow.PanelType.EnemyMasterPresets;
+
+        SetActivePanel(activePanel);
+        suppressStateWrite = false;
+        SaveOpenPanelsState();
+        ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, activePanel);
     }
 
     private VisualElement BuildLeftPane()
@@ -660,8 +675,10 @@ public sealed class EnemyMasterPresetsPanel
         enemyPrefabField.RegisterValueChangedCallback(evt =>
         {
             selectedEnemyPrefab = evt.newValue as GameObject;
+            SaveSelectedPrefabState();
             RefreshActiveStatus();
         });
+        enemyPrefabField.SetValueWithoutNotify(selectedEnemyPrefab);
         sectionContainer.Add(enemyPrefabField);
 
         VisualElement buttonRow = new VisualElement();
@@ -687,6 +704,7 @@ public sealed class EnemyMasterPresetsPanel
         activeStatusLabel.style.marginTop = 2f;
         activeStatusLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
         sectionContainer.Add(activeStatusLabel);
+        RefreshActiveStatus();
     }
 
     private void BuildNavigationSection()
@@ -734,6 +752,7 @@ public sealed class EnemyMasterPresetsPanel
     private void SetActiveDetailsSection(DetailsSectionType sectionType)
     {
         activeDetailsSection = sectionType;
+        ManagementToolStateUtility.SaveEnumValue(ActiveDetailsSectionStateKey, activeDetailsSection);
         BuildActiveDetailsSection();
     }
 
@@ -823,31 +842,19 @@ public sealed class EnemyMasterPresetsPanel
     #region Prefab Activation
     private void FindEnemyPrefab()
     {
-        string[] guids = AssetDatabase.FindAssets("t:Prefab");
-
-        for (int index = 0; index < guids.Length; index++)
+        if (ManagementToolPrefabUtility.TryFindFirstPrefabWithComponent<EnemyAuthoring>(out GameObject prefab) == false)
         {
-            string path = AssetDatabase.GUIDToAssetPath(guids[index]);
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-
-            if (prefab == null)
-                continue;
-
-            EnemyAuthoring authoring = prefab.GetComponent<EnemyAuthoring>();
-
-            if (authoring == null)
-                continue;
-
-            selectedEnemyPrefab = prefab;
-
-            if (enemyPrefabField != null)
-                enemyPrefabField.SetValueWithoutNotify(prefab);
-
-            RefreshActiveStatus();
+            EditorUtility.DisplayDialog("Find Enemy Prefab", "No prefab with EnemyAuthoring was found.", "OK");
             return;
         }
 
-        EditorUtility.DisplayDialog("Find Enemy Prefab", "No prefab with EnemyAuthoring was found.", "OK");
+        selectedEnemyPrefab = prefab;
+        SaveSelectedPrefabState();
+
+        if (enemyPrefabField != null)
+            enemyPrefabField.SetValueWithoutNotify(prefab);
+
+        RefreshActiveStatus();
     }
 
     private void AssignPresetToPrefab()
@@ -961,6 +968,7 @@ public sealed class EnemyMasterPresetsPanel
             entry.TabContainer.RemoveFromHierarchy();
 
         sidePanels.Remove(panelType);
+        SaveOpenPanelsState();
 
         if (activePanel == panelType)
             SetActivePanel(EnemyManagementWindow.PanelType.EnemyMasterPresets);
@@ -1046,6 +1054,7 @@ public sealed class EnemyMasterPresetsPanel
             Content = content,
             BrainPanel = brainPanel
         };
+        SaveOpenPanelsState();
     }
 
     private void SyncSidePanelSelection(EnemyManagementWindow.PanelType panelType, SidePanelEntry entry)
@@ -1101,6 +1110,10 @@ public sealed class EnemyMasterPresetsPanel
             return;
 
         activePanel = panelType;
+
+        if (suppressStateWrite == false)
+            ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, activePanel);
+
         contentHost.Clear();
         contentHost.Add(entry.Content);
         UpdateTabStyles();
@@ -1131,6 +1144,49 @@ public sealed class EnemyMasterPresetsPanel
             return presetName;
 
         return presetName + " v. " + version;
+    }
+
+    private void RestorePersistedState()
+    {
+        activePanel = ManagementToolStateUtility.LoadEnumValue(ActivePanelStateKey,
+                                                                EnemyManagementWindow.PanelType.EnemyMasterPresets);
+        activeDetailsSection = ManagementToolStateUtility.LoadEnumValue(ActiveDetailsSectionStateKey,
+                                                                         DetailsSectionType.Metadata);
+        selectedEnemyPrefab = ManagementToolStateUtility.LoadGameObjectAsset(SelectedPrefabPathStateKey);
+    }
+
+    private void RestoreOpenSidePanels()
+    {
+        List<EnemyManagementWindow.PanelType> openPanels = ManagementToolStateUtility.LoadEnumList<EnemyManagementWindow.PanelType>(OpenPanelsStateKey);
+
+        for (int index = 0; index < openPanels.Count; index++)
+        {
+            EnemyManagementWindow.PanelType openPanel = openPanels[index];
+
+            if (openPanel == EnemyManagementWindow.PanelType.EnemyMasterPresets)
+                continue;
+
+            OpenSidePanel(openPanel);
+        }
+    }
+
+    private void SaveOpenPanelsState()
+    {
+        if (suppressStateWrite)
+            return;
+
+        List<EnemyManagementWindow.PanelType> openPanels = new List<EnemyManagementWindow.PanelType>();
+        openPanels.Add(EnemyManagementWindow.PanelType.EnemyMasterPresets);
+
+        if (sidePanels.ContainsKey(EnemyManagementWindow.PanelType.EnemyBrainPresets))
+            openPanels.Add(EnemyManagementWindow.PanelType.EnemyBrainPresets);
+
+        ManagementToolStateUtility.SaveEnumList(OpenPanelsStateKey, openPanels);
+    }
+
+    private void SaveSelectedPrefabState()
+    {
+        ManagementToolStateUtility.SaveAssetPath(SelectedPrefabPathStateKey, selectedEnemyPrefab);
     }
     #endregion
 

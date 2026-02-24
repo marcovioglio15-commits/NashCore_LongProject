@@ -21,6 +21,7 @@ public sealed class PlayerControllerPresetsPanel
     private const float MultiplierAngleWidth = 52f;
     private const float MultiplierRangeWidth = 110f;
     private const float MultiplierRowSpacing = 2f;
+    private const string ActiveSectionStateKey = "NashCore.PlayerManagement.Controller.ActiveSection";
 
     // Sections Margin
     private const float SectionMarginTop = 8f;
@@ -88,6 +89,7 @@ public sealed class PlayerControllerPresetsPanel
 
         m_Library = PlayerControllerPresetLibraryUtility.GetOrCreateLibrary();
         m_InputAsset = PlayerInputActionsAssetUtility.LoadOrCreateAsset();
+        m_ActiveSection = ManagementToolStateUtility.LoadEnumValue(ActiveSectionStateKey, SectionType.Metadata);
 
         BuildUI();
         RefreshPresetList();
@@ -693,6 +695,7 @@ public sealed class PlayerControllerPresetsPanel
     private void SetActiveSection(SectionType sectionType)
     {
         m_ActiveSection = sectionType;
+        ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, m_ActiveSection);
         BuildActiveSection();
     }
 

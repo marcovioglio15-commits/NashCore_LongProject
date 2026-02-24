@@ -12,6 +12,7 @@ public sealed class PlayerProgressionPresetsPanel
 {
     #region Constants
     private const float LeftPaneWidth = 280f;
+    private const string ActiveSectionStateKey = "NashCore.PlayerManagement.Progression.ActiveSection";
     #endregion
 
     #region Fields
@@ -47,6 +48,7 @@ public sealed class PlayerProgressionPresetsPanel
         root.style.flexGrow = 1f;
 
         library = PlayerProgressionPresetLibraryUtility.GetOrCreateLibrary();
+        activeSection = ManagementToolStateUtility.LoadEnumValue(ActiveSectionStateKey, SectionType.Metadata);
 
         BuildUI();
         RefreshPresetList();
@@ -580,6 +582,7 @@ public sealed class PlayerProgressionPresetsPanel
     private void SetActiveSection(SectionType sectionType)
     {
         activeSection = sectionType;
+        ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, activeSection);
         BuildActiveSection();
     }
 

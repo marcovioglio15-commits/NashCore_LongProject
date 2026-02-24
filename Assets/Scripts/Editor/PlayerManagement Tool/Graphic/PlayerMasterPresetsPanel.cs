@@ -17,6 +17,10 @@ public sealed class PlayerMasterPresetsPanel
     private const string ProgressionPresetsFolder = "Assets/Scriptable Objects/Player/Progression";
     private const string PowerUpsPresetsFolder = "Assets/Scriptable Objects/Player/Power-Ups";
     private const string AnimationPresetsFolder = "Assets/Scriptable Objects/Player/Animation Bindings";
+    private const string ActivePanelStateKey = "NashCore.PlayerManagement.Master.ActivePanel";
+    private const string OpenPanelsStateKey = "NashCore.PlayerManagement.Master.OpenPanels";
+    private const string ActiveDetailsSectionStateKey = "NashCore.PlayerManagement.Master.ActiveDetailsSection";
+    private const string SelectedPrefabPathStateKey = "NashCore.PlayerManagement.Master.SelectedPrefabPath";
     #endregion
 
     #region Fields
@@ -42,6 +46,7 @@ public sealed class PlayerMasterPresetsPanel
     private ObjectField m_PlayerPrefabField;
     private Label m_ActiveStatusLabel;
     private GameObject m_SelectedPlayerPrefab;
+    private bool m_SuppressStateWrite;
     #endregion
 
     #region Properties
@@ -62,6 +67,7 @@ public sealed class PlayerMasterPresetsPanel
         m_Root.style.flexDirection = FlexDirection.Column;
 
         m_Library = PlayerMasterPresetLibraryUtility.GetOrCreateLibrary();
+        RestorePersistedState();
 
         BuildUI();
         RefreshPresetList();
@@ -133,8 +139,17 @@ public sealed class PlayerMasterPresetsPanel
         m_Root.Add(m_TabBar);
         m_Root.Add(m_ContentHost);
 
+        m_SuppressStateWrite = true;
         AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot, null, null, null, null);
-        SetActivePanel(PlayerManagementWindow.PanelType.PlayerMasterPresets);
+        RestoreOpenSidePanels();
+
+        if (m_SidePanels.ContainsKey(m_ActivePanel) == false)
+            m_ActivePanel = PlayerManagementWindow.PanelType.PlayerMasterPresets;
+
+        SetActivePanel(m_ActivePanel);
+        m_SuppressStateWrite = false;
+        SaveOpenPanelsState();
+        ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, m_ActivePanel);
     }
 
     private VisualElement BuildLeftPane()
@@ -469,6 +484,7 @@ public sealed class PlayerMasterPresetsPanel
         versionField.BindProperty(versionProperty);
         versionField.RegisterValueChangedCallback(evt =>
         {
+            PlayerManagementDraftSession.MarkDirty();
             RefreshPresetList();
         });
         sectionContainer.Add(versionField);
@@ -480,6 +496,7 @@ public sealed class PlayerMasterPresetsPanel
         descriptionField.BindProperty(descriptionProperty);
         descriptionField.RegisterValueChangedCallback(evt =>
         {
+            PlayerManagementDraftSession.MarkDirty();
             RefreshPresetList();
         });
         sectionContainer.Add(descriptionField);
@@ -518,6 +535,7 @@ public sealed class PlayerMasterPresetsPanel
         m_PresetSerializedObject.Update();
         idProperty.stringValue = Guid.NewGuid().ToString("N");
         m_PresetSerializedObject.ApplyModifiedProperties();
+        PlayerManagementDraftSession.MarkDirty();
     }
 
     private void HandlePresetNameChanged(string newName)
@@ -589,6 +607,8 @@ public sealed class PlayerMasterPresetsPanel
         presetField.BindProperty(presetProperty);
         presetField.RegisterValueChangedCallback(evt =>
         {
+            PlayerManagementDraftSession.MarkDirty();
+
             if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets ||
                 panelType == PlayerManagementWindow.PanelType.LevelUpProgression ||
                 panelType == PlayerManagementWindow.PanelType.PowerUps ||
@@ -649,8 +669,10 @@ public sealed class PlayerMasterPresetsPanel
         m_PlayerPrefabField.RegisterValueChangedCallback(evt =>
         {
             m_SelectedPlayerPrefab = evt.newValue as GameObject;
+            SaveSelectedPrefabState();
             RefreshActiveStatus();
         });
+        m_PlayerPrefabField.SetValueWithoutNotify(m_SelectedPlayerPrefab);
         sectionContainer.Add(m_PlayerPrefabField);
 
         VisualElement buttonRow = new VisualElement();
@@ -676,6 +698,7 @@ public sealed class PlayerMasterPresetsPanel
         m_ActiveStatusLabel.style.marginTop = 2f;
         m_ActiveStatusLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
         sectionContainer.Add(m_ActiveStatusLabel);
+        RefreshActiveStatus();
     }
 
     private void BuildNavigationSection()
@@ -794,6 +817,7 @@ public sealed class PlayerMasterPresetsPanel
     private void SetActiveDetailsSection(DetailsSectionType sectionType)
     {
         m_ActiveDetailsSection = sectionType;
+        ManagementToolStateUtility.SaveEnumValue(ActiveDetailsSectionStateKey, m_ActiveDetailsSection);
         BuildActiveDetailsSection();
     }
 
@@ -802,6 +826,10 @@ public sealed class PlayerMasterPresetsPanel
         if (m_DetailSectionContentRoot == null)
             return;
 
+        if (m_PresetSerializedObject == null)
+            return;
+
+        m_PresetSerializedObject.Update();
         m_DetailSectionContentRoot.Clear();
 
         switch (m_ActiveDetailsSection)
@@ -941,37 +969,26 @@ public sealed class PlayerMasterPresetsPanel
         property.objectReferenceValue = preset;
         m_PresetSerializedObject.ApplyModifiedProperties();
         PlayerManagementDraftSession.MarkDirty();
+        SyncOpenSidePanels();
     }
     #endregion
 
     #region Prefab Activation
     private void FindPlayerPrefab()
     {
-        string[] guids = AssetDatabase.FindAssets("t:Prefab");
-
-        for (int i = 0; i < guids.Length; i++)
+        if (ManagementToolPrefabUtility.TryFindFirstPrefabWithComponent<PlayerAuthoring>(out GameObject prefab) == false)
         {
-            string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-
-            if (prefab == null)
-                continue;
-
-            PlayerAuthoring authoring = prefab.GetComponent<PlayerAuthoring>();
-
-            if (authoring == null)
-                continue;
-
-            m_SelectedPlayerPrefab = prefab;
-
-            if (m_PlayerPrefabField != null)
-                m_PlayerPrefabField.SetValueWithoutNotify(prefab);
-
-            RefreshActiveStatus();
+            EditorUtility.DisplayDialog("Find Player Prefab", "No prefab with PlayerAuthoring was found.", "OK");
             return;
         }
 
-        EditorUtility.DisplayDialog("Find Player Prefab", "No prefab with PlayerAuthoring was found.", "OK");
+        m_SelectedPlayerPrefab = prefab;
+        SaveSelectedPrefabState();
+
+        if (m_PlayerPrefabField != null)
+            m_PlayerPrefabField.SetValueWithoutNotify(prefab);
+
+        RefreshActiveStatus();
     }
 
     private void AssignPresetToPrefab()
@@ -1084,6 +1101,7 @@ public sealed class PlayerMasterPresetsPanel
             entry.TabContainer.RemoveFromHierarchy();
 
         m_SidePanels.Remove(panelType);
+        SaveOpenPanelsState();
 
         if (m_ActivePanel == panelType)
             SetActivePanel(PlayerManagementWindow.PanelType.PlayerMasterPresets);
@@ -1208,6 +1226,7 @@ public sealed class PlayerMasterPresetsPanel
             PowerUpsPanel = powerUpsPanel,
             AnimationPanel = animationPanel
         };
+        SaveOpenPanelsState();
     }
 
     private void SyncSidePanelSelection(PlayerManagementWindow.PanelType panelType, SidePanelEntry entry)
@@ -1314,6 +1333,10 @@ public sealed class PlayerMasterPresetsPanel
             return;
 
         m_ActivePanel = panelType;
+
+        if (m_SuppressStateWrite == false)
+            ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, m_ActivePanel);
+
         m_ContentHost.Clear();
         m_ContentHost.Add(entry.Content);
         UpdateTabStyles();
@@ -1344,6 +1367,58 @@ public sealed class PlayerMasterPresetsPanel
             return name;
 
         return name + " v. " + version;
+    }
+
+    private void RestorePersistedState()
+    {
+        m_ActivePanel = ManagementToolStateUtility.LoadEnumValue(ActivePanelStateKey,
+                                                                  PlayerManagementWindow.PanelType.PlayerMasterPresets);
+        m_ActiveDetailsSection = ManagementToolStateUtility.LoadEnumValue(ActiveDetailsSectionStateKey,
+                                                                           DetailsSectionType.Metadata);
+        m_SelectedPlayerPrefab = ManagementToolStateUtility.LoadGameObjectAsset(SelectedPrefabPathStateKey);
+    }
+
+    private void RestoreOpenSidePanels()
+    {
+        List<PlayerManagementWindow.PanelType> openPanels = ManagementToolStateUtility.LoadEnumList<PlayerManagementWindow.PanelType>(OpenPanelsStateKey);
+
+        for (int index = 0; index < openPanels.Count; index++)
+        {
+            PlayerManagementWindow.PanelType openPanel = openPanels[index];
+
+            if (openPanel == PlayerManagementWindow.PanelType.PlayerMasterPresets)
+                continue;
+
+            OpenSidePanel(openPanel);
+        }
+    }
+
+    private void SaveOpenPanelsState()
+    {
+        if (m_SuppressStateWrite)
+            return;
+
+        List<PlayerManagementWindow.PanelType> openPanels = new List<PlayerManagementWindow.PanelType>();
+        openPanels.Add(PlayerManagementWindow.PanelType.PlayerMasterPresets);
+
+        if (m_SidePanels.ContainsKey(PlayerManagementWindow.PanelType.PlayerControllerPresets))
+            openPanels.Add(PlayerManagementWindow.PanelType.PlayerControllerPresets);
+
+        if (m_SidePanels.ContainsKey(PlayerManagementWindow.PanelType.LevelUpProgression))
+            openPanels.Add(PlayerManagementWindow.PanelType.LevelUpProgression);
+
+        if (m_SidePanels.ContainsKey(PlayerManagementWindow.PanelType.PowerUps))
+            openPanels.Add(PlayerManagementWindow.PanelType.PowerUps);
+
+        if (m_SidePanels.ContainsKey(PlayerManagementWindow.PanelType.AnimationBindings))
+            openPanels.Add(PlayerManagementWindow.PanelType.AnimationBindings);
+
+        ManagementToolStateUtility.SaveEnumList(OpenPanelsStateKey, openPanels);
+    }
+
+    private void SaveSelectedPrefabState()
+    {
+        ManagementToolStateUtility.SaveAssetPath(SelectedPrefabPathStateKey, m_SelectedPlayerPrefab);
     }
 
     private void EnsureFolder(string folderPath)

@@ -6,6 +6,8 @@ using UnityEngine.UIElements;
 public sealed class PlayerManagementWindow : EditorWindow
 {
     #region Fields
+    private const string ActivePanelStateKey = "NashCore.PlayerManagement.Window.ActivePanel";
+
     private PlayerMasterPresetsPanel masterPresetsPanel;
     private PlayerControllerPresetsPanel controllerPresetsPanel;
     private VisualElement contentRoot;
@@ -36,6 +38,7 @@ public sealed class PlayerManagementWindow : EditorWindow
         if (PlayerManagementDraftSession.IsInitialized == false)
             PlayerManagementDraftSession.BeginSession();
 
+        activePanel = ManagementToolStateUtility.LoadEnumValue(ActivePanelStateKey, PanelType.PlayerMasterPresets);
         UpdateUnsavedState();
     }
 
@@ -184,6 +187,7 @@ public sealed class PlayerManagementWindow : EditorWindow
     private void ShowPanel(PanelType panelType)
     {
         activePanel = panelType;
+        ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, activePanel);
 
         if (contentRoot == null)
             return;

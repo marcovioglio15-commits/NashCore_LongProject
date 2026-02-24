@@ -10,6 +10,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 {
     #region Constants
     private const float LeftPaneWidth = 280f;
+    private const string ActiveSectionStateKey = "NashCore.PlayerManagement.PowerUps.ActiveSection";
     #endregion
 
     #region Fields
@@ -49,6 +50,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         library = PlayerPowerUpsPresetLibraryUtility.GetOrCreateLibrary();
         inputAsset = PlayerInputActionsAssetUtility.LoadOrCreateAsset();
+        activeSection = ManagementToolStateUtility.LoadEnumValue(ActiveSectionStateKey, SectionType.Metadata);
 
         BuildUI();
         RefreshPresetList();
@@ -497,6 +499,7 @@ public sealed class PlayerPowerUpsPresetsPanel
     private void SetActiveSection(SectionType sectionType)
     {
         activeSection = sectionType;
+        ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, activeSection);
         BuildActiveSection();
     }
 

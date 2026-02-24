@@ -6,6 +6,8 @@ using UnityEngine.UIElements;
 public sealed class EnemyManagementWindow : EditorWindow
 {
     #region Fields
+    private const string ActivePanelStateKey = "NashCore.EnemyManagement.Window.ActivePanel";
+
     private EnemyMasterPresetsPanel masterPresetsPanel;
     private VisualElement contentRoot;
     private Label sessionStatusLabel;
@@ -33,6 +35,11 @@ public sealed class EnemyManagementWindow : EditorWindow
 
         if (EnemyManagementDraftSession.IsInitialized == false)
             EnemyManagementDraftSession.BeginSession();
+
+        activePanel = ManagementToolStateUtility.LoadEnumValue(ActivePanelStateKey, PanelType.EnemyMasterPresets);
+
+        if (activePanel != PanelType.EnemyMasterPresets)
+            activePanel = PanelType.EnemyMasterPresets;
 
         UpdateUnsavedState();
     }
@@ -172,6 +179,7 @@ public sealed class EnemyManagementWindow : EditorWindow
     private void ShowPanel(PanelType panelType)
     {
         activePanel = panelType;
+        ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, activePanel);
 
         if (contentRoot == null)
             return;
