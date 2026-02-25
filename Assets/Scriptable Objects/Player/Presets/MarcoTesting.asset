@@ -111,6 +111,7 @@ MonoBehaviour:
     values:
       shootSpeed: 24
       rateOfFire: 8
+      explosionRadius: 1
       range: 20
       lifetime: 2
       damage: 1

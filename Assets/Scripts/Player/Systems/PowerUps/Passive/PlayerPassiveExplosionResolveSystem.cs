@@ -211,11 +211,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
         if (enemyHealth.Current <= 0f)
             return;
 
-        enemyHealth.Current -= damage;
-
-        if (enemyHealth.Current < 0f)
-            enemyHealth.Current = 0f;
-
+        EnemyDamageUtility.ApplyFlatShieldDamage(ref enemyHealth, damage);
         enemyHealthArray[enemyIndex] = enemyHealth;
         enemyDirtyFlags[enemyIndex] = 1;
 

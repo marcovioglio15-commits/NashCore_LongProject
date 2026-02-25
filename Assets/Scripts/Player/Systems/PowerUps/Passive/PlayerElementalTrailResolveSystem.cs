@@ -68,11 +68,13 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
                 continue;
             }
 
-            bool canApply = segment.ApplyTimer <= 0f && segment.StacksPerTick > 0f && segment.Radius > 0f;
+            int pendingApplyCount = ResolvePendingApplyCount(ref segment);
+            bool canApply = pendingApplyCount > 0 && segment.StacksPerTick > 0f && segment.Radius > 0f;
 
             if (canApply && enemyCount > 0)
             {
                 float radius = math.max(0f, segment.Radius);
+                float stacksToApply = math.max(0f, segment.StacksPerTick) * pendingApplyCount;
                 float3 trailPosition = trailTransform.ValueRO.Position;
                 float procVfxLifetimeSeconds = ResolveProcVfxLifetimeSeconds(in segment.Effect);
                 Entity ownerEntity = segment.OwnerEntity;
@@ -110,7 +112,7 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
 
                     bool procTriggered;
                     bool applied = EnemyElementalStackUtility.TryApplyStacks(enemyEntity,
-                                                                             math.max(0f, segment.StacksPerTick),
+                                                                             stacksToApply,
                                                                              segment.Effect,
                                                                              ref elementalStackLookup,
                                                                              out procTriggered);
@@ -152,8 +154,6 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
                                             enemyRuntimeState.SpawnVersion,
                                             procVfxLifetimeSeconds);
                 }
-
-                segment.ApplyTimer = math.max(0.01f, segment.ApplyIntervalSeconds);
             }
 
             trailSegment.ValueRW = segment;
@@ -225,6 +225,25 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
             default:
                 return 0.5f;
         }
+    }
+
+    private static int ResolvePendingApplyCount(ref ElementalTrailSegment segment)
+    {
+        float applyIntervalSeconds = math.max(0.01f, segment.ApplyIntervalSeconds);
+        segment.ApplyIntervalSeconds = applyIntervalSeconds;
+
+        if (segment.ApplyTimer > 0f)
+            return 0;
+
+        float overdueSeconds = -segment.ApplyTimer;
+        int additionalApplyCount = (int)math.floor(overdueSeconds / applyIntervalSeconds);
+        int applyCount = 1 + math.max(0, additionalApplyCount);
+        segment.ApplyTimer += applyCount * applyIntervalSeconds;
+
+        if (segment.ApplyTimer <= 0f)
+            segment.ApplyTimer = applyIntervalSeconds;
+
+        return applyCount;
     }
     #endregion
 

@@ -8,6 +8,7 @@ using Unity.Transforms;
 /// <summary>
 /// Resolves projectile hits against active enemies using a spatial hash.
 /// Applies damage, elemental payloads and split-projectile generation.
+/// Each projectile can hit all enemies overlapped by its runtime impact radius.
 /// </summary>
 [UpdateInGroup(typeof(EnemySystemGroup))]
 [UpdateAfter(typeof(EnemySteeringSystem))]
@@ -70,7 +71,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         NativeArray<float3> enemyPositions = new NativeArray<float3>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> enemyRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-        float maxRadius = 0.05f;
+        float maxEnemyRadius = 0.05f;
 
         for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
         {
@@ -78,11 +79,13 @@ public partial struct EnemyProjectileHitSystem : ISystem
             float bodyRadius = math.max(0.05f, enemyDataArray[enemyIndex].BodyRadius);
             enemyRadii[enemyIndex] = bodyRadius;
 
-            if (bodyRadius > maxRadius)
-                maxRadius = bodyRadius;
+            if (bodyRadius > maxEnemyRadius)
+            {
+                maxEnemyRadius = bodyRadius;
+            }
         }
 
-        float cellSize = math.max(0.25f, maxRadius);
+        float cellSize = math.max(0.25f, maxEnemyRadius);
         float inverseCellSize = 1f / cellSize;
         NativeParallelMultiHashMap<int, int> enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.TempJob);
 
@@ -101,12 +104,13 @@ public partial struct EnemyProjectileHitSystem : ISystem
         {
             projectilePositions[projectileIndex] = projectileTransforms[projectileIndex].Position;
             float projectileScale = math.max(0.01f, projectileTransforms[projectileIndex].Scale);
-            projectileRadii[projectileIndex] = math.max(0.005f, BaseProjectileHitRadius * projectileScale);
+            float explosionRadius = math.max(0f, projectileDataArray[projectileIndex].ExplosionRadius);
+            projectileRadii[projectileIndex] = math.max(0.005f, BaseProjectileHitRadius * projectileScale + explosionRadius);
         }
 
-        NativeArray<int> hitEnemyIndices = new NativeArray<int>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeStream projectileHitStream = new NativeStream(projectileCount, Allocator.TempJob);
 
-        EnemyProjectileHitJob hitJob = new EnemyProjectileHitJob
+        EnemyProjectileHitCollectJob hitCollectJob = new EnemyProjectileHitCollectJob
         {
             ProjectilePositions = projectilePositions,
             ProjectileRadii = projectileRadii,
@@ -114,11 +118,12 @@ public partial struct EnemyProjectileHitSystem : ISystem
             EnemyRadii = enemyRadii,
             CellMap = enemyCellMap,
             InverseCellSize = inverseCellSize,
-            HitEnemyIndices = hitEnemyIndices
+            MaxEnemyRadius = maxEnemyRadius,
+            HitStreamWriter = projectileHitStream.AsWriter()
         };
 
-        JobHandle handle = hitJob.Schedule(projectileCount, 64, state.Dependency);
-        handle.Complete();
+        JobHandle hitCollectHandle = hitCollectJob.Schedule(projectileCount, 64, state.Dependency);
+        hitCollectHandle.Complete();
 
         NativeArray<float> damageByEnemy = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
         BufferLookup<ProjectilePoolElement> projectilePoolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
@@ -128,16 +133,17 @@ public partial struct EnemyProjectileHitSystem : ISystem
         ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
         ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup = SystemAPI.GetComponentLookup<EnemyElementalVfxAnchor>(true);
         ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup = SystemAPI.GetComponentLookup<PlayerElementalVfxConfig>(true);
+        NativeStream.Reader projectileHitReader = projectileHitStream.AsReader();
 
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
-            int enemyIndex = hitEnemyIndices[projectileIndex];
+            int hitCount = projectileHitReader.BeginForEachIndex(projectileIndex);
 
-            if (enemyIndex < 0)
+            if (hitCount <= 0)
+            {
+                projectileHitReader.EndForEachIndex();
                 continue;
-
-            if (enemyIndex >= enemyCount)
-                continue;
+            }
 
             Projectile projectileData = projectileDataArray[projectileIndex];
             ProjectileOwner projectileOwner = projectileOwnerArray[projectileIndex];
@@ -147,32 +153,60 @@ public partial struct EnemyProjectileHitSystem : ISystem
             float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntities[projectileIndex],
                                                                         projectileTransform.Scale,
                                                                         in projectileBaseScaleLookup);
-            Entity enemyEntity = enemyEntities[enemyIndex];
-            float3 enemyPosition = enemyTransforms[enemyIndex].Position;
-            EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
+            float projectileDamage = math.max(0f, projectileData.Damage);
+            bool hasValidHit = false;
             ElementalVfxDefinitionConfig elementalVfxConfig = default;
 
             if (elementalPayload.Enabled != 0 && elementalPayload.StacksPerHit > 0f)
+            {
                 elementalVfxConfig = ResolveElementalVfxDefinition(projectileOwner.ShooterEntity,
                                                                     elementalPayload.Effect.ElementType,
                                                                     in elementalVfxConfigLookup);
+            }
 
-            damageByEnemy[enemyIndex] += math.max(0f, projectileData.Damage);
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                int enemyIndex = projectileHitReader.Read<int>();
+
+                if (enemyIndex < 0 || enemyIndex >= enemyCount)
+                {
+                    continue;
+                }
+
+                hasValidHit = true;
+
+                if (projectileDamage > 0f)
+                {
+                    damageByEnemy[enemyIndex] += projectileDamage;
+                }
+
+                Entity enemyEntity = enemyEntities[enemyIndex];
+                float3 enemyPosition = enemyPositions[enemyIndex];
+                EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
+                TryApplyElementalPayload(enemyEntity,
+                                         enemyPosition,
+                                         in elementalPayload,
+                                         in projectileOwner,
+                                         in enemyRuntimeState,
+                                         in elementalVfxConfig,
+                                         in elementalVfxAnchorLookup,
+                                         ref elementalStackLookup,
+                                         ref vfxRequestLookup);
+            }
+
+            projectileHitReader.EndForEachIndex();
+
+            if (hasValidHit == false)
+            {
+                continue;
+            }
+
             TryEnqueueSplitRequests(in projectileData,
-                                   in splitState,
-                                   in projectileTransform,
-                                   currentScaleMultiplier,
-                                   in projectileOwner,
-                                   ref shootRequestLookup);
-            TryApplyElementalPayload(enemyEntity,
-                                     enemyPosition,
-                                     in elementalPayload,
-                                     in projectileOwner,
-                                     in enemyRuntimeState,
-                                     in elementalVfxConfig,
-                                     in elementalVfxAnchorLookup,
-                                     ref elementalStackLookup,
-                                     ref vfxRequestLookup);
+                                    in splitState,
+                                    in projectileTransform,
+                                    currentScaleMultiplier,
+                                    in projectileOwner,
+                                    ref shootRequestLookup);
             DespawnProjectile(entityManager, projectileEntities[projectileIndex], projectileOwner, ref projectilePoolLookup);
         }
 
@@ -192,11 +226,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 continue;
 
             EnemyHealth enemyHealth = enemyHealthArray[enemyIndex];
-            enemyHealth.Current -= damage;
-
-            if (enemyHealth.Current < 0f)
-                enemyHealth.Current = 0f;
-
+            EnemyDamageUtility.ApplyFlatShieldDamage(ref enemyHealth, damage);
             entityManager.SetComponentData(enemyEntity, enemyHealth);
 
             if (enemyHealth.Current <= 0f)
@@ -231,7 +261,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         enemyRadii.Dispose();
         projectilePositions.Dispose();
         projectileRadii.Dispose();
-        hitEnemyIndices.Dispose();
+        projectileHitStream.Dispose();
         enemyCellMap.Dispose();
         damageByEnemy.Dispose();
     }
@@ -276,6 +306,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         float splitRange = math.max(0f, projectileData.MaxRange * math.max(0f, splitState.SplitLifetimeMultiplier));
         float splitLifetime = math.max(0f, projectileData.MaxLifetime * math.max(0f, splitState.SplitLifetimeMultiplier));
         float splitDamage = math.max(0f, projectileData.Damage * math.max(0f, splitState.SplitDamageMultiplier));
+        float splitExplosionRadius = math.max(0f, projectileData.ExplosionRadius * math.max(0f, splitState.SplitSizeMultiplier));
         float splitScaleMultiplier = math.max(0.01f, currentScaleMultiplier * math.max(0f, splitState.SplitSizeMultiplier));
 
         switch (splitState.DirectionMode)
@@ -289,6 +320,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                         splitRange,
                                         splitLifetime,
                                         splitDamage,
+                                        splitExplosionRadius,
                                         splitScaleMultiplier,
                                         projectileData.InheritPlayerSpeed);
                 return;
@@ -303,6 +335,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                             splitRange,
                                             splitLifetime,
                                             splitDamage,
+                                            splitExplosionRadius,
                                             splitScaleMultiplier,
                                             projectileData.InheritPlayerSpeed);
                     return;
@@ -316,6 +349,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                             splitRange,
                                             splitLifetime,
                                             splitDamage,
+                                            splitExplosionRadius,
                                             splitScaleMultiplier,
                                             projectileData.InheritPlayerSpeed);
                 return;
@@ -330,6 +364,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                                 float splitRange,
                                                 float splitLifetime,
                                                 float splitDamage,
+                                                float splitExplosionRadius,
                                                 float splitScaleMultiplier,
                                                 byte inheritPlayerSpeed)
     {
@@ -348,6 +383,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                  splitRange,
                                  splitLifetime,
                                  splitDamage,
+                                 splitExplosionRadius,
                                  splitScaleMultiplier,
                                  inheritPlayerSpeed);
         }
@@ -361,6 +397,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                                     float splitRange,
                                                     float splitLifetime,
                                                     float splitDamage,
+                                                    float splitExplosionRadius,
                                                     float splitScaleMultiplier,
                                                     byte inheritPlayerSpeed)
     {
@@ -377,6 +414,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                  splitRange,
                                  splitLifetime,
                                  splitDamage,
+                                 splitExplosionRadius,
                                  splitScaleMultiplier,
                                  inheritPlayerSpeed);
         }
@@ -389,6 +427,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                              float splitRange,
                                              float splitLifetime,
                                              float splitDamage,
+                                             float splitExplosionRadius,
                                              float splitScaleMultiplier,
                                              byte inheritPlayerSpeed)
     {
@@ -397,6 +436,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             Position = spawnPosition,
             Direction = direction,
             Speed = splitSpeed,
+            ExplosionRadius = splitExplosionRadius,
             Range = splitRange,
             Lifetime = splitLifetime,
             Damage = splitDamage,
@@ -588,7 +628,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
     #region Jobs
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
-    private struct EnemyProjectileHitJob : IJobParallelFor
+    private struct EnemyProjectileHitCollectJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<float3> ProjectilePositions;
         [ReadOnly] public NativeArray<float> ProjectileRadii;
@@ -596,23 +636,27 @@ public partial struct EnemyProjectileHitSystem : ISystem
         [ReadOnly] public NativeArray<float> EnemyRadii;
         [ReadOnly] public NativeParallelMultiHashMap<int, int> CellMap;
         [ReadOnly] public float InverseCellSize;
-        public NativeArray<int> HitEnemyIndices;
+        [ReadOnly] public float MaxEnemyRadius;
+        public NativeStream.Writer HitStreamWriter;
 
         public void Execute(int index)
         {
             float3 projectilePosition = ProjectilePositions[index];
             float projectileRadius = math.max(0.005f, ProjectileRadii[index]);
-            int centerCellX = (int)math.floor(projectilePosition.x * InverseCellSize);
-            int centerCellY = (int)math.floor(projectilePosition.z * InverseCellSize);
+            float searchRadius = math.max(0.01f, projectileRadius + math.max(0.05f, MaxEnemyRadius));
+            int minCellX = (int)math.floor((projectilePosition.x - searchRadius) * InverseCellSize);
+            int maxCellX = (int)math.floor((projectilePosition.x + searchRadius) * InverseCellSize);
+            int minCellY = (int)math.floor((projectilePosition.z - searchRadius) * InverseCellSize);
+            int maxCellY = (int)math.floor((projectilePosition.z + searchRadius) * InverseCellSize);
 
-            int closestEnemyIndex = -1;
-            float closestDistanceSquared = float.MaxValue;
+            NativeStream.Writer streamWriter = HitStreamWriter;
+            streamWriter.BeginForEachIndex(index);
 
-            for (int offsetX = -1; offsetX <= 1; offsetX++)
+            for (int cellX = minCellX; cellX <= maxCellX; cellX++)
             {
-                for (int offsetY = -1; offsetY <= 1; offsetY++)
+                for (int cellY = minCellY; cellY <= maxCellY; cellY++)
                 {
-                    int key = EncodeCell(centerCellX + offsetX, centerCellY + offsetY);
+                    int key = EncodeCell(cellX, cellY);
                     NativeParallelMultiHashMapIterator<int> iterator;
                     int enemyIndex;
 
@@ -630,17 +674,13 @@ public partial struct EnemyProjectileHitSystem : ISystem
                         if (sqrDistance > radiusSquared)
                             continue;
 
-                        if (sqrDistance >= closestDistanceSquared)
-                            continue;
-
-                        closestDistanceSquared = sqrDistance;
-                        closestEnemyIndex = enemyIndex;
+                        streamWriter.Write(enemyIndex);
                     }
                     while (CellMap.TryGetNextValue(out enemyIndex, ref iterator));
                 }
             }
 
-            HitEnemyIndices[index] = closestEnemyIndex;
+            streamWriter.EndForEachIndex();
         }
 
         private static int EncodeCell(int x, int y)

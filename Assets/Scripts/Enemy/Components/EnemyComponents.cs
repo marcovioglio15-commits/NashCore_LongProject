@@ -88,6 +88,22 @@ public struct EnemyVisualGpuBaked : IComponentData
 }
 
 /// <summary>
+/// Stores the entity that owns the world-space status bars companion view for an enemy.
+/// </summary>
+public struct EnemyWorldSpaceStatusBarsLink : IComponentData
+{
+    public Entity ViewEntity;
+}
+
+/// <summary>
+/// Caches the resolved world-space status bars view entity instance used at runtime.
+/// </summary>
+public struct EnemyWorldSpaceStatusBarsRuntimeLink : IComponentData
+{
+    public Entity ViewEntity;
+}
+
+/// <summary>
 /// Stores the owner spawner of an enemy entity.
 /// </summary>
 public struct EnemyOwnerSpawner : IComponentData

@@ -657,13 +657,19 @@ public sealed class PlayerMasterPresetsPanel
         return container;
     }
 
+    /// <summary>
+    /// Builds the Active Preset section for assigning selected master preset to a player prefab.
+    /// Called by BuildActiveDetailsSection when ActivePreset tab is selected.
+    /// </summary>
     private void BuildActivePresetSection()
     {
+        // Create section container and exit if details root is unavailable.
         VisualElement sectionContainer = CreateDetailsSectionContainer("Active on Player Prefab");
 
         if (sectionContainer == null)
             return;
 
+        // Create prefab field and persist selection on user changes.
         m_PlayerPrefabField = new ObjectField("Player Prefab");
         m_PlayerPrefabField.objectType = typeof(GameObject);
         m_PlayerPrefabField.RegisterValueChangedCallback(evt =>
@@ -672,9 +678,11 @@ public sealed class PlayerMasterPresetsPanel
             SaveSelectedPrefabState();
             RefreshActiveStatus();
         });
+        // Reapply persisted prefab after section rebuilds.
         m_PlayerPrefabField.SetValueWithoutNotify(m_SelectedPlayerPrefab);
         sectionContainer.Add(m_PlayerPrefabField);
 
+        // Build action row with find/set buttons.
         VisualElement buttonRow = new VisualElement();
         buttonRow.style.flexDirection = FlexDirection.Row;
         buttonRow.style.marginTop = 2f;
@@ -694,6 +702,7 @@ public sealed class PlayerMasterPresetsPanel
 
         sectionContainer.Add(buttonRow);
 
+        // Add status label for active assignment feedback.
         m_ActiveStatusLabel = new Label();
         m_ActiveStatusLabel.style.marginTop = 2f;
         m_ActiveStatusLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -814,8 +823,15 @@ public sealed class PlayerMasterPresetsPanel
         parent.Add(sectionButton);
     }
 
+    /// <summary>
+    /// Sets active details subsection and persists it for reopen state.
+    /// Called by details tab buttons.
+    /// Takes in the target details section enum.
+    /// </summary>
+    /// <param name="sectionType">Details subsection to activate.</param>
     private void SetActiveDetailsSection(DetailsSectionType sectionType)
     {
+        // Persist selected details subsection and rebuild content.
         m_ActiveDetailsSection = sectionType;
         ManagementToolStateUtility.SaveEnumValue(ActiveDetailsSectionStateKey, m_ActiveDetailsSection);
         BuildActiveDetailsSection();
@@ -974,20 +990,27 @@ public sealed class PlayerMasterPresetsPanel
     #endregion
 
     #region Prefab Activation
+    /// <summary>
+    /// Finds the first project prefab containing PlayerAuthoring and selects it.
+    /// Called by Active Preset "Find" button.
+    /// </summary>
     private void FindPlayerPrefab()
     {
+        // Resolve candidate prefab and show dialog when not found.
         if (ManagementToolPrefabUtility.TryFindFirstPrefabWithComponent<PlayerAuthoring>(out GameObject prefab) == false)
         {
             EditorUtility.DisplayDialog("Find Player Prefab", "No prefab with PlayerAuthoring was found.", "OK");
             return;
         }
 
+        // Store and persist selected prefab, then reflect it in UI field.
         m_SelectedPlayerPrefab = prefab;
         SaveSelectedPrefabState();
 
         if (m_PlayerPrefabField != null)
             m_PlayerPrefabField.SetValueWithoutNotify(prefab);
 
+        // Refresh active assignment feedback.
         RefreshActiveStatus();
     }
 
@@ -1089,11 +1112,19 @@ public sealed class PlayerMasterPresetsPanel
         SyncSidePanelSelection(panelType, m_SidePanels[panelType]);
     }
 
+    /// <summary>
+    /// Closes an opened side panel and persists updated open panels set.
+    /// Called by side tab close buttons.
+    /// Takes in the panel enum to close.
+    /// </summary>
+    /// <param name="panelType">Side panel to close.</param>
     private void CloseSidePanel(PlayerManagementWindow.PanelType panelType)
     {
+        // Keep root panel always open.
         if (panelType == PlayerManagementWindow.PanelType.PlayerMasterPresets)
             return;
 
+        // Resolve side panel entry and remove its tab UI.
         if (m_SidePanels.TryGetValue(panelType, out SidePanelEntry entry) == false)
             return;
 
@@ -1103,6 +1134,7 @@ public sealed class PlayerMasterPresetsPanel
         m_SidePanels.Remove(panelType);
         SaveOpenPanelsState();
 
+        // Fallback to root panel if the active side panel was closed.
         if (m_ActivePanel == panelType)
             SetActivePanel(PlayerManagementWindow.PanelType.PlayerMasterPresets);
     }
@@ -1193,6 +1225,18 @@ public sealed class PlayerMasterPresetsPanel
         return panelRoot;
     }
 
+    /// <summary>
+    /// Adds a tab entry for a panel and persists open panels state.
+    /// Called for root tab creation and for each newly opened side panel.
+    /// Takes in panel enum, label, content root and optional panel controllers.
+    /// </summary>
+    /// <param name="panelType">Panel represented by this tab.</param>
+    /// <param name="label">Tab label.</param>
+    /// <param name="content">Content root shown when tab is active.</param>
+    /// <param name="controllerPanel">Optional controller presets panel instance.</param>
+    /// <param name="progressionPanel">Optional progression presets panel instance.</param>
+    /// <param name="powerUpsPanel">Optional power-ups presets panel instance.</param>
+    /// <param name="animationPanel">Optional animation bindings presets panel instance.</param>
     private void AddTab(PlayerManagementWindow.PanelType panelType,
                         string label,
                         VisualElement content,
@@ -1201,9 +1245,11 @@ public sealed class PlayerMasterPresetsPanel
                         PlayerPowerUpsPresetsPanel powerUpsPanel,
                         PlayerAnimationBindingsPresetsPanel animationPanel)
     {
+        // Guard against initialization state where tab bar is not available yet.
         if (m_TabBar == null)
             return;
 
+        // Build tab container and wire click to panel activation.
         VisualElement tabContainer = new VisualElement();
         tabContainer.style.flexDirection = FlexDirection.Row;
         tabContainer.style.alignItems = Align.Center;
@@ -1215,6 +1261,7 @@ public sealed class PlayerMasterPresetsPanel
         tabButton.style.unityTextAlign = TextAnchor.MiddleLeft;
         tabContainer.Add(tabButton);
 
+        // Register tab in lookup dictionary for selection syncing and refresh.
         m_TabBar.Add(tabContainer);
         m_SidePanels[panelType] = new SidePanelEntry
         {
@@ -1324,19 +1371,28 @@ public sealed class PlayerMasterPresetsPanel
         SyncOpenSidePanels();
     }
 
+    /// <summary>
+    /// Activates requested panel tab, persists panel selection, and swaps visible content.
+    /// Called by tab button clicks and restore logic.
+    /// Takes in panel enum to display.
+    /// </summary>
+    /// <param name="panelType">Panel to activate.</param>
     private void SetActivePanel(PlayerManagementWindow.PanelType panelType)
     {
+        // Resolve panel entry and guard against missing content host.
         if (m_SidePanels.TryGetValue(panelType, out SidePanelEntry entry) == false)
             return;
 
         if (m_ContentHost == null)
             return;
 
+        // Persist selected panel except while startup restore is in progress.
         m_ActivePanel = panelType;
 
         if (m_SuppressStateWrite == false)
             ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, m_ActivePanel);
 
+        // Swap visible panel root and refresh tab styles.
         m_ContentHost.Clear();
         m_ContentHost.Add(entry.Content);
         UpdateTabStyles();
@@ -1369,17 +1425,28 @@ public sealed class PlayerMasterPresetsPanel
         return name + " v. " + version;
     }
 
+    /// <summary>
+    /// Restores active panel, active details section, and selected prefab from EditorPrefs.
+    /// Called by constructor before building UI.
+    /// </summary>
     private void RestorePersistedState()
     {
+        // Restore previously active panel and details subsection.
         m_ActivePanel = ManagementToolStateUtility.LoadEnumValue(ActivePanelStateKey,
                                                                   PlayerManagementWindow.PanelType.PlayerMasterPresets);
         m_ActiveDetailsSection = ManagementToolStateUtility.LoadEnumValue(ActiveDetailsSectionStateKey,
                                                                            DetailsSectionType.Metadata);
+        // Restore selected player prefab reference.
         m_SelectedPlayerPrefab = ManagementToolStateUtility.LoadGameObjectAsset(SelectedPrefabPathStateKey);
     }
 
+    /// <summary>
+    /// Reopens side panels that were open in previous session.
+    /// Called while creating initial tab container.
+    /// </summary>
     private void RestoreOpenSidePanels()
     {
+        // Load persisted open panel list and reopen each side panel.
         List<PlayerManagementWindow.PanelType> openPanels = ManagementToolStateUtility.LoadEnumList<PlayerManagementWindow.PanelType>(OpenPanelsStateKey);
 
         for (int index = 0; index < openPanels.Count; index++)
@@ -1393,11 +1460,17 @@ public sealed class PlayerMasterPresetsPanel
         }
     }
 
+    /// <summary>
+    /// Persists currently open panel tabs to EditorPrefs.
+    /// Called whenever side panel set changes and after restore completion.
+    /// </summary>
     private void SaveOpenPanelsState()
     {
+        // Skip writes during startup restore pass.
         if (m_SuppressStateWrite)
             return;
 
+        // Build deterministic list containing root panel and all currently opened side panels.
         List<PlayerManagementWindow.PanelType> openPanels = new List<PlayerManagementWindow.PanelType>();
         openPanels.Add(PlayerManagementWindow.PanelType.PlayerMasterPresets);
 
@@ -1416,6 +1489,10 @@ public sealed class PlayerMasterPresetsPanel
         ManagementToolStateUtility.SaveEnumList(OpenPanelsStateKey, openPanels);
     }
 
+    /// <summary>
+    /// Persists currently selected player prefab asset path.
+    /// Called on prefab field changes and when "Find" selects a prefab.
+    /// </summary>
     private void SaveSelectedPrefabState()
     {
         ManagementToolStateUtility.SaveAssetPath(SelectedPrefabPathStateKey, m_SelectedPlayerPrefab);

@@ -6,6 +6,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
+/// <summary>
+/// UI panel for creating, editing, duplicating and deleting Player Power-Ups presets.
+/// Used as side panel content by PlayerMasterPresetsPanel when Power-Ups section is opened.
+/// </summary>
 public sealed class PlayerPowerUpsPresetsPanel
 {
     #region Constants
@@ -496,8 +500,15 @@ public sealed class PlayerPowerUpsPresetsPanel
         parent.Add(sectionButton);
     }
 
+    /// <summary>
+    /// Sets active details section and persists the selection for reopen.
+    /// Called by section tab buttons in power-ups preset details.
+    /// Takes in the target section enum.
+    /// </summary>
+    /// <param name="sectionType">Section to activate.</param>
     private void SetActiveSection(SectionType sectionType)
     {
+        // Persist selected section and rebuild detail content.
         activeSection = sectionType;
         ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, activeSection);
         BuildActiveSection();

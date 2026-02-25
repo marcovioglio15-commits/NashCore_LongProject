@@ -53,7 +53,7 @@ public struct MovementValuesBlob
 /// <summary>
 /// This structure holds configuration data related to player shooting mechanics, 
 /// including trigger modes, projectile behavior, shooting offsets, 
-/// and values such as shoot speed, rate of fire, range, lifetime, and damage.
+/// and values such as shoot speed, rate of fire, explosion radius, range, lifetime, and damage.
 /// </summary>
 public struct ShootingConfig
 {
@@ -65,12 +65,13 @@ public struct ShootingConfig
 
 /// <summary>
 /// Holds shooting-related values such as shoot speed, 
-/// rate of fire, range, lifetime, and damage for projectiles.
+/// rate of fire, explosion radius, range, lifetime, and damage for projectiles.
 /// </summary>
 public struct ShootingValuesBlob
 {
     public float ShootSpeed;
     public float RateOfFire;
+    public float ExplosionRadius;
     public float Range;
     public float Lifetime;
     public float Damage;

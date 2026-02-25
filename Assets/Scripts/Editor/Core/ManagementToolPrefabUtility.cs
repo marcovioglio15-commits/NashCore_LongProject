@@ -3,17 +3,28 @@ using UnityEngine;
 
 /// <summary>
 /// Shared utility methods for finding and validating prefab assets used by management tools.
+/// Used by the Player/Enemy Master Presets panels when resolving the target prefab in Active Preset sections.
 /// </summary>
 public static class ManagementToolPrefabUtility
 {
     #region Methods
 
     #region Public Methods
+    /// <summary>
+    /// Finds the first project prefab containing a component of type <typeparamref name="TComponent"/>.
+    /// Used by the Active Preset "Find" button handlers in management panels.
+    /// Takes in an output <see cref="GameObject"/> that receives the found prefab.
+    /// </summary>
+    /// <typeparam name="TComponent">Component type required on the prefab.</typeparam>
+    /// <param name="prefabAsset">Output prefab reference set when a match is found.</param>
+    /// <returns>Returns true when a matching prefab is found; otherwise false.</returns>
     public static bool TryFindFirstPrefabWithComponent<TComponent>(out GameObject prefabAsset) where TComponent : Component
     {
+        // Default output to null in case no matching prefab is found.
         prefabAsset = null;
         string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab");
 
+        // Scan all prefabs and return the first one that contains the requested component.
         for (int index = 0; index < prefabGuids.Length; index++)
         {
             string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuids[index]);
@@ -32,11 +43,21 @@ public static class ManagementToolPrefabUtility
         return false;
     }
 
+    /// <summary>
+    /// Checks whether a prefab contains a component of type <typeparamref name="TComponent"/>.
+    /// Used by callers that need a quick validation before operating on a prefab reference.
+    /// Takes in a prefab asset reference to validate.
+    /// </summary>
+    /// <typeparam name="TComponent">Component type expected on the prefab.</typeparam>
+    /// <param name="prefabAsset">Prefab to validate.</param>
+    /// <returns>Returns true if the prefab contains the component; otherwise false.</returns>
     public static bool HasComponent<TComponent>(GameObject prefabAsset) where TComponent : Component
     {
+        // Reject null prefabs early.
         if (prefabAsset == null)
             return false;
 
+        // Validate presence of the requested component.
         return prefabAsset.GetComponent<TComponent>() != null;
     }
     #endregion

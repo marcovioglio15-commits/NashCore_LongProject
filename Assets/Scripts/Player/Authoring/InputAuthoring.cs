@@ -43,6 +43,10 @@ public sealed class InputAuthoring : MonoBehaviour
     #region Methods
 
     #region Unity Methods
+    private void Awake()
+    {
+        SetCursorLock(isLocked : true);
+    }
     private void OnEnable()
     {
         if (inputActionsAsset == null)
@@ -200,6 +204,12 @@ public sealed class InputAuthoring : MonoBehaviour
         Debug.LogWarning("[InputAuthoring] No PlayerControllerConfig entities found. Player baking/spawn might be missing.");
     }
     #endif
+
+    private static void SetCursorLock(bool isLocked)
+    {
+        Cursor.lockState = isLocked ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !isLocked;
+    }
     #endregion
 
     #endregion

@@ -7,6 +7,7 @@ using UnityEngine;
 
 /// <summary>
 /// Shared EditorPrefs persistence helpers used by management tool editor panels.
+/// Used by Player/Enemy Management windows and preset panels to restore UI state after close/reopen.
 /// </summary>
 public static class ManagementToolStateUtility
 {
@@ -23,9 +24,11 @@ public static class ManagementToolStateUtility
     /// <returns> Returns the loaded enum value, or the fallback value if loading fails. </returns>
     public static TEnum LoadEnumValue<TEnum>(string stateKey, TEnum fallbackValue) where TEnum : struct, Enum
     {
+        // Abort and return fallback when the key is invalid.
         if (string.IsNullOrWhiteSpace(stateKey))
             return fallbackValue;
 
+        // Read persisted int value and map it back to the enum safely.
         int fallbackIntValue = Convert.ToInt32(fallbackValue, CultureInfo.InvariantCulture);
         int savedValue = EditorPrefs.GetInt(stateKey, fallbackIntValue);
 
@@ -46,9 +49,11 @@ public static class ManagementToolStateUtility
     /// <param name="value"></param>
     public static void SaveEnumValue<TEnum>(string stateKey, TEnum value) where TEnum : struct, Enum
     {
+        // Skip writes for invalid keys.
         if (string.IsNullOrWhiteSpace(stateKey))
             return;
 
+        // Persist enum as integer for stable storage.
         int serializedValue = Convert.ToInt32(value, CultureInfo.InvariantCulture);
         EditorPrefs.SetInt(stateKey, serializedValue);
     }
@@ -62,6 +67,7 @@ public static class ManagementToolStateUtility
     /// <returns> Returns the loaded list of enum values, or an empty list if loading fails. </returns>
     public static List<TEnum> LoadEnumList<TEnum>(string stateKey) where TEnum : struct, Enum
     {
+        // Create the output list once and return it for all failure paths.
         List<TEnum> values = new List<TEnum>();
 
         if (string.IsNullOrWhiteSpace(stateKey))
@@ -75,6 +81,7 @@ public static class ManagementToolStateUtility
         string[] tokens = rawValue.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
         HashSet<int> uniqueValues = new HashSet<int>();
 
+        // Parse, validate, and de-duplicate each serialized enum token.
         for (int index = 0; index < tokens.Length; index++)
         {
             string token = tokens[index];
@@ -105,15 +112,18 @@ public static class ManagementToolStateUtility
     /// <param name="values"></param>
     public static void SaveEnumList<TEnum>(string stateKey, IList<TEnum> values) where TEnum : struct, Enum
     {
+        // Skip writes for invalid keys.
         if (string.IsNullOrWhiteSpace(stateKey))
             return;
 
+        // Remove stale state when the incoming list is null or empty.
         if (values == null || values.Count == 0)
         {
             EditorPrefs.DeleteKey(stateKey);
             return;
         }
 
+        // Serialize enum values to a compact comma-separated integer list.
         StringBuilder builder = new StringBuilder(values.Count * 3);
 
         for (int index = 0; index < values.Count; index++)
@@ -138,15 +148,18 @@ public static class ManagementToolStateUtility
     /// <param name="assetObject"></param>
     public static void SaveAssetPath(string stateKey, UnityEngine.Object assetObject)
     {
+        // Skip writes for invalid keys.
         if (string.IsNullOrWhiteSpace(stateKey))
             return;
 
+        // Remove persisted key when the asset reference is null.
         if (assetObject == null)
         {
             EditorPrefs.DeleteKey(stateKey);
             return;
         }
 
+        // Resolve and validate the asset path before persisting it.
         string assetPath = AssetDatabase.GetAssetPath(assetObject);
 
         if (string.IsNullOrWhiteSpace(assetPath))
@@ -166,9 +179,11 @@ public static class ManagementToolStateUtility
     /// <returns> Returns the loaded GameObject asset, or null if loading fails. </returns>
     public static GameObject LoadGameObjectAsset(string stateKey)
     {
+        // Return null when key is invalid or missing.
         if (string.IsNullOrWhiteSpace(stateKey))
             return null;
 
+        // Read asset path and load the GameObject reference.
         string assetPath = EditorPrefs.GetString(stateKey, string.Empty);
 
         if (string.IsNullOrWhiteSpace(assetPath))

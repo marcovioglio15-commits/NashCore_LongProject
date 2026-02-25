@@ -643,7 +643,7 @@ MonoBehaviour:
       triggerMode: 2
       cooldownSeconds: 0
       radius: 4
-      damage: 20
+      damage: 4
       affectAllEnemiesInRadius: 1
       triggerOffset: {x: 0, y: 0, z: 0}
       explosionVfxPrefab: {fileID: 1211940420721360282, guid: 28a3caab1d07a7941b99718216a0fea3, type: 3}
@@ -920,7 +920,10 @@ MonoBehaviour:
   primaryActiveToolId: Dash
   secondaryActiveToolId: Bullet Time
   equippedPassiveToolIds:
-  - Enemy Explosion
+  - BIG SHOT
+  - Splitting Projectiles
   - Elemental Trail
+  - Fire Projectiles
+  - Enemy Explosion
   legacyPrimaryPassiveToolId: 
   legacySecondaryPassiveToolId: 

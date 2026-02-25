@@ -132,8 +132,16 @@ public static class EnemyElementalStackUtility
         switch (stackElement.EffectKind)
         {
             case ElementalEffectKind.Dots:
-                stackElement.DotRemainingSeconds = math.max(stackElement.DotRemainingSeconds, stackElement.DotDurationSeconds);
-                stackElement.DotTickTimer = math.max(0.01f, stackElement.DotTickInterval);
+                float dotTickInterval = math.max(0.01f, stackElement.DotTickInterval);
+                float dotDurationSeconds = math.max(0.05f, stackElement.DotDurationSeconds);
+                bool wasDotActive = stackElement.DotRemainingSeconds > 0f;
+                stackElement.DotRemainingSeconds = math.max(stackElement.DotRemainingSeconds, dotDurationSeconds);
+
+                if (wasDotActive == false ||
+                    stackElement.DotTickTimer <= 0f ||
+                    stackElement.DotTickTimer > dotTickInterval)
+                    stackElement.DotTickTimer = dotTickInterval;
+
                 return;
             case ElementalEffectKind.Impediment:
                 float procSlowPercent = math.min(stackElement.ImpedimentProcSlowPercent, stackElement.ImpedimentMaxSlowPercent);
@@ -165,8 +173,13 @@ public static class EnemyElementalStackUtility
         switch (stackElement.EffectKind)
         {
             case ElementalEffectKind.Dots:
+                float dotTickInterval = math.max(0.01f, stackElement.DotTickInterval);
                 stackElement.DotRemainingSeconds = math.max(0.05f, stackElement.DotDurationSeconds);
-                stackElement.DotTickTimer = math.max(0.01f, stackElement.DotTickInterval);
+
+                if (stackElement.DotTickTimer <= 0f ||
+                    stackElement.DotTickTimer > dotTickInterval)
+                    stackElement.DotTickTimer = dotTickInterval;
+
                 return true;
             case ElementalEffectKind.Impediment:
                 float procSlowPercent = math.min(stackElement.ImpedimentProcSlowPercent, stackElement.ImpedimentMaxSlowPercent);

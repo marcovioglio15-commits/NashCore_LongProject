@@ -203,11 +203,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
         if (enemyHealth.Current <= 0f)
             return;
 
-        enemyHealth.Current -= explosionDamage;
-
-        if (enemyHealth.Current < 0f)
-            enemyHealth.Current = 0f;
-
+        EnemyDamageUtility.ApplyFlatShieldDamage(ref enemyHealth, explosionDamage);
         enemyHealthArray[enemyIndex] = enemyHealth;
         enemyDirtyFlags[enemyIndex] = 1;
 

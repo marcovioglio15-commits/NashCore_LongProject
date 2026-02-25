@@ -157,6 +157,7 @@ public partial struct ProjectileSpawnSystem : ISystem
                 {
                     Velocity = direction * speed,
                     Damage = math.max(0f, request.Damage),
+                    ExplosionRadius = math.max(0f, request.ExplosionRadius),
                     MaxRange = request.Range,
                     MaxLifetime = request.Lifetime,
                     InheritPlayerSpeed = request.InheritPlayerSpeed

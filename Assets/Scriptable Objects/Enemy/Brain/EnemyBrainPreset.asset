@@ -30,8 +30,8 @@ MonoBehaviour:
     contactDamage: 5
     contactInterval: 0.75
   healthStatistics:
-    maxHealth: 1
-    maxShield: 0
+    maxHealth: 8
+    maxShield: 8
   visual:
     visualMode: 1
     visualAnimationSpeed: 1

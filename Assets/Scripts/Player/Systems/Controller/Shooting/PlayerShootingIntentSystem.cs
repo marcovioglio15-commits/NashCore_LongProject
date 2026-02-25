@@ -76,6 +76,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
             float projectileScaleMultiplier = math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier);
             float projectileSpeed = math.max(0f, values.ShootSpeed * math.max(0f, passiveToolsState.ProjectileSpeedMultiplier));
             float projectileDamage = math.max(0f, values.Damage * math.max(0f, passiveToolsState.ProjectileDamageMultiplier));
+            float projectileExplosionRadius = math.max(0f, values.ExplosionRadius);
             float projectileLifetime = ApplyLifetimeMultiplier(values.Lifetime, passiveToolsState.ProjectileLifetimeSecondsMultiplier);
             float projectileRange = ApplyLifetimeMultiplier(values.Range, passiveToolsState.ProjectileLifetimeRangeMultiplier);
 
@@ -138,6 +139,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
                     Position = spawnPosition,
                     Direction = shootDirection,
                     Speed = projectileSpeed,
+                    ExplosionRadius = projectileExplosionRadius,
                     Range = projectileRange,
                     Lifetime = projectileLifetime,
                     Damage = projectileDamage,

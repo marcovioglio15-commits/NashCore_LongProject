@@ -459,8 +459,15 @@ public sealed class EnemyBrainPresetsPanel
         parent.Add(sectionButton);
     }
 
+    /// <summary>
+    /// Sets active top-level details section and persists it for next reopen.
+    /// Called by section tab buttons in the details pane.
+    /// Takes in the target section enum.
+    /// </summary>
+    /// <param name="sectionType">Section to display in details content.</param>
     private void SetActiveSection(SectionType sectionType)
     {
+        // Persist selected section and rebuild details content.
         activeSection = sectionType;
         ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, activeSection);
         BuildActiveDetailsSection();
@@ -588,8 +595,15 @@ public sealed class EnemyBrainPresetsPanel
         SetActiveBrainSubSection(activeBrainSubSection);
     }
 
+    /// <summary>
+    /// Sets active Brain subsection tab and persists it for reopen.
+    /// Called by Brain subsection tab buttons.
+    /// Takes in the target subsection enum.
+    /// </summary>
+    /// <param name="subSectionType">Brain subsection to show.</param>
     private void SetActiveBrainSubSection(BrainSubSectionType subSectionType)
     {
+        // Persist subsection selection and refresh visible subsection content.
         activeBrainSubSection = subSectionType;
         ManagementToolStateUtility.SaveEnumValue(ActiveSubSectionStateKey, activeBrainSubSection);
         ShowActiveBrainSubSection();
@@ -752,7 +766,7 @@ public sealed class EnemyBrainPresetsPanel
                          healthStatisticsProperty,
                          "maxShield",
                          "Max Shield",
-                         "Maximum shield reserve assigned to this enemy at spawn. Currently unused at runtime.");
+                         "Maximum shield reserve assigned to this enemy at spawn. Shield absorbs incoming damage before health.");
         return container;
     }
 

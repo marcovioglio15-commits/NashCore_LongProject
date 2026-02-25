@@ -1973,6 +1973,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             {
                 ShootSpeed = shootingSettings.Values.ShootSpeed,
                 RateOfFire = shootingSettings.Values.RateOfFire,
+                ExplosionRadius = shootingSettings.Values.ExplosionRadius,
                 Range = shootingSettings.Values.Range,
                 Lifetime = shootingSettings.Values.Lifetime,
                 Damage = shootingSettings.Values.Damage

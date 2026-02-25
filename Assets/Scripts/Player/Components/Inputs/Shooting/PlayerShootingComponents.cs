@@ -51,6 +51,7 @@ public struct ShootRequest : IBufferElementData
     public float3 Position;
     public float3 Direction;
     public float Speed;
+    public float ExplosionRadius;
     public float Range;
     public float Lifetime;
     public float Damage;
@@ -67,12 +68,13 @@ public struct ProjectilePoolElement : IBufferElementData
 /// <summary>
 /// This component represents a projectile entity, 
 /// which includes its velocity, damage, maximum range, lifetime, 
-/// and whether it inherits the player's speed when spawned (Hoctagon style).
+/// additional impact radius, and whether it inherits the player's speed when spawned (Hoctagon style).
 /// </summary>
 public struct Projectile : IComponentData
 {
     public float3 Velocity;
     public float Damage;
+    public float ExplosionRadius;
     public float MaxRange;
     public float MaxLifetime;
     public byte InheritPlayerSpeed;

@@ -579,8 +579,15 @@ public sealed class PlayerProgressionPresetsPanel
         parent.Add(button);
     }
 
+    /// <summary>
+    /// Sets active details section and persists the selection for reopen.
+    /// Called by section buttons in progression preset details.
+    /// Takes in the target section enum.
+    /// </summary>
+    /// <param name="sectionType">Section to activate.</param>
     private void SetActiveSection(SectionType sectionType)
     {
+        // Persist selected section and rebuild detail content.
         activeSection = sectionType;
         ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, activeSection);
         BuildActiveSection();

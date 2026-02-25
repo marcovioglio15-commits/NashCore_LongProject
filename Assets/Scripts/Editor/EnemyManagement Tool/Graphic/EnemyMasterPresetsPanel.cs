@@ -40,6 +40,7 @@ public sealed class EnemyMasterPresetsPanel
 
     private ObjectField enemyPrefabField;
     private Label activeStatusLabel;
+    private Label testUiStatusLabel;
     private GameObject selectedEnemyPrefab;
     private bool suppressStateWrite;
     #endregion
@@ -663,24 +664,32 @@ public sealed class EnemyMasterPresetsPanel
         return container;
     }
 
+    /// <summary>
+    /// Builds the Active Preset section for assigning selected master preset to an enemy prefab.
+    /// Called by BuildActiveDetailsSection when ActivePreset tab is selected.
+    /// </summary>
     private void BuildActivePresetSection()
     {
+        // Create section container and exit if current details host is unavailable.
         VisualElement sectionContainer = CreateDetailsSectionContainer("Active on Enemy Prefab");
 
         if (sectionContainer == null)
             return;
 
+        // Create prefab picker field and persist selected prefab state on change.
         enemyPrefabField = new ObjectField("Enemy Prefab");
         enemyPrefabField.objectType = typeof(GameObject);
         enemyPrefabField.RegisterValueChangedCallback(evt =>
         {
             selectedEnemyPrefab = evt.newValue as GameObject;
             SaveSelectedPrefabState();
-            RefreshActiveStatus();
+            BuildActiveDetailsSection();
         });
+        // Restore field UI value after section rebuilds.
         enemyPrefabField.SetValueWithoutNotify(selectedEnemyPrefab);
         sectionContainer.Add(enemyPrefabField);
 
+        // Create action buttons row for find and assignment operations.
         VisualElement buttonRow = new VisualElement();
         buttonRow.style.flexDirection = FlexDirection.Row;
         buttonRow.style.marginTop = 2f;
@@ -700,11 +709,139 @@ public sealed class EnemyMasterPresetsPanel
 
         sectionContainer.Add(buttonRow);
 
+        // Add status label reporting whether preset is active on selected prefab.
         activeStatusLabel = new Label();
         activeStatusLabel.style.marginTop = 2f;
         activeStatusLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
         sectionContainer.Add(activeStatusLabel);
         RefreshActiveStatus();
+
+        BuildTestUiActionsSection(sectionContainer);
+        BuildTestUiSettingsSection(sectionContainer);
+    }
+
+    private void BuildTestUiActionsSection(VisualElement sectionContainer)
+    {
+        if (sectionContainer == null)
+            return;
+
+        VisualElement actionsContainer = new VisualElement();
+        actionsContainer.style.marginTop = 10f;
+        sectionContainer.Add(actionsContainer);
+
+        Label headerLabel = new Label("Test UI Actions");
+        headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        headerLabel.style.marginBottom = 4f;
+        actionsContainer.Add(headerLabel);
+
+        if (selectedEnemyPrefab == null)
+        {
+            Label noPrefabLabel = new Label("Select an enemy prefab to enable Test UI actions.");
+            noPrefabLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            actionsContainer.Add(noPrefabLabel);
+            return;
+        }
+
+        EnemyAuthoring enemyAuthoring = selectedEnemyPrefab.GetComponentInChildren<EnemyAuthoring>(true);
+
+        if (enemyAuthoring == null)
+        {
+            Label missingAuthoringLabel = new Label("EnemyAuthoring component not found on selected prefab.");
+            missingAuthoringLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            actionsContainer.Add(missingAuthoringLabel);
+            return;
+        }
+
+        VisualElement buttonsRow = new VisualElement();
+        buttonsRow.style.flexDirection = FlexDirection.Row;
+        buttonsRow.style.marginTop = 2f;
+
+        Button generateButton = new Button();
+        generateButton.text = "Generate Test UI";
+        generateButton.tooltip = "Generate world-space health and shield bars on selected prefab and assign them to EnemyAuthoring.";
+        generateButton.clicked += GenerateTestUiOnPrefab;
+        buttonsRow.Add(generateButton);
+
+        bool hasGeneratedTestUi = EnemyStatusBarsTestUiPrefabUtility.HasGeneratedTestUi(selectedEnemyPrefab);
+
+        Button deleteButton = new Button();
+        deleteButton.text = "Delete Test UI";
+        deleteButton.tooltip = "Delete generated test status bars from selected prefab and clear assignment if generated.";
+        deleteButton.style.marginLeft = 4f;
+        deleteButton.SetEnabled(hasGeneratedTestUi);
+        deleteButton.clicked += DeleteTestUiOnPrefab;
+        buttonsRow.Add(deleteButton);
+
+        actionsContainer.Add(buttonsRow);
+
+        testUiStatusLabel = new Label();
+        testUiStatusLabel.style.marginTop = 2f;
+        testUiStatusLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+        actionsContainer.Add(testUiStatusLabel);
+        RefreshTestUiStatus();
+    }
+
+    private void BuildTestUiSettingsSection(VisualElement sectionContainer)
+    {
+        if (sectionContainer == null)
+            return;
+
+        SerializedProperty testUiSettingsProperty = presetSerializedObject.FindProperty("testUiSettings");
+
+        if (testUiSettingsProperty == null)
+            return;
+
+        VisualElement settingsContainer = new VisualElement();
+        settingsContainer.style.marginTop = 10f;
+        sectionContainer.Add(settingsContainer);
+
+        Label headerLabel = new Label("Test UI Settings");
+        headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        headerLabel.style.marginBottom = 4f;
+        settingsContainer.Add(headerLabel);
+
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("worldOffset"), "World Offset");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("rootWidthPixels"), "Root Width Pixels");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("rootHeightPixels"), "Root Height Pixels");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("worldScale"), "World Scale");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("canvasSortingOrder"), "Canvas Sorting Order");
+
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("healthBarWidthPixels"), "Health Bar Width");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("healthBarHeightPixels"), "Health Bar Height");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("healthBarYOffsetPixels"), "Health Bar Y Offset");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("shieldBarWidthPixels"), "Shield Bar Width");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("shieldBarHeightPixels"), "Shield Bar Height");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("shieldBarYOffsetPixels"), "Shield Bar Y Offset");
+
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("healthFillColor"), "Health Fill Color");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("healthBackgroundColor"), "Health Background Color");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("shieldFillColor"), "Shield Fill Color");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("shieldBackgroundColor"), "Shield Background Color");
+
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("hideShieldWhenEmpty"), "Hide Shield When Empty");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("hideWhenEnemyInactive"), "Hide When Enemy Inactive");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("hideWhenEnemyCulled"), "Hide When Enemy Culled");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("smoothingSeconds"), "Smoothing Seconds");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("shieldSmoothingSeconds"), "Shield Smoothing Seconds");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("billboardToCamera"), "Billboard To Camera");
+        AddTrackedPropertyField(settingsContainer, testUiSettingsProperty.FindPropertyRelative("billboardYawOnly"), "Billboard Yaw Only");
+    }
+
+    private void AddTrackedPropertyField(VisualElement parent, SerializedProperty property, string label)
+    {
+        if (parent == null)
+            return;
+
+        if (property == null)
+            return;
+
+        PropertyField field = new PropertyField(property, label);
+        field.BindProperty(property);
+        field.RegisterValueChangeCallback(evt =>
+        {
+            EnemyManagementDraftSession.MarkDirty();
+        });
+        parent.Add(field);
     }
 
     private void BuildNavigationSection()
@@ -749,8 +886,15 @@ public sealed class EnemyMasterPresetsPanel
         parent.Add(sectionButton);
     }
 
+    /// <summary>
+    /// Sets the currently active details subsection and persists it for future reopen.
+    /// Called by details tab buttons.
+    /// Takes in the target details section enum.
+    /// </summary>
+    /// <param name="sectionType">Details subsection to display.</param>
     private void SetActiveDetailsSection(DetailsSectionType sectionType)
     {
+        // Persist active subsection and rebuild details content.
         activeDetailsSection = sectionType;
         ManagementToolStateUtility.SaveEnumValue(ActiveDetailsSectionStateKey, activeDetailsSection);
         BuildActiveDetailsSection();
@@ -840,21 +984,35 @@ public sealed class EnemyMasterPresetsPanel
     #endregion
 
     #region Prefab Activation
+    /// <summary>
+    /// Finds the first prefab containing EnemyAuthoring and selects it in Active Preset section.
+    /// Called by Active Preset "Find" button.
+    /// </summary>
     private void FindEnemyPrefab()
     {
+        // Query project prefabs and early-exit with dialog if none match.
         if (ManagementToolPrefabUtility.TryFindFirstPrefabWithComponent<EnemyAuthoring>(out GameObject prefab) == false)
         {
             EditorUtility.DisplayDialog("Find Enemy Prefab", "No prefab with EnemyAuthoring was found.", "OK");
             return;
         }
 
+        // Store selected prefab, persist it, and reflect it in UI field.
         selectedEnemyPrefab = prefab;
         SaveSelectedPrefabState();
 
         if (enemyPrefabField != null)
             enemyPrefabField.SetValueWithoutNotify(prefab);
 
+        if (activeDetailsSection == DetailsSectionType.ActivePreset)
+        {
+            BuildActiveDetailsSection();
+            return;
+        }
+
+        // Refresh assignment status text.
         RefreshActiveStatus();
+        RefreshTestUiStatus();
     }
 
     private void AssignPresetToPrefab()
@@ -899,6 +1057,142 @@ public sealed class EnemyMasterPresetsPanel
 
         EnemyManagementDraftSession.MarkDirty();
         RefreshActiveStatus();
+        RefreshTestUiStatus();
+    }
+
+    private void GenerateTestUiOnPrefab()
+    {
+        if (selectedEnemyPrefab == null)
+        {
+            EditorUtility.DisplayDialog("Generate Test UI", "Select an enemy prefab first.", "OK");
+            return;
+        }
+
+        EnemyAuthoring authoring = selectedEnemyPrefab.GetComponentInChildren<EnemyAuthoring>(true);
+
+        if (authoring == null)
+        {
+            EditorUtility.DisplayDialog("Generate Test UI", "EnemyAuthoring component not found on selected prefab.", "OK");
+            return;
+        }
+
+        EnemyWorldSpaceStatusBarsView assignedView = authoring.WorldSpaceStatusBarsView;
+
+        if (assignedView != null && EnemyStatusBarsTestUiPrefabUtility.IsGeneratedTestUiView(assignedView) == false)
+        {
+            bool replaceCustomView = EditorUtility.DisplayDialog("Generate Test UI",
+                                                                 "Selected prefab already has a custom world-space status bars view assigned. Replace it with generated test UI?",
+                                                                 "Replace",
+                                                                 "Cancel");
+
+            if (replaceCustomView == false)
+                return;
+        }
+
+        EnemyTestUiSettings testUiSettings = selectedPreset != null ? selectedPreset.TestUiSettings : null;
+        bool generated = EnemyStatusBarsTestUiPrefabUtility.TryGenerateTestUi(selectedEnemyPrefab, testUiSettings, out string message);
+
+        if (generated == false)
+        {
+            EditorUtility.DisplayDialog("Generate Test UI", message, "OK");
+            return;
+        }
+
+        ReloadSelectedPrefabReference();
+        EnemyManagementDraftSession.MarkDirty();
+        RefreshActiveStatus();
+        BuildActiveDetailsSection();
+    }
+
+    private void DeleteTestUiOnPrefab()
+    {
+        if (selectedEnemyPrefab == null)
+        {
+            EditorUtility.DisplayDialog("Delete Test UI", "Select an enemy prefab first.", "OK");
+            return;
+        }
+
+        bool confirmed = EditorUtility.DisplayDialog("Delete Test UI",
+                                                     "Delete generated test UI from selected enemy prefab?",
+                                                     "Delete",
+                                                     "Cancel");
+
+        if (confirmed == false)
+            return;
+
+        bool deleted = EnemyStatusBarsTestUiPrefabUtility.TryDeleteTestUi(selectedEnemyPrefab, out string message);
+
+        if (deleted == false)
+        {
+            EditorUtility.DisplayDialog("Delete Test UI", message, "OK");
+            return;
+        }
+
+        ReloadSelectedPrefabReference();
+        EnemyManagementDraftSession.MarkDirty();
+        RefreshActiveStatus();
+        BuildActiveDetailsSection();
+    }
+
+    private void RefreshTestUiStatus()
+    {
+        if (testUiStatusLabel == null)
+            return;
+
+        if (selectedEnemyPrefab == null)
+        {
+            testUiStatusLabel.text = "No enemy prefab selected.";
+            return;
+        }
+
+        EnemyAuthoring authoring = selectedEnemyPrefab.GetComponentInChildren<EnemyAuthoring>(true);
+
+        if (authoring == null)
+        {
+            testUiStatusLabel.text = "EnemyAuthoring component not found on prefab.";
+            return;
+        }
+
+        EnemyWorldSpaceStatusBarsView assignedView = authoring.WorldSpaceStatusBarsView;
+
+        if (assignedView == null)
+        {
+            testUiStatusLabel.text = "No world-space status bars view assigned on selected prefab.";
+            return;
+        }
+
+        bool hasGeneratedTestUi = EnemyStatusBarsTestUiPrefabUtility.IsGeneratedTestUiView(assignedView);
+
+        if (hasGeneratedTestUi)
+        {
+            testUiStatusLabel.text = "Generated test UI is assigned on selected prefab.";
+            return;
+        }
+
+        testUiStatusLabel.text = "A custom world-space status bars view is assigned on selected prefab.";
+    }
+
+    private void ReloadSelectedPrefabReference()
+    {
+        if (selectedEnemyPrefab == null)
+            return;
+
+        string prefabPath = AssetDatabase.GetAssetPath(selectedEnemyPrefab);
+
+        if (string.IsNullOrWhiteSpace(prefabPath))
+            return;
+
+        GameObject reloadedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+
+        if (reloadedPrefab == null)
+            return;
+
+        selectedEnemyPrefab = reloadedPrefab;
+
+        if (enemyPrefabField != null)
+            enemyPrefabField.SetValueWithoutNotify(selectedEnemyPrefab);
+
+        SaveSelectedPrefabState();
     }
 
     private void RefreshActiveStatus()
@@ -956,11 +1250,19 @@ public sealed class EnemyMasterPresetsPanel
         SyncSidePanelSelection(panelType, sidePanels[panelType]);
     }
 
+    /// <summary>
+    /// Closes an opened side panel tab and updates persisted open panels state.
+    /// Called by side tab close buttons.
+    /// Takes in the panel enum to close.
+    /// </summary>
+    /// <param name="panelType">Side panel to close.</param>
     private void CloseSidePanel(EnemyManagementWindow.PanelType panelType)
     {
+        // Prevent closing the root panel tab.
         if (panelType == EnemyManagementWindow.PanelType.EnemyMasterPresets)
             return;
 
+        // Resolve side panel entry and remove its tab UI.
         if (sidePanels.TryGetValue(panelType, out SidePanelEntry entry) == false)
             return;
 
@@ -970,6 +1272,7 @@ public sealed class EnemyMasterPresetsPanel
         sidePanels.Remove(panelType);
         SaveOpenPanelsState();
 
+        // Return to root panel if the currently active side panel was closed.
         if (activePanel == panelType)
             SetActivePanel(EnemyManagementWindow.PanelType.EnemyMasterPresets);
     }
@@ -1027,14 +1330,25 @@ public sealed class EnemyMasterPresetsPanel
         return panelRoot;
     }
 
+    /// <summary>
+    /// Adds a new tab entry for a panel and persists updated open tabs set.
+    /// Called when creating root tab and opening side panels.
+    /// Takes in panel identity, label, content root and optional panel controller.
+    /// </summary>
+    /// <param name="panelType">Panel enum represented by this tab.</param>
+    /// <param name="label">Tab label.</param>
+    /// <param name="content">Panel content root.</param>
+    /// <param name="brainPanel">Optional brain panel controller instance.</param>
     private void AddTab(EnemyManagementWindow.PanelType panelType,
                         string label,
                         VisualElement content,
                         EnemyBrainPresetsPanel brainPanel)
     {
+        // Guard against missing tab bar during initialization.
         if (tabBar == null)
             return;
 
+        // Build tab button container and bind panel activation.
         VisualElement tabContainer = new VisualElement();
         tabContainer.style.flexDirection = FlexDirection.Row;
         tabContainer.style.alignItems = Align.Center;
@@ -1046,6 +1360,7 @@ public sealed class EnemyMasterPresetsPanel
         tabButton.style.unityTextAlign = TextAnchor.MiddleLeft;
         tabContainer.Add(tabButton);
 
+        // Register side panel entry for selection and refresh synchronization.
         tabBar.Add(tabContainer);
         sidePanels[panelType] = new SidePanelEntry
         {
@@ -1101,19 +1416,28 @@ public sealed class EnemyMasterPresetsPanel
         SyncOpenSidePanels();
     }
 
+    /// <summary>
+    /// Activates a panel tab, updates persisted active panel state, and swaps visible content.
+    /// Called when clicking tabs and during state restore.
+    /// Takes in panel enum to display.
+    /// </summary>
+    /// <param name="panelType">Panel to activate.</param>
     private void SetActivePanel(EnemyManagementWindow.PanelType panelType)
     {
+        // Resolve target entry and guard against missing content host.
         if (sidePanels.TryGetValue(panelType, out SidePanelEntry entry) == false)
             return;
 
         if (contentHost == null)
             return;
 
+        // Persist active panel unless initialization restore is suppressing writes.
         activePanel = panelType;
 
         if (suppressStateWrite == false)
             ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, activePanel);
 
+        // Swap visible content and refresh tab visuals.
         contentHost.Clear();
         contentHost.Add(entry.Content);
         UpdateTabStyles();
@@ -1146,17 +1470,28 @@ public sealed class EnemyMasterPresetsPanel
         return presetName + " v. " + version;
     }
 
+    /// <summary>
+    /// Restores persisted panel/detail/prefab selections from EditorPrefs.
+    /// Called by constructor before UI tree creation.
+    /// </summary>
     private void RestorePersistedState()
     {
+        // Restore active tab and details subsection selections.
         activePanel = ManagementToolStateUtility.LoadEnumValue(ActivePanelStateKey,
                                                                 EnemyManagementWindow.PanelType.EnemyMasterPresets);
         activeDetailsSection = ManagementToolStateUtility.LoadEnumValue(ActiveDetailsSectionStateKey,
                                                                          DetailsSectionType.Metadata);
+        // Restore last selected enemy prefab reference.
         selectedEnemyPrefab = ManagementToolStateUtility.LoadGameObjectAsset(SelectedPrefabPathStateKey);
     }
 
+    /// <summary>
+    /// Reopens side panels that were persisted as open in the previous session.
+    /// Called during tab container initialization.
+    /// </summary>
     private void RestoreOpenSidePanels()
     {
+        // Load and replay open side panel list.
         List<EnemyManagementWindow.PanelType> openPanels = ManagementToolStateUtility.LoadEnumList<EnemyManagementWindow.PanelType>(OpenPanelsStateKey);
 
         for (int index = 0; index < openPanels.Count; index++)
@@ -1170,11 +1505,17 @@ public sealed class EnemyMasterPresetsPanel
         }
     }
 
+    /// <summary>
+    /// Persists the current set of open tabs to EditorPrefs.
+    /// Called after opening/closing side panels and after initialization restore.
+    /// </summary>
     private void SaveOpenPanelsState()
     {
+        // Skip writes while restoring startup state.
         if (suppressStateWrite)
             return;
 
+        // Build deterministic list including root panel and currently opened side panels.
         List<EnemyManagementWindow.PanelType> openPanels = new List<EnemyManagementWindow.PanelType>();
         openPanels.Add(EnemyManagementWindow.PanelType.EnemyMasterPresets);
 
@@ -1184,6 +1525,10 @@ public sealed class EnemyMasterPresetsPanel
         ManagementToolStateUtility.SaveEnumList(OpenPanelsStateKey, openPanels);
     }
 
+    /// <summary>
+    /// Persists currently selected enemy prefab asset path.
+    /// Called on prefab field changes and on "Find" action.
+    /// </summary>
     private void SaveSelectedPrefabState()
     {
         ManagementToolStateUtility.SaveAssetPath(SelectedPrefabPathStateKey, selectedEnemyPrefab);

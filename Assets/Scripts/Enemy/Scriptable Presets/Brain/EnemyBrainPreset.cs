@@ -213,7 +213,7 @@ public sealed class EnemyBrainHealthStatisticsSettings
     [Tooltip("Maximum and initial health assigned to this enemy when spawned from pool.")]
     [SerializeField] private float maxHealth = 30f;
 
-    [Tooltip("Maximum shield reserve assigned to this enemy at spawn. Currently unused at runtime.")]
+    [Tooltip("Maximum shield reserve assigned to this enemy at spawn. Shield absorbs incoming damage before health.")]
     [SerializeField] private float maxShield;
     #endregion
 

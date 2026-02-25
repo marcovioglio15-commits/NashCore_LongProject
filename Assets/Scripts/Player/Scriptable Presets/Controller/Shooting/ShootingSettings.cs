@@ -116,6 +116,9 @@ public sealed class ShootingValues
     [Tooltip("Number of projectiles fired per second.")]
     [SerializeField] private float rateOfFire = 8f;
 
+    [Tooltip("Additional flat area radius applied around projectile impact checks.")]
+    [SerializeField] private float explosionRadius;
+
     [Tooltip("Optional maximum travel distance before despawn. Zero or negative disables range despawn.")]
     [SerializeField] private float range = 0f;
 
@@ -140,6 +143,14 @@ public sealed class ShootingValues
         get
         {
             return rateOfFire;
+        }
+    }
+
+    public float ExplosionRadius
+    {
+        get
+        {
+            return explosionRadius;
         }
     }
 
@@ -176,6 +187,9 @@ public sealed class ShootingValues
 
         if (rateOfFire < 0f)
             rateOfFire = 0f;
+
+        if (explosionRadius < 0f)
+            explosionRadius = 0f;
 
         if (damage < 0f)
             damage = 0f;

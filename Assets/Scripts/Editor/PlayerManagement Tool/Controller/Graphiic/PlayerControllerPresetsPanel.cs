@@ -692,8 +692,15 @@ public sealed class PlayerControllerPresetsPanel
         parent.Add(sectionButton);
     }
 
+    /// <summary>
+    /// Sets active details section and persists the selection for next reopen.
+    /// Called by section tab buttons in the preset details panel.
+    /// Takes in the target section enum.
+    /// </summary>
+    /// <param name="sectionType">Section to activate.</param>
     private void SetActiveSection(SectionType sectionType)
     {
+        // Persist selected section and rebuild detail content.
         m_ActiveSection = sectionType;
         ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, m_ActiveSection);
         BuildActiveSection();
@@ -1169,6 +1176,7 @@ public sealed class PlayerControllerPresetsPanel
         {
             "shootSpeed",
             "rateOfFire",
+            "explosionRadius",
             "range",
             "lifetime",
             "damage"

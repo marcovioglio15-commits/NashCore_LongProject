@@ -15,6 +15,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private static readonly Color BodyGizmoColor = new Color(1f, 0.9f, 0.2f, 0.9f);
     private static readonly Color VisualDistanceGizmoColor = new Color(0.15f, 1f, 0.75f, 0.9f);
     private static readonly Color ElementalAnchorGizmoColor = new Color(1f, 0.4f, 0.8f, 0.9f);
+    private static readonly Color WorldSpaceBarsGizmoColor = new Color(0.25f, 0.95f, 0.45f, 0.9f);
     #endregion
 
     #region Fields
@@ -106,6 +107,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Tooltip("Optional transform used as anchor for attached elemental status VFX.")]
     [SerializeField] private Transform elementalVfxAnchor;
 
+    [Tooltip("Optional world-space status bars view used to display fillable health and shield images above this enemy.")]
+    [SerializeField] private EnemyWorldSpaceStatusBarsView worldSpaceStatusBarsView;
+
     [Header("Debug Gizmos")]
     [Tooltip("Draw the contact radius preview when the authoring object is selected.")]
     [SerializeField] private bool drawContactRadiusGizmo = true;
@@ -118,6 +122,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     [Tooltip("Draw the visual distance culling radius preview when enabled.")]
     [SerializeField] private bool drawVisualDistanceGizmo = true;
+
+    [Tooltip("Draw a link gizmo from enemy pivot to world-space health and shield bars view.")]
+    [SerializeField] private bool drawWorldSpaceBarsGizmo = true;
     #endregion
 
     #endregion
@@ -388,6 +395,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
             return elementalVfxAnchor;
         }
     }
+
+    public EnemyWorldSpaceStatusBarsView WorldSpaceStatusBarsView
+    {
+        get
+        {
+            return worldSpaceStatusBarsView;
+        }
+    }
     #endregion
 
     #region Methods
@@ -421,12 +436,16 @@ public sealed class EnemyAuthoring : MonoBehaviour
             DrawWireRadius(center, math.max(0f, MaxVisibleDistance), VisualDistanceGizmoColor);
 
         if (elementalVfxAnchor == null)
+        {
+            DrawWorldSpaceBarsGizmo(center);
             return;
+        }
 
         Gizmos.color = ElementalAnchorGizmoColor;
         Vector3 anchorPosition = elementalVfxAnchor.position;
         Gizmos.DrawLine(center, anchorPosition);
         Gizmos.DrawWireSphere(anchorPosition, 0.14f);
+        DrawWorldSpaceBarsGizmo(center);
     }
     #endregion
 
@@ -561,6 +580,31 @@ public sealed class EnemyAuthoring : MonoBehaviour
         Gizmos.color = color;
         Gizmos.DrawWireSphere(center, radius);
     }
+
+    private void DrawWorldSpaceBarsGizmo(Vector3 center)
+    {
+        if (drawWorldSpaceBarsGizmo == false)
+        {
+            return;
+        }
+
+        if (worldSpaceStatusBarsView == null)
+        {
+            return;
+        }
+
+        Transform barsTransform = worldSpaceStatusBarsView.transform;
+
+        if (barsTransform == null)
+        {
+            return;
+        }
+
+        Gizmos.color = WorldSpaceBarsGizmoColor;
+        Vector3 barsPosition = barsTransform.position;
+        Gizmos.DrawLine(center, barsPosition);
+        Gizmos.DrawWireCube(barsPosition, new Vector3(0.2f, 0.08f, 0.02f));
+    }
     #endregion
 
     #endregion
@@ -645,6 +689,17 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
                 break;
         }
 
+        EnemyWorldSpaceStatusBarsView resolvedStatusBarsView = ResolveWorldSpaceStatusBarsView(authoring);
+        Entity statusBarsViewEntity = RegisterStatusBarsViewEntity(resolvedStatusBarsView);
+        AddComponent(entity, new EnemyWorldSpaceStatusBarsLink
+        {
+            ViewEntity = statusBarsViewEntity
+        });
+        AddComponent(entity, new EnemyWorldSpaceStatusBarsRuntimeLink
+        {
+            ViewEntity = Entity.Null
+        });
+
         AddComponent(entity, new EnemyOwnerSpawner
         {
             SpawnerEntity = Entity.Null
@@ -718,6 +773,49 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             return fallbackAnimator;
 
         return null;
+    }
+
+    private static EnemyWorldSpaceStatusBarsView ResolveWorldSpaceStatusBarsView(EnemyAuthoring authoring)
+    {
+        if (authoring == null)
+        {
+            return null;
+        }
+
+        EnemyWorldSpaceStatusBarsView assignedStatusBarsView = authoring.WorldSpaceStatusBarsView;
+
+        if (assignedStatusBarsView != null &&
+            assignedStatusBarsView.gameObject != null)
+        {
+            return assignedStatusBarsView;
+        }
+
+        EnemyWorldSpaceStatusBarsView fallbackStatusBarsView = authoring.GetComponentInChildren<EnemyWorldSpaceStatusBarsView>(true);
+
+        if (fallbackStatusBarsView != null &&
+            fallbackStatusBarsView.gameObject != null)
+        {
+            return fallbackStatusBarsView;
+        }
+
+        return null;
+    }
+
+    private Entity RegisterStatusBarsViewEntity(EnemyWorldSpaceStatusBarsView statusBarsView)
+    {
+        if (statusBarsView == null)
+        {
+            return Entity.Null;
+        }
+
+        GameObject viewGameObject = statusBarsView.gameObject;
+
+        if (viewGameObject == null)
+        {
+            return Entity.Null;
+        }
+
+        return GetEntity(viewGameObject, TransformUsageFlags.Dynamic);
     }
     #endregion
 

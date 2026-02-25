@@ -70,11 +70,7 @@ public partial struct EnemyElementalEffectsSystem : ISystem
                 continue;
 
             EnemyHealth nextHealth = enemyHealth.ValueRO;
-            nextHealth.Current -= accumulatedDotDamage;
-
-            if (nextHealth.Current < 0f)
-                nextHealth.Current = 0f;
-
+            EnemyDamageUtility.ApplyFlatShieldDamage(ref nextHealth, accumulatedDotDamage);
             enemyHealth.ValueRW = nextHealth;
 
             if (nextHealth.Current > 0f)
@@ -114,23 +110,58 @@ public partial struct EnemyElementalEffectsSystem : ISystem
         if (stackElement.DotRemainingSeconds <= 0f)
             return;
 
-        if (stackElement.DotTickInterval <= 0f)
-            stackElement.DotTickInterval = 0.01f;
+        float dotTickInterval = math.max(0.01f, stackElement.DotTickInterval);
+        stackElement.DotTickInterval = dotTickInterval;
+
+        float effectiveDeltaTime = math.min(math.max(0f, deltaTime), stackElement.DotRemainingSeconds);
+        float dotTickTimer = stackElement.DotTickTimer;
+
+        if (dotTickTimer <= 0f || dotTickTimer > dotTickInterval)
+            dotTickTimer = dotTickInterval;
+
+        int dotTickCount = ResolveDotTickCount(dotTickInterval, ref dotTickTimer, effectiveDeltaTime);
+
+        if (dotTickCount > 0 && stackElement.DotDamagePerTick > 0f)
+            accumulatedDotDamage += stackElement.DotDamagePerTick * dotTickCount;
 
         stackElement.DotRemainingSeconds -= deltaTime;
-        stackElement.DotTickTimer -= deltaTime;
-
-        while (stackElement.DotTickTimer <= 0f && stackElement.DotRemainingSeconds > 0f)
-        {
-            accumulatedDotDamage += math.max(0f, stackElement.DotDamagePerTick);
-            stackElement.DotTickTimer += stackElement.DotTickInterval;
-        }
 
         if (stackElement.DotRemainingSeconds > 0f)
+        {
+            stackElement.DotTickTimer = dotTickTimer;
             return;
+        }
 
         stackElement.DotRemainingSeconds = 0f;
         stackElement.DotTickTimer = 0f;
+    }
+
+    private static int ResolveDotTickCount(float dotTickInterval, ref float dotTickTimer, float elapsedSeconds)
+    {
+        if (elapsedSeconds <= 0f)
+            return 0;
+
+        if (elapsedSeconds < dotTickTimer)
+        {
+            dotTickTimer -= elapsedSeconds;
+            return 0;
+        }
+
+        float timeAfterFirstTick = elapsedSeconds - dotTickTimer;
+        int additionalTicks = (int)math.floor(timeAfterFirstTick / dotTickInterval);
+        int clampedAdditionalTicks = math.max(0, additionalTicks);
+        int totalTicks = 1 + clampedAdditionalTicks;
+        float consumedByAdditionalTicks = clampedAdditionalTicks * dotTickInterval;
+        float remainderAfterLastTick = timeAfterFirstTick - consumedByAdditionalTicks;
+
+        if (remainderAfterLastTick > 0f)
+        {
+            dotTickTimer = dotTickInterval - remainderAfterLastTick;
+            return totalTicks;
+        }
+
+        dotTickTimer = dotTickInterval;
+        return totalTicks;
     }
 
     private static void UpdateImpedimentState(ref EnemyElementStackElement stackElement, float deltaTime, ref float maximumSlowPercent)

@@ -81,6 +81,12 @@ public static class EnemyPoolUtility
                 SpawnerEntity = Entity.Null
             });
 
+        if (entityManager.HasComponent<EnemyWorldSpaceStatusBarsRuntimeLink>(enemyEntity) == false)
+            entityManager.AddComponentData(enemyEntity, new EnemyWorldSpaceStatusBarsRuntimeLink
+            {
+                ViewEntity = Entity.Null
+            });
+
         if (entityManager.HasComponent<EnemyVisualConfig>(enemyEntity) == false)
             entityManager.AddComponentData(enemyEntity, new EnemyVisualConfig
             {
