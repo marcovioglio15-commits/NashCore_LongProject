@@ -109,11 +109,9 @@ public partial struct PlayerLookRotationSystem : ISystem
     #region Helpers
     private static float SignedAngleRadians(float3 from, float3 to)
     {
-        float3 cross = math.cross(from, to);
-        float sign = math.sign(math.dot(cross, new float3(0f, 1f, 0f)));
-        float dot = math.clamp(math.dot(from, to), -1f, 1f);
-        float angle = math.acos(dot);
-        return angle * sign;
+        float clampedDot = math.clamp(math.dot(from, to), -1f, 1f);
+        float crossY = math.dot(math.cross(from, to), new float3(0f, 1f, 0f));
+        return math.atan2(crossY, clampedDot);
     }
     #endregion
 }
