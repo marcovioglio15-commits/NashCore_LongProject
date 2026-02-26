@@ -68,9 +68,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
     [SerializeField] private bool drawRuntimeVisualBridgeGizmo = true;
 
     [Header("Hybrid Bake Safety")]
-    [Tooltip("When enabled, bakes the Animator as a companion component for ECS-driven visual sync. Keep disabled for complex rig hierarchies and use Runtime Visual Bridge instead.")]
-    [SerializeField] private bool bakeAnimatorCompanion = false;
-
     [Tooltip("When enabled, bakes the attached Elemental Trail prefab reference into ECS. Disable to isolate SubScene object-reference streaming issues.")]
     [SerializeField] private bool bakeElementalTrailAttachedVfxReference = false;
 
@@ -180,14 +177,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return runtimeVisualBridgeOffset;
-        }
-    }
-
-    public bool BakeAnimatorCompanion
-    {
-        get
-        {
-            return bakeAnimatorCompanion;
         }
     }
 
@@ -717,28 +706,13 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             SpawnWhenAnimatorMissing = authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing ? (byte)1 : (byte)0
         });
 
-        if (authoring.BakeAnimatorCompanion && resolvedAnimatorComponent != null)
-        {
-            AddComponentObject(entity, resolvedAnimatorComponent);
-        }
-#if UNITY_EDITOR
-        else if (authoring.BakeAnimatorCompanion)
-        {
-            Debug.LogWarning(string.Format("[PlayerAuthoringBaker] Animator companion bake enabled on '{0}', but no valid scene Animator was resolved. Companion Animator was not baked; runtime visual bridge can be used as fallback.",
-                                           authoring.name),
-                             authoring);
-        }
-
         if (authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing &&
-            authoring.BakeAnimatorCompanion == false &&
             resolvedRuntimeVisualBridgePrefab == null)
         {
             Debug.LogWarning(string.Format("[PlayerAuthoringBaker] Runtime visual bridge spawn is enabled on '{0}', but RuntimeVisualBridgePrefab is missing or invalid.",
                                            authoring.name),
                              authoring);
         }
-#endif
-
         PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
 
         if (progressionPreset != null)
@@ -912,6 +886,11 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             return false;
 
         if (animator.gameObject == null)
+            return false;
+
+        // Companion animators must resolve to real scene instances during baking.
+        // Asset/prefab-stage animators can produce unstable Unity object refs in SubScene streaming.
+        if (animator.gameObject.scene.IsValid() == false)
             return false;
 
         Transform authoringTransform = authoring.transform;

@@ -79,7 +79,7 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
             {
                 if (loggedMissingAnimatorComponentWarning == 0)
                 {
-                    Debug.LogWarning("[PlayerAnimatorSyncSystem] Animator component missing on player entity. Verify BakeAnimatorCompanion or configure RuntimeVisualBridgePrefab for runtime visual spawn.");
+                    Debug.LogWarning("[PlayerAnimatorSyncSystem] Animator component missing on player entity. Verify RuntimeVisualBridgePrefab configuration for runtime visual spawn.");
                     loggedMissingAnimatorComponentWarning = 1;
                 }
 
