@@ -38,18 +38,38 @@ public partial struct PlayerPowerUpRechargeSystem : ISystem
 
             float primaryEnergy = powerUpsState.ValueRO.PrimaryEnergy;
             float secondaryEnergy = powerUpsState.ValueRO.SecondaryEnergy;
+            float primaryCooldownRemaining = powerUpsState.ValueRO.PrimaryCooldownRemaining;
+            float secondaryCooldownRemaining = powerUpsState.ValueRO.SecondaryCooldownRemaining;
 
             RechargeSlot(ref primaryEnergy, in powerUpsConfig.ValueRO.PrimarySlot, deltaTime, killDelta);
             RechargeSlot(ref secondaryEnergy, in powerUpsConfig.ValueRO.SecondarySlot, deltaTime, killDelta);
+            TickCooldown(ref primaryCooldownRemaining, deltaTime);
+            TickCooldown(ref secondaryCooldownRemaining, deltaTime);
 
             powerUpsState.ValueRW.PrimaryEnergy = primaryEnergy;
             powerUpsState.ValueRW.SecondaryEnergy = secondaryEnergy;
+            powerUpsState.ValueRW.PrimaryCooldownRemaining = primaryCooldownRemaining;
+            powerUpsState.ValueRW.SecondaryCooldownRemaining = secondaryCooldownRemaining;
             powerUpsState.ValueRW.LastObservedGlobalKillCount = globalKillCount;
         }
     }
     #endregion
 
     #region Helpers
+    private static void TickCooldown(ref float cooldownRemaining, float deltaTime)
+    {
+        if (cooldownRemaining <= 0f)
+        {
+            cooldownRemaining = 0f;
+            return;
+        }
+
+        cooldownRemaining -= math.max(0f, deltaTime);
+
+        if (cooldownRemaining < 0f)
+            cooldownRemaining = 0f;
+    }
+
     private static void RechargeSlot(ref float currentEnergy, in PlayerPowerUpSlotConfig slotConfig, float deltaTime, uint killDelta)
     {
         if (slotConfig.IsDefined == 0)

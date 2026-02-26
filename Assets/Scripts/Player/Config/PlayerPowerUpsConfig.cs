@@ -26,6 +26,7 @@ public struct PlayerPowerUpSlotConfig
     public float ActivationCost;
     public float MaintenanceCostPerSecond;
     public float ChargePerTrigger;
+    public float CooldownSeconds;
     public byte Toggleable;
     public byte FullChargeRequirement;
     public byte Unreplaceable;
@@ -33,6 +34,9 @@ public struct PlayerPowerUpSlotConfig
     public BombPowerUpConfig Bomb;
     public DashPowerUpConfig Dash;
     public BulletTimePowerUpConfig BulletTime;
+    public ShotgunPowerUpConfig Shotgun;
+    public ChargeShotPowerUpConfig ChargeShot;
+    public PortableHealthPackPowerUpConfig PortableHealthPack;
 }
 
 /// <summary>
@@ -72,6 +76,48 @@ public struct BulletTimePowerUpConfig
 {
     public float Duration;
     public float EnemySlowPercent;
+}
+
+/// <summary>
+/// Holds baked runtime configuration for the Shotgun active tool.
+/// </summary>
+public struct ShotgunPowerUpConfig
+{
+    public int ProjectileCount;
+    public float ConeAngleDegrees;
+    public float SizeMultiplier;
+    public float DamageMultiplier;
+    public float SpeedMultiplier;
+    public float RangeMultiplier;
+    public float LifetimeMultiplier;
+    public ProjectilePenetrationMode PenetrationMode;
+    public int MaxPenetrations;
+}
+
+/// <summary>
+/// Holds baked runtime configuration for the Charge Shot active tool.
+/// </summary>
+public struct ChargeShotPowerUpConfig
+{
+    public float RequiredCharge;
+    public float MaximumCharge;
+    public float ChargeRatePerSecond;
+    public byte SuppressBaseShootingWhileCharging;
+    public float SizeMultiplier;
+    public float DamageMultiplier;
+    public float SpeedMultiplier;
+    public float RangeMultiplier;
+    public float LifetimeMultiplier;
+    public ProjectilePenetrationMode PenetrationMode;
+    public int MaxPenetrations;
+}
+
+/// <summary>
+/// Holds baked runtime configuration for the Portable Health Pack active tool.
+/// </summary>
+public struct PortableHealthPackPowerUpConfig
+{
+    public float HealAmount;
 }
 
 /// <summary>

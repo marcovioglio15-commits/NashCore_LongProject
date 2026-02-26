@@ -160,6 +160,8 @@ public partial struct ProjectileSpawnSystem : ISystem
                     ExplosionRadius = math.max(0f, request.ExplosionRadius),
                     MaxRange = request.Range,
                     MaxLifetime = request.Lifetime,
+                    PenetrationMode = request.PenetrationMode,
+                    RemainingPenetrations = math.max(0, request.MaxPenetrations),
                     InheritPlayerSpeed = request.InheritPlayerSpeed
                 };
 

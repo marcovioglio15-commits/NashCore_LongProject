@@ -61,7 +61,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
                              .WithEntityAccess())
         {
             PlayerElementalTrailAttachedVfxState previousTrailState = trailAttachedVfxState.ValueRO;
-            ReleaseLegacyPooledTrailEntityIfAny(entityManager, previousTrailState.VfxEntity);
+            ReleasePooledTrailEntityIfAny(entityManager, previousTrailState.VfxEntity);
 
             GameObject trailPrefab = ResolveTrailPrefab(entityManager, playerEntity);
             bool shouldBeActive = passiveToolsState.ValueRO.HasElementalTrail != 0 && trailPrefab != null;
@@ -276,7 +276,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
         managedInstance.SourcePrefab = null;
     }
 
-    private static void ReleaseLegacyPooledTrailEntityIfAny(EntityManager entityManager, Entity vfxEntity)
+    private static void ReleasePooledTrailEntityIfAny(EntityManager entityManager, Entity vfxEntity)
     {
         if (IsValidEntity(entityManager, vfxEntity) == false)
             return;

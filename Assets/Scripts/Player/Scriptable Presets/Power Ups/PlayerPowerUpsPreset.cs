@@ -29,7 +29,10 @@ public enum ActiveToolKind
     Bomb = 0,
     Dash = 1,
     BulletTime = 2,
-    Custom = 3
+    Custom = 3,
+    Shotgun = 4,
+    ChargeShot = 5,
+    PortableHealthPack = 6
 }
 
 public enum PowerUpResourceType
@@ -184,6 +187,23 @@ public sealed class PowerUpCommonData
     #endregion
 
     #region Methods
+
+    #region Setup
+    public void Configure(string powerUpIdValue,
+                          string displayNameValue,
+                          string descriptionValue,
+                          List<string> dropPoolsValue,
+                          int dropTierValue,
+                          int purchaseCostValue)
+    {
+        powerUpId = powerUpIdValue;
+        displayName = displayNameValue;
+        description = descriptionValue;
+        dropPools = dropPoolsValue;
+        dropTier = dropTierValue;
+        purchaseCost = purchaseCostValue;
+    }
+    #endregion
 
     #region Validation
     public void Validate()
@@ -2207,6 +2227,41 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 {
     #region Fields
 
+    #region Constants
+    private const string ModuleIdTriggerPress = "module_trigger_press_standard";
+    private const string ModuleIdTriggerRelease = "module_trigger_release_standard";
+    private const string ModuleIdTriggerHoldCharge = "module_trigger_hold_charge_standard";
+    private const string ModuleIdGateResource = "module_gate_resource_standard";
+    private const string ModuleIdGateCooldown = "module_gate_cooldown_standard";
+    private const string ModuleIdStateSuppressShooting = "module_state_suppress_shooting_standard";
+    private const string ModuleIdEffectProjectilePatternCone = "module_effect_projectile_pattern_cone_standard";
+    private const string ModuleIdEffectProjectileScale = "module_effect_projectile_scale_standard";
+    private const string ModuleIdEffectProjectilePenetration = "module_effect_projectile_penetration_standard";
+    private const string ModuleIdEffectSpawnBomb = "module_effect_spawn_bomb_standard";
+    private const string ModuleIdEffectDash = "module_effect_dash_standard";
+    private const string ModuleIdEffectTimeDilationEnemies = "module_effect_time_dilation_enemies_standard";
+    private const string ModuleIdEffectHealMissingHealth = "module_effect_heal_missing_health_standard";
+    private const string ModuleIdPassiveSpawnTrailSegment = "module_passive_spawn_trail_segment_standard";
+    private const string ModuleIdPassiveAreaTickApplyElement = "module_passive_area_tick_apply_element_standard";
+    private const string ModuleIdPassiveDeathExplosion = "module_passive_death_explosion_standard";
+    private const string ModuleIdPassiveProjectileOrbitOverride = "module_passive_projectile_orbit_override_standard";
+    private const string ModuleIdPassiveProjectileBounceOnWalls = "module_passive_projectile_bounce_on_walls_standard";
+    private const string ModuleIdPassiveProjectileSplitOnDeath = "module_passive_projectile_split_on_death_standard";
+
+    private const string ActivePowerUpIdShotgun = "active_shotgun";
+    private const string ActivePowerUpIdChargeShot = "active_charge_shot";
+    private const string ActivePowerUpIdGigaBomb = "active_giga_bomb";
+    private const string ActivePowerUpIdBasicDash = "active_basic_dash";
+    private const string ActivePowerUpIdPortableHealthPack = "active_portable_health_pack";
+    private const string ActivePowerUpIdBulletTime = "active_bullet_time";
+
+    private const string PassivePowerUpIdElementalTrail = "passive_elemental_trail";
+    private const string PassivePowerUpIdEnemiesExplodeOnDeath = "passive_enemies_explode_on_death";
+    private const string PassivePowerUpIdOrbitalProjectiles = "passive_orbital_projectiles";
+    private const string PassivePowerUpIdBouncingProjectiles = "passive_bouncing_projectiles";
+    private const string PassivePowerUpIdSplittingProjectiles = "passive_splitting_projectiles";
+    #endregion
+
     #region Serialized Fields
     [Header("Metadata")]
     [Tooltip("Unique ID for this power ups preset.")]
@@ -2241,9 +2296,32 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         "Boss"
     };
 
+    [Header("Modules Management")]
+    [Tooltip("Reusable module catalog used to compose active and passive power ups.")]
+    [SerializeField] private List<PowerUpModuleDefinition> moduleDefinitions = new List<PowerUpModuleDefinition>();
+
+    [Header("Active Power Ups")]
+    [Tooltip("Composable active power up definitions assembled from modules.")]
+    [SerializeField] private List<ModularPowerUpDefinition> activePowerUps = new List<ModularPowerUpDefinition>();
+
+    [Header("Passive Power Ups")]
+    [Tooltip("Composable passive power up definitions assembled from modules.")]
+    [SerializeField] private List<ModularPowerUpDefinition> passivePowerUps = new List<ModularPowerUpDefinition>();
+
+    [Header("Loadout")]
+    [Tooltip("PowerUpId assigned to primary slot at runtime initialization.")]
+    [SerializeField] private string primaryActivePowerUpId;
+
+    [Tooltip("PowerUpId assigned to secondary slot at runtime initialization.")]
+    [SerializeField] private string secondaryActivePowerUpId;
+
+    [Tooltip("PowerUpId list assigned as equipped passive power ups at runtime initialization.")]
+    [SerializeField] private List<string> equippedPassivePowerUpIds = new List<string>();
+
     [Header("Passive Tools")]
     [Tooltip("Passive tools available in this preset.")]
     [FormerlySerializedAs("passiveModifiers")]
+    [HideInInspector]
     [SerializeField] private List<PassiveToolDefinition> passiveTools = new List<PassiveToolDefinition>();
 
     [Header("Elemental VFX Assignments")]
@@ -2252,27 +2330,31 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     [Header("Active Tools")]
     [Tooltip("Active tools available in this preset.")]
+    [HideInInspector]
     [SerializeField] private List<ActiveToolDefinition> activeTools = new List<ActiveToolDefinition>();
 
-    [Header("Loadout")]
+    [Header(" Loadout")]
     [Tooltip("PowerUpId assigned to primary slot at runtime initialization.")]
+    [HideInInspector]
     [SerializeField] private string primaryActiveToolId;
 
     [Tooltip("PowerUpId assigned to secondary slot at runtime initialization.")]
+    [HideInInspector]
     [SerializeField] private string secondaryActiveToolId;
 
     [Tooltip("PowerUpId list assigned as equipped passive tools at runtime initialization.")]
+    [HideInInspector]
     [SerializeField] private List<string> equippedPassiveToolIds = new List<string>();
 
-    [Tooltip("Legacy field used to migrate old primary passive loadout data.")]
+    [Tooltip(" field used to migrate old primary passive loadout data.")]
     [FormerlySerializedAs("primaryPassiveToolId")]
     [HideInInspector]
-    [SerializeField] private string legacyPrimaryPassiveToolId;
+    [SerializeField] private string PrimaryPassiveToolId;
 
-    [Tooltip("Legacy field used to migrate old secondary passive loadout data.")]
+    [Tooltip(" field used to migrate old secondary passive loadout data.")]
     [FormerlySerializedAs("secondaryPassiveToolId")]
     [HideInInspector]
-    [SerializeField] private string legacySecondaryPassiveToolId;
+    [SerializeField] private string SecondaryPassiveToolId;
     #endregion
 
     #endregion
@@ -2334,6 +2416,54 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         }
     }
 
+    public IReadOnlyList<PowerUpModuleDefinition> ModuleDefinitions
+    {
+        get
+        {
+            return moduleDefinitions;
+        }
+    }
+
+    public IReadOnlyList<ModularPowerUpDefinition> ActivePowerUps
+    {
+        get
+        {
+            return activePowerUps;
+        }
+    }
+
+    public IReadOnlyList<ModularPowerUpDefinition> PassivePowerUps
+    {
+        get
+        {
+            return passivePowerUps;
+        }
+    }
+
+    public string PrimaryActivePowerUpId
+    {
+        get
+        {
+            return primaryActivePowerUpId;
+        }
+    }
+
+    public string SecondaryActivePowerUpId
+    {
+        get
+        {
+            return secondaryActivePowerUpId;
+        }
+    }
+
+    public IReadOnlyList<string> EquippedPassivePowerUpIds
+    {
+        get
+        {
+            return equippedPassivePowerUpIds;
+        }
+    }
+
     public IReadOnlyList<PassiveToolDefinition> PassiveTools
     {
         get
@@ -2385,6 +2515,442 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     #region Methods
 
+    #region Public API
+    public bool EnsureDefaultModularSetup()
+    {
+        ValidateMetadata();
+        ValidateCollections();
+        int moduleCountBefore = moduleDefinitions.Count;
+        int activeCountBefore = activePowerUps.Count;
+        int passiveCountBefore = passivePowerUps.Count;
+        GenerateDefaultModularSetupIfEmpty();
+
+        if (moduleDefinitions.Count == moduleCountBefore &&
+            activePowerUps.Count == activeCountBefore &&
+            passivePowerUps.Count == passiveCountBefore)
+        {
+            return false;
+        }
+
+        ValidateEntries();
+        return true;
+    }
+    #endregion
+
+    #region Setup Defaults
+    private void GenerateDefaultModularSetupIfEmpty()
+    {
+        if (moduleDefinitions.Count > 0)
+            return;
+
+        if (activePowerUps.Count > 0)
+            return;
+
+        if (passivePowerUps.Count > 0)
+            return;
+
+        List<string> defaultDropPools = BuildDefaultDropPools();
+        moduleDefinitions = BuildDefaultModuleDefinitions();
+        activePowerUps = BuildDefaultActivePowerUps(defaultDropPools);
+        passivePowerUps = BuildDefaultPassivePowerUps(defaultDropPools);
+        primaryActivePowerUpId = ActivePowerUpIdShotgun;
+        secondaryActivePowerUpId = ActivePowerUpIdBasicDash;
+
+        if (equippedPassivePowerUpIds == null)
+            equippedPassivePowerUpIds = new List<string>();
+
+        equippedPassivePowerUpIds.Clear();
+        equippedPassivePowerUpIds.Add(PassivePowerUpIdElementalTrail);
+    }
+
+    private List<PowerUpModuleDefinition> BuildDefaultModuleDefinitions()
+    {
+        List<PowerUpModuleDefinition> definitions = new List<PowerUpModuleDefinition>();
+        definitions.Add(CreateModuleDefinition(ModuleIdTriggerPress, "Trigger Press", PowerUpModuleKind.TriggerPress, PowerUpModuleStage.Trigger, "Fires when the input is initially pressed."));
+        definitions.Add(CreateModuleDefinition(ModuleIdTriggerRelease, "Trigger Release", PowerUpModuleKind.TriggerRelease, PowerUpModuleStage.Trigger, "Fires when the input is released."));
+        definitions.Add(CreateModuleDefinition(ModuleIdTriggerHoldCharge, "Hold Charge", PowerUpModuleKind.TriggerHoldCharge, PowerUpModuleStage.Trigger, "Accumulates charge while the input stays pressed."));
+        definitions.Add(CreateModuleDefinition(ModuleIdGateResource, "Resource Gate", PowerUpModuleKind.GateResource, PowerUpModuleStage.Gate, "Checks and consumes activation resource."));
+        definitions.Add(CreateModuleDefinition(ModuleIdGateCooldown, "Cooldown Gate", PowerUpModuleKind.GateCooldown, PowerUpModuleStage.Gate, "Blocks activation while cooldown is active."));
+        definitions.Add(CreateModuleDefinition(ModuleIdStateSuppressShooting, "Suppress Shooting", PowerUpModuleKind.StateSuppressShooting, PowerUpModuleStage.StateEnter, "Disables standard shooting while active."));
+        definitions.Add(CreateModuleDefinition(ModuleIdEffectProjectilePatternCone, "Projectile Cone Pattern", PowerUpModuleKind.EffectProjectilePatternCone, PowerUpModuleStage.Execute, "Shoots a cone of multiple projectiles."));
+        definitions.Add(CreateModuleDefinition(ModuleIdEffectProjectileScale, "Projectile Scale", PowerUpModuleKind.EffectProjectileScale, PowerUpModuleStage.Execute, "Applies scale and stat multipliers to projectiles."));
+        definitions.Add(CreateModuleDefinition(ModuleIdEffectProjectilePenetration, "Projectile Penetration", PowerUpModuleKind.EffectProjectilePenetration, PowerUpModuleStage.Execute, "Configures projectile penetration behavior."));
+        definitions.Add(CreateModuleDefinition(ModuleIdEffectSpawnBomb, "Spawn Bomb", PowerUpModuleKind.EffectSpawnBomb, PowerUpModuleStage.Execute, "Deploys a bomb and detonates after fuse."));
+        definitions.Add(CreateModuleDefinition(ModuleIdEffectDash, "Dash", PowerUpModuleKind.EffectDash, PowerUpModuleStage.Execute, "Moves player rapidly with optional invulnerability."));
+        definitions.Add(CreateModuleDefinition(ModuleIdEffectTimeDilationEnemies, "Time Dilation Enemies", PowerUpModuleKind.EffectTimeDilationEnemies, PowerUpModuleStage.Execute, "Slows enemy simulation for a short duration."));
+        definitions.Add(CreateModuleDefinition(ModuleIdEffectHealMissingHealth, "Heal Missing Health", PowerUpModuleKind.EffectHealMissingHealth, PowerUpModuleStage.Execute, "Restores a flat health amount up to missing HP."));
+        definitions.Add(CreateModuleDefinition(ModuleIdPassiveSpawnTrailSegment, "Spawn Trail Segment", PowerUpModuleKind.PassiveSpawnTrailSegment, PowerUpModuleStage.Hook, "Spawns trail segments while moving."));
+        definitions.Add(CreateModuleDefinition(ModuleIdPassiveAreaTickApplyElement, "Area Tick Apply Element", PowerUpModuleKind.PassiveAreaTickApplyElement, PowerUpModuleStage.Hook, "Applies elemental stacks in area over time."));
+        definitions.Add(CreateModuleDefinition(ModuleIdPassiveDeathExplosion, "Death Explosion", PowerUpModuleKind.PassiveDeathExplosion, PowerUpModuleStage.Hook, "Triggers explosions on enemy death."));
+        definitions.Add(CreateModuleDefinition(ModuleIdPassiveProjectileOrbitOverride, "Projectile Orbit Override", PowerUpModuleKind.PassiveProjectileOrbitOverride, PowerUpModuleStage.Hook, "Overrides projectile trajectory to orbit mode."));
+        definitions.Add(CreateModuleDefinition(ModuleIdPassiveProjectileBounceOnWalls, "Projectile Bounce On Walls", PowerUpModuleKind.PassiveProjectileBounceOnWalls, PowerUpModuleStage.Hook, "Makes projectiles bounce on walls."));
+        definitions.Add(CreateModuleDefinition(ModuleIdPassiveProjectileSplitOnDeath, "Projectile Split On Death", PowerUpModuleKind.PassiveProjectileSplitOnDeath, PowerUpModuleStage.Hook, "Splits projectiles when they expire."));
+        return definitions;
+    }
+
+    private List<ModularPowerUpDefinition> BuildDefaultActivePowerUps(List<string> defaultDropPools)
+    {
+        List<ModularPowerUpDefinition> definitions = new List<ModularPowerUpDefinition>();
+
+        definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdShotgun,
+                                                "Shotgun",
+                                                "Fires a cone spread of projectiles.",
+                                                defaultDropPools,
+                                                1,
+                                                90,
+                                                false,
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 30f, 25f, false, PowerUpChargeType.Time)),
+                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(0.7f)),
+                                                CreateBinding(ModuleIdEffectProjectilePatternCone, PowerUpModuleStage.Execute, 30, CreateProjectilePatternPayload(6, 45f)),
+                                                CreateBinding(ModuleIdEffectProjectileScale, PowerUpModuleStage.Execute, 40, CreateProjectileScalePayload(1f, 1f, 1f, 1f, 1f))));
+
+        definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdChargeShot,
+                                                "Charge Shot",
+                                                "Builds and releases a charged empowered shot.",
+                                                defaultDropPools,
+                                                2,
+                                                120,
+                                                false,
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
+                                                CreateBinding(ModuleIdTriggerHoldCharge, PowerUpModuleStage.Trigger, 10, CreateHoldChargePayload(80f, 120f, 140f)),
+                                                CreateBinding(ModuleIdTriggerRelease, PowerUpModuleStage.Trigger, 20, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 30, CreateResourceGatePayload(100f, 35f, 20f, false, PowerUpChargeType.Time)),
+                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 40, CreateCooldownGatePayload(0.35f)),
+                                                CreateBinding(ModuleIdStateSuppressShooting, PowerUpModuleStage.StateEnter, 50, CreateSuppressShootingPayload(true)),
+                                                CreateBinding(ModuleIdEffectProjectileScale, PowerUpModuleStage.Execute, 60, CreateProjectileScalePayload(1.85f, 2f, 1f, 1.25f, 1.25f)),
+                                                CreateBinding(ModuleIdEffectProjectilePenetration, PowerUpModuleStage.Execute, 70, CreateProjectilePenetrationPayload(ProjectilePenetrationMode.FixedHits, 2))));
+
+        definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdGigaBomb,
+                                                "Giga Bomb",
+                                                "Deploys a high-damage area bomb.",
+                                                defaultDropPools,
+                                                3,
+                                                160,
+                                                false,
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 100f, 35f, true, PowerUpChargeType.EnemiesDestroyed)),
+                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(1.8f)),
+                                                CreateBinding(ModuleIdEffectSpawnBomb, PowerUpModuleStage.Execute, 30, null)));
+
+        definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdBasicDash,
+                                                "Basic Dash",
+                                                "Quick reposition dash with optional i-frames.",
+                                                defaultDropPools,
+                                                1,
+                                                100,
+                                                false,
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 30f, 25f, false, PowerUpChargeType.Time)),
+                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(0.9f)),
+                                                CreateBinding(ModuleIdEffectDash, PowerUpModuleStage.Execute, 30, null)));
+
+        definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdPortableHealthPack,
+                                                "Portable Health Pack",
+                                                "Instant heal with an energy cost.",
+                                                defaultDropPools,
+                                                2,
+                                                130,
+                                                false,
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 45f, 20f, false, PowerUpChargeType.Time)),
+                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(7f)),
+                                                CreateBinding(ModuleIdEffectHealMissingHealth, PowerUpModuleStage.Execute, 30, CreateHealPayload(35f))));
+
+        definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdBulletTime,
+                                                "Bullet Time",
+                                                "Slows enemies for a tactical time window.",
+                                                defaultDropPools,
+                                                3,
+                                                170,
+                                                false,
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 80f, 20f, false, PowerUpChargeType.EnemiesDestroyed)),
+                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(8f)),
+                                                CreateBinding(ModuleIdEffectTimeDilationEnemies, PowerUpModuleStage.Execute, 30, null)));
+
+        return definitions;
+    }
+
+    private List<ModularPowerUpDefinition> BuildDefaultPassivePowerUps(List<string> defaultDropPools)
+    {
+        List<ModularPowerUpDefinition> definitions = new List<ModularPowerUpDefinition>();
+
+        definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdElementalTrail,
+                                                "Elemental Trail",
+                                                "Leaves an elemental trail that applies area stacks.",
+                                                defaultDropPools,
+                                                2,
+                                                140,
+                                                false,
+                                                CreateBinding(ModuleIdPassiveSpawnTrailSegment, PowerUpModuleStage.Hook, 0, null),
+                                                CreateBinding(ModuleIdPassiveAreaTickApplyElement, PowerUpModuleStage.Hook, 10, null)));
+
+        definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdEnemiesExplodeOnDeath,
+                                                "Enemies Explode On Death",
+                                                "Killed enemies explode and damage nearby targets.",
+                                                defaultDropPools,
+                                                3,
+                                                160,
+                                                false,
+                                                CreateBinding(ModuleIdPassiveDeathExplosion, PowerUpModuleStage.Hook, 0, null)));
+
+        definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdOrbitalProjectiles,
+                                                "Orbital Projectiles",
+                                                "Projectiles switch to an orbital movement pattern.",
+                                                defaultDropPools,
+                                                2,
+                                                150,
+                                                false,
+                                                CreateBinding(ModuleIdPassiveProjectileOrbitOverride, PowerUpModuleStage.Hook, 0, null)));
+
+        definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdBouncingProjectiles,
+                                                "Bouncing Projectiles",
+                                                "Projectiles bounce on walls.",
+                                                defaultDropPools,
+                                                2,
+                                                140,
+                                                false,
+                                                CreateBinding(ModuleIdPassiveProjectileBounceOnWalls, PowerUpModuleStage.Hook, 0, null)));
+
+        definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdSplittingProjectiles,
+                                                "Splitting Projectiles",
+                                                "Projectiles split when they expire.",
+                                                defaultDropPools,
+                                                3,
+                                                180,
+                                                false,
+                                                CreateBinding(ModuleIdPassiveProjectileSplitOnDeath, PowerUpModuleStage.Hook, 0, null)));
+
+        return definitions;
+    }
+
+    private static List<string> BuildDropPoolCopy(List<string> sourceDropPools)
+    {
+        List<string> copy = new List<string>();
+
+        if (sourceDropPools == null)
+            return copy;
+
+        for (int index = 0; index < sourceDropPools.Count; index++)
+        {
+            string poolId = sourceDropPools[index];
+
+            if (string.IsNullOrWhiteSpace(poolId))
+                continue;
+
+            copy.Add(poolId);
+        }
+
+        return copy;
+    }
+
+    private List<string> BuildDefaultDropPools()
+    {
+        List<string> defaultDropPools = BuildDropPoolCopy(dropPoolCatalog);
+
+        if (defaultDropPools.Count > 0)
+            return defaultDropPools;
+
+        defaultDropPools.Add("Milestone");
+        defaultDropPools.Add("Shop");
+        defaultDropPools.Add("Boss");
+        return defaultDropPools;
+    }
+
+    private static PowerUpModuleDefinition CreateModuleDefinition(string moduleId,
+                                                                  string displayName,
+                                                                  PowerUpModuleKind moduleKind,
+                                                                  PowerUpModuleStage defaultStage,
+                                                                  string notes)
+    {
+        PowerUpModuleData payload = CreateDefaultPayloadForModuleKind(moduleKind);
+        PowerUpModuleDefinition moduleDefinition = new PowerUpModuleDefinition();
+        moduleDefinition.Configure(moduleId, displayName, moduleKind, defaultStage, notes, payload);
+        moduleDefinition.Validate();
+        return moduleDefinition;
+    }
+
+    private static PowerUpModuleData CreateDefaultPayloadForModuleKind(PowerUpModuleKind moduleKind)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+
+        switch (moduleKind)
+        {
+            case PowerUpModuleKind.TriggerHoldCharge:
+                payload.HoldCharge.Configure(80f, 120f, 140f);
+                break;
+            case PowerUpModuleKind.GateResource:
+                payload.ResourceGate.Configure(PowerUpResourceType.Energy,
+                                               PowerUpResourceType.Energy,
+                                               100f,
+                                               30f,
+                                               0f,
+                                               false,
+                                               PowerUpChargeType.Time,
+                                               25f);
+                break;
+            case PowerUpModuleKind.GateCooldown:
+                payload.CooldownGate.Configure(1f);
+                break;
+            case PowerUpModuleKind.StateSuppressShooting:
+                payload.SuppressShooting.Configure(true);
+                break;
+            case PowerUpModuleKind.EffectProjectilePatternCone:
+                payload.ProjectilePatternCone.Configure(6, 45f);
+                break;
+            case PowerUpModuleKind.EffectProjectileScale:
+                payload.ProjectileScale.Configure(1f, 1f, 1f, 1f, 1f);
+                break;
+            case PowerUpModuleKind.EffectProjectilePenetration:
+                payload.ProjectilePenetration.Configure(ProjectilePenetrationMode.FixedHits, 1);
+                break;
+            case PowerUpModuleKind.EffectHealMissingHealth:
+                payload.HealMissingHealth.Configure(35f);
+                break;
+            default:
+                break;
+        }
+
+        payload.Validate();
+        return payload;
+    }
+
+    private static ModularPowerUpDefinition CreatePowerUpDefinition(string powerUpId,
+                                                                    string displayName,
+                                                                    string descriptionValue,
+                                                                    List<string> dropPools,
+                                                                    int dropTier,
+                                                                    int purchaseCost,
+                                                                    bool unreplaceable,
+                                                                    params PowerUpModuleBinding[] bindings)
+    {
+        ModularPowerUpDefinition powerUpDefinition = new ModularPowerUpDefinition();
+        powerUpDefinition.Configure(CreateCommonData(powerUpId, displayName, descriptionValue, dropPools, dropTier, purchaseCost), unreplaceable);
+        powerUpDefinition.ClearBindings();
+
+        if (bindings != null)
+        {
+            for (int index = 0; index < bindings.Length; index++)
+                powerUpDefinition.AddBinding(bindings[index]);
+        }
+
+        powerUpDefinition.Validate();
+        return powerUpDefinition;
+    }
+
+    private static PowerUpCommonData CreateCommonData(string powerUpId,
+                                                      string displayName,
+                                                      string descriptionValue,
+                                                      List<string> dropPools,
+                                                      int dropTier,
+                                                      int purchaseCost)
+    {
+        PowerUpCommonData commonData = new PowerUpCommonData();
+        commonData.Configure(powerUpId,
+                             displayName,
+                             descriptionValue,
+                             BuildDropPoolCopy(dropPools),
+                             dropTier,
+                             purchaseCost);
+        commonData.Validate();
+        return commonData;
+    }
+
+    private static PowerUpModuleBinding CreateBinding(string moduleId, PowerUpModuleStage stage, int order, PowerUpModuleData overridePayload)
+    {
+        PowerUpModuleBinding binding = new PowerUpModuleBinding();
+        binding.Configure(moduleId, stage, order, true);
+
+        if (overridePayload != null)
+            binding.ConfigureOverride(true, overridePayload);
+        else
+            binding.ConfigureOverride(false, new PowerUpModuleData());
+
+        binding.Validate();
+        return binding;
+    }
+
+    private static PowerUpModuleData CreateResourceGatePayload(float maximumEnergy,
+                                                               float activationCost,
+                                                               float chargePerTrigger,
+                                                               bool fullChargeRequirement,
+                                                               PowerUpChargeType chargeType)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+        payload.ResourceGate.Configure(PowerUpResourceType.Energy,
+                                       PowerUpResourceType.Energy,
+                                       maximumEnergy,
+                                       activationCost,
+                                       0f,
+                                       fullChargeRequirement,
+                                       chargeType,
+                                       chargePerTrigger);
+        payload.Validate();
+        return payload;
+    }
+
+    private static PowerUpModuleData CreateCooldownGatePayload(float cooldownSeconds)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+        payload.CooldownGate.Configure(cooldownSeconds);
+        payload.Validate();
+        return payload;
+    }
+
+    private static PowerUpModuleData CreateHoldChargePayload(float requiredCharge, float maximumCharge, float chargeRatePerSecond)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+        payload.HoldCharge.Configure(requiredCharge, maximumCharge, chargeRatePerSecond);
+        payload.Validate();
+        return payload;
+    }
+
+    private static PowerUpModuleData CreateSuppressShootingPayload(bool suppressBaseShootingWhileActive)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+        payload.SuppressShooting.Configure(suppressBaseShootingWhileActive);
+        payload.Validate();
+        return payload;
+    }
+
+    private static PowerUpModuleData CreateProjectilePatternPayload(int projectileCount, float coneAngleDegrees)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+        payload.ProjectilePatternCone.Configure(projectileCount, coneAngleDegrees);
+        payload.Validate();
+        return payload;
+    }
+
+    private static PowerUpModuleData CreateProjectileScalePayload(float sizeMultiplier,
+                                                                  float damageMultiplier,
+                                                                  float speedMultiplier,
+                                                                  float rangeMultiplier,
+                                                                  float lifetimeMultiplier)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+        payload.ProjectileScale.Configure(sizeMultiplier, damageMultiplier, speedMultiplier, rangeMultiplier, lifetimeMultiplier);
+        payload.Validate();
+        return payload;
+    }
+
+    private static PowerUpModuleData CreateProjectilePenetrationPayload(ProjectilePenetrationMode mode, int maxPenetrations)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+        payload.ProjectilePenetration.Configure(mode, maxPenetrations);
+        payload.Validate();
+        return payload;
+    }
+
+    private static PowerUpModuleData CreateHealPayload(float healAmount)
+    {
+        PowerUpModuleData payload = new PowerUpModuleData();
+        payload.HealMissingHealth.Configure(healAmount);
+        payload.Validate();
+        return payload;
+    }
+    #endregion
+
     #region Unity Methods
     private void OnValidate()
     {
@@ -2418,6 +2984,18 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         if (dropPoolCatalog == null)
             dropPoolCatalog = new List<string>();
 
+        if (moduleDefinitions == null)
+            moduleDefinitions = new List<PowerUpModuleDefinition>();
+
+        if (activePowerUps == null)
+            activePowerUps = new List<ModularPowerUpDefinition>();
+
+        if (passivePowerUps == null)
+            passivePowerUps = new List<ModularPowerUpDefinition>();
+
+        if (equippedPassivePowerUpIds == null)
+            equippedPassivePowerUpIds = new List<string>();
+
         if (passiveTools == null)
             passiveTools = new List<PassiveToolDefinition>();
 
@@ -2440,6 +3018,8 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     private void ValidateEntries()
     {
+        GenerateDefaultModularSetupIfEmpty();
+
         for (int index = 0; index < passiveTools.Count; index++)
         {
             PassiveToolDefinition passiveTool = passiveTools[index];
@@ -2460,8 +3040,135 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             activeTool.Validate();
         }
 
-        ValidateElementalVfxAssignments();
+        for (int index = 0; index < moduleDefinitions.Count; index++)
+        {
+            PowerUpModuleDefinition moduleDefinition = moduleDefinitions[index];
 
+            if (moduleDefinition == null)
+                continue;
+
+            moduleDefinition.Validate();
+        }
+
+        HashSet<string> visitedModuleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < moduleDefinitions.Count; index++)
+        {
+            PowerUpModuleDefinition moduleDefinition = moduleDefinitions[index];
+
+            if (moduleDefinition == null)
+                continue;
+
+            string moduleId = moduleDefinition.ModuleId;
+
+            if (string.IsNullOrWhiteSpace(moduleId))
+                continue;
+
+            if (visitedModuleIds.Add(moduleId))
+                continue;
+
+            moduleDefinitions[index] = null;
+        }
+
+        for (int index = 0; index < moduleDefinitions.Count; index++)
+        {
+            if (moduleDefinitions[index] != null)
+                continue;
+
+            moduleDefinitions.RemoveAt(index);
+            index--;
+        }
+
+        for (int index = 0; index < activePowerUps.Count; index++)
+        {
+            ModularPowerUpDefinition activePowerUp = activePowerUps[index];
+
+            if (activePowerUp == null)
+                continue;
+
+            activePowerUp.Validate();
+        }
+
+        for (int index = 0; index < passivePowerUps.Count; index++)
+        {
+            ModularPowerUpDefinition passivePowerUp = passivePowerUps[index];
+
+            if (passivePowerUp == null)
+                continue;
+
+            passivePowerUp.Validate();
+        }
+
+        ValidateElementalVfxAssignments();
+        MigrateLoadoutIds();
+
+        ValidateActivePowerUpLoadout();
+        ValidatePassivePowerUpLoadout();
+        ValidateToolLoadout();
+    }
+
+    private void ValidateActivePowerUpLoadout()
+    {
+        if (string.IsNullOrWhiteSpace(primaryActivePowerUpId) == false &&
+            HasActivePowerUpWithId(primaryActivePowerUpId) == false)
+            primaryActivePowerUpId = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(secondaryActivePowerUpId) == false &&
+            HasActivePowerUpWithId(secondaryActivePowerUpId) == false)
+            secondaryActivePowerUpId = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(primaryActivePowerUpId) && activePowerUps.Count > 0)
+            primaryActivePowerUpId = GetFirstValidActivePowerUpId();
+
+        if (string.IsNullOrWhiteSpace(secondaryActivePowerUpId) && activePowerUps.Count > 1)
+            secondaryActivePowerUpId = GetSecondValidActivePowerUpId();
+    }
+
+    private void ValidatePassivePowerUpLoadout()
+    {
+        if (equippedPassivePowerUpIds == null)
+            equippedPassivePowerUpIds = new List<string>();
+
+        HashSet<string> equippedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < equippedPassivePowerUpIds.Count; index++)
+        {
+            string equippedPassivePowerUpId = equippedPassivePowerUpIds[index];
+
+            if (string.IsNullOrWhiteSpace(equippedPassivePowerUpId))
+            {
+                equippedPassivePowerUpIds.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            if (HasPassivePowerUpWithId(equippedPassivePowerUpId) == false)
+            {
+                equippedPassivePowerUpIds.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            if (equippedIds.Add(equippedPassivePowerUpId))
+                continue;
+
+            equippedPassivePowerUpIds.RemoveAt(index);
+            index--;
+        }
+
+        if (equippedPassivePowerUpIds.Count > 0)
+            return;
+
+        string firstValidPassivePowerUpId = GetFirstValidPassivePowerUpId();
+
+        if (string.IsNullOrWhiteSpace(firstValidPassivePowerUpId))
+            return;
+
+        equippedPassivePowerUpIds.Add(firstValidPassivePowerUpId);
+    }
+
+    private void ValidateToolLoadout()
+    {
         if (string.IsNullOrWhiteSpace(primaryActiveToolId) == false &&
             HasActiveToolWithId(primaryActiveToolId) == false)
             primaryActiveToolId = string.Empty;
@@ -2531,6 +3238,164 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         ElementalVfxByElementData newEntry = new ElementalVfxByElementData();
         newEntry.SetElementType(elementType);
         elementalVfxByElement.Add(newEntry);
+    }
+
+    private void MigrateLoadoutIds()
+    {
+        if (string.IsNullOrWhiteSpace(primaryActivePowerUpId) &&
+            string.IsNullOrWhiteSpace(primaryActiveToolId) == false)
+            primaryActivePowerUpId = primaryActiveToolId;
+
+        if (string.IsNullOrWhiteSpace(secondaryActivePowerUpId) &&
+            string.IsNullOrWhiteSpace(secondaryActiveToolId) == false)
+            secondaryActivePowerUpId = secondaryActiveToolId;
+
+        if (equippedPassivePowerUpIds == null)
+            equippedPassivePowerUpIds = new List<string>();
+
+        if (equippedPassivePowerUpIds.Count > 0)
+            return;
+
+        if (equippedPassiveToolIds == null || equippedPassiveToolIds.Count == 0)
+            return;
+
+        for (int index = 0; index < equippedPassiveToolIds.Count; index++)
+        {
+            string PassiveToolId = equippedPassiveToolIds[index];
+
+            if (string.IsNullOrWhiteSpace(PassiveToolId))
+                continue;
+
+            equippedPassivePowerUpIds.Add(PassiveToolId);
+        }
+    }
+
+    private bool HasActivePowerUpWithId(string powerUpId)
+    {
+        if (string.IsNullOrWhiteSpace(powerUpId))
+            return false;
+
+        for (int index = 0; index < activePowerUps.Count; index++)
+        {
+            ModularPowerUpDefinition activePowerUp = activePowerUps[index];
+
+            if (activePowerUp == null)
+                continue;
+
+            PowerUpCommonData commonData = activePowerUp.CommonData;
+
+            if (commonData == null)
+                continue;
+
+            if (string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase) == false)
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private string GetFirstValidActivePowerUpId()
+    {
+        for (int index = 0; index < activePowerUps.Count; index++)
+        {
+            ModularPowerUpDefinition activePowerUp = activePowerUps[index];
+
+            if (activePowerUp == null)
+                continue;
+
+            PowerUpCommonData commonData = activePowerUp.CommonData;
+
+            if (commonData == null)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(commonData.PowerUpId))
+                continue;
+
+            return commonData.PowerUpId;
+        }
+
+        return string.Empty;
+    }
+
+    private string GetSecondValidActivePowerUpId()
+    {
+        int foundCount = 0;
+
+        for (int index = 0; index < activePowerUps.Count; index++)
+        {
+            ModularPowerUpDefinition activePowerUp = activePowerUps[index];
+
+            if (activePowerUp == null)
+                continue;
+
+            PowerUpCommonData commonData = activePowerUp.CommonData;
+
+            if (commonData == null)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(commonData.PowerUpId))
+                continue;
+
+            foundCount++;
+
+            if (foundCount < 2)
+                continue;
+
+            return commonData.PowerUpId;
+        }
+
+        return string.Empty;
+    }
+
+    private bool HasPassivePowerUpWithId(string powerUpId)
+    {
+        if (string.IsNullOrWhiteSpace(powerUpId))
+            return false;
+
+        for (int index = 0; index < passivePowerUps.Count; index++)
+        {
+            ModularPowerUpDefinition passivePowerUp = passivePowerUps[index];
+
+            if (passivePowerUp == null)
+                continue;
+
+            PowerUpCommonData commonData = passivePowerUp.CommonData;
+
+            if (commonData == null)
+                continue;
+
+            if (string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase) == false)
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private string GetFirstValidPassivePowerUpId()
+    {
+        for (int index = 0; index < passivePowerUps.Count; index++)
+        {
+            ModularPowerUpDefinition passivePowerUp = passivePowerUps[index];
+
+            if (passivePowerUp == null)
+                continue;
+
+            PowerUpCommonData commonData = passivePowerUp.CommonData;
+
+            if (commonData == null)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(commonData.PowerUpId))
+                continue;
+
+            return commonData.PowerUpId;
+        }
+
+        return string.Empty;
     }
 
     private bool HasActiveToolWithId(string powerUpId)
@@ -2663,7 +3528,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     private void ValidateEquippedPassiveToolIds()
     {
-        MigrateLegacyPassiveToolIds();
+        MigratePassiveToolIds();
 
         if (equippedPassiveToolIds == null)
             equippedPassiveToolIds = new List<string>();
@@ -2706,43 +3571,43 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         equippedPassiveToolIds.Add(firstValidPassiveToolId);
     }
 
-    private void MigrateLegacyPassiveToolIds()
+    private void MigratePassiveToolIds()
     {
         if (equippedPassiveToolIds == null)
             equippedPassiveToolIds = new List<string>();
 
         if (equippedPassiveToolIds.Count > 0)
         {
-            ClearLegacyPassiveToolIds();
+            ClearPassiveToolIds();
             return;
         }
 
-        TryAppendLegacyPassiveToolId(legacyPrimaryPassiveToolId);
-        TryAppendLegacyPassiveToolId(legacySecondaryPassiveToolId);
-        ClearLegacyPassiveToolIds();
+        TryAppendPassiveToolId(PrimaryPassiveToolId);
+        TryAppendPassiveToolId(SecondaryPassiveToolId);
+        ClearPassiveToolIds();
     }
 
-    private void TryAppendLegacyPassiveToolId(string legacyPassiveToolId)
+    private void TryAppendPassiveToolId(string PassiveToolId)
     {
-        if (string.IsNullOrWhiteSpace(legacyPassiveToolId))
+        if (string.IsNullOrWhiteSpace(PassiveToolId))
             return;
 
-        if (HasPassiveToolWithId(legacyPassiveToolId) == false)
+        if (HasPassiveToolWithId(PassiveToolId) == false)
             return;
 
         for (int index = 0; index < equippedPassiveToolIds.Count; index++)
         {
-            if (string.Equals(equippedPassiveToolIds[index], legacyPassiveToolId, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(equippedPassiveToolIds[index], PassiveToolId, StringComparison.OrdinalIgnoreCase))
                 return;
         }
 
-        equippedPassiveToolIds.Add(legacyPassiveToolId);
+        equippedPassiveToolIds.Add(PassiveToolId);
     }
 
-    private void ClearLegacyPassiveToolIds()
+    private void ClearPassiveToolIds()
     {
-        legacyPrimaryPassiveToolId = string.Empty;
-        legacySecondaryPassiveToolId = string.Empty;
+        PrimaryPassiveToolId = string.Empty;
+        SecondaryPassiveToolId = string.Empty;
     }
     #endregion
 

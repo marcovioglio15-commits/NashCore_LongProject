@@ -448,6 +448,12 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
+        if (selectedPreset.EnsureDefaultModularSetup())
+        {
+            EditorUtility.SetDirty(selectedPreset);
+            AssetDatabase.SaveAssetIfDirty(selectedPreset);
+        }
+
         presetSerializedObject = new SerializedObject(selectedPreset);
 
         sectionButtonsRoot = BuildSectionButtons();
@@ -484,8 +490,9 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
         AddSectionButton(buttonsRoot, SectionType.DropPools, "Drop Pools");
-        AddSectionButton(buttonsRoot, SectionType.PassiveTools, "Passive Tools");
-        AddSectionButton(buttonsRoot, SectionType.ActiveTools, "Active Tools");
+        AddSectionButton(buttonsRoot, SectionType.ModulesManagement, "Modules Management");
+        AddSectionButton(buttonsRoot, SectionType.ActivePowerUps, "Active Power Ups");
+        AddSectionButton(buttonsRoot, SectionType.PassivePowerUps, "Passive Power Ups");
         AddSectionButton(buttonsRoot, SectionType.LoadoutInput, "Loadout & Input");
 
         return buttonsRoot;
@@ -529,11 +536,14 @@ public sealed class PlayerPowerUpsPresetsPanel
             case SectionType.DropPools:
                 BuildDropPoolsSection();
                 return;
-            case SectionType.PassiveTools:
-                BuildPassiveToolsSection();
+            case SectionType.ModulesManagement:
+                BuildModulesManagementSection();
                 return;
-            case SectionType.ActiveTools:
-                BuildActiveToolsSection();
+            case SectionType.ActivePowerUps:
+                BuildActivePowerUpsSection();
+                return;
+            case SectionType.PassivePowerUps:
+                BuildPassivePowerUpsSection();
                 return;
             case SectionType.LoadoutInput:
                 BuildLoadoutInputSection();
@@ -622,26 +632,26 @@ public sealed class PlayerPowerUpsPresetsPanel
         sectionContentRoot.Add(catalogField);
     }
 
-    private void BuildPassiveToolsSection()
+    private void BuildModulesManagementSection()
     {
-        Label header = new Label("Passive Tools");
+        Label header = new Label("Modules Management");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
         sectionContentRoot.Add(header);
 
-        SerializedProperty passiveToolsProperty = presetSerializedObject.FindProperty("passiveTools");
+        SerializedProperty moduleDefinitionsProperty = presetSerializedObject.FindProperty("moduleDefinitions");
 
-        if (passiveToolsProperty == null)
+        if (moduleDefinitionsProperty == null)
         {
-            Label missingLabel = new Label("Passive tools property is missing.");
+            Label missingLabel = new Label("Module definitions property is missing.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
             sectionContentRoot.Add(missingLabel);
             return;
         }
 
-        PropertyField passiveToolsField = new PropertyField(passiveToolsProperty);
-        passiveToolsField.BindProperty(passiveToolsProperty);
-        sectionContentRoot.Add(passiveToolsField);
+        PropertyField modulesField = new PropertyField(moduleDefinitionsProperty);
+        modulesField.BindProperty(moduleDefinitionsProperty);
+        sectionContentRoot.Add(modulesField);
 
         SerializedProperty elementalVfxByElementProperty = presetSerializedObject.FindProperty("elementalVfxByElement");
 
@@ -659,26 +669,48 @@ public sealed class PlayerPowerUpsPresetsPanel
         sectionContentRoot.Add(elementalVfxField);
     }
 
-    private void BuildActiveToolsSection()
+    private void BuildActivePowerUpsSection()
     {
-        Label header = new Label("Active Tools");
+        Label header = new Label("Active Power Ups");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
         sectionContentRoot.Add(header);
 
-        SerializedProperty activeToolsProperty = presetSerializedObject.FindProperty("activeTools");
+        SerializedProperty activePowerUpsProperty = presetSerializedObject.FindProperty("activePowerUps");
 
-        if (activeToolsProperty == null)
+        if (activePowerUpsProperty == null)
         {
-            Label missingLabel = new Label("Active tools property is missing.");
+            Label missingLabel = new Label("Active power ups property is missing.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
             sectionContentRoot.Add(missingLabel);
             return;
         }
 
-        PropertyField activeToolsField = new PropertyField(activeToolsProperty);
-        activeToolsField.BindProperty(activeToolsProperty);
-        sectionContentRoot.Add(activeToolsField);
+        PropertyField activePowerUpsField = new PropertyField(activePowerUpsProperty);
+        activePowerUpsField.BindProperty(activePowerUpsProperty);
+        sectionContentRoot.Add(activePowerUpsField);
+    }
+
+    private void BuildPassivePowerUpsSection()
+    {
+        Label header = new Label("Passive Power Ups");
+        header.style.unityFontStyleAndWeight = FontStyle.Bold;
+        header.style.marginBottom = 4f;
+        sectionContentRoot.Add(header);
+
+        SerializedProperty passivePowerUpsProperty = presetSerializedObject.FindProperty("passivePowerUps");
+
+        if (passivePowerUpsProperty == null)
+        {
+            Label missingLabel = new Label("Passive power ups property is missing.");
+            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            sectionContentRoot.Add(missingLabel);
+            return;
+        }
+
+        PropertyField passivePowerUpsField = new PropertyField(passivePowerUpsProperty);
+        passivePowerUpsField.BindProperty(passivePowerUpsProperty);
+        sectionContentRoot.Add(passivePowerUpsField);
     }
 
     private void BuildLoadoutInputSection()
@@ -690,11 +722,11 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         SerializedProperty primaryToolActionIdProperty = presetSerializedObject.FindProperty("primaryToolActionId");
         SerializedProperty secondaryToolActionIdProperty = presetSerializedObject.FindProperty("secondaryToolActionId");
-        SerializedProperty primaryActiveToolIdProperty = presetSerializedObject.FindProperty("primaryActiveToolId");
-        SerializedProperty secondaryActiveToolIdProperty = presetSerializedObject.FindProperty("secondaryActiveToolId");
-        SerializedProperty equippedPassiveToolIdsProperty = presetSerializedObject.FindProperty("equippedPassiveToolIds");
-        SerializedProperty activeToolsProperty = presetSerializedObject.FindProperty("activeTools");
-        SerializedProperty passiveToolsProperty = presetSerializedObject.FindProperty("passiveTools");
+        SerializedProperty primaryActivePowerUpIdProperty = presetSerializedObject.FindProperty("primaryActivePowerUpId");
+        SerializedProperty secondaryActivePowerUpIdProperty = presetSerializedObject.FindProperty("secondaryActivePowerUpId");
+        SerializedProperty equippedPassivePowerUpIdsProperty = presetSerializedObject.FindProperty("equippedPassivePowerUpIds");
+        SerializedProperty activePowerUpsProperty = presetSerializedObject.FindProperty("activePowerUps");
+        SerializedProperty passivePowerUpsProperty = presetSerializedObject.FindProperty("passivePowerUps");
 
         if (primaryToolActionIdProperty == null)
         {
@@ -712,7 +744,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
-        if (primaryActiveToolIdProperty == null)
+        if (primaryActivePowerUpIdProperty == null)
         {
             Label missingLabel = new Label("Loadout/input properties are missing on this preset.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -720,7 +752,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
-        if (secondaryActiveToolIdProperty == null)
+        if (secondaryActivePowerUpIdProperty == null)
         {
             Label missingLabel = new Label("Loadout/input properties are missing on this preset.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -728,15 +760,15 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
-        if (activeToolsProperty == null)
+        if (activePowerUpsProperty == null)
         {
-            Label missingLabel = new Label("Active tools list is missing on this preset.");
+            Label missingLabel = new Label("Active power ups list is missing on this preset.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
             sectionContentRoot.Add(missingLabel);
             return;
         }
 
-        if (equippedPassiveToolIdsProperty == null)
+        if (equippedPassivePowerUpIdsProperty == null)
         {
             Label missingLabel = new Label("Passive loadout properties are missing on this preset.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -744,9 +776,9 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
-        if (passiveToolsProperty == null)
+        if (passivePowerUpsProperty == null)
         {
-            Label missingLabel = new Label("Passive tools list is missing on this preset.");
+            Label missingLabel = new Label("Passive power ups list is missing on this preset.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
             sectionContentRoot.Add(missingLabel);
             return;
@@ -773,47 +805,47 @@ public sealed class PlayerPowerUpsPresetsPanel
         loadoutHeader.style.marginBottom = 2f;
         sectionContentRoot.Add(loadoutHeader);
 
-        List<LoadoutToolOption> loadoutOptions = BuildLoadoutOptions(activeToolsProperty);
+        List<LoadoutPowerUpOption> loadoutOptions = BuildLoadoutOptions(activePowerUpsProperty);
 
         if (loadoutOptions.Count == 0)
         {
-            HelpBox missingToolsHelpBox = new HelpBox("No valid active tools found. Add Bomb, Dash or Bullet Time tools in Active Tools first.", HelpBoxMessageType.Warning);
+            HelpBox missingToolsHelpBox = new HelpBox("No valid active power ups found. Add entries in Active Power Ups first.", HelpBoxMessageType.Warning);
             sectionContentRoot.Add(missingToolsHelpBox);
         }
         else
         {
-            BuildLoadoutSelector("Primary Tool", primaryActiveToolIdProperty, loadoutOptions);
-            BuildLoadoutSelector("Secondary Tool", secondaryActiveToolIdProperty, loadoutOptions);
+            BuildLoadoutSelector("Primary Active Power Up", primaryActivePowerUpIdProperty, loadoutOptions);
+            BuildLoadoutSelector("Secondary Active Power Up", secondaryActivePowerUpIdProperty, loadoutOptions);
 
-            ActiveToolKind primarySelectedKind = ResolveSelectedKind(primaryActiveToolIdProperty.stringValue, loadoutOptions);
-            ActiveToolKind secondarySelectedKind = ResolveSelectedKind(secondaryActiveToolIdProperty.stringValue, loadoutOptions);
+            string primaryId = ResolveSelectedToolId(primaryActivePowerUpIdProperty.stringValue, loadoutOptions);
+            string secondaryId = ResolveSelectedToolId(secondaryActivePowerUpIdProperty.stringValue, loadoutOptions);
 
-            if (primarySelectedKind == secondarySelectedKind)
+            if (string.Equals(primaryId, secondaryId, StringComparison.OrdinalIgnoreCase))
             {
-                HelpBox sameSlotWarning = new HelpBox("Primary and Secondary currently use the same tool type.", HelpBoxMessageType.Warning);
+                HelpBox sameSlotWarning = new HelpBox("Primary and Secondary currently reference the same active power up.", HelpBoxMessageType.Warning);
                 sectionContentRoot.Add(sameSlotWarning);
             }
         }
 
-        Label passiveLoadoutHeader = new Label("Passive Tools Loadout (IDs)");
+        Label passiveLoadoutHeader = new Label("Passive Power Ups Loadout (IDs)");
         passiveLoadoutHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
         passiveLoadoutHeader.style.marginTop = 8f;
         passiveLoadoutHeader.style.marginBottom = 2f;
         sectionContentRoot.Add(passiveLoadoutHeader);
 
-        List<string> passiveToolIds = BuildPassiveLoadoutOptions(passiveToolsProperty);
+        List<string> passiveToolIds = BuildPassiveLoadoutOptions(passivePowerUpsProperty);
 
         if (passiveToolIds.Count == 0)
         {
-            HelpBox missingPassiveToolsHelpBox = new HelpBox("No valid passive tools found. Add passive tools first.", HelpBoxMessageType.Warning);
+            HelpBox missingPassiveToolsHelpBox = new HelpBox("No valid passive power ups found. Add passive power ups first.", HelpBoxMessageType.Warning);
             sectionContentRoot.Add(missingPassiveToolsHelpBox);
             return;
         }
 
-        BuildPassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
+        BuildPassiveLoadoutArray(equippedPassivePowerUpIdsProperty, passiveToolIds);
     }
 
-    private void BuildLoadoutSelector(string label, SerializedProperty slotToolIdProperty, List<LoadoutToolOption> loadoutOptions)
+    private void BuildLoadoutSelector(string label, SerializedProperty slotToolIdProperty, List<LoadoutPowerUpOption> loadoutOptions)
     {
         if (slotToolIdProperty == null)
             return;
@@ -821,19 +853,33 @@ public sealed class PlayerPowerUpsPresetsPanel
         if (loadoutOptions == null || loadoutOptions.Count == 0)
             return;
 
-        List<ActiveToolKind> availableKinds = new List<ActiveToolKind>();
+        List<string> optionLabels = new List<string>();
 
         for (int index = 0; index < loadoutOptions.Count; index++)
-            availableKinds.Add(loadoutOptions[index].Kind);
+            optionLabels.Add(loadoutOptions[index].DisplayLabel);
 
-        ActiveToolKind selectedKind = ResolveSelectedKind(slotToolIdProperty.stringValue, loadoutOptions);
-        PopupField<ActiveToolKind> kindSelector = new PopupField<ActiveToolKind>(label, availableKinds, selectedKind);
-        kindSelector.formatListItemCallback = FormatToolKind;
-        kindSelector.formatSelectedValueCallback = FormatToolKind;
-        kindSelector.tooltip = "Select the active tool type assigned to this slot.";
-        kindSelector.RegisterValueChangedCallback(evt =>
+        LoadoutPowerUpOption selectedOption = ResolveSelectedOption(slotToolIdProperty.stringValue, loadoutOptions);
+        int selectedIndex = 0;
+
+        for (int index = 0; index < loadoutOptions.Count; index++)
         {
-            string selectedToolId = ResolveToolIdByKind(loadoutOptions, evt.newValue);
+            if (string.Equals(loadoutOptions[index].PowerUpId, selectedOption.PowerUpId, StringComparison.OrdinalIgnoreCase))
+            {
+                selectedIndex = index;
+                break;
+            }
+        }
+
+        PopupField<string> selector = new PopupField<string>(label, optionLabels, selectedIndex);
+        selector.tooltip = "Select the active power up assigned to this slot.";
+        selector.RegisterValueChangedCallback(evt =>
+        {
+            int optionIndex = optionLabels.IndexOf(evt.newValue);
+
+            if (optionIndex < 0 || optionIndex >= loadoutOptions.Count)
+                return;
+
+            string selectedToolId = loadoutOptions[optionIndex].PowerUpId;
 
             if (string.IsNullOrWhiteSpace(selectedToolId))
                 return;
@@ -850,54 +896,66 @@ public sealed class PlayerPowerUpsPresetsPanel
             PlayerManagementDraftSession.MarkDirty();
             BuildActiveSection();
         });
-        sectionContentRoot.Add(kindSelector);
+        sectionContentRoot.Add(selector);
     }
 
-    private static string FormatToolKind(ActiveToolKind toolKind)
+    private static string ResolveSelectedToolId(string selectedToolId, List<LoadoutPowerUpOption> options)
     {
-        switch (toolKind)
+        if (options == null || options.Count == 0)
+            return string.Empty;
+
+        if (string.IsNullOrWhiteSpace(selectedToolId) == false)
         {
-            case ActiveToolKind.Bomb:
-                return "Bomb";
-            case ActiveToolKind.Dash:
-                return "Dash";
-            case ActiveToolKind.BulletTime:
-                return "Bullet Time";
-            default:
-                return "Bomb";
+            for (int index = 0; index < options.Count; index++)
+            {
+                if (string.Equals(options[index].PowerUpId, selectedToolId, StringComparison.OrdinalIgnoreCase))
+                    return options[index].PowerUpId;
+            }
         }
+
+        return options[0].PowerUpId;
     }
 
-    private static List<LoadoutToolOption> BuildLoadoutOptions(SerializedProperty activeToolsProperty)
+    private static LoadoutPowerUpOption ResolveSelectedOption(string selectedToolId, List<LoadoutPowerUpOption> options)
     {
-        List<LoadoutToolOption> options = new List<LoadoutToolOption>();
+        if (options == null || options.Count == 0)
+            return default;
 
-        if (activeToolsProperty == null)
+        if (string.IsNullOrWhiteSpace(selectedToolId) == false)
+        {
+            for (int index = 0; index < options.Count; index++)
+            {
+                if (string.Equals(options[index].PowerUpId, selectedToolId, StringComparison.OrdinalIgnoreCase))
+                    return options[index];
+            }
+        }
+
+        return options[0];
+    }
+
+    private static List<LoadoutPowerUpOption> BuildLoadoutOptions(SerializedProperty activePowerUpsProperty)
+    {
+        List<LoadoutPowerUpOption> options = new List<LoadoutPowerUpOption>();
+
+        if (activePowerUpsProperty == null)
             return options;
 
-        for (int index = 0; index < activeToolsProperty.arraySize; index++)
+        for (int index = 0; index < activePowerUpsProperty.arraySize; index++)
         {
-            SerializedProperty activeToolProperty = activeToolsProperty.GetArrayElementAtIndex(index);
+            SerializedProperty activePowerUpProperty = activePowerUpsProperty.GetArrayElementAtIndex(index);
 
-            if (activeToolProperty == null)
+            if (activePowerUpProperty == null)
                 continue;
 
-            SerializedProperty toolKindProperty = activeToolProperty.FindPropertyRelative("toolKind");
-            SerializedProperty commonDataProperty = activeToolProperty.FindPropertyRelative("commonData");
+            SerializedProperty commonDataProperty = activePowerUpProperty.FindPropertyRelative("commonData");
 
-            if (toolKindProperty == null || commonDataProperty == null)
+            if (commonDataProperty == null)
                 continue;
 
             SerializedProperty toolIdProperty = commonDataProperty.FindPropertyRelative("powerUpId");
+            SerializedProperty displayNameProperty = commonDataProperty.FindPropertyRelative("displayName");
 
             if (toolIdProperty == null)
-                continue;
-
-            ActiveToolKind toolKind = (ActiveToolKind)toolKindProperty.enumValueIndex;
-
-            if (toolKind != ActiveToolKind.Bomb &&
-                toolKind != ActiveToolKind.Dash &&
-                toolKind != ActiveToolKind.BulletTime)
                 continue;
 
             string toolId = toolIdProperty.stringValue;
@@ -905,70 +963,74 @@ public sealed class PlayerPowerUpsPresetsPanel
             if (string.IsNullOrWhiteSpace(toolId))
                 continue;
 
-            if (HasOptionForKind(options, toolKind))
-                continue;
+            string displayName = displayNameProperty != null ? displayNameProperty.stringValue : string.Empty;
 
-            options.Add(new LoadoutToolOption
+            if (string.IsNullOrWhiteSpace(displayName))
+                displayName = toolId;
+
+            options.Add(new LoadoutPowerUpOption
             {
-                Kind = toolKind,
-                ToolId = toolId
+                PowerUpId = toolId,
+                DisplayLabel = displayName + " (" + toolId + ")"
             });
         }
 
         return options;
     }
 
-    private static bool HasOptionForKind(List<LoadoutToolOption> options, ActiveToolKind toolKind)
+    private static List<string> BuildPassiveLoadoutOptions(SerializedProperty passivePowerUpsProperty)
     {
-        if (options == null)
-            return false;
+        List<string> options = new List<string>();
 
-        for (int index = 0; index < options.Count; index++)
+        if (passivePowerUpsProperty == null)
+            return options;
+
+        for (int index = 0; index < passivePowerUpsProperty.arraySize; index++)
         {
-            if (options[index].Kind != toolKind)
+            SerializedProperty passivePowerUpProperty = passivePowerUpsProperty.GetArrayElementAtIndex(index);
+
+            if (passivePowerUpProperty == null)
                 continue;
 
-            return true;
+            SerializedProperty commonDataProperty = passivePowerUpProperty.FindPropertyRelative("commonData");
+
+            if (commonDataProperty == null)
+                continue;
+
+            SerializedProperty toolIdProperty = commonDataProperty.FindPropertyRelative("powerUpId");
+
+            if (toolIdProperty == null)
+                continue;
+
+            string toolId = toolIdProperty.stringValue;
+
+            if (string.IsNullOrWhiteSpace(toolId))
+                continue;
+
+            if (ContainsStringIgnoreCase(options, toolId))
+                continue;
+
+            options.Add(toolId);
+        }
+
+        return options;
+    }
+
+    private static bool ContainsStringIgnoreCase(List<string> values, string candidate)
+    {
+        if (values == null)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(candidate))
+            return false;
+
+        for (int index = 0; index < values.Count; index++)
+        {
+            if (string.Equals(values[index], candidate, StringComparison.OrdinalIgnoreCase))
+                return true;
         }
 
         return false;
-    }
-
-    private static ActiveToolKind ResolveSelectedKind(string selectedToolId, List<LoadoutToolOption> options)
-    {
-        if (options == null || options.Count == 0)
-            return ActiveToolKind.Bomb;
-
-        if (string.IsNullOrWhiteSpace(selectedToolId) == false)
-        {
-            for (int index = 0; index < options.Count; index++)
-            {
-                if (string.Equals(options[index].ToolId, selectedToolId, StringComparison.OrdinalIgnoreCase) == false)
-                    continue;
-
-                return options[index].Kind;
-            }
-        }
-
-        return options[0].Kind;
-    }
-
-    private static string ResolveToolIdByKind(List<LoadoutToolOption> options, ActiveToolKind selectedKind)
-    {
-        if (options == null)
-            return string.Empty;
-
-        for (int index = 0; index < options.Count; index++)
-        {
-            LoadoutToolOption option = options[index];
-
-            if (option.Kind != selectedKind)
-                continue;
-
-            return option.ToolId;
-        }
-
-        return string.Empty;
     }
 
     private void BuildPassiveLoadoutArray(SerializedProperty equippedPassiveToolIdsProperty, List<string> passiveToolIds)
@@ -1000,7 +1062,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             row.style.alignItems = Align.Center;
             row.style.marginBottom = 4f;
 
-            PopupField<string> passiveSelector = new PopupField<string>("Passive Tool " + (index + 1), passiveToolIds, selectedToolId);
+            PopupField<string> passiveSelector = new PopupField<string>("Passive Power Up " + (index + 1), passiveToolIds, selectedToolId);
             passiveSelector.tooltip = "Select a passive tool by its PowerUpId.";
             passiveSelector.style.flexGrow = 1f;
             int capturedIndex = index;
@@ -1032,7 +1094,7 @@ public sealed class PlayerPowerUpsPresetsPanel
         {
             AddPassiveLoadoutEntry(equippedPassiveToolIdsProperty, passiveToolIds);
         });
-        addButton.text = "Add Passive Tool";
+        addButton.text = "Add Passive Power Up";
         addButton.tooltip = "Add one passive tool ID to the startup loadout.";
         addButton.style.marginTop = 2f;
         addButton.SetEnabled(CanAddPassiveLoadoutEntry(equippedPassiveToolIdsProperty, passiveToolIds));
@@ -1053,7 +1115,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
 
         if (selectedPreset != null)
-            Undo.RecordObject(selectedPreset, "Add Passive Tool Loadout Entry");
+            Undo.RecordObject(selectedPreset, "Add Passive Power Up Loadout Entry");
 
         presetSerializedObject.Update();
         int insertIndex = equippedPassiveToolIdsProperty.arraySize;
@@ -1078,7 +1140,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
 
         if (selectedPreset != null)
-            Undo.RecordObject(selectedPreset, "Remove Passive Tool Loadout Entry");
+            Undo.RecordObject(selectedPreset, "Remove Passive Power Up Loadout Entry");
 
         presetSerializedObject.Update();
         equippedPassiveToolIdsProperty.DeleteArrayElementAtIndex(entryIndex);
@@ -1108,7 +1170,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
 
         if (selectedPreset != null)
-            Undo.RecordObject(selectedPreset, "Change Passive Tool Loadout Entry");
+            Undo.RecordObject(selectedPreset, "Change Passive Power Up Loadout Entry");
 
         presetSerializedObject.Update();
         passiveToolIdProperty.stringValue = passiveToolId;
@@ -1240,45 +1302,6 @@ public sealed class PlayerPowerUpsPresetsPanel
         }
 
         return false;
-    }
-
-    private static List<string> BuildPassiveLoadoutOptions(SerializedProperty passiveToolsProperty)
-    {
-        List<string> options = new List<string>();
-        HashSet<string> uniqueToolIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        if (passiveToolsProperty == null)
-            return options;
-
-        for (int index = 0; index < passiveToolsProperty.arraySize; index++)
-        {
-            SerializedProperty passiveToolProperty = passiveToolsProperty.GetArrayElementAtIndex(index);
-
-            if (passiveToolProperty == null)
-                continue;
-
-            SerializedProperty commonDataProperty = passiveToolProperty.FindPropertyRelative("commonData");
-
-            if (commonDataProperty == null)
-                continue;
-
-            SerializedProperty toolIdProperty = commonDataProperty.FindPropertyRelative("powerUpId");
-
-            if (toolIdProperty == null)
-                continue;
-
-            string toolId = toolIdProperty.stringValue;
-
-            if (string.IsNullOrWhiteSpace(toolId))
-                continue;
-
-            if (uniqueToolIds.Add(toolId) == false)
-                continue;
-
-            options.Add(toolId);
-        }
-
-        return options;
     }
 
     private static string ResolveSelectedPassiveToolId(string selectedToolId, List<string> passiveToolIds)
@@ -1415,15 +1438,16 @@ public sealed class PlayerPowerUpsPresetsPanel
     {
         Metadata = 0,
         DropPools = 1,
-        PassiveTools = 2,
-        ActiveTools = 3,
-        LoadoutInput = 4
+        ModulesManagement = 2,
+        ActivePowerUps = 3,
+        PassivePowerUps = 4,
+        LoadoutInput = 5
     }
 
-    private struct LoadoutToolOption
+    private struct LoadoutPowerUpOption
     {
-        public ActiveToolKind Kind;
-        public string ToolId;
+        public string PowerUpId;
+        public string DisplayLabel;
     }
     #endregion
 }

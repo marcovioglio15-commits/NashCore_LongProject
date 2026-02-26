@@ -97,7 +97,7 @@ Shader "Cel Shader/Toon Diffuse ECS"
             // which is currently handled by the Hybrid Renderer V2's shader bindings.
             StructuredBuffer<DeformedVertexData> _DeformedMeshData : register(t1);
 
-            // Compared to legacy:
+            // Compared to :
             // - adds SV_VertexID (needed to index deformation buffer)
             // - adds per-instance macros for DOTS instancing.
             struct Attributes

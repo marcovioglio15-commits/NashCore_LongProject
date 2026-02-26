@@ -1214,6 +1214,22 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (preset == null)
             return default;
 
+        IReadOnlyList<ModularPowerUpDefinition> activePowerUps = preset.ActivePowerUps;
+
+        if (activePowerUps != null && activePowerUps.Count > 0)
+        {
+            ModularPowerUpDefinition primaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.PrimaryActivePowerUpId, 0);
+            ModularPowerUpDefinition secondaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.SecondaryActivePowerUpId, 1);
+            PlayerPowerUpSlotConfig primaryCompiledSlot = BuildSlotConfigFromModularPowerUp(authoring, preset, primaryPowerUp);
+            PlayerPowerUpSlotConfig secondaryCompiledSlot = BuildSlotConfigFromModularPowerUp(authoring, preset, secondaryPowerUp);
+
+            return new PlayerPowerUpsConfig
+            {
+                PrimarySlot = primaryCompiledSlot,
+                SecondarySlot = secondaryCompiledSlot
+            };
+        }
+
         ActiveToolDefinition primaryTool = ResolveLoadoutTool(preset, preset.PrimaryActiveToolId, 0);
         ActiveToolDefinition secondaryTool = ResolveLoadoutTool(preset, preset.SecondaryActiveToolId, 1);
         PlayerPowerUpSlotConfig primarySlotConfig = BuildSlotConfig(authoring, primaryTool);
@@ -1329,6 +1345,46 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (preset == null)
             return;
 
+        IReadOnlyList<ModularPowerUpDefinition> passivePowerUps = preset.PassivePowerUps;
+
+        if (passivePowerUps != null && passivePowerUps.Count > 0)
+        {
+            IReadOnlyList<string> equippedPassivePowerUpIds = preset.EquippedPassivePowerUpIds;
+
+            if (equippedPassivePowerUpIds == null || equippedPassivePowerUpIds.Count == 0)
+                return;
+
+            HashSet<string> visitedPassivePowerUpIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+
+            for (int index = 0; index < equippedPassivePowerUpIds.Count; index++)
+            {
+                string passivePowerUpId = equippedPassivePowerUpIds[index];
+
+                if (string.IsNullOrWhiteSpace(passivePowerUpId))
+                    continue;
+
+                if (visitedPassivePowerUpIds.Add(passivePowerUpId) == false)
+                    continue;
+
+                ModularPowerUpDefinition passivePowerUp = ResolveLoadoutPassivePowerUp(preset, passivePowerUpId);
+
+                if (passivePowerUp == null)
+                    continue;
+
+                PlayerPassiveToolConfig passiveToolConfig = BuildPassiveToolConfigFromModularPowerUp(authoring, preset, passivePowerUp);
+
+                if (passiveToolConfig.IsDefined == 0)
+                    continue;
+
+                equippedPassiveToolsBuffer.Add(new EquippedPassiveToolElement
+                {
+                    Tool = passiveToolConfig
+                });
+            }
+
+            return;
+        }
+
         IReadOnlyList<string> equippedPassiveToolIds = preset.EquippedPassiveToolIds;
 
         if (equippedPassiveToolIds == null || equippedPassiveToolIds.Count == 0)
@@ -1361,6 +1417,474 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 Tool = passiveToolConfig
             });
         }
+    }
+
+    private static ModularPowerUpDefinition ResolveLoadoutActivePowerUp(PlayerPowerUpsPreset preset, string powerUpId, int fallbackIndex)
+    {
+        if (preset == null)
+            return null;
+
+        IReadOnlyList<ModularPowerUpDefinition> activePowerUps = preset.ActivePowerUps;
+
+        if (activePowerUps == null)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(powerUpId) == false)
+        {
+            for (int index = 0; index < activePowerUps.Count; index++)
+            {
+                ModularPowerUpDefinition activePowerUp = activePowerUps[index];
+
+                if (activePowerUp == null)
+                    continue;
+
+                PowerUpCommonData commonData = activePowerUp.CommonData;
+
+                if (commonData == null)
+                    continue;
+
+                if (string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase) == false)
+                    continue;
+
+                return activePowerUp;
+            }
+        }
+
+        if (fallbackIndex >= 0 && fallbackIndex < activePowerUps.Count)
+            return activePowerUps[fallbackIndex];
+
+        return null;
+    }
+
+    private static ModularPowerUpDefinition ResolveLoadoutPassivePowerUp(PlayerPowerUpsPreset preset, string powerUpId)
+    {
+        if (preset == null)
+            return null;
+
+        IReadOnlyList<ModularPowerUpDefinition> passivePowerUps = preset.PassivePowerUps;
+
+        if (passivePowerUps == null)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(powerUpId) == false)
+        {
+            for (int index = 0; index < passivePowerUps.Count; index++)
+            {
+                ModularPowerUpDefinition passivePowerUp = passivePowerUps[index];
+
+                if (passivePowerUp == null)
+                    continue;
+
+                PowerUpCommonData commonData = passivePowerUp.CommonData;
+
+                if (commonData == null)
+                    continue;
+
+                if (string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase) == false)
+                    continue;
+
+                return passivePowerUp;
+            }
+        }
+
+        return null;
+    }
+
+    private static PowerUpModuleDefinition ResolveModuleDefinitionById(PlayerPowerUpsPreset preset, string moduleId)
+    {
+        if (preset == null)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(moduleId))
+            return null;
+
+        IReadOnlyList<PowerUpModuleDefinition> modules = preset.ModuleDefinitions;
+
+        if (modules == null)
+            return null;
+
+        for (int index = 0; index < modules.Count; index++)
+        {
+            PowerUpModuleDefinition module = modules[index];
+
+            if (module == null)
+                continue;
+
+            if (string.Equals(module.ModuleId, moduleId, System.StringComparison.OrdinalIgnoreCase))
+                return module;
+        }
+
+        return null;
+    }
+
+    private PlayerPowerUpSlotConfig BuildSlotConfigFromModularPowerUp(PlayerAuthoring authoring, PlayerPowerUpsPreset preset, ModularPowerUpDefinition powerUp)
+    {
+        if (powerUp == null)
+            return default;
+
+        PowerUpResourceType activationResource = PowerUpResourceType.None;
+        PowerUpResourceType maintenanceResource = PowerUpResourceType.None;
+        PowerUpChargeType chargeType = PowerUpChargeType.Time;
+        float maximumEnergy = 0f;
+        float activationCost = 0f;
+        float maintenanceCostPerSecond = 0f;
+        float chargePerTrigger = 0f;
+        float cooldownSeconds = 0f;
+        bool fullChargeRequirement = false;
+        bool hasShotgun = false;
+        bool hasHoldCharge = false;
+        bool hasBomb = false;
+        bool hasDash = false;
+        bool hasBulletTime = false;
+        bool hasHealthPack = false;
+        bool suppressBaseShootingWhileCharging = false;
+        bool hasProjectileScale = false;
+        bool hasPenetration = false;
+        PowerUpProjectilePatternConeModuleData shotgunPattern = new PowerUpProjectilePatternConeModuleData();
+        PowerUpProjectileScaleModuleData projectileScale = new PowerUpProjectileScaleModuleData();
+        PowerUpProjectilePenetrationModuleData projectilePenetration = new PowerUpProjectilePenetrationModuleData();
+        PowerUpHoldChargeModuleData holdCharge = new PowerUpHoldChargeModuleData();
+        PowerUpHealMissingHealthModuleData healData = new PowerUpHealMissingHealthModuleData();
+        DashToolData dashData = new DashToolData();
+        BulletTimeToolData bulletTimeData = new BulletTimeToolData();
+        BombToolData bombData = new BombToolData();
+        ExplosionPassiveToolData explosionData = new ExplosionPassiveToolData();
+        bool hasExplosionData = false;
+        IReadOnlyList<PowerUpModuleBinding> moduleBindings = powerUp.ModuleBindings;
+
+        if (moduleBindings == null || moduleBindings.Count == 0)
+            return default;
+
+        for (int index = 0; index < moduleBindings.Count; index++)
+        {
+            PowerUpModuleBinding binding = moduleBindings[index];
+
+            if (binding == null)
+                continue;
+
+            if (binding.IsEnabled == false)
+                continue;
+
+            PowerUpModuleDefinition moduleDefinition = ResolveModuleDefinitionById(preset, binding.ModuleId);
+
+            if (moduleDefinition == null)
+                continue;
+
+            PowerUpModuleData payload = binding.ResolvePayload(moduleDefinition);
+
+            if (payload == null)
+                continue;
+
+            switch (moduleDefinition.ModuleKind)
+            {
+                case PowerUpModuleKind.GateResource:
+                    activationResource = payload.ResourceGate.ActivationResource;
+                    maintenanceResource = payload.ResourceGate.MaintenanceResource;
+                    maximumEnergy = math.max(0f, payload.ResourceGate.MaximumEnergy);
+                    activationCost = math.max(0f, payload.ResourceGate.ActivationCost);
+                    maintenanceCostPerSecond = math.max(0f, payload.ResourceGate.MaintenanceCostPerSecond);
+                    fullChargeRequirement = payload.ResourceGate.FullChargeRequirement;
+                    chargeType = payload.ResourceGate.ChargeType;
+                    chargePerTrigger = math.max(0f, payload.ResourceGate.ChargePerTrigger);
+                    break;
+                case PowerUpModuleKind.GateCooldown:
+                    cooldownSeconds = math.max(0f, payload.CooldownGate.CooldownSeconds);
+                    break;
+                case PowerUpModuleKind.TriggerHoldCharge:
+                    hasHoldCharge = true;
+                    holdCharge = payload.HoldCharge;
+                    break;
+                case PowerUpModuleKind.StateSuppressShooting:
+                    suppressBaseShootingWhileCharging = payload.SuppressShooting.SuppressBaseShootingWhileActive;
+                    break;
+                case PowerUpModuleKind.EffectProjectilePatternCone:
+                    hasShotgun = true;
+                    shotgunPattern = payload.ProjectilePatternCone;
+                    break;
+                case PowerUpModuleKind.EffectProjectileScale:
+                    hasProjectileScale = true;
+                    projectileScale = payload.ProjectileScale;
+                    break;
+                case PowerUpModuleKind.EffectProjectilePenetration:
+                    hasPenetration = true;
+                    projectilePenetration = payload.ProjectilePenetration;
+                    break;
+                case PowerUpModuleKind.EffectSpawnBomb:
+                    hasBomb = true;
+                    bombData = payload.Bomb;
+                    break;
+                case PowerUpModuleKind.EffectExplosionAreaDamage:
+                    hasExplosionData = true;
+                    explosionData = payload.DeathExplosion;
+                    break;
+                case PowerUpModuleKind.EffectDash:
+                    hasDash = true;
+                    dashData = payload.Dash;
+                    break;
+                case PowerUpModuleKind.EffectTimeDilationEnemies:
+                    hasBulletTime = true;
+                    bulletTimeData = payload.BulletTime;
+                    break;
+                case PowerUpModuleKind.EffectHealMissingHealth:
+                    hasHealthPack = true;
+                    healData = payload.HealMissingHealth;
+                    break;
+            }
+        }
+
+        ActiveToolKind resolvedToolKind = ActiveToolKind.Custom;
+
+        if (hasHoldCharge)
+            resolvedToolKind = ActiveToolKind.ChargeShot;
+        else if (hasShotgun)
+            resolvedToolKind = ActiveToolKind.Shotgun;
+        else if (hasBomb)
+            resolvedToolKind = ActiveToolKind.Bomb;
+        else if (hasDash)
+            resolvedToolKind = ActiveToolKind.Dash;
+        else if (hasBulletTime)
+            resolvedToolKind = ActiveToolKind.BulletTime;
+        else if (hasHealthPack)
+            resolvedToolKind = ActiveToolKind.PortableHealthPack;
+
+        if (resolvedToolKind == ActiveToolKind.Custom)
+            return default;
+
+        Entity bombPrefabEntity = Entity.Null;
+
+        if (resolvedToolKind == ActiveToolKind.Bomb && bombData != null && bombData.BombPrefab != null)
+        {
+            GameObject bombPrefab = bombData.BombPrefab;
+
+            if (IsInvalidBombPrefab(authoring, bombPrefab) == false)
+                bombPrefabEntity = GetEntity(bombPrefab, TransformUsageFlags.Dynamic);
+            else
+            {
+#if UNITY_EDITOR
+                if (authoring != null)
+                    Debug.LogError(string.Format("[PlayerAuthoringBaker] Invalid bomb prefab '{0}' on '{1}'. Assign a dedicated bomb prefab without PlayerAuthoring.", bombPrefab.name, authoring.name), authoring);
+#endif
+            }
+        }
+
+        float bombRadius = bombData != null ? math.max(0.1f, bombData.Radius) : 0.1f;
+        float bombDamage = bombData != null ? math.max(0f, bombData.Damage) : 0f;
+        byte bombAffectAll = bombData != null && bombData.AffectAllEnemiesInRadius ? (byte)1 : (byte)0;
+
+        if (hasExplosionData && explosionData != null)
+        {
+            bombRadius = math.max(0.1f, explosionData.Radius);
+            bombDamage = math.max(0f, explosionData.Damage);
+            bombAffectAll = explosionData.AffectAllEnemiesInRadius ? (byte)1 : (byte)0;
+        }
+
+        float shotgunSizeMultiplier = hasProjectileScale ? math.max(0.01f, projectileScale.SizeMultiplier) : 1f;
+        float shotgunDamageMultiplier = hasProjectileScale ? math.max(0f, projectileScale.DamageMultiplier) : 1f;
+        float shotgunSpeedMultiplier = hasProjectileScale ? math.max(0f, projectileScale.SpeedMultiplier) : 1f;
+        float shotgunRangeMultiplier = hasProjectileScale ? math.max(0f, projectileScale.RangeMultiplier) : 1f;
+        float shotgunLifetimeMultiplier = hasProjectileScale ? math.max(0f, projectileScale.LifetimeMultiplier) : 1f;
+        ProjectilePenetrationMode penetrationMode = hasPenetration ? projectilePenetration.Mode : ProjectilePenetrationMode.None;
+        int maxPenetrations = hasPenetration ? math.max(0, projectilePenetration.MaxPenetrations) : 0;
+        float chargeShotRequired = math.max(0f, holdCharge.RequiredCharge);
+        float chargeShotMaximum = math.max(chargeShotRequired, holdCharge.MaximumCharge);
+        float chargeShotRate = math.max(0f, holdCharge.ChargeRatePerSecond);
+
+        return new PlayerPowerUpSlotConfig
+        {
+            IsDefined = 1,
+            ToolKind = resolvedToolKind,
+            ActivationResource = activationResource,
+            MaintenanceResource = maintenanceResource,
+            ChargeType = chargeType,
+            MaximumEnergy = maximumEnergy,
+            ActivationCost = activationCost,
+            MaintenanceCostPerSecond = maintenanceCostPerSecond,
+            ChargePerTrigger = chargePerTrigger,
+            CooldownSeconds = cooldownSeconds,
+            Toggleable = 0,
+            FullChargeRequirement = fullChargeRequirement ? (byte)1 : (byte)0,
+            Unreplaceable = powerUp.Unreplaceable ? (byte)1 : (byte)0,
+            BombPrefabEntity = bombPrefabEntity,
+            Bomb = new BombPowerUpConfig
+            {
+                SpawnOffset = bombData != null ? new float3(bombData.SpawnOffset.x, bombData.SpawnOffset.y, bombData.SpawnOffset.z) : float3.zero,
+                DeploySpeed = bombData != null ? math.max(0f, bombData.DeploySpeed) : 0f,
+                CollisionRadius = bombData != null ? math.max(0.01f, bombData.CollisionRadius) : 0.1f,
+                BounceOnWalls = bombData != null && bombData.BounceOnWalls ? (byte)1 : (byte)0,
+                BounceDamping = bombData != null ? math.clamp(bombData.BounceDamping, 0f, 1f) : 0f,
+                LinearDampingPerSecond = bombData != null ? math.max(0f, bombData.LinearDampingPerSecond) : 0f,
+                FuseSeconds = bombData != null ? math.max(0.05f, bombData.FuseSeconds) : 0.05f,
+                Radius = bombRadius,
+                Damage = bombDamage,
+                AffectAllEnemiesInRadius = bombAffectAll
+            },
+            Dash = new DashPowerUpConfig
+            {
+                Distance = dashData != null ? math.max(0f, dashData.Distance) : 0f,
+                Duration = dashData != null ? math.max(0.01f, dashData.Duration) : 0.01f,
+                SpeedTransitionInSeconds = dashData != null ? math.max(0f, dashData.SpeedTransitionInSeconds) : 0f,
+                SpeedTransitionOutSeconds = dashData != null ? math.max(0f, dashData.SpeedTransitionOutSeconds) : 0f,
+                GrantsInvulnerability = dashData != null && dashData.GrantsInvulnerability ? (byte)1 : (byte)0,
+                InvulnerabilityExtraTime = dashData != null ? math.max(0f, dashData.InvulnerabilityExtraTime) : 0f
+            },
+            BulletTime = new BulletTimePowerUpConfig
+            {
+                Duration = bulletTimeData != null ? math.max(0.05f, bulletTimeData.Duration) : 0.05f,
+                EnemySlowPercent = bulletTimeData != null ? math.clamp(bulletTimeData.EnemySlowPercent, 0f, 100f) : 0f
+            },
+            Shotgun = new ShotgunPowerUpConfig
+            {
+                ProjectileCount = math.max(1, shotgunPattern.ProjectileCount),
+                ConeAngleDegrees = math.max(0f, shotgunPattern.ConeAngleDegrees),
+                SizeMultiplier = shotgunSizeMultiplier,
+                DamageMultiplier = shotgunDamageMultiplier,
+                SpeedMultiplier = shotgunSpeedMultiplier,
+                RangeMultiplier = shotgunRangeMultiplier,
+                LifetimeMultiplier = shotgunLifetimeMultiplier,
+                PenetrationMode = penetrationMode,
+                MaxPenetrations = maxPenetrations
+            },
+            ChargeShot = new ChargeShotPowerUpConfig
+            {
+                RequiredCharge = chargeShotRequired,
+                MaximumCharge = chargeShotMaximum,
+                ChargeRatePerSecond = chargeShotRate,
+                SuppressBaseShootingWhileCharging = suppressBaseShootingWhileCharging ? (byte)1 : (byte)0,
+                SizeMultiplier = shotgunSizeMultiplier,
+                DamageMultiplier = shotgunDamageMultiplier,
+                SpeedMultiplier = shotgunSpeedMultiplier,
+                RangeMultiplier = shotgunRangeMultiplier,
+                LifetimeMultiplier = shotgunLifetimeMultiplier,
+                PenetrationMode = penetrationMode,
+                MaxPenetrations = maxPenetrations
+            },
+            PortableHealthPack = new PortableHealthPackPowerUpConfig
+            {
+                HealAmount = math.max(0f, healData.HealAmount)
+            }
+        };
+    }
+
+    private PlayerPassiveToolConfig BuildPassiveToolConfigFromModularPowerUp(PlayerAuthoring authoring, PlayerPowerUpsPreset preset, ModularPowerUpDefinition powerUp)
+    {
+        if (powerUp == null)
+            return default;
+
+        PowerUpTrailSpawnModuleData trailSpawnData = null;
+        PowerUpElementalAreaTickModuleData elementalAreaTickData = null;
+        ExplosionPassiveToolData deathExplosionData = null;
+        PerfectCirclePassiveToolData orbitData = null;
+        BouncingProjectilesPassiveToolData bounceData = null;
+        SplittingProjectilesPassiveToolData splitData = null;
+        IReadOnlyList<PowerUpModuleBinding> moduleBindings = powerUp.ModuleBindings;
+
+        if (moduleBindings == null || moduleBindings.Count == 0)
+            return default;
+
+        for (int index = 0; index < moduleBindings.Count; index++)
+        {
+            PowerUpModuleBinding binding = moduleBindings[index];
+
+            if (binding == null)
+                continue;
+
+            if (binding.IsEnabled == false)
+                continue;
+
+            PowerUpModuleDefinition moduleDefinition = ResolveModuleDefinitionById(preset, binding.ModuleId);
+
+            if (moduleDefinition == null)
+                continue;
+
+            PowerUpModuleData payload = binding.ResolvePayload(moduleDefinition);
+
+            if (payload == null)
+                continue;
+
+            switch (moduleDefinition.ModuleKind)
+            {
+                case PowerUpModuleKind.PassiveSpawnTrailSegment:
+                    trailSpawnData = payload.TrailSpawn;
+                    break;
+                case PowerUpModuleKind.PassiveAreaTickApplyElement:
+                    elementalAreaTickData = payload.ElementalAreaTick;
+                    break;
+                case PowerUpModuleKind.PassiveDeathExplosion:
+                    deathExplosionData = payload.DeathExplosion;
+                    break;
+                case PowerUpModuleKind.PassiveProjectileOrbitOverride:
+                    orbitData = payload.ProjectileOrbitOverride;
+                    break;
+                case PowerUpModuleKind.PassiveProjectileBounceOnWalls:
+                    bounceData = payload.ProjectileBounceOnWalls;
+                    break;
+                case PowerUpModuleKind.PassiveProjectileSplitOnDeath:
+                    splitData = payload.ProjectileSplitOnDeath;
+                    break;
+            }
+        }
+
+        PlayerPassiveToolConfig config = default;
+
+        if (trailSpawnData != null || elementalAreaTickData != null)
+        {
+            ElementalEffectConfig effectConfig = BuildElementalEffectConfig(elementalAreaTickData != null ? elementalAreaTickData.EffectData : null);
+            config.IsDefined = 1;
+            config.ToolKind = PassiveToolKind.ElementalTrail;
+            config.ElementalTrail = new ElementalTrailPassiveConfig
+            {
+                Effect = effectConfig,
+                TrailSegmentLifetimeSeconds = trailSpawnData != null ? math.max(0.05f, trailSpawnData.TrailSegmentLifetimeSeconds) : 1.5f,
+                TrailSpawnDistance = trailSpawnData != null ? math.max(0f, trailSpawnData.TrailSpawnDistance) : 0.6f,
+                TrailSpawnIntervalSeconds = trailSpawnData != null ? math.max(0.01f, trailSpawnData.TrailSpawnIntervalSeconds) : 0.1f,
+                TrailRadius = trailSpawnData != null ? math.max(0f, trailSpawnData.TrailRadius) : 1.2f,
+                MaxActiveSegmentsPerPlayer = trailSpawnData != null ? math.max(1, trailSpawnData.MaxActiveSegmentsPerPlayer) : 30,
+                StacksPerTick = elementalAreaTickData != null ? math.max(0f, elementalAreaTickData.StacksPerTick) : 1f,
+                ApplyIntervalSeconds = elementalAreaTickData != null ? math.max(0.01f, elementalAreaTickData.ApplyIntervalSeconds) : 0.2f,
+                TrailAttachedVfxPrefabEntity = Entity.Null,
+                TrailAttachedVfxScaleMultiplier = math.max(0.01f, authoring.ElementalTrailAttachedVfxScaleMultiplier),
+                TrailAttachedVfxOffset = trailSpawnData != null
+                    ? new float3(trailSpawnData.TrailAttachedVfxOffset.x, trailSpawnData.TrailAttachedVfxOffset.y, trailSpawnData.TrailAttachedVfxOffset.z)
+                    : new float3(0f, 0.08f, 0f)
+            };
+
+            return config;
+        }
+
+        if (deathExplosionData != null)
+        {
+            config.IsDefined = 1;
+            config.ToolKind = PassiveToolKind.Explosion;
+            config.Explosion = BuildExplosionPassiveConfig(authoring, deathExplosionData);
+            config.Explosion.TriggerMode = PassiveExplosionTriggerMode.OnEnemyKilled;
+            return config;
+        }
+
+        if (orbitData != null)
+        {
+            config.IsDefined = 1;
+            config.ToolKind = PassiveToolKind.PerfectCircle;
+            config.PerfectCircle = BuildPerfectCirclePassiveConfig(orbitData);
+            return config;
+        }
+
+        if (bounceData != null)
+        {
+            config.IsDefined = 1;
+            config.ToolKind = PassiveToolKind.BouncingProjectiles;
+            config.BouncingProjectiles = BuildBouncingProjectilesPassiveConfig(bounceData);
+            return config;
+        }
+
+        if (splitData != null)
+        {
+            config.IsDefined = 1;
+            config.ToolKind = PassiveToolKind.SplittingProjectiles;
+            config.SplittingProjectiles = BuildSplittingProjectilesPassiveConfig(splitData);
+            return config;
+        }
+
+        return default;
     }
 
     /// <summary>

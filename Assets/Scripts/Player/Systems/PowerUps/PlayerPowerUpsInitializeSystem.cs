@@ -203,6 +203,13 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             {
                 PrimaryEnergy = primaryMaximumEnergy,
                 SecondaryEnergy = secondaryMaximumEnergy,
+                PrimaryCooldownRemaining = 0f,
+                SecondaryCooldownRemaining = 0f,
+                PrimaryCharge = 0f,
+                SecondaryCharge = 0f,
+                PrimaryIsCharging = 0,
+                SecondaryIsCharging = 0,
+                IsShootingSuppressed = 0,
                 PreviousPrimaryPressed = 0,
                 PreviousSecondaryPressed = 0,
                 LastObservedGlobalKillCount = currentKillCount,

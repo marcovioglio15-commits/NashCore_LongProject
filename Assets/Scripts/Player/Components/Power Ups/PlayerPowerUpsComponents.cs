@@ -9,6 +9,13 @@ public struct PlayerPowerUpsState : IComponentData
 {
     public float PrimaryEnergy;
     public float SecondaryEnergy;
+    public float PrimaryCooldownRemaining;
+    public float SecondaryCooldownRemaining;
+    public float PrimaryCharge;
+    public float SecondaryCharge;
+    public byte PrimaryIsCharging;
+    public byte SecondaryIsCharging;
+    public byte IsShootingSuppressed;
     public byte PreviousPrimaryPressed;
     public byte PreviousSecondaryPressed;
     public uint LastObservedGlobalKillCount;

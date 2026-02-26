@@ -56,6 +56,8 @@ public struct ShootRequest : IBufferElementData
     public float Lifetime;
     public float Damage;
     public float ProjectileScaleMultiplier;
+    public ProjectilePenetrationMode PenetrationMode;
+    public int MaxPenetrations;
     public byte InheritPlayerSpeed;
     public byte IsSplitChild;
 }
@@ -77,6 +79,8 @@ public struct Projectile : IComponentData
     public float ExplosionRadius;
     public float MaxRange;
     public float MaxLifetime;
+    public ProjectilePenetrationMode PenetrationMode;
+    public int RemainingPenetrations;
     public byte InheritPlayerSpeed;
 }
 

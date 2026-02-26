@@ -25,78 +25,78 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Tooltip("Enemy master preset that resolves sub-presets used by this enemy.")]
     [SerializeField] private EnemyMasterPreset masterPreset;
 
-    [Tooltip("Legacy direct brain preset fallback used when MasterPreset is missing or has no Brain preset assigned.")]
+    [Tooltip(" direct brain preset fallback used when MasterPreset is missing or has no Brain preset assigned.")]
     [SerializeField] private EnemyBrainPreset brainPreset;
 
-    [Tooltip("Legacy fallback move speed used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback move speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float moveSpeed = 3f;
 
-    [Tooltip("Legacy fallback max speed used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback max speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxSpeed = 4f;
 
-    [Tooltip("Legacy fallback acceleration used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback acceleration used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float acceleration = 8f;
 
-    [Tooltip("Legacy fallback deceleration used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback deceleration used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float deceleration = 8f;
 
-    [Tooltip("Legacy fallback separation radius used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback separation radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float separationRadius = 1.1f;
 
-    [Tooltip("Legacy fallback separation weight used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback separation weight used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float separationWeight = 2f;
 
-    [Tooltip("Legacy fallback body radius used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback body radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float bodyRadius = 0.55f;
 
-    [Tooltip("Legacy fallback contact radius used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback contact radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float contactRadius = 1.2f;
 
-    [Tooltip("Legacy fallback contact damage used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback contact damage used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float contactDamage = 5f;
 
-    [Tooltip("Legacy fallback contact interval used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback contact interval used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float contactInterval = 0.75f;
 
-    [Tooltip("Legacy fallback max health used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback max health used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxHealth = 30f;
 
-    [Tooltip("Legacy fallback max shield used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback max shield used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxShield;
 
-    [Tooltip("Legacy fallback visual mode used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback visual mode used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private EnemyVisualMode visualMode = EnemyVisualMode.GpuBaked;
 
-    [Tooltip("Legacy fallback visual animation speed used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback visual animation speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float visualAnimationSpeed = 1f;
 
-    [Tooltip("Legacy fallback GPU loop duration used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback GPU loop duration used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float gpuAnimationLoopDuration = 1f;
 
-    [Tooltip("Legacy fallback distance culling toggle used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback distance culling toggle used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private bool enableDistanceCulling = true;
 
-    [Tooltip("Legacy fallback max visible distance used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback max visible distance used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxVisibleDistance = 55f;
 
-    [Tooltip("Legacy fallback culling hysteresis used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback culling hysteresis used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float visibleDistanceHysteresis = 6f;
 
@@ -410,7 +410,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #region Unity Methods
     private void OnValidate()
     {
-        ValidateLegacyFallbackValues();
+        ValidateFallbackValues();
 
         if (masterPreset != null)
             masterPreset.ValidateValues();
@@ -450,7 +450,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #endregion
 
     #region Validation
-    private void ValidateLegacyFallbackValues()
+    private void ValidateFallbackValues()
     {
         if (moveSpeed < 0f)
             moveSpeed = 0f;

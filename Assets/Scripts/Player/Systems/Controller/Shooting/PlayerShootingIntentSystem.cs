@@ -51,6 +51,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
         ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
+        ComponentLookup<PlayerPowerUpsState> powerUpsStateLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsState>(true);
 
         // for each player,
         // determine if they should shoot based on their input and shooting mode,
@@ -73,12 +74,24 @@ public partial struct PlayerShootingIntentSystem : ISystem
             ref ShootingValuesBlob values = ref shootingConfig.Values;
             byte inheritPlayerSpeed = shootingConfig.ProjectilesInheritPlayerSpeed;
             PlayerPassiveToolsState passiveToolsState = ResolvePassiveToolsState(entity, in passiveToolsLookup);
+            bool isShootingSuppressed = false;
+
+            if (powerUpsStateLookup.HasComponent(entity))
+                isShootingSuppressed = powerUpsStateLookup[entity].IsShootingSuppressed != 0;
+
             float projectileScaleMultiplier = math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier);
             float projectileSpeed = math.max(0f, values.ShootSpeed * math.max(0f, passiveToolsState.ProjectileSpeedMultiplier));
             float projectileDamage = math.max(0f, values.Damage * math.max(0f, passiveToolsState.ProjectileDamageMultiplier));
             float projectileExplosionRadius = math.max(0f, values.ExplosionRadius);
             float projectileLifetime = ApplyLifetimeMultiplier(values.Lifetime, passiveToolsState.ProjectileLifetimeSecondsMultiplier);
             float projectileRange = ApplyLifetimeMultiplier(values.Range, passiveToolsState.ProjectileLifetimeRangeMultiplier);
+
+            if (isShootingSuppressed)
+            {
+                shootingState.ValueRW.AutomaticEnabled = 0;
+                shootingState.ValueRW.PreviousShootPressed = inputState.ValueRO.Shoot > 0.5f ? (byte)1 : (byte)0;
+                continue;
+            }
 
             // if rate of fire or shoot speed is zero or negative, treat as shooting disabled and skip shooting logic
             if (values.RateOfFire <= 0f || projectileSpeed <= 0f)
@@ -144,6 +157,8 @@ public partial struct PlayerShootingIntentSystem : ISystem
                     Lifetime = projectileLifetime,
                     Damage = projectileDamage,
                     ProjectileScaleMultiplier = projectileScaleMultiplier,
+                    PenetrationMode = ProjectilePenetrationMode.None,
+                    MaxPenetrations = 0,
                     InheritPlayerSpeed = inheritPlayerSpeed,
                     IsSplitChild = 0
                 };

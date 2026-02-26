@@ -201,6 +201,12 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 continue;
             }
 
+            if (CanProjectileContinueAfterHit(ref projectileData))
+            {
+                entityManager.SetComponentData(projectileEntities[projectileIndex], projectileData);
+                continue;
+            }
+
             TryEnqueueSplitRequests(in projectileData,
                                     in splitState,
                                     in projectileTransform,
@@ -441,9 +447,32 @@ public partial struct EnemyProjectileHitSystem : ISystem
             Lifetime = splitLifetime,
             Damage = splitDamage,
             ProjectileScaleMultiplier = splitScaleMultiplier,
+            PenetrationMode = ProjectilePenetrationMode.None,
+            MaxPenetrations = 0,
             InheritPlayerSpeed = inheritPlayerSpeed,
             IsSplitChild = 1
         });
+    }
+
+    private static bool CanProjectileContinueAfterHit(ref Projectile projectileData)
+    {
+        switch (projectileData.PenetrationMode)
+        {
+            case ProjectilePenetrationMode.Infinite:
+                return true;
+            case ProjectilePenetrationMode.FixedHits:
+                if (projectileData.RemainingPenetrations <= 0)
+                    return false;
+
+                projectileData.RemainingPenetrations -= 1;
+
+                if (projectileData.RemainingPenetrations < 0)
+                    projectileData.RemainingPenetrations = 0;
+
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static float ResolveCurrentScaleMultiplier(Entity projectileEntity,
