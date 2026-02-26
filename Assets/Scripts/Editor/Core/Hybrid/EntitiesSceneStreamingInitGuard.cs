@@ -24,7 +24,6 @@ public static class EntitiesSceneStreamingInitGuard
 
     static EntitiesSceneStreamingInitGuard()
     {
-        EnsureInitialized("domain-load");
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
     }
 
