@@ -15,6 +15,7 @@ public static class EntitiesSceneStreamingInitGuard
     private const string AsyncLoadSceneOperationTypeName = "Unity.Scenes.AsyncLoadSceneOperation, Unity.Scenes";
     private const string InitMethodName = "EditorInitializeOnLoadMethod";
     private const string UnityObjectRefsFieldName = "s_UnityObjectsRefs";
+    private const bool LogForcedInitialization = false;
 
     private static Type s_AsyncLoadSceneOperationType;
     private static MethodInfo s_InitMethod;
@@ -45,10 +46,10 @@ public static class EntitiesSceneStreamingInitGuard
         {
             s_InitMethod.Invoke(null, null);
 
-            if (s_HasLoggedFallbackInit == false)
+            if (LogForcedInitialization && s_HasLoggedFallbackInit == false)
             {
                 s_HasLoggedFallbackInit = true;
-                Debug.LogWarning(
+                Debug.Log(
                     string.Format(
                         "[EntitiesSceneStreamingInitGuard] Forced DOTS scene-streaming init ({0}) to prevent AsyncLoadSceneOperation null refs.",
                         context));
