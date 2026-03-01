@@ -95,8 +95,6 @@ public partial struct PlayerShootingIntentSystem : ISystem
 
             if (isShootingSuppressed)
             {
-                shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
-
                 if (values.RateOfFire > 0f)
                     shootingState.ValueRW.NextShotTime = elapsedTime;
 
