@@ -91,23 +91,26 @@ public partial struct PlayerShootingIntentSystem : ISystem
             float passiveShotgunConeAngle = hasPassiveShotgunPayload ? math.max(0f, passiveToolsState.Shotgun.ConeAngleDegrees) : 0f;
             ProjectilePenetrationMode passivePenetrationMode = hasPassiveShotgunPayload ? passiveToolsState.Shotgun.PenetrationMode : ProjectilePenetrationMode.None;
             int passiveMaxPenetrations = hasPassiveShotgunPayload ? math.max(0, passiveToolsState.Shotgun.MaxPenetrations) : 0;
+            bool isShootPressed = inputState.ValueRO.Shoot > 0.5f;
 
             if (isShootingSuppressed)
             {
-                shootingState.ValueRW.AutomaticEnabled = 0;
-                shootingState.ValueRW.PreviousShootPressed = inputState.ValueRO.Shoot > 0.5f ? (byte)1 : (byte)0;
+                shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
+
+                if (values.RateOfFire > 0f)
+                    shootingState.ValueRW.NextShotTime = elapsedTime;
+
                 continue;
             }
 
             // if rate of fire or shoot speed is zero or negative, treat as shooting disabled and skip shooting logic
             if (values.RateOfFire <= 0f || projectileSpeed <= 0f)
             {
-                shootingState.ValueRW.PreviousShootPressed = inputState.ValueRO.Shoot > 0.5f ? (byte)1 : (byte)0;
+                shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
                 continue;
             }
 
             // determine if the shoot button is currently pressed and if it was just pressed this frame
-            bool isShootPressed = inputState.ValueRO.Shoot > 0.5f;
             bool shootPressedThisFrame = isShootPressed && shootingState.ValueRO.PreviousShootPressed == 0;
             bool shootReleasedThisFrame = isShootPressed == false && shootingState.ValueRO.PreviousShootPressed != 0;
             shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
