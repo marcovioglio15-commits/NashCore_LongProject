@@ -229,9 +229,6 @@ public sealed class PowerUpResourceGateModuleData
     [Tooltip("Minimum energy percentage required to activate. 0 disables this gate.")]
     [SerializeField] private float minimumActivationEnergyPercent;
 
-    [FormerlySerializedAs("fullChargeRequirement")]
-    [SerializeField] private bool legacyFullChargeRequirement;
-
     [Tooltip("Charge source used to refill energy over time/events.")]
     [SerializeField] private PowerUpChargeType chargeType = PowerUpChargeType.Time;
 
@@ -374,13 +371,6 @@ public sealed class PowerUpResourceGateModuleData
 
         if (maintenanceCostPerSecond < 0f)
             maintenanceCostPerSecond = 0f;
-
-        if (legacyFullChargeRequirement &&
-            minimumActivationEnergyPercent <= 0f)
-        {
-            minimumActivationEnergyPercent = 100f;
-            legacyFullChargeRequirement = false;
-        }
 
         if (minimumActivationEnergyPercent < 0f)
             minimumActivationEnergyPercent = 0f;

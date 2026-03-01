@@ -2096,9 +2096,6 @@ public sealed class ActiveToolDefinition
     [Tooltip("Minimum energy percentage required for activation. 0 disables this gate.")]
     [SerializeField] private float minimumActivationEnergyPercent;
 
-    [FormerlySerializedAs("fullChargeRequirement")]
-    [SerializeField] private bool legacyFullChargeRequirement;
-
     [Tooltip("When enabled, this tool cannot be replaced from slots.")]
     [SerializeField] private bool unreplaceable;
 
@@ -2261,13 +2258,6 @@ public sealed class ActiveToolDefinition
 
         if (chargePerTrigger < 0f)
             chargePerTrigger = 0f;
-
-        if (legacyFullChargeRequirement &&
-            minimumActivationEnergyPercent <= 0f)
-        {
-            minimumActivationEnergyPercent = 100f;
-            legacyFullChargeRequirement = false;
-        }
 
         if (minimumActivationEnergyPercent < 0f)
             minimumActivationEnergyPercent = 0f;
