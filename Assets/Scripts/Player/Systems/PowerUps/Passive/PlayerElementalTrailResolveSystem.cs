@@ -42,13 +42,35 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
         int enemyCount = enemyQuery.CalculateEntityCount();
         NativeArray<Entity> enemyEntities = default;
         NativeArray<EnemyData> enemyDataArray = default;
-        NativeArray<LocalTransform> enemyTransforms = default;
+        NativeArray<float3> enemyPositions = default;
+        NativeArray<float> enemyBodyRadii = default;
+        NativeParallelMultiHashMap<int, int> enemyCellMap = default;
+        float inverseCellSize = 0f;
+        float maximumEnemyRadius = 0.05f;
 
         if (enemyCount > 0)
         {
             enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
             enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.Temp);
-            enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Temp);
+
+            for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
+            {
+                enemyPositions[enemyIndex] = enemyTransforms[enemyIndex].Position;
+                float bodyRadius = math.max(0f, enemyDataArray[enemyIndex].BodyRadius);
+                enemyBodyRadii[enemyIndex] = bodyRadius;
+
+                if (bodyRadius > maximumEnemyRadius)
+                    maximumEnemyRadius = bodyRadius;
+            }
+
+            enemyTransforms.Dispose();
+            float cellSize = EnemySpatialHashUtility.ResolveCellSize(maximumEnemyRadius);
+            inverseCellSize = 1f / cellSize;
+            EnemySpatialHashUtility.BuildCellMap(in enemyPositions, inverseCellSize, ref enemyCellMap);
         }
 
         foreach ((RefRW<ElementalTrailSegment> trailSegment,
@@ -93,66 +115,92 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
                     canSpawnElementalVfx = elementalVfxConfig.SpawnStackVfx != 0 || elementalVfxConfig.SpawnProcVfx != 0;
                 }
 
-                for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
+                float queryRadius = radius + math.max(0f, maximumEnemyRadius);
+                EnemySpatialHashUtility.ResolveCellBounds(trailPosition,
+                                                          queryRadius,
+                                                          inverseCellSize,
+                                                          out int minCellX,
+                                                          out int maxCellX,
+                                                          out int minCellY,
+                                                          out int maxCellY);
+
+                for (int cellX = minCellX; cellX <= maxCellX; cellX++)
                 {
-                    Entity enemyEntity = enemyEntities[enemyIndex];
-
-                    if (entityManager.Exists(enemyEntity) == false)
-                        continue;
-
-                    float3 enemyPosition = enemyTransforms[enemyIndex].Position;
-                    float3 delta = enemyPosition - trailPosition;
-                    delta.y = 0f;
-                    float distanceSquared = math.lengthsq(delta);
-                    float bodyRadius = math.max(0f, enemyDataArray[enemyIndex].BodyRadius);
-                    float totalRadius = radius + bodyRadius;
-
-                    if (distanceSquared > totalRadius * totalRadius)
-                        continue;
-
-                    bool procTriggered;
-                    bool applied = EnemyElementalStackUtility.TryApplyStacks(enemyEntity,
-                                                                             stacksToApply,
-                                                                             segment.Effect,
-                                                                             ref elementalStackLookup,
-                                                                             out procTriggered);
-
-                    if (applied == false || canSpawnElementalVfx == false)
-                        continue;
-
-                    if (enemyRuntimeLookup.HasComponent(enemyEntity) == false)
-                        continue;
-
-                    EnemyRuntimeState enemyRuntimeState = enemyRuntimeLookup[enemyEntity];
-                    Entity followTargetEntity = enemyEntity;
-
-                    if (elementalVfxAnchorLookup.HasComponent(enemyEntity))
+                    for (int cellY = minCellY; cellY <= maxCellY; cellY++)
                     {
-                        Entity anchorEntity = elementalVfxAnchorLookup[enemyEntity].AnchorEntity;
+                        int cellKey = EnemySpatialHashUtility.EncodeCell(cellX, cellY);
+                        NativeParallelMultiHashMapIterator<int> iterator;
+                        int enemyIndex;
 
-                        if (anchorEntity != Entity.Null)
-                            followTargetEntity = anchorEntity;
+                        if (enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator) == false)
+                            continue;
+
+                        do
+                        {
+                            if (enemyIndex < 0 || enemyIndex >= enemyCount)
+                                continue;
+
+                            Entity enemyEntity = enemyEntities[enemyIndex];
+
+                            if (entityManager.Exists(enemyEntity) == false)
+                                continue;
+
+                            float3 enemyPosition = enemyPositions[enemyIndex];
+                            float3 delta = enemyPosition - trailPosition;
+                            delta.y = 0f;
+                            float distanceSquared = math.lengthsq(delta);
+                            float bodyRadius = math.max(0f, enemyBodyRadii[enemyIndex]);
+                            float totalRadius = radius + bodyRadius;
+
+                            if (distanceSquared > totalRadius * totalRadius)
+                                continue;
+
+                            bool procTriggered;
+                            bool applied = EnemyElementalStackUtility.TryApplyStacks(enemyEntity,
+                                                                                     stacksToApply,
+                                                                                     segment.Effect,
+                                                                                     ref elementalStackLookup,
+                                                                                     out procTriggered);
+
+                            if (applied == false || canSpawnElementalVfx == false)
+                                continue;
+
+                            if (enemyRuntimeLookup.HasComponent(enemyEntity) == false)
+                                continue;
+
+                            EnemyRuntimeState enemyRuntimeState = enemyRuntimeLookup[enemyEntity];
+                            Entity followTargetEntity = enemyEntity;
+
+                            if (elementalVfxAnchorLookup.HasComponent(enemyEntity))
+                            {
+                                Entity anchorEntity = elementalVfxAnchorLookup[enemyEntity].AnchorEntity;
+
+                                if (anchorEntity != Entity.Null)
+                                    followTargetEntity = anchorEntity;
+                            }
+
+                            if (elementalVfxConfig.SpawnStackVfx != 0)
+                                EnqueueElementalVfx(ref vfxRequests,
+                                                    elementalVfxConfig.StackVfxPrefabEntity,
+                                                    enemyPosition,
+                                                    elementalVfxConfig.StackVfxScaleMultiplier,
+                                                    followTargetEntity,
+                                                    enemyEntity,
+                                                    enemyRuntimeState.SpawnVersion,
+                                                    0.35f);
+
+                            if (procTriggered && elementalVfxConfig.SpawnProcVfx != 0)
+                                EnqueueElementalVfx(ref vfxRequests,
+                                                    elementalVfxConfig.ProcVfxPrefabEntity,
+                                                    enemyPosition,
+                                                    elementalVfxConfig.ProcVfxScaleMultiplier,
+                                                    followTargetEntity,
+                                                    enemyEntity,
+                                                    enemyRuntimeState.SpawnVersion,
+                                                    procVfxLifetimeSeconds);
+                        }
+                        while (enemyCellMap.TryGetNextValue(out enemyIndex, ref iterator));
                     }
-
-                    if (elementalVfxConfig.SpawnStackVfx != 0)
-                        EnqueueElementalVfx(ref vfxRequests,
-                                            elementalVfxConfig.StackVfxPrefabEntity,
-                                            enemyPosition,
-                                            elementalVfxConfig.StackVfxScaleMultiplier,
-                                            followTargetEntity,
-                                            enemyEntity,
-                                            enemyRuntimeState.SpawnVersion,
-                                            0.35f);
-
-                    if (procTriggered && elementalVfxConfig.SpawnProcVfx != 0)
-                        EnqueueElementalVfx(ref vfxRequests,
-                                            elementalVfxConfig.ProcVfxPrefabEntity,
-                                            enemyPosition,
-                                            elementalVfxConfig.ProcVfxScaleMultiplier,
-                                            followTargetEntity,
-                                            enemyEntity,
-                                            enemyRuntimeState.SpawnVersion,
-                                            procVfxLifetimeSeconds);
                 }
             }
 
@@ -166,7 +214,9 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
         {
             enemyEntities.Dispose();
             enemyDataArray.Dispose();
-            enemyTransforms.Dispose();
+            enemyPositions.Dispose();
+            enemyBodyRadii.Dispose();
+            enemyCellMap.Dispose();
         }
     }
     #endregion

@@ -55,18 +55,98 @@ public partial struct EnemyProjectileHitSystem : ISystem
         if (projectileCount <= 0)
             return;
 
-        NativeArray<Entity> enemyEntities = enemyQuery.ToEntityArray(Allocator.TempJob);
-        NativeArray<EnemyData> enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.TempJob);
-        NativeArray<EnemyHealth> enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.TempJob);
-        NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
-        NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.TempJob);
+        NativeArray<Entity> enemyEntities = new NativeArray<Entity>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<EnemyData> enemyDataArray = new NativeArray<EnemyData>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<EnemyHealth> enemyHealthArray = new NativeArray<EnemyHealth>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<LocalTransform> enemyTransforms = new NativeArray<LocalTransform>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<EnemyRuntimeState> enemyRuntimeArray = new NativeArray<EnemyRuntimeState>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        int enemyWriteIndex = 0;
 
-        NativeArray<Entity> projectileEntities = projectileQuery.ToEntityArray(Allocator.TempJob);
-        NativeArray<Projectile> projectileDataArray = projectileQuery.ToComponentDataArray<Projectile>(Allocator.TempJob);
-        NativeArray<ProjectileOwner> projectileOwnerArray = projectileQuery.ToComponentDataArray<ProjectileOwner>(Allocator.TempJob);
-        NativeArray<ProjectileSplitState> projectileSplitArray = projectileQuery.ToComponentDataArray<ProjectileSplitState>(Allocator.TempJob);
-        NativeArray<ProjectileElementalPayload> projectileElementalArray = projectileQuery.ToComponentDataArray<ProjectileElementalPayload>(Allocator.TempJob);
-        NativeArray<LocalTransform> projectileTransforms = projectileQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
+        foreach ((RefRO<EnemyData> enemyData,
+                  RefRO<EnemyHealth> enemyHealth,
+                  RefRO<LocalTransform> enemyTransform,
+                  RefRO<EnemyRuntimeState> enemyRuntimeState,
+                  Entity enemyEntity) in SystemAPI.Query<RefRO<EnemyData>,
+                                                         RefRO<EnemyHealth>,
+                                                         RefRO<LocalTransform>,
+                                                         RefRO<EnemyRuntimeState>>()
+                                                 .WithAll<EnemyActive>()
+                                                 .WithNone<EnemyDespawnRequest>()
+                                                 .WithEntityAccess())
+        {
+            if (enemyWriteIndex >= enemyCount)
+                break;
+
+            enemyEntities[enemyWriteIndex] = enemyEntity;
+            enemyDataArray[enemyWriteIndex] = enemyData.ValueRO;
+            enemyHealthArray[enemyWriteIndex] = enemyHealth.ValueRO;
+            enemyTransforms[enemyWriteIndex] = enemyTransform.ValueRO;
+            enemyRuntimeArray[enemyWriteIndex] = enemyRuntimeState.ValueRO;
+            enemyWriteIndex++;
+        }
+
+        enemyCount = enemyWriteIndex;
+
+        if (enemyCount <= 0)
+        {
+            enemyEntities.Dispose();
+            enemyDataArray.Dispose();
+            enemyHealthArray.Dispose();
+            enemyTransforms.Dispose();
+            enemyRuntimeArray.Dispose();
+            return;
+        }
+
+        NativeArray<Entity> projectileEntities = new NativeArray<Entity>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<Projectile> projectileDataArray = new NativeArray<Projectile>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<ProjectileOwner> projectileOwnerArray = new NativeArray<ProjectileOwner>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<ProjectileSplitState> projectileSplitArray = new NativeArray<ProjectileSplitState>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<ProjectileElementalPayload> projectileElementalArray = new NativeArray<ProjectileElementalPayload>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<LocalTransform> projectileTransforms = new NativeArray<LocalTransform>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        int projectileWriteIndex = 0;
+
+        foreach ((RefRO<Projectile> projectileData,
+                  RefRO<ProjectileOwner> projectileOwner,
+                  RefRO<ProjectileSplitState> projectileSplitState,
+                  RefRO<ProjectileElementalPayload> projectileElementalPayload,
+                  RefRO<LocalTransform> projectileTransform,
+                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>,
+                                                              RefRO<ProjectileOwner>,
+                                                              RefRO<ProjectileSplitState>,
+                                                              RefRO<ProjectileElementalPayload>,
+                                                              RefRO<LocalTransform>>()
+                                                      .WithAll<ProjectileActive>()
+                                                      .WithEntityAccess())
+        {
+            if (projectileWriteIndex >= projectileCount)
+                break;
+
+            projectileEntities[projectileWriteIndex] = projectileEntity;
+            projectileDataArray[projectileWriteIndex] = projectileData.ValueRO;
+            projectileOwnerArray[projectileWriteIndex] = projectileOwner.ValueRO;
+            projectileSplitArray[projectileWriteIndex] = projectileSplitState.ValueRO;
+            projectileElementalArray[projectileWriteIndex] = projectileElementalPayload.ValueRO;
+            projectileTransforms[projectileWriteIndex] = projectileTransform.ValueRO;
+            projectileWriteIndex++;
+        }
+
+        projectileCount = projectileWriteIndex;
+
+        if (projectileCount <= 0)
+        {
+            enemyEntities.Dispose();
+            enemyDataArray.Dispose();
+            enemyHealthArray.Dispose();
+            enemyTransforms.Dispose();
+            enemyRuntimeArray.Dispose();
+            projectileEntities.Dispose();
+            projectileDataArray.Dispose();
+            projectileOwnerArray.Dispose();
+            projectileSplitArray.Dispose();
+            projectileElementalArray.Dispose();
+            projectileTransforms.Dispose();
+            return;
+        }
 
         NativeArray<float3> enemyPositions = new NativeArray<float3>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> enemyRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -155,6 +235,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                                                         in projectileBaseScaleLookup);
             float projectileDamage = math.max(0f, projectileData.Damage);
             bool hasValidHit = false;
+            bool enemyKilledByProjectile = false;
             ElementalVfxDefinitionConfig elementalVfxConfig = default;
 
             if (elementalPayload.Enabled != 0 && elementalPayload.StacksPerHit > 0f)
@@ -178,6 +259,12 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 if (projectileDamage > 0f)
                 {
                     damageByEnemy[enemyIndex] += projectileDamage;
+                    float projectedRemainingHealth = enemyHealthArray[enemyIndex].Current - damageByEnemy[enemyIndex];
+
+                    if (projectedRemainingHealth <= 0f)
+                    {
+                        enemyKilledByProjectile = true;
+                    }
                 }
 
                 Entity enemyEntity = enemyEntities[enemyIndex];
@@ -201,18 +288,44 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 continue;
             }
 
-            if (CanProjectileContinueAfterHit(ref projectileData))
+            bool shouldSplitOnHitEvent = ProjectileSplitUtility.ShouldSplitOnHitEvent(in splitState, enemyKilledByProjectile);
+            bool canProjectileContinue = CanProjectileContinueAfterHit(ref projectileData);
+
+            if (canProjectileContinue)
             {
                 entityManager.SetComponentData(projectileEntities[projectileIndex], projectileData);
+
+                if (shouldSplitOnHitEvent)
+                {
+                    ProjectileSplitUtility.TryEnqueueSplitRequests(in projectileData,
+                                                                   in splitState,
+                                                                   in projectileTransform,
+                                                                   currentScaleMultiplier,
+                                                                   in elementalPayload,
+                                                                   in projectileOwner,
+                                                                   ref shootRequestLookup);
+                    splitState.CanSplit = 0;
+                    entityManager.SetComponentData(projectileEntities[projectileIndex], splitState);
+                }
+
                 continue;
             }
 
-            TryEnqueueSplitRequests(in projectileData,
-                                    in splitState,
-                                    in projectileTransform,
-                                    currentScaleMultiplier,
-                                    in projectileOwner,
-                                    ref shootRequestLookup);
+            bool shouldSplitOnDespawnEvent = ProjectileSplitUtility.ShouldSplitOnDespawn(in splitState);
+
+            if (shouldSplitOnHitEvent || shouldSplitOnDespawnEvent)
+            {
+                ProjectileSplitUtility.TryEnqueueSplitRequests(in projectileData,
+                                                               in splitState,
+                                                               in projectileTransform,
+                                                               currentScaleMultiplier,
+                                                               in elementalPayload,
+                                                               in projectileOwner,
+                                                               ref shootRequestLookup);
+                splitState.CanSplit = 0;
+                entityManager.SetComponentData(projectileEntities[projectileIndex], splitState);
+            }
+
             DespawnProjectile(entityManager, projectileEntities[projectileIndex], projectileOwner, ref projectilePoolLookup);
         }
 
@@ -472,6 +585,24 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 return true;
             default:
                 return false;
+        }
+    }
+
+    private static bool ShouldSplitOnHitEvent(in ProjectileSplitState splitState, bool enemyKilledByProjectile)
+    {
+        if (splitState.CanSplit == 0)
+        {
+            return false;
+        }
+
+        switch (splitState.TriggerMode)
+        {
+            case ProjectileSplitTriggerMode.OnEnemyKilled:
+                return enemyKilledByProjectile;
+            case ProjectileSplitTriggerMode.OnEnemyHit:
+                return true;
+            default:
+                return true;
         }
     }
 

@@ -13,6 +13,15 @@ public struct PlayerPowerUpsConfig : IComponentData
 }
 
 /// <summary>
+/// Input edge used to trigger non-charge active power-up execution.
+/// </summary>
+public enum PowerUpActivationInputMode
+{
+    OnPress = 0,
+    OnRelease = 1
+}
+
+/// <summary>
 /// Holds baked runtime configuration for a single active-tool slot.
 /// </summary>
 public struct PlayerPowerUpSlotConfig
@@ -27,9 +36,13 @@ public struct PlayerPowerUpSlotConfig
     public float MaintenanceCostPerSecond;
     public float ChargePerTrigger;
     public float CooldownSeconds;
+    public PowerUpActivationInputMode ActivationInputMode;
     public byte Toggleable;
-    public byte FullChargeRequirement;
+    public float MinimumActivationEnergyPercent;
     public byte Unreplaceable;
+    public byte SuppressBaseShootingWhileActive;
+    public byte InterruptOtherSlotOnEnter;
+    public byte InterruptOtherSlotChargingOnly;
     public Entity BombPrefabEntity;
     public BombPowerUpConfig Bomb;
     public DashPowerUpConfig Dash;
@@ -45,12 +58,14 @@ public struct PlayerPowerUpSlotConfig
 public struct BombPowerUpConfig
 {
     public float3 SpawnOffset;
+    public SpawnOffsetOrientationMode SpawnOffsetOrientation;
     public float DeploySpeed;
     public float CollisionRadius;
     public byte BounceOnWalls;
     public float BounceDamping;
     public float LinearDampingPerSecond;
     public float FuseSeconds;
+    public byte EnableDamagePayload;
     public float Radius;
     public float Damage;
     public byte AffectAllEnemiesInRadius;
@@ -92,6 +107,9 @@ public struct ShotgunPowerUpConfig
     public float LifetimeMultiplier;
     public ProjectilePenetrationMode PenetrationMode;
     public int MaxPenetrations;
+    public byte HasElementalPayload;
+    public ElementalEffectConfig ElementalEffect;
+    public float ElementalStacksPerHit;
 }
 
 /// <summary>
@@ -110,6 +128,9 @@ public struct ChargeShotPowerUpConfig
     public float LifetimeMultiplier;
     public ProjectilePenetrationMode PenetrationMode;
     public int MaxPenetrations;
+    public byte HasElementalPayload;
+    public ElementalEffectConfig ElementalEffect;
+    public float ElementalStacksPerHit;
 }
 
 /// <summary>
@@ -117,7 +138,34 @@ public struct ChargeShotPowerUpConfig
 /// </summary>
 public struct PortableHealthPackPowerUpConfig
 {
+    public PowerUpHealApplicationMode ApplyMode;
     public float HealAmount;
+    public float DurationSeconds;
+    public float TickIntervalSeconds;
+    public PowerUpHealStackPolicy StackPolicy;
+}
+
+/// <summary>
+/// Runtime trigger mode used by passive heal payloads.
+/// </summary>
+public enum PassiveHealTriggerMode
+{
+    Periodic = 0,
+    OnPlayerDamaged = 1,
+    OnEnemyKilled = 2
+}
+
+/// <summary>
+/// Holds baked runtime configuration for passive heal-over-time behavior.
+/// </summary>
+public struct PassiveHealConfig
+{
+    public PassiveHealTriggerMode TriggerMode;
+    public float CooldownSeconds;
+    public float HealAmount;
+    public float DurationSeconds;
+    public float TickIntervalSeconds;
+    public PowerUpHealStackPolicy StackPolicy;
 }
 
 /// <summary>
@@ -127,13 +175,24 @@ public struct PlayerPassiveToolConfig
 {
     public byte IsDefined;
     public PassiveToolKind ToolKind;
+    public byte HasProjectileSize;
+    public byte HasShotgun;
+    public byte HasElementalProjectiles;
+    public byte HasPerfectCircle;
+    public byte HasBouncingProjectiles;
+    public byte HasSplittingProjectiles;
+    public byte HasExplosion;
+    public byte HasElementalTrail;
+    public byte HasHeal;
     public ProjectileSizePassiveConfig ProjectileSize;
+    public ShotgunPowerUpConfig Shotgun;
     public ElementalProjectilesPassiveConfig ElementalProjectiles;
     public PerfectCirclePassiveConfig PerfectCircle;
     public BouncingProjectilesPassiveConfig BouncingProjectiles;
     public SplittingProjectilesPassiveConfig SplittingProjectiles;
     public ExplosionPassiveConfig Explosion;
     public ElementalTrailPassiveConfig ElementalTrail;
+    public PassiveHealConfig Heal;
 }
 
 /// <summary>
@@ -243,6 +302,7 @@ public struct BouncingProjectilesPassiveConfig
 /// </summary>
 public struct SplittingProjectilesPassiveConfig
 {
+    public ProjectileSplitTriggerMode TriggerMode;
     public ProjectileSplitDirectionMode DirectionMode;
     public int SplitProjectileCount;
     public float SplitOffsetDegrees;

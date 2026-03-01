@@ -15,11 +15,16 @@ public sealed class PlayerPowerUpsPresetsPanel
     #region Constants
     private const float LeftPaneWidth = 280f;
     private const string ActiveSectionStateKey = "NashCore.PlayerManagement.PowerUps.ActiveSection";
+    private const float ModuleCardSpacing = 10f;
+    private const float PowerUpCardSpacing = 10f;
     #endregion
 
     #region Fields
     private readonly VisualElement root;
     private readonly List<PlayerPowerUpsPreset> filteredPresets = new List<PlayerPowerUpsPreset>();
+    private readonly Dictionary<string, bool> moduleDefinitionFoldoutStateByKey = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, bool> activePowerUpFoldoutStateByKey = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, bool> passivePowerUpFoldoutStateByKey = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
     private readonly PlayerPowerUpsPresetLibrary library;
     private readonly InputActionAsset inputAsset;
 
@@ -32,6 +37,12 @@ public sealed class PlayerPowerUpsPresetsPanel
     private PlayerPowerUpsPreset selectedPreset;
     private SerializedObject presetSerializedObject;
     private SectionType activeSection = SectionType.Metadata;
+    private string moduleIdFilterText = string.Empty;
+    private string moduleDisplayNameFilterText = string.Empty;
+    private string activePowerUpIdFilterText = string.Empty;
+    private string activePowerUpDisplayNameFilterText = string.Empty;
+    private string passivePowerUpIdFilterText = string.Empty;
+    private string passivePowerUpDisplayNameFilterText = string.Empty;
     #endregion
 
     #region Properties
@@ -649,9 +660,102 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
-        PropertyField modulesField = new PropertyField(moduleDefinitionsProperty);
-        modulesField.BindProperty(moduleDefinitionsProperty);
-        sectionContentRoot.Add(modulesField);
+        Label moduleInfoLabel = new Label("Reusable module catalog used by Active and Passive Power Ups.");
+        moduleInfoLabel.style.marginBottom = 4f;
+        sectionContentRoot.Add(moduleInfoLabel);
+
+        VisualElement filtersRow = new VisualElement();
+        filtersRow.style.flexDirection = FlexDirection.Row;
+        filtersRow.style.alignItems = Align.FlexEnd;
+        filtersRow.style.marginBottom = 4f;
+
+        TextField moduleIdFilterField = new TextField("Filter Module ID");
+        moduleIdFilterField.isDelayed = true;
+        moduleIdFilterField.value = moduleIdFilterText;
+        moduleIdFilterField.style.flexGrow = 1f;
+        moduleIdFilterField.style.marginRight = 6f;
+        moduleIdFilterField.tooltip = "Show only modules whose Module ID contains this text.";
+        filtersRow.Add(moduleIdFilterField);
+
+        TextField moduleDisplayNameFilterField = new TextField("Filter Display Name");
+        moduleDisplayNameFilterField.isDelayed = true;
+        moduleDisplayNameFilterField.value = moduleDisplayNameFilterText;
+        moduleDisplayNameFilterField.style.flexGrow = 1f;
+        moduleDisplayNameFilterField.tooltip = "Show only modules whose Display Name contains this text.";
+        filtersRow.Add(moduleDisplayNameFilterField);
+
+        sectionContentRoot.Add(filtersRow);
+
+        Label moduleCountLabel = new Label();
+        ScrollView moduleCardsContainer = new ScrollView();
+
+        VisualElement moduleActionsRow = new VisualElement();
+        moduleActionsRow.style.flexDirection = FlexDirection.Row;
+        moduleActionsRow.style.alignItems = Align.Center;
+        moduleActionsRow.style.marginBottom = 4f;
+
+        Button addModuleButton = new Button(AddModuleDefinition);
+        addModuleButton.text = "Add Module";
+        addModuleButton.tooltip = "Create a new module definition entry.";
+        moduleActionsRow.Add(addModuleButton);
+
+        Button expandAllButton = new Button(() =>
+        {
+            SetAllModuleFoldoutStates(true);
+            RebuildModuleDefinitionCards(moduleCardsContainer, moduleCountLabel);
+        });
+        expandAllButton.text = "Expand All";
+        expandAllButton.tooltip = "Expand every visible module card.";
+        expandAllButton.style.marginLeft = 4f;
+        moduleActionsRow.Add(expandAllButton);
+
+        Button collapseAllButton = new Button(() =>
+        {
+            SetAllModuleFoldoutStates(false);
+            RebuildModuleDefinitionCards(moduleCardsContainer, moduleCountLabel);
+        });
+        collapseAllButton.text = "Collapse All";
+        collapseAllButton.tooltip = "Collapse every visible module card.";
+        collapseAllButton.style.marginLeft = 4f;
+        moduleActionsRow.Add(collapseAllButton);
+
+        Button clearFiltersButton = new Button(() =>
+        {
+            moduleIdFilterText = string.Empty;
+            moduleDisplayNameFilterText = string.Empty;
+            moduleIdFilterField.SetValueWithoutNotify(string.Empty);
+            moduleDisplayNameFilterField.SetValueWithoutNotify(string.Empty);
+            RebuildModuleDefinitionCards(moduleCardsContainer, moduleCountLabel);
+        });
+        clearFiltersButton.text = "Clear Filters";
+        clearFiltersButton.tooltip = "Clear both module search filters.";
+        clearFiltersButton.style.marginLeft = 4f;
+        moduleActionsRow.Add(clearFiltersButton);
+
+        sectionContentRoot.Add(moduleActionsRow);
+
+        moduleCountLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+        moduleCountLabel.style.marginBottom = 2f;
+        sectionContentRoot.Add(moduleCountLabel);
+
+        moduleCardsContainer.style.maxHeight = 520f;
+        moduleCardsContainer.style.paddingRight = 2f;
+        moduleCardsContainer.style.marginBottom = 2f;
+        sectionContentRoot.Add(moduleCardsContainer);
+
+        moduleIdFilterField.RegisterValueChangedCallback(evt =>
+        {
+            moduleIdFilterText = evt.newValue;
+            RebuildModuleDefinitionCards(moduleCardsContainer, moduleCountLabel);
+        });
+
+        moduleDisplayNameFilterField.RegisterValueChangedCallback(evt =>
+        {
+            moduleDisplayNameFilterText = evt.newValue;
+            RebuildModuleDefinitionCards(moduleCardsContainer, moduleCountLabel);
+        });
+
+        RebuildModuleDefinitionCards(moduleCardsContainer, moduleCountLabel);
 
         SerializedProperty elementalVfxByElementProperty = presetSerializedObject.FindProperty("elementalVfxByElement");
 
@@ -667,6 +771,569 @@ public sealed class PlayerPowerUpsPresetsPanel
         PropertyField elementalVfxField = new PropertyField(elementalVfxByElementProperty);
         elementalVfxField.BindProperty(elementalVfxByElementProperty);
         sectionContentRoot.Add(elementalVfxField);
+    }
+
+    private void RebuildModuleDefinitionCards(VisualElement moduleCardsContainer, Label moduleCountLabel)
+    {
+        if (moduleCardsContainer == null)
+        {
+            return;
+        }
+
+        moduleCardsContainer.Clear();
+
+        if (presetSerializedObject == null)
+        {
+            if (moduleCountLabel != null)
+            {
+                moduleCountLabel.text = "Visible Modules: 0 / 0";
+            }
+
+            return;
+        }
+
+        SerializedProperty moduleDefinitionsProperty = presetSerializedObject.FindProperty("moduleDefinitions");
+
+        if (moduleDefinitionsProperty == null)
+        {
+            if (moduleCountLabel != null)
+            {
+                moduleCountLabel.text = "Visible Modules: 0 / 0";
+            }
+
+            HelpBox missingHelpBox = new HelpBox("Module definitions property is missing.", HelpBoxMessageType.Warning);
+            moduleCardsContainer.Add(missingHelpBox);
+            return;
+        }
+
+        int totalModules = moduleDefinitionsProperty.arraySize;
+        int visibleModules = 0;
+        HashSet<string> validFoldoutStateKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int moduleIndex = 0; moduleIndex < moduleDefinitionsProperty.arraySize; moduleIndex++)
+        {
+            SerializedProperty moduleProperty = moduleDefinitionsProperty.GetArrayElementAtIndex(moduleIndex);
+
+            if (moduleProperty == null)
+            {
+                continue;
+            }
+
+            string moduleId = ResolveModuleDefinitionId(moduleProperty);
+            string displayName = ResolveModuleDefinitionDisplayName(moduleProperty);
+            PowerUpModuleKind moduleKind = ResolveModuleDefinitionKind(moduleProperty);
+            string foldoutStateKey = BuildModuleFoldoutStateKey(moduleId, moduleIndex);
+            validFoldoutStateKeys.Add(foldoutStateKey);
+
+            if (IsMatchingModuleFilters(moduleId, displayName) == false)
+            {
+                continue;
+            }
+
+            VisualElement moduleCard = CreateModuleDefinitionCard(moduleDefinitionsProperty,
+                                                                  moduleProperty,
+                                                                  moduleIndex,
+                                                                  moduleId,
+                                                                  displayName,
+                                                                  moduleKind);
+            moduleCardsContainer.Add(moduleCard);
+            visibleModules += 1;
+        }
+
+        PruneFoldoutStateMap(moduleDefinitionFoldoutStateByKey, validFoldoutStateKeys);
+
+        if (moduleCountLabel != null)
+        {
+            moduleCountLabel.text = string.Format("Visible Modules: {0} / {1}", visibleModules, totalModules);
+        }
+
+        if (visibleModules > 0)
+        {
+            return;
+        }
+
+        HelpBox emptyHelpBox = new HelpBox("No modules match current filters.", HelpBoxMessageType.Info);
+        moduleCardsContainer.Add(emptyHelpBox);
+    }
+
+    private VisualElement CreateModuleDefinitionCard(SerializedProperty moduleDefinitionsProperty,
+                                                     SerializedProperty moduleProperty,
+                                                     int moduleIndex,
+                                                     string moduleId,
+                                                     string displayName,
+                                                     PowerUpModuleKind moduleKind)
+    {
+        VisualElement card = new VisualElement();
+        card.style.marginBottom = ModuleCardSpacing;
+        card.style.paddingLeft = 6f;
+        card.style.paddingRight = 6f;
+        card.style.paddingTop = 4f;
+        card.style.paddingBottom = 4f;
+        card.style.backgroundColor = new Color(1f, 1f, 1f, 0.03f);
+        card.style.borderBottomWidth = 1f;
+        card.style.borderTopWidth = 1f;
+        card.style.borderLeftWidth = 1f;
+        card.style.borderRightWidth = 1f;
+        card.style.borderBottomColor = new Color(1f, 1f, 1f, 0.14f);
+        card.style.borderTopColor = new Color(1f, 1f, 1f, 0.14f);
+        card.style.borderLeftColor = new Color(1f, 1f, 1f, 0.14f);
+        card.style.borderRightColor = new Color(1f, 1f, 1f, 0.14f);
+
+        string foldoutStateKey = BuildModuleFoldoutStateKey(moduleId, moduleIndex);
+        Foldout foldout = new Foldout();
+        foldout.text = BuildModuleCardTitle(moduleIndex, moduleId, displayName, moduleKind);
+        foldout.value = ResolveModuleFoldoutState(foldoutStateKey);
+        foldout.RegisterValueChangedCallback(evt =>
+        {
+            if (evt.newValue)
+            {
+                moduleDefinitionFoldoutStateByKey[foldoutStateKey] = true;
+                return;
+            }
+
+            moduleDefinitionFoldoutStateByKey.Remove(foldoutStateKey);
+        });
+        card.Add(foldout);
+
+        VisualElement actionsRow = new VisualElement();
+        actionsRow.style.flexDirection = FlexDirection.Row;
+        actionsRow.style.marginLeft = 14f;
+        actionsRow.style.marginTop = 2f;
+        actionsRow.style.marginBottom = 4f;
+        foldout.Add(actionsRow);
+
+        Button duplicateButton = new Button(() =>
+        {
+            DuplicateModuleDefinition(moduleIndex);
+        });
+        duplicateButton.text = "Duplicate";
+        duplicateButton.tooltip = "Duplicate this module definition.";
+        actionsRow.Add(duplicateButton);
+
+        Button moveUpButton = new Button(() =>
+        {
+            MoveModuleDefinition(moduleIndex, moduleIndex - 1);
+        });
+        moveUpButton.text = "Up";
+        moveUpButton.tooltip = "Move this module one position up.";
+        moveUpButton.style.marginLeft = 4f;
+        moveUpButton.SetEnabled(moduleIndex > 0);
+        actionsRow.Add(moveUpButton);
+
+        Button moveDownButton = new Button(() =>
+        {
+            MoveModuleDefinition(moduleIndex, moduleIndex + 1);
+        });
+        moveDownButton.text = "Down";
+        moveDownButton.tooltip = "Move this module one position down.";
+        moveDownButton.style.marginLeft = 4f;
+        moveDownButton.SetEnabled(moduleIndex < moduleDefinitionsProperty.arraySize - 1);
+        actionsRow.Add(moveDownButton);
+
+        Button deleteButton = new Button(() =>
+        {
+            DeleteModuleDefinition(moduleIndex);
+        });
+        deleteButton.text = "Delete";
+        deleteButton.tooltip = "Delete this module definition.";
+        deleteButton.style.marginLeft = 4f;
+        actionsRow.Add(deleteButton);
+
+        PropertyField moduleField = new PropertyField(moduleProperty);
+        moduleField.BindProperty(moduleProperty);
+        foldout.Add(moduleField);
+
+        return card;
+    }
+
+    private void AddModuleDefinition()
+    {
+        ApplyModuleDefinitionsMutation("Add Module Definition", moduleDefinitionsProperty =>
+        {
+            int insertIndex = moduleDefinitionsProperty.arraySize;
+            moduleDefinitionsProperty.arraySize = insertIndex + 1;
+            SerializedProperty moduleProperty = moduleDefinitionsProperty.GetArrayElementAtIndex(insertIndex);
+            string uniqueModuleId = GenerateUniqueModuleId(moduleDefinitionsProperty, "ModuleCustom", insertIndex);
+            InitializeNewModuleDefinition(moduleProperty, uniqueModuleId, "New Module");
+            moduleDefinitionFoldoutStateByKey[BuildModuleFoldoutStateKey(uniqueModuleId, insertIndex)] = true;
+        });
+    }
+
+    private void DuplicateModuleDefinition(int moduleIndex)
+    {
+        ApplyModuleDefinitionsMutation("Duplicate Module Definition", moduleDefinitionsProperty =>
+        {
+            if (moduleIndex < 0 || moduleIndex >= moduleDefinitionsProperty.arraySize)
+            {
+                return;
+            }
+
+            moduleDefinitionsProperty.InsertArrayElementAtIndex(moduleIndex);
+            moduleDefinitionsProperty.MoveArrayElement(moduleIndex, moduleIndex + 1);
+            int duplicatedIndex = moduleIndex + 1;
+            SerializedProperty duplicatedProperty = moduleDefinitionsProperty.GetArrayElementAtIndex(duplicatedIndex);
+            string baseModuleId = ResolveModuleDefinitionId(duplicatedProperty);
+            string copiedDisplayName = ResolveModuleDefinitionDisplayName(duplicatedProperty);
+            string uniqueModuleId = GenerateUniqueModuleId(moduleDefinitionsProperty, baseModuleId, duplicatedIndex);
+            SetModuleDefinitionId(duplicatedProperty, uniqueModuleId);
+
+            if (string.IsNullOrWhiteSpace(copiedDisplayName))
+            {
+                copiedDisplayName = "New Module";
+            }
+
+            SetModuleDefinitionDisplayName(duplicatedProperty, copiedDisplayName + " Copy");
+            moduleDefinitionFoldoutStateByKey[BuildModuleFoldoutStateKey(uniqueModuleId, duplicatedIndex)] = true;
+        });
+    }
+
+    private void DeleteModuleDefinition(int moduleIndex)
+    {
+        ApplyModuleDefinitionsMutation("Delete Module Definition", moduleDefinitionsProperty =>
+        {
+            if (moduleIndex < 0 || moduleIndex >= moduleDefinitionsProperty.arraySize)
+            {
+                return;
+            }
+
+            moduleDefinitionsProperty.DeleteArrayElementAtIndex(moduleIndex);
+        });
+    }
+
+    private void MoveModuleDefinition(int fromIndex, int toIndex)
+    {
+        ApplyModuleDefinitionsMutation("Move Module Definition", moduleDefinitionsProperty =>
+        {
+            if (fromIndex < 0 || fromIndex >= moduleDefinitionsProperty.arraySize)
+            {
+                return;
+            }
+
+            if (toIndex < 0 || toIndex >= moduleDefinitionsProperty.arraySize)
+            {
+                return;
+            }
+
+            if (fromIndex == toIndex)
+            {
+                return;
+            }
+
+            moduleDefinitionsProperty.MoveArrayElement(fromIndex, toIndex);
+        });
+    }
+
+    private void SetAllModuleFoldoutStates(bool expanded)
+    {
+        if (presetSerializedObject == null)
+        {
+            return;
+        }
+
+        SerializedProperty moduleDefinitionsProperty = presetSerializedObject.FindProperty("moduleDefinitions");
+
+        if (moduleDefinitionsProperty == null)
+        {
+            return;
+        }
+
+        for (int moduleIndex = 0; moduleIndex < moduleDefinitionsProperty.arraySize; moduleIndex++)
+        {
+            SerializedProperty moduleProperty = moduleDefinitionsProperty.GetArrayElementAtIndex(moduleIndex);
+
+            if (moduleProperty == null)
+                continue;
+
+            string moduleId = ResolveModuleDefinitionId(moduleProperty);
+            string displayName = ResolveModuleDefinitionDisplayName(moduleProperty);
+
+            if (IsMatchingModuleFilters(moduleId, displayName) == false)
+                continue;
+
+            string stateKey = BuildModuleFoldoutStateKey(moduleId, moduleIndex);
+
+            if (expanded)
+            {
+                moduleDefinitionFoldoutStateByKey[stateKey] = true;
+                continue;
+            }
+
+            moduleDefinitionFoldoutStateByKey.Remove(stateKey);
+        }
+    }
+
+    private void ApplyModuleDefinitionsMutation(string undoLabel, Action<SerializedProperty> mutation)
+    {
+        if (presetSerializedObject == null || mutation == null)
+        {
+            return;
+        }
+
+        SerializedProperty moduleDefinitionsProperty = presetSerializedObject.FindProperty("moduleDefinitions");
+
+        if (moduleDefinitionsProperty == null)
+        {
+            return;
+        }
+
+        if (selectedPreset != null)
+        {
+            Undo.RecordObject(selectedPreset, undoLabel);
+        }
+
+        presetSerializedObject.Update();
+        mutation(moduleDefinitionsProperty);
+        presetSerializedObject.ApplyModifiedProperties();
+        PlayerManagementDraftSession.MarkDirty();
+        BuildActiveSection();
+    }
+
+    private bool IsMatchingModuleFilters(string moduleId, string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(moduleIdFilterText) == false)
+        {
+            string resolvedModuleId = string.IsNullOrWhiteSpace(moduleId) ? string.Empty : moduleId;
+
+            if (resolvedModuleId.IndexOf(moduleIdFilterText, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(moduleDisplayNameFilterText) == false)
+        {
+            string resolvedDisplayName = string.IsNullOrWhiteSpace(displayName) ? string.Empty : displayName;
+
+            if (resolvedDisplayName.IndexOf(moduleDisplayNameFilterText, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static string BuildModuleCardTitle(int moduleIndex, string moduleId, string displayName, PowerUpModuleKind moduleKind)
+    {
+        string resolvedDisplayName = string.IsNullOrWhiteSpace(displayName) ? "<Unnamed>" : displayName.Trim();
+        string resolvedModuleId = string.IsNullOrWhiteSpace(moduleId) ? "<No ID>" : moduleId.Trim();
+        return string.Format("#{0:D2}  {1}  ({2})  [{3}]", moduleIndex + 1, resolvedDisplayName, resolvedModuleId, moduleKind);
+    }
+
+    private bool ResolveModuleFoldoutState(string foldoutStateKey)
+    {
+        if (string.IsNullOrWhiteSpace(foldoutStateKey))
+        {
+            return false;
+        }
+
+        bool isExpanded;
+
+        if (moduleDefinitionFoldoutStateByKey.TryGetValue(foldoutStateKey, out isExpanded))
+        {
+            return isExpanded;
+        }
+
+        return false;
+    }
+
+    private static string BuildModuleFoldoutStateKey(string moduleId, int moduleIndex)
+    {
+        string normalizedModuleId = string.IsNullOrWhiteSpace(moduleId) ? "<NoId>" : moduleId.Trim();
+        return string.Format("Module:Index_{0}:Id_{1}", moduleIndex, normalizedModuleId);
+    }
+
+    private static string ResolveModuleDefinitionId(SerializedProperty moduleProperty)
+    {
+        if (moduleProperty == null)
+        {
+            return string.Empty;
+        }
+
+        SerializedProperty moduleIdProperty = moduleProperty.FindPropertyRelative("moduleId");
+
+        if (moduleIdProperty == null)
+        {
+            return string.Empty;
+        }
+
+        return moduleIdProperty.stringValue;
+    }
+
+    private static string ResolveModuleDefinitionDisplayName(SerializedProperty moduleProperty)
+    {
+        if (moduleProperty == null)
+        {
+            return string.Empty;
+        }
+
+        SerializedProperty displayNameProperty = moduleProperty.FindPropertyRelative("displayName");
+
+        if (displayNameProperty == null)
+        {
+            return string.Empty;
+        }
+
+        return displayNameProperty.stringValue;
+    }
+
+    private static PowerUpModuleKind ResolveModuleDefinitionKind(SerializedProperty moduleProperty)
+    {
+        if (moduleProperty == null)
+        {
+            return default;
+        }
+
+        SerializedProperty moduleKindProperty = moduleProperty.FindPropertyRelative("moduleKind");
+
+        if (moduleKindProperty == null || moduleKindProperty.propertyType != SerializedPropertyType.Enum)
+        {
+            return default;
+        }
+
+        return (PowerUpModuleKind)moduleKindProperty.enumValueIndex;
+    }
+
+    private static string GenerateUniqueModuleId(SerializedProperty moduleDefinitionsProperty, string baseModuleId, int excludedIndex)
+    {
+        string sanitizedBaseModuleId = string.IsNullOrWhiteSpace(baseModuleId) ? "ModuleCustom" : baseModuleId.Trim();
+        HashSet<string> existingModuleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int moduleIndex = 0; moduleIndex < moduleDefinitionsProperty.arraySize; moduleIndex++)
+        {
+            if (moduleIndex == excludedIndex)
+            {
+                continue;
+            }
+
+            SerializedProperty moduleProperty = moduleDefinitionsProperty.GetArrayElementAtIndex(moduleIndex);
+            string existingModuleId = ResolveModuleDefinitionId(moduleProperty);
+
+            if (string.IsNullOrWhiteSpace(existingModuleId))
+            {
+                continue;
+            }
+
+            existingModuleIds.Add(existingModuleId.Trim());
+        }
+
+        if (existingModuleIds.Contains(sanitizedBaseModuleId) == false)
+        {
+            return sanitizedBaseModuleId;
+        }
+
+        for (int suffix = 2; suffix < int.MaxValue; suffix++)
+        {
+            string candidateModuleId = sanitizedBaseModuleId + suffix.ToString();
+
+            if (existingModuleIds.Contains(candidateModuleId))
+            {
+                continue;
+            }
+
+            return candidateModuleId;
+        }
+
+        return Guid.NewGuid().ToString("N");
+    }
+
+    private static void InitializeNewModuleDefinition(SerializedProperty moduleProperty, string moduleId, string displayName)
+    {
+        if (moduleProperty == null)
+        {
+            return;
+        }
+
+        SetModuleDefinitionId(moduleProperty, moduleId);
+        SetModuleDefinitionDisplayName(moduleProperty, displayName);
+        SetModuleDefinitionKind(moduleProperty, PowerUpModuleKind.TriggerPress);
+        SetModuleDefinitionStage(moduleProperty, PowerUpModuleStage.Trigger);
+        SetModuleDefinitionNotes(moduleProperty, string.Empty);
+    }
+
+    private static void SetModuleDefinitionId(SerializedProperty moduleProperty, string moduleId)
+    {
+        if (moduleProperty == null)
+        {
+            return;
+        }
+
+        SerializedProperty moduleIdProperty = moduleProperty.FindPropertyRelative("moduleId");
+
+        if (moduleIdProperty == null)
+        {
+            return;
+        }
+
+        moduleIdProperty.stringValue = moduleId;
+    }
+
+    private static void SetModuleDefinitionDisplayName(SerializedProperty moduleProperty, string displayName)
+    {
+        if (moduleProperty == null)
+        {
+            return;
+        }
+
+        SerializedProperty displayNameProperty = moduleProperty.FindPropertyRelative("displayName");
+
+        if (displayNameProperty == null)
+        {
+            return;
+        }
+
+        displayNameProperty.stringValue = displayName;
+    }
+
+    private static void SetModuleDefinitionKind(SerializedProperty moduleProperty, PowerUpModuleKind moduleKind)
+    {
+        if (moduleProperty == null)
+        {
+            return;
+        }
+
+        SerializedProperty moduleKindProperty = moduleProperty.FindPropertyRelative("moduleKind");
+
+        if (moduleKindProperty == null || moduleKindProperty.propertyType != SerializedPropertyType.Enum)
+        {
+            return;
+        }
+
+        moduleKindProperty.enumValueIndex = (int)moduleKind;
+    }
+
+    private static void SetModuleDefinitionStage(SerializedProperty moduleProperty, PowerUpModuleStage stage)
+    {
+        if (moduleProperty == null)
+        {
+            return;
+        }
+
+        SerializedProperty stageProperty = moduleProperty.FindPropertyRelative("defaultStage");
+
+        if (stageProperty == null || stageProperty.propertyType != SerializedPropertyType.Enum)
+        {
+            return;
+        }
+
+        stageProperty.enumValueIndex = (int)stage;
+    }
+
+    private static void SetModuleDefinitionNotes(SerializedProperty moduleProperty, string notes)
+    {
+        if (moduleProperty == null)
+        {
+            return;
+        }
+
+        SerializedProperty notesProperty = moduleProperty.FindPropertyRelative("notes");
+
+        if (notesProperty == null)
+        {
+            return;
+        }
+
+        notesProperty.stringValue = notes;
     }
 
     private void BuildActivePowerUpsSection()
@@ -686,9 +1353,102 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
-        PropertyField activePowerUpsField = new PropertyField(activePowerUpsProperty);
-        activePowerUpsField.BindProperty(activePowerUpsProperty);
-        sectionContentRoot.Add(activePowerUpsField);
+        Label infoLabel = new Label("Composable active entries assembled from module bindings.");
+        infoLabel.style.marginBottom = 4f;
+        sectionContentRoot.Add(infoLabel);
+
+        VisualElement filtersRow = new VisualElement();
+        filtersRow.style.flexDirection = FlexDirection.Row;
+        filtersRow.style.alignItems = Align.FlexEnd;
+        filtersRow.style.marginBottom = 4f;
+
+        TextField powerUpIdFilterField = new TextField("Filter PowerUp ID");
+        powerUpIdFilterField.isDelayed = true;
+        powerUpIdFilterField.value = activePowerUpIdFilterText;
+        powerUpIdFilterField.style.flexGrow = 1f;
+        powerUpIdFilterField.style.marginRight = 6f;
+        powerUpIdFilterField.tooltip = "Show only active power ups whose PowerUp ID contains this text.";
+        filtersRow.Add(powerUpIdFilterField);
+
+        TextField displayNameFilterField = new TextField("Filter Display Name");
+        displayNameFilterField.isDelayed = true;
+        displayNameFilterField.value = activePowerUpDisplayNameFilterText;
+        displayNameFilterField.style.flexGrow = 1f;
+        displayNameFilterField.tooltip = "Show only active power ups whose Display Name contains this text.";
+        filtersRow.Add(displayNameFilterField);
+        sectionContentRoot.Add(filtersRow);
+
+        Label countLabel = new Label();
+        ScrollView cardsContainer = new ScrollView();
+
+        VisualElement actionsRow = new VisualElement();
+        actionsRow.style.flexDirection = FlexDirection.Row;
+        actionsRow.style.alignItems = Align.Center;
+        actionsRow.style.marginBottom = 4f;
+
+        Button addButton = new Button(() =>
+        {
+            AddPowerUpDefinition(true);
+        });
+        addButton.text = "Add Active";
+        addButton.tooltip = "Create a new active power up entry.";
+        actionsRow.Add(addButton);
+
+        Button expandAllButton = new Button(() =>
+        {
+            SetAllPowerUpFoldoutStates(true, true);
+            RebuildActivePowerUpCards(cardsContainer, countLabel);
+        });
+        expandAllButton.text = "Expand All";
+        expandAllButton.tooltip = "Expand every visible active power up card.";
+        expandAllButton.style.marginLeft = 4f;
+        actionsRow.Add(expandAllButton);
+
+        Button collapseAllButton = new Button(() =>
+        {
+            SetAllPowerUpFoldoutStates(true, false);
+            RebuildActivePowerUpCards(cardsContainer, countLabel);
+        });
+        collapseAllButton.text = "Collapse All";
+        collapseAllButton.tooltip = "Collapse every visible active power up card.";
+        collapseAllButton.style.marginLeft = 4f;
+        actionsRow.Add(collapseAllButton);
+
+        Button clearFiltersButton = new Button(() =>
+        {
+            activePowerUpIdFilterText = string.Empty;
+            activePowerUpDisplayNameFilterText = string.Empty;
+            powerUpIdFilterField.SetValueWithoutNotify(string.Empty);
+            displayNameFilterField.SetValueWithoutNotify(string.Empty);
+            RebuildActivePowerUpCards(cardsContainer, countLabel);
+        });
+        clearFiltersButton.text = "Clear Filters";
+        clearFiltersButton.tooltip = "Clear active power up search filters.";
+        clearFiltersButton.style.marginLeft = 4f;
+        actionsRow.Add(clearFiltersButton);
+        sectionContentRoot.Add(actionsRow);
+
+        countLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+        countLabel.style.marginBottom = 2f;
+        sectionContentRoot.Add(countLabel);
+
+        cardsContainer.style.maxHeight = 620f;
+        cardsContainer.style.paddingRight = 2f;
+        sectionContentRoot.Add(cardsContainer);
+
+        powerUpIdFilterField.RegisterValueChangedCallback(evt =>
+        {
+            activePowerUpIdFilterText = evt.newValue;
+            RebuildActivePowerUpCards(cardsContainer, countLabel);
+        });
+
+        displayNameFilterField.RegisterValueChangedCallback(evt =>
+        {
+            activePowerUpDisplayNameFilterText = evt.newValue;
+            RebuildActivePowerUpCards(cardsContainer, countLabel);
+        });
+
+        RebuildActivePowerUpCards(cardsContainer, countLabel);
     }
 
     private void BuildPassivePowerUpsSection()
@@ -708,9 +1468,1032 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
-        PropertyField passivePowerUpsField = new PropertyField(passivePowerUpsProperty);
-        passivePowerUpsField.BindProperty(passivePowerUpsProperty);
-        sectionContentRoot.Add(passivePowerUpsField);
+        Label infoLabel = new Label("Composable passive entries assembled from module bindings.");
+        infoLabel.style.marginBottom = 4f;
+        sectionContentRoot.Add(infoLabel);
+
+        VisualElement filtersRow = new VisualElement();
+        filtersRow.style.flexDirection = FlexDirection.Row;
+        filtersRow.style.alignItems = Align.FlexEnd;
+        filtersRow.style.marginBottom = 4f;
+
+        TextField powerUpIdFilterField = new TextField("Filter PowerUp ID");
+        powerUpIdFilterField.isDelayed = true;
+        powerUpIdFilterField.value = passivePowerUpIdFilterText;
+        powerUpIdFilterField.style.flexGrow = 1f;
+        powerUpIdFilterField.style.marginRight = 6f;
+        powerUpIdFilterField.tooltip = "Show only passive power ups whose PowerUp ID contains this text.";
+        filtersRow.Add(powerUpIdFilterField);
+
+        TextField displayNameFilterField = new TextField("Filter Display Name");
+        displayNameFilterField.isDelayed = true;
+        displayNameFilterField.value = passivePowerUpDisplayNameFilterText;
+        displayNameFilterField.style.flexGrow = 1f;
+        displayNameFilterField.tooltip = "Show only passive power ups whose Display Name contains this text.";
+        filtersRow.Add(displayNameFilterField);
+        sectionContentRoot.Add(filtersRow);
+
+        Label countLabel = new Label();
+        ScrollView cardsContainer = new ScrollView();
+
+        VisualElement actionsRow = new VisualElement();
+        actionsRow.style.flexDirection = FlexDirection.Row;
+        actionsRow.style.alignItems = Align.Center;
+        actionsRow.style.marginBottom = 4f;
+
+        Button addButton = new Button(() =>
+        {
+            AddPowerUpDefinition(false);
+        });
+        addButton.text = "Add Passive";
+        addButton.tooltip = "Create a new passive power up entry.";
+        actionsRow.Add(addButton);
+
+        Button expandAllButton = new Button(() =>
+        {
+            SetAllPowerUpFoldoutStates(false, true);
+            RebuildPassivePowerUpCards(cardsContainer, countLabel);
+        });
+        expandAllButton.text = "Expand All";
+        expandAllButton.tooltip = "Expand every visible passive power up card.";
+        expandAllButton.style.marginLeft = 4f;
+        actionsRow.Add(expandAllButton);
+
+        Button collapseAllButton = new Button(() =>
+        {
+            SetAllPowerUpFoldoutStates(false, false);
+            RebuildPassivePowerUpCards(cardsContainer, countLabel);
+        });
+        collapseAllButton.text = "Collapse All";
+        collapseAllButton.tooltip = "Collapse every visible passive power up card.";
+        collapseAllButton.style.marginLeft = 4f;
+        actionsRow.Add(collapseAllButton);
+
+        Button clearFiltersButton = new Button(() =>
+        {
+            passivePowerUpIdFilterText = string.Empty;
+            passivePowerUpDisplayNameFilterText = string.Empty;
+            powerUpIdFilterField.SetValueWithoutNotify(string.Empty);
+            displayNameFilterField.SetValueWithoutNotify(string.Empty);
+            RebuildPassivePowerUpCards(cardsContainer, countLabel);
+        });
+        clearFiltersButton.text = "Clear Filters";
+        clearFiltersButton.tooltip = "Clear passive power up search filters.";
+        clearFiltersButton.style.marginLeft = 4f;
+        actionsRow.Add(clearFiltersButton);
+        sectionContentRoot.Add(actionsRow);
+
+        countLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+        countLabel.style.marginBottom = 2f;
+        sectionContentRoot.Add(countLabel);
+
+        cardsContainer.style.maxHeight = 620f;
+        cardsContainer.style.paddingRight = 2f;
+        sectionContentRoot.Add(cardsContainer);
+
+        powerUpIdFilterField.RegisterValueChangedCallback(evt =>
+        {
+            passivePowerUpIdFilterText = evt.newValue;
+            RebuildPassivePowerUpCards(cardsContainer, countLabel);
+        });
+
+        displayNameFilterField.RegisterValueChangedCallback(evt =>
+        {
+            passivePowerUpDisplayNameFilterText = evt.newValue;
+            RebuildPassivePowerUpCards(cardsContainer, countLabel);
+        });
+
+        RebuildPassivePowerUpCards(cardsContainer, countLabel);
+    }
+
+    private void RebuildActivePowerUpCards(VisualElement cardsContainer, Label countLabel)
+    {
+        RebuildPowerUpDefinitionCards(cardsContainer,
+                                      countLabel,
+                                      true,
+                                      activePowerUpFoldoutStateByKey,
+                                      activePowerUpIdFilterText,
+                                      activePowerUpDisplayNameFilterText);
+    }
+
+    private void RebuildPassivePowerUpCards(VisualElement cardsContainer, Label countLabel)
+    {
+        RebuildPowerUpDefinitionCards(cardsContainer,
+                                      countLabel,
+                                      false,
+                                      passivePowerUpFoldoutStateByKey,
+                                      passivePowerUpIdFilterText,
+                                      passivePowerUpDisplayNameFilterText);
+    }
+
+    private void RebuildPowerUpDefinitionCards(VisualElement cardsContainer,
+                                               Label countLabel,
+                                               bool isActiveSection,
+                                               Dictionary<string, bool> foldoutStateByKey,
+                                               string powerUpIdFilterValue,
+                                               string displayNameFilterValue)
+    {
+        if (cardsContainer == null)
+            return;
+
+        cardsContainer.Clear();
+
+        if (presetSerializedObject == null)
+        {
+            if (countLabel != null)
+                countLabel.text = "Visible Entries: 0 / 0";
+
+            return;
+        }
+
+        string propertyName = ResolvePowerUpsPropertyName(isActiveSection);
+        SerializedProperty powerUpsProperty = presetSerializedObject.FindProperty(propertyName);
+
+        if (powerUpsProperty == null)
+        {
+            if (countLabel != null)
+                countLabel.text = "Visible Entries: 0 / 0";
+
+            HelpBox missingHelpBox = new HelpBox("Power ups property is missing.", HelpBoxMessageType.Warning);
+            cardsContainer.Add(missingHelpBox);
+            return;
+        }
+
+        int totalCount = powerUpsProperty.arraySize;
+        int visibleCount = 0;
+        HashSet<string> validFoldoutStateKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, PowerUpModuleCatalogEntry> moduleCatalogById = PowerUpModuleCatalogUtility.BuildCatalogById(presetSerializedObject);
+
+        for (int powerUpIndex = 0; powerUpIndex < powerUpsProperty.arraySize; powerUpIndex++)
+        {
+            SerializedProperty powerUpProperty = powerUpsProperty.GetArrayElementAtIndex(powerUpIndex);
+
+            if (powerUpProperty == null)
+                continue;
+
+            string powerUpId = ResolvePowerUpDefinitionId(powerUpProperty);
+            string displayName = ResolvePowerUpDefinitionDisplayName(powerUpProperty);
+            string foldoutStateKey = BuildPowerUpFoldoutStateKey(isActiveSection, powerUpId, powerUpIndex);
+            validFoldoutStateKeys.Add(foldoutStateKey);
+
+            if (IsMatchingPowerUpFilters(powerUpId, displayName, powerUpIdFilterValue, displayNameFilterValue) == false)
+                continue;
+
+            VisualElement card = CreatePowerUpDefinitionCard(powerUpsProperty,
+                                                             powerUpProperty,
+                                                             powerUpIndex,
+                                                             isActiveSection,
+                                                             foldoutStateByKey,
+                                                             moduleCatalogById);
+            cardsContainer.Add(card);
+            visibleCount += 1;
+        }
+
+        PruneFoldoutStateMap(foldoutStateByKey, validFoldoutStateKeys);
+
+        if (countLabel != null)
+            countLabel.text = string.Format("Visible Entries: {0} / {1}", visibleCount, totalCount);
+
+        if (visibleCount > 0)
+            return;
+
+        string emptyMessage = isActiveSection
+            ? "No active power ups match current filters."
+            : "No passive power ups match current filters.";
+        HelpBox emptyHelpBox = new HelpBox(emptyMessage, HelpBoxMessageType.Info);
+        cardsContainer.Add(emptyHelpBox);
+    }
+
+    private VisualElement CreatePowerUpDefinitionCard(SerializedProperty powerUpsProperty,
+                                                      SerializedProperty powerUpProperty,
+                                                      int powerUpIndex,
+                                                      bool isActiveSection,
+                                                      Dictionary<string, bool> foldoutStateByKey,
+                                                      Dictionary<string, PowerUpModuleCatalogEntry> moduleCatalogById)
+    {
+        VisualElement card = new VisualElement();
+        card.style.marginBottom = PowerUpCardSpacing;
+        card.style.paddingLeft = 6f;
+        card.style.paddingRight = 6f;
+        card.style.paddingTop = 4f;
+        card.style.paddingBottom = 4f;
+        card.style.backgroundColor = new Color(1f, 1f, 1f, 0.03f);
+        card.style.borderBottomWidth = 1f;
+        card.style.borderTopWidth = 1f;
+        card.style.borderLeftWidth = 1f;
+        card.style.borderRightWidth = 1f;
+        card.style.borderBottomColor = new Color(1f, 1f, 1f, 0.14f);
+        card.style.borderTopColor = new Color(1f, 1f, 1f, 0.14f);
+        card.style.borderLeftColor = new Color(1f, 1f, 1f, 0.14f);
+        card.style.borderRightColor = new Color(1f, 1f, 1f, 0.14f);
+
+        string powerUpId = ResolvePowerUpDefinitionId(powerUpProperty);
+        string displayName = ResolvePowerUpDefinitionDisplayName(powerUpProperty);
+        int bindingCount = ResolvePowerUpDefinitionBindingCount(powerUpProperty);
+        bool unreplaceable = ResolvePowerUpDefinitionUnreplaceable(powerUpProperty);
+        string foldoutStateKey = BuildPowerUpFoldoutStateKey(isActiveSection, powerUpId, powerUpIndex);
+        Foldout foldout = new Foldout();
+        foldout.text = BuildPowerUpCardTitle(powerUpIndex, powerUpId, displayName, bindingCount, unreplaceable);
+        foldout.value = ResolvePowerUpFoldoutState(foldoutStateByKey, foldoutStateKey);
+        foldout.RegisterValueChangedCallback(evt =>
+        {
+            if (evt.newValue)
+            {
+                foldoutStateByKey[foldoutStateKey] = true;
+                return;
+            }
+
+            foldoutStateByKey.Remove(foldoutStateKey);
+        });
+        card.Add(foldout);
+
+        VisualElement actionsRow = new VisualElement();
+        actionsRow.style.flexDirection = FlexDirection.Row;
+        actionsRow.style.marginLeft = 14f;
+        actionsRow.style.marginTop = 2f;
+        actionsRow.style.marginBottom = 4f;
+        foldout.Add(actionsRow);
+
+        Button duplicateButton = new Button(() =>
+        {
+            DuplicatePowerUpDefinition(isActiveSection, powerUpIndex);
+        });
+        duplicateButton.text = "Duplicate";
+        duplicateButton.tooltip = "Duplicate this power up entry.";
+        actionsRow.Add(duplicateButton);
+
+        Button moveUpButton = new Button(() =>
+        {
+            MovePowerUpDefinition(isActiveSection, powerUpIndex, powerUpIndex - 1);
+        });
+        moveUpButton.text = "Up";
+        moveUpButton.tooltip = "Move this power up one position up.";
+        moveUpButton.style.marginLeft = 4f;
+        moveUpButton.SetEnabled(powerUpIndex > 0);
+        actionsRow.Add(moveUpButton);
+
+        Button moveDownButton = new Button(() =>
+        {
+            MovePowerUpDefinition(isActiveSection, powerUpIndex, powerUpIndex + 1);
+        });
+        moveDownButton.text = "Down";
+        moveDownButton.tooltip = "Move this power up one position down.";
+        moveDownButton.style.marginLeft = 4f;
+        moveDownButton.SetEnabled(powerUpIndex < powerUpsProperty.arraySize - 1);
+        actionsRow.Add(moveDownButton);
+
+        Button deleteButton = new Button(() =>
+        {
+            DeletePowerUpDefinition(isActiveSection, powerUpIndex);
+        });
+        deleteButton.text = "Delete";
+        deleteButton.tooltip = "Delete this power up entry.";
+        deleteButton.style.marginLeft = 4f;
+        actionsRow.Add(deleteButton);
+
+        HelpBox coverageWarningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+        coverageWarningBox.style.marginLeft = 14f;
+        coverageWarningBox.style.marginBottom = 4f;
+        foldout.Add(coverageWarningBox);
+
+        UpdatePowerUpCardPresentation(powerUpProperty,
+                                      powerUpIndex,
+                                      isActiveSection,
+                                      foldout,
+                                      coverageWarningBox,
+                                      moduleCatalogById);
+
+        card.TrackSerializedObjectValue(powerUpProperty.serializedObject, changedObject =>
+        {
+            if (changedObject == null)
+                return;
+
+            Dictionary<string, PowerUpModuleCatalogEntry> updatedModuleCatalogById = PowerUpModuleCatalogUtility.BuildCatalogById(changedObject);
+            UpdatePowerUpCardPresentation(powerUpProperty,
+                                          powerUpIndex,
+                                          isActiveSection,
+                                          foldout,
+                                          coverageWarningBox,
+                                          updatedModuleCatalogById);
+        });
+
+        PropertyField powerUpField = new PropertyField(powerUpProperty);
+        powerUpField.BindProperty(powerUpProperty);
+        powerUpField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            if (evt == null)
+                return;
+
+            Dictionary<string, PowerUpModuleCatalogEntry> updatedModuleCatalogById = PowerUpModuleCatalogUtility.BuildCatalogById(powerUpProperty.serializedObject);
+            UpdatePowerUpCardPresentation(powerUpProperty,
+                                          powerUpIndex,
+                                          isActiveSection,
+                                          foldout,
+                                          coverageWarningBox,
+                                          updatedModuleCatalogById);
+        });
+        foldout.Add(powerUpField);
+
+        return card;
+    }
+
+    private void AddPowerUpDefinition(bool isActiveSection)
+    {
+        string undoLabel = isActiveSection ? "Add Active Power Up" : "Add Passive Power Up";
+
+        ApplyPowerUpDefinitionsMutation(undoLabel, isActiveSection, powerUpsProperty =>
+        {
+            int insertIndex = powerUpsProperty.arraySize;
+            powerUpsProperty.arraySize = insertIndex + 1;
+            SerializedProperty insertedProperty = powerUpsProperty.GetArrayElementAtIndex(insertIndex);
+            string basePowerUpId = isActiveSection ? "ActivePowerUpCustom" : "PassivePowerUpCustom";
+            string uniquePowerUpId = GenerateUniquePowerUpId(powerUpsProperty, basePowerUpId, insertIndex);
+            string defaultDisplayName = isActiveSection ? "New Active Power Up" : "New Passive Power Up";
+            InitializeNewPowerUpDefinition(insertedProperty, uniquePowerUpId, defaultDisplayName);
+            Dictionary<string, bool> foldoutStateByKey = ResolvePowerUpFoldoutStateMap(isActiveSection);
+            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, uniquePowerUpId, insertIndex);
+            foldoutStateByKey[foldoutKey] = true;
+        });
+    }
+
+    private void DuplicatePowerUpDefinition(bool isActiveSection, int sourceIndex)
+    {
+        string undoLabel = isActiveSection ? "Duplicate Active Power Up" : "Duplicate Passive Power Up";
+
+        ApplyPowerUpDefinitionsMutation(undoLabel, isActiveSection, powerUpsProperty =>
+        {
+            if (sourceIndex < 0 || sourceIndex >= powerUpsProperty.arraySize)
+                return;
+
+            powerUpsProperty.InsertArrayElementAtIndex(sourceIndex);
+            powerUpsProperty.MoveArrayElement(sourceIndex, sourceIndex + 1);
+            int duplicatedIndex = sourceIndex + 1;
+            SerializedProperty duplicatedProperty = powerUpsProperty.GetArrayElementAtIndex(duplicatedIndex);
+            string basePowerUpId = ResolvePowerUpDefinitionId(duplicatedProperty);
+            string copiedDisplayName = ResolvePowerUpDefinitionDisplayName(duplicatedProperty);
+            string uniquePowerUpId = GenerateUniquePowerUpId(powerUpsProperty, basePowerUpId, duplicatedIndex);
+            SetPowerUpDefinitionId(duplicatedProperty, uniquePowerUpId);
+
+            if (string.IsNullOrWhiteSpace(copiedDisplayName))
+                copiedDisplayName = isActiveSection ? "New Active Power Up" : "New Passive Power Up";
+
+            SetPowerUpDefinitionDisplayName(duplicatedProperty, copiedDisplayName + " Copy");
+            Dictionary<string, bool> foldoutStateByKey = ResolvePowerUpFoldoutStateMap(isActiveSection);
+            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, uniquePowerUpId, duplicatedIndex);
+            foldoutStateByKey[foldoutKey] = true;
+        });
+    }
+
+    private void DeletePowerUpDefinition(bool isActiveSection, int index)
+    {
+        string undoLabel = isActiveSection ? "Delete Active Power Up" : "Delete Passive Power Up";
+
+        ApplyPowerUpDefinitionsMutation(undoLabel, isActiveSection, powerUpsProperty =>
+        {
+            if (index < 0 || index >= powerUpsProperty.arraySize)
+                return;
+
+            powerUpsProperty.DeleteArrayElementAtIndex(index);
+        });
+    }
+
+    private void MovePowerUpDefinition(bool isActiveSection, int fromIndex, int toIndex)
+    {
+        string undoLabel = isActiveSection ? "Move Active Power Up" : "Move Passive Power Up";
+
+        ApplyPowerUpDefinitionsMutation(undoLabel, isActiveSection, powerUpsProperty =>
+        {
+            if (fromIndex < 0 || fromIndex >= powerUpsProperty.arraySize)
+                return;
+
+            if (toIndex < 0 || toIndex >= powerUpsProperty.arraySize)
+                return;
+
+            if (fromIndex == toIndex)
+                return;
+
+            powerUpsProperty.MoveArrayElement(fromIndex, toIndex);
+        });
+    }
+
+    private void SetAllPowerUpFoldoutStates(bool isActiveSection, bool expanded)
+    {
+        if (presetSerializedObject == null)
+            return;
+
+        string propertyName = ResolvePowerUpsPropertyName(isActiveSection);
+        SerializedProperty powerUpsProperty = presetSerializedObject.FindProperty(propertyName);
+
+        if (powerUpsProperty == null)
+            return;
+
+        Dictionary<string, bool> foldoutStateByKey = ResolvePowerUpFoldoutStateMap(isActiveSection);
+        string powerUpIdFilterValue = isActiveSection ? activePowerUpIdFilterText : passivePowerUpIdFilterText;
+        string displayNameFilterValue = isActiveSection ? activePowerUpDisplayNameFilterText : passivePowerUpDisplayNameFilterText;
+
+        for (int powerUpIndex = 0; powerUpIndex < powerUpsProperty.arraySize; powerUpIndex++)
+        {
+            SerializedProperty powerUpProperty = powerUpsProperty.GetArrayElementAtIndex(powerUpIndex);
+
+            if (powerUpProperty == null)
+                continue;
+
+            string powerUpId = ResolvePowerUpDefinitionId(powerUpProperty);
+            string displayName = ResolvePowerUpDefinitionDisplayName(powerUpProperty);
+
+            if (IsMatchingPowerUpFilters(powerUpId, displayName, powerUpIdFilterValue, displayNameFilterValue) == false)
+                continue;
+
+            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, powerUpId, powerUpIndex);
+
+            if (expanded)
+            {
+                foldoutStateByKey[foldoutKey] = true;
+                continue;
+            }
+
+            foldoutStateByKey.Remove(foldoutKey);
+        }
+    }
+
+    private void ApplyPowerUpDefinitionsMutation(string undoLabel, bool isActiveSection, Action<SerializedProperty> mutation)
+    {
+        if (presetSerializedObject == null || mutation == null)
+            return;
+
+        string propertyName = ResolvePowerUpsPropertyName(isActiveSection);
+        SerializedProperty powerUpsProperty = presetSerializedObject.FindProperty(propertyName);
+
+        if (powerUpsProperty == null)
+            return;
+
+        if (selectedPreset != null)
+            Undo.RecordObject(selectedPreset, undoLabel);
+
+        presetSerializedObject.Update();
+        mutation(powerUpsProperty);
+        presetSerializedObject.ApplyModifiedProperties();
+        PlayerManagementDraftSession.MarkDirty();
+        BuildActiveSection();
+    }
+
+    private static string ResolvePowerUpsPropertyName(bool isActiveSection)
+    {
+        return isActiveSection ? "activePowerUps" : "passivePowerUps";
+    }
+
+    private Dictionary<string, bool> ResolvePowerUpFoldoutStateMap(bool isActiveSection)
+    {
+        return isActiveSection ? activePowerUpFoldoutStateByKey : passivePowerUpFoldoutStateByKey;
+    }
+
+    private static void PruneFoldoutStateMap(Dictionary<string, bool> foldoutStateByKey, HashSet<string> validStateKeys)
+    {
+        if (foldoutStateByKey == null || validStateKeys == null)
+            return;
+
+        List<string> keysToRemove = new List<string>();
+
+        foreach (KeyValuePair<string, bool> entry in foldoutStateByKey)
+        {
+            if (validStateKeys.Contains(entry.Key))
+                continue;
+
+            keysToRemove.Add(entry.Key);
+        }
+
+        for (int index = 0; index < keysToRemove.Count; index++)
+            foldoutStateByKey.Remove(keysToRemove[index]);
+    }
+
+    private static bool ResolvePowerUpFoldoutState(Dictionary<string, bool> foldoutStateByKey, string foldoutStateKey)
+    {
+        if (foldoutStateByKey == null || string.IsNullOrWhiteSpace(foldoutStateKey))
+            return false;
+
+        bool isExpanded;
+
+        if (foldoutStateByKey.TryGetValue(foldoutStateKey, out isExpanded))
+            return isExpanded;
+
+        return false;
+    }
+
+    private static bool IsMatchingPowerUpFilters(string powerUpId, string displayName, string powerUpIdFilterValue, string displayNameFilterValue)
+    {
+        if (string.IsNullOrWhiteSpace(powerUpIdFilterValue) == false)
+        {
+            string resolvedPowerUpId = string.IsNullOrWhiteSpace(powerUpId) ? string.Empty : powerUpId;
+
+            if (resolvedPowerUpId.IndexOf(powerUpIdFilterValue, StringComparison.OrdinalIgnoreCase) < 0)
+                return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(displayNameFilterValue) == false)
+        {
+            string resolvedDisplayName = string.IsNullOrWhiteSpace(displayName) ? string.Empty : displayName;
+
+            if (resolvedDisplayName.IndexOf(displayNameFilterValue, StringComparison.OrdinalIgnoreCase) < 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    private static string BuildPowerUpCardTitle(int powerUpIndex, string powerUpId, string displayName, int bindingCount, bool unreplaceable)
+    {
+        string resolvedDisplayName = string.IsNullOrWhiteSpace(displayName) ? "<Unnamed>" : displayName.Trim();
+        string resolvedPowerUpId = string.IsNullOrWhiteSpace(powerUpId) ? "<No ID>" : powerUpId.Trim();
+        string lockTag = unreplaceable ? " | Unreplaceable" : string.Empty;
+        return string.Format("#{0:D2}  {1}  ({2})  [{3} Modules{4}]",
+                             powerUpIndex + 1,
+                             resolvedDisplayName,
+                             resolvedPowerUpId,
+                             bindingCount,
+                             lockTag);
+    }
+
+    private static void UpdatePowerUpCardPresentation(SerializedProperty powerUpProperty,
+                                                      int powerUpIndex,
+                                                      bool isActiveSection,
+                                                      Foldout foldout,
+                                                      HelpBox coverageWarningBox,
+                                                      Dictionary<string, PowerUpModuleCatalogEntry> moduleCatalogById)
+    {
+        if (powerUpProperty == null)
+            return;
+
+        if (foldout == null)
+            return;
+
+        string powerUpId = ResolvePowerUpDefinitionId(powerUpProperty);
+        string displayName = ResolvePowerUpDefinitionDisplayName(powerUpProperty);
+        int bindingCount = ResolvePowerUpDefinitionBindingCount(powerUpProperty);
+        bool unreplaceable = ResolvePowerUpDefinitionUnreplaceable(powerUpProperty);
+        foldout.text = BuildPowerUpCardTitle(powerUpIndex, powerUpId, displayName, bindingCount, unreplaceable);
+
+        if (coverageWarningBox == null)
+            return;
+
+        string coverageWarning = BuildPowerUpCoverageWarning(powerUpProperty, isActiveSection, moduleCatalogById);
+
+        if (string.IsNullOrWhiteSpace(coverageWarning))
+        {
+            coverageWarningBox.style.display = DisplayStyle.None;
+            coverageWarningBox.text = string.Empty;
+            return;
+        }
+
+        coverageWarningBox.style.display = DisplayStyle.Flex;
+        coverageWarningBox.text = coverageWarning;
+    }
+
+    private static string BuildPowerUpFoldoutStateKey(bool isActiveSection, string powerUpId, int powerUpIndex)
+    {
+        string prefix = isActiveSection ? "Active:" : "Passive:";
+        string normalizedPowerUpId = string.IsNullOrWhiteSpace(powerUpId) ? "<NoId>" : powerUpId.Trim();
+        return string.Format("{0}Index_{1}:Id_{2}", prefix, powerUpIndex, normalizedPowerUpId);
+    }
+
+    private static string ResolvePowerUpDefinitionId(SerializedProperty powerUpProperty)
+    {
+        if (powerUpProperty == null)
+            return string.Empty;
+
+        SerializedProperty commonDataProperty = powerUpProperty.FindPropertyRelative("commonData");
+
+        if (commonDataProperty == null)
+            return string.Empty;
+
+        SerializedProperty powerUpIdProperty = commonDataProperty.FindPropertyRelative("powerUpId");
+
+        if (powerUpIdProperty == null)
+            return string.Empty;
+
+        return powerUpIdProperty.stringValue;
+    }
+
+    private static string ResolvePowerUpDefinitionDisplayName(SerializedProperty powerUpProperty)
+    {
+        if (powerUpProperty == null)
+            return string.Empty;
+
+        SerializedProperty commonDataProperty = powerUpProperty.FindPropertyRelative("commonData");
+
+        if (commonDataProperty == null)
+            return string.Empty;
+
+        SerializedProperty displayNameProperty = commonDataProperty.FindPropertyRelative("displayName");
+
+        if (displayNameProperty == null)
+            return string.Empty;
+
+        return displayNameProperty.stringValue;
+    }
+
+    private static int ResolvePowerUpDefinitionBindingCount(SerializedProperty powerUpProperty)
+    {
+        if (powerUpProperty == null)
+            return 0;
+
+        SerializedProperty moduleBindingsProperty = powerUpProperty.FindPropertyRelative("moduleBindings");
+
+        if (moduleBindingsProperty == null)
+            return 0;
+
+        return moduleBindingsProperty.arraySize;
+    }
+
+    private static bool ResolvePowerUpDefinitionUnreplaceable(SerializedProperty powerUpProperty)
+    {
+        if (powerUpProperty == null)
+            return false;
+
+        SerializedProperty unreplaceableProperty = powerUpProperty.FindPropertyRelative("unreplaceable");
+
+        if (unreplaceableProperty == null)
+            return false;
+
+        return unreplaceableProperty.boolValue;
+    }
+
+    private static string BuildPowerUpCoverageWarning(SerializedProperty powerUpProperty,
+                                                      bool isActiveSection,
+                                                      Dictionary<string, PowerUpModuleCatalogEntry> moduleCatalogById)
+    {
+        if (powerUpProperty == null)
+            return string.Empty;
+
+        SerializedProperty moduleBindingsProperty = powerUpProperty.FindPropertyRelative("moduleBindings");
+
+        if (moduleBindingsProperty == null)
+            return string.Empty;
+
+        if (moduleBindingsProperty.arraySize <= 0)
+            return string.Empty;
+
+        HashSet<PowerUpModuleKind> moduleKinds = new HashSet<PowerUpModuleKind>();
+        List<string> unresolvedModuleIds = new List<string>();
+        List<string> unsupportedModuleKinds = new List<string>();
+
+        for (int bindingIndex = 0; bindingIndex < moduleBindingsProperty.arraySize; bindingIndex++)
+        {
+            SerializedProperty bindingProperty = moduleBindingsProperty.GetArrayElementAtIndex(bindingIndex);
+
+            if (bindingProperty == null)
+                continue;
+
+            SerializedProperty isEnabledProperty = bindingProperty.FindPropertyRelative("isEnabled");
+
+            if (isEnabledProperty != null && isEnabledProperty.boolValue == false)
+                continue;
+
+            string moduleId = ModularPowerUpBindingDrawerUtility.ResolveBindingModuleId(bindingProperty);
+
+            if (string.IsNullOrWhiteSpace(moduleId))
+                continue;
+
+            string normalizedModuleId = moduleId.Trim();
+            PowerUpModuleCatalogEntry moduleEntry;
+
+            if (PowerUpModuleCatalogUtility.TryResolveModuleInfo(moduleCatalogById, normalizedModuleId, out moduleEntry) == false)
+            {
+                AddUniqueString(unresolvedModuleIds, normalizedModuleId);
+                continue;
+            }
+
+            moduleKinds.Add(moduleEntry.ModuleKind);
+
+            if (IsModuleKindSupportedInSection(moduleEntry.ModuleKind, isActiveSection))
+                continue;
+
+            AddUniqueString(unsupportedModuleKinds, PowerUpModuleEnumDescriptions.FormatModuleKindOption(moduleEntry.ModuleKind));
+        }
+
+        List<string> warningLines = new List<string>();
+
+        if (unresolvedModuleIds.Count > 0)
+            warningLines.Add("Missing module IDs in catalog: " + string.Join(", ", unresolvedModuleIds));
+
+        if (unsupportedModuleKinds.Count > 0)
+        {
+            string unsupportedPrefix = isActiveSection
+                ? "Ignored in Active runtime: "
+                : "Ignored in Passive runtime: ";
+            warningLines.Add(unsupportedPrefix + string.Join(", ", unsupportedModuleKinds));
+        }
+
+        string contextWarning = isActiveSection
+            ? BuildActiveCoverageWarning(moduleKinds)
+            : BuildPassiveCoverageWarning(moduleKinds);
+
+        if (string.IsNullOrWhiteSpace(contextWarning) == false)
+            warningLines.Add(contextWarning);
+
+        if (warningLines.Count <= 0)
+            return string.Empty;
+
+        return string.Join("\n", warningLines);
+    }
+
+    private static bool IsModuleKindSupportedInSection(PowerUpModuleKind moduleKind, bool isActiveSection)
+    {
+        if (isActiveSection)
+        {
+            switch (moduleKind)
+            {
+                case PowerUpModuleKind.TriggerPress:
+                case PowerUpModuleKind.TriggerRelease:
+                case PowerUpModuleKind.TriggerHoldCharge:
+                case PowerUpModuleKind.GateResource:
+                case PowerUpModuleKind.StateSuppressShooting:
+                case PowerUpModuleKind.ProjectilesPatternCone:
+                case PowerUpModuleKind.ProjectilesTuning:
+                case PowerUpModuleKind.SpawnObject:
+                case PowerUpModuleKind.DeathExplosion:
+                case PowerUpModuleKind.Dash:
+                case PowerUpModuleKind.TimeDilationEnemies:
+                case PowerUpModuleKind.Heal:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        switch (moduleKind)
+        {
+            case PowerUpModuleKind.TriggerEvent:
+            case PowerUpModuleKind.GateResource:
+            case PowerUpModuleKind.Heal:
+            case PowerUpModuleKind.ProjectilesPatternCone:
+            case PowerUpModuleKind.ProjectilesTuning:
+            case PowerUpModuleKind.SpawnTrailSegment:
+            case PowerUpModuleKind.AreaTickApplyElement:
+            case PowerUpModuleKind.DeathExplosion:
+            case PowerUpModuleKind.OrbitalProjectiles:
+            case PowerUpModuleKind.BouncingProjectiles:
+            case PowerUpModuleKind.ProjectileSplit:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static string BuildActiveCoverageWarning(HashSet<PowerUpModuleKind> moduleKinds)
+    {
+        if (moduleKinds == null || moduleKinds.Count <= 0)
+            return string.Empty;
+
+        List<string> warningLines = new List<string>();
+        bool hasHoldCharge = moduleKinds.Contains(PowerUpModuleKind.TriggerHoldCharge);
+        bool hasShotgunPattern = moduleKinds.Contains(PowerUpModuleKind.ProjectilesPatternCone);
+        bool hasSpawnObject = moduleKinds.Contains(PowerUpModuleKind.SpawnObject);
+        bool hasDash = moduleKinds.Contains(PowerUpModuleKind.Dash);
+        bool hasBulletTime = moduleKinds.Contains(PowerUpModuleKind.TimeDilationEnemies);
+        bool hasHeal = moduleKinds.Contains(PowerUpModuleKind.Heal);
+        bool hasDeathExplosion = moduleKinds.Contains(PowerUpModuleKind.DeathExplosion);
+        bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
+        bool hasTriggerPress = moduleKinds.Contains(PowerUpModuleKind.TriggerPress);
+        bool hasTriggerRelease = moduleKinds.Contains(PowerUpModuleKind.TriggerRelease);
+        int executeKindCount = 0;
+
+        if (hasHoldCharge)
+            executeKindCount += 1;
+
+        if (hasShotgunPattern)
+            executeKindCount += 1;
+
+        if (hasSpawnObject)
+            executeKindCount += 1;
+
+        if (hasDash)
+            executeKindCount += 1;
+
+        if (hasBulletTime)
+            executeKindCount += 1;
+
+        if (hasHeal)
+            executeKindCount += 1;
+
+        if (executeKindCount == 0)
+            warningLines.Add("No execute module selected. This active power up compiles as undefined.");
+
+        if (executeKindCount > 1)
+            warningLines.Add("Multiple execute modules found. Runtime priority is: TriggerHoldCharge > ProjectilesPatternCone > SpawnObject > Dash > TimeDilationEnemies > Heal.");
+
+        if (hasDeathExplosion && hasSpawnObject == false)
+            warningLines.Add("DeathExplosion is ignored unless SpawnObject is also bound.");
+
+        if (hasTriggerEvent)
+            warningLines.Add("TriggerEvent currently has no active runtime consumer.");
+
+        if (hasTriggerPress && hasTriggerRelease)
+            warningLines.Add("TriggerPress and TriggerRelease are both bound. Runtime uses OnPress activation.");
+
+        if (warningLines.Count <= 0)
+            return string.Empty;
+
+        return string.Join("\n", warningLines);
+    }
+
+    private static string BuildPassiveCoverageWarning(HashSet<PowerUpModuleKind> moduleKinds)
+    {
+        if (moduleKinds == null || moduleKinds.Count <= 0)
+            return string.Empty;
+
+        List<string> warningLines = new List<string>();
+        bool hasTrail = moduleKinds.Contains(PowerUpModuleKind.SpawnTrailSegment) || moduleKinds.Contains(PowerUpModuleKind.AreaTickApplyElement);
+        bool hasExplosion = moduleKinds.Contains(PowerUpModuleKind.DeathExplosion);
+        bool hasOrbit = moduleKinds.Contains(PowerUpModuleKind.OrbitalProjectiles);
+        bool hasBounce = moduleKinds.Contains(PowerUpModuleKind.BouncingProjectiles);
+        bool hasSplit = moduleKinds.Contains(PowerUpModuleKind.ProjectileSplit);
+        bool hasShotgun = moduleKinds.Contains(PowerUpModuleKind.ProjectilesPatternCone) || moduleKinds.Contains(PowerUpModuleKind.ProjectilesTuning);
+        bool hasHeal = moduleKinds.Contains(PowerUpModuleKind.Heal);
+        bool hasGateResource = moduleKinds.Contains(PowerUpModuleKind.GateResource);
+        bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
+        bool hasAnyPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal;
+
+        if (hasAnyPassiveRuntimeConsumer == false)
+            warningLines.Add("No passive runtime module found. This passive power up compiles as undefined.");
+
+        if (hasTriggerEvent && hasExplosion == false && hasSplit == false && hasHeal == false)
+            warningLines.Add("TriggerEvent has no passive consumer without DeathExplosion, ProjectileSplit, or Heal.");
+
+        if (hasGateResource && hasHeal == false)
+            warningLines.Add("GateResource in Passive currently only contributes cooldown data to Heal modules.");
+
+        if (warningLines.Count <= 0)
+            return string.Empty;
+
+        return string.Join("\n", warningLines);
+    }
+
+    private static void AddUniqueString(List<string> values, string candidateValue)
+    {
+        if (values == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(candidateValue))
+            return;
+
+        for (int index = 0; index < values.Count; index++)
+        {
+            if (string.Equals(values[index], candidateValue, StringComparison.OrdinalIgnoreCase))
+                return;
+        }
+
+        values.Add(candidateValue);
+    }
+
+    private static string GenerateUniquePowerUpId(SerializedProperty powerUpsProperty, string basePowerUpId, int excludedIndex)
+    {
+        string sanitizedBasePowerUpId = string.IsNullOrWhiteSpace(basePowerUpId) ? "PowerUpCustom" : basePowerUpId.Trim();
+        HashSet<string> existingPowerUpIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int powerUpIndex = 0; powerUpIndex < powerUpsProperty.arraySize; powerUpIndex++)
+        {
+            if (powerUpIndex == excludedIndex)
+                continue;
+
+            SerializedProperty powerUpProperty = powerUpsProperty.GetArrayElementAtIndex(powerUpIndex);
+            string existingPowerUpId = ResolvePowerUpDefinitionId(powerUpProperty);
+
+            if (string.IsNullOrWhiteSpace(existingPowerUpId))
+                continue;
+
+            existingPowerUpIds.Add(existingPowerUpId.Trim());
+        }
+
+        if (existingPowerUpIds.Contains(sanitizedBasePowerUpId) == false)
+            return sanitizedBasePowerUpId;
+
+        for (int suffix = 2; suffix < int.MaxValue; suffix++)
+        {
+            string candidatePowerUpId = sanitizedBasePowerUpId + suffix.ToString();
+
+            if (existingPowerUpIds.Contains(candidatePowerUpId))
+                continue;
+
+            return candidatePowerUpId;
+        }
+
+        return Guid.NewGuid().ToString("N");
+    }
+
+    private void InitializeNewPowerUpDefinition(SerializedProperty powerUpProperty, string powerUpId, string displayName)
+    {
+        if (powerUpProperty == null)
+            return;
+
+        SerializedProperty commonDataProperty = powerUpProperty.FindPropertyRelative("commonData");
+        SerializedProperty moduleBindingsProperty = powerUpProperty.FindPropertyRelative("moduleBindings");
+        SerializedProperty unreplaceableProperty = powerUpProperty.FindPropertyRelative("unreplaceable");
+
+        if (commonDataProperty != null)
+        {
+            SetStringField(commonDataProperty.FindPropertyRelative("powerUpId"), powerUpId);
+            SetStringField(commonDataProperty.FindPropertyRelative("displayName"), displayName);
+            SetStringField(commonDataProperty.FindPropertyRelative("description"), string.Empty);
+            SetIntField(commonDataProperty.FindPropertyRelative("dropTier"), 1);
+            SetIntField(commonDataProperty.FindPropertyRelative("purchaseCost"), 0);
+            CopyDropPoolCatalogIntoPowerUp(commonDataProperty.FindPropertyRelative("dropPools"));
+        }
+
+        if (moduleBindingsProperty != null)
+            moduleBindingsProperty.arraySize = 0;
+
+        if (unreplaceableProperty != null)
+            unreplaceableProperty.boolValue = false;
+    }
+
+    private void CopyDropPoolCatalogIntoPowerUp(SerializedProperty dropPoolsProperty)
+    {
+        if (dropPoolsProperty == null)
+            return;
+
+        dropPoolsProperty.arraySize = 0;
+
+        if (presetSerializedObject == null)
+            return;
+
+        SerializedProperty dropPoolCatalogProperty = presetSerializedObject.FindProperty("dropPoolCatalog");
+
+        if (dropPoolCatalogProperty == null)
+            return;
+
+        for (int poolIndex = 0; poolIndex < dropPoolCatalogProperty.arraySize; poolIndex++)
+        {
+            SerializedProperty poolProperty = dropPoolCatalogProperty.GetArrayElementAtIndex(poolIndex);
+
+            if (poolProperty == null)
+                continue;
+
+            string poolId = poolProperty.stringValue;
+
+            if (string.IsNullOrWhiteSpace(poolId))
+                continue;
+
+            int insertIndex = dropPoolsProperty.arraySize;
+            dropPoolsProperty.arraySize = insertIndex + 1;
+            SerializedProperty insertedPoolProperty = dropPoolsProperty.GetArrayElementAtIndex(insertIndex);
+
+            if (insertedPoolProperty == null)
+                continue;
+
+            insertedPoolProperty.stringValue = poolId;
+        }
+    }
+
+    private static void SetStringField(SerializedProperty property, string value)
+    {
+        if (property == null)
+            return;
+
+        property.stringValue = value;
+    }
+
+    private static void SetIntField(SerializedProperty property, int value)
+    {
+        if (property == null)
+            return;
+
+        property.intValue = value;
+    }
+
+    private static void SetPowerUpDefinitionId(SerializedProperty powerUpProperty, string powerUpId)
+    {
+        if (powerUpProperty == null)
+            return;
+
+        SerializedProperty commonDataProperty = powerUpProperty.FindPropertyRelative("commonData");
+
+        if (commonDataProperty == null)
+            return;
+
+        SerializedProperty powerUpIdProperty = commonDataProperty.FindPropertyRelative("powerUpId");
+
+        if (powerUpIdProperty == null)
+            return;
+
+        powerUpIdProperty.stringValue = powerUpId;
+    }
+
+    private static void SetPowerUpDefinitionDisplayName(SerializedProperty powerUpProperty, string displayName)
+    {
+        if (powerUpProperty == null)
+            return;
+
+        SerializedProperty commonDataProperty = powerUpProperty.FindPropertyRelative("commonData");
+
+        if (commonDataProperty == null)
+            return;
+
+        SerializedProperty displayNameProperty = commonDataProperty.FindPropertyRelative("displayName");
+
+        if (displayNameProperty == null)
+            return;
+
+        displayNameProperty.stringValue = displayName;
     }
 
     private void BuildLoadoutInputSection()
@@ -807,24 +2590,18 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         List<LoadoutPowerUpOption> loadoutOptions = BuildLoadoutOptions(activePowerUpsProperty);
 
-        if (loadoutOptions.Count == 0)
-        {
-            HelpBox missingToolsHelpBox = new HelpBox("No valid active power ups found. Add entries in Active Power Ups first.", HelpBoxMessageType.Warning);
-            sectionContentRoot.Add(missingToolsHelpBox);
-        }
-        else
-        {
-            BuildLoadoutSelector("Primary Active Power Up", primaryActivePowerUpIdProperty, loadoutOptions);
-            BuildLoadoutSelector("Secondary Active Power Up", secondaryActivePowerUpIdProperty, loadoutOptions);
+        BuildLoadoutSelector("Primary Active Power Up", primaryActivePowerUpIdProperty, loadoutOptions);
+        BuildLoadoutSelector("Secondary Active Power Up", secondaryActivePowerUpIdProperty, loadoutOptions);
 
-            string primaryId = ResolveSelectedToolId(primaryActivePowerUpIdProperty.stringValue, loadoutOptions);
-            string secondaryId = ResolveSelectedToolId(secondaryActivePowerUpIdProperty.stringValue, loadoutOptions);
+        string primaryId = ResolveSelectedToolId(primaryActivePowerUpIdProperty.stringValue, loadoutOptions);
+        string secondaryId = ResolveSelectedToolId(secondaryActivePowerUpIdProperty.stringValue, loadoutOptions);
 
-            if (string.Equals(primaryId, secondaryId, StringComparison.OrdinalIgnoreCase))
-            {
-                HelpBox sameSlotWarning = new HelpBox("Primary and Secondary currently reference the same active power up.", HelpBoxMessageType.Warning);
-                sectionContentRoot.Add(sameSlotWarning);
-            }
+        if (string.IsNullOrWhiteSpace(primaryId) == false &&
+            string.IsNullOrWhiteSpace(secondaryId) == false &&
+            string.Equals(primaryId, secondaryId, StringComparison.OrdinalIgnoreCase))
+        {
+            HelpBox sameSlotWarning = new HelpBox("Primary and Secondary currently reference the same active power up.", HelpBoxMessageType.Warning);
+            sectionContentRoot.Add(sameSlotWarning);
         }
 
         Label passiveLoadoutHeader = new Label("Passive Power Ups Loadout (IDs)");
@@ -881,9 +2658,6 @@ public sealed class PlayerPowerUpsPresetsPanel
 
             string selectedToolId = loadoutOptions[optionIndex].PowerUpId;
 
-            if (string.IsNullOrWhiteSpace(selectedToolId))
-                return;
-
             if (string.Equals(slotToolIdProperty.stringValue, selectedToolId, StringComparison.Ordinal))
                 return;
 
@@ -936,6 +2710,11 @@ public sealed class PlayerPowerUpsPresetsPanel
     private static List<LoadoutPowerUpOption> BuildLoadoutOptions(SerializedProperty activePowerUpsProperty)
     {
         List<LoadoutPowerUpOption> options = new List<LoadoutPowerUpOption>();
+        options.Add(new LoadoutPowerUpOption
+        {
+            PowerUpId = string.Empty,
+            DisplayLabel = "<None>"
+        });
 
         if (activePowerUpsProperty == null)
             return options;

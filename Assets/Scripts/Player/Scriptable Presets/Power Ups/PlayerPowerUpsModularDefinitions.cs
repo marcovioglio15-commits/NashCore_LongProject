@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 #region Enums
 public enum PowerUpModuleStage
@@ -20,28 +21,31 @@ public enum PowerUpModuleKind
     TriggerPress = 0,
     TriggerRelease = 1,
     TriggerHoldCharge = 2,
-    GateResource = 3,
-    GateCooldown = 4,
+    TriggerEvent = 3,
+    GateResource = 4,
     StateSuppressShooting = 5,
-    EffectProjectilePatternCone = 6,
-    EffectProjectileScale = 7,
-    EffectProjectilePenetration = 8,
-    EffectSpawnBomb = 9,
-    EffectExplosionAreaDamage = 10,
-    EffectDash = 11,
-    EffectHealMissingHealth = 12,
-    EffectTimeDilationEnemies = 13,
-    HookOnPlayerMovementStep = 14,
-    HookOnEnemyDeath = 15,
-    HookOnProjectileSpawned = 16,
-    HookOnProjectileWallHit = 17,
-    HookOnProjectileDeath = 18,
-    PassiveSpawnTrailSegment = 19,
-    PassiveAreaTickApplyElement = 20,
-    PassiveDeathExplosion = 21,
-    PassiveProjectileOrbitOverride = 22,
-    PassiveProjectileBounceOnWalls = 23,
-    PassiveProjectileSplitOnDeath = 24
+    ProjectilesPatternCone = 6,
+    ProjectilesTuning = 7,
+    SpawnObject = 8,
+    Dash = 9,
+    TimeDilationEnemies = 10,
+    Heal = 11,
+    SpawnTrailSegment = 12,
+    AreaTickApplyElement = 13,
+    DeathExplosion = 14,
+    OrbitalProjectiles = 15,
+    BouncingProjectiles = 16,
+    ProjectileSplit = 17
+}
+
+public enum PowerUpTriggerEventType
+{
+    OnEnemyKilled = 0,
+    OnPlayerDamaged = 1,
+    OnPlayerMovementStep = 2,
+    OnProjectileSpawned = 3,
+    OnProjectileWallHit = 4,
+    OnProjectileDespawned = 5
 }
 
 public enum ProjectilePenetrationMode
@@ -49,6 +53,48 @@ public enum ProjectilePenetrationMode
     None = 0,
     FixedHits = 1,
     Infinite = 2
+}
+
+public static class PowerUpModuleKindUtility
+{
+    #region Methods
+
+    #region Public API
+    public static PowerUpModuleStage ResolveStageFromKind(PowerUpModuleKind moduleKind)
+    {
+        switch (moduleKind)
+        {
+            case PowerUpModuleKind.TriggerPress:
+            case PowerUpModuleKind.TriggerRelease:
+            case PowerUpModuleKind.TriggerHoldCharge:
+                return PowerUpModuleStage.Trigger;
+            case PowerUpModuleKind.TriggerEvent:
+                return PowerUpModuleStage.Hook;
+            case PowerUpModuleKind.GateResource:
+                return PowerUpModuleStage.Gate;
+            case PowerUpModuleKind.StateSuppressShooting:
+                return PowerUpModuleStage.StateEnter;
+            case PowerUpModuleKind.ProjectilesPatternCone:
+            case PowerUpModuleKind.ProjectilesTuning:
+            case PowerUpModuleKind.SpawnObject:
+            case PowerUpModuleKind.Dash:
+            case PowerUpModuleKind.TimeDilationEnemies:
+            case PowerUpModuleKind.Heal:
+                return PowerUpModuleStage.Execute;
+            case PowerUpModuleKind.SpawnTrailSegment:
+            case PowerUpModuleKind.AreaTickApplyElement:
+            case PowerUpModuleKind.DeathExplosion:
+            case PowerUpModuleKind.OrbitalProjectiles:
+            case PowerUpModuleKind.BouncingProjectiles:
+            case PowerUpModuleKind.ProjectileSplit:
+                return PowerUpModuleStage.Hook;
+            default:
+                return PowerUpModuleStage.Hook;
+        }
+    }
+    #endregion
+
+    #endregion
 }
 #endregion
 
@@ -126,6 +172,40 @@ public sealed class PowerUpHoldChargeModuleData
 }
 
 [Serializable]
+public sealed class PowerUpTriggerEventModuleData
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Runtime event that triggers execution for modules bound to this trigger.")]
+    [SerializeField] private PowerUpTriggerEventType eventType = PowerUpTriggerEventType.OnEnemyKilled;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public PowerUpTriggerEventType EventType
+    {
+        get
+        {
+            return eventType;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Setup
+    public void Configure(PowerUpTriggerEventType eventTypeValue)
+    {
+        eventType = eventTypeValue;
+    }
+    #endregion
+
+    #endregion
+}
+
+[Serializable]
 public sealed class PowerUpResourceGateModuleData
 {
     #region Fields
@@ -146,14 +226,20 @@ public sealed class PowerUpResourceGateModuleData
     [Tooltip("Maintenance cost consumed per second when toggled on.")]
     [SerializeField] private float maintenanceCostPerSecond;
 
-    [Tooltip("When enabled, activation requires the slot to be fully charged.")]
-    [SerializeField] private bool fullChargeRequirement;
+    [Tooltip("Minimum energy percentage required to activate. 0 disables this gate.")]
+    [SerializeField] private float minimumActivationEnergyPercent;
+
+    [FormerlySerializedAs("fullChargeRequirement")]
+    [SerializeField] private bool legacyFullChargeRequirement;
 
     [Tooltip("Charge source used to refill energy over time/events.")]
     [SerializeField] private PowerUpChargeType chargeType = PowerUpChargeType.Time;
 
     [Tooltip("Recharge amount gained per trigger unit of the selected charge source.")]
     [SerializeField] private float chargePerTrigger = 100f;
+
+    [Tooltip("Cooldown in seconds applied after a successful activation.")]
+    [SerializeField] private float cooldownSeconds = 1f;
     #endregion
 
     #endregion
@@ -199,11 +285,11 @@ public sealed class PowerUpResourceGateModuleData
         }
     }
 
-    public bool FullChargeRequirement
+    public float MinimumActivationEnergyPercent
     {
         get
         {
-            return fullChargeRequirement;
+            return minimumActivationEnergyPercent;
         }
     }
 
@@ -222,6 +308,14 @@ public sealed class PowerUpResourceGateModuleData
             return chargePerTrigger;
         }
     }
+
+    public float CooldownSeconds
+    {
+        get
+        {
+            return cooldownSeconds;
+        }
+    }
     #endregion
 
     #region Methods
@@ -232,18 +326,40 @@ public sealed class PowerUpResourceGateModuleData
                           float maximumEnergyValue,
                           float activationCostValue,
                           float maintenanceCostPerSecondValue,
-                          bool fullChargeRequirementValue,
+                          float minimumActivationEnergyPercentValue,
                           PowerUpChargeType chargeTypeValue,
                           float chargePerTriggerValue)
+    {
+        Configure(activationResourceValue,
+                  maintenanceResourceValue,
+                  maximumEnergyValue,
+                  activationCostValue,
+                  maintenanceCostPerSecondValue,
+                  minimumActivationEnergyPercentValue,
+                  chargeTypeValue,
+                  chargePerTriggerValue,
+                  0f);
+    }
+
+    public void Configure(PowerUpResourceType activationResourceValue,
+                          PowerUpResourceType maintenanceResourceValue,
+                          float maximumEnergyValue,
+                          float activationCostValue,
+                          float maintenanceCostPerSecondValue,
+                          float minimumActivationEnergyPercentValue,
+                          PowerUpChargeType chargeTypeValue,
+                          float chargePerTriggerValue,
+                          float cooldownSecondsValue)
     {
         activationResource = activationResourceValue;
         maintenanceResource = maintenanceResourceValue;
         maximumEnergy = maximumEnergyValue;
         activationCost = activationCostValue;
         maintenanceCostPerSecond = maintenanceCostPerSecondValue;
-        fullChargeRequirement = fullChargeRequirementValue;
+        minimumActivationEnergyPercent = minimumActivationEnergyPercentValue;
         chargeType = chargeTypeValue;
         chargePerTrigger = chargePerTriggerValue;
+        cooldownSeconds = cooldownSecondsValue;
     }
     #endregion
 
@@ -259,8 +375,27 @@ public sealed class PowerUpResourceGateModuleData
         if (maintenanceCostPerSecond < 0f)
             maintenanceCostPerSecond = 0f;
 
+        if (legacyFullChargeRequirement &&
+            minimumActivationEnergyPercent <= 0f)
+        {
+            minimumActivationEnergyPercent = 100f;
+            legacyFullChargeRequirement = false;
+        }
+
+        if (minimumActivationEnergyPercent < 0f)
+            minimumActivationEnergyPercent = 0f;
+
+        if (minimumActivationEnergyPercent > 100f)
+            minimumActivationEnergyPercent = 100f;
+
+        if (maximumEnergy <= 0f)
+            minimumActivationEnergyPercent = 0f;
+
         if (chargePerTrigger < 0f)
             chargePerTrigger = 0f;
+
+        if (cooldownSeconds < 0f)
+            cooldownSeconds = 0f;
     }
     #endregion
 
@@ -317,6 +452,12 @@ public sealed class PowerUpSuppressShootingModuleData
     #region Serialized Fields
     [Tooltip("When enabled, base shooting is blocked while this state is active.")]
     [SerializeField] private bool suppressBaseShootingWhileActive = true;
+
+    [Tooltip("When enabled, activation interrupts charging or active effects on the opposite slot.")]
+    [SerializeField] private bool interruptOtherSlotOnEnter;
+
+    [Tooltip("When enabled, interruption clears only opposite-slot charge state.")]
+    [SerializeField] private bool interruptOtherSlotChargingOnly = true;
     #endregion
 
     #endregion
@@ -329,6 +470,22 @@ public sealed class PowerUpSuppressShootingModuleData
             return suppressBaseShootingWhileActive;
         }
     }
+
+    public bool InterruptOtherSlotOnEnter
+    {
+        get
+        {
+            return interruptOtherSlotOnEnter;
+        }
+    }
+
+    public bool InterruptOtherSlotChargingOnly
+    {
+        get
+        {
+            return interruptOtherSlotChargingOnly;
+        }
+    }
     #endregion
 
     #region Methods
@@ -336,7 +493,16 @@ public sealed class PowerUpSuppressShootingModuleData
     #region Setup
     public void Configure(bool suppressBaseShootingWhileActiveValue)
     {
+        Configure(suppressBaseShootingWhileActiveValue, false, true);
+    }
+
+    public void Configure(bool suppressBaseShootingWhileActiveValue,
+                          bool interruptOtherSlotOnEnterValue,
+                          bool interruptOtherSlotChargingOnlyValue)
+    {
         suppressBaseShootingWhileActive = suppressBaseShootingWhileActiveValue;
+        interruptOtherSlotOnEnter = interruptOtherSlotOnEnterValue;
+        interruptOtherSlotChargingOnly = interruptOtherSlotChargingOnlyValue;
     }
     #endregion
 
@@ -561,23 +727,250 @@ public sealed class PowerUpProjectilePenetrationModuleData
 }
 
 [Serializable]
-public sealed class PowerUpHealMissingHealthModuleData
+public sealed class PowerUpProjectileTuningModuleData
 {
     #region Fields
 
     #region Serialized Fields
-    [Tooltip("Flat health restored on activation, clamped to missing HP.")]
-    [SerializeField] private float healAmount = 30f;
+    [Tooltip("Multiplier applied to projectile visual and collision scale.")]
+    [SerializeField] private float sizeMultiplier = 1f;
+
+    [Tooltip("Multiplier applied to projectile damage.")]
+    [SerializeField] private float damageMultiplier = 1f;
+
+    [Tooltip("Multiplier applied to projectile speed.")]
+    [SerializeField] private float speedMultiplier = 1f;
+
+    [Tooltip("Multiplier applied to projectile max range.")]
+    [SerializeField] private float rangeMultiplier = 1f;
+
+    [Tooltip("Multiplier applied to projectile lifetime seconds.")]
+    [SerializeField] private float lifetimeMultiplier = 1f;
+
+    [Tooltip("Penetration behavior applied to the projectile.")]
+    [SerializeField] private ProjectilePenetrationMode penetrationMode = ProjectilePenetrationMode.None;
+
+    [Tooltip("Number of extra enemy penetrations when mode is FixedHits.")]
+    [SerializeField] private int maxPenetrations;
+
+    [Header("Elemental Stacks On Hit")]
+    [Tooltip("When enabled, each projectile hit applies elemental stacks using the payload below.")]
+    [SerializeField] private bool applyElementalOnHit;
+
+    [Tooltip("Elemental effect payload applied on projectile hit when elemental stacks are enabled.")]
+    [SerializeField] private ElementalEffectDefinitionData elementalEffectData = new ElementalEffectDefinitionData();
+
+    [Tooltip("Elemental stacks applied on each projectile hit when elemental stacks are enabled.")]
+    [SerializeField] private float elementalStacksPerHit = 1f;
     #endregion
 
     #endregion
 
     #region Properties
+    public float SizeMultiplier
+    {
+        get
+        {
+            return sizeMultiplier;
+        }
+    }
+
+    public float DamageMultiplier
+    {
+        get
+        {
+            return damageMultiplier;
+        }
+    }
+
+    public float SpeedMultiplier
+    {
+        get
+        {
+            return speedMultiplier;
+        }
+    }
+
+    public float RangeMultiplier
+    {
+        get
+        {
+            return rangeMultiplier;
+        }
+    }
+
+    public float LifetimeMultiplier
+    {
+        get
+        {
+            return lifetimeMultiplier;
+        }
+    }
+
+    public ProjectilePenetrationMode PenetrationMode
+    {
+        get
+        {
+            return penetrationMode;
+        }
+    }
+
+    public int MaxPenetrations
+    {
+        get
+        {
+            return maxPenetrations;
+        }
+    }
+
+    public bool ApplyElementalOnHit
+    {
+        get
+        {
+            return applyElementalOnHit;
+        }
+    }
+
+    public ElementalEffectDefinitionData ElementalEffectData
+    {
+        get
+        {
+            return elementalEffectData;
+        }
+    }
+
+    public float ElementalStacksPerHit
+    {
+        get
+        {
+            return elementalStacksPerHit;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Setup
+    public void Configure(float sizeMultiplierValue,
+                          float damageMultiplierValue,
+                          float speedMultiplierValue,
+                          float rangeMultiplierValue,
+                          float lifetimeMultiplierValue,
+                          ProjectilePenetrationMode penetrationModeValue,
+                          int maxPenetrationsValue,
+                          bool applyElementalOnHitValue = false,
+                          ElementalEffectDefinitionData elementalEffectDataValue = null,
+                          float elementalStacksPerHitValue = 0f)
+    {
+        sizeMultiplier = sizeMultiplierValue;
+        damageMultiplier = damageMultiplierValue;
+        speedMultiplier = speedMultiplierValue;
+        rangeMultiplier = rangeMultiplierValue;
+        lifetimeMultiplier = lifetimeMultiplierValue;
+        penetrationMode = penetrationModeValue;
+        maxPenetrations = maxPenetrationsValue;
+        applyElementalOnHit = applyElementalOnHitValue;
+        elementalEffectData = elementalEffectDataValue != null ? elementalEffectDataValue : new ElementalEffectDefinitionData();
+        elementalStacksPerHit = elementalStacksPerHitValue;
+    }
+    #endregion
+
+    #region Validation
+    public void Validate()
+    {
+        if (sizeMultiplier < 0.01f)
+            sizeMultiplier = 0.01f;
+
+        if (damageMultiplier < 0f)
+            damageMultiplier = 0f;
+
+        if (speedMultiplier < 0f)
+            speedMultiplier = 0f;
+
+        if (rangeMultiplier < 0f)
+            rangeMultiplier = 0f;
+
+        if (lifetimeMultiplier < 0f)
+            lifetimeMultiplier = 0f;
+
+        if (maxPenetrations < 0)
+            maxPenetrations = 0;
+
+        if (elementalEffectData == null)
+            elementalEffectData = new ElementalEffectDefinitionData();
+
+        elementalEffectData.Validate();
+
+        if (elementalStacksPerHit < 0f)
+            elementalStacksPerHit = 0f;
+    }
+    #endregion
+
+    #endregion
+}
+
+[Serializable]
+public sealed class PowerUpHealMissingHealthModuleData
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Healing mode. Instant applies one-time heal, OverTime distributes healing across ticks.")]
+    [SerializeField] private PowerUpHealApplicationMode applyMode = PowerUpHealApplicationMode.Instant;
+
+    [Tooltip("Total heal amount. For instant mode this is applied immediately, otherwise distributed in time.")]
+    [SerializeField] private float healAmount = 30f;
+
+    [Tooltip("Duration in seconds used by OverTime mode.")]
+    [SerializeField] private float durationSeconds = 2f;
+
+    [Tooltip("Tick interval in seconds used by OverTime mode.")]
+    [SerializeField] private float tickIntervalSeconds = 0.2f;
+
+    [Tooltip("Behavior when a new heal-over-time is applied while another is active.")]
+    [SerializeField] private PowerUpHealStackPolicy stackPolicy = PowerUpHealStackPolicy.Refresh;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public PowerUpHealApplicationMode ApplyMode
+    {
+        get
+        {
+            return applyMode;
+        }
+    }
+
     public float HealAmount
     {
         get
         {
             return healAmount;
+        }
+    }
+
+    public float DurationSeconds
+    {
+        get
+        {
+            return durationSeconds;
+        }
+    }
+
+    public float TickIntervalSeconds
+    {
+        get
+        {
+            return tickIntervalSeconds;
+        }
+    }
+
+    public PowerUpHealStackPolicy StackPolicy
+    {
+        get
+        {
+            return stackPolicy;
         }
     }
     #endregion
@@ -587,7 +980,24 @@ public sealed class PowerUpHealMissingHealthModuleData
     #region Setup
     public void Configure(float healAmountValue)
     {
+        Configure(PowerUpHealApplicationMode.Instant,
+                  healAmountValue,
+                  0f,
+                  0.2f,
+                  PowerUpHealStackPolicy.Refresh);
+    }
+
+    public void Configure(PowerUpHealApplicationMode applyModeValue,
+                          float healAmountValue,
+                          float durationSecondsValue,
+                          float tickIntervalSecondsValue,
+                          PowerUpHealStackPolicy stackPolicyValue)
+    {
+        applyMode = applyModeValue;
         healAmount = healAmountValue;
+        durationSeconds = durationSecondsValue;
+        tickIntervalSeconds = tickIntervalSecondsValue;
+        stackPolicy = stackPolicyValue;
     }
     #endregion
 
@@ -596,6 +1006,12 @@ public sealed class PowerUpHealMissingHealthModuleData
     {
         if (healAmount < 0f)
             healAmount = 0f;
+
+        if (durationSeconds < 0f)
+            durationSeconds = 0f;
+
+        if (tickIntervalSeconds < 0.01f)
+            tickIntervalSeconds = 0.01f;
     }
     #endregion
 
@@ -815,68 +1231,65 @@ public sealed class PowerUpModuleData
     [Tooltip("Hold-charge settings used by TriggerHoldCharge modules.")]
     [SerializeField] private PowerUpHoldChargeModuleData holdCharge = new PowerUpHoldChargeModuleData();
 
+    [Header("Trigger - Event")]
+    [Tooltip("Event trigger settings used by TriggerEvent modules.")]
+    [SerializeField] private PowerUpTriggerEventModuleData triggerEvent = new PowerUpTriggerEventModuleData();
+
     [Header("Gate - Resource")]
     [Tooltip("Resource-gate settings used by GateResource modules.")]
     [SerializeField] private PowerUpResourceGateModuleData resourceGate = new PowerUpResourceGateModuleData();
-
-    [Header("Gate - Cooldown")]
-    [Tooltip("Cooldown settings used by GateCooldown modules.")]
-    [SerializeField] private PowerUpCooldownGateModuleData cooldownGate = new PowerUpCooldownGateModuleData();
 
     [Header("State - Suppress Shooting")]
     [Tooltip("Shooting suppression settings used by StateSuppressShooting modules.")]
     [SerializeField] private PowerUpSuppressShootingModuleData suppressShooting = new PowerUpSuppressShootingModuleData();
 
-    [Header("Effect - Projectile Pattern")]
-    [Tooltip("Projectile cone settings used by EffectProjectilePatternCone modules.")]
+    [Header("Execute - Projectile Pattern")]
+    [Tooltip("Projectile cone settings used by ProjectilesPatternCone modules.")]
     [SerializeField] private PowerUpProjectilePatternConeModuleData projectilePatternCone = new PowerUpProjectilePatternConeModuleData();
 
-    [Header("Effect - Projectile Scale")]
-    [Tooltip("Projectile scaling settings used by EffectProjectileScale modules.")]
-    [SerializeField] private PowerUpProjectileScaleModuleData projectileScale = new PowerUpProjectileScaleModuleData();
+    [Header("Execute - Projectile Tuning")]
+    [Tooltip("Combined projectile tuning settings used by ProjectilesTuning modules.")]
+    [SerializeField] private PowerUpProjectileTuningModuleData projectileTuning = new PowerUpProjectileTuningModuleData();
 
-    [Header("Effect - Projectile Penetration")]
-    [Tooltip("Projectile penetration settings used by EffectProjectilePenetration modules.")]
-    [SerializeField] private PowerUpProjectilePenetrationModuleData projectilePenetration = new PowerUpProjectilePenetrationModuleData();
-
-    [Header("Effect - Spawn Bomb")]
-    [Tooltip("Bomb settings used by EffectSpawnBomb modules.")]
+    [Header("Execute - Spawn Object")]
+    [Tooltip("Spawn-object settings used by SpawnObject modules.")]
     [SerializeField] private BombToolData bomb = new BombToolData();
 
-    [Header("Effect - Dash")]
-    [Tooltip("Dash settings used by EffectDash modules.")]
+    [Header("Execute - Dash")]
+    [Tooltip("Dash settings used by Dash modules.")]
     [SerializeField] private DashToolData dash = new DashToolData();
 
-    [Header("Effect - Time Dilation")]
-    [Tooltip("Time dilation settings used by EffectTimeDilationEnemies modules.")]
+    [Header("Execute - Time Dilation")]
+    [Tooltip("Time dilation settings used by TimeDilationEnemies modules.")]
     [SerializeField] private BulletTimeToolData bulletTime = new BulletTimeToolData();
 
-    [Header("Effect - Heal")]
-    [Tooltip("Healing settings used by EffectHealMissingHealth modules.")]
+    [Header("Execute - Heal")]
+    [Tooltip("Healing settings used by Heal modules.")]
     [SerializeField] private PowerUpHealMissingHealthModuleData healMissingHealth = new PowerUpHealMissingHealthModuleData();
 
-    [Header("Passive - Death Explosion")]
-    [Tooltip("Explosion settings used by PassiveDeathExplosion modules.")]
+    [Header("Hook - Death Explosion")]
+    [Tooltip("Explosion settings used by DeathExplosion modules.")]
     [SerializeField] private ExplosionPassiveToolData deathExplosion = new ExplosionPassiveToolData();
 
-    [Header("Passive - Orbit Override")]
-    [Tooltip("Orbit settings used by PassiveProjectileOrbitOverride modules.")]
+    [Header("Hook - Orbital Projectiles")]
+    [Tooltip("Orbit settings used by OrbitalProjectiles modules.")]
     [SerializeField] private PerfectCirclePassiveToolData projectileOrbitOverride = new PerfectCirclePassiveToolData();
 
-    [Header("Passive - Bounce On Walls")]
-    [Tooltip("Bounce settings used by PassiveProjectileBounceOnWalls modules.")]
+    [Header("Hook - Bouncing Projectiles")]
+    [Tooltip("Bounce settings used by BouncingProjectiles modules.")]
     [SerializeField] private BouncingProjectilesPassiveToolData projectileBounceOnWalls = new BouncingProjectilesPassiveToolData();
 
-    [Header("Passive - Split On Death")]
-    [Tooltip("Split settings used by PassiveProjectileSplitOnDeath modules.")]
-    [SerializeField] private SplittingProjectilesPassiveToolData projectileSplitOnDeath = new SplittingProjectilesPassiveToolData();
+    [Header("Hook - Projectile Split")]
+    [Tooltip("Split settings used by ProjectileSplit modules.")]
+    [FormerlySerializedAs("projectileSplitOnDeath")]
+    [SerializeField] private SplittingProjectilesPassiveToolData projectileSplit = new SplittingProjectilesPassiveToolData();
 
-    [Header("Passive - Trail Spawn")]
-    [Tooltip("Trail spawn settings used by PassiveSpawnTrailSegment modules.")]
+    [Header("Hook - Trail Spawn")]
+    [Tooltip("Trail spawn settings used by SpawnTrailSegment modules.")]
     [SerializeField] private PowerUpTrailSpawnModuleData trailSpawn = new PowerUpTrailSpawnModuleData();
 
-    [Header("Passive - Elemental Area Tick")]
-    [Tooltip("Area tick elemental settings used by PassiveAreaTickApplyElement modules.")]
+    [Header("Hook - Elemental Area Tick")]
+    [Tooltip("Area tick elemental settings used by AreaTickApplyElement modules.")]
     [SerializeField] private PowerUpElementalAreaTickModuleData elementalAreaTick = new PowerUpElementalAreaTickModuleData();
     #endregion
 
@@ -899,11 +1312,11 @@ public sealed class PowerUpModuleData
         }
     }
 
-    public PowerUpCooldownGateModuleData CooldownGate
+    public PowerUpTriggerEventModuleData TriggerEvent
     {
         get
         {
-            return cooldownGate;
+            return triggerEvent;
         }
     }
 
@@ -923,19 +1336,11 @@ public sealed class PowerUpModuleData
         }
     }
 
-    public PowerUpProjectileScaleModuleData ProjectileScale
+    public PowerUpProjectileTuningModuleData ProjectileTuning
     {
         get
         {
-            return projectileScale;
-        }
-    }
-
-    public PowerUpProjectilePenetrationModuleData ProjectilePenetration
-    {
-        get
-        {
-            return projectilePenetration;
+            return projectileTuning;
         }
     }
 
@@ -995,11 +1400,11 @@ public sealed class PowerUpModuleData
         }
     }
 
-    public SplittingProjectilesPassiveToolData ProjectileSplitOnDeath
+    public SplittingProjectilesPassiveToolData ProjectileSplit
     {
         get
         {
-            return projectileSplitOnDeath;
+            return projectileSplit;
         }
     }
 
@@ -1031,8 +1436,8 @@ public sealed class PowerUpModuleData
         if (resourceGate == null)
             resourceGate = new PowerUpResourceGateModuleData();
 
-        if (cooldownGate == null)
-            cooldownGate = new PowerUpCooldownGateModuleData();
+        if (triggerEvent == null)
+            triggerEvent = new PowerUpTriggerEventModuleData();
 
         if (suppressShooting == null)
             suppressShooting = new PowerUpSuppressShootingModuleData();
@@ -1040,11 +1445,8 @@ public sealed class PowerUpModuleData
         if (projectilePatternCone == null)
             projectilePatternCone = new PowerUpProjectilePatternConeModuleData();
 
-        if (projectileScale == null)
-            projectileScale = new PowerUpProjectileScaleModuleData();
-
-        if (projectilePenetration == null)
-            projectilePenetration = new PowerUpProjectilePenetrationModuleData();
+        if (projectileTuning == null)
+            projectileTuning = new PowerUpProjectileTuningModuleData();
 
         if (bomb == null)
             bomb = new BombToolData();
@@ -1067,8 +1469,8 @@ public sealed class PowerUpModuleData
         if (projectileBounceOnWalls == null)
             projectileBounceOnWalls = new BouncingProjectilesPassiveToolData();
 
-        if (projectileSplitOnDeath == null)
-            projectileSplitOnDeath = new SplittingProjectilesPassiveToolData();
+        if (projectileSplit == null)
+            projectileSplit = new SplittingProjectilesPassiveToolData();
 
         if (trailSpawn == null)
             trailSpawn = new PowerUpTrailSpawnModuleData();
@@ -1078,10 +1480,8 @@ public sealed class PowerUpModuleData
 
         holdCharge.Validate();
         resourceGate.Validate();
-        cooldownGate.Validate();
         projectilePatternCone.Validate();
-        projectileScale.Validate();
-        projectilePenetration.Validate();
+        projectileTuning.Validate();
         bomb.Validate();
         dash.Validate();
         bulletTime.Validate();
@@ -1089,7 +1489,7 @@ public sealed class PowerUpModuleData
         deathExplosion.Validate();
         projectileOrbitOverride.Validate();
         projectileBounceOnWalls.Validate();
-        projectileSplitOnDeath.Validate();
+        projectileSplit.Validate();
         trailSpawn.Validate();
         elementalAreaTick.Validate();
     }
@@ -1115,7 +1515,8 @@ public sealed class PowerUpModuleDefinition
     [Tooltip("Behavior implemented by this module.")]
     [SerializeField] private PowerUpModuleKind moduleKind;
 
-    [Tooltip("Default execution stage for this module.")]
+    [Tooltip("Legacy serialized stage. Stage is now derived from module kind.")]
+    [HideInInspector]
     [SerializeField] private PowerUpModuleStage defaultStage = PowerUpModuleStage.Execute;
 
     [Tooltip("Optional designer notes for this module.")]
@@ -1156,7 +1557,7 @@ public sealed class PowerUpModuleDefinition
     {
         get
         {
-            return defaultStage;
+            return PowerUpModuleKindUtility.ResolveStageFromKind(moduleKind);
         }
     }
 
@@ -1190,9 +1591,15 @@ public sealed class PowerUpModuleDefinition
         moduleId = moduleIdValue;
         displayName = displayNameValue;
         moduleKind = moduleKindValue;
-        defaultStage = defaultStageValue;
+        defaultStage = PowerUpModuleKindUtility.ResolveStageFromKind(moduleKindValue);
         notes = notesValue;
         data = dataValue;
+    }
+
+    public void SetModuleKind(PowerUpModuleKind moduleKindValue)
+    {
+        moduleKind = moduleKindValue;
+        defaultStage = PowerUpModuleKindUtility.ResolveStageFromKind(moduleKindValue);
     }
     #endregion
 
@@ -1208,6 +1615,7 @@ public sealed class PowerUpModuleDefinition
         if (data == null)
             data = new PowerUpModuleData();
 
+        defaultStage = PowerUpModuleKindUtility.ResolveStageFromKind(moduleKind);
         data.Validate();
     }
     #endregion
@@ -1224,11 +1632,9 @@ public sealed class PowerUpModuleBinding
     [Tooltip("Referenced ModuleId inside Modules Management.")]
     [SerializeField] private string moduleId;
 
-    [Tooltip("Execution stage used by this binding.")]
+    [Tooltip("Legacy serialized stage. Stage is now derived from module kind.")]
+    [HideInInspector]
     [SerializeField] private PowerUpModuleStage stage = PowerUpModuleStage.Execute;
-
-    [Tooltip("Order value used inside the same stage.")]
-    [SerializeField] private int order;
 
     [Tooltip("When disabled, this module binding is ignored at bake/runtime compile.")]
     [SerializeField] private bool isEnabled = true;
@@ -1256,14 +1662,6 @@ public sealed class PowerUpModuleBinding
         get
         {
             return stage;
-        }
-    }
-
-    public int Order
-    {
-        get
-        {
-            return order;
         }
     }
 
@@ -1295,11 +1693,17 @@ public sealed class PowerUpModuleBinding
     #region Methods
 
     #region Setup
-    public void Configure(string moduleIdValue, PowerUpModuleStage stageValue, int orderValue, bool isEnabledValue)
+    public void Configure(string moduleIdValue, bool isEnabledValue)
+    {
+        moduleId = moduleIdValue;
+        stage = PowerUpModuleStage.Execute;
+        isEnabled = isEnabledValue;
+    }
+
+    public void Configure(string moduleIdValue, PowerUpModuleStage stageValue, bool isEnabledValue)
     {
         moduleId = moduleIdValue;
         stage = stageValue;
-        order = orderValue;
         isEnabled = isEnabledValue;
     }
 

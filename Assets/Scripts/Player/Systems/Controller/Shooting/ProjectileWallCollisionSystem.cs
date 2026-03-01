@@ -43,14 +43,18 @@ public partial struct ProjectileWallCollisionSystem : ISystem
         float deltaTime = SystemAPI.Time.DeltaTime;
         EntityManager entityManager = state.EntityManager;
         BufferLookup<ProjectilePoolElement> poolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
+        BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
         ComponentLookup<PlayerMovementState> movementStateLookup = SystemAPI.GetComponentLookup<PlayerMovementState>(true);
+        ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
 
         foreach ((RefRO<Projectile> projectile,
                   RefRO<ProjectileOwner> owner,
                   RefRO<ProjectilePerfectCircleState> perfectCircleState,
+                  RefRO<ProjectileElementalPayload> elementalPayload,
                   RefRW<ProjectileBounceState> bounceState,
+                  RefRW<ProjectileSplitState> splitState,
                   RefRW<LocalTransform> projectileTransform,
-                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileOwner>, RefRO<ProjectilePerfectCircleState>, RefRW<ProjectileBounceState>, RefRW<LocalTransform>>()
+                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileOwner>, RefRO<ProjectilePerfectCircleState>, RefRO<ProjectileElementalPayload>, RefRW<ProjectileBounceState>, RefRW<ProjectileSplitState>, RefRW<LocalTransform>>()
                                                        .WithAll<ProjectileActive>()
                                                        .WithEntityAccess())
         {
@@ -89,6 +93,21 @@ public partial struct ProjectileWallCollisionSystem : ISystem
             {
                 entityManager.SetComponentData(projectileEntity, projectileData);
                 continue;
+            }
+
+            if (ProjectileSplitUtility.ShouldSplitOnDespawn(in splitState.ValueRO))
+            {
+                float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntity,
+                                                                            projectileTransform.ValueRO.Scale,
+                                                                            in projectileBaseScaleLookup);
+                ProjectileSplitUtility.TryEnqueueSplitRequests(in projectileData,
+                                                               in splitState.ValueRO,
+                                                               in projectileTransform.ValueRO,
+                                                               currentScaleMultiplier,
+                                                               in elementalPayload.ValueRO,
+                                                               in owner.ValueRO,
+                                                               ref shootRequestLookup);
+                splitState.ValueRW.CanSplit = 0;
             }
 
             ProjectilePoolUtility.SetProjectileParked(entityManager, projectileEntity);
@@ -156,6 +175,17 @@ public partial struct ProjectileWallCollisionSystem : ISystem
         bounceState.CurrentSpeedMultiplier = nextMultiplier;
         bounceState.RemainingBounces--;
         return true;
+    }
+
+    private static float ResolveCurrentScaleMultiplier(Entity projectileEntity,
+                                                       float currentScale,
+                                                       in ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup)
+    {
+        if (projectileBaseScaleLookup.HasComponent(projectileEntity) == false)
+            return math.max(0.01f, currentScale);
+
+        float baseScale = math.max(0.0001f, projectileBaseScaleLookup[projectileEntity].Value);
+        return math.max(0.01f, currentScale / baseScale);
     }
     #endregion
 

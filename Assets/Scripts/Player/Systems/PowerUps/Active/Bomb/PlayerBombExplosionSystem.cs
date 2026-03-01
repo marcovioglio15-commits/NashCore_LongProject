@@ -44,7 +44,12 @@ public partial struct PlayerBombExplosionSystem : ISystem
         NativeArray<EnemyData> enemyDataArray = default;
         NativeArray<EnemyHealth> enemyHealthArray = default;
         NativeArray<LocalTransform> enemyTransforms = default;
+        NativeArray<float3> enemyPositions = default;
+        NativeArray<float> enemyBodyRadii = default;
         NativeArray<byte> enemyDirtyFlags = default;
+        NativeParallelMultiHashMap<int, int> enemyCellMap = default;
+        float inverseCellSize = 0f;
+        float maximumEnemyRadius = 0.05f;
 
         if (enemyCount > 0)
         {
@@ -52,7 +57,24 @@ public partial struct PlayerBombExplosionSystem : ISystem
             enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.Temp);
             enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.Temp);
             enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             enemyDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+            enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Temp);
+
+            for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
+            {
+                enemyPositions[enemyIndex] = enemyTransforms[enemyIndex].Position;
+                float bodyRadius = math.max(0f, enemyDataArray[enemyIndex].BodyRadius);
+                enemyBodyRadii[enemyIndex] = bodyRadius;
+
+                if (bodyRadius > maximumEnemyRadius)
+                    maximumEnemyRadius = bodyRadius;
+            }
+
+            float cellSize = EnemySpatialHashUtility.ResolveCellSize(maximumEnemyRadius);
+            inverseCellSize = 1f / cellSize;
+            EnemySpatialHashUtility.BuildCellMap(in enemyPositions, inverseCellSize, ref enemyCellMap);
         }
 
         for (int bombIndex = 0; bombIndex < bombEntities.Length; bombIndex++)
@@ -64,10 +86,13 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                         in fuseState,
                                         enemyCount,
                                         in enemyEntities,
-                                        in enemyDataArray,
                                         ref enemyHealthArray,
-                                        in enemyTransforms,
-                                        ref enemyDirtyFlags);
+                                        in enemyPositions,
+                                        in enemyBodyRadii,
+                                        ref enemyDirtyFlags,
+                                        in enemyCellMap,
+                                        inverseCellSize,
+                                        maximumEnemyRadius);
 
             Entity bombEntity = bombEntities[bombIndex];
 
@@ -94,7 +119,10 @@ public partial struct PlayerBombExplosionSystem : ISystem
             enemyDataArray.Dispose();
             enemyHealthArray.Dispose();
             enemyTransforms.Dispose();
+            enemyPositions.Dispose();
+            enemyBodyRadii.Dispose();
             enemyDirtyFlags.Dispose();
+            enemyCellMap.Dispose();
         }
 
         bombEntities.Dispose();
@@ -107,10 +135,13 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                                 in BombFuseState fuseState,
                                                 int enemyCount,
                                                 in NativeArray<Entity> enemyEntities,
-                                                in NativeArray<EnemyData> enemyDataArray,
                                                 ref NativeArray<EnemyHealth> enemyHealthArray,
-                                                in NativeArray<LocalTransform> enemyTransforms,
-                                                ref NativeArray<byte> enemyDirtyFlags)
+                                                in NativeArray<float3> enemyPositions,
+                                                in NativeArray<float> enemyBodyRadii,
+                                                ref NativeArray<byte> enemyDirtyFlags,
+                                                in NativeParallelMultiHashMap<int, int> enemyCellMap,
+                                                float inverseCellSize,
+                                                float maximumEnemyRadius)
     {
         float explosionRadius = math.max(0.1f, fuseState.Radius);
         float explosionRadiusSquared = explosionRadius * explosionRadius;
@@ -121,39 +152,94 @@ public partial struct PlayerBombExplosionSystem : ISystem
 
         if (fuseState.AffectAllEnemiesInRadius != 0)
         {
-            for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
-                ApplyExplosionDamageToEnemy(ref state,
-                                            in fuseState,
-                                            enemyIndex,
-                                            explosionRadiusSquared,
-                                            explosionDamage,
-                                            in enemyEntities,
-                                            in enemyDataArray,
-                                            ref enemyHealthArray,
-                                            in enemyTransforms,
-                                            ref enemyDirtyFlags);
+            float queryRadius = explosionRadius + math.max(0f, maximumEnemyRadius);
+            EnemySpatialHashUtility.ResolveCellBounds(fuseState.Position,
+                                                      queryRadius,
+                                                      inverseCellSize,
+                                                      out int minCellX,
+                                                      out int maxCellX,
+                                                      out int minCellY,
+                                                      out int maxCellY);
+
+            for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+            {
+                for (int cellY = minCellY; cellY <= maxCellY; cellY++)
+                {
+                    int cellKey = EnemySpatialHashUtility.EncodeCell(cellX, cellY);
+                    NativeParallelMultiHashMapIterator<int> iterator;
+                    int enemyIndex;
+
+                    if (enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator) == false)
+                        continue;
+
+                    do
+                    {
+                        if (enemyIndex < 0 || enemyIndex >= enemyCount)
+                            continue;
+
+                        ApplyExplosionDamageToEnemy(ref state,
+                                                    in fuseState,
+                                                    enemyIndex,
+                                                    explosionRadiusSquared,
+                                                    explosionDamage,
+                                                    in enemyEntities,
+                                                    ref enemyHealthArray,
+                                                    in enemyPositions,
+                                                    in enemyBodyRadii,
+                                                    ref enemyDirtyFlags);
+                    }
+                    while (enemyCellMap.TryGetNextValue(out enemyIndex, ref iterator));
+                }
+            }
 
             return;
         }
 
         int closestEnemyIndex = -1;
         float closestDistanceSquared = float.MaxValue;
+        float closestQueryRadius = explosionRadius + math.max(0f, maximumEnemyRadius);
+        EnemySpatialHashUtility.ResolveCellBounds(fuseState.Position,
+                                                  closestQueryRadius,
+                                                  inverseCellSize,
+                                                  out int closestMinCellX,
+                                                  out int closestMaxCellX,
+                                                  out int closestMinCellY,
+                                                  out int closestMaxCellY);
 
-        for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
+        for (int cellX = closestMinCellX; cellX <= closestMaxCellX; cellX++)
         {
-            float3 enemyPosition = enemyTransforms[enemyIndex].Position;
-            float3 delta = enemyPosition - fuseState.Position;
-            delta.y = 0f;
-            float sqrDistance = math.lengthsq(delta);
+            for (int cellY = closestMinCellY; cellY <= closestMaxCellY; cellY++)
+            {
+                int cellKey = EnemySpatialHashUtility.EncodeCell(cellX, cellY);
+                NativeParallelMultiHashMapIterator<int> iterator;
+                int enemyIndex;
 
-            if (sqrDistance > explosionRadiusSquared)
-                continue;
+                if (enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator) == false)
+                    continue;
 
-            if (sqrDistance >= closestDistanceSquared)
-                continue;
+                do
+                {
+                    if (enemyIndex < 0 || enemyIndex >= enemyCount)
+                        continue;
 
-            closestDistanceSquared = sqrDistance;
-            closestEnemyIndex = enemyIndex;
+                    float3 enemyPosition = enemyPositions[enemyIndex];
+                    float3 delta = enemyPosition - fuseState.Position;
+                    delta.y = 0f;
+                    float sqrDistance = math.lengthsq(delta);
+                    float bodyRadius = enemyBodyRadii[enemyIndex];
+                    float bodyRadiusSquared = bodyRadius * bodyRadius;
+
+                    if (sqrDistance > explosionRadiusSquared + bodyRadiusSquared)
+                        continue;
+
+                    if (sqrDistance >= closestDistanceSquared)
+                        continue;
+
+                    closestDistanceSquared = sqrDistance;
+                    closestEnemyIndex = enemyIndex;
+                }
+                while (enemyCellMap.TryGetNextValue(out enemyIndex, ref iterator));
+            }
         }
 
         if (closestEnemyIndex < 0)
@@ -165,9 +251,9 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                     explosionRadiusSquared,
                                     explosionDamage,
                                     in enemyEntities,
-                                    in enemyDataArray,
                                     ref enemyHealthArray,
-                                    in enemyTransforms,
+                                    in enemyPositions,
+                                    in enemyBodyRadii,
                                     ref enemyDirtyFlags);
     }
 
@@ -177,9 +263,9 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                                     float explosionRadiusSquared,
                                                     float explosionDamage,
                                                     in NativeArray<Entity> enemyEntities,
-                                                    in NativeArray<EnemyData> enemyDataArray,
                                                     ref NativeArray<EnemyHealth> enemyHealthArray,
-                                                    in NativeArray<LocalTransform> enemyTransforms,
+                                                    in NativeArray<float3> enemyPositions,
+                                                    in NativeArray<float> enemyBodyRadii,
                                                     ref NativeArray<byte> enemyDirtyFlags)
     {
         Entity enemyEntity = enemyEntities[enemyIndex];
@@ -188,11 +274,11 @@ public partial struct PlayerBombExplosionSystem : ISystem
         if (entityManager.Exists(enemyEntity) == false)
             return;
 
-        float3 enemyPosition = enemyTransforms[enemyIndex].Position;
+        float3 enemyPosition = enemyPositions[enemyIndex];
         float3 delta = enemyPosition - fuseState.Position;
         delta.y = 0f;
         float sqrDistance = math.lengthsq(delta);
-        float bodyRadius = math.max(0f, enemyDataArray[enemyIndex].BodyRadius);
+        float bodyRadius = math.max(0f, enemyBodyRadii[enemyIndex]);
         float bodyRadiusSquared = bodyRadius * bodyRadius;
 
         if (sqrDistance > explosionRadiusSquared + bodyRadiusSquared)

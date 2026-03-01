@@ -2,6 +2,19 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
+public enum PlayerPowerUpCheatCommandType
+{
+    None = 0,
+    RefillEnergy = 1,
+    ResetCooldowns = 2,
+    SwapActiveSlots = 3,
+    SetPrimaryActiveKind = 4,
+    SetSecondaryActiveKind = 5,
+    AddPassiveByKind = 6,
+    RemovePassiveByKind = 7,
+    ClearPassives = 8
+}
+
 /// <summary>
 /// Holds runtime state for power-up slots and activation inputs.
 /// </summary>
@@ -23,6 +36,16 @@ public struct PlayerPowerUpsState : IComponentData
 }
 
 /// <summary>
+/// Runtime cheat command queue consumed by PlayerPowerUpCheatSystem.
+/// </summary>
+public struct PlayerPowerUpCheatCommand : IBufferElementData
+{
+    public PlayerPowerUpCheatCommandType CommandType;
+    public ActiveToolKind ActiveKind;
+    public PassiveToolKind PassiveKind;
+}
+
+/// <summary>
 /// Holds aggregated runtime multipliers from equipped passive tools.
 /// </summary>
 public struct PlayerPassiveToolsState : IComponentData
@@ -32,6 +55,8 @@ public struct PlayerPassiveToolsState : IComponentData
     public float ProjectileSpeedMultiplier;
     public float ProjectileLifetimeSecondsMultiplier;
     public float ProjectileLifetimeRangeMultiplier;
+    public byte HasShotgun;
+    public ShotgunPowerUpConfig Shotgun;
     public byte HasElementalProjectiles;
     public ElementalProjectilesPassiveConfig ElementalProjectiles;
     public byte HasPerfectCircle;
@@ -44,6 +69,8 @@ public struct PlayerPassiveToolsState : IComponentData
     public ExplosionPassiveConfig Explosion;
     public byte HasElementalTrail;
     public ElementalTrailPassiveConfig ElementalTrail;
+    public byte HasHeal;
+    public PassiveHealConfig Heal;
 }
 
 /// <summary>
@@ -70,6 +97,19 @@ public struct PlayerBulletTimeState : IComponentData
 {
     public float RemainingDuration;
     public float SlowPercent;
+}
+
+/// <summary>
+/// Holds runtime state for heal-over-time effects triggered by power ups.
+/// </summary>
+public struct PlayerHealOverTimeState : IComponentData
+{
+    public byte IsActive;
+    public float HealPerSecond;
+    public float RemainingTotalHeal;
+    public float RemainingDuration;
+    public float TickIntervalSeconds;
+    public float TickTimer;
 }
 
 /// <summary>
@@ -119,6 +159,15 @@ public struct BombExplodeRequest : IComponentData
 /// Holds runtime timers for passive explosion logic.
 /// </summary>
 public struct PlayerPassiveExplosionState : IComponentData
+{
+    public float CooldownRemaining;
+    public float PreviousObservedHealth;
+}
+
+/// <summary>
+/// Holds runtime timers for passive heal-over-time logic.
+/// </summary>
+public struct PlayerPassiveHealState : IComponentData
 {
     public float CooldownRemaining;
     public float PreviousObservedHealth;

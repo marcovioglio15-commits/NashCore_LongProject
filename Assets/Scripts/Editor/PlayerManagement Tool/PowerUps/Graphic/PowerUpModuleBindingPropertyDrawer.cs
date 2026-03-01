@@ -13,14 +13,12 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
         VisualElement root = new VisualElement();
         SerializedProperty moduleIdProperty = property.FindPropertyRelative("moduleId");
         SerializedProperty stageProperty = property.FindPropertyRelative("stage");
-        SerializedProperty orderProperty = property.FindPropertyRelative("order");
         SerializedProperty enabledProperty = property.FindPropertyRelative("isEnabled");
         SerializedProperty useOverrideProperty = property.FindPropertyRelative("useOverridePayload");
         SerializedProperty overridePayloadProperty = property.FindPropertyRelative("overridePayload");
 
         if (moduleIdProperty == null ||
             stageProperty == null ||
-            orderProperty == null ||
             enabledProperty == null ||
             useOverrideProperty == null ||
             overridePayloadProperty == null)
@@ -43,23 +41,9 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
 
         HelpBox moduleKindInfoBox = new HelpBox(string.Empty, HelpBoxMessageType.Info);
         moduleKindInfoBox.style.marginTop = 2f;
+        ApplyFieldAlignedBoxStyle(moduleKindInfoBox);
         root.Add(moduleKindInfoBox);
 
-        List<PowerUpModuleStage> stageOptions = BuildStageOptions();
-        PowerUpModuleStage currentStage = ResolveStage(stageProperty);
-        PopupField<PowerUpModuleStage> stagePopup = new PopupField<PowerUpModuleStage>("Stage", stageOptions, currentStage);
-        stagePopup.tooltip = "Execution stage used by this binding.";
-        root.Add(stagePopup);
-
-        HelpBox stageInfoBox = new HelpBox(PowerUpModuleEnumDescriptions.GetStageDescription(currentStage), HelpBoxMessageType.Info);
-        stageInfoBox.style.marginTop = 2f;
-        root.Add(stageInfoBox);
-
-        HelpBox stageCoherenceBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
-        stageCoherenceBox.style.marginTop = 2f;
-        root.Add(stageCoherenceBox);
-
-        AddField(root, orderProperty, "Order");
         AddField(root, enabledProperty, "Enabled");
         AddField(root, useOverrideProperty, "Use Override Payload");
 
@@ -78,10 +62,7 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
                          useOverrideProperty,
                          overridePayloadProperty,
                          modulePopup,
-                         stagePopup,
                          moduleKindInfoBox,
-                         stageInfoBox,
-                         stageCoherenceBox,
                          overrideContainer);
 
         modulePopup.RegisterValueChangedCallback(evt =>
@@ -98,31 +79,7 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
                              useOverrideProperty,
                              overridePayloadProperty,
                              modulePopup,
-                             stagePopup,
                              moduleKindInfoBox,
-                             stageInfoBox,
-                             stageCoherenceBox,
-                             overrideContainer);
-        });
-
-        stagePopup.RegisterValueChangedCallback(evt =>
-        {
-            if ((int)evt.newValue == stageProperty.enumValueIndex)
-                return;
-
-            stageProperty.serializedObject.Update();
-            stageProperty.enumValueIndex = (int)evt.newValue;
-            stageProperty.serializedObject.ApplyModifiedProperties();
-            RefreshBindingUi(property.serializedObject,
-                             moduleIdProperty,
-                             stageProperty,
-                             useOverrideProperty,
-                             overridePayloadProperty,
-                             modulePopup,
-                             stagePopup,
-                             moduleKindInfoBox,
-                             stageInfoBox,
-                             stageCoherenceBox,
                              overrideContainer);
         });
 
@@ -134,25 +91,7 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
                              useOverrideProperty,
                              overridePayloadProperty,
                              modulePopup,
-                             stagePopup,
                              moduleKindInfoBox,
-                             stageInfoBox,
-                             stageCoherenceBox,
-                             overrideContainer);
-        });
-
-        root.TrackPropertyValue(stageProperty, changedProperty =>
-        {
-            RefreshBindingUi(property.serializedObject,
-                             moduleIdProperty,
-                             changedProperty,
-                             useOverrideProperty,
-                             overridePayloadProperty,
-                             modulePopup,
-                             stagePopup,
-                             moduleKindInfoBox,
-                             stageInfoBox,
-                             stageCoherenceBox,
                              overrideContainer);
         });
 
@@ -164,10 +103,7 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
                              changedProperty,
                              overridePayloadProperty,
                              modulePopup,
-                             stagePopup,
                              moduleKindInfoBox,
-                             stageInfoBox,
-                             stageCoherenceBox,
                              overrideContainer);
         });
 
@@ -180,10 +116,7 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
                                          SerializedProperty useOverrideProperty,
                                          SerializedProperty overridePayloadProperty,
                                          PopupField<string> modulePopup,
-                                         PopupField<PowerUpModuleStage> stagePopup,
                                          HelpBox moduleKindInfoBox,
-                                         HelpBox stageInfoBox,
-                                         HelpBox stageCoherenceBox,
                                          VisualElement overrideContainer)
     {
         string moduleId = moduleIdProperty != null ? moduleIdProperty.stringValue : string.Empty;
@@ -208,14 +141,16 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
         PowerUpModuleStage moduleDefaultStage;
         string moduleDisplayName;
         bool moduleResolved = TryResolveModuleInfo(serializedObject, resolvedModuleId, out moduleKind, out moduleDefaultStage, out moduleDisplayName);
-        PowerUpModuleStage bindingStage = ResolveStage(stageProperty);
+        PowerUpModuleStage bindingStage = moduleResolved ? moduleDefaultStage : ResolveStage(stageProperty);
 
-        if (System.Collections.Generic.EqualityComparer<PowerUpModuleStage>.Default.Equals(stagePopup.value, bindingStage) == false)
-            stagePopup.SetValueWithoutNotify(bindingStage);
+        if (stageProperty != null && stageProperty.propertyType == SerializedPropertyType.Enum && stageProperty.enumValueIndex != (int)bindingStage)
+        {
+            stageProperty.serializedObject.Update();
+            stageProperty.enumValueIndex = (int)bindingStage;
+            stageProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
 
-        stageInfoBox.text = PowerUpModuleEnumDescriptions.GetStageDescription(bindingStage);
         UpdateModuleInfoBox(moduleKindInfoBox, moduleResolved, moduleKind, moduleDisplayName);
-        UpdateStageCoherenceBox(stageCoherenceBox, moduleResolved, moduleKind, moduleDisplayName, moduleDefaultStage, bindingStage);
         RebuildOverrideContainer(overrideContainer, useOverrideProperty, overridePayloadProperty, moduleResolved, moduleKind);
     }
 
@@ -236,38 +171,6 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
                                      moduleKind,
                                      PowerUpModuleEnumDescriptions.GetModuleKindDescription(moduleKind));
         infoBox.messageType = HelpBoxMessageType.Info;
-    }
-
-    private static void UpdateStageCoherenceBox(HelpBox coherenceBox,
-                                                bool moduleResolved,
-                                                PowerUpModuleKind moduleKind,
-                                                string moduleDisplayName,
-                                                PowerUpModuleStage moduleDefaultStage,
-                                                PowerUpModuleStage bindingStage)
-    {
-        if (coherenceBox == null)
-            return;
-
-        if (moduleResolved == false)
-        {
-            coherenceBox.style.display = DisplayStyle.None;
-            coherenceBox.text = string.Empty;
-            return;
-        }
-
-        if (bindingStage == moduleDefaultStage)
-        {
-            coherenceBox.style.display = DisplayStyle.None;
-            coherenceBox.text = string.Empty;
-            return;
-        }
-
-        coherenceBox.style.display = DisplayStyle.Flex;
-        coherenceBox.text = string.Format("Binding Stage '{0}' overrides module default stage '{1}' for '{2}' ({3}).",
-                                          bindingStage,
-                                          moduleDefaultStage,
-                                          moduleDisplayName,
-                                          moduleKind);
     }
 
     private static void RebuildOverrideContainer(VisualElement overrideContainer,
@@ -320,9 +223,7 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
             return;
         }
 
-        PropertyField payloadField = new PropertyField(payloadProperty, payloadLabel);
-        payloadField.BindProperty(payloadProperty);
-        overrideContainer.Add(payloadField);
+        PowerUpModuleDefinitionPropertyDrawer.BuildPayloadEditor(overrideContainer, payloadProperty, moduleKind, payloadLabel);
     }
 
     private static bool TryResolveModuleInfo(SerializedObject serializedObject,
@@ -362,10 +263,9 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
                 continue;
 
             SerializedProperty moduleKindProperty = moduleElement.FindPropertyRelative("moduleKind");
-            SerializedProperty defaultStageProperty = moduleElement.FindPropertyRelative("defaultStage");
             SerializedProperty displayNameProperty = moduleElement.FindPropertyRelative("displayName");
             moduleKind = ResolveModuleKindFromEnumProperty(moduleKindProperty);
-            defaultStage = ResolveStage(defaultStageProperty);
+            defaultStage = PowerUpModuleKindUtility.ResolveStageFromKind(moduleKind);
             displayName = displayNameProperty != null && string.IsNullOrWhiteSpace(displayNameProperty.stringValue) == false
                 ? displayNameProperty.stringValue
                 : moduleId;
@@ -386,6 +286,20 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
         PropertyField field = new PropertyField(property, label);
         field.BindProperty(property);
         parent.Add(field);
+    }
+
+    private static void ApplyFieldAlignedBoxStyle(VisualElement boxElement)
+    {
+        if (boxElement == null)
+            return;
+
+        float leftMargin = EditorGUIUtility.labelWidth + 4f;
+
+        if (leftMargin < 130f)
+            leftMargin = 130f;
+
+        boxElement.style.marginLeft = leftMargin;
+        boxElement.style.marginRight = 2f;
     }
 
     private static string ResolveInitialModuleId(string currentId, List<string> options)
@@ -452,17 +366,6 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
         }
 
         return false;
-    }
-
-    private static List<PowerUpModuleStage> BuildStageOptions()
-    {
-        List<PowerUpModuleStage> stageOptions = new List<PowerUpModuleStage>();
-        IReadOnlyList<PowerUpModuleStage> source = PowerUpModuleEnumDescriptions.StageOptions;
-
-        for (int index = 0; index < source.Count; index++)
-            stageOptions.Add(source[index]);
-
-        return stageOptions;
     }
 
     private static PowerUpModuleKind ResolveModuleKindFromEnumProperty(SerializedProperty moduleKindProperty)

@@ -1,4 +1,6 @@
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
 
 /// <summary>
 /// This system handles the despawning of projectile entities when they exceed their maximum range 
@@ -22,7 +24,9 @@ public partial struct ProjectileDespawnSystem : ISystem
         state.RequireForUpdate<Projectile>();
         state.RequireForUpdate<ProjectileRuntimeState>();
         state.RequireForUpdate<ProjectileOwner>();
+        state.RequireForUpdate<ProjectileSplitState>();
         state.RequireForUpdate<ProjectilePerfectCircleState>();
+        state.RequireForUpdate<LocalTransform>();
         state.RequireForUpdate<ProjectileActive>();
     }
 
@@ -34,12 +38,17 @@ public partial struct ProjectileDespawnSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         BufferLookup<ProjectilePoolElement> poolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
+        BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
+        ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
 
         foreach ((RefRO<Projectile> projectile,
                   RefRO<ProjectileRuntimeState> runtimeState,
                   RefRO<ProjectilePerfectCircleState> perfectCircleState,
+                  RefRO<ProjectileElementalPayload> elementalPayload,
+                  RefRW<ProjectileSplitState> splitState,
+                  RefRO<LocalTransform> projectileTransform,
                   RefRO<ProjectileOwner> owner,
-                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileRuntimeState>, RefRO<ProjectilePerfectCircleState>, RefRO<ProjectileOwner>>()
+                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileRuntimeState>, RefRO<ProjectilePerfectCircleState>, RefRO<ProjectileElementalPayload>, RefRW<ProjectileSplitState>, RefRO<LocalTransform>, RefRO<ProjectileOwner>>()
                                                       .WithAll<ProjectileActive>()
                                                       .WithEntityAccess())
         {
@@ -58,6 +67,21 @@ public partial struct ProjectileDespawnSystem : ISystem
             else if (reachedRange == false && reachedLifetime == false)
                 continue;
 
+            if (ProjectileSplitUtility.ShouldSplitOnDespawn(in splitState.ValueRO))
+            {
+                float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntity,
+                                                                            projectileTransform.ValueRO.Scale,
+                                                                            in projectileBaseScaleLookup);
+                ProjectileSplitUtility.TryEnqueueSplitRequests(in projectile.ValueRO,
+                                                               in splitState.ValueRO,
+                                                               in projectileTransform.ValueRO,
+                                                               currentScaleMultiplier,
+                                                               in elementalPayload.ValueRO,
+                                                               in owner.ValueRO,
+                                                               ref shootRequestLookup);
+                splitState.ValueRW.CanSplit = 0;
+            }
+
             ProjectilePoolUtility.SetProjectileParked(state.EntityManager, projectileEntity);
             state.EntityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, false);
 
@@ -72,6 +96,19 @@ public partial struct ProjectileDespawnSystem : ISystem
                 ProjectileEntity = projectileEntity
             });
         }
+    }
+    #endregion
+
+    #region Helpers
+    private static float ResolveCurrentScaleMultiplier(Entity projectileEntity,
+                                                       float currentScale,
+                                                       in ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup)
+    {
+        if (projectileBaseScaleLookup.HasComponent(projectileEntity) == false)
+            return math.max(0.01f, currentScale);
+
+        float baseScale = math.max(0.0001f, projectileBaseScaleLookup[projectileEntity].Value);
+        return math.max(0.01f, currentScale / baseScale);
     }
     #endregion
 

@@ -63,13 +63,26 @@ public partial struct PlayerInputBridgeSystem : ISystem
             }
         }
 
-        foreach (RefRW<PlayerInputState> inputState in SystemAPI.Query<RefRW<PlayerInputState>>())
+        bool assignedLocalInput = false;
+
+        foreach (RefRW<PlayerInputState> inputState in SystemAPI.Query<RefRW<PlayerInputState>>().WithAll<PlayerControllerConfig>())
         {
-            inputState.ValueRW.Move = move;
-            inputState.ValueRW.Look = look;
-            inputState.ValueRW.Shoot = shoot;
-            inputState.ValueRW.PowerUpPrimary = powerUpPrimary;
-            inputState.ValueRW.PowerUpSecondary = powerUpSecondary;
+            if (assignedLocalInput == false)
+            {
+                inputState.ValueRW.Move = move;
+                inputState.ValueRW.Look = look;
+                inputState.ValueRW.Shoot = shoot;
+                inputState.ValueRW.PowerUpPrimary = powerUpPrimary;
+                inputState.ValueRW.PowerUpSecondary = powerUpSecondary;
+                assignedLocalInput = true;
+                continue;
+            }
+
+            inputState.ValueRW.Move = float2.zero;
+            inputState.ValueRW.Look = float2.zero;
+            inputState.ValueRW.Shoot = 0f;
+            inputState.ValueRW.PowerUpPrimary = 0f;
+            inputState.ValueRW.PowerUpSecondary = 0f;
         }
 
         #if UNITY_EDITOR

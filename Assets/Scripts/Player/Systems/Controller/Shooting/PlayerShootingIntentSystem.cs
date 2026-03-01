@@ -18,6 +18,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
 {
     #region Constants
     private const int MaxAutomaticShotsPerFrame = 4;
+    private const float DirectionLengthEpsilon = 1e-6f;
     #endregion
 
     #region Lifecycle
@@ -85,6 +86,11 @@ public partial struct PlayerShootingIntentSystem : ISystem
             float projectileExplosionRadius = math.max(0f, values.ExplosionRadius);
             float projectileLifetime = ApplyLifetimeMultiplier(values.Lifetime, passiveToolsState.ProjectileLifetimeSecondsMultiplier);
             float projectileRange = ApplyLifetimeMultiplier(values.Range, passiveToolsState.ProjectileLifetimeRangeMultiplier);
+            bool hasPassiveShotgunPayload = passiveToolsState.HasShotgun != 0;
+            int passiveShotgunProjectileCount = hasPassiveShotgunPayload ? math.max(1, passiveToolsState.Shotgun.ProjectileCount) : 1;
+            float passiveShotgunConeAngle = hasPassiveShotgunPayload ? math.max(0f, passiveToolsState.Shotgun.ConeAngleDegrees) : 0f;
+            ProjectilePenetrationMode passivePenetrationMode = hasPassiveShotgunPayload ? passiveToolsState.Shotgun.PenetrationMode : ProjectilePenetrationMode.None;
+            int passiveMaxPenetrations = hasPassiveShotgunPayload ? math.max(0, passiveToolsState.Shotgun.MaxPenetrations) : 0;
 
             if (isShootingSuppressed)
             {
@@ -147,23 +153,48 @@ public partial struct PlayerShootingIntentSystem : ISystem
             // shoot direction, and shooting parameters from the config
             for (int shotIndex = 0; shotIndex < shotsToFire; shotIndex++)
             {
-                ShootRequest request = new ShootRequest
+                if (passiveShotgunProjectileCount <= 1)
                 {
-                    Position = spawnPosition,
-                    Direction = shootDirection,
-                    Speed = projectileSpeed,
-                    ExplosionRadius = projectileExplosionRadius,
-                    Range = projectileRange,
-                    Lifetime = projectileLifetime,
-                    Damage = projectileDamage,
-                    ProjectileScaleMultiplier = projectileScaleMultiplier,
-                    PenetrationMode = ProjectilePenetrationMode.None,
-                    MaxPenetrations = 0,
-                    InheritPlayerSpeed = inheritPlayerSpeed,
-                    IsSplitChild = 0
-                };
+                    AddShootRequest(shootRequests,
+                                    spawnPosition,
+                                    shootDirection,
+                                    projectileSpeed,
+                                    projectileExplosionRadius,
+                                    projectileRange,
+                                    projectileLifetime,
+                                    projectileDamage,
+                                    projectileScaleMultiplier,
+                                    inheritPlayerSpeed,
+                                    passivePenetrationMode,
+                                    passiveMaxPenetrations);
+                    continue;
+                }
 
-                shootRequests.Add(request);
+                float halfCone = passiveShotgunConeAngle * 0.5f;
+                float spreadStep = passiveShotgunConeAngle / (passiveShotgunProjectileCount - 1);
+
+                for (int projectileIndex = 0; projectileIndex < passiveShotgunProjectileCount; projectileIndex++)
+                {
+                    float spreadAngleDegrees = -halfCone + spreadStep * projectileIndex;
+                    quaternion rotationOffset = quaternion.AxisAngle(new float3(0f, 1f, 0f), math.radians(spreadAngleDegrees));
+                    float3 spreadDirection = math.normalizesafe(math.rotate(rotationOffset, shootDirection), shootDirection);
+
+                    if (math.lengthsq(spreadDirection) <= DirectionLengthEpsilon)
+                        spreadDirection = shootDirection;
+
+                    AddShootRequest(shootRequests,
+                                    spawnPosition,
+                                    spreadDirection,
+                                    projectileSpeed,
+                                    projectileExplosionRadius,
+                                    projectileRange,
+                                    projectileLifetime,
+                                    projectileDamage,
+                                    projectileScaleMultiplier,
+                                    inheritPlayerSpeed,
+                                    passivePenetrationMode,
+                                    passiveMaxPenetrations);
+                }
             }
         }
     }
@@ -310,7 +341,9 @@ public partial struct PlayerShootingIntentSystem : ISystem
             ProjectileDamageMultiplier = 1f,
             ProjectileSpeedMultiplier = 1f,
             ProjectileLifetimeSecondsMultiplier = 1f,
-            ProjectileLifetimeRangeMultiplier = 1f
+            ProjectileLifetimeRangeMultiplier = 1f,
+            HasShotgun = 0,
+            Shotgun = default
         };
     }
 
@@ -320,6 +353,40 @@ public partial struct PlayerShootingIntentSystem : ISystem
             return baseLifetimeValue;
 
         return math.max(0f, baseLifetimeValue * math.max(0f, lifetimeMultiplier));
+    }
+
+    private static void AddShootRequest(DynamicBuffer<ShootRequest> shootRequests,
+                                        float3 spawnPosition,
+                                        float3 shootDirection,
+                                        float projectileSpeed,
+                                        float projectileExplosionRadius,
+                                        float projectileRange,
+                                        float projectileLifetime,
+                                        float projectileDamage,
+                                        float projectileScaleMultiplier,
+                                        byte inheritPlayerSpeed,
+                                        ProjectilePenetrationMode penetrationMode,
+                                        int maxPenetrations)
+    {
+        ShootRequest request = new ShootRequest
+        {
+            Position = spawnPosition,
+            Direction = shootDirection,
+            Speed = projectileSpeed,
+            ExplosionRadius = projectileExplosionRadius,
+            Range = projectileRange,
+            Lifetime = projectileLifetime,
+            Damage = projectileDamage,
+            ProjectileScaleMultiplier = projectileScaleMultiplier,
+            PenetrationMode = penetrationMode,
+            MaxPenetrations = maxPenetrations,
+            InheritPlayerSpeed = inheritPlayerSpeed,
+            IsSplitChild = 0,
+            HasElementalPayloadOverride = 0,
+            ElementalEffectOverride = default,
+            ElementalStacksPerHitOverride = 0f
+        };
+        shootRequests.Add(request);
     }
     #endregion
 }

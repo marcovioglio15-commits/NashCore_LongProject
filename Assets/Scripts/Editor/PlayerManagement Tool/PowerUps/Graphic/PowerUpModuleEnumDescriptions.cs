@@ -20,30 +20,22 @@ public static class PowerUpModuleEnumDescriptions
         PowerUpModuleKind.TriggerPress,
         PowerUpModuleKind.TriggerRelease,
         PowerUpModuleKind.TriggerHoldCharge,
+        PowerUpModuleKind.TriggerEvent,
         PowerUpModuleKind.GateResource,
-        PowerUpModuleKind.GateCooldown,
         PowerUpModuleKind.StateSuppressShooting,
-        PowerUpModuleKind.EffectProjectilePatternCone,
-        PowerUpModuleKind.EffectProjectileScale,
-        PowerUpModuleKind.EffectProjectilePenetration,
-        PowerUpModuleKind.EffectSpawnBomb,
-        PowerUpModuleKind.EffectExplosionAreaDamage,
-        PowerUpModuleKind.EffectDash,
-        PowerUpModuleKind.EffectHealMissingHealth,
-        PowerUpModuleKind.EffectTimeDilationEnemies,
-        PowerUpModuleKind.HookOnPlayerMovementStep,
-        PowerUpModuleKind.HookOnEnemyDeath,
-        PowerUpModuleKind.HookOnProjectileSpawned,
-        PowerUpModuleKind.HookOnProjectileWallHit,
-        PowerUpModuleKind.HookOnProjectileDeath,
-        PowerUpModuleKind.PassiveSpawnTrailSegment,
-        PowerUpModuleKind.PassiveAreaTickApplyElement,
-        PowerUpModuleKind.PassiveDeathExplosion,
-        PowerUpModuleKind.PassiveProjectileOrbitOverride,
-        PowerUpModuleKind.PassiveProjectileBounceOnWalls,
-        PowerUpModuleKind.PassiveProjectileSplitOnDeath
+        PowerUpModuleKind.ProjectilesPatternCone,
+        PowerUpModuleKind.ProjectilesTuning,
+        PowerUpModuleKind.SpawnObject,
+        PowerUpModuleKind.Dash,
+        PowerUpModuleKind.TimeDilationEnemies,
+        PowerUpModuleKind.Heal,
+        PowerUpModuleKind.SpawnTrailSegment,
+        PowerUpModuleKind.AreaTickApplyElement,
+        PowerUpModuleKind.DeathExplosion,
+        PowerUpModuleKind.OrbitalProjectiles,
+        PowerUpModuleKind.BouncingProjectiles,
+        PowerUpModuleKind.ProjectileSplit
     };
-
     #endregion
 
     #region Properties
@@ -62,7 +54,6 @@ public static class PowerUpModuleEnumDescriptions
             return ModuleKindValues;
         }
     }
-
     #endregion
 
     #region Methods
@@ -70,12 +61,12 @@ public static class PowerUpModuleEnumDescriptions
     #region Public API
     public static string FormatStageOption(PowerUpModuleStage stage)
     {
-        return string.Concat(stage.ToString(), " - ", GetStageDescription(stage));
+        return stage.ToString();
     }
 
     public static string FormatModuleKindOption(PowerUpModuleKind moduleKind)
     {
-        return string.Concat(moduleKind.ToString(), " - ", GetModuleKindDescription(moduleKind));
+        return moduleKind.ToString();
     }
 
     public static string GetStageDescription(PowerUpModuleStage stage)
@@ -83,21 +74,21 @@ public static class PowerUpModuleEnumDescriptions
         switch (stage)
         {
             case PowerUpModuleStage.Trigger:
-                return "Input/event detection point that starts the flow.";
+                return "Input trigger stage.";
             case PowerUpModuleStage.PreGate:
-                return "Optional normalization step before resource/cooldown checks.";
+                return "Pre-gate stage used before resource checks.";
             case PowerUpModuleStage.Gate:
-                return "Validation and cost checks that can block activation.";
+                return "Resource and validation stage.";
             case PowerUpModuleStage.StateEnter:
-                return "State changes enabled before effects are executed.";
+                return "State enter stage for temporary states.";
             case PowerUpModuleStage.Execute:
-                return "Main gameplay effect execution stage.";
+                return "Direct execution gameplay effects.";
             case PowerUpModuleStage.StateExit:
-                return "Cleanup stage when transient states end.";
+                return "State exit stage.";
             case PowerUpModuleStage.PostExecute:
-                return "Post-processing stage after primary effects.";
+                return "Post execution stage.";
             case PowerUpModuleStage.Hook:
-                return "Event-driven passive hook evaluated by runtime listeners.";
+                return "Event-driven hook stage.";
             default:
                 return "No description available.";
         }
@@ -108,55 +99,41 @@ public static class PowerUpModuleEnumDescriptions
         switch (moduleKind)
         {
             case PowerUpModuleKind.TriggerPress:
-                return "Fires once when input crosses press threshold.";
+                return "Triggers once when input is pressed.";
             case PowerUpModuleKind.TriggerRelease:
-                return "Fires once when pressed input is released.";
+                return "Triggers once when input is released.";
             case PowerUpModuleKind.TriggerHoldCharge:
                 return "Accumulates charge while input is held.";
+            case PowerUpModuleKind.TriggerEvent:
+                return "Triggers execution from configured runtime event.";
             case PowerUpModuleKind.GateResource:
-                return "Consumes/validates energy or health resource.";
-            case PowerUpModuleKind.GateCooldown:
-                return "Prevents activation until cooldown reaches zero.";
+                return "Applies activation resource, recharge and cooldown checks.";
             case PowerUpModuleKind.StateSuppressShooting:
-                return "Temporarily blocks standard shooting logic.";
-            case PowerUpModuleKind.EffectProjectilePatternCone:
-                return "Emits multiple projectiles in a cone spread.";
-            case PowerUpModuleKind.EffectProjectileScale:
-                return "Applies projectile size/damage/speed/range multipliers.";
-            case PowerUpModuleKind.EffectProjectilePenetration:
-                return "Configures projectile pass-through behavior.";
-            case PowerUpModuleKind.EffectSpawnBomb:
-                return "Spawns and handles bomb projectile behavior.";
-            case PowerUpModuleKind.EffectExplosionAreaDamage:
-                return "Applies radial damage in an explosion area.";
-            case PowerUpModuleKind.EffectDash:
-                return "Performs a movement dash with optional i-frames.";
-            case PowerUpModuleKind.EffectHealMissingHealth:
-                return "Heals missing HP by a flat amount.";
-            case PowerUpModuleKind.EffectTimeDilationEnemies:
-                return "Slows enemy simulation for a duration.";
-            case PowerUpModuleKind.HookOnPlayerMovementStep:
-                return "Passive trigger executed on movement step updates.";
-            case PowerUpModuleKind.HookOnEnemyDeath:
-                return "Passive trigger executed when an enemy dies.";
-            case PowerUpModuleKind.HookOnProjectileSpawned:
-                return "Passive trigger executed when a projectile spawns.";
-            case PowerUpModuleKind.HookOnProjectileWallHit:
-                return "Passive trigger executed on projectile wall collision.";
-            case PowerUpModuleKind.HookOnProjectileDeath:
-                return "Passive trigger executed when a projectile despawns.";
-            case PowerUpModuleKind.PassiveSpawnTrailSegment:
-                return "Spawns persistent trail segments around movement path.";
-            case PowerUpModuleKind.PassiveAreaTickApplyElement:
-                return "Applies elemental stacks periodically in an area.";
-            case PowerUpModuleKind.PassiveDeathExplosion:
-                return "Triggers explosions from eligible death events.";
-            case PowerUpModuleKind.PassiveProjectileOrbitOverride:
-                return "Overrides projectile movement to orbital pattern.";
-            case PowerUpModuleKind.PassiveProjectileBounceOnWalls:
+                return "Suppresses base shooting and can interrupt opposite slot.";
+            case PowerUpModuleKind.ProjectilesPatternCone:
+                return "Sets projectile cone pattern emission.";
+            case PowerUpModuleKind.ProjectilesTuning:
+                return "Sets projectile multipliers and penetration behavior.";
+            case PowerUpModuleKind.SpawnObject:
+                return "Spawns configured object payload, optionally with damage.";
+            case PowerUpModuleKind.Dash:
+                return "Executes dash movement payload.";
+            case PowerUpModuleKind.TimeDilationEnemies:
+                return "Applies bullet-time slow effect to enemies.";
+            case PowerUpModuleKind.Heal:
+                return "Applies instant or over-time heal payload.";
+            case PowerUpModuleKind.SpawnTrailSegment:
+                return "Spawns and maintains elemental trail segments.";
+            case PowerUpModuleKind.AreaTickApplyElement:
+                return "Applies elemental stacks in area ticks.";
+            case PowerUpModuleKind.DeathExplosion:
+                return "Triggers damage explosion payload.";
+            case PowerUpModuleKind.OrbitalProjectiles:
+                return "Overrides projectile trajectories to orbital behavior.";
+            case PowerUpModuleKind.BouncingProjectiles:
                 return "Adds wall bounce logic to projectiles.";
-            case PowerUpModuleKind.PassiveProjectileSplitOnDeath:
-                return "Splits projectile into children on death/despawn.";
+            case PowerUpModuleKind.ProjectileSplit:
+                return "Splits projectiles on configured split trigger.";
             default:
                 return "No description available.";
         }
@@ -164,41 +141,7 @@ public static class PowerUpModuleEnumDescriptions
 
     public static PowerUpModuleStage GetRecommendedStage(PowerUpModuleKind moduleKind)
     {
-        switch (moduleKind)
-        {
-            case PowerUpModuleKind.TriggerPress:
-            case PowerUpModuleKind.TriggerRelease:
-            case PowerUpModuleKind.TriggerHoldCharge:
-                return PowerUpModuleStage.Trigger;
-            case PowerUpModuleKind.GateResource:
-            case PowerUpModuleKind.GateCooldown:
-                return PowerUpModuleStage.Gate;
-            case PowerUpModuleKind.StateSuppressShooting:
-                return PowerUpModuleStage.StateEnter;
-            case PowerUpModuleKind.EffectProjectilePatternCone:
-            case PowerUpModuleKind.EffectProjectileScale:
-            case PowerUpModuleKind.EffectProjectilePenetration:
-            case PowerUpModuleKind.EffectSpawnBomb:
-            case PowerUpModuleKind.EffectExplosionAreaDamage:
-            case PowerUpModuleKind.EffectDash:
-            case PowerUpModuleKind.EffectHealMissingHealth:
-            case PowerUpModuleKind.EffectTimeDilationEnemies:
-                return PowerUpModuleStage.Execute;
-            case PowerUpModuleKind.HookOnPlayerMovementStep:
-            case PowerUpModuleKind.HookOnEnemyDeath:
-            case PowerUpModuleKind.HookOnProjectileSpawned:
-            case PowerUpModuleKind.HookOnProjectileWallHit:
-            case PowerUpModuleKind.HookOnProjectileDeath:
-            case PowerUpModuleKind.PassiveSpawnTrailSegment:
-            case PowerUpModuleKind.PassiveAreaTickApplyElement:
-            case PowerUpModuleKind.PassiveDeathExplosion:
-            case PowerUpModuleKind.PassiveProjectileOrbitOverride:
-            case PowerUpModuleKind.PassiveProjectileBounceOnWalls:
-            case PowerUpModuleKind.PassiveProjectileSplitOnDeath:
-                return PowerUpModuleStage.Hook;
-            default:
-                return PowerUpModuleStage.Execute;
-        }
+        return PowerUpModuleKindUtility.ResolveStageFromKind(moduleKind);
     }
 
     public static bool IsStageCoherent(PowerUpModuleKind moduleKind, PowerUpModuleStage stage)
@@ -214,70 +157,65 @@ public static class PowerUpModuleEnumDescriptions
                 relativePropertyPath = "holdCharge";
                 payloadLabel = "Hold Charge Payload";
                 return true;
+            case PowerUpModuleKind.TriggerEvent:
+                relativePropertyPath = "triggerEvent";
+                payloadLabel = "Event Trigger Payload";
+                return true;
             case PowerUpModuleKind.GateResource:
                 relativePropertyPath = "resourceGate";
                 payloadLabel = "Resource Gate Payload";
-                return true;
-            case PowerUpModuleKind.GateCooldown:
-                relativePropertyPath = "cooldownGate";
-                payloadLabel = "Cooldown Gate Payload";
                 return true;
             case PowerUpModuleKind.StateSuppressShooting:
                 relativePropertyPath = "suppressShooting";
                 payloadLabel = "Suppress Shooting Payload";
                 return true;
-            case PowerUpModuleKind.EffectProjectilePatternCone:
+            case PowerUpModuleKind.ProjectilesPatternCone:
                 relativePropertyPath = "projectilePatternCone";
                 payloadLabel = "Projectile Pattern Payload";
                 return true;
-            case PowerUpModuleKind.EffectProjectileScale:
-                relativePropertyPath = "projectileScale";
-                payloadLabel = "Projectile Scale Payload";
+            case PowerUpModuleKind.ProjectilesTuning:
+                relativePropertyPath = "projectileTuning";
+                payloadLabel = "Projectile Tuning Payload";
                 return true;
-            case PowerUpModuleKind.EffectProjectilePenetration:
-                relativePropertyPath = "projectilePenetration";
-                payloadLabel = "Projectile Penetration Payload";
-                return true;
-            case PowerUpModuleKind.EffectSpawnBomb:
+            case PowerUpModuleKind.SpawnObject:
                 relativePropertyPath = "bomb";
-                payloadLabel = "Bomb Payload";
+                payloadLabel = "Spawn Object Payload";
                 return true;
-            case PowerUpModuleKind.EffectExplosionAreaDamage:
-            case PowerUpModuleKind.PassiveDeathExplosion:
-                relativePropertyPath = "deathExplosion";
-                payloadLabel = "Explosion Payload";
-                return true;
-            case PowerUpModuleKind.EffectDash:
+            case PowerUpModuleKind.Dash:
                 relativePropertyPath = "dash";
                 payloadLabel = "Dash Payload";
                 return true;
-            case PowerUpModuleKind.EffectHealMissingHealth:
+            case PowerUpModuleKind.Heal:
                 relativePropertyPath = "healMissingHealth";
                 payloadLabel = "Heal Payload";
                 return true;
-            case PowerUpModuleKind.EffectTimeDilationEnemies:
+            case PowerUpModuleKind.TimeDilationEnemies:
                 relativePropertyPath = "bulletTime";
                 payloadLabel = "Time Dilation Payload";
                 return true;
-            case PowerUpModuleKind.PassiveSpawnTrailSegment:
+            case PowerUpModuleKind.SpawnTrailSegment:
                 relativePropertyPath = "trailSpawn";
                 payloadLabel = "Trail Spawn Payload";
                 return true;
-            case PowerUpModuleKind.PassiveAreaTickApplyElement:
+            case PowerUpModuleKind.AreaTickApplyElement:
                 relativePropertyPath = "elementalAreaTick";
                 payloadLabel = "Elemental Area Tick Payload";
                 return true;
-            case PowerUpModuleKind.PassiveProjectileOrbitOverride:
+            case PowerUpModuleKind.DeathExplosion:
+                relativePropertyPath = "deathExplosion";
+                payloadLabel = "Explosion Payload";
+                return true;
+            case PowerUpModuleKind.OrbitalProjectiles:
                 relativePropertyPath = "projectileOrbitOverride";
-                payloadLabel = "Orbit Override Payload";
+                payloadLabel = "Orbital Projectiles Payload";
                 return true;
-            case PowerUpModuleKind.PassiveProjectileBounceOnWalls:
+            case PowerUpModuleKind.BouncingProjectiles:
                 relativePropertyPath = "projectileBounceOnWalls";
-                payloadLabel = "Bounce Payload";
+                payloadLabel = "Bouncing Projectiles Payload";
                 return true;
-            case PowerUpModuleKind.PassiveProjectileSplitOnDeath:
-                relativePropertyPath = "projectileSplitOnDeath";
-                payloadLabel = "Split Payload";
+            case PowerUpModuleKind.ProjectileSplit:
+                relativePropertyPath = "projectileSplit";
+                payloadLabel = "Projectile Split Payload";
                 return true;
             default:
                 relativePropertyPath = string.Empty;

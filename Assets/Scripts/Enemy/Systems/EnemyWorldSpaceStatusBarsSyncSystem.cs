@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -53,7 +52,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
         ResolveMainCameraTransform(elapsedTime);
         Transform cameraTransform = cachedMainCameraTransform;
         Camera mainCamera = cachedMainCamera;
-        SyncStatusBarsViews(entityManager, SystemAPI.Time.DeltaTime, cameraTransform, mainCamera);
+        SyncStatusBarsViews(ref state, entityManager, SystemAPI.Time.DeltaTime, cameraTransform, mainCamera);
         ReleaseInactiveFallbackViews(entityManager);
     }
 
@@ -114,100 +113,85 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
         return cachedMainCameraTransform;
     }
 
-    private void SyncStatusBarsViews(EntityManager entityManager, float deltaTime, Transform mainCameraTransform, Camera mainCamera)
+    private void SyncStatusBarsViews(ref SystemState state,
+                                     EntityManager entityManager,
+                                     float deltaTime,
+                                     Transform mainCameraTransform,
+                                     Camera mainCamera)
     {
         if (enemyQuery.IsEmptyIgnoreFilter)
-        {
             return;
-        }
 
-        NativeArray<Entity> enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
-        NativeArray<EnemyHealth> enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.Temp);
-        NativeArray<EnemyVisualRuntimeState> visualRuntimeStateArray = enemyQuery.ToComponentDataArray<EnemyVisualRuntimeState>(Allocator.Temp);
-        NativeArray<LocalTransform> enemyTransformArray = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-        for (int enemyIndex = 0; enemyIndex < enemyEntities.Length; enemyIndex++)
+        foreach ((RefRO<EnemyHealth> enemyHealth,
+                  RefRO<EnemyVisualRuntimeState> visualRuntimeState,
+                  RefRO<LocalTransform> enemyTransform,
+                  RefRW<EnemyWorldSpaceStatusBarsRuntimeLink> runtimeLink,
+                  Entity enemyEntity)
+                 in SystemAPI.Query<RefRO<EnemyHealth>,
+                                    RefRO<EnemyVisualRuntimeState>,
+                                    RefRO<LocalTransform>,
+                                    RefRW<EnemyWorldSpaceStatusBarsRuntimeLink>>()
+                             .WithAll<EnemyActive>()
+                             .WithEntityAccess())
         {
-            Entity enemyEntity = enemyEntities[enemyIndex];
             bool enemyActive = entityManager.IsComponentEnabled<EnemyActive>(enemyEntity);
 
             if (enemyActive == false)
-            {
                 continue;
-            }
 
-            EnemyWorldSpaceStatusBarsRuntimeLink runtimeLink = entityManager.GetComponentData<EnemyWorldSpaceStatusBarsRuntimeLink>(enemyEntity);
-            Entity statusBarsViewEntity = runtimeLink.ViewEntity;
+            EnemyWorldSpaceStatusBarsRuntimeLink currentRuntimeLink = runtimeLink.ValueRO;
+            Entity statusBarsViewEntity = currentRuntimeLink.ViewEntity;
             bool hasValidRuntimeLink = IsValidStatusBarsViewEntity(entityManager, statusBarsViewEntity);
 
             if (hasValidRuntimeLink == false)
             {
                 statusBarsViewEntity = ResolveStatusBarsViewEntity(entityManager, enemyEntity);
-                runtimeLink.ViewEntity = statusBarsViewEntity;
-                entityManager.SetComponentData(enemyEntity, runtimeLink);
+                currentRuntimeLink.ViewEntity = statusBarsViewEntity;
+                runtimeLink.ValueRW = currentRuntimeLink;
             }
 
             if (statusBarsViewEntity == Entity.Null)
-            {
                 continue;
-            }
 
             if (entityManager.Exists(statusBarsViewEntity) == false)
-            {
                 continue;
-            }
 
             if (entityManager.HasComponent<EnemyWorldSpaceStatusBarsView>(statusBarsViewEntity) == false)
-            {
                 continue;
-            }
 
             EnemyWorldSpaceStatusBarsView statusBarsView = entityManager.GetComponentObject<EnemyWorldSpaceStatusBarsView>(statusBarsViewEntity);
 
             if (statusBarsView == null)
-            {
                 continue;
-            }
 
             statusBarsView = ResolveRuntimeUsableView(enemyEntity, statusBarsView);
 
             if (statusBarsView == null)
-            {
                 continue;
-            }
 
             statusBarsView.SyncCanvasCamera(mainCamera);
-            float3 enemyPositionFloat3 = enemyTransformArray[enemyIndex].Position;
+            float3 enemyPositionFloat3 = enemyTransform.ValueRO.Position;
             Vector3 enemyPosition = new Vector3(enemyPositionFloat3.x, enemyPositionFloat3.y, enemyPositionFloat3.z);
             statusBarsView.SyncWorldPose(enemyPosition, mainCameraTransform);
 
-            EnemyHealth healthState = enemyHealthArray[enemyIndex];
+            EnemyHealth healthState = enemyHealth.ValueRO;
             float normalizedHealth = 0f;
 
             if (healthState.Max > 0f)
-            {
                 normalizedHealth = math.clamp(healthState.Current / healthState.Max, 0f, 1f);
-            }
 
             float normalizedShield = 0f;
 
             if (healthState.MaxShield > 0f)
-            {
                 normalizedShield = math.clamp(healthState.CurrentShield / healthState.MaxShield, 0f, 1f);
-            }
 
-            bool enemyVisible = visualRuntimeStateArray[enemyIndex].IsVisible != 0;
+            bool enemyVisible = visualRuntimeState.ValueRO.IsVisible != 0;
             statusBarsView.SyncFromRuntime(normalizedHealth,
                                            normalizedShield,
                                            enemyActive,
                                            enemyVisible,
                                            deltaTime);
         }
-
-        enemyEntities.Dispose();
-        enemyHealthArray.Dispose();
-        visualRuntimeStateArray.Dispose();
-        enemyTransformArray.Dispose();
-
     }
 
     private static bool IsValidStatusBarsViewEntity(EntityManager entityManager, Entity statusBarsViewEntity)

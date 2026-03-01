@@ -13,7 +13,9 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingPassiveToolsStateQuery;
     private EntityQuery missingDashQuery;
     private EntityQuery missingBulletTimeStateQuery;
+    private EntityQuery missingHealOverTimeStateQuery;
     private EntityQuery missingPassiveExplosionStateQuery;
+    private EntityQuery missingPassiveHealStateQuery;
     private EntityQuery missingElementalTrailStateQuery;
     private EntityQuery missingElementalTrailAttachedVfxStateQuery;
     private EntityQuery missingBombRequestBufferQuery;
@@ -22,6 +24,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingPowerUpVfxRequestBufferQuery;
     private EntityQuery missingPowerUpVfxPoolBufferQuery;
     private EntityQuery missingPowerUpVfxCapConfigQuery;
+    private EntityQuery missingPowerUpCheatBufferQuery;
     #endregion
 
     #region Methods
@@ -51,9 +54,19 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithNone<PlayerBulletTimeState>()
             .Build();
 
+        missingHealOverTimeStateQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerHealOverTimeState>()
+            .Build();
+
         missingPassiveExplosionStateQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerPassiveExplosionState>()
+            .Build();
+
+        missingPassiveHealStateQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPassiveHealState>()
             .Build();
 
         missingElementalTrailStateQuery = SystemAPI.QueryBuilder()
@@ -95,6 +108,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerPowerUpVfxCapConfig>()
             .Build();
+
+        missingPowerUpCheatBufferQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPowerUpCheatCommand>()
+            .Build();
     }
 
     /// <summary>
@@ -108,7 +126,9 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         bool hasMissingPassiveToolsState = missingPassiveToolsStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingDash = missingDashQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingBulletTimeState = missingBulletTimeStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingHealOverTimeState = missingHealOverTimeStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPassiveExplosionState = missingPassiveExplosionStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingPassiveHealState = missingPassiveHealStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingElementalTrailState = missingElementalTrailStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingElementalTrailAttachedVfxState = missingElementalTrailAttachedVfxStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingBombRequestBuffer = missingBombRequestBufferQuery.IsEmptyIgnoreFilter == false;
@@ -117,12 +137,15 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         bool hasMissingPowerUpVfxRequestBuffer = missingPowerUpVfxRequestBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPowerUpVfxPoolBuffer = missingPowerUpVfxPoolBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPowerUpVfxCapConfig = missingPowerUpVfxCapConfigQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingPowerUpCheatBuffer = missingPowerUpCheatBufferQuery.IsEmptyIgnoreFilter == false;
 
         if (hasMissingState == false &&
             hasMissingPassiveToolsState == false &&
             hasMissingDash == false &&
             hasMissingBulletTimeState == false &&
+            hasMissingHealOverTimeState == false &&
             hasMissingPassiveExplosionState == false &&
+            hasMissingPassiveHealState == false &&
             hasMissingElementalTrailState == false &&
             hasMissingElementalTrailAttachedVfxState == false &&
             hasMissingBombRequestBuffer == false &&
@@ -130,7 +153,8 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             hasMissingExplosionRequestBuffer == false &&
             hasMissingPowerUpVfxRequestBuffer == false &&
             hasMissingPowerUpVfxPoolBuffer == false &&
-            hasMissingPowerUpVfxCapConfig == false)
+            hasMissingPowerUpVfxCapConfig == false &&
+            hasMissingPowerUpCheatBuffer == false)
             return;
 
         uint currentKillCount = 0u;
@@ -155,8 +179,14 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         if (hasMissingBulletTimeState)
             AddMissingBulletTimeState(ref commandBuffer);
 
+        if (hasMissingHealOverTimeState)
+            AddMissingHealOverTimeState(ref commandBuffer);
+
         if (hasMissingPassiveExplosionState)
             AddMissingPassiveExplosionState(ref commandBuffer);
+
+        if (hasMissingPassiveHealState)
+            AddMissingPassiveHealState(ref commandBuffer);
 
         if (hasMissingElementalTrailState)
             AddMissingElementalTrailState(ref commandBuffer);
@@ -181,6 +211,9 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         if (hasMissingPowerUpVfxCapConfig)
             AddMissingPowerUpVfxCapConfig(ref commandBuffer);
+
+        if (hasMissingPowerUpCheatBuffer)
+            AddMissingPowerUpCheatBuffers(ref commandBuffer);
 
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
@@ -244,6 +277,8 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             ProjectileSpeedMultiplier = 1f,
             ProjectileLifetimeSecondsMultiplier = 1f,
             ProjectileLifetimeRangeMultiplier = 1f,
+            HasShotgun = 0,
+            Shotgun = default,
             HasElementalProjectiles = 0,
             ElementalProjectiles = default,
             HasPerfectCircle = 0,
@@ -255,7 +290,9 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             HasExplosion = 0,
             Explosion = default,
             HasElementalTrail = 0,
-            ElementalTrail = default
+            ElementalTrail = default,
+            HasHeal = 0,
+            Heal = default
         };
 
         if (equippedPassiveToolsLookup.HasBuffer(entity) == false)
@@ -277,49 +314,127 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         if (passiveToolConfig.IsDefined == 0)
             return;
 
-        switch (passiveToolConfig.ToolKind)
+        if (passiveToolConfig.HasProjectileSize != 0)
         {
-            case PassiveToolKind.ProjectileSize:
-                passiveToolsState.ProjectileSizeMultiplier *= math.max(0.01f, passiveToolConfig.ProjectileSize.SizeMultiplier);
-                passiveToolsState.ProjectileDamageMultiplier *= math.max(0f, passiveToolConfig.ProjectileSize.DamageMultiplier);
-                passiveToolsState.ProjectileSpeedMultiplier *= math.max(0f, passiveToolConfig.ProjectileSize.SpeedMultiplier);
-                passiveToolsState.ProjectileLifetimeSecondsMultiplier *= math.max(0f, passiveToolConfig.ProjectileSize.LifetimeSecondsMultiplier);
-                passiveToolsState.ProjectileLifetimeRangeMultiplier *= math.max(0f, passiveToolConfig.ProjectileSize.LifetimeRangeMultiplier);
-                return;
-            case PassiveToolKind.ElementalProjectiles:
-                passiveToolsState.HasElementalProjectiles = 1;
-                passiveToolsState.ElementalProjectiles = passiveToolConfig.ElementalProjectiles;
-                return;
-            case PassiveToolKind.PerfectCircle:
-                passiveToolsState.HasPerfectCircle = 1;
-                passiveToolsState.PerfectCircle = passiveToolConfig.PerfectCircle;
-                return;
-            case PassiveToolKind.BouncingProjectiles:
-                passiveToolsState.HasBouncingProjectiles = 1;
-                passiveToolsState.BouncingProjectiles.MaxBounces += math.max(0, passiveToolConfig.BouncingProjectiles.MaxBounces);
-                passiveToolsState.BouncingProjectiles.SpeedPercentChangePerBounce += passiveToolConfig.BouncingProjectiles.SpeedPercentChangePerBounce;
-                if (passiveToolsState.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce <= 0f)
-                    passiveToolsState.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce = math.max(0f, passiveToolConfig.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce);
-                else
-                    passiveToolsState.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce = math.min(passiveToolsState.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce,
-                                                                                                        math.max(0f, passiveToolConfig.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce));
+            passiveToolsState.ProjectileSizeMultiplier *= math.max(0.01f, passiveToolConfig.ProjectileSize.SizeMultiplier);
+            passiveToolsState.ProjectileDamageMultiplier *= math.max(0f, passiveToolConfig.ProjectileSize.DamageMultiplier);
+            passiveToolsState.ProjectileSpeedMultiplier *= math.max(0f, passiveToolConfig.ProjectileSize.SpeedMultiplier);
+            passiveToolsState.ProjectileLifetimeSecondsMultiplier *= math.max(0f, passiveToolConfig.ProjectileSize.LifetimeSecondsMultiplier);
+            passiveToolsState.ProjectileLifetimeRangeMultiplier *= math.max(0f, passiveToolConfig.ProjectileSize.LifetimeRangeMultiplier);
+        }
 
-                passiveToolsState.BouncingProjectiles.MaximumSpeedMultiplierAfterBounce = math.max(passiveToolsState.BouncingProjectiles.MaximumSpeedMultiplierAfterBounce,
-                                                                                                    math.max(0f, passiveToolConfig.BouncingProjectiles.MaximumSpeedMultiplierAfterBounce));
-                return;
-            case PassiveToolKind.SplittingProjectiles:
-                passiveToolsState.HasSplittingProjectiles = 1;
-                passiveToolsState.SplittingProjectiles = passiveToolConfig.SplittingProjectiles;
-                return;
-            case PassiveToolKind.Explosion:
-                passiveToolsState.HasExplosion = 1;
+        if (passiveToolConfig.HasShotgun != 0)
+        {
+            passiveToolsState.HasShotgun = 1;
+            passiveToolsState.Shotgun.ProjectileCount += math.max(0, passiveToolConfig.Shotgun.ProjectileCount);
+            passiveToolsState.Shotgun.ConeAngleDegrees = math.max(passiveToolsState.Shotgun.ConeAngleDegrees,
+                                                                  math.max(0f, passiveToolConfig.Shotgun.ConeAngleDegrees));
+            passiveToolsState.Shotgun.PenetrationMode = (ProjectilePenetrationMode)math.max((int)passiveToolsState.Shotgun.PenetrationMode,
+                                                                                             (int)passiveToolConfig.Shotgun.PenetrationMode);
+            passiveToolsState.Shotgun.MaxPenetrations += math.max(0, passiveToolConfig.Shotgun.MaxPenetrations);
+        }
 
-                if (passiveToolsState.Explosion.Radius <= 0f)
+        if (passiveToolConfig.HasElementalProjectiles != 0 && passiveToolConfig.ElementalProjectiles.StacksPerHit > 0f)
+        {
+            float candidateStacksPerHit = math.max(0f, passiveToolConfig.ElementalProjectiles.StacksPerHit);
+
+            if (candidateStacksPerHit > 0f)
+            {
+                if (passiveToolsState.HasElementalProjectiles == 0)
                 {
-                    passiveToolsState.Explosion = passiveToolConfig.Explosion;
-                    return;
+                    passiveToolsState.HasElementalProjectiles = 1;
+                    passiveToolsState.ElementalProjectiles = passiveToolConfig.ElementalProjectiles;
+                }
+                else
+                {
+                    passiveToolsState.ElementalProjectiles.Effect = passiveToolConfig.ElementalProjectiles.Effect;
+                    passiveToolsState.ElementalProjectiles.StacksPerHit += candidateStacksPerHit;
+                }
+            }
+        }
+
+        if (passiveToolConfig.HasPerfectCircle != 0)
+        {
+            passiveToolsState.HasPerfectCircle = 1;
+
+            if (passiveToolsState.PerfectCircle.OrbitRadiusMax <= 0f)
+            {
+                passiveToolsState.PerfectCircle = passiveToolConfig.PerfectCircle;
+            }
+            else
+            {
+                passiveToolsState.PerfectCircle.RadialEntrySpeed = math.max(passiveToolsState.PerfectCircle.RadialEntrySpeed, passiveToolConfig.PerfectCircle.RadialEntrySpeed);
+                passiveToolsState.PerfectCircle.OrbitalSpeed = math.max(passiveToolsState.PerfectCircle.OrbitalSpeed, passiveToolConfig.PerfectCircle.OrbitalSpeed);
+                passiveToolsState.PerfectCircle.OrbitRadiusMin = math.max(passiveToolsState.PerfectCircle.OrbitRadiusMin, passiveToolConfig.PerfectCircle.OrbitRadiusMin);
+                passiveToolsState.PerfectCircle.OrbitRadiusMax = math.max(passiveToolsState.PerfectCircle.OrbitRadiusMax, passiveToolConfig.PerfectCircle.OrbitRadiusMax);
+                passiveToolsState.PerfectCircle.OrbitPulseFrequency = math.max(passiveToolsState.PerfectCircle.OrbitPulseFrequency, passiveToolConfig.PerfectCircle.OrbitPulseFrequency);
+                passiveToolsState.PerfectCircle.OrbitEntryRatio = math.max(passiveToolsState.PerfectCircle.OrbitEntryRatio, passiveToolConfig.PerfectCircle.OrbitEntryRatio);
+                passiveToolsState.PerfectCircle.OrbitBlendDuration = math.max(passiveToolsState.PerfectCircle.OrbitBlendDuration, passiveToolConfig.PerfectCircle.OrbitBlendDuration);
+                passiveToolsState.PerfectCircle.HeightOffset = math.max(passiveToolsState.PerfectCircle.HeightOffset, passiveToolConfig.PerfectCircle.HeightOffset);
+                passiveToolsState.PerfectCircle.GoldenAngleDegrees = math.max(passiveToolsState.PerfectCircle.GoldenAngleDegrees, passiveToolConfig.PerfectCircle.GoldenAngleDegrees);
+            }
+        }
+
+        if (passiveToolConfig.HasBouncingProjectiles != 0)
+        {
+            passiveToolsState.HasBouncingProjectiles = 1;
+            passiveToolsState.BouncingProjectiles.MaxBounces += math.max(0, passiveToolConfig.BouncingProjectiles.MaxBounces);
+            passiveToolsState.BouncingProjectiles.SpeedPercentChangePerBounce += passiveToolConfig.BouncingProjectiles.SpeedPercentChangePerBounce;
+
+            if (passiveToolsState.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce <= 0f)
+                passiveToolsState.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce = math.max(0f, passiveToolConfig.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce);
+            else
+                passiveToolsState.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce = math.min(passiveToolsState.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce,
+                                                                                                    math.max(0f, passiveToolConfig.BouncingProjectiles.MinimumSpeedMultiplierAfterBounce));
+
+            passiveToolsState.BouncingProjectiles.MaximumSpeedMultiplierAfterBounce = math.max(passiveToolsState.BouncingProjectiles.MaximumSpeedMultiplierAfterBounce,
+                                                                                                math.max(0f, passiveToolConfig.BouncingProjectiles.MaximumSpeedMultiplierAfterBounce));
+        }
+
+        if (passiveToolConfig.HasSplittingProjectiles != 0)
+        {
+            passiveToolsState.HasSplittingProjectiles = 1;
+
+            if (passiveToolsState.SplittingProjectiles.SplitProjectileCount <= 0)
+            {
+                passiveToolsState.SplittingProjectiles = passiveToolConfig.SplittingProjectiles;
+            }
+            else
+            {
+                passiveToolsState.SplittingProjectiles.SplitProjectileCount = math.max(passiveToolsState.SplittingProjectiles.SplitProjectileCount,
+                                                                                       passiveToolConfig.SplittingProjectiles.SplitProjectileCount);
+                passiveToolsState.SplittingProjectiles.SplitOffsetDegrees = math.max(passiveToolsState.SplittingProjectiles.SplitOffsetDegrees,
+                                                                                     passiveToolConfig.SplittingProjectiles.SplitOffsetDegrees);
+                passiveToolsState.SplittingProjectiles.SplitDamageMultiplier = math.max(passiveToolsState.SplittingProjectiles.SplitDamageMultiplier,
+                                                                                        passiveToolConfig.SplittingProjectiles.SplitDamageMultiplier);
+                passiveToolsState.SplittingProjectiles.SplitSizeMultiplier = math.max(passiveToolsState.SplittingProjectiles.SplitSizeMultiplier,
+                                                                                      passiveToolConfig.SplittingProjectiles.SplitSizeMultiplier);
+                passiveToolsState.SplittingProjectiles.SplitSpeedMultiplier = math.max(passiveToolsState.SplittingProjectiles.SplitSpeedMultiplier,
+                                                                                       passiveToolConfig.SplittingProjectiles.SplitSpeedMultiplier);
+                passiveToolsState.SplittingProjectiles.SplitLifetimeMultiplier = math.max(passiveToolsState.SplittingProjectiles.SplitLifetimeMultiplier,
+                                                                                          passiveToolConfig.SplittingProjectiles.SplitLifetimeMultiplier);
+
+                if (passiveToolsState.SplittingProjectiles.CustomAnglesDegrees.Length <= 0 &&
+                    passiveToolConfig.SplittingProjectiles.CustomAnglesDegrees.Length > 0)
+                {
+                    passiveToolsState.SplittingProjectiles.CustomAnglesDegrees = passiveToolConfig.SplittingProjectiles.CustomAnglesDegrees;
                 }
 
+                passiveToolsState.SplittingProjectiles.TriggerMode = passiveToolConfig.SplittingProjectiles.TriggerMode;
+                passiveToolsState.SplittingProjectiles.DirectionMode = passiveToolConfig.SplittingProjectiles.DirectionMode;
+            }
+        }
+
+        if (passiveToolConfig.HasExplosion != 0)
+        {
+            passiveToolsState.HasExplosion = 1;
+
+            if (passiveToolsState.Explosion.Radius <= 0f)
+            {
+                passiveToolsState.Explosion = passiveToolConfig.Explosion;
+            }
+            else
+            {
                 passiveToolsState.Explosion.CooldownSeconds = math.min(passiveToolsState.Explosion.CooldownSeconds, passiveToolConfig.Explosion.CooldownSeconds);
                 passiveToolsState.Explosion.Radius = math.max(passiveToolsState.Explosion.Radius, passiveToolConfig.Explosion.Radius);
                 passiveToolsState.Explosion.Damage += passiveToolConfig.Explosion.Damage;
@@ -331,12 +446,61 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
                     passiveToolsState.Explosion.ScaleVfxToRadius = passiveToolConfig.Explosion.ScaleVfxToRadius;
                     passiveToolsState.Explosion.VfxScaleMultiplier = passiveToolConfig.Explosion.VfxScaleMultiplier;
                 }
+            }
+        }
 
-                return;
-            case PassiveToolKind.ElementalTrail:
-                passiveToolsState.HasElementalTrail = 1;
+        if (passiveToolConfig.HasElementalTrail != 0)
+        {
+            passiveToolsState.HasElementalTrail = 1;
+
+            if (passiveToolsState.ElementalTrail.TrailSegmentLifetimeSeconds <= 0f)
+            {
                 passiveToolsState.ElementalTrail = passiveToolConfig.ElementalTrail;
-                return;
+            }
+            else
+            {
+                passiveToolsState.ElementalTrail.Effect = passiveToolConfig.ElementalTrail.Effect;
+                passiveToolsState.ElementalTrail.TrailSegmentLifetimeSeconds = math.max(passiveToolsState.ElementalTrail.TrailSegmentLifetimeSeconds,
+                                                                                        passiveToolConfig.ElementalTrail.TrailSegmentLifetimeSeconds);
+                passiveToolsState.ElementalTrail.TrailSpawnDistance = math.max(passiveToolsState.ElementalTrail.TrailSpawnDistance,
+                                                                               passiveToolConfig.ElementalTrail.TrailSpawnDistance);
+                passiveToolsState.ElementalTrail.TrailSpawnIntervalSeconds = math.min(passiveToolsState.ElementalTrail.TrailSpawnIntervalSeconds,
+                                                                                      passiveToolConfig.ElementalTrail.TrailSpawnIntervalSeconds);
+                passiveToolsState.ElementalTrail.TrailRadius = math.max(passiveToolsState.ElementalTrail.TrailRadius,
+                                                                        passiveToolConfig.ElementalTrail.TrailRadius);
+                passiveToolsState.ElementalTrail.MaxActiveSegmentsPerPlayer = math.max(passiveToolsState.ElementalTrail.MaxActiveSegmentsPerPlayer,
+                                                                                        passiveToolConfig.ElementalTrail.MaxActiveSegmentsPerPlayer);
+                passiveToolsState.ElementalTrail.StacksPerTick += math.max(0f, passiveToolConfig.ElementalTrail.StacksPerTick);
+                passiveToolsState.ElementalTrail.ApplyIntervalSeconds = math.min(passiveToolsState.ElementalTrail.ApplyIntervalSeconds,
+                                                                                 passiveToolConfig.ElementalTrail.ApplyIntervalSeconds);
+
+                if (passiveToolsState.ElementalTrail.TrailAttachedVfxPrefabEntity == Entity.Null &&
+                    passiveToolConfig.ElementalTrail.TrailAttachedVfxPrefabEntity != Entity.Null)
+                {
+                    passiveToolsState.ElementalTrail.TrailAttachedVfxPrefabEntity = passiveToolConfig.ElementalTrail.TrailAttachedVfxPrefabEntity;
+                    passiveToolsState.ElementalTrail.TrailAttachedVfxScaleMultiplier = passiveToolConfig.ElementalTrail.TrailAttachedVfxScaleMultiplier;
+                    passiveToolsState.ElementalTrail.TrailAttachedVfxOffset = passiveToolConfig.ElementalTrail.TrailAttachedVfxOffset;
+                }
+            }
+        }
+
+        if (passiveToolConfig.HasHeal != 0)
+        {
+            passiveToolsState.HasHeal = 1;
+
+            if (passiveToolsState.Heal.HealAmount <= 0f)
+            {
+                passiveToolsState.Heal = passiveToolConfig.Heal;
+            }
+            else
+            {
+                passiveToolsState.Heal.HealAmount += math.max(0f, passiveToolConfig.Heal.HealAmount);
+                passiveToolsState.Heal.CooldownSeconds = math.min(passiveToolsState.Heal.CooldownSeconds, passiveToolConfig.Heal.CooldownSeconds);
+                passiveToolsState.Heal.DurationSeconds = math.max(passiveToolsState.Heal.DurationSeconds, passiveToolConfig.Heal.DurationSeconds);
+                passiveToolsState.Heal.TickIntervalSeconds = math.min(passiveToolsState.Heal.TickIntervalSeconds, passiveToolConfig.Heal.TickIntervalSeconds);
+                passiveToolsState.Heal.StackPolicy = passiveToolConfig.Heal.StackPolicy;
+                passiveToolsState.Heal.TriggerMode = passiveToolConfig.Heal.TriggerMode;
+            }
         }
     }
 
@@ -380,6 +544,26 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         entities.Dispose();
     }
 
+    private void AddMissingHealOverTimeState(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingHealOverTimeStateQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+        {
+            commandBuffer.AddComponent(entities[index], new PlayerHealOverTimeState
+            {
+                IsActive = 0,
+                HealPerSecond = 0f,
+                RemainingTotalHeal = 0f,
+                RemainingDuration = 0f,
+                TickIntervalSeconds = 0.2f,
+                TickTimer = 0f
+            });
+        }
+
+        entities.Dispose();
+    }
+
     private void AddMissingPassiveExplosionState(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingPassiveExplosionStateQuery.ToEntityArray(Allocator.Temp);
@@ -387,6 +571,22 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         for (int index = 0; index < entities.Length; index++)
         {
             commandBuffer.AddComponent(entities[index], new PlayerPassiveExplosionState
+            {
+                CooldownRemaining = 0f,
+                PreviousObservedHealth = -1f
+            });
+        }
+
+        entities.Dispose();
+    }
+
+    private void AddMissingPassiveHealState(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingPassiveHealStateQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+        {
+            commandBuffer.AddComponent(entities[index], new PlayerPassiveHealState
             {
                 CooldownRemaining = 0f,
                 PreviousObservedHealth = -1f
@@ -495,6 +695,16 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
                 RefreshAttachedLifetimeOnCapHit = 1
             });
         }
+
+        entities.Dispose();
+    }
+
+    private void AddMissingPowerUpCheatBuffers(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingPowerUpCheatBufferQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+            commandBuffer.AddBuffer<PlayerPowerUpCheatCommand>(entities[index]);
 
         entities.Dispose();
     }

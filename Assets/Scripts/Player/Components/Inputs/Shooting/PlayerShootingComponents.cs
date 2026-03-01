@@ -60,6 +60,9 @@ public struct ShootRequest : IBufferElementData
     public int MaxPenetrations;
     public byte InheritPlayerSpeed;
     public byte IsSplitChild;
+    public byte HasElementalPayloadOverride;
+    public ElementalEffectConfig ElementalEffectOverride;
+    public float ElementalStacksPerHitOverride;
 }
 
 public struct ProjectilePoolElement : IBufferElementData
@@ -156,6 +159,7 @@ public struct ProjectileBounceState : IComponentData
 public struct ProjectileSplitState : IComponentData
 {
     public byte CanSplit;
+    public ProjectileSplitTriggerMode TriggerMode;
     public ProjectileSplitDirectionMode DirectionMode;
     public int SplitProjectileCount;
     public float SplitOffsetDegrees;

@@ -30,7 +30,7 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
         SerializedProperty maintenanceCostPerSecondProperty = property.FindPropertyRelative("maintenanceCostPerSecond");
         SerializedProperty chargeTypeProperty = property.FindPropertyRelative("chargeType");
         SerializedProperty chargePerTriggerProperty = property.FindPropertyRelative("chargePerTrigger");
-        SerializedProperty fullChargeRequirementProperty = property.FindPropertyRelative("fullChargeRequirement");
+        SerializedProperty minimumActivationEnergyPercentProperty = property.FindPropertyRelative("minimumActivationEnergyPercent");
         SerializedProperty unreplaceableProperty = property.FindPropertyRelative("unreplaceable");
         SerializedProperty bombDataProperty = property.FindPropertyRelative("bombData");
         SerializedProperty dashDataProperty = property.FindPropertyRelative("dashData");
@@ -46,7 +46,7 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
             maintenanceCostPerSecondProperty == null ||
             chargeTypeProperty == null ||
             chargePerTriggerProperty == null ||
-            fullChargeRequirementProperty == null ||
+            minimumActivationEnergyPercentProperty == null ||
             unreplaceableProperty == null ||
             bombDataProperty == null ||
             dashDataProperty == null ||
@@ -76,7 +76,7 @@ public sealed class ActiveToolDefinitionPropertyDrawer : PropertyDrawer
         AddField(root, maintenanceCostPerSecondProperty);
         AddField(root, chargeTypeProperty);
         AddField(root, chargePerTriggerProperty);
-        AddField(root, fullChargeRequirementProperty);
+        AddField(root, minimumActivationEnergyPercentProperty);
         AddField(root, unreplaceableProperty);
 
         Label toolSpecificLabel = new Label("Tool Specific");

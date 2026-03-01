@@ -33,6 +33,8 @@ public partial struct PlayerPowerUpVfxLifetimeSystem : ISystem
         ComponentLookup<EnemyActive> enemyActiveLookup = SystemAPI.GetComponentLookup<EnemyActive>(true);
         ComponentLookup<EnemyDespawnRequest> enemyDespawnLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
 
+        // For each VFX entity that follows a target, validate the target and update the VFX position.
+        // If the target is invalid or despawning, release or destroy the VFX entity.
         foreach ((RefRW<PlayerPowerUpVfxLifetime> lifetime,
                   RefRW<LocalTransform> vfxTransform,
                   RefRO<PlayerPowerUpVfxFollowTarget> followTarget,
@@ -116,6 +118,7 @@ public partial struct PlayerPowerUpVfxLifetimeSystem : ISystem
             lifetime.ValueRW = currentLifetime;
         }
 
+        // For each VFX entity that moves with a velocity, update the VFX position based on the velocity.
         foreach ((RefRW<PlayerPowerUpVfxLifetime> lifetime,
                   RefRW<LocalTransform> vfxTransform,
                   RefRO<PlayerPowerUpVfxVelocity> velocity,

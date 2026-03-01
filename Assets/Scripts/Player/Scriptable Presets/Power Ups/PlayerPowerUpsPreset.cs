@@ -104,6 +104,33 @@ public enum ProjectileSplitDirectionMode
     Uniform = 0,
     CustomAngles = 1
 }
+
+public enum ProjectileSplitTriggerMode
+{
+    OnEnemyKilled = 0,
+    OnEnemyHit = 1,
+    OnProjectileDespawn = 2
+}
+
+public enum SpawnOffsetOrientationMode
+{
+    PlayerForward = 0,
+    PlayerLookDirection = 1,
+    WorldForward = 2
+}
+
+public enum PowerUpHealApplicationMode
+{
+    Instant = 0,
+    OverTime = 1
+}
+
+public enum PowerUpHealStackPolicy
+{
+    Refresh = 0,
+    Additive = 1,
+    IgnoreIfActive = 2
+}
 #endregion
 
 #region Common Data Structures
@@ -961,10 +988,13 @@ public sealed class SplittingProjectilesPassiveToolData
 
     #region Serialized Fields
     [Header("Splitting Projectiles")]
+    [Tooltip("Event used to trigger projectile split generation.")]
+    [SerializeField] private ProjectileSplitTriggerMode triggerMode = ProjectileSplitTriggerMode.OnEnemyKilled;
+
     [Tooltip("How split projectile directions are generated.")]
     [SerializeField] private ProjectileSplitDirectionMode directionMode = ProjectileSplitDirectionMode.Uniform;
 
-    [Tooltip("Amount of split projectiles spawned on enemy hit when Uniform mode is active.")]
+    [Tooltip("Amount of split projectiles spawned per split event when Uniform mode is active.")]
     [SerializeField] private int splitProjectileCount = 2;
 
     [Tooltip("Angular offset in degrees used as rotation start for uniform split distribution.")]
@@ -998,6 +1028,14 @@ public sealed class SplittingProjectilesPassiveToolData
         get
         {
             return directionMode;
+        }
+    }
+
+    public ProjectileSplitTriggerMode TriggerMode
+    {
+        get
+        {
+            return triggerMode;
         }
     }
 
@@ -1676,6 +1714,9 @@ public sealed class BombToolData
     [Tooltip("Local-space spawn offset from player origin, rotated by player rotation at activation time.")]
     [SerializeField] private Vector3 spawnOffset = new Vector3(0f, 0f, 1.2f);
 
+    [Tooltip("Reference used to orient the spawn offset. PlayerForward uses player transform, PlayerLookDirection uses runtime look vector, WorldForward ignores player rotation.")]
+    [SerializeField] private SpawnOffsetOrientationMode spawnOffsetOrientation = SpawnOffsetOrientationMode.PlayerForward;
+
     [Tooltip("Initial planar speed applied to the bomb when deployed.")]
     [SerializeField] private float deploySpeed = 4.5f;
 
@@ -1696,6 +1737,9 @@ public sealed class BombToolData
 
     [Tooltip("Explosion radius applied when the bomb detonates.")]
     [SerializeField] private float radius = 7f;
+
+    [Tooltip("When disabled, damage payload is not applied by this spawned object.")]
+    [SerializeField] private bool enableDamagePayload = true;
 
     [Tooltip("Damage dealt to enemies inside the explosion radius.")]
     [SerializeField] private float damage = 120f;
@@ -1720,6 +1764,14 @@ public sealed class BombToolData
         get
         {
             return spawnOffset;
+        }
+    }
+
+    public SpawnOffsetOrientationMode SpawnOffsetOrientation
+    {
+        get
+        {
+            return spawnOffsetOrientation;
         }
     }
 
@@ -1776,6 +1828,14 @@ public sealed class BombToolData
         get
         {
             return radius;
+        }
+    }
+
+    public bool EnableDamagePayload
+    {
+        get
+        {
+            return enableDamagePayload;
         }
     }
 
@@ -2033,8 +2093,11 @@ public sealed class ActiveToolDefinition
     [Tooltip("Recharge amount granted for each charge event.")]
     [SerializeField] private float chargePerTrigger = 10f;
 
-    [Tooltip("When enabled, activation requires full maximum energy.")]
-    [SerializeField] private bool fullChargeRequirement;
+    [Tooltip("Minimum energy percentage required for activation. 0 disables this gate.")]
+    [SerializeField] private float minimumActivationEnergyPercent;
+
+    [FormerlySerializedAs("fullChargeRequirement")]
+    [SerializeField] private bool legacyFullChargeRequirement;
 
     [Tooltip("When enabled, this tool cannot be replaced from slots.")]
     [SerializeField] private bool unreplaceable;
@@ -2133,11 +2196,11 @@ public sealed class ActiveToolDefinition
         }
     }
 
-    public bool FullChargeRequirement
+    public float MinimumActivationEnergyPercent
     {
         get
         {
-            return fullChargeRequirement;
+            return minimumActivationEnergyPercent;
         }
     }
 
@@ -2199,8 +2262,21 @@ public sealed class ActiveToolDefinition
         if (chargePerTrigger < 0f)
             chargePerTrigger = 0f;
 
-        if (fullChargeRequirement && maximumEnergy <= 0f)
-            fullChargeRequirement = false;
+        if (legacyFullChargeRequirement &&
+            minimumActivationEnergyPercent <= 0f)
+        {
+            minimumActivationEnergyPercent = 100f;
+            legacyFullChargeRequirement = false;
+        }
+
+        if (minimumActivationEnergyPercent < 0f)
+            minimumActivationEnergyPercent = 0f;
+
+        if (minimumActivationEnergyPercent > 100f)
+            minimumActivationEnergyPercent = 100f;
+
+        if (maximumEnergy <= 0f)
+            minimumActivationEnergyPercent = 0f;
 
         if (bombData == null)
             bombData = new BombToolData();
@@ -2228,38 +2304,37 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     #region Fields
 
     #region Constants
-    private const string ModuleIdTriggerPress = "module_trigger_press_standard";
-    private const string ModuleIdTriggerRelease = "module_trigger_release_standard";
-    private const string ModuleIdTriggerHoldCharge = "module_trigger_hold_charge_standard";
-    private const string ModuleIdGateResource = "module_gate_resource_standard";
-    private const string ModuleIdGateCooldown = "module_gate_cooldown_standard";
-    private const string ModuleIdStateSuppressShooting = "module_state_suppress_shooting_standard";
-    private const string ModuleIdEffectProjectilePatternCone = "module_effect_projectile_pattern_cone_standard";
-    private const string ModuleIdEffectProjectileScale = "module_effect_projectile_scale_standard";
-    private const string ModuleIdEffectProjectilePenetration = "module_effect_projectile_penetration_standard";
-    private const string ModuleIdEffectSpawnBomb = "module_effect_spawn_bomb_standard";
-    private const string ModuleIdEffectDash = "module_effect_dash_standard";
-    private const string ModuleIdEffectTimeDilationEnemies = "module_effect_time_dilation_enemies_standard";
-    private const string ModuleIdEffectHealMissingHealth = "module_effect_heal_missing_health_standard";
-    private const string ModuleIdPassiveSpawnTrailSegment = "module_passive_spawn_trail_segment_standard";
-    private const string ModuleIdPassiveAreaTickApplyElement = "module_passive_area_tick_apply_element_standard";
-    private const string ModuleIdPassiveDeathExplosion = "module_passive_death_explosion_standard";
-    private const string ModuleIdPassiveProjectileOrbitOverride = "module_passive_projectile_orbit_override_standard";
-    private const string ModuleIdPassiveProjectileBounceOnWalls = "module_passive_projectile_bounce_on_walls_standard";
-    private const string ModuleIdPassiveProjectileSplitOnDeath = "module_passive_projectile_split_on_death_standard";
+    private const string ModuleIdTriggerPress = "Module_TriggerPress";
+    private const string ModuleIdTriggerRelease = "Module_TriggerRelease";
+    private const string ModuleIdTriggerHoldCharge = "Module_TriggerHoldCharge";
+    private const string ModuleIdTriggerEvent = "Module_TriggerEvent";
+    private const string ModuleIdGateResource = "Module_GateResource";
+    private const string ModuleIdStateSuppressShooting = "Module_StateSuppressShooting";
+    private const string ModuleIdProjectilesPatternCone = "Module_ProjectilesPatternCone";
+    private const string ModuleIdProjectilesTuning = "Module_ProjectilesTuning";
+    private const string ModuleIdSpawnObject = "Module_SpawnObject";
+    private const string ModuleIdDash = "Module_Dash";
+    private const string ModuleIdTimeDilationEnemies = "Module_TimeDilationEnemies";
+    private const string ModuleIdHeal = "Module_Heal";
+    private const string ModuleIdSpawnTrailSegment = "Module_SpawnTrailSegment";
+    private const string ModuleIdAreaTickApplyElement = "Module_AreaTickApplyElement";
+    private const string ModuleIdDeathExplosion = "Module_DeathExplosion";
+    private const string ModuleIdOrbitalProjectiles = "Module_OrbitalProjectiles";
+    private const string ModuleIdBouncingProjectiles = "Module_BouncingProjectiles";
+    private const string ModuleIdProjectileSplit = "Module_ProjectileSplit";
 
-    private const string ActivePowerUpIdShotgun = "active_shotgun";
-    private const string ActivePowerUpIdChargeShot = "active_charge_shot";
-    private const string ActivePowerUpIdGigaBomb = "active_giga_bomb";
-    private const string ActivePowerUpIdBasicDash = "active_basic_dash";
-    private const string ActivePowerUpIdPortableHealthPack = "active_portable_health_pack";
-    private const string ActivePowerUpIdBulletTime = "active_bullet_time";
+    private const string ActivePowerUpIdShotgun = "ActiveShotgun";
+    private const string ActivePowerUpIdChargeShot = "ActiveChargeShot";
+    private const string ActivePowerUpIdGigaBomb = "ActiveGigaBomb";
+    private const string ActivePowerUpIdBasicDash = "ActiveBasicDash";
+    private const string ActivePowerUpIdPortableHealthPack = "ActivePortableHealthPack";
+    private const string ActivePowerUpIdBulletTime = "ActiveBulletTime";
 
-    private const string PassivePowerUpIdElementalTrail = "passive_elemental_trail";
-    private const string PassivePowerUpIdEnemiesExplodeOnDeath = "passive_enemies_explode_on_death";
-    private const string PassivePowerUpIdOrbitalProjectiles = "passive_orbital_projectiles";
-    private const string PassivePowerUpIdBouncingProjectiles = "passive_bouncing_projectiles";
-    private const string PassivePowerUpIdSplittingProjectiles = "passive_splitting_projectiles";
+    private const string PassivePowerUpIdElementalTrail = "PassiveElementalTrail";
+    private const string PassivePowerUpIdEnemiesExplodeOnDeath = "PassiveEnemiesExplodeOnDeath";
+    private const string PassivePowerUpIdOrbitalProjectiles = "PassiveOrbitalProjectiles";
+    private const string PassivePowerUpIdBouncingProjectiles = "PassiveBouncingProjectiles";
+    private const string PassivePowerUpIdSplittingProjectiles = "PassiveSplittingProjectiles";
     #endregion
 
     #region Serialized Fields
@@ -2568,23 +2643,22 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         List<PowerUpModuleDefinition> definitions = new List<PowerUpModuleDefinition>();
         definitions.Add(CreateModuleDefinition(ModuleIdTriggerPress, "Trigger Press", PowerUpModuleKind.TriggerPress, PowerUpModuleStage.Trigger, "Fires when the input is initially pressed."));
         definitions.Add(CreateModuleDefinition(ModuleIdTriggerRelease, "Trigger Release", PowerUpModuleKind.TriggerRelease, PowerUpModuleStage.Trigger, "Fires when the input is released."));
-        definitions.Add(CreateModuleDefinition(ModuleIdTriggerHoldCharge, "Hold Charge", PowerUpModuleKind.TriggerHoldCharge, PowerUpModuleStage.Trigger, "Accumulates charge while the input stays pressed."));
-        definitions.Add(CreateModuleDefinition(ModuleIdGateResource, "Resource Gate", PowerUpModuleKind.GateResource, PowerUpModuleStage.Gate, "Checks and consumes activation resource."));
-        definitions.Add(CreateModuleDefinition(ModuleIdGateCooldown, "Cooldown Gate", PowerUpModuleKind.GateCooldown, PowerUpModuleStage.Gate, "Blocks activation while cooldown is active."));
-        definitions.Add(CreateModuleDefinition(ModuleIdStateSuppressShooting, "Suppress Shooting", PowerUpModuleKind.StateSuppressShooting, PowerUpModuleStage.StateEnter, "Disables standard shooting while active."));
-        definitions.Add(CreateModuleDefinition(ModuleIdEffectProjectilePatternCone, "Projectile Cone Pattern", PowerUpModuleKind.EffectProjectilePatternCone, PowerUpModuleStage.Execute, "Shoots a cone of multiple projectiles."));
-        definitions.Add(CreateModuleDefinition(ModuleIdEffectProjectileScale, "Projectile Scale", PowerUpModuleKind.EffectProjectileScale, PowerUpModuleStage.Execute, "Applies scale and stat multipliers to projectiles."));
-        definitions.Add(CreateModuleDefinition(ModuleIdEffectProjectilePenetration, "Projectile Penetration", PowerUpModuleKind.EffectProjectilePenetration, PowerUpModuleStage.Execute, "Configures projectile penetration behavior."));
-        definitions.Add(CreateModuleDefinition(ModuleIdEffectSpawnBomb, "Spawn Bomb", PowerUpModuleKind.EffectSpawnBomb, PowerUpModuleStage.Execute, "Deploys a bomb and detonates after fuse."));
-        definitions.Add(CreateModuleDefinition(ModuleIdEffectDash, "Dash", PowerUpModuleKind.EffectDash, PowerUpModuleStage.Execute, "Moves player rapidly with optional invulnerability."));
-        definitions.Add(CreateModuleDefinition(ModuleIdEffectTimeDilationEnemies, "Time Dilation Enemies", PowerUpModuleKind.EffectTimeDilationEnemies, PowerUpModuleStage.Execute, "Slows enemy simulation for a short duration."));
-        definitions.Add(CreateModuleDefinition(ModuleIdEffectHealMissingHealth, "Heal Missing Health", PowerUpModuleKind.EffectHealMissingHealth, PowerUpModuleStage.Execute, "Restores a flat health amount up to missing HP."));
-        definitions.Add(CreateModuleDefinition(ModuleIdPassiveSpawnTrailSegment, "Spawn Trail Segment", PowerUpModuleKind.PassiveSpawnTrailSegment, PowerUpModuleStage.Hook, "Spawns trail segments while moving."));
-        definitions.Add(CreateModuleDefinition(ModuleIdPassiveAreaTickApplyElement, "Area Tick Apply Element", PowerUpModuleKind.PassiveAreaTickApplyElement, PowerUpModuleStage.Hook, "Applies elemental stacks in area over time."));
-        definitions.Add(CreateModuleDefinition(ModuleIdPassiveDeathExplosion, "Death Explosion", PowerUpModuleKind.PassiveDeathExplosion, PowerUpModuleStage.Hook, "Triggers explosions on enemy death."));
-        definitions.Add(CreateModuleDefinition(ModuleIdPassiveProjectileOrbitOverride, "Projectile Orbit Override", PowerUpModuleKind.PassiveProjectileOrbitOverride, PowerUpModuleStage.Hook, "Overrides projectile trajectory to orbit mode."));
-        definitions.Add(CreateModuleDefinition(ModuleIdPassiveProjectileBounceOnWalls, "Projectile Bounce On Walls", PowerUpModuleKind.PassiveProjectileBounceOnWalls, PowerUpModuleStage.Hook, "Makes projectiles bounce on walls."));
-        definitions.Add(CreateModuleDefinition(ModuleIdPassiveProjectileSplitOnDeath, "Projectile Split On Death", PowerUpModuleKind.PassiveProjectileSplitOnDeath, PowerUpModuleStage.Hook, "Splits projectiles when they expire."));
+        definitions.Add(CreateModuleDefinition(ModuleIdTriggerHoldCharge, "Trigger Hold Charge", PowerUpModuleKind.TriggerHoldCharge, PowerUpModuleStage.Trigger, "Accumulates charge while the input stays pressed."));
+        definitions.Add(CreateModuleDefinition(ModuleIdTriggerEvent, "Trigger Event", PowerUpModuleKind.TriggerEvent, PowerUpModuleStage.Hook, "Fires from a runtime event selected in payload."));
+        definitions.Add(CreateModuleDefinition(ModuleIdGateResource, "Resource Gate", PowerUpModuleKind.GateResource, PowerUpModuleStage.Gate, "Checks resource costs, recharge and cooldown."));
+        definitions.Add(CreateModuleDefinition(ModuleIdStateSuppressShooting, "Suppress Shooting", PowerUpModuleKind.StateSuppressShooting, PowerUpModuleStage.StateEnter, "Disables base shooting while active."));
+        definitions.Add(CreateModuleDefinition(ModuleIdProjectilesPatternCone, "Projectiles Pattern Cone", PowerUpModuleKind.ProjectilesPatternCone, PowerUpModuleStage.Execute, "Shoots a cone of multiple projectiles."));
+        definitions.Add(CreateModuleDefinition(ModuleIdProjectilesTuning, "Projectiles Tuning", PowerUpModuleKind.ProjectilesTuning, PowerUpModuleStage.Execute, "Applies projectile multipliers and penetration behavior."));
+        definitions.Add(CreateModuleDefinition(ModuleIdSpawnObject, "Spawn Object", PowerUpModuleKind.SpawnObject, PowerUpModuleStage.Execute, "Spawns a configured object with optional damage payload."));
+        definitions.Add(CreateModuleDefinition(ModuleIdDash, "Dash", PowerUpModuleKind.Dash, PowerUpModuleStage.Execute, "Moves player rapidly with optional invulnerability."));
+        definitions.Add(CreateModuleDefinition(ModuleIdTimeDilationEnemies, "Time Dilation Enemies", PowerUpModuleKind.TimeDilationEnemies, PowerUpModuleStage.Execute, "Slows enemy simulation for a short duration."));
+        definitions.Add(CreateModuleDefinition(ModuleIdHeal, "Heal", PowerUpModuleKind.Heal, PowerUpModuleStage.Execute, "Applies instant heal or heal-over-time."));
+        definitions.Add(CreateModuleDefinition(ModuleIdSpawnTrailSegment, "Spawn Trail Segment", PowerUpModuleKind.SpawnTrailSegment, PowerUpModuleStage.Hook, "Spawns trail segments while moving."));
+        definitions.Add(CreateModuleDefinition(ModuleIdAreaTickApplyElement, "Area Tick Apply Element", PowerUpModuleKind.AreaTickApplyElement, PowerUpModuleStage.Hook, "Applies elemental stacks in area over time."));
+        definitions.Add(CreateModuleDefinition(ModuleIdDeathExplosion, "Death Explosion", PowerUpModuleKind.DeathExplosion, PowerUpModuleStage.Hook, "Triggers explosions from configured events."));
+        definitions.Add(CreateModuleDefinition(ModuleIdOrbitalProjectiles, "Orbital Projectiles", PowerUpModuleKind.OrbitalProjectiles, PowerUpModuleStage.Hook, "Overrides projectile trajectory to orbital behavior."));
+        definitions.Add(CreateModuleDefinition(ModuleIdBouncingProjectiles, "Bouncing Projectiles", PowerUpModuleKind.BouncingProjectiles, PowerUpModuleStage.Hook, "Adds wall bounce behavior to projectiles."));
+        definitions.Add(CreateModuleDefinition(ModuleIdProjectileSplit, "Projectile Split", PowerUpModuleKind.ProjectileSplit, PowerUpModuleStage.Hook, "Splits projectiles based on configured trigger mode."));
         return definitions;
     }
 
@@ -2599,11 +2673,10 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 1,
                                                 90,
                                                 false,
-                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
-                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 30f, 25f, false, PowerUpChargeType.Time)),
-                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(0.7f)),
-                                                CreateBinding(ModuleIdEffectProjectilePatternCone, PowerUpModuleStage.Execute, 30, CreateProjectilePatternPayload(6, 45f)),
-                                                CreateBinding(ModuleIdEffectProjectileScale, PowerUpModuleStage.Execute, 40, CreateProjectileScalePayload(1f, 1f, 1f, 1f, 1f))));
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, CreateResourceGatePayload(100f, 30f, 25f, 0f, PowerUpChargeType.Time, 0.7f)),
+                                                CreateBinding(ModuleIdProjectilesPatternCone, PowerUpModuleStage.Execute, CreateProjectilePatternPayload(6, 45f)),
+                                                CreateBinding(ModuleIdProjectilesTuning, PowerUpModuleStage.Execute, CreateProjectileTuningPayload(1f, 1f, 1f, 1f, 1f, ProjectilePenetrationMode.None, 0))));
 
         definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdChargeShot,
                                                 "Charge Shot",
@@ -2612,14 +2685,12 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 2,
                                                 120,
                                                 false,
-                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
-                                                CreateBinding(ModuleIdTriggerHoldCharge, PowerUpModuleStage.Trigger, 10, CreateHoldChargePayload(80f, 120f, 140f)),
-                                                CreateBinding(ModuleIdTriggerRelease, PowerUpModuleStage.Trigger, 20, null),
-                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 30, CreateResourceGatePayload(100f, 35f, 20f, false, PowerUpChargeType.Time)),
-                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 40, CreateCooldownGatePayload(0.35f)),
-                                                CreateBinding(ModuleIdStateSuppressShooting, PowerUpModuleStage.StateEnter, 50, CreateSuppressShootingPayload(true)),
-                                                CreateBinding(ModuleIdEffectProjectileScale, PowerUpModuleStage.Execute, 60, CreateProjectileScalePayload(1.85f, 2f, 1f, 1.25f, 1.25f)),
-                                                CreateBinding(ModuleIdEffectProjectilePenetration, PowerUpModuleStage.Execute, 70, CreateProjectilePenetrationPayload(ProjectilePenetrationMode.FixedHits, 2))));
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, null),
+                                                CreateBinding(ModuleIdTriggerHoldCharge, PowerUpModuleStage.Trigger, CreateHoldChargePayload(80f, 120f, 140f)),
+                                                CreateBinding(ModuleIdTriggerRelease, PowerUpModuleStage.Trigger, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, CreateResourceGatePayload(100f, 35f, 20f, 0f, PowerUpChargeType.Time, 0.35f)),
+                                                CreateBinding(ModuleIdStateSuppressShooting, PowerUpModuleStage.StateEnter, CreateSuppressShootingPayload(true)),
+                                                CreateBinding(ModuleIdProjectilesTuning, PowerUpModuleStage.Execute, CreateProjectileTuningPayload(1.85f, 2f, 1f, 1.25f, 1.25f, ProjectilePenetrationMode.FixedHits, 2))));
 
         definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdGigaBomb,
                                                 "Giga Bomb",
@@ -2628,10 +2699,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 3,
                                                 160,
                                                 false,
-                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
-                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 100f, 35f, true, PowerUpChargeType.EnemiesDestroyed)),
-                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(1.8f)),
-                                                CreateBinding(ModuleIdEffectSpawnBomb, PowerUpModuleStage.Execute, 30, null)));
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, CreateResourceGatePayload(100f, 100f, 35f, 100f, PowerUpChargeType.EnemiesDestroyed, 1.8f)),
+                                                CreateBinding(ModuleIdSpawnObject, PowerUpModuleStage.Execute, null)));
 
         definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdBasicDash,
                                                 "Basic Dash",
@@ -2640,10 +2710,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 1,
                                                 100,
                                                 false,
-                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
-                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 30f, 25f, false, PowerUpChargeType.Time)),
-                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(0.9f)),
-                                                CreateBinding(ModuleIdEffectDash, PowerUpModuleStage.Execute, 30, null)));
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, CreateResourceGatePayload(100f, 30f, 25f, 0f, PowerUpChargeType.Time, 0.9f)),
+                                                CreateBinding(ModuleIdDash, PowerUpModuleStage.Execute, null)));
 
         definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdPortableHealthPack,
                                                 "Portable Health Pack",
@@ -2652,10 +2721,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 2,
                                                 130,
                                                 false,
-                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
-                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 45f, 20f, false, PowerUpChargeType.Time)),
-                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(7f)),
-                                                CreateBinding(ModuleIdEffectHealMissingHealth, PowerUpModuleStage.Execute, 30, CreateHealPayload(35f))));
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, CreateResourceGatePayload(100f, 45f, 20f, 0f, PowerUpChargeType.Time, 7f)),
+                                                CreateBinding(ModuleIdHeal, PowerUpModuleStage.Execute, CreateHealPayload(35f))));
 
         definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdBulletTime,
                                                 "Bullet Time",
@@ -2664,10 +2732,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 3,
                                                 170,
                                                 false,
-                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, 0, null),
-                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, 10, CreateResourceGatePayload(100f, 80f, 20f, false, PowerUpChargeType.EnemiesDestroyed)),
-                                                CreateBinding(ModuleIdGateCooldown, PowerUpModuleStage.Gate, 20, CreateCooldownGatePayload(8f)),
-                                                CreateBinding(ModuleIdEffectTimeDilationEnemies, PowerUpModuleStage.Execute, 30, null)));
+                                                CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, null),
+                                                CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, CreateResourceGatePayload(100f, 80f, 20f, 0f, PowerUpChargeType.EnemiesDestroyed, 8f)),
+                                                CreateBinding(ModuleIdTimeDilationEnemies, PowerUpModuleStage.Execute, null)));
 
         return definitions;
     }
@@ -2683,8 +2750,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 2,
                                                 140,
                                                 false,
-                                                CreateBinding(ModuleIdPassiveSpawnTrailSegment, PowerUpModuleStage.Hook, 0, null),
-                                                CreateBinding(ModuleIdPassiveAreaTickApplyElement, PowerUpModuleStage.Hook, 10, null)));
+                                                CreateBinding(ModuleIdTriggerEvent, PowerUpModuleStage.Hook, CreateTriggerEventPayload(PowerUpTriggerEventType.OnPlayerMovementStep)),
+                                                CreateBinding(ModuleIdSpawnTrailSegment, PowerUpModuleStage.Hook, null),
+                                                CreateBinding(ModuleIdAreaTickApplyElement, PowerUpModuleStage.Hook, null)));
 
         definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdEnemiesExplodeOnDeath,
                                                 "Enemies Explode On Death",
@@ -2693,7 +2761,8 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 3,
                                                 160,
                                                 false,
-                                                CreateBinding(ModuleIdPassiveDeathExplosion, PowerUpModuleStage.Hook, 0, null)));
+                                                CreateBinding(ModuleIdTriggerEvent, PowerUpModuleStage.Hook, CreateTriggerEventPayload(PowerUpTriggerEventType.OnEnemyKilled)),
+                                                CreateBinding(ModuleIdDeathExplosion, PowerUpModuleStage.Hook, null)));
 
         definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdOrbitalProjectiles,
                                                 "Orbital Projectiles",
@@ -2702,7 +2771,8 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 2,
                                                 150,
                                                 false,
-                                                CreateBinding(ModuleIdPassiveProjectileOrbitOverride, PowerUpModuleStage.Hook, 0, null)));
+                                                CreateBinding(ModuleIdTriggerEvent, PowerUpModuleStage.Hook, CreateTriggerEventPayload(PowerUpTriggerEventType.OnProjectileSpawned)),
+                                                CreateBinding(ModuleIdOrbitalProjectiles, PowerUpModuleStage.Hook, null)));
 
         definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdBouncingProjectiles,
                                                 "Bouncing Projectiles",
@@ -2711,16 +2781,18 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                                 2,
                                                 140,
                                                 false,
-                                                CreateBinding(ModuleIdPassiveProjectileBounceOnWalls, PowerUpModuleStage.Hook, 0, null)));
+                                                CreateBinding(ModuleIdTriggerEvent, PowerUpModuleStage.Hook, CreateTriggerEventPayload(PowerUpTriggerEventType.OnProjectileWallHit)),
+                                                CreateBinding(ModuleIdBouncingProjectiles, PowerUpModuleStage.Hook, null)));
 
         definitions.Add(CreatePowerUpDefinition(PassivePowerUpIdSplittingProjectiles,
                                                 "Splitting Projectiles",
-                                                "Projectiles split when they expire.",
+                                                "Projectiles split on hit/kill or despawn based on trigger mode.",
                                                 defaultDropPools,
                                                 3,
                                                 180,
                                                 false,
-                                                CreateBinding(ModuleIdPassiveProjectileSplitOnDeath, PowerUpModuleStage.Hook, 0, null)));
+                                                CreateBinding(ModuleIdTriggerEvent, PowerUpModuleStage.Hook, CreateTriggerEventPayload(PowerUpTriggerEventType.OnProjectileDespawned)),
+                                                CreateBinding(ModuleIdProjectileSplit, PowerUpModuleStage.Hook, null)));
 
         return definitions;
     }
@@ -2780,33 +2852,31 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             case PowerUpModuleKind.TriggerHoldCharge:
                 payload.HoldCharge.Configure(80f, 120f, 140f);
                 break;
+            case PowerUpModuleKind.TriggerEvent:
+                payload.TriggerEvent.Configure(PowerUpTriggerEventType.OnEnemyKilled);
+                break;
             case PowerUpModuleKind.GateResource:
                 payload.ResourceGate.Configure(PowerUpResourceType.Energy,
                                                PowerUpResourceType.Energy,
                                                100f,
                                                30f,
                                                0f,
-                                               false,
+                                               0f,
                                                PowerUpChargeType.Time,
-                                               25f);
-                break;
-            case PowerUpModuleKind.GateCooldown:
-                payload.CooldownGate.Configure(1f);
+                                               25f,
+                                               1f);
                 break;
             case PowerUpModuleKind.StateSuppressShooting:
                 payload.SuppressShooting.Configure(true);
                 break;
-            case PowerUpModuleKind.EffectProjectilePatternCone:
+            case PowerUpModuleKind.ProjectilesPatternCone:
                 payload.ProjectilePatternCone.Configure(6, 45f);
                 break;
-            case PowerUpModuleKind.EffectProjectileScale:
-                payload.ProjectileScale.Configure(1f, 1f, 1f, 1f, 1f);
+            case PowerUpModuleKind.ProjectilesTuning:
+                payload.ProjectileTuning.Configure(1f, 1f, 1f, 1f, 1f, ProjectilePenetrationMode.FixedHits, 1);
                 break;
-            case PowerUpModuleKind.EffectProjectilePenetration:
-                payload.ProjectilePenetration.Configure(ProjectilePenetrationMode.FixedHits, 1);
-                break;
-            case PowerUpModuleKind.EffectHealMissingHealth:
-                payload.HealMissingHealth.Configure(35f);
+            case PowerUpModuleKind.Heal:
+                payload.HealMissingHealth.Configure(PowerUpHealApplicationMode.Instant, 35f, 0f, 0.2f, PowerUpHealStackPolicy.Refresh);
                 break;
             default:
                 break;
@@ -2857,10 +2927,10 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         return commonData;
     }
 
-    private static PowerUpModuleBinding CreateBinding(string moduleId, PowerUpModuleStage stage, int order, PowerUpModuleData overridePayload)
+    private static PowerUpModuleBinding CreateBinding(string moduleId, PowerUpModuleStage stage, PowerUpModuleData overridePayload)
     {
         PowerUpModuleBinding binding = new PowerUpModuleBinding();
-        binding.Configure(moduleId, stage, order, true);
+        binding.Configure(moduleId, stage, true);
 
         if (overridePayload != null)
             binding.ConfigureOverride(true, overridePayload);
@@ -2874,8 +2944,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     private static PowerUpModuleData CreateResourceGatePayload(float maximumEnergy,
                                                                float activationCost,
                                                                float chargePerTrigger,
-                                                               bool fullChargeRequirement,
-                                                               PowerUpChargeType chargeType)
+                                                               float minimumActivationEnergyPercent,
+                                                               PowerUpChargeType chargeType,
+                                                               float cooldownSeconds)
     {
         PowerUpModuleData payload = new PowerUpModuleData();
         payload.ResourceGate.Configure(PowerUpResourceType.Energy,
@@ -2883,17 +2954,10 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                                        maximumEnergy,
                                        activationCost,
                                        0f,
-                                       fullChargeRequirement,
+                                       minimumActivationEnergyPercent,
                                        chargeType,
-                                       chargePerTrigger);
-        payload.Validate();
-        return payload;
-    }
-
-    private static PowerUpModuleData CreateCooldownGatePayload(float cooldownSeconds)
-    {
-        PowerUpModuleData payload = new PowerUpModuleData();
-        payload.CooldownGate.Configure(cooldownSeconds);
+                                       chargePerTrigger,
+                                       cooldownSeconds);
         payload.Validate();
         return payload;
     }
@@ -2922,22 +2986,30 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         return payload;
     }
 
-    private static PowerUpModuleData CreateProjectileScalePayload(float sizeMultiplier,
-                                                                  float damageMultiplier,
-                                                                  float speedMultiplier,
-                                                                  float rangeMultiplier,
-                                                                  float lifetimeMultiplier)
+    private static PowerUpModuleData CreateProjectileTuningPayload(float sizeMultiplier,
+                                                                   float damageMultiplier,
+                                                                   float speedMultiplier,
+                                                                   float rangeMultiplier,
+                                                                   float lifetimeMultiplier,
+                                                                   ProjectilePenetrationMode penetrationMode,
+                                                                   int maxPenetrations)
     {
         PowerUpModuleData payload = new PowerUpModuleData();
-        payload.ProjectileScale.Configure(sizeMultiplier, damageMultiplier, speedMultiplier, rangeMultiplier, lifetimeMultiplier);
+        payload.ProjectileTuning.Configure(sizeMultiplier,
+                                           damageMultiplier,
+                                           speedMultiplier,
+                                           rangeMultiplier,
+                                           lifetimeMultiplier,
+                                           penetrationMode,
+                                           maxPenetrations);
         payload.Validate();
         return payload;
     }
 
-    private static PowerUpModuleData CreateProjectilePenetrationPayload(ProjectilePenetrationMode mode, int maxPenetrations)
+    private static PowerUpModuleData CreateTriggerEventPayload(PowerUpTriggerEventType eventType)
     {
         PowerUpModuleData payload = new PowerUpModuleData();
-        payload.ProjectilePenetration.Configure(mode, maxPenetrations);
+        payload.TriggerEvent.Configure(eventType);
         payload.Validate();
         return payload;
     }
@@ -3019,6 +3091,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     private void ValidateEntries()
     {
         GenerateDefaultModularSetupIfEmpty();
+        MigrateModuleDefinitionsToUnifiedKinds();
 
         for (int index = 0; index < passiveTools.Count; index++)
         {
@@ -3107,6 +3180,364 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         ValidateToolLoadout();
     }
 
+    private void MigrateModuleDefinitionsToUnifiedKinds()
+    {
+        HashSet<string> validModuleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < moduleDefinitions.Count; index++)
+        {
+            PowerUpModuleDefinition moduleDefinition = moduleDefinitions[index];
+
+            if (moduleDefinition == null)
+                continue;
+
+            PowerUpModuleData payload = moduleDefinition.Data;
+
+            if (payload == null)
+                continue;
+
+            string moduleId = moduleDefinition.ModuleId;
+            string mappedModuleId = moduleId;
+            string mappedDisplayName = moduleDefinition.DisplayName;
+            PowerUpModuleKind mappedModuleKind = moduleDefinition.ModuleKind;
+            bool removeDefinition = false;
+
+            switch (moduleId)
+            {
+                case "ModuleTriggerPress":
+                    mappedModuleId = ModuleIdTriggerPress;
+                    mappedDisplayName = "Trigger Press";
+                    mappedModuleKind = PowerUpModuleKind.TriggerPress;
+                    break;
+                case "ModuleTriggerRelease":
+                    mappedModuleId = ModuleIdTriggerRelease;
+                    mappedDisplayName = "Trigger Release";
+                    mappedModuleKind = PowerUpModuleKind.TriggerRelease;
+                    break;
+                case "ModuleTriggerHoldCharge":
+                    mappedModuleId = ModuleIdTriggerHoldCharge;
+                    mappedDisplayName = "Trigger Hold Charge";
+                    mappedModuleKind = PowerUpModuleKind.TriggerHoldCharge;
+                    break;
+                case "ModuleGateResource":
+                    mappedModuleId = ModuleIdGateResource;
+                    mappedDisplayName = "Resource Gate";
+                    mappedModuleKind = PowerUpModuleKind.GateResource;
+                    break;
+                case "ModuleGateCooldown":
+                    removeDefinition = true;
+                    break;
+                case "ModuleStateSuppressShooting":
+                    mappedModuleId = ModuleIdStateSuppressShooting;
+                    mappedDisplayName = "Suppress Shooting";
+                    mappedModuleKind = PowerUpModuleKind.StateSuppressShooting;
+                    break;
+                case "ModuleEffectProjectilePatternCone":
+                    mappedModuleId = ModuleIdProjectilesPatternCone;
+                    mappedDisplayName = "Projectiles Pattern Cone";
+                    mappedModuleKind = PowerUpModuleKind.ProjectilesPatternCone;
+                    break;
+                case "ModuleEffectProjectileScale":
+                case "ModuleEffectProjectilePenetration":
+                case "ModuleEffectProjectileTuning":
+                    mappedModuleId = ModuleIdProjectilesTuning;
+                    mappedDisplayName = "Projectiles Tuning";
+                    mappedModuleKind = PowerUpModuleKind.ProjectilesTuning;
+                    break;
+                case "ModuleEffectSpawnBomb":
+                case "ModuleEffectSpawnObject":
+                    mappedModuleId = ModuleIdSpawnObject;
+                    mappedDisplayName = "Spawn Object";
+                    mappedModuleKind = PowerUpModuleKind.SpawnObject;
+                    break;
+                case "ModuleEffectDash":
+                    mappedModuleId = ModuleIdDash;
+                    mappedDisplayName = "Dash";
+                    mappedModuleKind = PowerUpModuleKind.Dash;
+                    break;
+                case "ModuleEffectTimeDilationEnemies":
+                    mappedModuleId = ModuleIdTimeDilationEnemies;
+                    mappedDisplayName = "Time Dilation Enemies";
+                    mappedModuleKind = PowerUpModuleKind.TimeDilationEnemies;
+                    break;
+                case "ModuleEffectHealMissingHealth":
+                case "ModuleEffectHeal":
+                    mappedModuleId = ModuleIdHeal;
+                    mappedDisplayName = "Heal";
+                    mappedModuleKind = PowerUpModuleKind.Heal;
+                    break;
+                case "ModulePassiveSpawnTrailSegment":
+                    mappedModuleId = ModuleIdSpawnTrailSegment;
+                    mappedDisplayName = "Spawn Trail Segment";
+                    mappedModuleKind = PowerUpModuleKind.SpawnTrailSegment;
+                    break;
+                case "ModulePassiveAreaTickApplyElement":
+                    mappedModuleId = ModuleIdAreaTickApplyElement;
+                    mappedDisplayName = "Area Tick Apply Element";
+                    mappedModuleKind = PowerUpModuleKind.AreaTickApplyElement;
+                    break;
+                case "ModulePassiveDeathExplosion":
+                    mappedModuleId = ModuleIdDeathExplosion;
+                    mappedDisplayName = "Death Explosion";
+                    mappedModuleKind = PowerUpModuleKind.DeathExplosion;
+                    break;
+                case "ModulePassiveProjectileOrbitOverride":
+                    mappedModuleId = ModuleIdOrbitalProjectiles;
+                    mappedDisplayName = "Orbital Projectiles";
+                    mappedModuleKind = PowerUpModuleKind.OrbitalProjectiles;
+                    break;
+                case "ModulePassiveProjectileBounceOnWalls":
+                    mappedModuleId = ModuleIdBouncingProjectiles;
+                    mappedDisplayName = "Bouncing Projectiles";
+                    mappedModuleKind = PowerUpModuleKind.BouncingProjectiles;
+                    break;
+                case "ModulePassiveProjectileSplit":
+                    mappedModuleId = ModuleIdProjectileSplit;
+                    mappedDisplayName = "Projectile Split";
+                    mappedModuleKind = PowerUpModuleKind.ProjectileSplit;
+                    break;
+            }
+
+            if (removeDefinition)
+            {
+                moduleDefinitions[index] = null;
+                continue;
+            }
+
+            if (mappedModuleKind == PowerUpModuleKind.Heal)
+            {
+                payload.HealMissingHealth.Configure(PowerUpHealApplicationMode.Instant,
+                                                    payload.HealMissingHealth.HealAmount,
+                                                    0f,
+                                                    0.2f,
+                                                    PowerUpHealStackPolicy.Refresh);
+            }
+
+            moduleDefinition.Configure(mappedModuleId,
+                                       mappedDisplayName,
+                                       mappedModuleKind,
+                                       PowerUpModuleKindUtility.ResolveStageFromKind(mappedModuleKind),
+                                       moduleDefinition.Notes,
+                                       payload);
+            validModuleIds.Add(mappedModuleId);
+        }
+
+        if (validModuleIds.Contains(ModuleIdTriggerEvent) == false)
+        {
+            moduleDefinitions.Add(CreateModuleDefinition(ModuleIdTriggerEvent,
+                                                         "Trigger Event",
+                                                         PowerUpModuleKind.TriggerEvent,
+                                                         PowerUpModuleStage.Hook,
+                                                         "Fires from a runtime event selected in payload."));
+            validModuleIds.Add(ModuleIdTriggerEvent);
+        }
+
+        for (int powerUpIndex = 0; powerUpIndex < activePowerUps.Count; powerUpIndex++)
+        {
+            ModularPowerUpDefinition powerUp = activePowerUps[powerUpIndex];
+
+            if (powerUp == null)
+                continue;
+
+            IReadOnlyList<PowerUpModuleBinding> bindings = powerUp.ModuleBindings;
+
+            if (bindings == null)
+                continue;
+
+            for (int bindingIndex = 0; bindingIndex < bindings.Count; bindingIndex++)
+            {
+                PowerUpModuleBinding binding = bindings[bindingIndex];
+
+                if (binding == null)
+                    continue;
+
+                string mappedBindingModuleId = binding.ModuleId;
+
+                switch (binding.ModuleId)
+                {
+                    case "ModuleTriggerPress":
+                        mappedBindingModuleId = ModuleIdTriggerPress;
+                        break;
+                    case "ModuleTriggerRelease":
+                        mappedBindingModuleId = ModuleIdTriggerRelease;
+                        break;
+                    case "ModuleTriggerHoldCharge":
+                        mappedBindingModuleId = ModuleIdTriggerHoldCharge;
+                        break;
+                    case "ModuleGateResource":
+                    case "ModuleGateCooldown":
+                        mappedBindingModuleId = ModuleIdGateResource;
+                        break;
+                    case "ModuleStateSuppressShooting":
+                        mappedBindingModuleId = ModuleIdStateSuppressShooting;
+                        break;
+                    case "ModuleEffectProjectilePatternCone":
+                        mappedBindingModuleId = ModuleIdProjectilesPatternCone;
+                        break;
+                    case "ModuleEffectProjectileScale":
+                    case "ModuleEffectProjectilePenetration":
+                    case "ModuleEffectProjectileTuning":
+                        mappedBindingModuleId = ModuleIdProjectilesTuning;
+                        break;
+                    case "ModuleEffectSpawnBomb":
+                    case "ModuleEffectSpawnObject":
+                        mappedBindingModuleId = ModuleIdSpawnObject;
+                        break;
+                    case "ModuleEffectDash":
+                        mappedBindingModuleId = ModuleIdDash;
+                        break;
+                    case "ModuleEffectTimeDilationEnemies":
+                        mappedBindingModuleId = ModuleIdTimeDilationEnemies;
+                        break;
+                    case "ModuleEffectHealMissingHealth":
+                    case "ModuleEffectHeal":
+                        mappedBindingModuleId = ModuleIdHeal;
+                        break;
+                    case "ModulePassiveSpawnTrailSegment":
+                        mappedBindingModuleId = ModuleIdSpawnTrailSegment;
+                        break;
+                    case "ModulePassiveAreaTickApplyElement":
+                        mappedBindingModuleId = ModuleIdAreaTickApplyElement;
+                        break;
+                    case "ModulePassiveDeathExplosion":
+                        mappedBindingModuleId = ModuleIdDeathExplosion;
+                        break;
+                    case "ModulePassiveProjectileOrbitOverride":
+                        mappedBindingModuleId = ModuleIdOrbitalProjectiles;
+                        break;
+                    case "ModulePassiveProjectileBounceOnWalls":
+                        mappedBindingModuleId = ModuleIdBouncingProjectiles;
+                        break;
+                    case "ModulePassiveProjectileSplit":
+                        mappedBindingModuleId = ModuleIdProjectileSplit;
+                        break;
+                }
+
+                PowerUpModuleDefinition resolvedDefinition = ResolveModuleDefinitionById(mappedBindingModuleId);
+                PowerUpModuleStage stage = binding.Stage;
+
+                if (resolvedDefinition != null)
+                    stage = resolvedDefinition.DefaultStage;
+
+                binding.Configure(mappedBindingModuleId, stage, binding.IsEnabled);
+                binding.ConfigureOverride(binding.UseOverridePayload, binding.OverridePayload);
+            }
+        }
+
+        for (int powerUpIndex = 0; powerUpIndex < passivePowerUps.Count; powerUpIndex++)
+        {
+            ModularPowerUpDefinition powerUp = passivePowerUps[powerUpIndex];
+
+            if (powerUp == null)
+                continue;
+
+            IReadOnlyList<PowerUpModuleBinding> bindings = powerUp.ModuleBindings;
+
+            if (bindings == null)
+                continue;
+
+            for (int bindingIndex = 0; bindingIndex < bindings.Count; bindingIndex++)
+            {
+                PowerUpModuleBinding binding = bindings[bindingIndex];
+
+                if (binding == null)
+                    continue;
+
+                string mappedBindingModuleId = binding.ModuleId;
+
+                switch (binding.ModuleId)
+                {
+                    case "ModuleTriggerPress":
+                        mappedBindingModuleId = ModuleIdTriggerPress;
+                        break;
+                    case "ModuleTriggerRelease":
+                        mappedBindingModuleId = ModuleIdTriggerRelease;
+                        break;
+                    case "ModuleTriggerHoldCharge":
+                        mappedBindingModuleId = ModuleIdTriggerHoldCharge;
+                        break;
+                    case "ModuleGateResource":
+                    case "ModuleGateCooldown":
+                        mappedBindingModuleId = ModuleIdGateResource;
+                        break;
+                    case "ModuleStateSuppressShooting":
+                        mappedBindingModuleId = ModuleIdStateSuppressShooting;
+                        break;
+                    case "ModuleEffectProjectilePatternCone":
+                        mappedBindingModuleId = ModuleIdProjectilesPatternCone;
+                        break;
+                    case "ModuleEffectProjectileScale":
+                    case "ModuleEffectProjectilePenetration":
+                    case "ModuleEffectProjectileTuning":
+                        mappedBindingModuleId = ModuleIdProjectilesTuning;
+                        break;
+                    case "ModuleEffectSpawnBomb":
+                    case "ModuleEffectSpawnObject":
+                        mappedBindingModuleId = ModuleIdSpawnObject;
+                        break;
+                    case "ModuleEffectDash":
+                        mappedBindingModuleId = ModuleIdDash;
+                        break;
+                    case "ModuleEffectTimeDilationEnemies":
+                        mappedBindingModuleId = ModuleIdTimeDilationEnemies;
+                        break;
+                    case "ModuleEffectHealMissingHealth":
+                    case "ModuleEffectHeal":
+                        mappedBindingModuleId = ModuleIdHeal;
+                        break;
+                    case "ModulePassiveSpawnTrailSegment":
+                        mappedBindingModuleId = ModuleIdSpawnTrailSegment;
+                        break;
+                    case "ModulePassiveAreaTickApplyElement":
+                        mappedBindingModuleId = ModuleIdAreaTickApplyElement;
+                        break;
+                    case "ModulePassiveDeathExplosion":
+                        mappedBindingModuleId = ModuleIdDeathExplosion;
+                        break;
+                    case "ModulePassiveProjectileOrbitOverride":
+                        mappedBindingModuleId = ModuleIdOrbitalProjectiles;
+                        break;
+                    case "ModulePassiveProjectileBounceOnWalls":
+                        mappedBindingModuleId = ModuleIdBouncingProjectiles;
+                        break;
+                    case "ModulePassiveProjectileSplit":
+                        mappedBindingModuleId = ModuleIdProjectileSplit;
+                        break;
+                }
+
+                PowerUpModuleDefinition resolvedDefinition = ResolveModuleDefinitionById(mappedBindingModuleId);
+                PowerUpModuleStage stage = binding.Stage;
+
+                if (resolvedDefinition != null)
+                    stage = resolvedDefinition.DefaultStage;
+
+                binding.Configure(mappedBindingModuleId, stage, binding.IsEnabled);
+                binding.ConfigureOverride(binding.UseOverridePayload, binding.OverridePayload);
+            }
+        }
+    }
+
+    private PowerUpModuleDefinition ResolveModuleDefinitionById(string moduleId)
+    {
+        if (string.IsNullOrWhiteSpace(moduleId))
+            return null;
+
+        for (int index = 0; index < moduleDefinitions.Count; index++)
+        {
+            PowerUpModuleDefinition moduleDefinition = moduleDefinitions[index];
+
+            if (moduleDefinition == null)
+                continue;
+
+            if (string.Equals(moduleDefinition.ModuleId, moduleId, StringComparison.OrdinalIgnoreCase) == false)
+                continue;
+
+            return moduleDefinition;
+        }
+
+        return null;
+    }
+
     private void ValidateActivePowerUpLoadout()
     {
         if (string.IsNullOrWhiteSpace(primaryActivePowerUpId) == false &&
@@ -3116,12 +3547,6 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         if (string.IsNullOrWhiteSpace(secondaryActivePowerUpId) == false &&
             HasActivePowerUpWithId(secondaryActivePowerUpId) == false)
             secondaryActivePowerUpId = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(primaryActivePowerUpId) && activePowerUps.Count > 0)
-            primaryActivePowerUpId = GetFirstValidActivePowerUpId();
-
-        if (string.IsNullOrWhiteSpace(secondaryActivePowerUpId) && activePowerUps.Count > 1)
-            secondaryActivePowerUpId = GetSecondValidActivePowerUpId();
     }
 
     private void ValidatePassivePowerUpLoadout()
@@ -3155,16 +3580,6 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             equippedPassivePowerUpIds.RemoveAt(index);
             index--;
         }
-
-        if (equippedPassivePowerUpIds.Count > 0)
-            return;
-
-        string firstValidPassivePowerUpId = GetFirstValidPassivePowerUpId();
-
-        if (string.IsNullOrWhiteSpace(firstValidPassivePowerUpId))
-            return;
-
-        equippedPassivePowerUpIds.Add(firstValidPassivePowerUpId);
     }
 
     private void ValidateToolLoadout()

@@ -1197,8 +1197,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         if (activePowerUps != null && activePowerUps.Count > 0)
         {
-            ModularPowerUpDefinition primaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.PrimaryActivePowerUpId, 0);
-            ModularPowerUpDefinition secondaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.SecondaryActivePowerUpId, 1);
+            ModularPowerUpDefinition primaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.PrimaryActivePowerUpId, -1);
+            ModularPowerUpDefinition secondaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.SecondaryActivePowerUpId, -1);
             PlayerPowerUpSlotConfig primaryCompiledSlot = BuildSlotConfigFromModularPowerUp(authoring, preset, primaryPowerUp);
             PlayerPowerUpSlotConfig secondaryCompiledSlot = BuildSlotConfigFromModularPowerUp(authoring, preset, secondaryPowerUp);
 
@@ -1209,8 +1209,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             };
         }
 
-        ActiveToolDefinition primaryTool = ResolveLoadoutTool(preset, preset.PrimaryActiveToolId, 0);
-        ActiveToolDefinition secondaryTool = ResolveLoadoutTool(preset, preset.SecondaryActiveToolId, 1);
+        ActiveToolDefinition primaryTool = ResolveLoadoutTool(preset, preset.PrimaryActiveToolId, -1);
+        ActiveToolDefinition secondaryTool = ResolveLoadoutTool(preset, preset.SecondaryActiveToolId, -1);
         PlayerPowerUpSlotConfig primarySlotConfig = BuildSlotConfig(authoring, primaryTool);
         PlayerPowerUpSlotConfig secondarySlotConfig = BuildSlotConfig(authoring, secondaryTool);
 
@@ -1501,6 +1501,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (powerUp == null)
             return default;
 
+        bool hasGateResource = false;
         PowerUpResourceType activationResource = PowerUpResourceType.None;
         PowerUpResourceType maintenanceResource = PowerUpResourceType.None;
         PowerUpChargeType chargeType = PowerUpChargeType.Time;
@@ -1509,25 +1510,64 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         float maintenanceCostPerSecond = 0f;
         float chargePerTrigger = 0f;
         float cooldownSeconds = 0f;
-        bool fullChargeRequirement = false;
+        bool hasCooldownSeconds = false;
+        float minimumActivationEnergyPercent = 0f;
+        bool suppressBaseShootingWhileActive = false;
+        bool interruptOtherSlotOnEnter = false;
+        bool interruptOtherSlotChargingOnly = true;
         bool hasShotgun = false;
         bool hasHoldCharge = false;
+        float holdChargeRequired = 0f;
+        float holdChargeMaximum = 0f;
+        float holdChargeRatePerSecond = 0f;
         bool hasBomb = false;
+        GameObject bombPrefab = null;
+        float3 bombSpawnOffset = float3.zero;
+        SpawnOffsetOrientationMode bombSpawnOffsetOrientation = SpawnOffsetOrientationMode.PlayerForward;
+        float bombDeploySpeed = 0f;
+        float bombCollisionRadius = 0.1f;
+        bool bombBounceOnWalls = false;
+        float bombBounceDamping = 0f;
+        float bombLinearDampingPerSecond = 0f;
+        float bombFuseSeconds = float.MaxValue;
+        bool bombDamagePayloadEnabled = false;
+        float bombPayloadRadius = 0.1f;
+        float bombPayloadDamage = 0f;
+        bool bombPayloadAffectAllEnemies = false;
         bool hasDash = false;
+        float dashDistance = 0f;
+        float dashDuration = 0.01f;
+        float dashSpeedTransitionInSeconds = 0f;
+        float dashSpeedTransitionOutSeconds = 0f;
+        bool dashGrantsInvulnerability = false;
+        float dashInvulnerabilityExtraTime = 0f;
         bool hasBulletTime = false;
+        float bulletTimeDuration = 0.05f;
+        float bulletTimeEnemySlowPercent = 0f;
         bool hasHealthPack = false;
+        bool hasHealthPackOverTime = false;
+        float healthPackHealAmount = 0f;
+        float healthPackDurationSeconds = 0f;
+        float healthPackTickIntervalSeconds = 0.2f;
+        PowerUpHealStackPolicy healthPackStackPolicy = PowerUpHealStackPolicy.Refresh;
+        bool hasTriggerPress = false;
+        bool hasTriggerRelease = false;
         bool suppressBaseShootingWhileCharging = false;
-        bool hasProjectileScale = false;
-        bool hasPenetration = false;
-        PowerUpProjectilePatternConeModuleData shotgunPattern = new PowerUpProjectilePatternConeModuleData();
-        PowerUpProjectileScaleModuleData projectileScale = new PowerUpProjectileScaleModuleData();
-        PowerUpProjectilePenetrationModuleData projectilePenetration = new PowerUpProjectilePenetrationModuleData();
-        PowerUpHoldChargeModuleData holdCharge = new PowerUpHoldChargeModuleData();
-        PowerUpHealMissingHealthModuleData healData = new PowerUpHealMissingHealthModuleData();
-        DashToolData dashData = new DashToolData();
-        BulletTimeToolData bulletTimeData = new BulletTimeToolData();
-        BombToolData bombData = new BombToolData();
-        ExplosionPassiveToolData explosionData = new ExplosionPassiveToolData();
+        int shotgunProjectileCount = 0;
+        float shotgunConeAngleDegrees = 0f;
+        float projectileSizeMultiplier = 1f;
+        float projectileDamageMultiplier = 1f;
+        float projectileSpeedMultiplier = 1f;
+        float projectileRangeMultiplier = 1f;
+        float projectileLifetimeMultiplier = 1f;
+        ProjectilePenetrationMode projectilePenetrationMode = ProjectilePenetrationMode.None;
+        int projectileMaxPenetrations = 0;
+        bool hasProjectileElementalPayload = false;
+        ElementalEffectConfig projectileElementalEffect = default;
+        float projectileElementalStacksPerHit = 0f;
+        float explosionRadius = 0f;
+        float explosionDamage = 0f;
+        bool explosionAffectAllEnemies = false;
         bool hasExplosionData = false;
         IReadOnlyList<PowerUpModuleBinding> moduleBindings = powerUp.ModuleBindings;
 
@@ -1557,56 +1597,195 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             switch (moduleDefinition.ModuleKind)
             {
                 case PowerUpModuleKind.GateResource:
-                    activationResource = payload.ResourceGate.ActivationResource;
-                    maintenanceResource = payload.ResourceGate.MaintenanceResource;
-                    maximumEnergy = math.max(0f, payload.ResourceGate.MaximumEnergy);
-                    activationCost = math.max(0f, payload.ResourceGate.ActivationCost);
-                    maintenanceCostPerSecond = math.max(0f, payload.ResourceGate.MaintenanceCostPerSecond);
-                    fullChargeRequirement = payload.ResourceGate.FullChargeRequirement;
-                    chargeType = payload.ResourceGate.ChargeType;
-                    chargePerTrigger = math.max(0f, payload.ResourceGate.ChargePerTrigger);
-                    break;
-                case PowerUpModuleKind.GateCooldown:
-                    cooldownSeconds = math.max(0f, payload.CooldownGate.CooldownSeconds);
+                    PowerUpResourceGateModuleData resourceGateData = payload.ResourceGate;
+
+                    if (resourceGateData == null)
+                        break;
+
+                    if (hasGateResource == false)
+                    {
+                        hasGateResource = true;
+                        activationResource = resourceGateData.ActivationResource;
+                        maintenanceResource = resourceGateData.MaintenanceResource;
+                        chargeType = resourceGateData.ChargeType;
+                    }
+                    else
+                    {
+                        if (activationResource == PowerUpResourceType.None && resourceGateData.ActivationResource != PowerUpResourceType.None)
+                            activationResource = resourceGateData.ActivationResource;
+
+                        if (maintenanceResource == PowerUpResourceType.None && resourceGateData.MaintenanceResource != PowerUpResourceType.None)
+                            maintenanceResource = resourceGateData.MaintenanceResource;
+                    }
+
+                    maximumEnergy = math.max(maximumEnergy, math.max(0f, resourceGateData.MaximumEnergy));
+                    activationCost += math.max(0f, resourceGateData.ActivationCost);
+                    maintenanceCostPerSecond += math.max(0f, resourceGateData.MaintenanceCostPerSecond);
+                    minimumActivationEnergyPercent = math.max(minimumActivationEnergyPercent,
+                                                              math.clamp(resourceGateData.MinimumActivationEnergyPercent, 0f, 100f));
+
+                    if (chargeType == PowerUpChargeType.Time && resourceGateData.ChargeType != PowerUpChargeType.Time)
+                        chargeType = resourceGateData.ChargeType;
+
+                    chargePerTrigger += math.max(0f, resourceGateData.ChargePerTrigger);
+
+                    float candidateCooldownSeconds = math.max(0f, resourceGateData.CooldownSeconds);
+
+                    if (candidateCooldownSeconds > 0f)
+                    {
+                        if (hasCooldownSeconds == false)
+                        {
+                            hasCooldownSeconds = true;
+                            cooldownSeconds = candidateCooldownSeconds;
+                        }
+                        else
+                        {
+                            cooldownSeconds = math.min(cooldownSeconds, candidateCooldownSeconds);
+                        }
+                    }
+
                     break;
                 case PowerUpModuleKind.TriggerHoldCharge:
+                    PowerUpHoldChargeModuleData holdChargeData = payload.HoldCharge;
+
+                    if (holdChargeData == null)
+                        break;
+
                     hasHoldCharge = true;
-                    holdCharge = payload.HoldCharge;
+                    holdChargeRequired = math.max(holdChargeRequired, math.max(0f, holdChargeData.RequiredCharge));
+                    holdChargeMaximum = math.max(math.max(holdChargeMaximum, holdChargeRequired), math.max(0f, holdChargeData.MaximumCharge));
+                    holdChargeRatePerSecond += math.max(0f, holdChargeData.ChargeRatePerSecond);
+                    break;
+                case PowerUpModuleKind.TriggerPress:
+                    hasTriggerPress = true;
+                    break;
+                case PowerUpModuleKind.TriggerRelease:
+                    hasTriggerRelease = true;
+                    break;
+                case PowerUpModuleKind.TriggerEvent:
                     break;
                 case PowerUpModuleKind.StateSuppressShooting:
-                    suppressBaseShootingWhileCharging = payload.SuppressShooting.SuppressBaseShootingWhileActive;
+                    PowerUpSuppressShootingModuleData suppressShootingData = payload.SuppressShooting;
+
+                    if (suppressShootingData == null)
+                        break;
+
+                    suppressBaseShootingWhileCharging = suppressBaseShootingWhileCharging || suppressShootingData.SuppressBaseShootingWhileActive;
+                    suppressBaseShootingWhileActive = suppressBaseShootingWhileActive || suppressShootingData.SuppressBaseShootingWhileActive;
+                    interruptOtherSlotOnEnter = interruptOtherSlotOnEnter || suppressShootingData.InterruptOtherSlotOnEnter;
+                    interruptOtherSlotChargingOnly = interruptOtherSlotChargingOnly && suppressShootingData.InterruptOtherSlotChargingOnly;
                     break;
-                case PowerUpModuleKind.EffectProjectilePatternCone:
+                case PowerUpModuleKind.ProjectilesPatternCone:
                     hasShotgun = true;
-                    shotgunPattern = payload.ProjectilePatternCone;
+                    PowerUpProjectilePatternConeModuleData shotgunPatternData = payload.ProjectilePatternCone;
+
+                    if (shotgunPatternData == null)
+                        break;
+
+                    shotgunProjectileCount += math.max(1, shotgunPatternData.ProjectileCount);
+                    shotgunConeAngleDegrees = math.max(shotgunConeAngleDegrees, math.max(0f, shotgunPatternData.ConeAngleDegrees));
                     break;
-                case PowerUpModuleKind.EffectProjectileScale:
-                    hasProjectileScale = true;
-                    projectileScale = payload.ProjectileScale;
+                case PowerUpModuleKind.ProjectilesTuning:
+                    PowerUpProjectileTuningModuleData projectileTuningData = payload.ProjectileTuning;
+
+                    if (projectileTuningData == null)
+                        break;
+
+                    projectileSizeMultiplier *= math.max(0.01f, projectileTuningData.SizeMultiplier);
+                    projectileDamageMultiplier *= math.max(0f, projectileTuningData.DamageMultiplier);
+                    projectileSpeedMultiplier *= math.max(0f, projectileTuningData.SpeedMultiplier);
+                    projectileRangeMultiplier *= math.max(0f, projectileTuningData.RangeMultiplier);
+                    projectileLifetimeMultiplier *= math.max(0f, projectileTuningData.LifetimeMultiplier);
+                    projectilePenetrationMode = (ProjectilePenetrationMode)math.max((int)projectilePenetrationMode, (int)projectileTuningData.PenetrationMode);
+                    projectileMaxPenetrations += math.max(0, projectileTuningData.MaxPenetrations);
+
+                    if (projectileTuningData.ApplyElementalOnHit && projectileTuningData.ElementalEffectData != null)
+                    {
+                        hasProjectileElementalPayload = true;
+                        projectileElementalEffect = BuildElementalEffectConfig(projectileTuningData.ElementalEffectData);
+                        projectileElementalStacksPerHit += math.max(0f, projectileTuningData.ElementalStacksPerHit);
+                    }
+
                     break;
-                case PowerUpModuleKind.EffectProjectilePenetration:
-                    hasPenetration = true;
-                    projectilePenetration = payload.ProjectilePenetration;
-                    break;
-                case PowerUpModuleKind.EffectSpawnBomb:
+                case PowerUpModuleKind.SpawnObject:
                     hasBomb = true;
-                    bombData = payload.Bomb;
+                    BombToolData bombModuleData = payload.Bomb;
+
+                    if (bombModuleData == null)
+                        break;
+
+                    if (bombPrefab == null && bombModuleData.BombPrefab != null)
+                        bombPrefab = bombModuleData.BombPrefab;
+
+                    if (math.lengthsq(bombSpawnOffset) <= 0f)
+                        bombSpawnOffset = new float3(bombModuleData.SpawnOffset.x, bombModuleData.SpawnOffset.y, bombModuleData.SpawnOffset.z);
+
+                    bombSpawnOffsetOrientation = bombModuleData.SpawnOffsetOrientation;
+                    bombDeploySpeed = math.max(bombDeploySpeed, math.max(0f, bombModuleData.DeploySpeed));
+                    bombCollisionRadius = math.max(bombCollisionRadius, math.max(0.01f, bombModuleData.CollisionRadius));
+                    bombBounceOnWalls = bombBounceOnWalls || bombModuleData.BounceOnWalls;
+                    bombBounceDamping = math.max(bombBounceDamping, math.clamp(bombModuleData.BounceDamping, 0f, 1f));
+                    bombLinearDampingPerSecond = math.max(bombLinearDampingPerSecond, math.max(0f, bombModuleData.LinearDampingPerSecond));
+                    bombFuseSeconds = math.min(bombFuseSeconds, math.max(0.05f, bombModuleData.FuseSeconds));
+                    bombDamagePayloadEnabled = bombDamagePayloadEnabled || bombModuleData.EnableDamagePayload;
+                    bombPayloadRadius = math.max(bombPayloadRadius, math.max(0.1f, bombModuleData.Radius));
+                    bombPayloadDamage += math.max(0f, bombModuleData.Damage);
+                    bombPayloadAffectAllEnemies = bombPayloadAffectAllEnemies || bombModuleData.AffectAllEnemiesInRadius;
                     break;
-                case PowerUpModuleKind.EffectExplosionAreaDamage:
+                case PowerUpModuleKind.DeathExplosion:
                     hasExplosionData = true;
-                    explosionData = payload.DeathExplosion;
+                    ExplosionPassiveToolData explosionModuleData = payload.DeathExplosion;
+
+                    if (explosionModuleData == null)
+                        break;
+
+                    explosionRadius = math.max(explosionRadius, math.max(0f, explosionModuleData.Radius));
+                    explosionDamage += math.max(0f, explosionModuleData.Damage);
+                    explosionAffectAllEnemies = explosionAffectAllEnemies || explosionModuleData.AffectAllEnemiesInRadius;
                     break;
-                case PowerUpModuleKind.EffectDash:
+                case PowerUpModuleKind.Dash:
                     hasDash = true;
-                    dashData = payload.Dash;
+                    DashToolData dashModuleData = payload.Dash;
+
+                    if (dashModuleData == null)
+                        break;
+
+                    dashDistance = math.max(dashDistance, math.max(0f, dashModuleData.Distance));
+                    dashDuration = math.max(dashDuration, math.max(0.01f, dashModuleData.Duration));
+                    dashSpeedTransitionInSeconds = math.min(dashSpeedTransitionInSeconds <= 0f ? float.MaxValue : dashSpeedTransitionInSeconds,
+                                                            math.max(0f, dashModuleData.SpeedTransitionInSeconds));
+                    dashSpeedTransitionOutSeconds = math.min(dashSpeedTransitionOutSeconds <= 0f ? float.MaxValue : dashSpeedTransitionOutSeconds,
+                                                             math.max(0f, dashModuleData.SpeedTransitionOutSeconds));
+                    dashGrantsInvulnerability = dashGrantsInvulnerability || dashModuleData.GrantsInvulnerability;
+                    dashInvulnerabilityExtraTime = math.max(dashInvulnerabilityExtraTime, math.max(0f, dashModuleData.InvulnerabilityExtraTime));
                     break;
-                case PowerUpModuleKind.EffectTimeDilationEnemies:
+                case PowerUpModuleKind.TimeDilationEnemies:
                     hasBulletTime = true;
-                    bulletTimeData = payload.BulletTime;
+                    BulletTimeToolData bulletTimeModuleData = payload.BulletTime;
+
+                    if (bulletTimeModuleData == null)
+                        break;
+
+                    bulletTimeDuration = math.max(bulletTimeDuration, math.max(0.05f, bulletTimeModuleData.Duration));
+                    bulletTimeEnemySlowPercent = math.max(bulletTimeEnemySlowPercent, math.clamp(bulletTimeModuleData.EnemySlowPercent, 0f, 100f));
                     break;
-                case PowerUpModuleKind.EffectHealMissingHealth:
+                case PowerUpModuleKind.Heal:
                     hasHealthPack = true;
-                    healData = payload.HealMissingHealth;
+                    PowerUpHealMissingHealthModuleData healModuleData = payload.HealMissingHealth;
+
+                    if (healModuleData == null)
+                        break;
+
+                    healthPackHealAmount += math.max(0f, healModuleData.HealAmount);
+                    healthPackStackPolicy = healModuleData.StackPolicy;
+
+                    if (healModuleData.ApplyMode == PowerUpHealApplicationMode.OverTime)
+                    {
+                        hasHealthPackOverTime = true;
+                        healthPackDurationSeconds = math.max(healthPackDurationSeconds, math.max(0f, healModuleData.DurationSeconds));
+                        healthPackTickIntervalSeconds = math.min(healthPackTickIntervalSeconds, math.max(0.01f, healModuleData.TickIntervalSeconds));
+                    }
+
                     break;
             }
         }
@@ -1631,10 +1810,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         Entity bombPrefabEntity = Entity.Null;
 
-        if (resolvedToolKind == ActiveToolKind.Bomb && bombData != null && bombData.BombPrefab != null)
+        if (resolvedToolKind == ActiveToolKind.Bomb && bombPrefab != null)
         {
-            GameObject bombPrefab = bombData.BombPrefab;
-
             if (IsInvalidBombPrefab(authoring, bombPrefab) == false)
                 bombPrefabEntity = GetEntity(bombPrefab, TransformUsageFlags.Dynamic);
             else
@@ -1646,27 +1823,44 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             }
         }
 
-        float bombRadius = bombData != null ? math.max(0.1f, bombData.Radius) : 0.1f;
-        float bombDamage = bombData != null ? math.max(0f, bombData.Damage) : 0f;
-        byte bombAffectAll = bombData != null && bombData.AffectAllEnemiesInRadius ? (byte)1 : (byte)0;
+        float bombRadius = math.max(0.1f, bombPayloadRadius);
+        float bombDamage = math.max(0f, bombPayloadDamage);
+        byte bombAffectAll = bombPayloadAffectAllEnemies ? (byte)1 : (byte)0;
+        byte bombEnableDamagePayload = bombDamagePayloadEnabled ? (byte)1 : (byte)0;
 
-        if (hasExplosionData && explosionData != null)
+        if (hasExplosionData)
         {
-            bombRadius = math.max(0.1f, explosionData.Radius);
-            bombDamage = math.max(0f, explosionData.Damage);
-            bombAffectAll = explosionData.AffectAllEnemiesInRadius ? (byte)1 : (byte)0;
+            bombRadius = math.max(0.1f, explosionRadius);
+            bombDamage += math.max(0f, explosionDamage);
+            bombAffectAll = explosionAffectAllEnemies ? (byte)1 : (byte)0;
+            bombEnableDamagePayload = 1;
         }
 
-        float shotgunSizeMultiplier = hasProjectileScale ? math.max(0.01f, projectileScale.SizeMultiplier) : 1f;
-        float shotgunDamageMultiplier = hasProjectileScale ? math.max(0f, projectileScale.DamageMultiplier) : 1f;
-        float shotgunSpeedMultiplier = hasProjectileScale ? math.max(0f, projectileScale.SpeedMultiplier) : 1f;
-        float shotgunRangeMultiplier = hasProjectileScale ? math.max(0f, projectileScale.RangeMultiplier) : 1f;
-        float shotgunLifetimeMultiplier = hasProjectileScale ? math.max(0f, projectileScale.LifetimeMultiplier) : 1f;
-        ProjectilePenetrationMode penetrationMode = hasPenetration ? projectilePenetration.Mode : ProjectilePenetrationMode.None;
-        int maxPenetrations = hasPenetration ? math.max(0, projectilePenetration.MaxPenetrations) : 0;
-        float chargeShotRequired = math.max(0f, holdCharge.RequiredCharge);
-        float chargeShotMaximum = math.max(chargeShotRequired, holdCharge.MaximumCharge);
-        float chargeShotRate = math.max(0f, holdCharge.ChargeRatePerSecond);
+        if (bombEnableDamagePayload == 0)
+        {
+            bombRadius = 0f;
+            bombDamage = 0f;
+            bombAffectAll = 0;
+        }
+
+        float shotgunSizeMultiplier = math.max(0.01f, projectileSizeMultiplier);
+        float shotgunDamageMultiplier = math.max(0f, projectileDamageMultiplier);
+        float shotgunSpeedMultiplier = math.max(0f, projectileSpeedMultiplier);
+        float shotgunRangeMultiplier = math.max(0f, projectileRangeMultiplier);
+        float shotgunLifetimeMultiplier = math.max(0f, projectileLifetimeMultiplier);
+        ProjectilePenetrationMode penetrationMode = projectilePenetrationMode;
+        int maxPenetrations = math.max(0, projectileMaxPenetrations);
+        bool hasElementalPayload = hasProjectileElementalPayload && projectileElementalStacksPerHit > 0f;
+        ElementalEffectConfig elementalEffect = projectileElementalEffect;
+        float elementalStacksPerHit = math.max(0f, projectileElementalStacksPerHit);
+
+        float chargeShotRequired = math.max(0f, holdChargeRequired);
+        float chargeShotMaximum = math.max(chargeShotRequired, holdChargeMaximum);
+        float chargeShotRate = math.max(0f, holdChargeRatePerSecond);
+        PowerUpActivationInputMode activationInputMode = PowerUpActivationInputMode.OnPress;
+
+        if (hasTriggerRelease && hasTriggerPress == false && hasHoldCharge == false)
+            activationInputMode = PowerUpActivationInputMode.OnRelease;
 
         return new PlayerPowerUpSlotConfig
         {
@@ -1680,48 +1874,57 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             MaintenanceCostPerSecond = maintenanceCostPerSecond,
             ChargePerTrigger = chargePerTrigger,
             CooldownSeconds = cooldownSeconds,
+            ActivationInputMode = activationInputMode,
             Toggleable = 0,
-            FullChargeRequirement = fullChargeRequirement ? (byte)1 : (byte)0,
+            MinimumActivationEnergyPercent = math.clamp(minimumActivationEnergyPercent, 0f, 100f),
             Unreplaceable = powerUp.Unreplaceable ? (byte)1 : (byte)0,
+            SuppressBaseShootingWhileActive = suppressBaseShootingWhileActive ? (byte)1 : (byte)0,
+            InterruptOtherSlotOnEnter = interruptOtherSlotOnEnter ? (byte)1 : (byte)0,
+            InterruptOtherSlotChargingOnly = interruptOtherSlotChargingOnly ? (byte)1 : (byte)0,
             BombPrefabEntity = bombPrefabEntity,
             Bomb = new BombPowerUpConfig
             {
-                SpawnOffset = bombData != null ? new float3(bombData.SpawnOffset.x, bombData.SpawnOffset.y, bombData.SpawnOffset.z) : float3.zero,
-                DeploySpeed = bombData != null ? math.max(0f, bombData.DeploySpeed) : 0f,
-                CollisionRadius = bombData != null ? math.max(0.01f, bombData.CollisionRadius) : 0.1f,
-                BounceOnWalls = bombData != null && bombData.BounceOnWalls ? (byte)1 : (byte)0,
-                BounceDamping = bombData != null ? math.clamp(bombData.BounceDamping, 0f, 1f) : 0f,
-                LinearDampingPerSecond = bombData != null ? math.max(0f, bombData.LinearDampingPerSecond) : 0f,
-                FuseSeconds = bombData != null ? math.max(0.05f, bombData.FuseSeconds) : 0.05f,
+                SpawnOffset = bombSpawnOffset,
+                SpawnOffsetOrientation = bombSpawnOffsetOrientation,
+                DeploySpeed = math.max(0f, bombDeploySpeed),
+                CollisionRadius = math.max(0.01f, bombCollisionRadius),
+                BounceOnWalls = bombBounceOnWalls ? (byte)1 : (byte)0,
+                BounceDamping = math.clamp(bombBounceDamping, 0f, 1f),
+                LinearDampingPerSecond = math.max(0f, bombLinearDampingPerSecond),
+                FuseSeconds = math.max(0.05f, bombFuseSeconds == float.MaxValue ? 0.05f : bombFuseSeconds),
+                EnableDamagePayload = bombEnableDamagePayload,
                 Radius = bombRadius,
                 Damage = bombDamage,
                 AffectAllEnemiesInRadius = bombAffectAll
             },
             Dash = new DashPowerUpConfig
             {
-                Distance = dashData != null ? math.max(0f, dashData.Distance) : 0f,
-                Duration = dashData != null ? math.max(0.01f, dashData.Duration) : 0.01f,
-                SpeedTransitionInSeconds = dashData != null ? math.max(0f, dashData.SpeedTransitionInSeconds) : 0f,
-                SpeedTransitionOutSeconds = dashData != null ? math.max(0f, dashData.SpeedTransitionOutSeconds) : 0f,
-                GrantsInvulnerability = dashData != null && dashData.GrantsInvulnerability ? (byte)1 : (byte)0,
-                InvulnerabilityExtraTime = dashData != null ? math.max(0f, dashData.InvulnerabilityExtraTime) : 0f
+                Distance = math.max(0f, dashDistance),
+                Duration = math.max(0.01f, dashDuration),
+                SpeedTransitionInSeconds = math.max(0f, dashSpeedTransitionInSeconds == float.MaxValue ? 0f : dashSpeedTransitionInSeconds),
+                SpeedTransitionOutSeconds = math.max(0f, dashSpeedTransitionOutSeconds == float.MaxValue ? 0f : dashSpeedTransitionOutSeconds),
+                GrantsInvulnerability = dashGrantsInvulnerability ? (byte)1 : (byte)0,
+                InvulnerabilityExtraTime = math.max(0f, dashInvulnerabilityExtraTime)
             },
             BulletTime = new BulletTimePowerUpConfig
             {
-                Duration = bulletTimeData != null ? math.max(0.05f, bulletTimeData.Duration) : 0.05f,
-                EnemySlowPercent = bulletTimeData != null ? math.clamp(bulletTimeData.EnemySlowPercent, 0f, 100f) : 0f
+                Duration = math.max(0.05f, bulletTimeDuration),
+                EnemySlowPercent = math.clamp(bulletTimeEnemySlowPercent, 0f, 100f)
             },
             Shotgun = new ShotgunPowerUpConfig
             {
-                ProjectileCount = math.max(1, shotgunPattern.ProjectileCount),
-                ConeAngleDegrees = math.max(0f, shotgunPattern.ConeAngleDegrees),
+                ProjectileCount = math.max(1, shotgunProjectileCount),
+                ConeAngleDegrees = math.max(0f, shotgunConeAngleDegrees),
                 SizeMultiplier = shotgunSizeMultiplier,
                 DamageMultiplier = shotgunDamageMultiplier,
                 SpeedMultiplier = shotgunSpeedMultiplier,
                 RangeMultiplier = shotgunRangeMultiplier,
                 LifetimeMultiplier = shotgunLifetimeMultiplier,
                 PenetrationMode = penetrationMode,
-                MaxPenetrations = maxPenetrations
+                MaxPenetrations = maxPenetrations,
+                HasElementalPayload = hasElementalPayload ? (byte)1 : (byte)0,
+                ElementalEffect = elementalEffect,
+                ElementalStacksPerHit = elementalStacksPerHit
             },
             ChargeShot = new ChargeShotPowerUpConfig
             {
@@ -1735,11 +1938,18 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 RangeMultiplier = shotgunRangeMultiplier,
                 LifetimeMultiplier = shotgunLifetimeMultiplier,
                 PenetrationMode = penetrationMode,
-                MaxPenetrations = maxPenetrations
+                MaxPenetrations = maxPenetrations,
+                HasElementalPayload = hasElementalPayload ? (byte)1 : (byte)0,
+                ElementalEffect = elementalEffect,
+                ElementalStacksPerHit = elementalStacksPerHit
             },
             PortableHealthPack = new PortableHealthPackPowerUpConfig
             {
-                HealAmount = math.max(0f, healData.HealAmount)
+                ApplyMode = hasHealthPackOverTime ? PowerUpHealApplicationMode.OverTime : PowerUpHealApplicationMode.Instant,
+                HealAmount = math.max(0f, healthPackHealAmount),
+                DurationSeconds = hasHealthPackOverTime ? math.max(0f, healthPackDurationSeconds) : 0f,
+                TickIntervalSeconds = math.max(0.01f, healthPackTickIntervalSeconds),
+                StackPolicy = healthPackStackPolicy
             }
         };
     }
@@ -1749,12 +1959,48 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (powerUp == null)
             return default;
 
-        PowerUpTrailSpawnModuleData trailSpawnData = null;
-        PowerUpElementalAreaTickModuleData elementalAreaTickData = null;
-        ExplosionPassiveToolData deathExplosionData = null;
-        PerfectCirclePassiveToolData orbitData = null;
-        BouncingProjectilesPassiveToolData bounceData = null;
-        SplittingProjectilesPassiveToolData splitData = null;
+        bool hasTriggerEvent = false;
+        PowerUpTriggerEventType triggerEventType = PowerUpTriggerEventType.OnEnemyKilled;
+        bool hasSharedCooldown = false;
+        float sharedCooldownSeconds = 0f;
+        bool hasTrailSpawn = false;
+        bool hasAreaTick = false;
+        float trailSegmentLifetimeSeconds = 1.5f;
+        float trailSpawnDistance = 0.6f;
+        float trailSpawnIntervalSeconds = 0.1f;
+        float trailRadius = 1.2f;
+        int maxTrailSegments = 30;
+        float3 trailAttachedVfxOffset = new float3(0f, 0.08f, 0f);
+        ElementalEffectConfig trailEffect = default;
+        float trailStacksPerTick = 0f;
+        float trailApplyIntervalSeconds = 0.2f;
+        bool hasExplosion = false;
+        ExplosionPassiveConfig explosionConfig = default;
+        bool hasOrbit = false;
+        PerfectCirclePassiveConfig orbitConfig = default;
+        bool hasBounce = false;
+        BouncingProjectilesPassiveConfig bounceConfig = default;
+        bool hasSplit = false;
+        SplittingProjectilesPassiveConfig splitConfig = default;
+        bool hasProjectileTuning = false;
+        bool hasShotgunPattern = false;
+        float projectileSizeMultiplier = 1f;
+        float projectileDamageMultiplier = 1f;
+        float projectileSpeedMultiplier = 1f;
+        float projectileRangeMultiplier = 1f;
+        float projectileLifetimeMultiplier = 1f;
+        ProjectilePenetrationMode projectilePenetrationMode = ProjectilePenetrationMode.None;
+        int projectileMaxPenetrations = 0;
+        int shotgunProjectileCount = 0;
+        float shotgunConeAngleDegrees = 0f;
+        bool hasElementalProjectiles = false;
+        ElementalEffectConfig elementalProjectilesEffect = default;
+        float elementalProjectilesStacksPerHit = 0f;
+        bool hasHeal = false;
+        float healAmount = 0f;
+        float healDurationSeconds = 0.5f;
+        float healTickIntervalSeconds = 0.2f;
+        PowerUpHealStackPolicy healStackPolicy = PowerUpHealStackPolicy.Refresh;
         IReadOnlyList<PowerUpModuleBinding> moduleBindings = powerUp.ModuleBindings;
 
         if (moduleBindings == null || moduleBindings.Count == 0)
@@ -1782,88 +2028,371 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
             switch (moduleDefinition.ModuleKind)
             {
-                case PowerUpModuleKind.PassiveSpawnTrailSegment:
-                    trailSpawnData = payload.TrailSpawn;
+                case PowerUpModuleKind.TriggerEvent:
+                    hasTriggerEvent = true;
+                    triggerEventType = payload.TriggerEvent.EventType;
                     break;
-                case PowerUpModuleKind.PassiveAreaTickApplyElement:
-                    elementalAreaTickData = payload.ElementalAreaTick;
+                case PowerUpModuleKind.GateResource:
+                    float candidateCooldownSeconds = math.max(0f, payload.ResourceGate.CooldownSeconds);
+
+                    if (candidateCooldownSeconds > 0f)
+                    {
+                        if (hasSharedCooldown == false)
+                        {
+                            hasSharedCooldown = true;
+                            sharedCooldownSeconds = candidateCooldownSeconds;
+                        }
+                        else
+                        {
+                            sharedCooldownSeconds = math.min(sharedCooldownSeconds, candidateCooldownSeconds);
+                        }
+                    }
+
                     break;
-                case PowerUpModuleKind.PassiveDeathExplosion:
-                    deathExplosionData = payload.DeathExplosion;
+                case PowerUpModuleKind.SpawnTrailSegment:
+                    PowerUpTrailSpawnModuleData trailSpawnData = payload.TrailSpawn;
+
+                    if (trailSpawnData == null)
+                        break;
+
+                    hasTrailSpawn = true;
+                    trailSegmentLifetimeSeconds = math.max(trailSegmentLifetimeSeconds, math.max(0.05f, trailSpawnData.TrailSegmentLifetimeSeconds));
+                    trailSpawnDistance = math.max(trailSpawnDistance, math.max(0f, trailSpawnData.TrailSpawnDistance));
+                    trailSpawnIntervalSeconds = math.min(trailSpawnIntervalSeconds, math.max(0.01f, trailSpawnData.TrailSpawnIntervalSeconds));
+                    trailRadius = math.max(trailRadius, math.max(0f, trailSpawnData.TrailRadius));
+                    maxTrailSegments = math.max(maxTrailSegments, math.max(1, trailSpawnData.MaxActiveSegmentsPerPlayer));
+                    trailAttachedVfxOffset = new float3(trailSpawnData.TrailAttachedVfxOffset.x,
+                                                        trailSpawnData.TrailAttachedVfxOffset.y,
+                                                        trailSpawnData.TrailAttachedVfxOffset.z);
                     break;
-                case PowerUpModuleKind.PassiveProjectileOrbitOverride:
-                    orbitData = payload.ProjectileOrbitOverride;
+                case PowerUpModuleKind.AreaTickApplyElement:
+                    PowerUpElementalAreaTickModuleData areaTickData = payload.ElementalAreaTick;
+
+                    if (areaTickData == null)
+                        break;
+
+                    hasAreaTick = true;
+                    trailEffect = BuildElementalEffectConfig(areaTickData.EffectData);
+                    trailStacksPerTick += math.max(0f, areaTickData.StacksPerTick);
+                    trailApplyIntervalSeconds = math.min(trailApplyIntervalSeconds, math.max(0.01f, areaTickData.ApplyIntervalSeconds));
                     break;
-                case PowerUpModuleKind.PassiveProjectileBounceOnWalls:
-                    bounceData = payload.ProjectileBounceOnWalls;
+                case PowerUpModuleKind.DeathExplosion:
+                    ExplosionPassiveConfig candidateExplosionConfig = BuildExplosionPassiveConfig(authoring, payload.DeathExplosion);
+
+                    if (candidateExplosionConfig.Radius <= 0f && candidateExplosionConfig.Damage <= 0f)
+                        break;
+
+                    if (hasExplosion == false)
+                    {
+                        hasExplosion = true;
+                        explosionConfig = candidateExplosionConfig;
+                        break;
+                    }
+
+                    explosionConfig.CooldownSeconds = math.min(explosionConfig.CooldownSeconds, candidateExplosionConfig.CooldownSeconds);
+                    explosionConfig.Radius = math.max(explosionConfig.Radius, candidateExplosionConfig.Radius);
+                    explosionConfig.Damage += candidateExplosionConfig.Damage;
+                    explosionConfig.AffectAllEnemiesInRadius = explosionConfig.AffectAllEnemiesInRadius != 0 || candidateExplosionConfig.AffectAllEnemiesInRadius != 0 ? (byte)1 : (byte)0;
+
+                    if (explosionConfig.ExplosionVfxPrefabEntity == Entity.Null && candidateExplosionConfig.ExplosionVfxPrefabEntity != Entity.Null)
+                    {
+                        explosionConfig.ExplosionVfxPrefabEntity = candidateExplosionConfig.ExplosionVfxPrefabEntity;
+                        explosionConfig.ScaleVfxToRadius = candidateExplosionConfig.ScaleVfxToRadius;
+                        explosionConfig.VfxScaleMultiplier = candidateExplosionConfig.VfxScaleMultiplier;
+                    }
+
                     break;
-                case PowerUpModuleKind.PassiveProjectileSplitOnDeath:
-                    splitData = payload.ProjectileSplitOnDeath;
+                case PowerUpModuleKind.OrbitalProjectiles:
+                    PerfectCirclePassiveConfig candidateOrbitConfig = BuildPerfectCirclePassiveConfig(payload.ProjectileOrbitOverride);
+
+                    if (hasOrbit == false)
+                    {
+                        hasOrbit = true;
+                        orbitConfig = candidateOrbitConfig;
+                        break;
+                    }
+
+                    orbitConfig.RadialEntrySpeed = math.max(orbitConfig.RadialEntrySpeed, candidateOrbitConfig.RadialEntrySpeed);
+                    orbitConfig.OrbitalSpeed = math.max(orbitConfig.OrbitalSpeed, candidateOrbitConfig.OrbitalSpeed);
+                    orbitConfig.OrbitRadiusMin = math.max(orbitConfig.OrbitRadiusMin, candidateOrbitConfig.OrbitRadiusMin);
+                    orbitConfig.OrbitRadiusMax = math.max(orbitConfig.OrbitRadiusMax, candidateOrbitConfig.OrbitRadiusMax);
+                    orbitConfig.OrbitPulseFrequency = math.max(orbitConfig.OrbitPulseFrequency, candidateOrbitConfig.OrbitPulseFrequency);
+                    orbitConfig.OrbitEntryRatio = math.max(orbitConfig.OrbitEntryRatio, candidateOrbitConfig.OrbitEntryRatio);
+                    orbitConfig.OrbitBlendDuration = math.max(orbitConfig.OrbitBlendDuration, candidateOrbitConfig.OrbitBlendDuration);
+                    orbitConfig.HeightOffset = math.max(orbitConfig.HeightOffset, candidateOrbitConfig.HeightOffset);
+                    orbitConfig.GoldenAngleDegrees = math.max(orbitConfig.GoldenAngleDegrees, candidateOrbitConfig.GoldenAngleDegrees);
+                    break;
+                case PowerUpModuleKind.BouncingProjectiles:
+                    BouncingProjectilesPassiveConfig candidateBounceConfig = BuildBouncingProjectilesPassiveConfig(payload.ProjectileBounceOnWalls);
+
+                    if (hasBounce == false)
+                    {
+                        hasBounce = true;
+                        bounceConfig = candidateBounceConfig;
+                        break;
+                    }
+
+                    bounceConfig.MaxBounces += math.max(0, candidateBounceConfig.MaxBounces);
+                    bounceConfig.SpeedPercentChangePerBounce += candidateBounceConfig.SpeedPercentChangePerBounce;
+
+                    if (bounceConfig.MinimumSpeedMultiplierAfterBounce <= 0f)
+                        bounceConfig.MinimumSpeedMultiplierAfterBounce = math.max(0f, candidateBounceConfig.MinimumSpeedMultiplierAfterBounce);
+                    else
+                        bounceConfig.MinimumSpeedMultiplierAfterBounce = math.min(bounceConfig.MinimumSpeedMultiplierAfterBounce,
+                                                                                  math.max(0f, candidateBounceConfig.MinimumSpeedMultiplierAfterBounce));
+
+                    bounceConfig.MaximumSpeedMultiplierAfterBounce = math.max(bounceConfig.MaximumSpeedMultiplierAfterBounce,
+                                                                              math.max(0f, candidateBounceConfig.MaximumSpeedMultiplierAfterBounce));
+                    break;
+                case PowerUpModuleKind.ProjectileSplit:
+                    SplittingProjectilesPassiveConfig candidateSplitConfig = BuildSplittingProjectilesPassiveConfig(payload.ProjectileSplit);
+
+                    if (hasSplit == false)
+                    {
+                        hasSplit = true;
+                        splitConfig = candidateSplitConfig;
+                        break;
+                    }
+
+                    splitConfig.SplitProjectileCount = math.max(splitConfig.SplitProjectileCount, candidateSplitConfig.SplitProjectileCount);
+                    splitConfig.SplitOffsetDegrees = math.max(splitConfig.SplitOffsetDegrees, candidateSplitConfig.SplitOffsetDegrees);
+                    splitConfig.SplitDamageMultiplier = math.max(splitConfig.SplitDamageMultiplier, candidateSplitConfig.SplitDamageMultiplier);
+                    splitConfig.SplitSizeMultiplier = math.max(splitConfig.SplitSizeMultiplier, candidateSplitConfig.SplitSizeMultiplier);
+                    splitConfig.SplitSpeedMultiplier = math.max(splitConfig.SplitSpeedMultiplier, candidateSplitConfig.SplitSpeedMultiplier);
+                    splitConfig.SplitLifetimeMultiplier = math.max(splitConfig.SplitLifetimeMultiplier, candidateSplitConfig.SplitLifetimeMultiplier);
+
+                    if (splitConfig.CustomAnglesDegrees.Length <= 0 && candidateSplitConfig.CustomAnglesDegrees.Length > 0)
+                        splitConfig.CustomAnglesDegrees = candidateSplitConfig.CustomAnglesDegrees;
+
+                    splitConfig.TriggerMode = candidateSplitConfig.TriggerMode;
+                    splitConfig.DirectionMode = candidateSplitConfig.DirectionMode;
+                    break;
+                case PowerUpModuleKind.ProjectilesPatternCone:
+                    PowerUpProjectilePatternConeModuleData shotgunPatternData = payload.ProjectilePatternCone;
+
+                    if (shotgunPatternData == null)
+                        break;
+
+                    hasShotgunPattern = true;
+                    shotgunProjectileCount += math.max(1, shotgunPatternData.ProjectileCount);
+                    shotgunConeAngleDegrees = math.max(shotgunConeAngleDegrees, math.max(0f, shotgunPatternData.ConeAngleDegrees));
+                    break;
+                case PowerUpModuleKind.ProjectilesTuning:
+                    PowerUpProjectileTuningModuleData projectileTuningData = payload.ProjectileTuning;
+
+                    if (projectileTuningData == null)
+                        break;
+
+                    hasProjectileTuning = true;
+                    projectileSizeMultiplier *= math.max(0.01f, projectileTuningData.SizeMultiplier);
+                    projectileDamageMultiplier *= math.max(0f, projectileTuningData.DamageMultiplier);
+                    projectileSpeedMultiplier *= math.max(0f, projectileTuningData.SpeedMultiplier);
+                    projectileRangeMultiplier *= math.max(0f, projectileTuningData.RangeMultiplier);
+                    projectileLifetimeMultiplier *= math.max(0f, projectileTuningData.LifetimeMultiplier);
+                    projectilePenetrationMode = (ProjectilePenetrationMode)math.max((int)projectilePenetrationMode, (int)projectileTuningData.PenetrationMode);
+                    projectileMaxPenetrations += math.max(0, projectileTuningData.MaxPenetrations);
+
+                    if (projectileTuningData.ApplyElementalOnHit &&
+                        projectileTuningData.ElementalEffectData != null &&
+                        projectileTuningData.ElementalStacksPerHit > 0f)
+                    {
+                        hasElementalProjectiles = true;
+                        elementalProjectilesEffect = BuildElementalEffectConfig(projectileTuningData.ElementalEffectData);
+                        elementalProjectilesStacksPerHit += math.max(0f, projectileTuningData.ElementalStacksPerHit);
+                    }
+
+                    break;
+                case PowerUpModuleKind.Heal:
+                    PowerUpHealMissingHealthModuleData healData = payload.HealMissingHealth;
+
+                    if (healData == null)
+                        break;
+
+                    hasHeal = true;
+                    healAmount += math.max(0f, healData.HealAmount);
+                    healDurationSeconds = math.max(healDurationSeconds,
+                                                   ResolvePassiveHealDurationSeconds(healData.ApplyMode,
+                                                                                     healData.HealAmount,
+                                                                                     healData.DurationSeconds));
+                    healTickIntervalSeconds = math.min(healTickIntervalSeconds, math.max(0.01f, healData.TickIntervalSeconds));
+                    healStackPolicy = healData.StackPolicy;
                     break;
             }
         }
 
-        PlayerPassiveToolConfig config = default;
+        if (hasExplosion)
+            explosionConfig.TriggerMode = ResolveExplosionTriggerMode(hasTriggerEvent, triggerEventType, explosionConfig.TriggerMode);
 
-        if (trailSpawnData != null || elementalAreaTickData != null)
+        if (hasSplit)
+            splitConfig.TriggerMode = ResolveSplitTriggerMode(hasTriggerEvent, triggerEventType, splitConfig.TriggerMode);
+
+        PlayerPassiveToolConfig config = new PlayerPassiveToolConfig
         {
-            ElementalEffectConfig effectConfig = BuildElementalEffectConfig(elementalAreaTickData != null ? elementalAreaTickData.EffectData : null);
-            config.IsDefined = 1;
-            config.ToolKind = PassiveToolKind.ElementalTrail;
-            config.ElementalTrail = new ElementalTrailPassiveConfig
+            IsDefined = 0,
+            ToolKind = PassiveToolKind.Custom,
+            HasProjectileSize = hasProjectileTuning ? (byte)1 : (byte)0,
+            HasShotgun = hasShotgunPattern || hasProjectileTuning ? (byte)1 : (byte)0,
+            HasElementalProjectiles = hasElementalProjectiles ? (byte)1 : (byte)0,
+            HasPerfectCircle = hasOrbit ? (byte)1 : (byte)0,
+            HasBouncingProjectiles = hasBounce ? (byte)1 : (byte)0,
+            HasSplittingProjectiles = hasSplit ? (byte)1 : (byte)0,
+            HasExplosion = hasExplosion ? (byte)1 : (byte)0,
+            HasElementalTrail = hasTrailSpawn || hasAreaTick ? (byte)1 : (byte)0,
+            HasHeal = hasHeal && healAmount > 0f ? (byte)1 : (byte)0,
+            ProjectileSize = new ProjectileSizePassiveConfig
             {
-                Effect = effectConfig,
-                TrailSegmentLifetimeSeconds = trailSpawnData != null ? math.max(0.05f, trailSpawnData.TrailSegmentLifetimeSeconds) : 1.5f,
-                TrailSpawnDistance = trailSpawnData != null ? math.max(0f, trailSpawnData.TrailSpawnDistance) : 0.6f,
-                TrailSpawnIntervalSeconds = trailSpawnData != null ? math.max(0.01f, trailSpawnData.TrailSpawnIntervalSeconds) : 0.1f,
-                TrailRadius = trailSpawnData != null ? math.max(0f, trailSpawnData.TrailRadius) : 1.2f,
-                MaxActiveSegmentsPerPlayer = trailSpawnData != null ? math.max(1, trailSpawnData.MaxActiveSegmentsPerPlayer) : 30,
-                StacksPerTick = elementalAreaTickData != null ? math.max(0f, elementalAreaTickData.StacksPerTick) : 1f,
-                ApplyIntervalSeconds = elementalAreaTickData != null ? math.max(0.01f, elementalAreaTickData.ApplyIntervalSeconds) : 0.2f,
+                SizeMultiplier = math.max(0.01f, projectileSizeMultiplier),
+                DamageMultiplier = math.max(0f, projectileDamageMultiplier),
+                SpeedMultiplier = math.max(0f, projectileSpeedMultiplier),
+                LifetimeRangeMultiplier = math.max(0f, projectileRangeMultiplier),
+                LifetimeSecondsMultiplier = math.max(0f, projectileLifetimeMultiplier)
+            },
+            Shotgun = new ShotgunPowerUpConfig
+            {
+                ProjectileCount = math.max(0, shotgunProjectileCount),
+                ConeAngleDegrees = math.max(0f, shotgunConeAngleDegrees),
+                SizeMultiplier = math.max(0.01f, projectileSizeMultiplier),
+                DamageMultiplier = math.max(0f, projectileDamageMultiplier),
+                SpeedMultiplier = math.max(0f, projectileSpeedMultiplier),
+                RangeMultiplier = math.max(0f, projectileRangeMultiplier),
+                LifetimeMultiplier = math.max(0f, projectileLifetimeMultiplier),
+                PenetrationMode = projectilePenetrationMode,
+                MaxPenetrations = math.max(0, projectileMaxPenetrations),
+                HasElementalPayload = hasElementalProjectiles ? (byte)1 : (byte)0,
+                ElementalEffect = elementalProjectilesEffect,
+                ElementalStacksPerHit = math.max(0f, elementalProjectilesStacksPerHit)
+            },
+            ElementalProjectiles = new ElementalProjectilesPassiveConfig
+            {
+                Effect = elementalProjectilesEffect,
+                StacksPerHit = math.max(0f, elementalProjectilesStacksPerHit)
+            },
+            PerfectCircle = orbitConfig,
+            BouncingProjectiles = bounceConfig,
+            SplittingProjectiles = splitConfig,
+            Explosion = explosionConfig,
+            ElementalTrail = new ElementalTrailPassiveConfig
+            {
+                Effect = trailEffect,
+                TrailSegmentLifetimeSeconds = math.max(0.05f, trailSegmentLifetimeSeconds),
+                TrailSpawnDistance = math.max(0f, trailSpawnDistance),
+                TrailSpawnIntervalSeconds = math.max(0.01f, trailSpawnIntervalSeconds),
+                TrailRadius = math.max(0f, trailRadius),
+                MaxActiveSegmentsPerPlayer = math.max(1, maxTrailSegments),
+                StacksPerTick = math.max(0f, trailStacksPerTick),
+                ApplyIntervalSeconds = math.max(0.01f, trailApplyIntervalSeconds),
                 TrailAttachedVfxPrefabEntity = Entity.Null,
                 TrailAttachedVfxScaleMultiplier = math.max(0.01f, authoring.ElementalTrailAttachedVfxScaleMultiplier),
-                TrailAttachedVfxOffset = trailSpawnData != null
-                    ? new float3(trailSpawnData.TrailAttachedVfxOffset.x, trailSpawnData.TrailAttachedVfxOffset.y, trailSpawnData.TrailAttachedVfxOffset.z)
-                    : new float3(0f, 0.08f, 0f)
-            };
+                TrailAttachedVfxOffset = trailAttachedVfxOffset
+            },
+            Heal = new PassiveHealConfig
+            {
+                TriggerMode = ResolvePassiveHealTriggerMode(hasTriggerEvent, triggerEventType, PassiveHealTriggerMode.Periodic),
+                CooldownSeconds = hasSharedCooldown ? math.max(0f, sharedCooldownSeconds) : 0f,
+                HealAmount = math.max(0f, healAmount),
+                DurationSeconds = math.max(0.05f, healDurationSeconds),
+                TickIntervalSeconds = math.max(0.01f, healTickIntervalSeconds),
+                StackPolicy = healStackPolicy
+            }
+        };
 
-            return config;
-        }
+        bool hasAnyPayload = config.HasProjectileSize != 0 ||
+                             config.HasShotgun != 0 ||
+                             config.HasElementalProjectiles != 0 ||
+                             config.HasPerfectCircle != 0 ||
+                             config.HasBouncingProjectiles != 0 ||
+                             config.HasSplittingProjectiles != 0 ||
+                             config.HasExplosion != 0 ||
+                             config.HasElementalTrail != 0 ||
+                             config.HasHeal != 0;
 
-        if (deathExplosionData != null)
-        {
-            config.IsDefined = 1;
+        if (hasAnyPayload == false)
+            return default;
+
+        config.IsDefined = 1;
+
+        if (config.HasElementalTrail != 0)
+            config.ToolKind = PassiveToolKind.ElementalTrail;
+        else if (config.HasExplosion != 0)
             config.ToolKind = PassiveToolKind.Explosion;
-            config.Explosion = BuildExplosionPassiveConfig(authoring, deathExplosionData);
-            config.Explosion.TriggerMode = PassiveExplosionTriggerMode.OnEnemyKilled;
-            return config;
-        }
-
-        if (orbitData != null)
-        {
-            config.IsDefined = 1;
+        else if (config.HasPerfectCircle != 0)
             config.ToolKind = PassiveToolKind.PerfectCircle;
-            config.PerfectCircle = BuildPerfectCirclePassiveConfig(orbitData);
-            return config;
-        }
-
-        if (bounceData != null)
-        {
-            config.IsDefined = 1;
+        else if (config.HasBouncingProjectiles != 0)
             config.ToolKind = PassiveToolKind.BouncingProjectiles;
-            config.BouncingProjectiles = BuildBouncingProjectilesPassiveConfig(bounceData);
-            return config;
-        }
-
-        if (splitData != null)
-        {
-            config.IsDefined = 1;
+        else if (config.HasSplittingProjectiles != 0)
             config.ToolKind = PassiveToolKind.SplittingProjectiles;
-            config.SplittingProjectiles = BuildSplittingProjectilesPassiveConfig(splitData);
-            return config;
-        }
+        else if (config.HasElementalProjectiles != 0)
+            config.ToolKind = PassiveToolKind.ElementalProjectiles;
+        else if (config.HasHeal != 0)
+            config.ToolKind = PassiveToolKind.Custom;
+        else
+            config.ToolKind = PassiveToolKind.ProjectileSize;
 
-        return default;
+        return config;
+    }
+
+    private static PassiveExplosionTriggerMode ResolveExplosionTriggerMode(bool hasTriggerEvent,
+                                                                           PowerUpTriggerEventType triggerEventType,
+                                                                           PassiveExplosionTriggerMode fallback)
+    {
+        if (hasTriggerEvent == false)
+            return fallback;
+
+        switch (triggerEventType)
+        {
+            case PowerUpTriggerEventType.OnEnemyKilled:
+                return PassiveExplosionTriggerMode.OnEnemyKilled;
+            case PowerUpTriggerEventType.OnPlayerDamaged:
+                return PassiveExplosionTriggerMode.OnPlayerDamaged;
+            default:
+                return fallback;
+        }
+    }
+
+    private static ProjectileSplitTriggerMode ResolveSplitTriggerMode(bool hasTriggerEvent,
+                                                                      PowerUpTriggerEventType triggerEventType,
+                                                                      ProjectileSplitTriggerMode fallback)
+    {
+        if (hasTriggerEvent == false)
+            return fallback;
+
+        switch (triggerEventType)
+        {
+            case PowerUpTriggerEventType.OnEnemyKilled:
+                return ProjectileSplitTriggerMode.OnEnemyKilled;
+            case PowerUpTriggerEventType.OnProjectileDespawned:
+                return ProjectileSplitTriggerMode.OnProjectileDespawn;
+            default:
+                return fallback;
+        }
+    }
+
+    private static PassiveHealTriggerMode ResolvePassiveHealTriggerMode(bool hasTriggerEvent,
+                                                                        PowerUpTriggerEventType triggerEventType,
+                                                                        PassiveHealTriggerMode fallback)
+    {
+        if (hasTriggerEvent == false)
+            return fallback;
+
+        switch (triggerEventType)
+        {
+            case PowerUpTriggerEventType.OnEnemyKilled:
+                return PassiveHealTriggerMode.OnEnemyKilled;
+            case PowerUpTriggerEventType.OnPlayerDamaged:
+                return PassiveHealTriggerMode.OnPlayerDamaged;
+            default:
+                return PassiveHealTriggerMode.Periodic;
+        }
+    }
+
+    private static float ResolvePassiveHealDurationSeconds(PowerUpHealApplicationMode applyMode, float healAmount, float durationSeconds)
+    {
+        if (applyMode == PowerUpHealApplicationMode.OverTime)
+            return math.max(0.05f, durationSeconds);
+
+        float clampedAmount = math.max(0f, healAmount);
+        float fallbackDurationSeconds = 0.5f + clampedAmount * 0.01f;
+        return math.clamp(fallbackDurationSeconds, 0.5f, 4f);
     }
 
     /// <summary>
@@ -1972,11 +2501,53 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         SplittingProjectilesPassiveConfig splittingProjectilesConfig = BuildSplittingProjectilesPassiveConfig(passiveTool.SplittingProjectilesData);
         ExplosionPassiveConfig explosionConfig = BuildExplosionPassiveConfig(authoring, passiveTool.ExplosionData);
         ElementalTrailPassiveConfig elementalTrailConfig = BuildElementalTrailPassiveConfig(authoring, passiveTool.ElementalTrailData);
+        byte hasProjectileSize = 0;
+        byte hasShotgun = 0;
+        byte hasElementalProjectiles = 0;
+        byte hasPerfectCircle = 0;
+        byte hasBouncingProjectiles = 0;
+        byte hasSplittingProjectiles = 0;
+        byte hasExplosion = 0;
+        byte hasElementalTrail = 0;
+
+        switch (toolKind)
+        {
+            case PassiveToolKind.ProjectileSize:
+                hasProjectileSize = 1;
+                break;
+            case PassiveToolKind.ElementalProjectiles:
+                hasElementalProjectiles = 1;
+                break;
+            case PassiveToolKind.PerfectCircle:
+                hasPerfectCircle = 1;
+                break;
+            case PassiveToolKind.BouncingProjectiles:
+                hasBouncingProjectiles = 1;
+                break;
+            case PassiveToolKind.SplittingProjectiles:
+                hasSplittingProjectiles = 1;
+                break;
+            case PassiveToolKind.Explosion:
+                hasExplosion = 1;
+                break;
+            case PassiveToolKind.ElementalTrail:
+                hasElementalTrail = 1;
+                break;
+        }
 
         return new PlayerPassiveToolConfig
         {
             IsDefined = 1,
             ToolKind = toolKind,
+            HasProjectileSize = hasProjectileSize,
+            HasShotgun = hasShotgun,
+            HasElementalProjectiles = hasElementalProjectiles,
+            HasPerfectCircle = hasPerfectCircle,
+            HasBouncingProjectiles = hasBouncingProjectiles,
+            HasSplittingProjectiles = hasSplittingProjectiles,
+            HasExplosion = hasExplosion,
+            HasElementalTrail = hasElementalTrail,
+            HasHeal = 0,
             ProjectileSize = projectileSizeConfig,
             ElementalProjectiles = elementalProjectilesConfig,
             PerfectCircle = perfectCircleConfig,
@@ -2080,6 +2651,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         }
 
         config.DirectionMode = splittingProjectilesData.DirectionMode;
+        config.TriggerMode = splittingProjectilesData.TriggerMode;
         config.SplitProjectileCount = math.max(1, splittingProjectilesData.SplitProjectileCount);
         config.SplitOffsetDegrees = splittingProjectilesData.SplitOffsetDegrees;
         config.CustomAnglesDegrees = customAngles;
@@ -2100,6 +2672,12 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         if (authoring != null && authoring.BakePowerUpVfxEntityPrefabs)
             explosionVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, explosionData.ExplosionVfxPrefab, "Passive Explosion VFX");
+#if UNITY_EDITOR
+        else if (authoring != null && explosionData.ExplosionVfxPrefab != null)
+            Debug.LogWarning(string.Format("[PlayerAuthoringBaker] Passive explosion VFX prefab is assigned on '{0}', but BakePowerUpVfxEntityPrefabs is disabled. Death-explosion VFX will not spawn at runtime.",
+                                           authoring.name),
+                             authoring);
+#endif
 
         return new ExplosionPassiveConfig
         {
@@ -2233,6 +2811,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         float bombBounceDamping = bombData != null ? math.clamp(bombData.BounceDamping, 0f, 1f) : 0f;
         float bombLinearDampingPerSecond = bombData != null ? math.max(0f, bombData.LinearDampingPerSecond) : 0f;
         float bombFuseSeconds = bombData != null ? math.max(0.05f, bombData.FuseSeconds) : 0.05f;
+        SpawnOffsetOrientationMode bombSpawnOffsetOrientation = bombData != null ? bombData.SpawnOffsetOrientation : SpawnOffsetOrientationMode.PlayerForward;
+        byte bombEnableDamagePayload = bombData != null ? (bombData.EnableDamagePayload ? (byte)1 : (byte)0) : (byte)1;
         float bombRadius = bombData != null ? math.max(0.1f, bombData.Radius) : 0.1f;
         float bombDamage = bombData != null ? math.max(0f, bombData.Damage) : 0f;
         byte bombAffectAll = bombData != null && bombData.AffectAllEnemiesInRadius ? (byte)1 : (byte)0;
@@ -2260,19 +2840,25 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             ActivationCost = activationCost,
             MaintenanceCostPerSecond = maintenanceCostPerSecond,
             ChargePerTrigger = chargePerTrigger,
+            ActivationInputMode = PowerUpActivationInputMode.OnPress,
             Toggleable = activeTool.Toggleable ? (byte)1 : (byte)0,
-            FullChargeRequirement = activeTool.FullChargeRequirement ? (byte)1 : (byte)0,
+            MinimumActivationEnergyPercent = math.clamp(activeTool.MinimumActivationEnergyPercent, 0f, 100f),
             Unreplaceable = activeTool.Unreplaceable ? (byte)1 : (byte)0,
+            SuppressBaseShootingWhileActive = 0,
+            InterruptOtherSlotOnEnter = 0,
+            InterruptOtherSlotChargingOnly = 1,
             BombPrefabEntity = bombPrefabEntity,
             Bomb = new BombPowerUpConfig
             {
                 SpawnOffset = bombSpawnOffset,
+                SpawnOffsetOrientation = bombSpawnOffsetOrientation,
                 DeploySpeed = bombDeploySpeed,
                 CollisionRadius = bombCollisionRadius,
                 BounceOnWalls = bombBounceOnWalls,
                 BounceDamping = bombBounceDamping,
                 LinearDampingPerSecond = bombLinearDampingPerSecond,
                 FuseSeconds = bombFuseSeconds,
+                EnableDamagePayload = bombEnableDamagePayload,
                 Radius = bombRadius,
                 Damage = bombDamage,
                 AffectAllEnemiesInRadius = bombAffectAll

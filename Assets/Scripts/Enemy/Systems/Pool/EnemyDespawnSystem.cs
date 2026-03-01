@@ -33,21 +33,24 @@ public partial struct EnemyDespawnSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
-        NativeArray<Entity> playerEntities = playerQuery.ToEntityArray(Allocator.Temp);
+        Entity playerEntity = Entity.Null;
+        float3 playerPosition = float3.zero;
 
-        if (playerEntities.Length == 0)
+        foreach ((RefRO<LocalTransform> playerTransform,
+                  Entity candidatePlayerEntity) in SystemAPI.Query<RefRO<LocalTransform>>()
+                                                           .WithAll<PlayerControllerConfig>()
+                                                           .WithEntityAccess())
         {
-            playerEntities.Dispose();
-            return;
+            playerEntity = candidatePlayerEntity;
+            playerPosition = playerTransform.ValueRO.Position;
+            break;
         }
 
-        Entity playerEntity = playerEntities[0];
-        playerEntities.Dispose();
+        if (playerEntity == Entity.Null)
+            return;
 
         if (entityManager.Exists(playerEntity) == false)
             return;
-
-        float3 playerPosition = entityManager.GetComponentData<LocalTransform>(playerEntity).Position;
         ComponentLookup<EnemySpawner> spawnerLookup = SystemAPI.GetComponentLookup<EnemySpawner>(true);
         ComponentLookup<EnemyDespawnRequest> despawnRequestLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
 

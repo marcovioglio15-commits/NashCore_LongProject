@@ -1,4 +1,3 @@
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -34,16 +33,24 @@ public partial struct EnemyContactDamageSystem : ISystem
     {
         EntityManager entityManager = state.EntityManager;
         ComponentLookup<PlayerDashState> dashStateLookup = SystemAPI.GetComponentLookup<PlayerDashState>(true);
-        NativeArray<Entity> playerEntities = playerQuery.ToEntityArray(Allocator.Temp);
+        Entity playerEntity = Entity.Null;
+        LocalTransform playerTransform = default;
+        PlayerHealth playerHealth = default;
 
-        if (playerEntities.Length == 0)
+        foreach ((RefRO<LocalTransform> candidatePlayerTransform,
+                  RefRO<PlayerHealth> candidatePlayerHealth,
+                  Entity candidatePlayerEntity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerHealth>>()
+                                                            .WithAll<PlayerControllerConfig>()
+                                                            .WithEntityAccess())
         {
-            playerEntities.Dispose();
-            return;
+            playerEntity = candidatePlayerEntity;
+            playerTransform = candidatePlayerTransform.ValueRO;
+            playerHealth = candidatePlayerHealth.ValueRO;
+            break;
         }
 
-        Entity playerEntity = playerEntities[0];
-        playerEntities.Dispose();
+        if (playerEntity == Entity.Null)
+            return;
 
         if (entityManager.Exists(playerEntity) == false)
             return;
@@ -55,9 +62,6 @@ public partial struct EnemyContactDamageSystem : ISystem
             if (dashState.RemainingInvulnerability > 0f)
                 return;
         }
-
-        LocalTransform playerTransform = entityManager.GetComponentData<LocalTransform>(playerEntity);
-        PlayerHealth playerHealth = entityManager.GetComponentData<PlayerHealth>(playerEntity);
 
         if (playerHealth.Current <= 0f)
             return;

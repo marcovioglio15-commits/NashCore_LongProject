@@ -1,7 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using Unity.Collections;
 
 /// <summary>
 /// This system processes shooter entities with pending shoot requests, 
@@ -49,89 +48,76 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// <param name="state">The current system state used to access the EntityManager and other ECS data.</param>
     public void OnUpdate(ref SystemState state)
     {
-        // Get the EntityManager and the array of shooter entities that have shoot requests
         EntityManager entityManager = state.EntityManager;
         ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
-        NativeArray<Entity> shooterEntities = shootersWithRequestsQuery.ToEntityArray(Allocator.Temp);
 
-        // Iterate through each shooter entity that has shoot requests
-        for (int shooterIndex = 0; shooterIndex < shooterEntities.Length; shooterIndex++)
+        foreach ((DynamicBuffer<ShootRequest> shootRequests,
+                  DynamicBuffer<ProjectilePoolElement> projectilePool,
+                  RefRO<ShooterProjectilePrefab> projectilePrefab,
+                  RefRO<ProjectilePoolState> poolStateValue,
+                  Entity shooterEntity) in SystemAPI.Query<DynamicBuffer<ShootRequest>,
+                                                           DynamicBuffer<ProjectilePoolElement>,
+                                                           RefRO<ShooterProjectilePrefab>,
+                                                           RefRO<ProjectilePoolState>>()
+                                                   .WithEntityAccess())
         {
-            Entity shooterEntity = shooterEntities[shooterIndex];
-
             if (entityManager.Exists(shooterEntity) == false)
                 continue;
 
             if (entityManager.HasComponent<Projectile>(shooterEntity))
                 continue;
 
-            // Get the shoot requests buffer for the shooter entity
-            DynamicBuffer<ShootRequest> shootRequests = entityManager.GetBuffer<ShootRequest>(shooterEntity);
-
             if (shootRequests.Length == 0)
                 continue;
 
-            ProjectilePoolState poolState = entityManager.GetComponentData<ProjectilePoolState>(shooterEntity);
+            ProjectilePoolState poolState = poolStateValue.ValueRO;
 
             if (poolState.Initialized == 0)
                 continue;
 
+            DynamicBuffer<ShootRequest> shooterShootRequests = shootRequests;
+            DynamicBuffer<ProjectilePoolElement> shooterProjectilePool = projectilePool;
+            Entity prefabEntity = projectilePrefab.ValueRO.PrefabEntity;
 
-            // Get the projectile prefab entity from the ShooterProjectilePrefab component of the shooter entity
-            ShooterProjectilePrefab projectilePrefab = entityManager.GetComponentData<ShooterProjectilePrefab>(shooterEntity);
-            Entity prefabEntity = projectilePrefab.PrefabEntity;
-
-            // If the projectile prefab entity is not valid, clear the shoot requests and skip processing for this shooter entity
             if (prefabEntity == Entity.Null || entityManager.Exists(prefabEntity) == false)
             {
-                shootRequests.Clear();
+                shooterShootRequests.Clear();
                 continue;
             }
 
-            DynamicBuffer<ProjectilePoolElement> projectilePool = entityManager.GetBuffer<ProjectilePoolElement>(shooterEntity);
             PlayerPassiveToolsState passiveToolsState = ResolvePassiveToolsState(shooterEntity, in passiveToolsLookup);
-            int missingProjectiles = shootRequests.Length - projectilePool.Length;
+            int missingProjectiles = shooterShootRequests.Length - shooterProjectilePool.Length;
 
-            // If there are more shoot requests than available projectiles in the pool, expand the pool
             if (missingProjectiles > 0)
             {
                 int expandBatch = math.max(1, poolState.ExpandBatch);
                 int expandCount = math.max(expandBatch, missingProjectiles);
                 ProjectilePoolUtility.ExpandPool(entityManager, shooterEntity, prefabEntity, expandCount);
-                // Refresh the projectile pool buffer reference after expansion
-                shootRequests = entityManager.GetBuffer<ShootRequest>(shooterEntity);
-                projectilePool = entityManager.GetBuffer<ProjectilePoolElement>(shooterEntity);
+                shooterShootRequests = entityManager.GetBuffer<ShootRequest>(shooterEntity);
+                shooterProjectilePool = entityManager.GetBuffer<ProjectilePoolElement>(shooterEntity);
             }
 
-            int requestsCount = shootRequests.Length;
+            int requestsCount = shooterShootRequests.Length;
 
-            // Spawn and initialize projectiles based on the shoot requests,
-            // using available projectiles from the pool
             for (int requestIndex = 0; requestIndex < requestsCount; requestIndex++)
             {
-                if (projectilePool.Length == 0)
+                if (shooterProjectilePool.Length == 0)
                     break;
 
-                // Get a projectile entity from the pool and remove it from the pool buffer
-                int lastIndex = projectilePool.Length - 1;
-                Entity projectileEntity = projectilePool[lastIndex].ProjectileEntity;
-                projectilePool.RemoveAt(lastIndex);
+                int lastIndex = shooterProjectilePool.Length - 1;
+                Entity projectileEntity = shooterProjectilePool[lastIndex].ProjectileEntity;
+                shooterProjectilePool.RemoveAt(lastIndex);
 
-                // If the projectile entity from the pool is not valid,
-                // skip processing for this shoot request
                 if (entityManager.Exists(projectileEntity) == false)
                     continue;
 
-                // Get the shoot request data and calculate the projectile's initial direction
-                ShootRequest request = shootRequests[requestIndex];
+                ShootRequest request = shooterShootRequests[requestIndex];
                 float3 direction = math.normalizesafe(request.Direction, new float3(0f, 0f, 1f));
                 float speed = math.max(0f, request.Speed);
 
                 if (passiveToolsState.HasPerfectCircle != 0)
                     speed = math.max(0f, passiveToolsState.PerfectCircle.RadialEntrySpeed);
 
-
-                // Set the projectile's initial position and rotation based on the shoot request data
                 LocalTransform projectileTransform = entityManager.GetComponentData<LocalTransform>(projectileEntity);
                 projectileTransform.Position = request.Position;
                 projectileTransform.Rotation = quaternion.LookRotationSafe(direction, new float3(0f, 1f, 0f));
@@ -147,7 +133,7 @@ public partial struct ProjectileSpawnSystem : ISystem
                     {
                         Value = baseScale
                     });
-                } 
+                }
 
                 float scaleMultiplier = math.max(0.01f, request.ProjectileScaleMultiplier);
                 projectileTransform.Scale = baseScale * scaleMultiplier;
@@ -165,15 +151,12 @@ public partial struct ProjectileSpawnSystem : ISystem
                     InheritPlayerSpeed = request.InheritPlayerSpeed
                 };
 
-                // Initialize the projectile's components with the data from the shoot request
-                // and set it as active
                 entityManager.SetComponentData(projectileEntity, projectileData);
                 entityManager.SetComponentData(projectileEntity, new ProjectileRuntimeState
                 {
                     TraveledDistance = 0f,
                     ElapsedLifetime = 0f
                 });
-                // Set the shooter entity as the owner of the projectile
                 entityManager.SetComponentData(projectileEntity, new ProjectileOwner
                 {
                     ShooterEntity = shooterEntity
@@ -194,17 +177,16 @@ public partial struct ProjectileSpawnSystem : ISystem
                 ProjectileSplitState splitState = BuildSplitState(in passiveToolsState.SplittingProjectiles, passiveToolsState.HasSplittingProjectiles != 0, request.IsSplitChild != 0);
                 entityManager.SetComponentData(projectileEntity, splitState);
 
-                ProjectileElementalPayload elementalPayload = BuildElementalPayload(in passiveToolsState.ElementalProjectiles, passiveToolsState.HasElementalProjectiles != 0);
+                ProjectileElementalPayload elementalPayload = ResolveElementalPayload(in request,
+                                                                                      in passiveToolsState.ElementalProjectiles,
+                                                                                      passiveToolsState.HasElementalProjectiles != 0);
                 entityManager.SetComponentData(projectileEntity, elementalPayload);
 
-                // Enable the ProjectileActive component to mark the projectile as active in the simulation
                 entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, true);
             }
-            // Clear the shoot requests buffer after processing all requests for the shooter entity
-            shootRequests.Clear();
+
+            shooterShootRequests.Clear();
         }
-        // Dispose of the temporary array of shooter entities to free up memory
-        shooterEntities.Dispose();
     }
 
     private static PlayerPassiveToolsState ResolvePassiveToolsState(Entity shooterEntity, in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup)
@@ -276,6 +258,7 @@ public partial struct ProjectileSpawnSystem : ISystem
         return new ProjectileSplitState
         {
             CanSplit = 1,
+            TriggerMode = splittingProjectilesConfig.TriggerMode,
             DirectionMode = splittingProjectilesConfig.DirectionMode,
             SplitProjectileCount = math.max(1, splittingProjectilesConfig.SplitProjectileCount),
             SplitOffsetDegrees = splittingProjectilesConfig.SplitOffsetDegrees,
@@ -287,7 +270,32 @@ public partial struct ProjectileSpawnSystem : ISystem
         };
     }
 
-    private static ProjectileElementalPayload BuildElementalPayload(in ElementalProjectilesPassiveConfig elementalProjectilesConfig, bool isEnabled)
+    private static ProjectileElementalPayload ResolveElementalPayload(in ShootRequest request,
+                                                                      in ElementalProjectilesPassiveConfig passiveElementalProjectilesConfig,
+                                                                      bool hasPassiveElementalPayload)
+    {
+        ProjectileElementalPayload requestPayload = BuildElementalPayloadFromRequest(in request);
+
+        if (requestPayload.Enabled != 0)
+            return requestPayload;
+
+        return BuildElementalPayloadFromPassive(in passiveElementalProjectilesConfig, hasPassiveElementalPayload);
+    }
+
+    private static ProjectileElementalPayload BuildElementalPayloadFromRequest(in ShootRequest request)
+    {
+        if (request.HasElementalPayloadOverride == 0 || request.ElementalStacksPerHitOverride <= 0f)
+            return default;
+
+        return new ProjectileElementalPayload
+        {
+            Enabled = 1,
+            Effect = request.ElementalEffectOverride,
+            StacksPerHit = math.max(0f, request.ElementalStacksPerHitOverride)
+        };
+    }
+
+    private static ProjectileElementalPayload BuildElementalPayloadFromPassive(in ElementalProjectilesPassiveConfig elementalProjectilesConfig, bool isEnabled)
     {
         if (isEnabled == false || elementalProjectilesConfig.StacksPerHit <= 0f)
             return default;

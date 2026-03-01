@@ -86,7 +86,7 @@ public static class PlayerInputActionsAssetUtility
     /// <param name="actionType"></param>
     /// <param name="expectedControlLayout"></param>
     /// <param name="configureBindings"></param>
-    /// <returns></returns>
+    /// <returns> Returns true if the action was created and configured; false if the action already existed. </returns>
     private static bool EnsureAction(InputActionMap map, string actionName, InputActionType actionType, string expectedControlLayout, Action<InputAction> configureBindings)
     {
         if (map == null)
@@ -192,7 +192,7 @@ public static class PlayerInputActionsAssetUtility
     /// This method creates a new input action asset with a "Player" action map containing 
     /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary) and their default bindings.
     /// </summary>
-    /// <returns></returns>
+    /// <returns> Returns the created InputActionAsset instance. </returns>
     private static InputActionAsset CreateDefaultAsset()
     {
         InputActionAsset asset = ScriptableObject.CreateInstance<InputActionAsset>();

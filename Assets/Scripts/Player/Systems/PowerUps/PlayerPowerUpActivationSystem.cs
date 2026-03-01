@@ -30,6 +30,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         public float Lifetime;
         public float ScaleMultiplier;
         public byte InheritPlayerSpeed;
+        public byte HasElementalPayloadOverride;
+        public ElementalEffectConfig ElementalEffectOverride;
+        public float ElementalStacksPerHitOverride;
     }
     #endregion
 
@@ -48,6 +51,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         state.RequireForUpdate<PlayerBombSpawnRequest>();
         state.RequireForUpdate<ShootRequest>();
         state.RequireForUpdate<PlayerBulletTimeState>();
+        state.RequireForUpdate<PlayerHealOverTimeState>();
         state.RequireForUpdate<PlayerPassiveToolsState>();
     }
 
@@ -61,6 +65,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<PlayerBulletTimeState> bulletTimeLookup = SystemAPI.GetComponentLookup<PlayerBulletTimeState>(false);
+        ComponentLookup<PlayerHealOverTimeState> healOverTimeLookup = SystemAPI.GetComponentLookup<PlayerHealOverTimeState>(false);
 
         foreach ((RefRO<PlayerInputState> inputState,
                   RefRO<PlayerPowerUpsConfig> powerUpsConfig,
@@ -94,12 +99,16 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             if (bulletTimeLookup.HasComponent(entity) == false)
                 continue;
 
+            if (healOverTimeLookup.HasComponent(entity) == false)
+                continue;
+
             PlayerLookState lookState = lookLookup[entity];
             PlayerMovementState movementState = movementLookup[entity];
             PlayerControllerConfig controllerConfig = controllerLookup[entity];
             PlayerPassiveToolsState passiveToolsState = passiveToolsLookup[entity];
             LocalTransform localTransform = transformLookup[entity];
             PlayerBulletTimeState bulletTimeState = bulletTimeLookup[entity];
+            PlayerHealOverTimeState healOverTimeState = healOverTimeLookup[entity];
             bool primaryPressed = inputState.ValueRO.PowerUpPrimary > InputPressThreshold;
             bool secondaryPressed = inputState.ValueRO.PowerUpSecondary > InputPressThreshold;
             bool primaryPressedThisFrame = primaryPressed && powerUpsState.ValueRO.PreviousPrimaryPressed == 0;
@@ -127,6 +136,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             PlayerHealth updatedHealth = default;
 
             ProcessSlotInput(in powerUpsConfig.ValueRO.PrimarySlot,
+                             in powerUpsConfig.ValueRO.SecondarySlot,
                              primaryPressed,
                              primaryPressedThisFrame,
                              primaryReleasedThisFrame,
@@ -142,9 +152,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                              ref primaryCooldownRemaining,
                              ref primaryCharge,
                              ref primaryIsCharging,
+                             ref secondaryCharge,
+                             ref secondaryIsCharging,
                              ref isShootingSuppressed,
                              ref dashState.ValueRW,
                              ref bulletTimeState,
+                             ref healOverTimeState,
                              bombRequests,
                              shootRequests,
                              entity,
@@ -153,6 +166,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                              ref healthChanged);
 
             ProcessSlotInput(in powerUpsConfig.ValueRO.SecondarySlot,
+                             in powerUpsConfig.ValueRO.PrimarySlot,
                              secondaryPressed,
                              secondaryPressedThisFrame,
                              secondaryReleasedThisFrame,
@@ -168,9 +182,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                              ref secondaryCooldownRemaining,
                              ref secondaryCharge,
                              ref secondaryIsCharging,
+                             ref primaryCharge,
+                             ref primaryIsCharging,
                              ref isShootingSuppressed,
                              ref dashState.ValueRW,
                              ref bulletTimeState,
+                             ref healOverTimeState,
                              bombRequests,
                              shootRequests,
                              entity,
@@ -191,12 +208,14 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             powerUpsState.ValueRW.SecondaryIsCharging = secondaryIsCharging;
             powerUpsState.ValueRW.IsShootingSuppressed = isShootingSuppressed;
             bulletTimeLookup[entity] = bulletTimeState;
+            healOverTimeLookup[entity] = healOverTimeState;
         }
     }
     #endregion
 
     #region Slot Processing
     private static void ProcessSlotInput(in PlayerPowerUpSlotConfig slotConfig,
+                                         in PlayerPowerUpSlotConfig otherSlotConfig,
                                          bool isPressed,
                                          bool pressedThisFrame,
                                          bool releasedThisFrame,
@@ -212,9 +231,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                          ref float cooldownRemaining,
                                          ref float charge,
                                          ref byte isCharging,
+                                         ref float otherSlotCharge,
+                                         ref byte otherSlotIsCharging,
                                          ref byte isShootingSuppressed,
                                          ref PlayerDashState dashState,
                                          ref PlayerBulletTimeState bulletTimeState,
+                                         ref PlayerHealOverTimeState healOverTimeState,
                                          DynamicBuffer<PlayerBombSpawnRequest> bombRequests,
                                          DynamicBuffer<ShootRequest> shootRequests,
                                          Entity playerEntity,
@@ -241,16 +263,33 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                   ref cooldownRemaining,
                                   ref charge,
                                   ref isCharging,
+                                  otherSlotConfig.IsDefined != 0,
+                                  ref otherSlotCharge,
+                                  ref otherSlotIsCharging,
                                   ref isShootingSuppressed,
                                   shootRequests,
                                   playerEntity,
                                   ref healthLookup,
                                   ref updatedHealth,
-                                  ref healthChanged);
+                                  ref healthChanged,
+                                  ref dashState,
+                                  ref bulletTimeState);
             return;
         }
 
-        if (pressedThisFrame == false)
+        bool activationTriggered;
+
+        switch (slotConfig.ActivationInputMode)
+        {
+            case PowerUpActivationInputMode.OnRelease:
+                activationTriggered = releasedThisFrame;
+                break;
+            default:
+                activationTriggered = pressedThisFrame;
+                break;
+        }
+
+        if (activationTriggered == false)
             return;
 
         if (cooldownRemaining > 0f)
@@ -259,6 +298,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         if (CanExecuteTool(slotConfig,
                            dashState,
                            bulletTimeState,
+                           healOverTimeState,
                            movementState,
                            controllerConfig,
                            localTransform,
@@ -285,8 +325,15 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                               ref updatedHealth,
                               ref healthChanged);
 
+        if (slotConfig.InterruptOtherSlotOnEnter != 0 && otherSlotConfig.IsDefined != 0)
+            InterruptOtherSlot(slotConfig,
+                               ref otherSlotCharge,
+                               ref otherSlotIsCharging,
+                               ref dashState,
+                               ref bulletTimeState);
+
         if (slotConfig.ToolKind == ActiveToolKind.PortableHealthPack)
-            ExecutePortableHealthPack(slotConfig, playerEntity, ref healthLookup, ref updatedHealth, ref healthChanged);
+            ExecutePortableHealthPack(slotConfig, playerEntity, ref healthLookup, ref updatedHealth, ref healthChanged, ref healOverTimeState);
 
         ExecuteTool(slotConfig,
                     in localTransform,
@@ -300,6 +347,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                     ref bulletTimeState,
                     bombRequests,
                     shootRequests);
+
+        if (slotConfig.SuppressBaseShootingWhileActive != 0)
+            isShootingSuppressed = 1;
 
         cooldownRemaining = math.max(0f, slotConfig.CooldownSeconds);
     }
@@ -318,12 +368,17 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                               ref float cooldownRemaining,
                                               ref float charge,
                                               ref byte isCharging,
+                                              bool hasOtherSlotDefinition,
+                                              ref float otherSlotCharge,
+                                              ref byte otherSlotIsCharging,
                                               ref byte isShootingSuppressed,
                                               DynamicBuffer<ShootRequest> shootRequests,
                                               Entity playerEntity,
                                               ref ComponentLookup<PlayerHealth> healthLookup,
                                               ref PlayerHealth updatedHealth,
-                                              ref bool healthChanged)
+                                              ref bool healthChanged,
+                                              ref PlayerDashState dashState,
+                                              ref PlayerBulletTimeState bulletTimeState)
     {
         if (cooldownRemaining > 0f)
         {
@@ -344,18 +399,45 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
         if (pressedThisFrame)
         {
+            if (CanPayActivationCost(slotConfig,
+                                     slotEnergy,
+                                     playerEntity,
+                                     ref healthLookup,
+                                     ref updatedHealth,
+                                     ref healthChanged) == false)
+            {
+                isCharging = 0;
+                charge = 0f;
+                return;
+            }
+
             isCharging = 1;
             charge = 0f;
         }
 
         if (isCharging != 0 && isPressed)
         {
+            if (CanPayActivationCost(slotConfig,
+                                     slotEnergy,
+                                     playerEntity,
+                                     ref healthLookup,
+                                     ref updatedHealth,
+                                     ref healthChanged) == false)
+            {
+                isCharging = 0;
+                charge = 0f;
+                return;
+            }
+
             charge += chargeRate * math.max(0f, deltaTime);
 
             if (charge > maximumCharge)
                 charge = maximumCharge;
 
             if (slotConfig.ChargeShot.SuppressBaseShootingWhileCharging != 0)
+                isShootingSuppressed = 1;
+
+            if (slotConfig.SuppressBaseShootingWhileActive != 0)
                 isShootingSuppressed = 1;
         }
 
@@ -382,6 +464,13 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                   ref updatedHealth,
                                   ref healthChanged);
 
+            if (slotConfig.InterruptOtherSlotOnEnter != 0 && hasOtherSlotDefinition)
+                InterruptOtherSlot(slotConfig,
+                                   ref otherSlotCharge,
+                                   ref otherSlotIsCharging,
+                                   ref dashState,
+                                   ref bulletTimeState);
+
             ExecuteChargeShot(slotConfig,
                               in localTransform,
                               in lookState,
@@ -401,6 +490,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
     private static bool CanExecuteTool(in PlayerPowerUpSlotConfig slotConfig,
                                        in PlayerDashState dashState,
                                        in PlayerBulletTimeState bulletTimeState,
+                                       in PlayerHealOverTimeState healOverTimeState,
                                        in PlayerMovementState movementState,
                                        in PlayerControllerConfig controllerConfig,
                                        in LocalTransform localTransform,
@@ -457,6 +547,11 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                 if (slotConfig.PortableHealthPack.HealAmount <= 0f)
                     return false;
 
+                if (slotConfig.PortableHealthPack.ApplyMode == PowerUpHealApplicationMode.OverTime &&
+                    slotConfig.PortableHealthPack.StackPolicy == PowerUpHealStackPolicy.IgnoreIfActive &&
+                    healOverTimeState.IsActive != 0)
+                    return false;
+
                 if (healthChanged == false)
                 {
                     if (healthLookup.HasComponent(playerEntity) == false)
@@ -495,23 +590,26 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
     {
         float maximumEnergy = math.max(0f, slotConfig.MaximumEnergy);
         float activationCost = math.max(0f, slotConfig.ActivationCost);
-
-        if (slotConfig.FullChargeRequirement != 0 && maximumEnergy > 0f)
-        {
-            if (slotEnergy + EnergyEpsilon < maximumEnergy)
-                return false;
-        }
+        float minimumActivationEnergyPercent = math.clamp(slotConfig.MinimumActivationEnergyPercent, 0f, 100f);
 
         switch (slotConfig.ActivationResource)
         {
             case PowerUpResourceType.None:
                 return true;
             case PowerUpResourceType.Energy:
-                if (activationCost <= 0f)
-                    return true;
-
                 if (maximumEnergy <= 0f)
                     return false;
+
+                if (minimumActivationEnergyPercent > 0f)
+                {
+                    float minimumEnergyRequired = maximumEnergy * (minimumActivationEnergyPercent * 0.01f);
+
+                    if (slotEnergy + EnergyEpsilon < minimumEnergyRequired)
+                        return false;
+                }
+
+                if (activationCost <= 0f)
+                    return true;
 
                 if (slotEnergy + EnergyEpsilon < activationCost)
                     return false;
@@ -602,7 +700,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         switch (slotConfig.ToolKind)
         {
             case ActiveToolKind.Bomb:
-                ExecuteBomb(slotConfig, in localTransform, in movementState, bombRequests);
+                ExecuteBomb(slotConfig, in localTransform, in lookState, in movementState, bombRequests);
                 return;
             case ActiveToolKind.Dash:
                 ExecuteDash(slotConfig,
@@ -631,14 +729,20 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
     private static void ExecuteBomb(in PlayerPowerUpSlotConfig slotConfig,
                                     in LocalTransform localTransform,
+                                    in PlayerLookState lookState,
                                     in PlayerMovementState movementState,
                                     DynamicBuffer<PlayerBombSpawnRequest> bombRequests)
     {
         float3 bombDirection = ResolveBombActivationDirection(in movementState, in localTransform);
-        float3 worldSpawnOffset = math.rotate(localTransform.Rotation, slotConfig.Bomb.SpawnOffset);
+        quaternion spawnOffsetRotation = ResolveSpawnOffsetRotation(in slotConfig.Bomb, in localTransform, in lookState);
+        float3 worldSpawnOffset = math.rotate(spawnOffsetRotation, slotConfig.Bomb.SpawnOffset);
         float3 spawnPosition = localTransform.Position + worldSpawnOffset;
         float deploySpeed = math.max(0f, slotConfig.Bomb.DeploySpeed);
         float3 initialVelocity = bombDirection * deploySpeed;
+        byte enableDamagePayload = slotConfig.Bomb.EnableDamagePayload;
+        float radius = enableDamagePayload != 0 ? math.max(0.1f, slotConfig.Bomb.Radius) : 0f;
+        float damage = enableDamagePayload != 0 ? math.max(0f, slotConfig.Bomb.Damage) : 0f;
+        byte affectAll = enableDamagePayload != 0 ? slotConfig.Bomb.AffectAllEnemiesInRadius : (byte)0;
 
         bombRequests.Add(new PlayerBombSpawnRequest
         {
@@ -651,9 +755,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             BounceDamping = math.clamp(slotConfig.Bomb.BounceDamping, 0f, 1f),
             LinearDampingPerSecond = math.max(0f, slotConfig.Bomb.LinearDampingPerSecond),
             FuseSeconds = math.max(0.05f, slotConfig.Bomb.FuseSeconds),
-            Radius = math.max(0.1f, slotConfig.Bomb.Radius),
-            Damage = math.max(0f, slotConfig.Bomb.Damage),
-            AffectAllEnemiesInRadius = slotConfig.Bomb.AffectAllEnemiesInRadius
+            Radius = radius,
+            Damage = damage,
+            AffectAllEnemiesInRadius = affectAll
         });
     }
 
@@ -736,7 +840,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                      slotConfig.Shotgun.DamageMultiplier,
                                                                      slotConfig.Shotgun.SpeedMultiplier,
                                                                      slotConfig.Shotgun.RangeMultiplier,
-                                                                     slotConfig.Shotgun.LifetimeMultiplier);
+                                                                     slotConfig.Shotgun.LifetimeMultiplier,
+                                                                     slotConfig.Shotgun.HasElementalPayload != 0,
+                                                                     in slotConfig.Shotgun.ElementalEffect,
+                                                                     slotConfig.Shotgun.ElementalStacksPerHit);
 
         if (projectileCount <= 1)
         {
@@ -776,6 +883,18 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                           in PlayerPassiveToolsState passiveToolsState,
                                           DynamicBuffer<ShootRequest> shootRequests)
     {
+        bool hasPassiveShotgunPayload = passiveToolsState.HasShotgun != 0;
+        int projectileCount = hasPassiveShotgunPayload ? math.max(1, passiveToolsState.Shotgun.ProjectileCount) : 1;
+        float coneAngleDegrees = hasPassiveShotgunPayload ? math.max(0f, passiveToolsState.Shotgun.ConeAngleDegrees) : 0f;
+        ProjectilePenetrationMode penetrationMode = slotConfig.ChargeShot.PenetrationMode;
+        int maxPenetrations = math.max(0, slotConfig.ChargeShot.MaxPenetrations);
+
+        if (hasPassiveShotgunPayload)
+        {
+            penetrationMode = (ProjectilePenetrationMode)math.max((int)penetrationMode, (int)passiveToolsState.Shotgun.PenetrationMode);
+            maxPenetrations = math.max(maxPenetrations, math.max(0, passiveToolsState.Shotgun.MaxPenetrations));
+        }
+
         float3 shootDirection = ResolveShootDirection(in lookState, in localTransform);
         float3 spawnPosition = ResolveShootSpawnPosition(in localTransform, in controllerConfig);
         ProjectileRequestTemplate template = BuildProjectileTemplate(in controllerConfig,
@@ -784,22 +903,48 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                      slotConfig.ChargeShot.DamageMultiplier,
                                                                      slotConfig.ChargeShot.SpeedMultiplier,
                                                                      slotConfig.ChargeShot.RangeMultiplier,
-                                                                     slotConfig.ChargeShot.LifetimeMultiplier);
+                                                                     slotConfig.ChargeShot.LifetimeMultiplier,
+                                                                     slotConfig.ChargeShot.HasElementalPayload != 0,
+                                                                     in slotConfig.ChargeShot.ElementalEffect,
+                                                                     slotConfig.ChargeShot.ElementalStacksPerHit);
 
-        AddShootRequest(ref shootRequests,
-                        spawnPosition,
-                        shootDirection,
-                        in template,
-                        slotConfig.ChargeShot.PenetrationMode,
-                        slotConfig.ChargeShot.MaxPenetrations,
-                        0);
+        if (projectileCount <= 1)
+        {
+            AddShootRequest(ref shootRequests,
+                            spawnPosition,
+                            shootDirection,
+                            in template,
+                            penetrationMode,
+                            maxPenetrations,
+                            0);
+            return;
+        }
+
+        float halfCone = coneAngleDegrees * 0.5f;
+        float step = coneAngleDegrees / (projectileCount - 1);
+
+        for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
+        {
+            float angle = -halfCone + step * projectileIndex;
+            quaternion rotationOffset = quaternion.AxisAngle(new float3(0f, 1f, 0f), math.radians(angle));
+            float3 spreadDirection = math.rotate(rotationOffset, shootDirection);
+
+            AddShootRequest(ref shootRequests,
+                            spawnPosition,
+                            spreadDirection,
+                            in template,
+                            penetrationMode,
+                            maxPenetrations,
+                            0);
+        }
     }
 
     private static void ExecutePortableHealthPack(in PlayerPowerUpSlotConfig slotConfig,
                                                   Entity playerEntity,
                                                   ref ComponentLookup<PlayerHealth> healthLookup,
                                                   ref PlayerHealth updatedHealth,
-                                                  ref bool healthChanged)
+                                                  ref bool healthChanged,
+                                                  ref PlayerHealOverTimeState healOverTimeState)
     {
         if (healthChanged == false)
         {
@@ -820,10 +965,91 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         if (missingHealth <= 0f)
             return;
 
+        if (slotConfig.PortableHealthPack.ApplyMode == PowerUpHealApplicationMode.OverTime)
+        {
+            ApplyHealOverTime(slotConfig,
+                              healAmount,
+                              missingHealth,
+                              ref healOverTimeState);
+            return;
+        }
+
         updatedHealth.Current += math.min(missingHealth, healAmount);
 
         if (updatedHealth.Current > updatedHealth.Max)
             updatedHealth.Current = updatedHealth.Max;
+    }
+
+    private static void ApplyHealOverTime(in PlayerPowerUpSlotConfig slotConfig,
+                                          float requestedHealAmount,
+                                          float currentMissingHealth,
+                                          ref PlayerHealOverTimeState healOverTimeState)
+    {
+        float clampedRequestedHeal = math.max(0f, requestedHealAmount);
+        float clampedMissingHealth = math.max(0f, currentMissingHealth);
+        float totalHeal = math.min(clampedRequestedHeal, clampedMissingHealth);
+
+        if (totalHeal <= 0f)
+            return;
+
+        float durationSeconds = math.max(0.05f, slotConfig.PortableHealthPack.DurationSeconds);
+        float tickIntervalSeconds = math.max(0.01f, slotConfig.PortableHealthPack.TickIntervalSeconds);
+        float healPerSecond = totalHeal / durationSeconds;
+        bool hasActiveHot = healOverTimeState.IsActive != 0;
+
+        switch (slotConfig.PortableHealthPack.StackPolicy)
+        {
+            case PowerUpHealStackPolicy.IgnoreIfActive:
+                if (hasActiveHot)
+                    return;
+
+                break;
+            case PowerUpHealStackPolicy.Additive:
+                if (hasActiveHot)
+                {
+                    healOverTimeState.RemainingTotalHeal += totalHeal;
+                    healOverTimeState.RemainingDuration = math.max(healOverTimeState.RemainingDuration, durationSeconds);
+                    healOverTimeState.TickIntervalSeconds = math.min(healOverTimeState.TickIntervalSeconds, tickIntervalSeconds);
+                    healOverTimeState.HealPerSecond += healPerSecond;
+                    healOverTimeState.IsActive = 1;
+                    return;
+                }
+
+                break;
+        }
+
+        healOverTimeState.IsActive = 1;
+        healOverTimeState.HealPerSecond = healPerSecond;
+        healOverTimeState.RemainingTotalHeal = totalHeal;
+        healOverTimeState.RemainingDuration = durationSeconds;
+        healOverTimeState.TickIntervalSeconds = tickIntervalSeconds;
+        healOverTimeState.TickTimer = 0f;
+    }
+
+    private static void InterruptOtherSlot(in PlayerPowerUpSlotConfig slotConfig,
+                                           ref float otherSlotCharge,
+                                           ref byte otherSlotIsCharging,
+                                           ref PlayerDashState dashState,
+                                           ref PlayerBulletTimeState bulletTimeState)
+    {
+        otherSlotCharge = 0f;
+        otherSlotIsCharging = 0;
+
+        if (slotConfig.InterruptOtherSlotChargingOnly != 0)
+            return;
+
+        dashState.IsDashing = 0;
+        dashState.Phase = 0;
+        dashState.PhaseRemaining = 0f;
+        dashState.HoldDuration = 0f;
+        dashState.RemainingInvulnerability = 0f;
+        dashState.Direction = float3.zero;
+        dashState.EntryVelocity = float3.zero;
+        dashState.Speed = 0f;
+        dashState.TransitionInDuration = 0f;
+        dashState.TransitionOutDuration = 0f;
+        bulletTimeState.RemainingDuration = 0f;
+        bulletTimeState.SlowPercent = 0f;
     }
     #endregion
 
@@ -853,7 +1079,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                      float damageMultiplier,
                                                                      float speedMultiplier,
                                                                      float rangeMultiplier,
-                                                                     float lifetimeMultiplier)
+                                                                     float lifetimeMultiplier,
+                                                                     bool hasElementalPayloadOverride,
+                                                                     in ElementalEffectConfig elementalEffectOverride,
+                                                                     float elementalStacksPerHitOverride)
     {
         ref ShootingConfig shootingConfig = ref controllerConfig.Config.Value.Shooting;
         ref ShootingValuesBlob values = ref shootingConfig.Values;
@@ -877,7 +1106,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             Range = range,
             Lifetime = lifetime,
             ScaleMultiplier = scale,
-            InheritPlayerSpeed = shootingConfig.ProjectilesInheritPlayerSpeed
+            InheritPlayerSpeed = shootingConfig.ProjectilesInheritPlayerSpeed,
+            HasElementalPayloadOverride = hasElementalPayloadOverride ? (byte)1 : (byte)0,
+            ElementalEffectOverride = elementalEffectOverride,
+            ElementalStacksPerHitOverride = math.max(0f, elementalStacksPerHitOverride)
         };
     }
 
@@ -902,12 +1134,39 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             PenetrationMode = penetrationMode,
             MaxPenetrations = math.max(0, maxPenetrations),
             InheritPlayerSpeed = template.InheritPlayerSpeed,
-            IsSplitChild = isSplitChild
+            IsSplitChild = isSplitChild,
+            HasElementalPayloadOverride = template.HasElementalPayloadOverride,
+            ElementalEffectOverride = template.ElementalEffectOverride,
+            ElementalStacksPerHitOverride = template.ElementalStacksPerHitOverride
         });
     }
     #endregion
 
     #region Movement Helpers
+    private static quaternion ResolveSpawnOffsetRotation(in BombPowerUpConfig bombConfig,
+                                                         in LocalTransform localTransform,
+                                                         in PlayerLookState lookState)
+    {
+        switch (bombConfig.SpawnOffsetOrientation)
+        {
+            case SpawnOffsetOrientationMode.PlayerLookDirection:
+                float3 lookDirection = lookState.DesiredDirection;
+                lookDirection.y = 0f;
+
+                if (math.lengthsq(lookDirection) > DirectionLengthEpsilon)
+                {
+                    float3 normalizedLook = math.normalizesafe(lookDirection, new float3(0f, 0f, 1f));
+                    return quaternion.LookRotationSafe(normalizedLook, new float3(0f, 1f, 0f));
+                }
+
+                return localTransform.Rotation;
+            case SpawnOffsetOrientationMode.WorldForward:
+                return quaternion.identity;
+            default:
+                return localTransform.Rotation;
+        }
+    }
+
     private static float3 ResolveBombActivationDirection(in PlayerMovementState movementState, in LocalTransform localTransform)
     {
         float3 movementDirection = movementState.Velocity;
