@@ -20,6 +20,10 @@ public partial struct EnemyPatternMovementSystem : ISystem
     private const float ClearanceEpsilon = 1e-4f;
     private const float BasicClearanceBlendScale = 0.12f;
     private const float DvdClearanceBlend = 0.75f;
+    private const float BasicMinimumForwardSpeedRatio = 0.62f;
+    private const float DvdMinimumForwardSpeedRatio = 0.8f;
+    private const float WallBlockedRepathThreshold = 0.72f;
+    private const float WallClearanceCorrectionRepathThreshold = 0.3f;
     #endregion
 
     #region Fields
@@ -174,6 +178,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float moveSpeed = math.max(0f, currentEnemyData.MoveSpeed) * slowMultiplier;
             float maxSpeed = math.max(0f, currentEnemyData.MaxSpeed) * slowMultiplier;
             float acceleration = math.max(0f, currentEnemyData.Acceleration);
+            float deceleration = math.max(0f, currentEnemyData.Deceleration);
             bool movementLocked = shooterControlLookup.HasComponent(enemyEntity) && shooterControlLookup[enemyEntity].MovementLocked != 0;
             bool ignoreSteeringAndPriority = ShouldIgnoreSteeringAndPriority(in currentPatternConfig);
             float3 desiredVelocity = float3.zero;
@@ -234,11 +239,17 @@ public partial struct EnemyPatternMovementSystem : ISystem
                     if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic)
                     {
                         float clearanceBlend = math.saturate(currentPatternConfig.BasicFreeTrajectoryPreference * BasicClearanceBlendScale);
-                        desiredVelocity += clearanceVelocity * clearanceBlend;
+                        desiredVelocity = ComposeDesiredVelocityWithClearance(desiredVelocity,
+                                                                              clearanceVelocity,
+                                                                              clearanceBlend,
+                                                                              BasicMinimumForwardSpeedRatio);
                     }
                     else
                     {
-                        desiredVelocity += clearanceVelocity * DvdClearanceBlend;
+                        desiredVelocity = ComposeDesiredVelocityWithClearance(desiredVelocity,
+                                                                              clearanceVelocity,
+                                                                              DvdClearanceBlend,
+                                                                              DvdMinimumForwardSpeedRatio);
                     }
                 }
             }
@@ -252,7 +263,11 @@ public partial struct EnemyPatternMovementSystem : ISystem
                 desiredVelocity *= maxSpeed / desiredSpeed;
 
             float3 velocityDelta = desiredVelocity - currentEnemyRuntimeState.Velocity;
-            float maxVelocityDelta = acceleration * deltaTime;
+            float accelerationRate = ResolveVelocityChangeRate(currentEnemyRuntimeState.Velocity,
+                                                               desiredVelocity,
+                                                               acceleration,
+                                                               deceleration);
+            float maxVelocityDelta = accelerationRate * deltaTime;
             float velocityDeltaMagnitude = math.length(velocityDelta);
 
             if (velocityDeltaMagnitude > maxVelocityDelta && velocityDeltaMagnitude > DirectionEpsilon)
@@ -279,6 +294,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             if (wallsEnabled)
             {
                 bool clearanceReachedTarget = false;
+                float requestedDisplacementDistance = math.length(desiredDisplacement);
                 bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
                                                                                        currentEnemyTransform.Position,
                                                                                        desiredDisplacement,
@@ -314,7 +330,13 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                               currentPatternConfig.BasicBlockedPathRetryDelay);
 
                         if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic && expandedWallClearance)
-                            clearanceReachedTarget = true;
+                        {
+                            float allowedDisplacementDistance = math.length(allowedDisplacement);
+                            float blockedDisplacementRatio = ResolveBlockedDisplacementRatio(requestedDisplacementDistance, allowedDisplacementDistance);
+
+                            if (blockedDisplacementRatio >= WallBlockedRepathThreshold)
+                                clearanceReachedTarget = true;
+                        }
                     }
                 }
 
@@ -333,7 +355,13 @@ public partial struct EnemyPatternMovementSystem : ISystem
                         currentEnemyRuntimeState.Velocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(currentEnemyRuntimeState.Velocity, clearanceNormal);
 
                         if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic)
-                            clearanceReachedTarget = true;
+                        {
+                            float clearanceCorrectionDistance = math.length(clearanceCorrectionDisplacement);
+                            float clearanceCorrectionRatio = math.saturate(clearanceCorrectionDistance / math.max(0.01f, wallCollisionRadius));
+
+                            if (clearanceCorrectionRatio >= WallClearanceCorrectionRepathThreshold)
+                                clearanceReachedTarget = true;
+                        }
                     }
                 }
 
@@ -400,6 +428,79 @@ public partial struct EnemyPatternMovementSystem : ISystem
     }
 
     /// <summary>
+    /// Blends clearance with the current desired velocity while preserving stable forward speed.
+    /// </summary>
+    /// <param name="baseVelocity">Current desired planar velocity before clearance.</param>
+    /// <param name="clearanceVelocity">Planar clearance contribution.</param>
+    /// <param name="clearanceBlend">Clearance blend scalar.</param>
+    /// <param name="minimumForwardSpeedRatio">Minimum retained forward speed ratio in [0..1].</param>
+    /// <returns>Blended desired velocity.</returns>
+    private static float3 ComposeDesiredVelocityWithClearance(float3 baseVelocity,
+                                                              float3 clearanceVelocity,
+                                                              float clearanceBlend,
+                                                              float minimumForwardSpeedRatio)
+    {
+        float blend = math.max(0f, clearanceBlend);
+
+        if (blend <= 0f)
+            return baseVelocity;
+
+        float3 blendedClearance = clearanceVelocity * blend;
+        float baseSpeed = math.length(baseVelocity);
+
+        if (baseSpeed <= DirectionEpsilon)
+            return baseVelocity + blendedClearance;
+
+        float3 forwardDirection = baseVelocity / math.max(baseSpeed, DirectionEpsilon);
+        float forwardDelta = math.dot(blendedClearance, forwardDirection);
+        float minimumForwardSpeed = baseSpeed * math.clamp(minimumForwardSpeedRatio, 0f, 1f);
+        float maximumForwardSpeed = baseSpeed * 1.15f;
+        float forwardSpeed = math.clamp(baseSpeed + forwardDelta, minimumForwardSpeed, maximumForwardSpeed);
+        float3 lateralClearance = blendedClearance - forwardDirection * forwardDelta;
+        return forwardDirection * forwardSpeed + lateralClearance;
+    }
+
+    /// <summary>
+    /// Resolves per-frame velocity change rate using acceleration for speed-up and deceleration for slow-down.
+    /// </summary>
+    /// <param name="currentVelocity">Current planar velocity.</param>
+    /// <param name="desiredVelocity">Target planar velocity.</param>
+    /// <param name="acceleration">Configured acceleration.</param>
+    /// <param name="deceleration">Configured deceleration.</param>
+    /// <returns>Velocity delta rate in units per second.</returns>
+    private static float ResolveVelocityChangeRate(float3 currentVelocity,
+                                                   float3 desiredVelocity,
+                                                   float acceleration,
+                                                   float deceleration)
+    {
+        float currentSpeed = math.length(currentVelocity);
+        float desiredSpeed = math.length(desiredVelocity);
+
+        if (desiredSpeed + DirectionEpsilon >= currentSpeed)
+            return math.max(0f, acceleration);
+
+        if (deceleration > 0f)
+            return deceleration;
+
+        return math.max(0f, acceleration);
+    }
+
+    /// <summary>
+    /// Computes how much requested displacement was blocked by wall collision resolution.
+    /// </summary>
+    /// <param name="requestedDistance">Requested displacement length.</param>
+    /// <param name="allowedDistance">Allowed displacement length.</param>
+    /// <returns>Blocked ratio in [0..1].</returns>
+    private static float ResolveBlockedDisplacementRatio(float requestedDistance, float allowedDistance)
+    {
+        if (requestedDistance <= DirectionEpsilon)
+            return 0f;
+
+        float allowedRatio = math.saturate(allowedDistance / requestedDistance);
+        return 1f - allowedRatio;
+    }
+
+    /// <summary>
     /// Resolves additional wall-clearance radius to enforce during runtime displacement.
     /// </summary>
     /// <param name="patternConfig">Current compiled pattern configuration.</param>
@@ -424,8 +525,8 @@ public partial struct EnemyPatternMovementSystem : ISystem
             return;
 
         patternRuntimeState.WanderHasTarget = 0;
-        patternRuntimeState.WanderWaitTimer = math.max(0f, patternConfig.BasicWaitCooldownSeconds);
-        patternRuntimeState.WanderRetryTimer = 0f;
+        patternRuntimeState.WanderWaitTimer = math.min(0.08f, math.max(0f, patternConfig.BasicWaitCooldownSeconds * 0.2f));
+        patternRuntimeState.WanderRetryTimer = math.max(0.02f, patternConfig.BasicBlockedPathRetryDelay * 0.5f);
     }
 
     /// <summary>

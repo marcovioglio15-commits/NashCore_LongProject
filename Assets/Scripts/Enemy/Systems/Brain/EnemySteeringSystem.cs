@@ -252,7 +252,12 @@ public partial struct EnemySteeringSystem : ISystem
                     desiredVelocity *= maxSpeed / desiredSpeed;
 
                 float acceleration = math.max(0f, enemyData.Acceleration);
-                float maxVelocityDelta = acceleration * deltaTime;
+                float deceleration = math.max(0f, enemyData.Deceleration);
+                float accelerationRate = ResolveVelocityChangeRate(runtimeState.Velocity,
+                                                                   desiredVelocity,
+                                                                   acceleration,
+                                                                   deceleration);
+                float maxVelocityDelta = accelerationRate * deltaTime;
                 float3 velocityDelta = desiredVelocity - runtimeState.Velocity;
                 float velocityDeltaMagnitude = math.length(velocityDelta);
 
@@ -375,6 +380,31 @@ public partial struct EnemySteeringSystem : ISystem
         {
             return (x * 73856093) ^ (y * 19349663);
         }
+    }
+
+    /// <summary>
+    /// Resolves per-frame velocity change rate using acceleration for speed-up and deceleration for slow-down.
+    /// </summary>
+    /// <param name="currentVelocity">Current planar velocity.</param>
+    /// <param name="desiredVelocity">Target planar velocity.</param>
+    /// <param name="acceleration">Configured acceleration.</param>
+    /// <param name="deceleration">Configured deceleration.</param>
+    /// <returns>Velocity delta rate in units per second.</returns>
+    private static float ResolveVelocityChangeRate(float3 currentVelocity,
+                                                   float3 desiredVelocity,
+                                                   float acceleration,
+                                                   float deceleration)
+    {
+        float currentSpeed = math.length(currentVelocity);
+        float desiredSpeed = math.length(desiredVelocity);
+
+        if (desiredSpeed + DirectionEpsilon >= currentSpeed)
+            return math.max(0f, acceleration);
+
+        if (deceleration > 0f)
+            return deceleration;
+
+        return math.max(0f, acceleration);
     }
     #endregion
 
