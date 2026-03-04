@@ -3,7 +3,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 
 /// <summary>
-/// Applies contact damage from active enemies to the player.
+/// Applies close-range enemy damage to the player using contact and area tick channels.
 /// </summary>
 [UpdateInGroup(typeof(EnemySystemGroup))]
 [UpdateAfter(typeof(EnemyProjectileHitSystem))]
@@ -73,7 +73,11 @@ public partial struct EnemyContactDamageSystem : ISystem
             enemyTimeScale = math.clamp(enemyGlobalTimeScale.Scale, 0f, 1f);
 
         float deltaTime = SystemAPI.Time.DeltaTime * enemyTimeScale;
-        float accumulatedDamage = 0f;
+        float accumulatedContactDamage = 0f;
+        float accumulatedAreaPercentDamage = 0f;
+
+        if (deltaTime <= 0f)
+            return;
 
         foreach ((RefRO<EnemyData> enemyData,
                   RefRW<EnemyRuntimeState> runtimeState,
@@ -82,37 +86,62 @@ public partial struct EnemyContactDamageSystem : ISystem
                                                                       .WithNone<EnemyDespawnRequest>())
         {
             EnemyRuntimeState nextState = runtimeState.ValueRO;
-            nextState.ContactCooldown -= deltaTime;
+            nextState.ContactDamageCooldown -= deltaTime;
+            nextState.AreaDamageCooldown -= deltaTime;
 
-            if (nextState.ContactCooldown < 0f)
-                nextState.ContactCooldown = 0f;
+            if (nextState.ContactDamageCooldown < 0f)
+                nextState.ContactDamageCooldown = 0f;
 
-            float contactRadius = math.max(0f, enemyData.ValueRO.ContactRadius);
-
-            if (contactRadius <= 0f)
-            {
-                runtimeState.ValueRW = nextState;
-                continue;
-            }
+            if (nextState.AreaDamageCooldown < 0f)
+                nextState.AreaDamageCooldown = 0f;
 
             float3 delta = enemyTransform.ValueRO.Position - playerPosition;
             delta.y = 0f;
             float sqrDistance = math.lengthsq(delta);
-            float contactRadiusSquared = contactRadius * contactRadius;
 
-            if (sqrDistance <= contactRadiusSquared && nextState.ContactCooldown <= 0f)
+            if (enemyData.ValueRO.ContactDamageEnabled != 0)
             {
-                accumulatedDamage += math.max(0f, enemyData.ValueRO.ContactDamage);
-                nextState.ContactCooldown = math.max(0.01f, enemyData.ValueRO.ContactInterval);
+                float contactRadius = math.max(0f, enemyData.ValueRO.ContactRadius);
+
+                if (contactRadius > 0f)
+                {
+                    float contactRadiusSquared = contactRadius * contactRadius;
+
+                    if (sqrDistance <= contactRadiusSquared && nextState.ContactDamageCooldown <= 0f)
+                    {
+                        accumulatedContactDamage += math.max(0f, enemyData.ValueRO.ContactAmountPerTick);
+                        nextState.ContactDamageCooldown = math.max(0.01f, enemyData.ValueRO.ContactTickInterval);
+                    }
+                }
+            }
+
+            if (enemyData.ValueRO.AreaDamageEnabled != 0)
+            {
+                float areaRadius = math.max(0f, enemyData.ValueRO.AreaRadius);
+
+                if (areaRadius > 0f)
+                {
+                    float areaRadiusSquared = areaRadius * areaRadius;
+
+                    if (sqrDistance <= areaRadiusSquared && nextState.AreaDamageCooldown <= 0f)
+                    {
+                        accumulatedAreaPercentDamage += math.max(0f, enemyData.ValueRO.AreaAmountPerTickPercent);
+                        nextState.AreaDamageCooldown = math.max(0.01f, enemyData.ValueRO.AreaTickInterval);
+                    }
+                }
             }
 
             runtimeState.ValueRW = nextState;
         }
 
-        if (accumulatedDamage <= 0f)
+        float maxHealth = math.max(0f, playerHealth.Max);
+        float areaDamage = maxHealth * math.max(0f, accumulatedAreaPercentDamage) * 0.01f;
+        float totalDamage = math.max(0f, accumulatedContactDamage) + math.max(0f, areaDamage);
+
+        if (totalDamage <= 0f)
             return;
 
-        playerHealth.Current -= accumulatedDamage;
+        playerHealth.Current -= totalDamage;
 
         if (playerHealth.Current < 0f)
             playerHealth.Current = 0f;

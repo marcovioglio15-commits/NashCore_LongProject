@@ -261,6 +261,8 @@ public static class EnemyManagementDraftSession
         AddAssetPathsOfType<EnemyMasterPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyBrainPresetLibrary>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyBrainPreset>(uniquePaths, TrackedEnemyAssetsRoot);
+        AddAssetPathsOfType<EnemyAdvancedPatternPresetLibrary>(uniquePaths, TrackedEnemyAssetsRoot);
+        AddAssetPathsOfType<EnemyAdvancedPatternPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddEnemyPrefabPaths(uniquePaths);
 
         List<string> paths = new List<string>(uniquePaths);
@@ -427,6 +429,9 @@ public static class EnemyManagementDraftSession
         if (assetObject is EnemyBrainPreset)
             return true;
 
+        if (assetObject is EnemyAdvancedPatternPreset)
+            return true;
+
         return false;
     }
 
@@ -459,7 +464,12 @@ public static class EnemyManagementDraftSession
             return true;
 
         EnemyBrainPresetLibrary brainLibrary = EnemyBrainPresetLibraryUtility.GetOrCreateLibrary();
-        return LibraryContainsPath(brainLibrary.Presets, assetPath);
+
+        if (LibraryContainsPath(brainLibrary.Presets, assetPath))
+            return true;
+
+        EnemyAdvancedPatternPresetLibrary advancedPatternLibrary = EnemyAdvancedPatternPresetLibraryUtility.GetOrCreateLibrary();
+        return LibraryContainsPath(advancedPatternLibrary.Presets, assetPath);
     }
 
     private static bool LibraryContainsPath<TAsset>(IReadOnlyList<TAsset> presets, string assetPath) where TAsset : UnityEngine.Object

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [Serializable]
 public sealed class EnemyBrainMovementSettings
@@ -18,6 +19,9 @@ public sealed class EnemyBrainMovementSettings
 
     [Tooltip("Reserved deceleration value for future braking behaviors. Currently unused at runtime.")]
     [SerializeField] private float deceleration = 8f;
+
+    [Tooltip("Self-rotation speed in degrees per second. Positive rotates clockwise around Y, negative counter-clockwise.")]
+    [SerializeField] private float rotationSpeedDegreesPerSecond;
     #endregion
 
     #endregion
@@ -54,6 +58,14 @@ public sealed class EnemyBrainMovementSettings
             return deceleration;
         }
     }
+
+    public float RotationSpeedDegreesPerSecond
+    {
+        get
+        {
+            return rotationSpeedDegreesPerSecond;
+        }
+    }
     #endregion
 
     #region Methods
@@ -72,6 +84,9 @@ public sealed class EnemyBrainMovementSettings
 
         if (deceleration < 0f)
             deceleration = 0f;
+
+        if (float.IsNaN(rotationSpeedDegreesPerSecond) || float.IsInfinity(rotationSpeedDegreesPerSecond))
+            rotationSpeedDegreesPerSecond = 0f;
     }
     #endregion
 
@@ -142,24 +157,49 @@ public sealed class EnemyBrainSteeringSettings
 }
 
 [Serializable]
-public sealed class EnemyBrainPlayerContactSettings
+public sealed class EnemyBrainDamageSettings
 {
     #region Fields
 
     #region Serialized Fields
-    [Tooltip("Distance from enemy center to apply contact damage to the player.")]
+    [Tooltip("When enabled, enemies apply flat periodic damage while the player is inside contact radius.")]
+    [SerializeField] private bool contactDamageEnabled = true;
+
+    [Tooltip("Distance from enemy center used to trigger contact damage ticks.")]
     [SerializeField] private float contactRadius = 1.2f;
 
-    [Tooltip("Damage applied to the player each time contact cooldown expires in range.")]
-    [SerializeField] private float contactDamage = 5f;
+    [Tooltip("Flat damage amount subtracted from player health at each contact tick.")]
+    [FormerlySerializedAs("contactDamage")]
+    [SerializeField] private float contactAmountPerTick = 5f;
 
-    [Tooltip("Cooldown in seconds between two consecutive contact damage applications.")]
-    [SerializeField] private float contactInterval = 0.75f;
+    [Tooltip("Interval in seconds between two contact damage ticks.")]
+    [FormerlySerializedAs("contactInterval")]
+    [SerializeField] private float contactTickInterval = 0.75f;
+
+    [Tooltip("When enabled, enemies apply periodic percentage damage while the player is inside area radius.")]
+    [SerializeField] private bool areaDamageEnabled;
+
+    [Tooltip("Distance from enemy center used to trigger area damage ticks.")]
+    [SerializeField] private float areaRadius = 2.25f;
+
+    [Tooltip("Percent of player max health applied per area damage tick. Example: 2 means 2%.")]
+    [SerializeField] private float areaAmountPerTickPercent = 2f;
+
+    [Tooltip("Interval in seconds between two area damage ticks.")]
+    [SerializeField] private float areaTickInterval = 1f;
     #endregion
 
     #endregion
 
     #region Properties
+    public bool ContactDamageEnabled
+    {
+        get
+        {
+            return contactDamageEnabled;
+        }
+    }
+
     public float ContactRadius
     {
         get
@@ -168,19 +208,51 @@ public sealed class EnemyBrainPlayerContactSettings
         }
     }
 
-    public float ContactDamage
+    public float ContactAmountPerTick
     {
         get
         {
-            return contactDamage;
+            return contactAmountPerTick;
         }
     }
 
-    public float ContactInterval
+    public float ContactTickInterval
     {
         get
         {
-            return contactInterval;
+            return contactTickInterval;
+        }
+    }
+
+    public bool AreaDamageEnabled
+    {
+        get
+        {
+            return areaDamageEnabled;
+        }
+    }
+
+    public float AreaRadius
+    {
+        get
+        {
+            return areaRadius;
+        }
+    }
+
+    public float AreaAmountPerTickPercent
+    {
+        get
+        {
+            return areaAmountPerTickPercent;
+        }
+    }
+
+    public float AreaTickInterval
+    {
+        get
+        {
+            return areaTickInterval;
         }
     }
     #endregion
@@ -193,11 +265,20 @@ public sealed class EnemyBrainPlayerContactSettings
         if (contactRadius < 0f)
             contactRadius = 0f;
 
-        if (contactDamage < 0f)
-            contactDamage = 0f;
+        if (contactAmountPerTick < 0f)
+            contactAmountPerTick = 0f;
 
-        if (contactInterval < 0.01f)
-            contactInterval = 0.01f;
+        if (contactTickInterval < 0.01f)
+            contactTickInterval = 0.01f;
+
+        if (areaRadius < 0f)
+            areaRadius = 0f;
+
+        if (areaAmountPerTickPercent < 0f)
+            areaAmountPerTickPercent = 0f;
+
+        if (areaTickInterval < 0.01f)
+            areaTickInterval = 0.01f;
     }
     #endregion
 
@@ -389,8 +470,9 @@ public sealed class EnemyBrainPreset : ScriptableObject
     [Tooltip("Steering settings block.")]
     [SerializeField] private EnemyBrainSteeringSettings steering = new EnemyBrainSteeringSettings();
 
-    [Tooltip("Player contact settings block.")]
-    [SerializeField] private EnemyBrainPlayerContactSettings playerContact = new EnemyBrainPlayerContactSettings();
+    [Tooltip("Damage settings block.")]
+    [FormerlySerializedAs("playerContact")]
+    [SerializeField] private EnemyBrainDamageSettings damage = new EnemyBrainDamageSettings();
 
     [Tooltip("Health and shield settings block.")]
     [SerializeField] private EnemyBrainHealthStatisticsSettings healthStatistics = new EnemyBrainHealthStatisticsSettings();
@@ -450,11 +532,11 @@ public sealed class EnemyBrainPreset : ScriptableObject
         }
     }
 
-    public EnemyBrainPlayerContactSettings PlayerContact
+    public EnemyBrainDamageSettings Damage
     {
         get
         {
-            return playerContact;
+            return damage;
         }
     }
 
@@ -489,8 +571,8 @@ public sealed class EnemyBrainPreset : ScriptableObject
         if (steering == null)
             steering = new EnemyBrainSteeringSettings();
 
-        if (playerContact == null)
-            playerContact = new EnemyBrainPlayerContactSettings();
+        if (damage == null)
+            damage = new EnemyBrainDamageSettings();
 
         if (healthStatistics == null)
             healthStatistics = new EnemyBrainHealthStatisticsSettings();
@@ -500,7 +582,7 @@ public sealed class EnemyBrainPreset : ScriptableObject
 
         movement.Validate();
         steering.Validate();
-        playerContact.Validate();
+        damage.Validate();
         healthStatistics.Validate();
         visual.Validate();
     }

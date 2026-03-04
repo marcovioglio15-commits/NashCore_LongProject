@@ -27,6 +27,7 @@ MonoBehaviour:
   - Assets/Scriptable Objects/Enemy
   - Assets/Scriptable Objects/Enemy/Brain
   - Assets/Scriptable Objects/Enemy/Master Presets
+  - Assets/Scriptable Objects/Enemy/Advanced Pattern
   folderColors:
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
@@ -42,5 +43,6 @@ MonoBehaviour:
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
   - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
-  folderApplyModes: 0100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  - {r: 0.13656995, g: 0.44319052, b: 0.9339623, a: 0}
+  folderApplyModes: 010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
   autoInheritColors: 1

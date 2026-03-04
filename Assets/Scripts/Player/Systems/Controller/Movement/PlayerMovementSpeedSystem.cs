@@ -43,16 +43,25 @@ public partial struct PlayerMovementSpeedSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
+        ComponentLookup<PlayerElementalRuntimeState> elementalRuntimeLookup = SystemAPI.GetComponentLookup<PlayerElementalRuntimeState>(true);
 
         foreach ((RefRW<PlayerMovementState> movementState,
                   RefRO<PlayerMovementModifiers> modifiers,
-                  RefRO<PlayerControllerConfig> controllerConfig) in SystemAPI.Query<RefRW<PlayerMovementState>, RefRO<PlayerMovementModifiers>, RefRO<PlayerControllerConfig>>())
+                  RefRO<PlayerControllerConfig> controllerConfig,
+                  Entity playerEntity) in SystemAPI.Query<RefRW<PlayerMovementState>, RefRO<PlayerMovementModifiers>, RefRO<PlayerControllerConfig>>().WithEntityAccess())
         {
             ref MovementConfig movementConfig = ref controllerConfig.ValueRO.Config.Value.Movement;
             float3 desiredDirection = movementState.ValueRO.DesiredDirection;
             bool hasInput = math.lengthsq(desiredDirection) > 1e-6f;
             float speedMultiplier = math.max(0f, modifiers.ValueRO.MaxSpeedMultiplier);
             float accelerationMultiplier = math.max(0f, modifiers.ValueRO.AccelerationMultiplier);
+
+            if (elementalRuntimeLookup.HasComponent(playerEntity))
+            {
+                float elementalSlowPercent = math.clamp(elementalRuntimeLookup[playerEntity].SlowPercent, 0f, 100f);
+                speedMultiplier *= math.saturate(1f - elementalSlowPercent * 0.01f);
+            }
+
             bool forceZeroSpeed = speedMultiplier <= 0f;
             float baseSpeed = movementConfig.Values.BaseSpeed * speedMultiplier;
             float maxSpeed = movementConfig.Values.MaxSpeed * speedMultiplier;

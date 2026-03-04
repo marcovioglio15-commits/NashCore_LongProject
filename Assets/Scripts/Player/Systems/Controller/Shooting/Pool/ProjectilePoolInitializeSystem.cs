@@ -52,6 +52,10 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
                   Entity shooterEntity) in SystemAPI.Query<RefRW<ProjectilePoolState>,
                                                            RefRO<ShooterProjectilePrefab>>().WithEntityAccess())
         {
+            if (entityManager.HasComponent<EnemyActive>(shooterEntity) &&
+                entityManager.IsComponentEnabled<EnemyActive>(shooterEntity) == false)
+                continue;
+
             if (poolState.ValueRO.Initialized != 0)
                 continue;
 

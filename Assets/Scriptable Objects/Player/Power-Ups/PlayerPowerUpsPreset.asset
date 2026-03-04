@@ -42,7 +42,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -191,7 +190,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -340,7 +338,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -489,7 +486,6 @@ MonoBehaviour:
         activationCost: 30
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 25
         cooldownSeconds: 1
@@ -638,7 +634,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -787,7 +782,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -936,7 +930,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -1085,7 +1078,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -1234,7 +1226,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -1383,7 +1374,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -1532,7 +1522,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -1681,7 +1670,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -1830,7 +1818,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -1979,7 +1966,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -2128,7 +2114,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -2277,7 +2262,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -2426,7 +2410,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -2575,7 +2558,6 @@ MonoBehaviour:
         activationCost: 100
         maintenanceCostPerSecond: 0
         minimumActivationEnergyPercent: 0
-        legacyFullChargeRequirement: 0
         chargeType: 0
         chargePerTrigger: 100
         cooldownSeconds: 1
@@ -2735,7 +2717,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -2883,7 +2864,6 @@ MonoBehaviour:
           activationCost: 50
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 100
-          legacyFullChargeRequirement: 0
           chargeType: 1
           chargePerTrigger: 5
           cooldownSeconds: 1
@@ -3031,7 +3011,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -3179,7 +3158,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -3339,7 +3317,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -3487,7 +3464,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -3635,7 +3611,6 @@ MonoBehaviour:
           activationCost: 80
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 1
           chargePerTrigger: 20
           cooldownSeconds: 1
@@ -3783,7 +3758,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -3931,7 +3905,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -4091,7 +4064,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -4239,7 +4211,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 100
-          legacyFullChargeRequirement: 0
           chargeType: 1
           chargePerTrigger: 35
           cooldownSeconds: 1
@@ -4387,7 +4358,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -4547,7 +4517,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -4695,7 +4664,6 @@ MonoBehaviour:
           activationCost: 30
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 25
           cooldownSeconds: 1
@@ -4843,7 +4811,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -5003,7 +4970,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -5151,7 +5117,6 @@ MonoBehaviour:
           activationCost: 45
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 20
           cooldownSeconds: 1
@@ -5299,7 +5264,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -5459,7 +5423,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -5607,7 +5570,6 @@ MonoBehaviour:
           activationCost: 80
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 1
           chargePerTrigger: 20
           cooldownSeconds: 1
@@ -5755,7 +5717,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -5916,7 +5877,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -6064,7 +6024,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -6224,7 +6183,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -6384,7 +6342,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -6544,7 +6501,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -6704,7 +6660,6 @@ MonoBehaviour:
           activationCost: 100
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 100
           cooldownSeconds: 1
@@ -6864,7 +6819,6 @@ MonoBehaviour:
           activationCost: 0
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 0
           cooldownSeconds: 1
@@ -7022,7 +6976,6 @@ MonoBehaviour:
           activationCost: 0
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 0
           cooldownSeconds: 0
@@ -7180,7 +7133,6 @@ MonoBehaviour:
           activationCost: 0
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 0
           cooldownSeconds: 0
@@ -7326,7 +7278,6 @@ MonoBehaviour:
           activationCost: 0
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 0
           cooldownSeconds: 0
@@ -7472,7 +7423,6 @@ MonoBehaviour:
           activationCost: 0
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 0
-          legacyFullChargeRequirement: 0
           chargeType: 0
           chargePerTrigger: 0
           cooldownSeconds: 0
@@ -7602,9 +7552,10 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
     unreplaceable: 0
   primaryActivePowerUpId: ActiveChargeShot
-  secondaryActivePowerUpId: ActiveGigaBomb
+  secondaryActivePowerUpId: ActiveBasicDash
   equippedPassivePowerUpIds:
   - PassiveEnemiesExplodeOnDeath
+  - PassiveShotgun
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT
@@ -8405,7 +8356,6 @@ MonoBehaviour:
     chargeType: 0
     chargePerTrigger: 0
     minimumActivationEnergyPercent: 0
-    legacyFullChargeRequirement: 0
     unreplaceable: 0
     bombData:
       bombPrefab: {fileID: 0}
@@ -8448,7 +8398,6 @@ MonoBehaviour:
     chargeType: 0
     chargePerTrigger: 0
     minimumActivationEnergyPercent: 0
-    legacyFullChargeRequirement: 0
     unreplaceable: 0
     bombData:
       bombPrefab: {fileID: 7369153295349678932, guid: dca4840ccd694c04299341737a490946, type: 3}
@@ -8491,7 +8440,6 @@ MonoBehaviour:
     chargeType: 0
     chargePerTrigger: 0
     minimumActivationEnergyPercent: 0
-    legacyFullChargeRequirement: 0
     unreplaceable: 0
     bombData:
       bombPrefab: {fileID: 7369153295349678932, guid: dca4840ccd694c04299341737a490946, type: 3}

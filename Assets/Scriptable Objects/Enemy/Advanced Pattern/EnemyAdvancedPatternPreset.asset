@@ -1,0 +1,650 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e650fe08531874944a1cf89235597e76, type: 3}
+  m_Name: EnemyAdvancedPatternPreset
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAdvancedPatternPreset
+  presetId: 531b9a8a38b64779a42cf4ed60b3623f
+  presetName: EnemyAdvancedPatternPreset
+  description: 
+  version: 1.0.0
+  legacyShooterProjectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
+  legacyShooterProjectilePoolInitialCapacity: 24
+  legacyShooterProjectilePoolExpandBatch: 8
+  moduleDefinitions:
+  - moduleId: Module_Stationary
+    displayName: Stationary
+    moduleKind: 0
+    notes: Forces movement speed to zero.
+    data:
+      stationary:
+        freezeRotation: 1
+      wanderer:
+        mode: 0
+        basic:
+          searchRadius: 9
+          minimumTravelDistance: 2
+          maximumTravelDistance: 8
+          arrivalTolerance: 0.35
+          waitCooldownSeconds: 0.7
+          candidateSampleCount: 9
+          useInfiniteDirectionSampling: 1
+          infiniteDirectionStepDegrees: 8
+          unexploredDirectionPreference: 0.65
+          towardPlayerPreference: 0.35
+          minimumWallDistance: 0.25
+          minimumEnemyClearance: 0.2
+          trajectoryPredictionTime: 0.35
+          freeTrajectoryPreference: 4
+          blockedPathRetryDelay: 0.25
+        dvd:
+          speedMultiplier: 1.05
+          bounceDamping: 1
+          randomizeInitialDirection: 1
+          fixedInitialDirectionDegrees: 45
+          cornerNudgeDistance: 0.08
+      shooter:
+        aimPolicy: 0
+        movementPolicy: 0
+        fireInterval: 1
+        burstCount: 1
+        intraBurstDelay: 0.08
+        useMinimumRange: 0
+        minimumRange: 2
+        useMaximumRange: 0
+        maximumRange: 20
+        projectile:
+          projectilesPerShot: 1
+          spreadAngleDegrees: 0
+          projectileSpeed: 14
+          projectileDamage: 6
+          projectileRange: 28
+          projectileLifetime: 4
+          projectileExplosionRadius: 0
+          projectileScaleMultiplier: 1
+          penetrationMode: 0
+          maxPenetrations: 0
+          inheritShooterSpeed: 0
+        runtimeProjectile:
+          projectilePrefab: {fileID: 0}
+          poolInitialCapacity: 24
+          poolExpandBatch: 8
+        elemental:
+          enableElementalDamage: 0
+          effectData:
+            elementType: 0
+            effectKind: 0
+            procMode: 0
+            reapplyMode: 0
+            procThresholdStacks: 5
+            maximumStacks: 20
+            stackDecayPerSecond: 1
+            consumeStacksOnProc: 0
+            dotDamagePerTick: 4
+            dotTickInterval: 0.5
+            dotDurationSeconds: 2
+            impedimentSlowPercentPerStack: 10
+            impedimentProcSlowPercent: 50
+            impedimentMaxSlowPercent: 100
+            impedimentDurationSeconds: 2
+          stacksPerHit: 1
+  - moduleId: Module_Grunt
+    displayName: Grunt
+    moduleKind: 1
+    notes: Uses standard chase and separation from Brain settings.
+    data:
+      stationary:
+        freezeRotation: 1
+      wanderer:
+        mode: 0
+        basic:
+          searchRadius: 9
+          minimumTravelDistance: 2
+          maximumTravelDistance: 8
+          arrivalTolerance: 0.35
+          waitCooldownSeconds: 0.7
+          candidateSampleCount: 9
+          useInfiniteDirectionSampling: 1
+          infiniteDirectionStepDegrees: 8
+          unexploredDirectionPreference: 0.65
+          towardPlayerPreference: 0.35
+          minimumWallDistance: 0.25
+          minimumEnemyClearance: 0.2
+          trajectoryPredictionTime: 0.35
+          freeTrajectoryPreference: 4
+          blockedPathRetryDelay: 0.25
+        dvd:
+          speedMultiplier: 1.05
+          bounceDamping: 1
+          randomizeInitialDirection: 1
+          fixedInitialDirectionDegrees: 45
+          cornerNudgeDistance: 0.08
+      shooter:
+        aimPolicy: 0
+        movementPolicy: 0
+        fireInterval: 1
+        burstCount: 1
+        intraBurstDelay: 0.08
+        useMinimumRange: 0
+        minimumRange: 2
+        useMaximumRange: 0
+        maximumRange: 20
+        projectile:
+          projectilesPerShot: 1
+          spreadAngleDegrees: 0
+          projectileSpeed: 14
+          projectileDamage: 6
+          projectileRange: 28
+          projectileLifetime: 4
+          projectileExplosionRadius: 0
+          projectileScaleMultiplier: 1
+          penetrationMode: 0
+          maxPenetrations: 0
+          inheritShooterSpeed: 0
+        runtimeProjectile:
+          projectilePrefab: {fileID: 0}
+          poolInitialCapacity: 24
+          poolExpandBatch: 8
+        elemental:
+          enableElementalDamage: 0
+          effectData:
+            elementType: 0
+            effectKind: 0
+            procMode: 0
+            reapplyMode: 0
+            procThresholdStacks: 5
+            maximumStacks: 20
+            stackDecayPerSecond: 1
+            consumeStacksOnProc: 0
+            dotDamagePerTick: 4
+            dotTickInterval: 0.5
+            dotDurationSeconds: 2
+            impedimentSlowPercentPerStack: 10
+            impedimentProcSlowPercent: 50
+            impedimentMaxSlowPercent: 100
+            impedimentDurationSeconds: 2
+          stacksPerHit: 1
+  - moduleId: Module_Wanderer
+    displayName: Wanderer
+    moduleKind: 2
+    notes: Uses autonomous wandering behavior.
+    data:
+      stationary:
+        freezeRotation: 1
+      wanderer:
+        mode: 0
+        basic:
+          searchRadius: 9
+          minimumTravelDistance: 2
+          maximumTravelDistance: 8
+          arrivalTolerance: 0.35
+          waitCooldownSeconds: 0.7
+          candidateSampleCount: 9
+          useInfiniteDirectionSampling: 1
+          infiniteDirectionStepDegrees: 8
+          unexploredDirectionPreference: 0.65
+          towardPlayerPreference: 0.35
+          minimumWallDistance: 0.25
+          minimumEnemyClearance: 0.2
+          trajectoryPredictionTime: 0.35
+          freeTrajectoryPreference: 4
+          blockedPathRetryDelay: 0.25
+        dvd:
+          speedMultiplier: 1.05
+          bounceDamping: 1
+          randomizeInitialDirection: 1
+          fixedInitialDirectionDegrees: 45
+          cornerNudgeDistance: 0.08
+      shooter:
+        aimPolicy: 0
+        movementPolicy: 0
+        fireInterval: 1
+        burstCount: 1
+        intraBurstDelay: 0.08
+        useMinimumRange: 0
+        minimumRange: 2
+        useMaximumRange: 0
+        maximumRange: 20
+        projectile:
+          projectilesPerShot: 1
+          spreadAngleDegrees: 0
+          projectileSpeed: 14
+          projectileDamage: 6
+          projectileRange: 28
+          projectileLifetime: 4
+          projectileExplosionRadius: 0
+          projectileScaleMultiplier: 1
+          penetrationMode: 0
+          maxPenetrations: 0
+          inheritShooterSpeed: 0
+        runtimeProjectile:
+          projectilePrefab: {fileID: 0}
+          poolInitialCapacity: 24
+          poolExpandBatch: 8
+        elemental:
+          enableElementalDamage: 0
+          effectData:
+            elementType: 0
+            effectKind: 0
+            procMode: 0
+            reapplyMode: 0
+            procThresholdStacks: 5
+            maximumStacks: 20
+            stackDecayPerSecond: 1
+            consumeStacksOnProc: 0
+            dotDamagePerTick: 4
+            dotTickInterval: 0.5
+            dotDurationSeconds: 2
+            impedimentSlowPercentPerStack: 10
+            impedimentProcSlowPercent: 50
+            impedimentMaxSlowPercent: 100
+            impedimentDurationSeconds: 2
+          stacksPerHit: 1
+  - moduleId: Module_Shooter
+    displayName: Shooter
+    moduleKind: 3
+    notes: Shoots periodic projectiles toward the player.
+    data:
+      stationary:
+        freezeRotation: 1
+      wanderer:
+        mode: 0
+        basic:
+          searchRadius: 9
+          minimumTravelDistance: 2
+          maximumTravelDistance: 8
+          arrivalTolerance: 0.35
+          waitCooldownSeconds: 0.7
+          candidateSampleCount: 9
+          useInfiniteDirectionSampling: 1
+          infiniteDirectionStepDegrees: 8
+          unexploredDirectionPreference: 0.65
+          towardPlayerPreference: 0.35
+          minimumWallDistance: 0.25
+          minimumEnemyClearance: 0.2
+          trajectoryPredictionTime: 0.35
+          freeTrajectoryPreference: 4
+          blockedPathRetryDelay: 0.25
+        dvd:
+          speedMultiplier: 1.05
+          bounceDamping: 1
+          randomizeInitialDirection: 1
+          fixedInitialDirectionDegrees: 45
+          cornerNudgeDistance: 0.08
+      shooter:
+        aimPolicy: 0
+        movementPolicy: 0
+        fireInterval: 1
+        burstCount: 1
+        intraBurstDelay: 0.08
+        useMinimumRange: 0
+        minimumRange: 2
+        useMaximumRange: 0
+        maximumRange: 20
+        projectile:
+          projectilesPerShot: 1
+          spreadAngleDegrees: 0
+          projectileSpeed: 14
+          projectileDamage: 6
+          projectileRange: 28
+          projectileLifetime: 4
+          projectileExplosionRadius: 0
+          projectileScaleMultiplier: 1
+          penetrationMode: 0
+          maxPenetrations: 0
+          inheritShooterSpeed: 0
+        runtimeProjectile:
+          projectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
+          poolInitialCapacity: 24
+          poolExpandBatch: 8
+        elemental:
+          enableElementalDamage: 0
+          effectData:
+            elementType: 0
+            effectKind: 0
+            procMode: 0
+            reapplyMode: 0
+            procThresholdStacks: 5
+            maximumStacks: 20
+            stackDecayPerSecond: 1
+            consumeStacksOnProc: 0
+            dotDamagePerTick: 4
+            dotTickInterval: 0.5
+            dotDurationSeconds: 2
+            impedimentSlowPercentPerStack: 10
+            impedimentProcSlowPercent: 50
+            impedimentMaxSlowPercent: 100
+            impedimentDurationSeconds: 2
+          stacksPerHit: 1
+  patterns:
+  - patternId: Pattern_BasicWanderer
+    displayName: Pattern_BasicWanderer
+    description: Moves in a predetermined pattern, deals damage on contact.
+    unreplaceable: 0
+    moduleBindings:
+    - moduleId: Module_Wanderer
+      isEnabled: 1
+      useOverridePayload: 1
+      overridePayload:
+        stationary:
+          freezeRotation: 1
+        wanderer:
+          mode: 0
+          basic:
+            searchRadius: 25
+            minimumTravelDistance: 5
+            maximumTravelDistance: 25
+            arrivalTolerance: 0.1
+            waitCooldownSeconds: 0.7
+            candidateSampleCount: 9
+            useInfiniteDirectionSampling: 1
+            infiniteDirectionStepDegrees: 8
+            unexploredDirectionPreference: 0.65
+            towardPlayerPreference: 0.35
+            minimumWallDistance: 2
+            minimumEnemyClearance: 1
+            trajectoryPredictionTime: 0.35
+            freeTrajectoryPreference: 4
+            blockedPathRetryDelay: 0.25
+          dvd:
+            speedMultiplier: 1.05
+            bounceDamping: 1
+            randomizeInitialDirection: 1
+            fixedInitialDirectionDegrees: 45
+            cornerNudgeDistance: 0.08
+        shooter:
+          aimPolicy: 0
+          movementPolicy: 0
+          fireInterval: 1
+          burstCount: 1
+          intraBurstDelay: 0.08
+          useMinimumRange: 0
+          minimumRange: 2
+          useMaximumRange: 0
+          maximumRange: 20
+          projectile:
+            projectilesPerShot: 1
+            spreadAngleDegrees: 0
+            projectileSpeed: 14
+            projectileDamage: 6
+            projectileRange: 28
+            projectileLifetime: 4
+            projectileExplosionRadius: 0
+            projectileScaleMultiplier: 1
+            penetrationMode: 0
+            maxPenetrations: 0
+            inheritShooterSpeed: 0
+          runtimeProjectile:
+            projectilePrefab: {fileID: 0}
+            poolInitialCapacity: 24
+            poolExpandBatch: 8
+          elemental:
+            enableElementalDamage: 0
+            effectData:
+              elementType: 0
+              effectKind: 0
+              procMode: 0
+              reapplyMode: 0
+              procThresholdStacks: 5
+              maximumStacks: 20
+              stackDecayPerSecond: 1
+              consumeStacksOnProc: 0
+              dotDamagePerTick: 4
+              dotTickInterval: 0.5
+              dotDurationSeconds: 2
+              impedimentSlowPercentPerStack: 10
+              impedimentProcSlowPercent: 50
+              impedimentMaxSlowPercent: 100
+              impedimentDurationSeconds: 2
+            stacksPerHit: 1
+  - patternId: Pattern_Shooter
+    displayName: Pattern_Shooter
+    description: Shoots one projectile each X seconds at the player's position. Stands
+      still. Deals contact damage.
+    unreplaceable: 0
+    moduleBindings:
+    - moduleId: Module_Shooter
+      isEnabled: 1
+      useOverridePayload: 1
+      overridePayload:
+        stationary:
+          freezeRotation: 1
+        wanderer:
+          mode: 0
+          basic:
+            searchRadius: 25
+            minimumTravelDistance: 5
+            maximumTravelDistance: 25
+            arrivalTolerance: 0.1
+            waitCooldownSeconds: 0.7
+            candidateSampleCount: 9
+            useInfiniteDirectionSampling: 1
+            infiniteDirectionStepDegrees: 8
+            unexploredDirectionPreference: 0.65
+            towardPlayerPreference: 0.35
+            minimumWallDistance: 1
+            minimumEnemyClearance: 1
+            trajectoryPredictionTime: 0.35
+            freeTrajectoryPreference: 4
+            blockedPathRetryDelay: 0.25
+          dvd:
+            speedMultiplier: 1.05
+            bounceDamping: 1
+            randomizeInitialDirection: 1
+            fixedInitialDirectionDegrees: 45
+            cornerNudgeDistance: 0.08
+        shooter:
+          aimPolicy: 0
+          movementPolicy: 0
+          fireInterval: 1
+          burstCount: 1
+          intraBurstDelay: 0.08
+          useMinimumRange: 0
+          minimumRange: 2
+          useMaximumRange: 0
+          maximumRange: 20
+          projectile:
+            projectilesPerShot: 1
+            spreadAngleDegrees: 0
+            projectileSpeed: 14
+            projectileDamage: 6
+            projectileRange: 28
+            projectileLifetime: 4
+            projectileExplosionRadius: 0
+            projectileScaleMultiplier: 1
+            penetrationMode: 0
+            maxPenetrations: 0
+            inheritShooterSpeed: 0
+          runtimeProjectile:
+            projectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
+            poolInitialCapacity: 24
+            poolExpandBatch: 8
+          elemental:
+            enableElementalDamage: 0
+            effectData:
+              elementType: 0
+              effectKind: 0
+              procMode: 0
+              reapplyMode: 0
+              procThresholdStacks: 5
+              maximumStacks: 20
+              stackDecayPerSecond: 1
+              consumeStacksOnProc: 0
+              dotDamagePerTick: 4
+              dotTickInterval: 0.5
+              dotDurationSeconds: 2
+              impedimentSlowPercentPerStack: 10
+              impedimentProcSlowPercent: 50
+              impedimentMaxSlowPercent: 100
+              impedimentDurationSeconds: 2
+            stacksPerHit: 1
+  - patternId: Pattern_DVDWanderer
+    displayName: Pattern_DVDWanderer
+    description: Moves diagonally and bounces like a dvd screensaver around.
+    unreplaceable: 0
+    moduleBindings:
+    - moduleId: Module_Wanderer
+      isEnabled: 1
+      useOverridePayload: 1
+      overridePayload:
+        stationary:
+          freezeRotation: 1
+        wanderer:
+          mode: 1
+          basic:
+            searchRadius: 25
+            minimumTravelDistance: 5
+            maximumTravelDistance: 25
+            arrivalTolerance: 0.1
+            waitCooldownSeconds: 0.7
+            candidateSampleCount: 9
+            useInfiniteDirectionSampling: 1
+            infiniteDirectionStepDegrees: 8
+            unexploredDirectionPreference: 0.65
+            towardPlayerPreference: 0.35
+            minimumWallDistance: 1
+            minimumEnemyClearance: 1
+            trajectoryPredictionTime: 0.35
+            freeTrajectoryPreference: 4
+            blockedPathRetryDelay: 0.25
+          dvd:
+            speedMultiplier: 1
+            bounceDamping: 1
+            randomizeInitialDirection: 1
+            fixedInitialDirectionDegrees: 45
+            cornerNudgeDistance: 0.08
+        shooter:
+          aimPolicy: 0
+          movementPolicy: 0
+          fireInterval: 1
+          burstCount: 1
+          intraBurstDelay: 0.08
+          useMinimumRange: 0
+          minimumRange: 2
+          useMaximumRange: 0
+          maximumRange: 20
+          projectile:
+            projectilesPerShot: 1
+            spreadAngleDegrees: 0
+            projectileSpeed: 14
+            projectileDamage: 6
+            projectileRange: 28
+            projectileLifetime: 4
+            projectileExplosionRadius: 0
+            projectileScaleMultiplier: 1
+            penetrationMode: 0
+            maxPenetrations: 0
+            inheritShooterSpeed: 0
+          runtimeProjectile:
+            projectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
+            poolInitialCapacity: 24
+            poolExpandBatch: 8
+          elemental:
+            enableElementalDamage: 0
+            effectData:
+              elementType: 0
+              effectKind: 0
+              procMode: 0
+              reapplyMode: 0
+              procThresholdStacks: 5
+              maximumStacks: 20
+              stackDecayPerSecond: 1
+              consumeStacksOnProc: 0
+              dotDamagePerTick: 4
+              dotTickInterval: 0.5
+              dotDurationSeconds: 2
+              impedimentSlowPercentPerStack: 10
+              impedimentProcSlowPercent: 50
+              impedimentMaxSlowPercent: 100
+              impedimentDurationSeconds: 2
+            stacksPerHit: 1
+  - patternId: Pattern_BasicGrunt
+    displayName: Pattern_BasicGrunt
+    description: Moves towards the player in a straight line, deals damage on contact.
+    unreplaceable: 0
+    moduleBindings:
+    - moduleId: Module_Grunt
+      isEnabled: 1
+      useOverridePayload: 0
+      overridePayload:
+        stationary:
+          freezeRotation: 1
+        wanderer:
+          mode: 1
+          basic:
+            searchRadius: 25
+            minimumTravelDistance: 5
+            maximumTravelDistance: 25
+            arrivalTolerance: 0.1
+            waitCooldownSeconds: 0.7
+            candidateSampleCount: 9
+            useInfiniteDirectionSampling: 1
+            infiniteDirectionStepDegrees: 8
+            unexploredDirectionPreference: 0.65
+            towardPlayerPreference: 0.35
+            minimumWallDistance: 1
+            minimumEnemyClearance: 1
+            trajectoryPredictionTime: 0.35
+            freeTrajectoryPreference: 4
+            blockedPathRetryDelay: 0.25
+          dvd:
+            speedMultiplier: 1.05
+            bounceDamping: 1
+            randomizeInitialDirection: 1
+            fixedInitialDirectionDegrees: 45
+            cornerNudgeDistance: 0.08
+        shooter:
+          aimPolicy: 0
+          movementPolicy: 0
+          fireInterval: 1
+          burstCount: 1
+          intraBurstDelay: 0.08
+          useMinimumRange: 0
+          minimumRange: 2
+          useMaximumRange: 0
+          maximumRange: 20
+          projectile:
+            projectilesPerShot: 1
+            spreadAngleDegrees: 0
+            projectileSpeed: 14
+            projectileDamage: 6
+            projectileRange: 28
+            projectileLifetime: 4
+            projectileExplosionRadius: 0
+            projectileScaleMultiplier: 1
+            penetrationMode: 0
+            maxPenetrations: 0
+            inheritShooterSpeed: 0
+          runtimeProjectile:
+            projectilePrefab: {fileID: 8239258266037394063, guid: 40b60835986c39c4c90b16009cf728fc, type: 3}
+            poolInitialCapacity: 24
+            poolExpandBatch: 8
+          elemental:
+            enableElementalDamage: 0
+            effectData:
+              elementType: 0
+              effectKind: 0
+              procMode: 0
+              reapplyMode: 0
+              procThresholdStacks: 5
+              maximumStacks: 20
+              stackDecayPerSecond: 1
+              consumeStacksOnProc: 0
+              dotDamagePerTick: 4
+              dotTickInterval: 0.5
+              dotDurationSeconds: 2
+              impedimentSlowPercentPerStack: 10
+              impedimentProcSlowPercent: 50
+              impedimentMaxSlowPercent: 100
+              impedimentDurationSeconds: 2
+            stacksPerHit: 1
+  activePatternIds:
+  - Pattern_BasicWanderer

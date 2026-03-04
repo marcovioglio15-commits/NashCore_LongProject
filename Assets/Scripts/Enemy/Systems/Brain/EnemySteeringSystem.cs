@@ -17,6 +17,7 @@ public partial struct EnemySteeringSystem : ISystem
     #region Constants
     private static readonly float3 UpAxis = new float3(0f, 1f, 0f);
     private static readonly float3 ForwardAxis = new float3(0f, 0f, 1f);
+    private const float RotationSpeedEpsilon = 1e-4f;
 
     private const float HighLodRadius = 16f;
     private const float MediumLodRadius = 34f;
@@ -36,7 +37,7 @@ public partial struct EnemySteeringSystem : ISystem
     {
         activeEnemiesQuery = SystemAPI.QueryBuilder()
             .WithAll<EnemyData, EnemyRuntimeState, LocalTransform, EnemyActive>()
-            .WithNone<EnemyDespawnRequest>()
+            .WithNone<EnemyDespawnRequest, EnemyCustomPatternMovementTag>()
             .Build();
 
         playerQuery = SystemAPI.QueryBuilder()
@@ -97,6 +98,7 @@ public partial struct EnemySteeringSystem : ISystem
         NativeList<int> evaluatedEnemyIndices = new NativeList<int>(enemyCount, Allocator.TempJob);
         NativeList<byte> evaluatedSeparationEnabled = new NativeList<byte>(enemyCount, Allocator.TempJob);
         ComponentLookup<EnemyElementalRuntimeState> elementalRuntimeLookup = SystemAPI.GetComponentLookup<EnemyElementalRuntimeState>(true);
+        ComponentLookup<EnemyShooterControlState> shooterControlLookup = SystemAPI.GetComponentLookup<EnemyShooterControlState>(true);
 
         float maxSeparationRadius = 0.25f;
         int frameCount = Time.frameCount;
@@ -239,6 +241,9 @@ public partial struct EnemySteeringSystem : ISystem
             if (velocityMaxSpeed > 0f && velocityMagnitude > velocityMaxSpeed && velocityMagnitude > 1e-6f)
                 runtimeState.Velocity *= velocityMaxSpeed / velocityMagnitude;
 
+            if (shooterControlLookup.HasComponent(enemyEntity) && shooterControlLookup[enemyEntity].MovementLocked != 0)
+                runtimeState.Velocity = float3.zero;
+
             float3 desiredDisplacement = runtimeState.Velocity * deltaTime;
             float3 position = enemyTransform.Position;
 
@@ -267,8 +272,16 @@ public partial struct EnemySteeringSystem : ISystem
             enemyTransform.Position = position;
 
             float planarVelocitySquared = runtimeState.Velocity.x * runtimeState.Velocity.x + runtimeState.Velocity.z * runtimeState.Velocity.z;
+            float rotationSpeedDegreesPerSecond = enemyData.RotationSpeedDegreesPerSecond;
+            bool hasSelfRotation = math.abs(rotationSpeedDegreesPerSecond) > RotationSpeedEpsilon;
 
-            if (planarVelocitySquared > 1e-6f)
+            if (hasSelfRotation)
+            {
+                float deltaYawRadians = math.radians(rotationSpeedDegreesPerSecond) * deltaTime;
+                quaternion deltaRotation = quaternion.RotateY(deltaYawRadians);
+                enemyTransform.Rotation = math.normalize(math.mul(enemyTransform.Rotation, deltaRotation));
+            }
+            else if (planarVelocitySquared > 1e-6f)
             {
                 float3 forward = math.normalizesafe(new float3(runtimeState.Velocity.x, 0f, runtimeState.Velocity.z), ForwardAxis);
                 enemyTransform.Rotation = quaternion.LookRotationSafe(forward, UpAxis);

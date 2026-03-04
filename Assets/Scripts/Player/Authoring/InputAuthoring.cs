@@ -33,6 +33,10 @@ public sealed class InputAuthoring : MonoBehaviour
 
     [Tooltip("Optional power ups preset override used when no source/master preset provides power-up input bindings.")]
     [SerializeField] private PlayerPowerUpsPreset powerUpsPresetOverride;
+
+    [Tooltip("Editor-only diagnostics toggle that logs PlayerControllerConfig entity presence at play start.")]
+    [Header("Debug")]
+    [SerializeField] private bool logPlayerEntityDiagnostics;
     #endregion
 
     #region Private
@@ -84,7 +88,7 @@ public sealed class InputAuthoring : MonoBehaviour
                                       secondaryPowerUpActionId);
 
         #if UNITY_EDITOR
-        LogPlayerEntitiesPresence();
+        LogPlayerEntitiesPresence(logPlayerEntityDiagnostics);
         #endif
     }
 
@@ -180,8 +184,11 @@ public sealed class InputAuthoring : MonoBehaviour
     }
 
     #if UNITY_EDITOR
-    private static void LogPlayerEntitiesPresence()
+    private static void LogPlayerEntitiesPresence(bool logDiagnostics)
     {
+        if (logDiagnostics == false)
+            return;
+
         World world = World.DefaultGameObjectInjectionWorld;
 
         if (world == null)
@@ -201,7 +208,7 @@ public sealed class InputAuthoring : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning("[InputAuthoring] No PlayerControllerConfig entities found. Player baking/spawn might be missing.");
+        Debug.Log("[InputAuthoring] No PlayerControllerConfig entities found.");
     }
     #endif
 

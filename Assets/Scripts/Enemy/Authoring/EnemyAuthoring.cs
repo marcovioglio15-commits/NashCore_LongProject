@@ -1,9 +1,10 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
-/// Authoring component that defines ECS enemy movement, steering, contact and visual settings.
+/// Authoring component that defines ECS enemy movement, steering, damage and visual settings.
 /// Main configuration is sourced from EnemyMasterPreset and its sub-presets.
 /// </summary>
 [DisallowMultipleComponent]
@@ -11,6 +12,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
 {
     #region Constants
     private static readonly Color ContactGizmoColor = new Color(1f, 0.25f, 0.25f, 0.9f);
+    private static readonly Color AreaGizmoColor = new Color(1f, 0.55f, 0.15f, 0.9f);
     private static readonly Color SeparationGizmoColor = new Color(0.2f, 0.6f, 1f, 0.9f);
     private static readonly Color BodyGizmoColor = new Color(1f, 0.9f, 0.2f, 0.9f);
     private static readonly Color VisualDistanceGizmoColor = new Color(0.15f, 1f, 0.75f, 0.9f);
@@ -28,6 +30,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Tooltip(" direct brain preset fallback used when MasterPreset is missing or has no Brain preset assigned.")]
     [SerializeField] private EnemyBrainPreset brainPreset;
 
+    [Tooltip(" direct advanced pattern preset fallback used when MasterPreset is missing or has no Advanced Pattern preset assigned.")]
+    [SerializeField] private EnemyAdvancedPatternPreset advancedPatternPreset;
+
     [Tooltip(" fallback move speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float moveSpeed = 3f;
@@ -43,6 +48,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Tooltip(" fallback deceleration used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float deceleration = 8f;
+
+    [Tooltip(" fallback self-rotation speed in degrees per second used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float rotationSpeedDegreesPerSecond;
 
     [Tooltip(" fallback separation radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
@@ -60,13 +69,35 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [SerializeField]
     [HideInInspector] private float contactRadius = 1.2f;
 
-    [Tooltip(" fallback contact damage used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback contact damage enable used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
-    [HideInInspector] private float contactDamage = 5f;
+    [HideInInspector] private bool contactDamageEnabled = true;
 
-    [Tooltip(" fallback contact interval used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip(" fallback contact amount per tick used when MasterPreset and BrainPreset are missing.")]
+    [FormerlySerializedAs("contactDamage")]
     [SerializeField]
-    [HideInInspector] private float contactInterval = 0.75f;
+    [HideInInspector] private float contactAmountPerTick = 5f;
+
+    [Tooltip(" fallback contact tick interval used when MasterPreset and BrainPreset are missing.")]
+    [FormerlySerializedAs("contactInterval")]
+    [SerializeField]
+    [HideInInspector] private float contactTickInterval = 0.75f;
+
+    [Tooltip(" fallback area damage enable used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private bool areaDamageEnabled;
+
+    [Tooltip(" fallback area radius used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float areaRadius = 2.25f;
+
+    [Tooltip(" fallback area amount per tick percent used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float areaAmountPerTickPercent = 2f;
+
+    [Tooltip(" fallback area tick interval used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float areaTickInterval = 1f;
 
     [Tooltip(" fallback max health used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
@@ -114,6 +145,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Tooltip("Draw the contact radius preview when the authoring object is selected.")]
     [SerializeField] private bool drawContactRadiusGizmo = true;
 
+    [Tooltip("Draw the area damage radius preview when the authoring object is selected.")]
+    [SerializeField] private bool drawAreaRadiusGizmo = true;
+
     [Tooltip("Draw the separation radius preview when the authoring object is selected.")]
     [SerializeField] private bool drawSeparationRadiusGizmo;
 
@@ -143,6 +177,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
         get
         {
             return brainPreset;
+        }
+    }
+
+    public EnemyAdvancedPatternPreset AdvancedPatternPreset
+    {
+        get
+        {
+            return ResolveAdvancedPatternPreset();
         }
     }
 
@@ -198,6 +240,19 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public float RotationSpeedDegreesPerSecond
+    {
+        get
+        {
+            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+
+            if (movementSettings == null)
+                return rotationSpeedDegreesPerSecond;
+
+            return movementSettings.RotationSpeedDegreesPerSecond;
+        }
+    }
+
     public float SeparationRadius
     {
         get
@@ -241,38 +296,103 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainPlayerContactSettings contactSettings = ResolvePlayerContactSettings();
+            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
 
-            if (contactSettings == null)
+            if (damageSettings == null)
                 return contactRadius;
 
-            return contactSettings.ContactRadius;
+            return damageSettings.ContactRadius;
         }
     }
 
-    public float ContactDamage
+    public bool ContactDamageEnabled
     {
         get
         {
-            EnemyBrainPlayerContactSettings contactSettings = ResolvePlayerContactSettings();
+            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
 
-            if (contactSettings == null)
-                return contactDamage;
+            if (damageSettings == null)
+                return contactDamageEnabled;
 
-            return contactSettings.ContactDamage;
+            return damageSettings.ContactDamageEnabled;
         }
     }
 
-    public float ContactInterval
+    public float ContactAmountPerTick
     {
         get
         {
-            EnemyBrainPlayerContactSettings contactSettings = ResolvePlayerContactSettings();
+            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
 
-            if (contactSettings == null)
-                return contactInterval;
+            if (damageSettings == null)
+                return contactAmountPerTick;
 
-            return contactSettings.ContactInterval;
+            return damageSettings.ContactAmountPerTick;
+        }
+    }
+
+    public float ContactTickInterval
+    {
+        get
+        {
+            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+
+            if (damageSettings == null)
+                return contactTickInterval;
+
+            return damageSettings.ContactTickInterval;
+        }
+    }
+
+    public bool AreaDamageEnabled
+    {
+        get
+        {
+            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+
+            if (damageSettings == null)
+                return areaDamageEnabled;
+
+            return damageSettings.AreaDamageEnabled;
+        }
+    }
+
+    public float AreaRadius
+    {
+        get
+        {
+            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+
+            if (damageSettings == null)
+                return areaRadius;
+
+            return damageSettings.AreaRadius;
+        }
+    }
+
+    public float AreaAmountPerTickPercent
+    {
+        get
+        {
+            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+
+            if (damageSettings == null)
+                return areaAmountPerTickPercent;
+
+            return damageSettings.AreaAmountPerTickPercent;
+        }
+    }
+
+    public float AreaTickInterval
+    {
+        get
+        {
+            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+
+            if (damageSettings == null)
+                return areaTickInterval;
+
+            return damageSettings.AreaTickInterval;
         }
     }
 
@@ -417,14 +537,20 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
         if (brainPreset != null)
             brainPreset.ValidateValues();
+
+        if (advancedPatternPreset != null)
+            advancedPatternPreset.ValidateValues();
     }
 
     private void OnDrawGizmosSelected()
     {
         Vector3 center = transform.position;
 
-        if (drawContactRadiusGizmo)
+        if (drawContactRadiusGizmo && ContactDamageEnabled)
             DrawWireRadius(center, math.max(0f, ContactRadius), ContactGizmoColor);
+
+        if (drawAreaRadiusGizmo && AreaDamageEnabled)
+            DrawWireRadius(center, math.max(0f, AreaRadius), AreaGizmoColor);
 
         if (drawSeparationRadiusGizmo)
             DrawWireRadius(center, math.max(0f, SeparationRadius), SeparationGizmoColor);
@@ -464,6 +590,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
         if (deceleration < 0f)
             deceleration = 0f;
 
+        if (float.IsNaN(rotationSpeedDegreesPerSecond) || float.IsInfinity(rotationSpeedDegreesPerSecond))
+            rotationSpeedDegreesPerSecond = 0f;
+
         if (separationRadius < 0.1f)
             separationRadius = 0.1f;
 
@@ -476,11 +605,20 @@ public sealed class EnemyAuthoring : MonoBehaviour
         if (contactRadius < 0f)
             contactRadius = 0f;
 
-        if (contactDamage < 0f)
-            contactDamage = 0f;
+        if (contactAmountPerTick < 0f)
+            contactAmountPerTick = 0f;
 
-        if (contactInterval < 0.01f)
-            contactInterval = 0.01f;
+        if (contactTickInterval < 0.01f)
+            contactTickInterval = 0.01f;
+
+        if (areaRadius < 0f)
+            areaRadius = 0f;
+
+        if (areaAmountPerTickPercent < 0f)
+            areaAmountPerTickPercent = 0f;
+
+        if (areaTickInterval < 0.01f)
+            areaTickInterval = 0.01f;
 
         if (maxHealth < 1f)
             maxHealth = 1f;
@@ -522,6 +660,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
         return brainPreset;
     }
 
+    private EnemyAdvancedPatternPreset ResolveAdvancedPatternPreset()
+    {
+        if (masterPreset != null && masterPreset.AdvancedPatternPreset != null)
+            return masterPreset.AdvancedPatternPreset;
+
+        return advancedPatternPreset;
+    }
+
     private EnemyBrainMovementSettings ResolveMovementSettings()
     {
         EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
@@ -542,14 +688,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
         return resolvedBrainPreset.Steering;
     }
 
-    private EnemyBrainPlayerContactSettings ResolvePlayerContactSettings()
+    private EnemyBrainDamageSettings ResolveDamageSettings()
     {
         EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
 
         if (resolvedBrainPreset == null)
             return null;
 
-        return resolvedBrainPreset.PlayerContact;
+        return resolvedBrainPreset.Damage;
     }
 
     private EnemyBrainHealthStatisticsSettings ResolveHealthStatisticsSettings()
@@ -631,12 +777,18 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             MaxSpeed = math.max(0f, authoring.MaxSpeed),
             Acceleration = math.max(0f, authoring.Acceleration),
             Deceleration = math.max(0f, authoring.Deceleration),
+            RotationSpeedDegreesPerSecond = authoring.RotationSpeedDegreesPerSecond,
             SeparationRadius = math.max(0.1f, authoring.SeparationRadius),
             SeparationWeight = math.max(0f, authoring.SeparationWeight),
             BodyRadius = math.max(0.05f, authoring.BodyRadius),
+            ContactDamageEnabled = authoring.ContactDamageEnabled ? (byte)1 : (byte)0,
             ContactRadius = math.max(0f, authoring.ContactRadius),
-            ContactDamage = math.max(0f, authoring.ContactDamage),
-            ContactInterval = math.max(0.01f, authoring.ContactInterval)
+            ContactAmountPerTick = math.max(0f, authoring.ContactAmountPerTick),
+            ContactTickInterval = math.max(0.01f, authoring.ContactTickInterval),
+            AreaDamageEnabled = authoring.AreaDamageEnabled ? (byte)1 : (byte)0,
+            AreaRadius = math.max(0f, authoring.AreaRadius),
+            AreaAmountPerTickPercent = math.max(0f, authoring.AreaAmountPerTickPercent),
+            AreaTickInterval = math.max(0.01f, authoring.AreaTickInterval)
         });
 
         float bakedHealth = math.max(1f, authoring.MaxHealth);
@@ -653,9 +805,51 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         AddComponent(entity, new EnemyRuntimeState
         {
             Velocity = float3.zero,
-            ContactCooldown = 0f,
+            ContactDamageCooldown = 0f,
+            AreaDamageCooldown = 0f,
             SpawnVersion = 0u
         });
+
+        EnemyCompiledPatternBakeResult compiledPattern = EnemyAdvancedPatternBakeUtility.Compile(authoring.AdvancedPatternPreset);
+
+        AddComponent(entity, compiledPattern.PatternConfig);
+        AddComponent(entity, new EnemyPatternRuntimeState
+        {
+            WanderTargetPosition = float3.zero,
+            WanderWaitTimer = 0f,
+            WanderRetryTimer = 0f,
+            LastWanderDirectionAngle = 0f,
+            WanderHasTarget = 0,
+            WanderInitialized = 0,
+            DvdDirection = float3.zero,
+            DvdInitialized = 0
+        });
+        AddComponent(entity, new EnemyShooterControlState
+        {
+            MovementLocked = 0
+        });
+
+        if (compiledPattern.HasCustomMovement)
+            AddComponent<EnemyCustomPatternMovementTag>(entity);
+
+        DynamicBuffer<EnemyShooterConfigElement> shooterConfigs = AddBuffer<EnemyShooterConfigElement>(entity);
+        DynamicBuffer<EnemyShooterRuntimeElement> shooterRuntime = AddBuffer<EnemyShooterRuntimeElement>(entity);
+
+        for (int shooterIndex = 0; shooterIndex < compiledPattern.ShooterConfigs.Count; shooterIndex++)
+        {
+            shooterConfigs.Add(compiledPattern.ShooterConfigs[shooterIndex]);
+            shooterRuntime.Add(new EnemyShooterRuntimeElement
+            {
+                NextBurstTimer = 0f,
+                NextShotInBurstTimer = 0f,
+                RemainingBurstShots = 0,
+                LockedAimDirection = float3.zero,
+                HasLockedAimDirection = 0
+            });
+        }
+
+        if (compiledPattern.ShooterConfigs.Count > 0)
+            TryBakeShooterRuntime(authoring, entity, compiledPattern);
 
         EnemyVisualMode bakedVisualMode = ResolveBakedVisualMode(authoring, out Animator resolvedAnimatorComponent);
 
@@ -799,6 +993,62 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         }
 
         return null;
+    }
+
+    private void TryBakeShooterRuntime(EnemyAuthoring authoring, Entity entity, EnemyCompiledPatternBakeResult compiledPattern)
+    {
+        if (authoring == null)
+            return;
+
+        if (compiledPattern == null)
+            return;
+
+        GameObject projectilePrefabObject = compiledPattern.ShooterProjectilePrefab;
+
+        if (IsInvalidShooterProjectilePrefab(authoring, projectilePrefabObject))
+        {
+#if UNITY_EDITOR
+            if (projectilePrefabObject == null)
+                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Shooter modules are active on '{0}', but Runtime Projectile prefab is not assigned in the resolved Shooter payload.", authoring.name), authoring);
+            else
+                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid Runtime Projectile prefab '{0}' on '{1}'. Assign a dedicated projectile prefab without authoring components.", projectilePrefabObject.name, authoring.name), authoring);
+#endif
+            return;
+        }
+
+        Entity projectilePrefabEntity = GetEntity(projectilePrefabObject, TransformUsageFlags.Dynamic);
+        AddComponent(entity, new ShooterProjectilePrefab
+        {
+            PrefabEntity = projectilePrefabEntity
+        });
+        AddComponent(entity, new ProjectilePoolState
+        {
+            InitialCapacity = math.max(0, compiledPattern.ShooterProjectilePoolInitialCapacity),
+            ExpandBatch = math.max(1, compiledPattern.ShooterProjectilePoolExpandBatch),
+            Initialized = 0
+        });
+        AddBuffer<ShootRequest>(entity);
+        AddBuffer<ProjectilePoolElement>(entity);
+    }
+
+    private static bool IsInvalidShooterProjectilePrefab(EnemyAuthoring authoring, GameObject projectilePrefabObject)
+    {
+        if (projectilePrefabObject == null)
+            return true;
+
+        if (authoring != null && projectilePrefabObject == authoring.gameObject)
+            return true;
+
+        if (projectilePrefabObject.scene.IsValid())
+            return true;
+
+        if (projectilePrefabObject.GetComponent<EnemyAuthoring>() != null)
+            return true;
+
+        if (projectilePrefabObject.GetComponent<PlayerAuthoring>() != null)
+            return true;
+
+        return false;
     }
 
     private Entity RegisterStatusBarsViewEntity(EnemyWorldSpaceStatusBarsView statusBarsView)

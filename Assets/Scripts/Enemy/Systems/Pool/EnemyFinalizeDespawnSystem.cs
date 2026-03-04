@@ -42,8 +42,36 @@ public partial struct EnemyFinalizeDespawnSystem : ISystem
                 {
                     EnemyRuntimeState runtimeState = runtimeLookup[enemyEntity];
                     runtimeState.Velocity = float3.zero;
-                    runtimeState.ContactCooldown = 0f;
+                    runtimeState.ContactDamageCooldown = 0f;
+                    runtimeState.AreaDamageCooldown = 0f;
                     runtimeLookup[enemyEntity] = runtimeState;
+                }
+
+                if (entityManager.HasComponent<EnemyPatternRuntimeState>(enemyEntity))
+                {
+                    EnemyPatternRuntimeState patternRuntimeState = entityManager.GetComponentData<EnemyPatternRuntimeState>(enemyEntity);
+                    patternRuntimeState.WanderTargetPosition = float3.zero;
+                    patternRuntimeState.WanderWaitTimer = 0f;
+                    patternRuntimeState.WanderRetryTimer = 0f;
+                    patternRuntimeState.LastWanderDirectionAngle = 0f;
+                    patternRuntimeState.WanderHasTarget = 0;
+                    patternRuntimeState.WanderInitialized = 0;
+                    patternRuntimeState.DvdDirection = float3.zero;
+                    patternRuntimeState.DvdInitialized = 0;
+                    entityManager.SetComponentData(enemyEntity, patternRuntimeState);
+                }
+
+                if (entityManager.HasComponent<EnemyShooterControlState>(enemyEntity))
+                {
+                    EnemyShooterControlState shooterControlState = entityManager.GetComponentData<EnemyShooterControlState>(enemyEntity);
+                    shooterControlState.MovementLocked = 0;
+                    entityManager.SetComponentData(enemyEntity, shooterControlState);
+                }
+
+                if (entityManager.HasBuffer<EnemyShooterRuntimeElement>(enemyEntity))
+                {
+                    DynamicBuffer<EnemyShooterRuntimeElement> shooterRuntime = entityManager.GetBuffer<EnemyShooterRuntimeElement>(enemyEntity);
+                    shooterRuntime.Clear();
                 }
 
                 if (healthLookup.HasComponent(enemyEntity))

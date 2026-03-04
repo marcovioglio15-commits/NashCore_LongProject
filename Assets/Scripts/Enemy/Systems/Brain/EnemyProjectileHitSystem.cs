@@ -104,6 +104,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         NativeArray<ProjectileElementalPayload> projectileElementalArray = new NativeArray<ProjectileElementalPayload>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<LocalTransform> projectileTransforms = new NativeArray<LocalTransform>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         int projectileWriteIndex = 0;
+        ComponentLookup<PlayerControllerConfig> playerControllerLookup = SystemAPI.GetComponentLookup<PlayerControllerConfig>(true);
 
         foreach ((RefRO<Projectile> projectileData,
                   RefRO<ProjectileOwner> projectileOwner,
@@ -120,6 +121,11 @@ public partial struct EnemyProjectileHitSystem : ISystem
         {
             if (projectileWriteIndex >= projectileCount)
                 break;
+
+            Entity shooterEntity = projectileOwner.ValueRO.ShooterEntity;
+
+            if (playerControllerLookup.HasComponent(shooterEntity) == false)
+                continue;
 
             projectileEntities[projectileWriteIndex] = projectileEntity;
             projectileDataArray[projectileWriteIndex] = projectileData.ValueRO;

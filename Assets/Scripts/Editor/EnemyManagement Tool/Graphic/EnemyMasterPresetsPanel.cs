@@ -142,6 +142,7 @@ public sealed class EnemyMasterPresetsPanel
         AddTab(EnemyManagementWindow.PanelType.EnemyMasterPresets,
                "Enemy Master Presets",
                mainContentRoot,
+               null,
                null);
         RestoreOpenSidePanels();
 
@@ -600,6 +601,14 @@ public sealed class EnemyMasterPresetsPanel
                                                CreateBrainPreset,
                                                () => OpenSidePanel(EnemyManagementWindow.PanelType.EnemyBrainPresets),
                                                EnemyManagementWindow.PanelType.EnemyBrainPresets));
+
+        SerializedProperty advancedPatternProperty = presetSerializedObject.FindProperty("advancedPatternPreset");
+        sectionContainer.Add(BuildSubPresetRow("Advanced Pattern Preset",
+                                               typeof(EnemyAdvancedPatternPreset),
+                                               advancedPatternProperty,
+                                               CreateAdvancedPatternPreset,
+                                               () => OpenSidePanel(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets),
+                                               EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets));
     }
 
     private VisualElement BuildSubPresetRow(string label,
@@ -619,7 +628,7 @@ public sealed class EnemyMasterPresetsPanel
         {
             EnemyManagementDraftSession.MarkDirty();
 
-            if (panelType == EnemyManagementWindow.PanelType.EnemyBrainPresets)
+            if (panelType != EnemyManagementWindow.PanelType.EnemyMasterPresets)
                 SyncOpenSidePanels();
         });
         container.Add(presetField);
@@ -860,6 +869,12 @@ public sealed class EnemyMasterPresetsPanel
         openBrainButton.clicked += () => OpenSidePanel(EnemyManagementWindow.PanelType.EnemyBrainPresets);
         row.Add(openBrainButton);
 
+        Button openAdvancedPatternButton = new Button();
+        openAdvancedPatternButton.text = "Open Advanced Pattern";
+        openAdvancedPatternButton.style.marginLeft = 4f;
+        openAdvancedPatternButton.clicked += () => OpenSidePanel(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets);
+        row.Add(openAdvancedPatternButton);
+
         sectionContainer.Add(row);
     }
 
@@ -962,6 +977,24 @@ public sealed class EnemyMasterPresetsPanel
 
         AssignSubPreset("brainPreset", newPreset);
         OpenSidePanel(EnemyManagementWindow.PanelType.EnemyBrainPresets);
+    }
+
+    private void CreateAdvancedPatternPreset()
+    {
+        EnemyAdvancedPatternPreset newPreset = EnemyAdvancedPatternPresetLibraryUtility.CreatePresetAsset("EnemyAdvancedPatternPreset");
+
+        if (newPreset == null)
+            return;
+
+        EnemyAdvancedPatternPresetLibrary advancedPatternLibrary = EnemyAdvancedPatternPresetLibraryUtility.GetOrCreateLibrary();
+        Undo.RegisterCreatedObjectUndo(newPreset, "Create Enemy Advanced Pattern Preset Asset");
+        Undo.RecordObject(advancedPatternLibrary, "Add Enemy Advanced Pattern Preset");
+        advancedPatternLibrary.AddPreset(newPreset);
+        EditorUtility.SetDirty(advancedPatternLibrary);
+        EnemyManagementDraftSession.MarkDirty();
+
+        AssignSubPreset("advancedPatternPreset", newPreset);
+        OpenSidePanel(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets);
     }
 
     private void AssignSubPreset(string propertyName, UnityEngine.Object preset)
@@ -1240,12 +1273,13 @@ public sealed class EnemyMasterPresetsPanel
         }
 
         EnemyBrainPresetsPanel brainPanel;
-        VisualElement content = BuildSidePanelContent(panelType, out brainPanel);
+        EnemyAdvancedPatternPresetsPanel advancedPatternPanel;
+        VisualElement content = BuildSidePanelContent(panelType, out brainPanel, out advancedPatternPanel);
 
         if (content == null)
             return;
 
-        AddTab(panelType, GetPanelTitle(panelType), content, brainPanel);
+        AddTab(panelType, GetPanelTitle(panelType), content, brainPanel, advancedPatternPanel);
         SetActivePanel(panelType);
         SyncSidePanelSelection(panelType, sidePanels[panelType]);
     }
@@ -1282,12 +1316,18 @@ public sealed class EnemyMasterPresetsPanel
         if (panelType == EnemyManagementWindow.PanelType.EnemyBrainPresets)
             return "Enemy Brain Presets";
 
+        if (panelType == EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets)
+            return "Enemy Advanced Pattern Presets";
+
         return "Enemy Master Presets";
     }
 
-    private VisualElement BuildSidePanelContent(EnemyManagementWindow.PanelType panelType, out EnemyBrainPresetsPanel brainPanel)
+    private VisualElement BuildSidePanelContent(EnemyManagementWindow.PanelType panelType,
+                                                out EnemyBrainPresetsPanel brainPanel,
+                                                out EnemyAdvancedPatternPresetsPanel advancedPatternPanel)
     {
         brainPanel = null;
+        advancedPatternPanel = null;
 
         VisualElement panelRoot = new VisualElement();
         panelRoot.style.flexDirection = FlexDirection.Column;
@@ -1318,6 +1358,13 @@ public sealed class EnemyMasterPresetsPanel
             return panelRoot;
         }
 
+        if (panelType == EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets)
+        {
+            advancedPatternPanel = new EnemyAdvancedPatternPresetsPanel();
+            panelRoot.Add(advancedPatternPanel.Root);
+            return panelRoot;
+        }
+
         VisualElement placeholder = new VisualElement();
         placeholder.style.flexGrow = 1f;
         placeholder.style.minHeight = 220f;
@@ -1339,10 +1386,12 @@ public sealed class EnemyMasterPresetsPanel
     /// <param name="label">Tab label.</param>
     /// <param name="content">Panel content root.</param>
     /// <param name="brainPanel">Optional brain panel controller instance.</param>
+    /// <param name="advancedPatternPanel">Optional advanced pattern panel controller instance.</param>
     private void AddTab(EnemyManagementWindow.PanelType panelType,
                         string label,
                         VisualElement content,
-                        EnemyBrainPresetsPanel brainPanel)
+                        EnemyBrainPresetsPanel brainPanel,
+                        EnemyAdvancedPatternPresetsPanel advancedPatternPanel)
     {
         // Guard against missing tab bar during initialization.
         if (tabBar == null)
@@ -1367,7 +1416,8 @@ public sealed class EnemyMasterPresetsPanel
             TabContainer = tabContainer,
             TabButton = tabButton,
             Content = content,
-            BrainPanel = brainPanel
+            BrainPanel = brainPanel,
+            AdvancedPatternPanel = advancedPatternPanel
         };
         SaveOpenPanelsState();
     }
@@ -1391,6 +1441,20 @@ public sealed class EnemyMasterPresetsPanel
                 return;
 
             entry.BrainPanel.SelectPresetFromExternal(brainPreset);
+            return;
+        }
+
+        if (panelType == EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets)
+        {
+            if (entry.AdvancedPatternPanel == null)
+                return;
+
+            EnemyAdvancedPatternPreset advancedPatternPreset = selectedPreset.AdvancedPatternPreset;
+
+            if (advancedPatternPreset == null)
+                return;
+
+            entry.AdvancedPatternPanel.SelectPresetFromExternal(advancedPatternPreset);
         }
     }
 
@@ -1411,6 +1475,9 @@ public sealed class EnemyMasterPresetsPanel
 
             if (entry.BrainPanel != null)
                 entry.BrainPanel.RefreshFromSessionChange();
+
+            if (entry.AdvancedPatternPanel != null)
+                entry.AdvancedPatternPanel.RefreshFromSessionChange();
         }
 
         SyncOpenSidePanels();
@@ -1522,6 +1589,9 @@ public sealed class EnemyMasterPresetsPanel
         if (sidePanels.ContainsKey(EnemyManagementWindow.PanelType.EnemyBrainPresets))
             openPanels.Add(EnemyManagementWindow.PanelType.EnemyBrainPresets);
 
+        if (sidePanels.ContainsKey(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets))
+            openPanels.Add(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets);
+
         ManagementToolStateUtility.SaveEnumList(OpenPanelsStateKey, openPanels);
     }
 
@@ -1552,6 +1622,7 @@ public sealed class EnemyMasterPresetsPanel
         public Button TabButton;
         public VisualElement Content;
         public EnemyBrainPresetsPanel BrainPanel;
+        public EnemyAdvancedPatternPresetsPanel AdvancedPatternPanel;
     }
     #endregion
 }

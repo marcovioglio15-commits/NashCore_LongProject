@@ -138,7 +138,8 @@ public partial struct EnemySpawnSystem : ISystem
 
                 EnemyRuntimeState runtimeState = entityManager.GetComponentData<EnemyRuntimeState>(enemyEntity);
                 runtimeState.Velocity = float3.zero;
-                runtimeState.ContactCooldown = 0f;
+                runtimeState.ContactDamageCooldown = 0f;
+                runtimeState.AreaDamageCooldown = 0f;
 
                 unchecked
                 {
@@ -149,6 +150,50 @@ public partial struct EnemySpawnSystem : ISystem
                     runtimeState.SpawnVersion = 1u;
 
                 entityManager.SetComponentData(enemyEntity, runtimeState);
+
+                if (entityManager.HasComponent<EnemyPatternRuntimeState>(enemyEntity))
+                {
+                    EnemyPatternRuntimeState patternRuntimeState = entityManager.GetComponentData<EnemyPatternRuntimeState>(enemyEntity);
+                    patternRuntimeState.WanderTargetPosition = float3.zero;
+                    patternRuntimeState.WanderWaitTimer = 0f;
+                    patternRuntimeState.WanderRetryTimer = 0f;
+                    patternRuntimeState.LastWanderDirectionAngle = 0f;
+                    patternRuntimeState.WanderHasTarget = 0;
+                    patternRuntimeState.WanderInitialized = 0;
+                    patternRuntimeState.DvdDirection = float3.zero;
+                    patternRuntimeState.DvdInitialized = 0;
+                    entityManager.SetComponentData(enemyEntity, patternRuntimeState);
+                }
+
+                if (entityManager.HasComponent<EnemyShooterControlState>(enemyEntity))
+                {
+                    EnemyShooterControlState shooterControlState = entityManager.GetComponentData<EnemyShooterControlState>(enemyEntity);
+                    shooterControlState.MovementLocked = 0;
+                    entityManager.SetComponentData(enemyEntity, shooterControlState);
+                }
+
+                if (entityManager.HasBuffer<EnemyShooterRuntimeElement>(enemyEntity))
+                {
+                    DynamicBuffer<EnemyShooterRuntimeElement> shooterRuntime = entityManager.GetBuffer<EnemyShooterRuntimeElement>(enemyEntity);
+                    int shooterCount = 0;
+
+                    if (entityManager.HasBuffer<EnemyShooterConfigElement>(enemyEntity))
+                        shooterCount = entityManager.GetBuffer<EnemyShooterConfigElement>(enemyEntity).Length;
+
+                    shooterRuntime.Clear();
+
+                    for (int shooterIndex = 0; shooterIndex < shooterCount; shooterIndex++)
+                    {
+                        shooterRuntime.Add(new EnemyShooterRuntimeElement
+                        {
+                            NextBurstTimer = 0f,
+                            NextShotInBurstTimer = 0f,
+                            RemainingBurstShots = 0,
+                            LockedAimDirection = float3.zero,
+                            HasLockedAimDirection = 0
+                        });
+                    }
+                }
 
                 EnemyOwnerSpawner ownerSpawner = entityManager.GetComponentData<EnemyOwnerSpawner>(enemyEntity);
                 ownerSpawner.SpawnerEntity = spawnerEntity;

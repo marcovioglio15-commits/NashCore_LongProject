@@ -585,7 +585,7 @@ public sealed class EnemyBrainPresetsPanel
 
         AddBrainSubSectionTab(BrainSubSectionType.Movement, "Movement", BuildMovementSubSection());
         AddBrainSubSectionTab(BrainSubSectionType.Steering, "Steering", BuildSteeringSubSection());
-        AddBrainSubSectionTab(BrainSubSectionType.PlayerContact, "Player Contact", BuildPlayerContactSubSection());
+        AddBrainSubSectionTab(BrainSubSectionType.Damage, "Damage", BuildDamageSubSection());
         AddBrainSubSectionTab(BrainSubSectionType.HealthStatistics, "Health Statistics", BuildHealthStatisticsSubSection());
         AddBrainSubSectionTab(BrainSubSectionType.Visual, "Visual", BuildVisualSubSection());
 
@@ -694,6 +694,11 @@ public sealed class EnemyBrainPresetsPanel
                          "deceleration",
                          "Deceleration",
                          "Reserved deceleration value for future braking behaviors. Currently unused at runtime.");
+        AddPropertyField(container,
+                         movementProperty,
+                         "rotationSpeedDegreesPerSecond",
+                         "Rotation Speed (Deg/Sec)",
+                         "Self-rotation speed around Y in degrees per second. Positive rotates clockwise, negative counter-clockwise.");
         return container;
     }
 
@@ -723,30 +728,77 @@ public sealed class EnemyBrainPresetsPanel
         return container;
     }
 
-    private VisualElement BuildPlayerContactSubSection()
+    private VisualElement BuildDamageSubSection()
     {
-        SerializedProperty playerContactProperty = presetSerializedObject.FindProperty("playerContact");
-        VisualElement container = CreateBrainSubSectionContainer("Player Contact");
+        SerializedProperty damageProperty = presetSerializedObject.FindProperty("damage");
+        VisualElement container = CreateBrainSubSectionContainer("Damage");
 
         if (container == null)
             return null;
 
-        AddPropertyField(container,
-                         playerContactProperty,
-                         "contactRadius",
-                         "Contact Radius",
-                         "Distance from enemy center to apply contact damage to the player.");
-        AddPropertyField(container,
-                         playerContactProperty,
-                         "contactDamage",
-                         "Contact Damage",
-                         "Damage applied to the player each time contact cooldown expires in range.");
-        AddPropertyField(container,
-                         playerContactProperty,
-                         "contactInterval",
-                         "Contact Interval",
-                         "Cooldown in seconds between two consecutive contact damage applications.");
+        if (damageProperty == null)
+            return container;
+
+        SerializedProperty contactToggleProperty = damageProperty.FindPropertyRelative("contactDamageEnabled");
+        SerializedProperty areaToggleProperty = damageProperty.FindPropertyRelative("areaDamageEnabled");
+
+        if (contactToggleProperty != null)
+        {
+            Foldout contactFoldout = CreateToggleableDamageFoldout(contactToggleProperty, "Contact Damage");
+            AddPropertyField(contactFoldout,
+                             damageProperty,
+                             "contactRadius",
+                             "Contact Radius",
+                             "Distance from enemy center used to trigger contact damage ticks.");
+            AddPropertyField(contactFoldout,
+                             damageProperty,
+                             "contactAmountPerTick",
+                             "Amount Per Tick",
+                             "Flat damage amount subtracted from player health at each contact tick.");
+            AddPropertyField(contactFoldout,
+                             damageProperty,
+                             "contactTickInterval",
+                             "Tick Interval",
+                             "Interval in seconds between two contact damage ticks.");
+            container.Add(contactFoldout);
+        }
+
+        if (areaToggleProperty != null)
+        {
+            Foldout areaFoldout = CreateToggleableDamageFoldout(areaToggleProperty, "Area Damage");
+            AddPropertyField(areaFoldout,
+                             damageProperty,
+                             "areaRadius",
+                             "Area Radius",
+                             "Distance from enemy center used to trigger area damage ticks.");
+            AddPropertyField(areaFoldout,
+                             damageProperty,
+                             "areaAmountPerTickPercent",
+                             "Amount Per Tick",
+                             "Percent of player max health applied per area damage tick.");
+            AddPropertyField(areaFoldout,
+                             damageProperty,
+                             "areaTickInterval",
+                             "Tick Interval",
+                             "Interval in seconds between two area damage ticks.");
+            container.Add(areaFoldout);
+        }
+
         return container;
+    }
+
+    private Foldout CreateToggleableDamageFoldout(SerializedProperty toggleProperty, string title)
+    {
+        Foldout foldout = new Foldout();
+        foldout.text = title;
+        foldout.BindProperty(toggleProperty);
+        foldout.value = toggleProperty.boolValue;
+        foldout.style.marginBottom = 4f;
+        foldout.RegisterValueChangedCallback(evt =>
+        {
+            EnemyManagementDraftSession.MarkDirty();
+        });
+        return foldout;
     }
 
     private VisualElement BuildHealthStatisticsSubSection()
@@ -953,7 +1005,7 @@ public sealed class EnemyBrainPresetsPanel
     {
         Movement = 0,
         Steering = 1,
-        PlayerContact = 2,
+        Damage = 2,
         HealthStatistics = 3,
         Visual = 4
     }

@@ -11,12 +11,18 @@ public struct EnemyData : IComponentData
     public float MaxSpeed;
     public float Acceleration;
     public float Deceleration;
+    public float RotationSpeedDegreesPerSecond;
     public float SeparationRadius;
     public float SeparationWeight;
     public float BodyRadius;
+    public byte ContactDamageEnabled;
     public float ContactRadius;
-    public float ContactDamage;
-    public float ContactInterval;
+    public float ContactAmountPerTick;
+    public float ContactTickInterval;
+    public byte AreaDamageEnabled;
+    public float AreaRadius;
+    public float AreaAmountPerTickPercent;
+    public float AreaTickInterval;
 }
 
 /// <summary>
@@ -36,7 +42,8 @@ public struct EnemyHealth : IComponentData
 public struct EnemyRuntimeState : IComponentData
 {
     public float3 Velocity;
-    public float ContactCooldown;
+    public float ContactDamageCooldown;
+    public float AreaDamageCooldown;
     public uint SpawnVersion;
 }
 

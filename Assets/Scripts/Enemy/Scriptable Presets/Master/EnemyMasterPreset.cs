@@ -24,6 +24,9 @@ public sealed class EnemyMasterPreset : ScriptableObject
     [Tooltip("Brain preset reference used by this enemy master preset.")]
     [SerializeField] private EnemyBrainPreset brainPreset;
 
+    [Tooltip("Advanced pattern preset reference used by this enemy master preset.")]
+    [SerializeField] private EnemyAdvancedPatternPreset advancedPatternPreset;
+
     [Header("Test UI Settings")]
     [Tooltip("Editor-only settings used by Enemy Management Tool to generate world-space health and shield bars on enemy prefabs.")]
     [SerializeField] private EnemyTestUiSettings testUiSettings = new EnemyTestUiSettings();
@@ -72,6 +75,14 @@ public sealed class EnemyMasterPreset : ScriptableObject
         }
     }
 
+    public EnemyAdvancedPatternPreset AdvancedPatternPreset
+    {
+        get
+        {
+            return advancedPatternPreset;
+        }
+    }
+
     public EnemyTestUiSettings TestUiSettings
     {
         get
@@ -96,6 +107,9 @@ public sealed class EnemyMasterPreset : ScriptableObject
 
         if (brainPreset != null)
             brainPreset.ValidateValues();
+
+        if (advancedPatternPreset != null)
+            advancedPatternPreset.ValidateValues();
     }
     #endregion
 
