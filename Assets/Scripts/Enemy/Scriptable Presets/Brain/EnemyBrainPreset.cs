@@ -25,6 +25,9 @@ public sealed class EnemyBrainMovementSettings
 
     [Tooltip("General enemy priority tier used by steering and visual overlap rules. Higher values keep right-of-way over lower tiers.")]
     [SerializeField] private int priorityTier;
+
+    [Tooltip("Scales steering and clearance reactivity. Higher values produce stronger side-step and avoidance corrections.")]
+    [SerializeField] private float steeringAggressiveness = 1f;
     #endregion
 
     #endregion
@@ -77,6 +80,14 @@ public sealed class EnemyBrainMovementSettings
             return priorityTier;
         }
     }
+
+    public float SteeringAggressiveness
+    {
+        get
+        {
+            return steeringAggressiveness;
+        }
+    }
     #endregion
 
     #region Methods
@@ -100,6 +111,11 @@ public sealed class EnemyBrainMovementSettings
             rotationSpeedDegreesPerSecond = 0f;
 
         priorityTier = Mathf.Clamp(priorityTier, -128, 128);
+
+        if (float.IsNaN(steeringAggressiveness) || float.IsInfinity(steeringAggressiveness))
+            steeringAggressiveness = 1f;
+        else
+            steeringAggressiveness = Mathf.Clamp(steeringAggressiveness, 0f, 2.5f);
     }
 
     public void MigrateLegacyVisibilityPriorityIfNeeded(int legacyVisibilityPriorityTier)

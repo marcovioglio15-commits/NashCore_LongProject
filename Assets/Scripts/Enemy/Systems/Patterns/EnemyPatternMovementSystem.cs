@@ -24,6 +24,8 @@ public partial struct EnemyPatternMovementSystem : ISystem
     private const float DvdMinimumForwardSpeedRatio = 0.8f;
     private const float WallBlockedRepathThreshold = 0.72f;
     private const float WallClearanceCorrectionRepathThreshold = 0.3f;
+    private const float MinimumSteeringAggressiveness = 0f;
+    private const float MaximumSteeringAggressiveness = 2.5f;
     #endregion
 
     #region Fields
@@ -179,6 +181,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float maxSpeed = math.max(0f, currentEnemyData.MaxSpeed) * slowMultiplier;
             float acceleration = math.max(0f, currentEnemyData.Acceleration);
             float deceleration = math.max(0f, currentEnemyData.Deceleration);
+            float steeringAggressiveness = ResolveSteeringAggressiveness(currentEnemyData.SteeringAggressiveness);
             bool movementLocked = shooterControlLookup.HasComponent(enemyEntity) && shooterControlLookup[enemyEntity].MovementLocked != 0;
             bool ignoreSteeringAndPriority = ShouldIgnoreSteeringAndPriority(in currentPatternConfig);
             float3 desiredVelocity = float3.zero;
@@ -199,6 +202,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                                                playerPosition,
                                                                                                moveSpeed,
                                                                                                maxSpeed,
+                                                                                               steeringAggressiveness,
                                                                                                elapsedTime,
                                                                                                deltaTime,
                                                                                                in physicsWorldSingleton,
@@ -234,11 +238,13 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                                                          currentEnemyData.BodyRadius,
                                                                                                          minimumEnemyClearance,
                                                                                                          clearanceSpeedCap,
+                                                                                                         steeringAggressiveness,
                                                                                                          in occupancyContext);
 
                     if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic)
                     {
-                        float clearanceBlend = math.saturate(currentPatternConfig.BasicFreeTrajectoryPreference * BasicClearanceBlendScale);
+                        float clearanceBlendScale = ResolveAggressivenessScale(steeringAggressiveness, 0.78f, 1.25f);
+                        float clearanceBlend = math.saturate(currentPatternConfig.BasicFreeTrajectoryPreference * BasicClearanceBlendScale * clearanceBlendScale);
                         desiredVelocity = ComposeDesiredVelocityWithClearance(desiredVelocity,
                                                                               clearanceVelocity,
                                                                               clearanceBlend,
@@ -246,9 +252,10 @@ public partial struct EnemyPatternMovementSystem : ISystem
                     }
                     else
                     {
+                        float dvdClearanceBlend = math.saturate(DvdClearanceBlend * ResolveAggressivenessScale(steeringAggressiveness, 0.85f, 1.35f));
                         desiredVelocity = ComposeDesiredVelocityWithClearance(desiredVelocity,
                                                                               clearanceVelocity,
-                                                                              DvdClearanceBlend,
+                                                                              dvdClearanceBlend,
                                                                               DvdMinimumForwardSpeedRatio);
                     }
                 }
@@ -483,6 +490,33 @@ public partial struct EnemyPatternMovementSystem : ISystem
             return deceleration;
 
         return math.max(0f, acceleration);
+    }
+
+    /// <summary>
+    /// Resolves one steering aggressiveness value with safe defaults and clamps.
+    /// </summary>
+    /// <param name="rawAggressiveness">Serialized aggressiveness value.</param>
+    /// <returns>Resolved aggressiveness value ready for runtime use.</returns>
+    private static float ResolveSteeringAggressiveness(float rawAggressiveness)
+    {
+        if (rawAggressiveness < 0f)
+            return MinimumSteeringAggressiveness;
+
+        return math.clamp(rawAggressiveness, MinimumSteeringAggressiveness, MaximumSteeringAggressiveness);
+    }
+
+    /// <summary>
+    /// Maps steering aggressiveness to a configurable scalar range.
+    /// </summary>
+    /// <param name="aggressiveness">Resolved aggressiveness value.</param>
+    /// <param name="minimumScale">Output scale at minimum aggressiveness.</param>
+    /// <param name="maximumScale">Output scale at maximum aggressiveness.</param>
+    /// <returns>Interpolated scalar in the requested range.</returns>
+    private static float ResolveAggressivenessScale(float aggressiveness, float minimumScale, float maximumScale)
+    {
+        float normalizedAggressiveness = math.saturate((aggressiveness - MinimumSteeringAggressiveness) /
+                                                       math.max(0.0001f, MaximumSteeringAggressiveness - MinimumSteeringAggressiveness));
+        return math.lerp(minimumScale, maximumScale, normalizedAggressiveness);
     }
 
     /// <summary>

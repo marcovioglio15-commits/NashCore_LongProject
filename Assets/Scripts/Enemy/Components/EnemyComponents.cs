@@ -16,6 +16,7 @@ public struct EnemyData : IComponentData
     public float SeparationWeight;
     public float BodyRadius;
     public int PriorityTier;
+    public float SteeringAggressiveness;
     public byte ContactDamageEnabled;
     public float ContactRadius;
     public float ContactAmountPerTick;

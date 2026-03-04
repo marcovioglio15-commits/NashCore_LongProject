@@ -15,6 +15,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private static readonly Color AreaGizmoColor = new Color(1f, 0.55f, 0.15f, 0.9f);
     private static readonly Color SeparationGizmoColor = new Color(0.2f, 0.6f, 1f, 0.9f);
     private static readonly Color BodyGizmoColor = new Color(1f, 0.9f, 0.2f, 0.9f);
+    private static readonly Color AggressivenessGizmoColor = new Color(0.32f, 0.9f, 1f, 0.8f);
     private static readonly Color VisualDistanceGizmoColor = new Color(0.15f, 1f, 0.75f, 0.9f);
     private static readonly Color ElementalAnchorGizmoColor = new Color(1f, 0.4f, 0.8f, 0.9f);
     private static readonly Color WorldSpaceBarsGizmoColor = new Color(0.25f, 0.95f, 0.45f, 0.9f);
@@ -136,6 +137,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [SerializeField]
     [HideInInspector] private int priorityTier;
 
+    [Tooltip(" fallback steering and clearance reactivity scalar used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float steeringAggressiveness = 1f;
+
     [Header("Visual References")]
     [Tooltip("Optional Animator used when visual mode is CompanionAnimator.")]
     [SerializeField] private Animator animatorComponent;
@@ -158,6 +163,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     [Tooltip("Draw the body radius preview used for projectile hit checks.")]
     [SerializeField] private bool drawBodyRadiusGizmo;
+
+    [Tooltip("Draw the effective steering clearance radius preview scaled by Steering Aggressiveness.")]
+    [SerializeField] private bool drawAggressivenessRadiusGizmo;
 
     [Tooltip("Draw the visual distance culling radius preview when enabled.")]
     [SerializeField] private bool drawVisualDistanceGizmo = true;
@@ -523,6 +531,29 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public float SteeringAggressiveness
+    {
+        get
+        {
+            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+
+            if (movementSettings != null)
+            {
+                float resolvedAggressiveness = movementSettings.SteeringAggressiveness;
+
+                if (float.IsNaN(resolvedAggressiveness) || float.IsInfinity(resolvedAggressiveness))
+                    return 1f;
+
+                return math.clamp(resolvedAggressiveness, 0f, 2.5f);
+            }
+
+            if (float.IsNaN(steeringAggressiveness) || float.IsInfinity(steeringAggressiveness))
+                return 1f;
+
+            return math.clamp(steeringAggressiveness, 0f, 2.5f);
+        }
+    }
+
     public int VisibilityPriorityTier
     {
         get
@@ -588,6 +619,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
         if (drawBodyRadiusGizmo)
             DrawWireRadius(center, math.max(0f, BodyRadius), BodyGizmoColor);
+
+        if (drawAggressivenessRadiusGizmo)
+        {
+            float effectiveClearanceRadius = math.max(0f, SeparationRadius) * math.max(0f, SteeringAggressiveness);
+            DrawWireRadius(center, effectiveClearanceRadius, AggressivenessGizmoColor);
+        }
 
         if (drawVisualDistanceGizmo && EnableDistanceCulling)
             DrawWireRadius(center, math.max(0f, MaxVisibleDistance), VisualDistanceGizmoColor);
@@ -681,6 +718,11 @@ public sealed class EnemyAuthoring : MonoBehaviour
             visibleDistanceHysteresis = 0f;
 
         priorityTier = math.clamp(priorityTier, -128, 128);
+
+        if (float.IsNaN(steeringAggressiveness) || float.IsInfinity(steeringAggressiveness))
+            steeringAggressiveness = 1f;
+        else
+            steeringAggressiveness = math.clamp(steeringAggressiveness, 0f, 2.5f);
     }
     #endregion
 
@@ -815,6 +857,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             SeparationWeight = math.max(0f, authoring.SeparationWeight),
             BodyRadius = math.max(0.05f, authoring.BodyRadius),
             PriorityTier = math.clamp(authoring.PriorityTier, -128, 128),
+            SteeringAggressiveness = math.clamp(authoring.SteeringAggressiveness, 0f, 2.5f),
             ContactDamageEnabled = authoring.ContactDamageEnabled ? (byte)1 : (byte)0,
             ContactRadius = math.max(0f, authoring.ContactRadius),
             ContactAmountPerTick = math.max(0f, authoring.ContactAmountPerTick),

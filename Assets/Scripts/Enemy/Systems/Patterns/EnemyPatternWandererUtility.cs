@@ -13,6 +13,8 @@ public static class EnemyPatternWandererUtility
     private const float ClearancePredictionMinimumSeconds = 0.1f;
     private const float RightOfWayTieSeconds = 0.02f;
     private const float SoftClearanceMultiplier = 1.35f;
+    private const float MinimumSteeringAggressiveness = 0f;
+    private const float MaximumSteeringAggressiveness = 2.5f;
     #endregion
 
     #region Nested Types
@@ -65,6 +67,7 @@ public static class EnemyPatternWandererUtility
     /// <param name="playerPosition">Current player position.</param>
     /// <param name="moveSpeed">Resolved movement speed.</param>
     /// <param name="maxSpeed">Resolved max speed.</param>
+    /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
     /// <param name="elapsedTime">Elapsed world time.</param>
     /// <param name="deltaTime">Current simulation delta time.</param>
     /// <param name="physicsWorldSingleton">Physics world singleton.</param>
@@ -80,6 +83,7 @@ public static class EnemyPatternWandererUtility
                                                       float3 playerPosition,
                                                       float moveSpeed,
                                                       float maxSpeed,
+                                                      float steeringAggressiveness,
                                                       float elapsedTime,
                                                       float deltaTime,
                                                       in PhysicsWorldSingleton physicsWorldSingleton,
@@ -92,6 +96,12 @@ public static class EnemyPatternWandererUtility
             patternRuntimeState.WanderWaitTimer = math.max(0f, patternRuntimeState.WanderWaitTimer - deltaTime);
             return float3.zero;
         }
+
+        float resolvedSteeringAggressiveness = ResolveSteeringAggressiveness(steeringAggressiveness);
+        float bodyRadius = math.max(0.05f, enemyData.BodyRadius);
+        float minimumEnemyClearance = math.max(0f, patternConfig.BasicMinimumEnemyClearance);
+        float desiredSpeed = maxSpeed > 0f ? math.min(moveSpeed, maxSpeed) : moveSpeed;
+        desiredSpeed = math.max(0f, desiredSpeed);
 
         if (patternRuntimeState.WanderRetryTimer > 0f)
             patternRuntimeState.WanderRetryTimer = math.max(0f, patternRuntimeState.WanderRetryTimer - deltaTime);
@@ -110,13 +120,25 @@ public static class EnemyPatternWandererUtility
             }
 
             if (patternRuntimeState.WanderRetryTimer > 0f)
+            {
+                float3 retryClearanceVelocity = ResolveLocalClearanceVelocity(enemyEntity,
+                                                                              enemyData.PriorityTier,
+                                                                              enemyPosition,
+                                                                              bodyRadius,
+                                                                              minimumEnemyClearance,
+                                                                              desiredSpeed,
+                                                                              resolvedSteeringAggressiveness,
+                                                                              in occupancyContext);
+                float retrySideStepScale = ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.55f, 0.95f);
+
+                if (math.lengthsq(retryClearanceVelocity) > DirectionEpsilon)
+                    return retryClearanceVelocity * retrySideStepScale;
+
                 return float3.zero;
+            }
 
             float3 targetDirection = toTarget / math.max(distanceToTarget, DirectionEpsilon);
-            float desiredSpeed = maxSpeed > 0f ? math.min(moveSpeed, maxSpeed) : moveSpeed;
-            float3 desiredVelocity = targetDirection * math.max(0f, desiredSpeed);
-            float bodyRadius = math.max(0.05f, enemyData.BodyRadius);
-            float minimumEnemyClearance = math.max(0f, patternConfig.BasicMinimumEnemyClearance);
+            float3 desiredVelocity = targetDirection * desiredSpeed;
             float predictionTime = math.max(ClearancePredictionMinimumSeconds, patternConfig.BasicTrajectoryPredictionTime);
 
             if (ShouldYieldToNeighbor(enemyEntity,
@@ -127,8 +149,28 @@ public static class EnemyPatternWandererUtility
                                       bodyRadius,
                                       minimumEnemyClearance,
                                       predictionTime,
+                                      resolvedSteeringAggressiveness,
                                       in occupancyContext))
             {
+                float3 yieldClearanceVelocity = ResolveLocalClearanceVelocity(enemyEntity,
+                                                                              enemyData.PriorityTier,
+                                                                              enemyPosition,
+                                                                              bodyRadius,
+                                                                              minimumEnemyClearance,
+                                                                              desiredSpeed,
+                                                                              resolvedSteeringAggressiveness,
+                                                                              in occupancyContext);
+                float3 yieldCorrectionVelocity = ComposeYieldCorrectionVelocity(desiredVelocity,
+                                                                                yieldClearanceVelocity,
+                                                                                resolvedSteeringAggressiveness);
+
+                if (math.lengthsq(yieldCorrectionVelocity) > DirectionEpsilon)
+                {
+                    float yieldCorrectionRetrySeconds = math.max(0.02f, patternConfig.BasicBlockedPathRetryDelay * 0.45f);
+                    patternRuntimeState.WanderRetryTimer = math.max(patternRuntimeState.WanderRetryTimer, yieldCorrectionRetrySeconds * 0.55f);
+                    return yieldCorrectionVelocity;
+                }
+
                 float yieldRetrySeconds = math.max(0.02f, patternConfig.BasicBlockedPathRetryDelay * 0.45f);
                 patternRuntimeState.WanderRetryTimer = math.max(patternRuntimeState.WanderRetryTimer, yieldRetrySeconds);
                 return float3.zero;
@@ -138,7 +180,22 @@ public static class EnemyPatternWandererUtility
         }
 
         if (patternRuntimeState.WanderRetryTimer > 0f)
+        {
+            float3 retryClearanceVelocity = ResolveLocalClearanceVelocity(enemyEntity,
+                                                                          enemyData.PriorityTier,
+                                                                          enemyPosition,
+                                                                          bodyRadius,
+                                                                          minimumEnemyClearance,
+                                                                          desiredSpeed,
+                                                                          resolvedSteeringAggressiveness,
+                                                                          in occupancyContext);
+            float retryDriftScale = ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.5f, 0.9f);
+
+            if (math.lengthsq(retryClearanceVelocity) > DirectionEpsilon)
+                return retryClearanceVelocity * retryDriftScale;
+
             return float3.zero;
+        }
 
         bool pickedDestination = TryPickWanderDestination(enemyEntity,
                                                           enemyData.PriorityTier,
@@ -167,8 +224,7 @@ public static class EnemyPatternWandererUtility
             toTarget.y = 0f;
             float distanceToTarget = math.length(toTarget);
             float3 targetDirection = toTarget / math.max(distanceToTarget, DirectionEpsilon);
-            float desiredSpeed = maxSpeed > 0f ? math.min(moveSpeed, maxSpeed) : moveSpeed;
-            return targetDirection * math.max(0f, desiredSpeed);
+            return targetDirection * desiredSpeed;
         }
 
         patternRuntimeState.WanderRetryTimer = math.max(0f, patternConfig.BasicBlockedPathRetryDelay);
@@ -198,6 +254,7 @@ public static class EnemyPatternWandererUtility
     /// <param name="bodyRadius">Current enemy body radius.</param>
     /// <param name="minimumEnemyClearance">Extra minimum clearance from neighbors.</param>
     /// <param name="maxSpeed">Current movement speed cap.</param>
+    /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
     /// <param name="occupancyContext">Occupancy context used for neighbor lookup.</param>
     /// <returns>Planar clearance velocity contribution.</returns>
     public static float3 ResolveLocalClearanceVelocity(Entity enemyEntity,
@@ -206,6 +263,7 @@ public static class EnemyPatternWandererUtility
                                                        float bodyRadius,
                                                        float minimumEnemyClearance,
                                                        float maxSpeed,
+                                                       float steeringAggressiveness,
                                                        in OccupancyContext occupancyContext)
     {
         float clearanceSpeedCap = math.max(0f, maxSpeed);
@@ -213,9 +271,15 @@ public static class EnemyPatternWandererUtility
         if (clearanceSpeedCap <= 0f)
             return float3.zero;
 
+        float resolvedSteeringAggressiveness = ResolveSteeringAggressiveness(steeringAggressiveness);
+
+        if (resolvedSteeringAggressiveness <= DirectionEpsilon)
+            return float3.zero;
+
         float requiredPadding = math.max(0f, minimumEnemyClearance);
         float normalizedBodyRadius = math.max(0.05f, bodyRadius);
-        float searchRadius = (normalizedBodyRadius + requiredPadding + math.max(0.05f, occupancyContext.MaxRadius)) * SoftClearanceMultiplier;
+        float searchRadiusScale = ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.9f, 1.35f);
+        float searchRadius = (normalizedBodyRadius + requiredPadding + math.max(0.05f, occupancyContext.MaxRadius)) * SoftClearanceMultiplier * searchRadiusScale;
         int minCellX = (int)math.floor((enemyPosition.x - searchRadius) * occupancyContext.InverseCellSize);
         int maxCellX = (int)math.floor((enemyPosition.x + searchRadius) * occupancyContext.InverseCellSize);
         int minCellY = (int)math.floor((enemyPosition.z - searchRadius) * occupancyContext.InverseCellSize);
@@ -250,7 +314,8 @@ public static class EnemyPatternWandererUtility
                         continue;
 
                     float priorityClearanceMultiplier = ResolvePriorityClearanceMultiplier(selfPriorityTier, neighborPriorityTier);
-                    float requiredClearance = math.max(0.01f, (normalizedBodyRadius + neighborRadius + requiredPadding) * priorityClearanceMultiplier);
+                    float clearanceDistanceScale = ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.88f, 1.32f);
+                    float requiredClearance = math.max(0.01f, (normalizedBodyRadius + neighborRadius + requiredPadding) * priorityClearanceMultiplier * clearanceDistanceScale);
                     float softClearance = requiredClearance * SoftClearanceMultiplier;
                     float3 delta = enemyPosition - neighborPosition;
                     delta.y = 0f;
@@ -269,7 +334,14 @@ public static class EnemyPatternWandererUtility
                     float penetrationWeight = penetration / math.max(0.01f, requiredClearance);
                     float weight = softWeight + penetrationWeight * 1.5f;
                     float priorityWeight = ResolvePriorityAvoidanceWeight(selfPriorityTier, neighborPriorityTier);
-                    accumulatedDirection += direction * weight * priorityWeight;
+                    float sideStepWeight = softWeight * ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.28f, 0.95f);
+
+                    if (selfPriorityTier < neighborPriorityTier)
+                        sideStepWeight *= 1.2f;
+
+                    float3 lateralDirection = ResolveLateralDirection(direction, enemyEntity, neighborEntity);
+                    float3 adjustedDirection = math.normalizesafe(direction + lateralDirection * sideStepWeight, direction);
+                    accumulatedDirection += adjustedDirection * weight * priorityWeight;
 
                     if (penetration > maximumPenetration)
                         maximumPenetration = penetration;
@@ -290,8 +362,9 @@ public static class EnemyPatternWandererUtility
 
         float referenceClearance = math.max(0.05f, normalizedBodyRadius + requiredPadding);
         float penetrationFactor = math.saturate(maximumPenetration / referenceClearance);
-        float clearanceSpeed = math.lerp(clearanceSpeedCap * 0.35f, clearanceSpeedCap, penetrationFactor);
-        return normalizedDirection * clearanceSpeed;
+        float clearanceMaxSpeed = clearanceSpeedCap * ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.85f, 1.6f);
+        float clearanceSpeed = math.lerp(clearanceSpeedCap * 0.35f, clearanceMaxSpeed, penetrationFactor);
+        return normalizedDirection * clearanceSpeed * resolvedSteeringAggressiveness;
     }
     #endregion
 
@@ -579,6 +652,7 @@ public static class EnemyPatternWandererUtility
     /// <param name="bodyRadius">Current enemy body radius.</param>
     /// <param name="minimumEnemyClearance">Extra clearance from neighbors.</param>
     /// <param name="predictionTime">Prediction horizon in seconds.</param>
+    /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
     /// <param name="occupancyContext">Occupancy context used for neighbor lookup.</param>
     /// <returns>True when current enemy should yield and repath.</returns>
     private static bool ShouldYieldToNeighbor(Entity enemyEntity,
@@ -589,8 +663,15 @@ public static class EnemyPatternWandererUtility
                                               float bodyRadius,
                                               float minimumEnemyClearance,
                                               float predictionTime,
+                                              float steeringAggressiveness,
                                               in OccupancyContext occupancyContext)
     {
+        float resolvedSteeringAggressiveness = ResolveSteeringAggressiveness(steeringAggressiveness);
+
+        if (resolvedSteeringAggressiveness <= DirectionEpsilon)
+            return false;
+
+        float yieldDistanceScale = ResolveAggressivenessScale(resolvedSteeringAggressiveness, 1.15f, 0.82f);
         float selfSpeed = math.length(new float3(desiredVelocity.x, 0f, desiredVelocity.z));
 
         if (selfSpeed <= DirectionEpsilon)
@@ -639,7 +720,7 @@ public static class EnemyPatternWandererUtility
                     if (selfPriorityTier < otherPriorityTier)
                     {
                         float priorityGap = math.min(4f, (float)math.max(1, otherPriorityTier - selfPriorityTier));
-                        float forcedYieldDistance = requiredClearance * (1.6f + priorityGap * 0.35f);
+                        float forcedYieldDistance = requiredClearance * (1.6f + priorityGap * 0.35f) * yieldDistanceScale;
 
                         if (distance <= forcedYieldDistance)
                             return true;
@@ -665,6 +746,8 @@ public static class EnemyPatternWandererUtility
                         float priorityGap = math.min(3f, (float)math.max(1, otherPriorityTier - selfPriorityTier));
                         softGateDistance *= 1f + priorityGap * 0.2f;
                     }
+
+                    softGateDistance *= yieldDistanceScale;
 
                     if (distance > softGateDistance)
                         continue;
@@ -737,6 +820,90 @@ public static class EnemyPatternWandererUtility
         return currentHash < otherHash;
     }
 
+    /// <summary>
+    /// Composes a corrective side-step velocity used when Wanderer Basic must yield near higher-priority traffic.
+    /// </summary>
+    /// <param name="desiredVelocity">Current forward desired velocity.</param>
+    /// <param name="clearanceVelocity">Clearance contribution from nearby occupancies.</param>
+    /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
+    /// <returns>Corrective side-step velocity or zero when no correction is available.</returns>
+    private static float3 ComposeYieldCorrectionVelocity(float3 desiredVelocity, float3 clearanceVelocity, float steeringAggressiveness)
+    {
+        float desiredSpeed = math.length(desiredVelocity);
+        float clearanceSpeed = math.length(clearanceVelocity);
+
+        if (clearanceSpeed <= DirectionEpsilon)
+            return float3.zero;
+
+        float3 clearanceDirection = clearanceVelocity / math.max(clearanceSpeed, DirectionEpsilon);
+
+        if (desiredSpeed <= DirectionEpsilon)
+            return clearanceDirection * clearanceSpeed;
+
+        float3 desiredDirection = desiredVelocity / math.max(desiredSpeed, DirectionEpsilon);
+        float forwardProjection = math.dot(clearanceDirection, desiredDirection);
+        float3 lateralDirection = math.normalizesafe(clearanceDirection - desiredDirection * forwardProjection, clearanceDirection);
+        float lateralSpeed = clearanceSpeed * ResolveAggressivenessScale(steeringAggressiveness, 0.45f, 0.9f);
+        float forwardRetainRatio = ResolveAggressivenessScale(steeringAggressiveness, 0.38f, 0.72f);
+        float forwardSpeed = desiredSpeed * forwardRetainRatio;
+        return desiredDirection * forwardSpeed + lateralDirection * lateralSpeed;
+    }
+
+    /// <summary>
+    /// Resolves one steering aggressiveness value with safe defaults and clamps.
+    /// </summary>
+    /// <param name="rawAggressiveness">Serialized aggressiveness value.</param>
+    /// <returns>Resolved aggressiveness value ready for runtime use.</returns>
+    private static float ResolveSteeringAggressiveness(float rawAggressiveness)
+    {
+        if (rawAggressiveness < 0f)
+            return MinimumSteeringAggressiveness;
+
+        return math.clamp(rawAggressiveness, MinimumSteeringAggressiveness, MaximumSteeringAggressiveness);
+    }
+
+    /// <summary>
+    /// Maps steering aggressiveness to a configurable scalar range.
+    /// </summary>
+    /// <param name="aggressiveness">Resolved aggressiveness value.</param>
+    /// <param name="minimumScale">Output scale at minimum aggressiveness.</param>
+    /// <param name="maximumScale">Output scale at maximum aggressiveness.</param>
+    /// <returns>Interpolated scalar in the requested range.</returns>
+    private static float ResolveAggressivenessScale(float aggressiveness, float minimumScale, float maximumScale)
+    {
+        float normalizedAggressiveness = math.saturate((aggressiveness - MinimumSteeringAggressiveness) /
+                                                       math.max(0.0001f, MaximumSteeringAggressiveness - MinimumSteeringAggressiveness));
+        return math.lerp(minimumScale, maximumScale, normalizedAggressiveness);
+    }
+
+    /// <summary>
+    /// Resolves deterministic lateral direction used to keep side-step traffic ordered across crowds.
+    /// </summary>
+    /// <param name="awayDirection">Current away-from-neighbor direction.</param>
+    /// <param name="currentEntity">Current entity.</param>
+    /// <param name="otherEntity">Neighbor entity.</param>
+    /// <returns>Planar lateral direction.</returns>
+    private static float3 ResolveLateralDirection(float3 awayDirection, Entity currentEntity, Entity otherEntity)
+    {
+        float3 lateral = new float3(-awayDirection.z, 0f, awayDirection.x);
+        float lateralLengthSquared = lateral.x * lateral.x + lateral.z * lateral.z;
+
+        if (lateralLengthSquared <= DirectionEpsilon)
+            return ResolveDeterministicDirection(currentEntity, otherEntity);
+
+        float inverseLateralLength = math.rsqrt(lateralLengthSquared);
+        float3 normalizedLateral = lateral * inverseLateralLength;
+        uint hash = math.hash(new int4(currentEntity.Index * 17 + 3,
+                                       currentEntity.Version * 19 + 5,
+                                       otherEntity.Index * 23 + 7,
+                                       otherEntity.Version * 29 + 11));
+
+        if ((hash & 1u) == 0u)
+            return normalizedLateral;
+
+        return -normalizedLateral;
+    }
+
     private static float ResolvePriorityClearanceMultiplier(int selfPriorityTier, int neighborPriorityTier)
     {
         if (selfPriorityTier < neighborPriorityTier)
@@ -751,7 +918,7 @@ public static class EnemyPatternWandererUtility
             return math.max(0.55f, 0.96f - priorityGap * 0.06f);
         }
 
-        return 1f;
+        return 1.08f;
     }
 
     private static float ResolvePriorityAvoidanceWeight(int selfPriorityTier, int neighborPriorityTier)
@@ -768,7 +935,7 @@ public static class EnemyPatternWandererUtility
             return math.max(0.2f, 0.7f - priorityGap * 0.08f);
         }
 
-        return 1f;
+        return 1.2f;
     }
 
     /// <summary>

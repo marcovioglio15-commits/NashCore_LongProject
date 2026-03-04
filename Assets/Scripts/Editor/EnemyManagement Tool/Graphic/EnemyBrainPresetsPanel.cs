@@ -722,6 +722,11 @@ public sealed class EnemyBrainPresetsPanel
                          "priorityTier",
                          "Priority Tier",
                          "General enemy priority tier used by steering and visual overlap rules. Higher values keep right-of-way over lower tiers.");
+        AddPropertyField(container,
+                         movementProperty,
+                         "steeringAggressiveness",
+                         "Steering Aggressiveness",
+                         "Scales steering and clearance reactivity. Higher values produce stronger side-step and avoidance corrections.");
         return container;
     }
 

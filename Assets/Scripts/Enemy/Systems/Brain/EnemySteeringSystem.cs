@@ -25,6 +25,13 @@ public partial struct EnemySteeringSystem : ISystem
     private const float SeparationPredictionMaxSeconds = 0.55f;
     private const float PriorityApproachUrgencyWeight = 2.2f;
     private const float SeparationUrgencyMaxBoost = 3.6f;
+    private const float DefaultSteeringAggressiveness = 1f;
+    private const float MinimumSteeringAggressiveness = 0f;
+    private const float MaximumSteeringAggressiveness = 2.5f;
+    private const float LookRotationSpeedGateRatio = 0.12f;
+    private const float LookRotationFallbackSpeed = 0.2f;
+    private const float LookRotationMinDegreesPerSecond = 360f;
+    private const float LookRotationMaxDegreesPerSecond = 820f;
 
     private const float HighLodRadius = 16f;
     private const float MediumLodRadius = 34f;
@@ -100,6 +107,7 @@ public partial struct EnemySteeringSystem : ISystem
         NativeArray<float> contactRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> bodyRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<int> priorityTiers = new NativeArray<int>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> steeringAggressiveness = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float3> planarVelocities = new NativeArray<float3>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<byte> wandererMovementFlags = new NativeArray<byte>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> separationRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -115,6 +123,7 @@ public partial struct EnemySteeringSystem : ISystem
 
         float maxSeparationRadius = 0.25f;
         float maxBodyRadius = 0.05f;
+        float maxSteeringAggressiveness = DefaultSteeringAggressiveness;
         int frameCount = Time.frameCount;
 
         for (int index = 0; index < enemyCount; index++)
@@ -134,6 +143,8 @@ public partial struct EnemySteeringSystem : ISystem
             contactRadii[index] = math.max(0f, enemyData.ContactRadius);
             bodyRadii[index] = math.max(0.05f, enemyData.BodyRadius);
             priorityTiers[index] = math.clamp(enemyData.PriorityTier, -128, 128);
+            float enemySteeringAggressiveness = ResolveSteeringAggressiveness(enemyData.SteeringAggressiveness);
+            steeringAggressiveness[index] = enemySteeringAggressiveness;
             float3 planarVelocity = enemyRuntimeArray[index].Velocity;
             planarVelocity.y = 0f;
             planarVelocities[index] = planarVelocity;
@@ -159,6 +170,9 @@ public partial struct EnemySteeringSystem : ISystem
             if (separationRadius > maxSeparationRadius)
                 maxSeparationRadius = separationRadius;
 
+            if (enemySteeringAggressiveness > maxSteeringAggressiveness)
+                maxSteeringAggressiveness = enemySteeringAggressiveness;
+
             enemyToEvaluatedIndex[index] = -1;
 
             SteeringLodLevel lodLevel = EvaluateLod(playerPosition, enemyTransform.Position);
@@ -174,8 +188,10 @@ public partial struct EnemySteeringSystem : ISystem
             }
         }
 
-        float maxHardClearanceRadius = (maxBodyRadius * 2f + SeparationClearancePadding) * 2.75f;
-        float cellSize = math.max(0.25f, math.max(maxSeparationRadius, maxHardClearanceRadius));
+        float clearanceAggressivenessScale = ResolveAggressivenessScale(maxSteeringAggressiveness, 0.82f, 1.35f);
+        float maxHardClearanceRadius = (maxBodyRadius * 2f + SeparationClearancePadding) * 2.75f * clearanceAggressivenessScale;
+        float maxScaledSeparationRadius = maxSeparationRadius * ResolveAggressivenessScale(maxSteeringAggressiveness, 0.9f, 1.45f);
+        float cellSize = math.max(0.25f, math.max(maxScaledSeparationRadius, maxHardClearanceRadius));
         float inverseCellSize = 1f / cellSize;
         NativeParallelMultiHashMap<int, int> cellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.TempJob);
 
@@ -213,6 +229,7 @@ public partial struct EnemySteeringSystem : ISystem
                 Positions = positions,
                 BodyRadii = bodyRadii,
                 PriorityTiers = priorityTiers,
+                SteeringAggressiveness = steeringAggressiveness,
                 Velocities = planarVelocities,
                 WandererMovementFlags = wandererMovementFlags,
                 SeparationRadii = separationRadii,
@@ -256,13 +273,15 @@ public partial struct EnemySteeringSystem : ISystem
             if (evaluatedIndex >= 0)
             {
                 float separationWeight = math.max(0f, enemyData.SeparationWeight);
+                float enemySteeringAggressiveness = steeringAggressiveness[enemyIndex];
                 float3 desiredVelocity = approachResults[evaluatedIndex];
 
                 if (evaluatedSeparationEnabled[evaluatedIndex] != 0)
                 {
                     float urgency = math.saturate(separationUrgencyResults[evaluatedIndex]);
                     float urgencyBoost = math.lerp(1f, SeparationUrgencyMaxBoost, urgency);
-                    desiredVelocity += separationResults[evaluatedIndex] * separationWeight * urgencyBoost;
+                    float separationResponseScale = ResolveAggressivenessScale(enemySteeringAggressiveness, 0.72f, 1.95f);
+                    desiredVelocity += separationResults[evaluatedIndex] * separationWeight * urgencyBoost * separationResponseScale * enemySteeringAggressiveness;
                 }
 
                 float maxSpeed = math.max(0f, speedData[enemyIndex].y);
@@ -326,6 +345,7 @@ public partial struct EnemySteeringSystem : ISystem
             float planarVelocitySquared = runtimeState.Velocity.x * runtimeState.Velocity.x + runtimeState.Velocity.z * runtimeState.Velocity.z;
             float rotationSpeedDegreesPerSecond = enemyData.RotationSpeedDegreesPerSecond;
             bool hasSelfRotation = math.abs(rotationSpeedDegreesPerSecond) > RotationSpeedEpsilon;
+            float enemySteeringAggressivenessForLook = steeringAggressiveness[enemyIndex];
 
             if (hasSelfRotation)
             {
@@ -335,8 +355,18 @@ public partial struct EnemySteeringSystem : ISystem
             }
             else if (planarVelocitySquared > DirectionEpsilon)
             {
-                float3 forward = math.normalizesafe(new float3(runtimeState.Velocity.x, 0f, runtimeState.Velocity.z), ForwardAxis);
-                enemyTransform.Rotation = quaternion.LookRotationSafe(forward, UpAxis);
+                float planarSpeed = math.sqrt(planarVelocitySquared);
+                float lookSpeedThreshold = ResolveLookSpeedThreshold(velocityMaxSpeed);
+
+                if (planarSpeed > lookSpeedThreshold)
+                {
+                    float3 forward = math.normalizesafe(new float3(runtimeState.Velocity.x, 0f, runtimeState.Velocity.z), ForwardAxis);
+                    float lookTurnRateDegrees = ResolveAggressivenessScale(enemySteeringAggressivenessForLook,
+                                                                           LookRotationMinDegreesPerSecond,
+                                                                           LookRotationMaxDegreesPerSecond);
+                    float maxRadiansDelta = math.radians(lookTurnRateDegrees) * deltaTime;
+                    enemyTransform.Rotation = RotateTowardsPlanar(enemyTransform.Rotation, forward, maxRadiansDelta);
+                }
             }
 
             entityManager.SetComponentData(enemyEntity, runtimeState);
@@ -352,6 +382,7 @@ public partial struct EnemySteeringSystem : ISystem
         contactRadii.Dispose();
         bodyRadii.Dispose();
         priorityTiers.Dispose();
+        steeringAggressiveness.Dispose();
         planarVelocities.Dispose();
         wandererMovementFlags.Dispose();
         separationRadii.Dispose();
@@ -402,6 +433,77 @@ public partial struct EnemySteeringSystem : ISystem
         {
             return (x * 73856093) ^ (y * 19349663);
         }
+    }
+
+    /// <summary>
+    /// Resolves one steering aggressiveness value with safe defaults and clamps.
+    /// </summary>
+    /// <param name="rawAggressiveness">Serialized aggressiveness value.</param>
+    /// <returns>Resolved aggressiveness value ready for runtime use.</returns>
+    private static float ResolveSteeringAggressiveness(float rawAggressiveness)
+    {
+        if (rawAggressiveness < 0f)
+            return MinimumSteeringAggressiveness;
+
+        return math.clamp(rawAggressiveness, MinimumSteeringAggressiveness, MaximumSteeringAggressiveness);
+    }
+
+    /// <summary>
+    /// Maps steering aggressiveness to a configurable scalar range.
+    /// </summary>
+    /// <param name="aggressiveness">Resolved aggressiveness value.</param>
+    /// <param name="minimumScale">Output scale at minimum aggressiveness.</param>
+    /// <param name="maximumScale">Output scale at maximum aggressiveness.</param>
+    /// <returns>Interpolated scalar in the requested range.</returns>
+    private static float ResolveAggressivenessScale(float aggressiveness, float minimumScale, float maximumScale)
+    {
+        float normalizedAggressiveness = math.saturate((aggressiveness - MinimumSteeringAggressiveness) /
+                                                       math.max(0.0001f, MaximumSteeringAggressiveness - MinimumSteeringAggressiveness));
+        return math.lerp(minimumScale, maximumScale, normalizedAggressiveness);
+    }
+
+    /// <summary>
+    /// Resolves planar speed threshold used to skip noisy look updates when movement is near zero.
+    /// </summary>
+    /// <param name="maxSpeed">Current movement max speed after modifiers.</param>
+    /// <returns>Planar speed threshold used by look smoothing.</returns>
+    private static float ResolveLookSpeedThreshold(float maxSpeed)
+    {
+        float normalizedMaxSpeed = math.max(0f, maxSpeed);
+
+        if (normalizedMaxSpeed <= DirectionEpsilon)
+            return LookRotationFallbackSpeed;
+
+        return math.max(LookRotationFallbackSpeed, normalizedMaxSpeed * LookRotationSpeedGateRatio);
+    }
+
+    /// <summary>
+    /// Rotates current orientation toward target planar forward with a bounded angular delta.
+    /// </summary>
+    /// <param name="currentRotation">Current world rotation.</param>
+    /// <param name="targetForward">Target planar forward direction.</param>
+    /// <param name="maxRadiansDelta">Maximum rotation in radians for this frame.</param>
+    /// <returns>Smoothed rotation result.</returns>
+    private static quaternion RotateTowardsPlanar(quaternion currentRotation, float3 targetForward, float maxRadiansDelta)
+    {
+        float normalizedDelta = math.max(0f, maxRadiansDelta);
+
+        if (normalizedDelta <= DirectionEpsilon)
+            return currentRotation;
+
+        quaternion targetRotation = quaternion.LookRotationSafe(targetForward, UpAxis);
+        float4 currentValue = currentRotation.value;
+        float4 targetValue = targetRotation.value;
+        float dot = math.clamp(math.dot(currentValue, targetValue), -1f, 1f);
+        float absoluteDot = math.abs(dot);
+        float angle = math.acos(math.min(1f, absoluteDot)) * 2f;
+
+        if (angle <= normalizedDelta || angle <= DirectionEpsilon)
+            return targetRotation;
+
+        float interpolation = math.saturate(normalizedDelta / math.max(angle, DirectionEpsilon));
+        quaternion rotated = math.slerp(currentRotation, targetRotation, interpolation);
+        return math.normalize(rotated);
     }
 
     /// <summary>
@@ -483,6 +585,7 @@ public partial struct EnemySteeringSystem : ISystem
         [ReadOnly] public NativeArray<float3> Positions;
         [ReadOnly] public NativeArray<float> BodyRadii;
         [ReadOnly] public NativeArray<int> PriorityTiers;
+        [ReadOnly] public NativeArray<float> SteeringAggressiveness;
         [ReadOnly] public NativeArray<float3> Velocities;
         [ReadOnly] public NativeArray<byte> WandererMovementFlags;
         [ReadOnly] public NativeArray<float> SeparationRadii;
@@ -503,6 +606,7 @@ public partial struct EnemySteeringSystem : ISystem
             float separationRadius = math.max(0.01f, SeparationRadii[enemyIndex]);
             float bodyRadius = math.max(0.01f, BodyRadii[enemyIndex]);
             int selfPriorityTier = PriorityTiers[enemyIndex];
+            float selfSteeringAggressiveness = ResolveSteeringAggressiveness(SteeringAggressiveness[enemyIndex]);
             float3 position = Positions[enemyIndex];
             float3 selfVelocity = Velocities[enemyIndex];
             float selfSpeed = math.length(selfVelocity);
@@ -533,14 +637,18 @@ public partial struct EnemySteeringSystem : ISystem
                         float neighborSpeed = math.length(neighborVelocity);
                         float neighborBodyRadius = math.max(0.01f, BodyRadii[neighborIndex]);
                         int neighborPriorityTier = PriorityTiers[neighborIndex];
+                        float neighborSteeringAggressiveness = ResolveSteeringAggressiveness(SteeringAggressiveness[neighborIndex]);
+                        float pairSteeringAggressiveness = math.max(selfSteeringAggressiveness, neighborSteeringAggressiveness);
+                        float pairClearanceScale = ResolveAggressivenessScale(pairSteeringAggressiveness, 0.82f, 1.35f);
                         bool neighborIsWanderer = WandererMovementFlags[neighborIndex] != 0;
                         float priorityClearanceMultiplier = ResolvePriorityClearanceMultiplier(selfPriorityTier, neighborPriorityTier);
-                        float hardClearanceDistance = (bodyRadius + neighborBodyRadius + SeparationClearancePadding) * priorityClearanceMultiplier;
+                        float hardClearanceDistance = (bodyRadius + neighborBodyRadius + SeparationClearancePadding) * priorityClearanceMultiplier * pairClearanceScale;
 
                         if (neighborIsWanderer)
                             hardClearanceDistance *= 1.18f;
 
-                        float influenceRadius = math.max(separationRadius, hardClearanceDistance * 1.35f);
+                        float selfRadiusScale = ResolveAggressivenessScale(selfSteeringAggressiveness, 0.9f, 1.45f);
+                        float influenceRadius = math.max(separationRadius * selfRadiusScale, hardClearanceDistance * 1.35f);
 
                         if (selfPriorityTier < neighborPriorityTier)
                             influenceRadius = math.max(influenceRadius, hardClearanceDistance * 1.65f);
@@ -608,7 +716,19 @@ public partial struct EnemySteeringSystem : ISystem
                         if (neighborIsWanderer)
                             priorityWeight *= 1.55f;
 
-                        separation += direction * math.max(0f, weight) * priorityWeight;
+                        float sideStepWeight = math.saturate((influenceRadius - distance) / math.max(0.01f, influenceRadius));
+                        sideStepWeight *= ResolveAggressivenessScale(selfSteeringAggressiveness, 0.35f, 1.1f);
+
+                        if (selfPriorityTier < neighborPriorityTier)
+                            sideStepWeight *= 1.25f;
+
+                        float3 lateralDirection = ResolveLateralAvoidanceDirection(direction,
+                                                                                   selfVelocity,
+                                                                                   neighborVelocity,
+                                                                                   enemyIndex,
+                                                                                   neighborIndex);
+                        float3 avoidanceDirection = math.normalizesafe(direction + lateralDirection * sideStepWeight, direction);
+                        separation += avoidanceDirection * math.max(0f, weight) * priorityWeight;
 
                         float urgencyDistanceGate = math.max(hardClearanceDistance, influenceRadius * 0.8f);
                         float urgency = math.saturate((urgencyDistanceGate - distance) / math.max(0.01f, urgencyDistanceGate));
@@ -632,6 +752,8 @@ public partial struct EnemySteeringSystem : ISystem
                             urgency = math.max(urgency, math.saturate(urgency + closingFactor * (neighborIsWanderer ? 0.85f : 0.55f)));
                         }
 
+                        urgency *= ResolveAggressivenessScale(selfSteeringAggressiveness, 0.85f, 1.2f);
+
                         if (urgency > highestUrgency)
                             highestUrgency = urgency;
                     }
@@ -650,6 +772,50 @@ public partial struct EnemySteeringSystem : ISystem
             return new float3(math.sin(angleRadians), 0f, math.cos(angleRadians));
         }
 
+        private static float3 ResolveLateralAvoidanceDirection(float3 awayDirection,
+                                                               float3 selfVelocity,
+                                                               float3 neighborVelocity,
+                                                               int enemyIndex,
+                                                               int neighborIndex)
+        {
+            float3 lateral = new float3(-awayDirection.z, 0f, awayDirection.x);
+            float lateralLengthSquared = lateral.x * lateral.x + lateral.z * lateral.z;
+
+            if (lateralLengthSquared <= DirectionEpsilon)
+                return ResolveDeterministicSeparationDirection(enemyIndex, neighborIndex);
+
+            float inverseLateralLength = math.rsqrt(lateralLengthSquared);
+            float3 normalizedLateral = lateral * inverseLateralLength;
+            float3 relativeVelocity = selfVelocity - neighborVelocity;
+            float3 normalizedRelativeVelocity = math.normalizesafe(new float3(relativeVelocity.x, 0f, relativeVelocity.z), float3.zero);
+            float alignment = math.dot(normalizedRelativeVelocity, normalizedLateral);
+
+            if (math.abs(alignment) > 0.12f)
+                return alignment >= 0f ? normalizedLateral : -normalizedLateral;
+
+            uint hash = math.hash(new int2(enemyIndex * 19 + 3, neighborIndex * 23 + 5));
+
+            if ((hash & 1u) == 0u)
+                return normalizedLateral;
+
+            return -normalizedLateral;
+        }
+
+        private static float ResolveSteeringAggressiveness(float rawAggressiveness)
+        {
+            if (rawAggressiveness < 0f)
+                return MinimumSteeringAggressiveness;
+
+            return math.clamp(rawAggressiveness, MinimumSteeringAggressiveness, MaximumSteeringAggressiveness);
+        }
+
+        private static float ResolveAggressivenessScale(float aggressiveness, float minimumScale, float maximumScale)
+        {
+            float normalizedAggressiveness = math.saturate((aggressiveness - MinimumSteeringAggressiveness) /
+                                                           math.max(0.0001f, MaximumSteeringAggressiveness - MinimumSteeringAggressiveness));
+            return math.lerp(minimumScale, maximumScale, normalizedAggressiveness);
+        }
+
         private static float ResolvePriorityClearanceMultiplier(int selfPriorityTier, int neighborPriorityTier)
         {
             if (selfPriorityTier < neighborPriorityTier)
@@ -664,7 +830,7 @@ public partial struct EnemySteeringSystem : ISystem
                 return math.max(0.5f, 0.94f - priorityGap * 0.07f);
             }
 
-            return 1f;
+            return 1.08f;
         }
 
         private static float ResolvePriorityAvoidanceWeight(int selfPriorityTier, int neighborPriorityTier)
@@ -681,7 +847,7 @@ public partial struct EnemySteeringSystem : ISystem
                 return math.max(0.15f, 0.6f - priorityGap * 0.08f);
             }
 
-            return 1f;
+            return 1.2f;
         }
 
         private static int EncodeCell(int x, int y)

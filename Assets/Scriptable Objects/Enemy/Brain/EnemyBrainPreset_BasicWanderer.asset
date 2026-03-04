@@ -23,6 +23,7 @@ MonoBehaviour:
     deceleration: 8
     rotationSpeedDegreesPerSecond: 0
     priorityTier: 1
+    steeringAggressiveness: 1
   steering:
     separationRadius: 1.1
     separationWeight: 2
