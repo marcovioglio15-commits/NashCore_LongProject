@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 03ce30e7ff27e12418b7854dd61a2d7d, type: 3}
-  m_Name: EnemyMasterPreset
+  m_Name: EnemyMasterPreset_BasicWanderer
   m_EditorClassIdentifier: Assembly-CSharp::EnemyMasterPreset
-  presetId: ad17f3c210134ea28f3ece504c9237b9
-  presetName: EnemyMasterPreset
+  presetId: 2770b9195ab04ceda4e134ba566d5ac8
+  presetName: EnemyMasterPreset_BasicWanderer
   description: 
   version: 1.0.0
-  brainPreset: {fileID: 11400000, guid: 3ca2ef3fee091ad479164f92b6d9964b, type: 2}
-  advancedPatternPreset: {fileID: 11400000, guid: 384f1f53b06b5594d96f022f18ea4883, type: 2}
+  brainPreset: {fileID: 11400000, guid: e5a60022610859e4eb11cb10fe239e7e, type: 2}
+  advancedPatternPreset: {fileID: 11400000, guid: dc685c0758c6c0949b9ab458b91c206f, type: 2}
   testUiSettings:
     worldOffset: {x: 0, y: 1.8, z: 0}
     rootWidthPixels: 120

@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAdvancedPatternPresetLibrary
   presets:
   - {fileID: 11400000, guid: 384f1f53b06b5594d96f022f18ea4883, type: 2}
+  - {fileID: 11400000, guid: dc685c0758c6c0949b9ab458b91c206f, type: 2}
+  - {fileID: 11400000, guid: 958231ce8f7174a4d8239616dbcbd199, type: 2}

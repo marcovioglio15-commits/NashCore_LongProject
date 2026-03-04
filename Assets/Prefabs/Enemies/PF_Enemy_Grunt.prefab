@@ -199,7 +199,7 @@ GameObject:
   - component: {fileID: 2362197013061763177}
   - component: {fileID: 8212256973497844587}
   m_Layer: 0
-  m_Name: PF_Enemy
+  m_Name: PF_Enemy_Grunt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -235,16 +235,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAuthoring
   masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
   brainPreset: {fileID: 11400000, guid: 3ca2ef3fee091ad479164f92b6d9964b, type: 2}
+  advancedPatternPreset: {fileID: 11400000, guid: 384f1f53b06b5594d96f022f18ea4883, type: 2}
   moveSpeed: 3
   maxSpeed: 4
   acceleration: 8
   deceleration: 8
+  rotationSpeedDegreesPerSecond: 0
   separationRadius: 1.1
   separationWeight: 2
   bodyRadius: 1
   contactRadius: 1.2
-  contactDamage: 5
-  contactInterval: 0.75
+  contactDamageEnabled: 1
+  contactAmountPerTick: 5
+  contactTickInterval: 0.75
+  areaDamageEnabled: 0
+  areaRadius: 2.25
+  areaAmountPerTickPercent: 2
+  areaTickInterval: 1
   maxHealth: 1
   maxShield: 0
   visualMode: 1
@@ -257,6 +264,7 @@ MonoBehaviour:
   elementalVfxAnchor: {fileID: 1506323467520610189}
   worldSpaceStatusBarsView: {fileID: 4842169406238662468}
   drawContactRadiusGizmo: 1
+  drawAreaRadiusGizmo: 1
   drawSeparationRadiusGizmo: 0
   drawBodyRadiusGizmo: 0
   drawVisualDistanceGizmo: 1

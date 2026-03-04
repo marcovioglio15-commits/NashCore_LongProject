@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyMasterPresetLibrary
   presets:
   - {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
+  - {fileID: 11400000, guid: 11c7c9887851de14697a987a8d644a56, type: 2}
+  - {fileID: 11400000, guid: 5281a0b709fc544408ab13483cd552f8, type: 2}

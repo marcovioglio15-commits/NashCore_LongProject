@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b187d81c45ffd2842bf4641501124f9a, type: 3}
+  m_Name: EnemyBrainPreset_DVDWanderer
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBrainPreset
+  presetId: e014be7a62f845c88f6db692bd6306cb
+  presetName: EnemyBrainPreset_DVDWanderer
+  description: 
+  version: 1.0.0
+  movement:
+    moveSpeed: 5
+    maxSpeed: 5
+    acceleration: 8
+    deceleration: 8
+    rotationSpeedDegreesPerSecond: 0
+  steering:
+    separationRadius: 1.1
+    separationWeight: 2
+    bodyRadius: 0.55
+  damage:
+    contactDamageEnabled: 1
+    contactRadius: 1.2
+    contactAmountPerTick: 5
+    contactTickInterval: 0.75
+    areaDamageEnabled: 1
+    areaRadius: 2.25
+    areaAmountPerTickPercent: 2
+    areaTickInterval: 1
+  healthStatistics:
+    maxHealth: 3
+    maxShield: 3
+  visual:
+    visualMode: 1
+    visualAnimationSpeed: 1
+    gpuAnimationLoopDuration: 1
+    enableDistanceCulling: 1
+    maxVisibleDistance: 55
+    visibleDistanceHysteresis: 6

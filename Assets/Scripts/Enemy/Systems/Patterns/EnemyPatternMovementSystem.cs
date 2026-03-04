@@ -46,6 +46,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
         Entity playerEntity = Entity.Null;
         float3 playerPosition = float3.zero;
 
+        // Find player
         foreach ((RefRO<LocalTransform> playerTransform,
                   Entity candidatePlayerEntity) in SystemAPI.Query<RefRO<LocalTransform>>()
                                                            .WithAll<PlayerControllerConfig>()
@@ -88,6 +89,9 @@ public partial struct EnemyPatternMovementSystem : ISystem
         NativeList<float> occupancyRadii = new NativeList<float>(Allocator.Temp);
         float occupancyMaxRadius = 0.05f;
 
+        // Build spatial hash map of nearby enemies for efficient avoidance queries.
+        // Only active non-despawning enemies
+        // are considered as occupancy since they are the only ones relevant for movement.
         foreach ((RefRO<EnemyData> occupancyEnemyData,
                   RefRO<EnemyRuntimeState> occupancyEnemyRuntimeState,
                   RefRO<LocalTransform> occupancyEnemyTransform,
@@ -118,6 +122,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
         float occupancyInverseCellSize = 1f / occupancyCellSize;
         NativeParallelMultiHashMap<int, int> occupancyCellMap = new NativeParallelMultiHashMap<int, int>(math.max(1, occupancyCount * 2), Allocator.Temp);
 
+        // Populate spatial hash map with nearby enemy positions.
         for (int occupancyIndex = 0; occupancyIndex < occupancyCount; occupancyIndex++)
         {
             float3 occupancyPosition = occupancyPositions[occupancyIndex];
@@ -167,6 +172,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             bool movementLocked = shooterControlLookup.HasComponent(enemyEntity) && shooterControlLookup[enemyEntity].MovementLocked != 0;
             float3 desiredVelocity = float3.zero;
 
+            // Determine desired velocity based on movement pattern kind and configuration.
             switch (currentPatternConfig.MovementKind)
             {
                 case EnemyCompiledMovementPatternKind.Stationary:
@@ -236,6 +242,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float wallCollisionRadius = math.max(0.01f, baseCollisionRadius + additionalWallClearance);
             bool expandedWallClearance = wallCollisionRadius > baseCollisionRadius + ClearanceEpsilon;
 
+            // Handle wall collisions and clearance if enabled, otherwise apply desired displacement directly.
             if (wallsEnabled)
             {
                 bool clearanceReachedTarget = false;
@@ -249,6 +256,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
 
                 nextPosition += allowedDisplacement;
 
+                // Handle wall collisions based on movement kind and pattern configuration.
                 if (hitWall)
                 {
                     if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd)
@@ -374,7 +382,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
     }
 
     /// <summary>
-    /// Resolves current Wanderer DVD desired velocity and lazily initializes first direction.
+    /// Resolves current Wanderer DVD desired velocity and initializes first direction.
     /// </summary>
     /// <param name="enemyEntity">Current enemy entity.</param>
     /// <param name="patternConfig">Current compiled pattern configuration.</param>
