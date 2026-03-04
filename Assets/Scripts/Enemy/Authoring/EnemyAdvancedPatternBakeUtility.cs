@@ -107,7 +107,8 @@ public static class EnemyAdvancedPatternBakeUtility
             DvdBounceDamping = 1f,
             DvdRandomizeInitialDirection = 1,
             DvdFixedInitialDirectionDegrees = 45f,
-            DvdCornerNudgeDistance = 0.08f
+            DvdCornerNudgeDistance = 0.08f,
+            DvdIgnoreSteeringAndPriority = 0
         };
     }
 
@@ -211,6 +212,7 @@ public static class EnemyAdvancedPatternBakeUtility
             patternConfig.DvdRandomizeInitialDirection = dvd.RandomizeInitialDirection ? (byte)1 : (byte)0;
             patternConfig.DvdFixedInitialDirectionDegrees = dvd.FixedInitialDirectionDegrees;
             patternConfig.DvdCornerNudgeDistance = math.max(0f, dvd.CornerNudgeDistance);
+            patternConfig.DvdIgnoreSteeringAndPriority = dvd.IgnoreSteeringAndPriority ? (byte)1 : (byte)0;
         }
 
         switch (wanderer.Mode)

@@ -29,6 +29,7 @@ public struct EnemyPatternConfig : IComponentData
     public byte DvdRandomizeInitialDirection;
     public float DvdFixedInitialDirectionDegrees;
     public float DvdCornerNudgeDistance;
+    public byte DvdIgnoreSteeringAndPriority;
 }
 
 /// <summary>

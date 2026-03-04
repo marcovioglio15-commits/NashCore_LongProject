@@ -89,12 +89,19 @@ public partial struct EnemyVisualDistanceCullingSystem : ISystem
 [UpdateAfter(typeof(EnemyVisualDistanceCullingSystem))]
 public partial struct EnemyCompanionAnimatorVisualSystem : ISystem
 {
+    #region Constants
+    private const int MinVisibilityPriorityTier = -128;
+    private const int MaxVisibilityPriorityTier = 128;
+    private const int SortingOrderPerPriorityTier = 100;
+    #endregion
+
     #region Methods
 
     #region Lifecycle
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<EnemyVisualCompanionAnimator>();
+        state.RequireForUpdate<EnemyData>();
         state.RequireForUpdate<EnemyVisualConfig>();
         state.RequireForUpdate<EnemyVisualRuntimeState>();
     }
@@ -103,10 +110,11 @@ public partial struct EnemyCompanionAnimatorVisualSystem : ISystem
     {
         EntityManager entityManager = state.EntityManager;
 
-        foreach ((RefRO<EnemyVisualConfig> visualConfig,
+        foreach ((RefRO<EnemyData> enemyData,
+                  RefRO<EnemyVisualConfig> visualConfig,
                   RefRW<EnemyVisualRuntimeState> visualRuntimeState,
                   Entity enemyEntity)
-                 in SystemAPI.Query<RefRO<EnemyVisualConfig>, RefRW<EnemyVisualRuntimeState>>()
+                 in SystemAPI.Query<RefRO<EnemyData>, RefRO<EnemyVisualConfig>, RefRW<EnemyVisualRuntimeState>>()
                              .WithAll<EnemyVisualCompanionAnimator, EnemyActive>()
                              .WithEntityAccess())
         {
@@ -123,11 +131,29 @@ public partial struct EnemyCompanionAnimatorVisualSystem : ISystem
             }
 
             EnemyVisualRuntimeState currentVisualRuntimeState = visualRuntimeState.ValueRO;
+            int targetVisibilityPriorityTier = math.clamp(enemyData.ValueRO.PriorityTier, MinVisibilityPriorityTier, MaxVisibilityPriorityTier);
 
             if (currentVisualRuntimeState.CompanionInitialized == 0)
             {
                 InitializeAnimator(animator);
+                int previousVisibilityPriorityTier = currentVisualRuntimeState.AppliedVisibilityPriorityTier;
+
+                if (previousVisibilityPriorityTier == int.MinValue)
+                    previousVisibilityPriorityTier = 0;
+
+                ApplyAnimatorVisibilityPriorityDelta(animator, previousVisibilityPriorityTier, targetVisibilityPriorityTier);
+                currentVisualRuntimeState.AppliedVisibilityPriorityTier = targetVisibilityPriorityTier;
                 currentVisualRuntimeState.CompanionInitialized = 1;
+            }
+            else if (currentVisualRuntimeState.AppliedVisibilityPriorityTier != targetVisibilityPriorityTier)
+            {
+                int previousVisibilityPriorityTier = currentVisualRuntimeState.AppliedVisibilityPriorityTier;
+
+                if (previousVisibilityPriorityTier == int.MinValue)
+                    previousVisibilityPriorityTier = 0;
+
+                ApplyAnimatorVisibilityPriorityDelta(animator, previousVisibilityPriorityTier, targetVisibilityPriorityTier);
+                currentVisualRuntimeState.AppliedVisibilityPriorityTier = targetVisibilityPriorityTier;
             }
 
             bool shouldBeVisible = currentVisualRuntimeState.IsVisible != 0;
@@ -177,6 +203,40 @@ public partial struct EnemyCompanionAnimatorVisualSystem : ISystem
 
         animator.Rebind();
         animator.Update(0f);
+    }
+
+    private static void ApplyAnimatorVisibilityPriorityDelta(Animator animator, int previousPriorityTier, int targetPriorityTier)
+    {
+        if (animator == null)
+            return;
+
+        int previousOffset = ResolveSortingOrderOffset(previousPriorityTier);
+        int targetOffset = ResolveSortingOrderOffset(targetPriorityTier);
+        int sortingOrderDelta = targetOffset - previousOffset;
+
+        if (sortingOrderDelta == 0)
+            return;
+
+        Renderer[] childRenderers = animator.GetComponentsInChildren<Renderer>(true);
+
+        for (int rendererIndex = 0; rendererIndex < childRenderers.Length; rendererIndex++)
+        {
+            Renderer childRenderer = childRenderers[rendererIndex];
+
+            if (childRenderer == null)
+                continue;
+
+            int nextSortingOrder = math.clamp(childRenderer.sortingOrder + sortingOrderDelta, short.MinValue, short.MaxValue);
+
+            if (childRenderer.sortingOrder != nextSortingOrder)
+                childRenderer.sortingOrder = nextSortingOrder;
+        }
+    }
+
+    private static int ResolveSortingOrderOffset(int priorityTier)
+    {
+        int clampedPriorityTier = math.clamp(priorityTier, MinVisibilityPriorityTier, MaxVisibilityPriorityTier);
+        return clampedPriorityTier * SortingOrderPerPriorityTier;
     }
     #endregion
 

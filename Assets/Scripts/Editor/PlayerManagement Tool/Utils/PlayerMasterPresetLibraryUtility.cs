@@ -44,17 +44,22 @@ public static class PlayerMasterPresetLibraryUtility
     {
         EnsureFolder(DefaultPresetsFolder);
 
-        PlayerMasterPreset preset = ScriptableObject.CreateInstance<PlayerMasterPreset>();
-        preset.name = presetName;
+        string normalizedName = string.IsNullOrWhiteSpace(presetName) ? "PlayerMasterPreset" : PlayerManagementDraftSession.NormalizeAssetName(presetName);
 
-        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, presetName + ".asset"));
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            normalizedName = "PlayerMasterPreset";
+
+        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, normalizedName + ".asset"));
+        string finalName = Path.GetFileNameWithoutExtension(assetPath);
+        PlayerMasterPreset preset = ScriptableObject.CreateInstance<PlayerMasterPreset>();
+        preset.name = finalName;
         AssetDatabase.CreateAsset(preset, assetPath);
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("m_PresetName");
 
         if (nameProperty != null)
-            nameProperty.stringValue = presetName;
+            nameProperty.stringValue = finalName;
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(preset);

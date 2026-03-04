@@ -317,6 +317,7 @@ public static class EnemyAdvancedPatternDrawerUtility
         AddField(dvdFoldout, dvdProperty.FindPropertyRelative("randomizeInitialDirection"), "Randomize Initial Direction");
         AddField(dvdFoldout, dvdProperty.FindPropertyRelative("fixedInitialDirectionDegrees"), "Fixed Initial Direction Degrees");
         AddField(dvdFoldout, dvdProperty.FindPropertyRelative("cornerNudgeDistance"), "Corner Nudge Distance");
+        AddField(dvdFoldout, dvdProperty.FindPropertyRelative("ignoreSteeringAndPriority"), "Ignore Steering And Priority");
 
         UpdateWandererModeVisibility(modeProperty, basicFoldout, dvdFoldout);
         payloadContainer.TrackPropertyValue(modeProperty, changedProperty =>

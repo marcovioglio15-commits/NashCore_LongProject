@@ -17,11 +17,12 @@ MonoBehaviour:
   description: 
   version: 1.0.0
   movement:
-    moveSpeed: 30
-    maxSpeed: 30
+    moveSpeed: 15
+    maxSpeed: 15
     acceleration: 8
     deceleration: 8
     rotationSpeedDegreesPerSecond: 0
+    priorityTier: 2
   steering:
     separationRadius: 1.1
     separationWeight: 2
@@ -45,3 +46,4 @@ MonoBehaviour:
     enableDistanceCulling: 1
     maxVisibleDistance: 55
     visibleDistanceHysteresis: 6
+    visibilityPriorityTier: 1

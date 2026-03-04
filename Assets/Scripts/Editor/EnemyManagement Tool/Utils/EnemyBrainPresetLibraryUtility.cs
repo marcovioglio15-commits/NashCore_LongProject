@@ -32,17 +32,22 @@ public static class EnemyBrainPresetLibraryUtility
     {
         EnsureFolder(DefaultPresetsFolder);
 
-        EnemyBrainPreset preset = ScriptableObject.CreateInstance<EnemyBrainPreset>();
-        preset.name = presetName;
+        string normalizedName = EnemyManagementDraftSession.NormalizeAssetName(presetName);
 
-        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, presetName + ".asset"));
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            normalizedName = "EnemyBrainPreset";
+
+        EnemyBrainPreset preset = ScriptableObject.CreateInstance<EnemyBrainPreset>();
+        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, normalizedName + ".asset"));
         AssetDatabase.CreateAsset(preset, assetPath);
+        string finalName = Path.GetFileNameWithoutExtension(assetPath);
+        preset.name = finalName;
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("presetName");
 
         if (nameProperty != null)
-            nameProperty.stringValue = presetName;
+            nameProperty.stringValue = finalName;
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(preset);

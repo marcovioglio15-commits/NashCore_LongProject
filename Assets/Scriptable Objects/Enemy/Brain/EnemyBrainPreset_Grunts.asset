@@ -22,6 +22,7 @@ MonoBehaviour:
     acceleration: 8
     deceleration: 8
     rotationSpeedDegreesPerSecond: 0
+    priorityTier: 0
   steering:
     separationRadius: 1.1
     separationWeight: 2
@@ -45,3 +46,4 @@ MonoBehaviour:
     enableDistanceCulling: 1
     maxVisibleDistance: 55
     visibleDistanceHysteresis: 6
+    visibilityPriorityTier: 0

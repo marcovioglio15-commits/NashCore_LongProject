@@ -241,6 +241,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                                                         in projectileBaseScaleLookup);
             float projectileDamage = math.max(0f, projectileData.Damage);
             bool hasValidHit = false;
+            int validHitCount = 0;
             bool enemyKilledByProjectile = false;
             ElementalVfxDefinitionConfig elementalVfxConfig = default;
 
@@ -261,6 +262,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 }
 
                 hasValidHit = true;
+                validHitCount++;
 
                 if (projectileDamage > 0f)
                 {
@@ -295,7 +297,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             }
 
             bool shouldSplitOnHitEvent = ProjectileSplitUtility.ShouldSplitOnHitEvent(in splitState, enemyKilledByProjectile);
-            bool canProjectileContinue = CanProjectileContinueAfterHit(ref projectileData);
+            bool canProjectileContinue = CanProjectileContinueAfterHit(ref projectileData, validHitCount);
 
             if (canProjectileContinue)
             {
@@ -573,22 +575,22 @@ public partial struct EnemyProjectileHitSystem : ISystem
         });
     }
 
-    private static bool CanProjectileContinueAfterHit(ref Projectile projectileData)
+    private static bool CanProjectileContinueAfterHit(ref Projectile projectileData, int hitCount)
     {
         switch (projectileData.PenetrationMode)
         {
             case ProjectilePenetrationMode.Infinite:
                 return true;
             case ProjectilePenetrationMode.FixedHits:
-                if (projectileData.RemainingPenetrations <= 0)
+                int consumedHitCount = math.max(1, hitCount);
+                int remainingPenetrationsBeforeHit = projectileData.RemainingPenetrations;
+
+                if (remainingPenetrationsBeforeHit <= 0)
                     return false;
 
-                projectileData.RemainingPenetrations -= 1;
+                projectileData.RemainingPenetrations = math.max(0, remainingPenetrationsBeforeHit - consumedHitCount);
 
-                if (projectileData.RemainingPenetrations < 0)
-                    projectileData.RemainingPenetrations = 0;
-
-                return true;
+                return remainingPenetrationsBeforeHit >= consumedHitCount;
             default:
                 return false;
         }

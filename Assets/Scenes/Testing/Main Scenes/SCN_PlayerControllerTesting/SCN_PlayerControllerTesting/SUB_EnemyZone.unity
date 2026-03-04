@@ -613,7 +613,7 @@ PrefabInstance:
       objectReference: {fileID: 3091458169621715366, guid: f9051ea5f5519dd4b8d0c5b52148ce5c, type: 3}
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
       propertyPath: spawnPerTick
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
       propertyPath: spawnInterval
@@ -798,7 +798,7 @@ PrefabInstance:
       objectReference: {fileID: 3091458169621715366, guid: 65af5c6d3a3173f498a19033f08c547d, type: 3}
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
       propertyPath: spawnPerTick
-      value: 4
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
       propertyPath: spawnInterval

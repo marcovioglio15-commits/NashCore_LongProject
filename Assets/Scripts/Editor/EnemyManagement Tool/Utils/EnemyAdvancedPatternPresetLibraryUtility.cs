@@ -32,17 +32,22 @@ public static class EnemyAdvancedPatternPresetLibraryUtility
     {
         EnsureFolder(DefaultPresetsFolder);
 
-        EnemyAdvancedPatternPreset preset = ScriptableObject.CreateInstance<EnemyAdvancedPatternPreset>();
-        preset.name = presetName;
+        string normalizedName = EnemyManagementDraftSession.NormalizeAssetName(presetName);
 
-        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, presetName + ".asset"));
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            normalizedName = "EnemyAdvancedPatternPreset";
+
+        EnemyAdvancedPatternPreset preset = ScriptableObject.CreateInstance<EnemyAdvancedPatternPreset>();
+        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, normalizedName + ".asset"));
         AssetDatabase.CreateAsset(preset, assetPath);
+        string finalName = Path.GetFileNameWithoutExtension(assetPath);
+        preset.name = finalName;
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("presetName");
 
         if (nameProperty != null)
-            nameProperty.stringValue = presetName;
+            nameProperty.stringValue = finalName;
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(preset);

@@ -267,6 +267,9 @@ public sealed class EnemyWandererDvdPayload
 
     [Tooltip("Small displacement in meters used to resolve corner-stuck situations.")]
     [SerializeField] private float cornerNudgeDistance = 0.08f;
+
+    [Tooltip("When enabled, DVD movement ignores local steering and priority rules, preserving pure bounce trajectories.")]
+    [SerializeField] private bool ignoreSteeringAndPriority;
     #endregion
 
     #endregion
@@ -309,6 +312,14 @@ public sealed class EnemyWandererDvdPayload
         get
         {
             return cornerNudgeDistance;
+        }
+    }
+
+    public bool IgnoreSteeringAndPriority
+    {
+        get
+        {
+            return ignoreSteeringAndPriority;
         }
     }
     #endregion

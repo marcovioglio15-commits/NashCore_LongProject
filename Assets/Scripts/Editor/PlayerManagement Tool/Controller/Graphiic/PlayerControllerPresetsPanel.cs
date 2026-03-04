@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -429,13 +430,30 @@ public sealed class PlayerControllerPresetsPanel
 
         PlayerControllerPreset duplicatedPreset = ScriptableObject.CreateInstance<PlayerControllerPreset>();
         EditorUtility.CopySerialized(preset, duplicatedPreset);
-        duplicatedPreset.name = preset.name + " Copy";
 
         string originalPath = AssetDatabase.GetAssetPath(preset);
-        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
+
+        if (string.IsNullOrWhiteSpace(originalPath))
+            return;
+
+        string originalDirectory = Path.GetDirectoryName(originalPath);
+
+        if (string.IsNullOrWhiteSpace(originalDirectory))
+            return;
+
+        string sourceDisplayName = string.IsNullOrWhiteSpace(preset.PresetName) ? preset.name : preset.PresetName;
+        string duplicateBaseName = PlayerManagementDraftSession.NormalizeAssetName(sourceDisplayName + " Copy");
+
+        if (string.IsNullOrWhiteSpace(duplicateBaseName))
+            duplicateBaseName = "PlayerControllerPreset Copy";
+
+        string requestedPath = Path.Combine(originalDirectory, duplicateBaseName + ".asset").Replace('\\', '/');
+        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
+        string finalName = Path.GetFileNameWithoutExtension(duplicatedPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
         Undo.RegisterCreatedObjectUndo(duplicatedPreset, "Duplicate Controller Preset Asset");
+        duplicatedPreset.name = finalName;
 
         SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
         SerializedProperty idProperty = duplicatedSerialized.FindProperty("presetId");
@@ -443,7 +461,7 @@ public sealed class PlayerControllerPresetsPanel
         if (idProperty != null)
             idProperty.stringValue = Guid.NewGuid().ToString("N");
         if (nameProperty != null)
-            nameProperty.stringValue = duplicatedPreset.name;
+            nameProperty.stringValue = finalName;
         duplicatedSerialized.ApplyModifiedPropertiesWithoutUndo();
 
         Undo.RecordObject(m_Library, "Duplicate Preset");

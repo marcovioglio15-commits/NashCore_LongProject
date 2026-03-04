@@ -22,6 +22,9 @@ public sealed class EnemyBrainMovementSettings
 
     [Tooltip("Self-rotation speed in degrees per second. Positive rotates clockwise around Y, negative counter-clockwise.")]
     [SerializeField] private float rotationSpeedDegreesPerSecond;
+
+    [Tooltip("General enemy priority tier used by steering and visual overlap rules. Higher values keep right-of-way over lower tiers.")]
+    [SerializeField] private int priorityTier;
     #endregion
 
     #endregion
@@ -66,6 +69,14 @@ public sealed class EnemyBrainMovementSettings
             return rotationSpeedDegreesPerSecond;
         }
     }
+
+    public int PriorityTier
+    {
+        get
+        {
+            return priorityTier;
+        }
+    }
     #endregion
 
     #region Methods
@@ -87,6 +98,19 @@ public sealed class EnemyBrainMovementSettings
 
         if (float.IsNaN(rotationSpeedDegreesPerSecond) || float.IsInfinity(rotationSpeedDegreesPerSecond))
             rotationSpeedDegreesPerSecond = 0f;
+
+        priorityTier = Mathf.Clamp(priorityTier, -128, 128);
+    }
+
+    public void MigrateLegacyVisibilityPriorityIfNeeded(int legacyVisibilityPriorityTier)
+    {
+        if (priorityTier != 0)
+            return;
+
+        if (legacyVisibilityPriorityTier == 0)
+            return;
+
+        priorityTier = Mathf.Clamp(legacyVisibilityPriorityTier, -128, 128);
     }
     #endregion
 
@@ -357,6 +381,9 @@ public sealed class EnemyBrainVisualSettings
 
     [Tooltip("Additional distance band used to avoid visual popping when crossing the culling boundary.")]
     [SerializeField] private float visibleDistanceHysteresis = 6f;
+
+    [Tooltip("Relative visibility priority used when enemies overlap visually. Higher values render on top where supported by renderer path.")]
+    [SerializeField] private int visibilityPriorityTier;
     #endregion
 
     #endregion
@@ -409,6 +436,14 @@ public sealed class EnemyBrainVisualSettings
             return visibleDistanceHysteresis;
         }
     }
+
+    public int VisibilityPriorityTier
+    {
+        get
+        {
+            return visibilityPriorityTier;
+        }
+    }
     #endregion
 
     #region Methods
@@ -438,6 +473,8 @@ public sealed class EnemyBrainVisualSettings
 
         if (visibleDistanceHysteresis < 0f)
             visibleDistanceHysteresis = 0f;
+
+        visibilityPriorityTier = Mathf.Clamp(visibilityPriorityTier, -128, 128);
     }
     #endregion
 
@@ -585,6 +622,7 @@ public sealed class EnemyBrainPreset : ScriptableObject
         damage.Validate();
         healthStatistics.Validate();
         visual.Validate();
+        movement.MigrateLegacyVisibilityPriorityIfNeeded(visual.VisibilityPriorityTier);
     }
     #endregion
 

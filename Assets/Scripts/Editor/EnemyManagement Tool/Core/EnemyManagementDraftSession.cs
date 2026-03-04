@@ -293,22 +293,18 @@ public static class EnemyManagementDraftSession
     private static void AddEnemyPrefabPaths(HashSet<string> uniquePaths)
     {
         string[] searchFolders = new string[] { TrackedProjectRoot };
-        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab EnemyAuthoring", searchFolders);
+        List<GameObject> enemyPrefabs = ManagementToolPrefabUtility.FindPrefabsWithComponentInHierarchy<EnemyAuthoring>(searchFolders);
 
-        for (int guidIndex = 0; guidIndex < prefabGuids.Length; guidIndex++)
+        for (int prefabIndex = 0; prefabIndex < enemyPrefabs.Count; prefabIndex++)
         {
-            string prefabGuid = prefabGuids[guidIndex];
-            string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuid);
-
-            if (string.IsNullOrWhiteSpace(prefabPath))
-                continue;
-
-            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            GameObject prefabAsset = enemyPrefabs[prefabIndex];
 
             if (prefabAsset == null)
                 continue;
 
-            if (prefabAsset.GetComponent<EnemyAuthoring>() == null)
+            string prefabPath = AssetDatabase.GetAssetPath(prefabAsset);
+
+            if (string.IsNullOrWhiteSpace(prefabPath))
                 continue;
 
             uniquePaths.Add(prefabPath);
@@ -395,7 +391,10 @@ public static class EnemyManagementDraftSession
                 continue;
 
             if (string.Equals(currentFileName, targetFileName, StringComparison.Ordinal))
+            {
+                SyncPresetAssetNameToFileName(assetObject, currentFileName);
                 continue;
+            }
 
             string directoryPath = Path.GetDirectoryName(assetPath);
 
@@ -408,13 +407,22 @@ public static class EnemyManagementDraftSession
             string uniquePath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
             string renameError = AssetDatabase.MoveAsset(assetPath, uniquePath);
 
-            if (string.IsNullOrWhiteSpace(renameError))
+            if (string.IsNullOrWhiteSpace(renameError) == false)
+            {
+                Debug.LogWarning(string.Format("EnemyManagementDraftSession: failed to rename asset '{0}' to '{1}'. Error: {2}",
+                                               assetPath,
+                                               targetFileName,
+                                               renameError));
+                continue;
+            }
+
+            UnityEngine.Object movedAssetObject = AssetDatabase.LoadMainAssetAtPath(uniquePath);
+
+            if (movedAssetObject == null)
                 continue;
 
-            Debug.LogWarning(string.Format("EnemyManagementDraftSession: failed to rename asset '{0}' to '{1}'. Error: {2}",
-                                           assetPath,
-                                           targetFileName,
-                                           renameError));
+            string movedFileName = Path.GetFileNameWithoutExtension(uniquePath);
+            SyncPresetAssetNameToFileName(movedAssetObject, movedFileName);
         }
     }
 
@@ -433,6 +441,31 @@ public static class EnemyManagementDraftSession
             return true;
 
         return false;
+    }
+
+    private static void SyncPresetAssetNameToFileName(UnityEngine.Object assetObject, string fileName)
+    {
+        if (assetObject == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        assetObject.name = fileName;
+        SerializedObject serializedObject = new SerializedObject(assetObject);
+        SerializedProperty presetNameProperty = serializedObject.FindProperty("presetName");
+
+        if (presetNameProperty == null)
+            presetNameProperty = serializedObject.FindProperty("m_PresetName");
+
+        if (presetNameProperty != null)
+        {
+            serializedObject.Update();
+            presetNameProperty.stringValue = fileName;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        EditorUtility.SetDirty(assetObject);
     }
 
     private static void SyncStagedDeletePaths()

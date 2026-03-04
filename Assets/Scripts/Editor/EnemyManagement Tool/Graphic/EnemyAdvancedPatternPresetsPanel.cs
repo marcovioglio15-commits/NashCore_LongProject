@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -344,13 +345,30 @@ public sealed class EnemyAdvancedPatternPresetsPanel
 
         EnemyAdvancedPatternPreset duplicatedPreset = ScriptableObject.CreateInstance<EnemyAdvancedPatternPreset>();
         EditorUtility.CopySerialized(preset, duplicatedPreset);
-        duplicatedPreset.name = preset.name + " Copy";
 
         string originalPath = AssetDatabase.GetAssetPath(preset);
-        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
+
+        if (string.IsNullOrWhiteSpace(originalPath))
+            return;
+
+        string originalDirectory = Path.GetDirectoryName(originalPath);
+
+        if (string.IsNullOrWhiteSpace(originalDirectory))
+            return;
+
+        string sourceDisplayName = string.IsNullOrWhiteSpace(preset.PresetName) ? preset.name : preset.PresetName;
+        string duplicateBaseName = EnemyManagementDraftSession.NormalizeAssetName(sourceDisplayName + " Copy");
+
+        if (string.IsNullOrWhiteSpace(duplicateBaseName))
+            duplicateBaseName = "EnemyAdvancedPatternPreset Copy";
+
+        string requestedPath = Path.Combine(originalDirectory, duplicateBaseName + ".asset").Replace('\\', '/');
+        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
         Undo.RegisterCreatedObjectUndo(duplicatedPreset, "Duplicate Enemy Advanced Pattern Preset Asset");
+        string finalName = Path.GetFileNameWithoutExtension(duplicatedPath);
+        duplicatedPreset.name = finalName;
 
         SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
         SerializedProperty idProperty = duplicatedSerialized.FindProperty("presetId");
@@ -360,7 +378,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
             idProperty.stringValue = Guid.NewGuid().ToString("N");
 
         if (nameProperty != null)
-            nameProperty.stringValue = duplicatedPreset.name;
+            nameProperty.stringValue = finalName;
 
         duplicatedSerialized.ApplyModifiedPropertiesWithoutUndo();
 

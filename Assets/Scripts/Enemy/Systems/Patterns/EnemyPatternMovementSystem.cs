@@ -18,6 +18,8 @@ public partial struct EnemyPatternMovementSystem : ISystem
     private const float DirectionEpsilon = 1e-6f;
     private const float RotationSpeedEpsilon = 1e-4f;
     private const float ClearanceEpsilon = 1e-4f;
+    private const float BasicClearanceBlendScale = 0.12f;
+    private const float DvdClearanceBlend = 0.75f;
     #endregion
 
     #region Fields
@@ -87,6 +89,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
         NativeList<float3> occupancyPositions = new NativeList<float3>(Allocator.Temp);
         NativeList<float3> occupancyVelocities = new NativeList<float3>(Allocator.Temp);
         NativeList<float> occupancyRadii = new NativeList<float>(Allocator.Temp);
+        NativeList<int> occupancyPriorityTiers = new NativeList<int>(Allocator.Temp);
         float occupancyMaxRadius = 0.05f;
 
         // Build spatial hash map of nearby enemies for efficient avoidance queries.
@@ -112,6 +115,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
 
             float occupancyRadius = math.max(0.05f, occupancyEnemyData.ValueRO.BodyRadius);
             occupancyRadii.Add(occupancyRadius);
+            occupancyPriorityTiers.Add(math.clamp(occupancyEnemyData.ValueRO.PriorityTier, -128, 128));
 
             if (occupancyRadius > occupancyMaxRadius)
                 occupancyMaxRadius = occupancyRadius;
@@ -135,6 +139,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                                                                           occupancyPositions.AsArray(),
                                                                                                                           occupancyVelocities.AsArray(),
                                                                                                                           occupancyRadii.AsArray(),
+                                                                                                                          occupancyPriorityTiers.AsArray(),
                                                                                                                           occupancyCellMap,
                                                                                                                           occupancyInverseCellSize,
                                                                                                                           occupancyMaxRadius);
@@ -170,6 +175,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float maxSpeed = math.max(0f, currentEnemyData.MaxSpeed) * slowMultiplier;
             float acceleration = math.max(0f, currentEnemyData.Acceleration);
             bool movementLocked = shooterControlLookup.HasComponent(enemyEntity) && shooterControlLookup[enemyEntity].MovementLocked != 0;
+            bool ignoreSteeringAndPriority = ShouldIgnoreSteeringAndPriority(in currentPatternConfig);
             float3 desiredVelocity = float3.zero;
 
             // Determine desired velocity based on movement pattern kind and configuration.
@@ -208,6 +214,33 @@ public partial struct EnemyPatternMovementSystem : ISystem
                 default:
                     desiredVelocity = float3.zero;
                     break;
+            }
+
+            if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
+                currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd)
+            {
+                if (ignoreSteeringAndPriority == false)
+                {
+                    float clearanceSpeedCap = maxSpeed > 0f ? maxSpeed : moveSpeed;
+                    float minimumEnemyClearance = math.max(0f, currentPatternConfig.BasicMinimumEnemyClearance);
+                    float3 clearanceVelocity = EnemyPatternWandererUtility.ResolveLocalClearanceVelocity(enemyEntity,
+                                                                                                         currentEnemyData.PriorityTier,
+                                                                                                         currentEnemyTransform.Position,
+                                                                                                         currentEnemyData.BodyRadius,
+                                                                                                         minimumEnemyClearance,
+                                                                                                         clearanceSpeedCap,
+                                                                                                         in occupancyContext);
+
+                    if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic)
+                    {
+                        float clearanceBlend = math.saturate(currentPatternConfig.BasicFreeTrajectoryPreference * BasicClearanceBlendScale);
+                        desiredVelocity += clearanceVelocity * clearanceBlend;
+                    }
+                    else
+                    {
+                        desiredVelocity += clearanceVelocity * DvdClearanceBlend;
+                    }
+                }
             }
 
             if (movementLocked)
@@ -345,6 +378,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
 
         occupancyCellMap.Dispose();
         occupancyRadii.Dispose();
+        occupancyPriorityTiers.Dispose();
         occupancyVelocities.Dispose();
         occupancyPositions.Dispose();
         occupancyEntities.Dispose();
@@ -352,6 +386,19 @@ public partial struct EnemyPatternMovementSystem : ISystem
     #endregion
 
     #region Movement Helpers
+    /// <summary>
+    /// Resolves whether current movement pattern ignores steering and priority interactions.
+    /// </summary>
+    /// <param name="patternConfig">Current compiled pattern configuration.</param>
+    /// <returns>True when DVD movement requests steering and priority bypass.</returns>
+    private static bool ShouldIgnoreSteeringAndPriority(in EnemyPatternConfig patternConfig)
+    {
+        if (patternConfig.MovementKind != EnemyCompiledMovementPatternKind.WandererDvd)
+            return false;
+
+        return patternConfig.DvdIgnoreSteeringAndPriority != 0;
+    }
+
     /// <summary>
     /// Resolves additional wall-clearance radius to enforce during runtime displacement.
     /// </summary>

@@ -51,6 +51,7 @@ MonoBehaviour:
           randomizeInitialDirection: 1
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
+          ignoreSteeringAndPriority: 0
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -127,6 +128,7 @@ MonoBehaviour:
           randomizeInitialDirection: 1
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
+          ignoreSteeringAndPriority: 0
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -203,6 +205,7 @@ MonoBehaviour:
           randomizeInitialDirection: 1
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
+          ignoreSteeringAndPriority: 0
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -279,6 +282,7 @@ MonoBehaviour:
           randomizeInitialDirection: 1
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
+          ignoreSteeringAndPriority: 0
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -360,6 +364,7 @@ MonoBehaviour:
             randomizeInitialDirection: 1
             fixedInitialDirectionDegrees: 45
             cornerNudgeDistance: 0.08
+            ignoreSteeringAndPriority: 1
         shooter:
           aimPolicy: 0
           movementPolicy: 0

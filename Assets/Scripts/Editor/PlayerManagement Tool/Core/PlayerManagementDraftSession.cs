@@ -422,7 +422,10 @@ public static class PlayerManagementDraftSession
                 continue;
 
             if (string.Equals(currentFileName, targetFileName, StringComparison.Ordinal))
+            {
+                SyncPresetAssetNameToFileName(assetObject, currentFileName);
                 continue;
+            }
 
             string directoryPath = Path.GetDirectoryName(assetPath);
 
@@ -435,10 +438,19 @@ public static class PlayerManagementDraftSession
             string uniquePath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
             string renameError = AssetDatabase.MoveAsset(assetPath, uniquePath);
 
-            if (string.IsNullOrWhiteSpace(renameError))
+            if (string.IsNullOrWhiteSpace(renameError) == false)
+            {
+                Debug.LogWarning(string.Format("PlayerManagementDraftSession: failed to rename asset '{0}' to '{1}'. Error: {2}", assetPath, targetFileName, renameError));
+                continue;
+            }
+
+            UnityEngine.Object movedAssetObject = AssetDatabase.LoadMainAssetAtPath(uniquePath);
+
+            if (movedAssetObject == null)
                 continue;
 
-            Debug.LogWarning(string.Format("PlayerManagementDraftSession: failed to rename asset '{0}' to '{1}'. Error: {2}", assetPath, targetFileName, renameError));
+            string movedFileName = Path.GetFileNameWithoutExtension(uniquePath);
+            SyncPresetAssetNameToFileName(movedAssetObject, movedFileName);
         }
     }
 
@@ -469,6 +481,31 @@ public static class PlayerManagementDraftSession
             return true;
 
         return false;
+    }
+
+    private static void SyncPresetAssetNameToFileName(UnityEngine.Object assetObject, string fileName)
+    {
+        if (assetObject == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        assetObject.name = fileName;
+        SerializedObject serializedObject = new SerializedObject(assetObject);
+        SerializedProperty presetNameProperty = serializedObject.FindProperty("presetName");
+
+        if (presetNameProperty == null)
+            presetNameProperty = serializedObject.FindProperty("m_PresetName");
+
+        if (presetNameProperty != null)
+        {
+            serializedObject.Update();
+            presetNameProperty.stringValue = fileName;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        EditorUtility.SetDirty(assetObject);
     }
 
     /// <summary>

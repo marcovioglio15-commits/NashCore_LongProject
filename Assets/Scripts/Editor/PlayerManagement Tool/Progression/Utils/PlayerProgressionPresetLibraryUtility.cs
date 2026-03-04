@@ -34,17 +34,22 @@ public static class PlayerProgressionPresetLibraryUtility
     {
         EnsureFolder(DefaultPresetsFolder);
 
-        PlayerProgressionPreset preset = ScriptableObject.CreateInstance<PlayerProgressionPreset>();
-        preset.name = presetName;
+        string normalizedName = string.IsNullOrWhiteSpace(presetName) ? "PlayerProgressionPreset" : PlayerManagementDraftSession.NormalizeAssetName(presetName);
 
-        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, presetName + ".asset"));
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            normalizedName = "PlayerProgressionPreset";
+
+        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetsFolder, normalizedName + ".asset"));
+        string finalName = Path.GetFileNameWithoutExtension(assetPath);
+        PlayerProgressionPreset preset = ScriptableObject.CreateInstance<PlayerProgressionPreset>();
+        preset.name = finalName;
         AssetDatabase.CreateAsset(preset, assetPath);
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("presetName");
 
         if (nameProperty != null)
-            nameProperty.stringValue = presetName;
+            nameProperty.stringValue = finalName;
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(preset);

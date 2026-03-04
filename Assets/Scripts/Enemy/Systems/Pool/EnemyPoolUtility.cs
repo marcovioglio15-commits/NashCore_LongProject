@@ -90,7 +90,8 @@ public static class EnemyPoolUtility
                 DvdBounceDamping = 1f,
                 DvdRandomizeInitialDirection = 1,
                 DvdFixedInitialDirectionDegrees = 45f,
-                DvdCornerNudgeDistance = 0.08f
+                DvdCornerNudgeDistance = 0.08f,
+                DvdIgnoreSteeringAndPriority = 0
             });
 
         if (entityManager.HasComponent<EnemyPatternRuntimeState>(enemyEntity) == false)
@@ -134,7 +135,8 @@ public static class EnemyPoolUtility
                 GpuLoopDuration = 1f,
                 MaxVisibleDistance = 55f,
                 VisibleDistanceHysteresis = 6f,
-                UseDistanceCulling = 1
+                UseDistanceCulling = 1,
+                VisibilityPriorityTier = 0
             });
 
         if (entityManager.HasComponent<EnemyVisualRuntimeState>(enemyEntity) == false)
@@ -143,7 +145,8 @@ public static class EnemyPoolUtility
                 AnimationTime = 0f,
                 LastDistanceToPlayer = 0f,
                 IsVisible = 1,
-                CompanionInitialized = 0
+                CompanionInitialized = 0,
+                AppliedVisibilityPriorityTier = int.MinValue
             });
 
         if (entityManager.HasComponent<EnemyActive>(enemyEntity) == false)

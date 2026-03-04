@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -20,11 +22,42 @@ public static class ManagementToolPrefabUtility
     /// <returns>Returns true when a matching prefab is found; otherwise false.</returns>
     public static bool TryFindFirstPrefabWithComponent<TComponent>(out GameObject prefabAsset) where TComponent : Component
     {
-        // Default output to null in case no matching prefab is found.
-        prefabAsset = null;
-        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab");
+        return TryFindFirstPrefabWithComponentInHierarchy<TComponent>(out prefabAsset);
+    }
 
-        // Scan all prefabs and return the first one that contains the requested component.
+    /// <summary>
+    /// Finds the first project prefab containing a component of type <typeparamref name="TComponent"/>
+    /// either on root or in any child object.
+    /// </summary>
+    /// <typeparam name="TComponent">Component type required on the prefab hierarchy.</typeparam>
+    /// <param name="prefabAsset">Output prefab reference set when a match is found.</param>
+    /// <returns>Returns true when a matching prefab is found; otherwise false.</returns>
+    public static bool TryFindFirstPrefabWithComponentInHierarchy<TComponent>(out GameObject prefabAsset) where TComponent : Component
+    {
+        List<GameObject> matchingPrefabs = FindPrefabsWithComponentInHierarchy<TComponent>();
+
+        if (matchingPrefabs.Count <= 0)
+        {
+            prefabAsset = null;
+            return false;
+        }
+
+        prefabAsset = matchingPrefabs[0];
+        return true;
+    }
+
+    /// <summary>
+    /// Finds all project prefabs containing a component of type <typeparamref name="TComponent"/>
+    /// either on root or in any child object.
+    /// </summary>
+    /// <typeparam name="TComponent">Component type required on the prefab hierarchy.</typeparam>
+    /// <param name="searchFolders">Optional folder filters passed to AssetDatabase.FindAssets.</param>
+    /// <returns>Returns a path-sorted list of matching prefab assets.</returns>
+    public static List<GameObject> FindPrefabsWithComponentInHierarchy<TComponent>(string[] searchFolders = null) where TComponent : Component
+    {
+        List<GameObject> matchingPrefabs = new List<GameObject>();
+        string[] prefabGuids = ResolvePrefabGuids(searchFolders);
+
         for (int index = 0; index < prefabGuids.Length; index++)
         {
             string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuids[index]);
@@ -33,14 +66,14 @@ public static class ManagementToolPrefabUtility
             if (candidatePrefab == null)
                 continue;
 
-            if (candidatePrefab.GetComponent<TComponent>() == null)
+            if (HasComponentInHierarchy<TComponent>(candidatePrefab) == false)
                 continue;
 
-            prefabAsset = candidatePrefab;
-            return true;
+            matchingPrefabs.Add(candidatePrefab);
         }
 
-        return false;
+        matchingPrefabs.Sort(ComparePrefabByPath);
+        return matchingPrefabs;
     }
 
     /// <summary>
@@ -53,12 +86,42 @@ public static class ManagementToolPrefabUtility
     /// <returns>Returns true if the prefab contains the component; otherwise false.</returns>
     public static bool HasComponent<TComponent>(GameObject prefabAsset) where TComponent : Component
     {
-        // Reject null prefabs early.
+        return HasComponentInHierarchy<TComponent>(prefabAsset);
+    }
+
+    /// <summary>
+    /// Checks whether a prefab contains a component of type <typeparamref name="TComponent"/>
+    /// either on root or in any child object.
+    /// </summary>
+    /// <typeparam name="TComponent">Component type expected on the prefab hierarchy.</typeparam>
+    /// <param name="prefabAsset">Prefab to validate.</param>
+    /// <returns>Returns true if the prefab hierarchy contains the component; otherwise false.</returns>
+    public static bool HasComponentInHierarchy<TComponent>(GameObject prefabAsset) where TComponent : Component
+    {
         if (prefabAsset == null)
             return false;
 
-        // Validate presence of the requested component.
-        return prefabAsset.GetComponent<TComponent>() != null;
+        if (prefabAsset.GetComponent<TComponent>() != null)
+            return true;
+
+        return prefabAsset.GetComponentInChildren<TComponent>(true) != null;
+    }
+    #endregion
+
+    #region Private Methods
+    private static string[] ResolvePrefabGuids(string[] searchFolders)
+    {
+        if (searchFolders == null || searchFolders.Length <= 0)
+            return AssetDatabase.FindAssets("t:Prefab");
+
+        return AssetDatabase.FindAssets("t:Prefab", searchFolders);
+    }
+
+    private static int ComparePrefabByPath(GameObject leftPrefab, GameObject rightPrefab)
+    {
+        string leftPath = leftPrefab != null ? AssetDatabase.GetAssetPath(leftPrefab) : string.Empty;
+        string rightPath = rightPrefab != null ? AssetDatabase.GetAssetPath(rightPrefab) : string.Empty;
+        return string.Compare(leftPath, rightPath, StringComparison.Ordinal);
     }
     #endregion
 

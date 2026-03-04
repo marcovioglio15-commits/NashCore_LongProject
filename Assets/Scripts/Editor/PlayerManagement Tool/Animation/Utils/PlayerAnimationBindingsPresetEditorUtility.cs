@@ -55,8 +55,9 @@ public static class PlayerAnimationBindingsPresetEditorUtility
 
         string normalizedName = string.IsNullOrWhiteSpace(presetName) ? "PlayerAnimationBindingsPreset" : PlayerManagementDraftSession.NormalizeAssetName(presetName);
         string targetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetFolder, normalizedName + ".asset"));
+        string finalName = Path.GetFileNameWithoutExtension(targetPath);
         PlayerAnimationBindingsPreset preset = ScriptableObject.CreateInstance<PlayerAnimationBindingsPreset>();
-        preset.name = normalizedName;
+        preset.name = finalName;
         AssetDatabase.CreateAsset(preset, targetPath);
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty presetIdProperty = serializedPreset.FindProperty("presetId");
@@ -67,7 +68,7 @@ public static class PlayerAnimationBindingsPresetEditorUtility
             presetIdProperty.stringValue = Guid.NewGuid().ToString("N");
 
         if (presetNameProperty != null)
-            presetNameProperty.stringValue = normalizedName;
+            presetNameProperty.stringValue = finalName;
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
 

@@ -374,13 +374,30 @@ public sealed class PlayerMasterPresetsPanel
 
         PlayerMasterPreset duplicatedPreset = ScriptableObject.CreateInstance<PlayerMasterPreset>();
         EditorUtility.CopySerialized(preset, duplicatedPreset);
-        duplicatedPreset.name = preset.name + " Copy";
 
         string originalPath = AssetDatabase.GetAssetPath(preset);
-        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
+
+        if (string.IsNullOrWhiteSpace(originalPath))
+            return;
+
+        string originalDirectory = Path.GetDirectoryName(originalPath);
+
+        if (string.IsNullOrWhiteSpace(originalDirectory))
+            return;
+
+        string sourceDisplayName = string.IsNullOrWhiteSpace(preset.PresetName) ? preset.name : preset.PresetName;
+        string duplicateBaseName = PlayerManagementDraftSession.NormalizeAssetName(sourceDisplayName + " Copy");
+
+        if (string.IsNullOrWhiteSpace(duplicateBaseName))
+            duplicateBaseName = "PlayerMasterPreset Copy";
+
+        string requestedPath = Path.Combine(originalDirectory, duplicateBaseName + ".asset").Replace('\\', '/');
+        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
+        string finalName = Path.GetFileNameWithoutExtension(duplicatedPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
         Undo.RegisterCreatedObjectUndo(duplicatedPreset, "Duplicate Master Preset Asset");
+        duplicatedPreset.name = finalName;
 
         SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
         SerializedProperty idProperty = duplicatedSerialized.FindProperty("m_PresetId");
@@ -388,7 +405,7 @@ public sealed class PlayerMasterPresetsPanel
         if (idProperty != null)
             idProperty.stringValue = Guid.NewGuid().ToString("N");
         if (nameProperty != null)
-            nameProperty.stringValue = duplicatedPreset.name;
+            nameProperty.stringValue = finalName;
         duplicatedSerialized.ApplyModifiedPropertiesWithoutUndo();
 
         Undo.RecordObject(m_Library, "Duplicate Master Preset");
@@ -947,10 +964,15 @@ public sealed class PlayerMasterPresetsPanel
     {
         EnsureFolder(folderPath);
 
-        T preset = ScriptableObject.CreateInstance<T>();
-        preset.name = presetName;
+        string normalizedName = string.IsNullOrWhiteSpace(presetName) ? typeof(T).Name : PlayerManagementDraftSession.NormalizeAssetName(presetName);
 
-        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(folderPath, presetName + ".asset"));
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            normalizedName = typeof(T).Name;
+
+        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(folderPath, normalizedName + ".asset"));
+        string finalName = Path.GetFileNameWithoutExtension(assetPath);
+        T preset = ScriptableObject.CreateInstance<T>();
+        preset.name = finalName;
         AssetDatabase.CreateAsset(preset, assetPath);
         Undo.RegisterCreatedObjectUndo(preset, "Create Sub Preset Asset");
 
@@ -961,7 +983,7 @@ public sealed class PlayerMasterPresetsPanel
             nameProperty = serializedPreset.FindProperty("presetName");
 
         if (nameProperty != null)
-            nameProperty.stringValue = presetName;
+            nameProperty.stringValue = finalName;
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(preset);

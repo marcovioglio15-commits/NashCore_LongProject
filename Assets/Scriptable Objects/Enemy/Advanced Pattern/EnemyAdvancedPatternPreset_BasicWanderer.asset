@@ -51,6 +51,7 @@ MonoBehaviour:
           randomizeInitialDirection: 1
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
+          ignoreSteeringAndPriority: 0
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -127,6 +128,7 @@ MonoBehaviour:
           randomizeInitialDirection: 1
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
+          ignoreSteeringAndPriority: 0
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -203,6 +205,7 @@ MonoBehaviour:
           randomizeInitialDirection: 1
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
+          ignoreSteeringAndPriority: 0
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -279,6 +282,7 @@ MonoBehaviour:
           randomizeInitialDirection: 1
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
+          ignoreSteeringAndPriority: 0
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -341,7 +345,7 @@ MonoBehaviour:
           basic:
             searchRadius: 25
             minimumTravelDistance: 2
-            maximumTravelDistance: 20
+            maximumTravelDistance: 25
             arrivalTolerance: 0.35
             waitCooldownSeconds: 0.7
             candidateSampleCount: 9
@@ -350,7 +354,7 @@ MonoBehaviour:
             unexploredDirectionPreference: 0.65
             towardPlayerPreference: 0.35
             minimumWallDistance: 1.5
-            minimumEnemyClearance: 0
+            minimumEnemyClearance: 1
             trajectoryPredictionTime: 0.5
             freeTrajectoryPreference: 4
             blockedPathRetryDelay: 0.25
@@ -360,6 +364,7 @@ MonoBehaviour:
             randomizeInitialDirection: 1
             fixedInitialDirectionDegrees: 45
             cornerNudgeDistance: 0.08
+            ignoreSteeringAndPriority: 0
         shooter:
           aimPolicy: 0
           movementPolicy: 0

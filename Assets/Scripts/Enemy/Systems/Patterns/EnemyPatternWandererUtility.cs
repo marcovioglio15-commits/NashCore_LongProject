@@ -10,6 +10,9 @@ public static class EnemyPatternWandererUtility
 {
     #region Constants
     private const float DirectionEpsilon = 1e-6f;
+    private const float ClearancePredictionMinimumSeconds = 0.1f;
+    private const float RightOfWayTieSeconds = 0.02f;
+    private const float SoftClearanceMultiplier = 1.35f;
     #endregion
 
     #region Nested Types
@@ -22,6 +25,7 @@ public static class EnemyPatternWandererUtility
         public readonly NativeArray<float3> Positions;
         public readonly NativeArray<float3> Velocities;
         public readonly NativeArray<float> Radii;
+        public readonly NativeArray<int> PriorityTiers;
         public readonly NativeParallelMultiHashMap<int, int> CellMap;
         public readonly float InverseCellSize;
         public readonly float MaxRadius;
@@ -30,6 +34,7 @@ public static class EnemyPatternWandererUtility
                                 NativeArray<float3> positions,
                                 NativeArray<float3> velocities,
                                 NativeArray<float> radii,
+                                NativeArray<int> priorityTiers,
                                 NativeParallelMultiHashMap<int, int> cellMap,
                                 float inverseCellSize,
                                 float maxRadius)
@@ -38,6 +43,7 @@ public static class EnemyPatternWandererUtility
             Positions = positions;
             Velocities = velocities;
             Radii = radii;
+            PriorityTiers = priorityTiers;
             CellMap = cellMap;
             InverseCellSize = inverseCellSize;
             MaxRadius = maxRadius;
@@ -105,13 +111,35 @@ public static class EnemyPatternWandererUtility
 
             float3 targetDirection = toTarget / math.max(distanceToTarget, DirectionEpsilon);
             float desiredSpeed = maxSpeed > 0f ? math.min(moveSpeed, maxSpeed) : moveSpeed;
-            return targetDirection * math.max(0f, desiredSpeed);
+            float3 desiredVelocity = targetDirection * math.max(0f, desiredSpeed);
+            float bodyRadius = math.max(0.05f, enemyData.BodyRadius);
+            float minimumEnemyClearance = math.max(0f, patternConfig.BasicMinimumEnemyClearance);
+            float predictionTime = math.max(ClearancePredictionMinimumSeconds, patternConfig.BasicTrajectoryPredictionTime);
+
+            if (ShouldYieldToNeighbor(enemyEntity,
+                                      enemyData.PriorityTier,
+                                      enemyPosition,
+                                      desiredVelocity,
+                                      distanceToTarget,
+                                      bodyRadius,
+                                      minimumEnemyClearance,
+                                      predictionTime,
+                                      in occupancyContext))
+            {
+                patternRuntimeState.WanderHasTarget = 0;
+                patternRuntimeState.WanderWaitTimer = 0f;
+                patternRuntimeState.WanderRetryTimer = 0f;
+                return float3.zero;
+            }
+
+            return desiredVelocity;
         }
 
         if (patternRuntimeState.WanderRetryTimer > 0f)
             return float3.zero;
 
         bool pickedDestination = TryPickWanderDestination(enemyEntity,
+                                                          enemyData.PriorityTier,
                                                           enemyData.BodyRadius,
                                                           in patternConfig,
                                                           enemyPosition,
@@ -152,6 +180,111 @@ public static class EnemyPatternWandererUtility
             return (x * 73856093) ^ (y * 19349663);
         }
     }
+
+    /// <summary>
+    /// Computes a planar clearance velocity used to reduce overlap and deadlocks with nearby enemies.
+    /// </summary>
+    /// <param name="enemyEntity">Current enemy entity.</param>
+    /// <param name="selfPriorityTier">Current enemy general priority tier.</param>
+    /// <param name="enemyPosition">Current enemy position.</param>
+    /// <param name="bodyRadius">Current enemy body radius.</param>
+    /// <param name="minimumEnemyClearance">Extra minimum clearance from neighbors.</param>
+    /// <param name="maxSpeed">Current movement speed cap.</param>
+    /// <param name="occupancyContext">Occupancy context used for neighbor lookup.</param>
+    /// <returns>Planar clearance velocity contribution.</returns>
+    public static float3 ResolveLocalClearanceVelocity(Entity enemyEntity,
+                                                       int selfPriorityTier,
+                                                       float3 enemyPosition,
+                                                       float bodyRadius,
+                                                       float minimumEnemyClearance,
+                                                       float maxSpeed,
+                                                       in OccupancyContext occupancyContext)
+    {
+        float clearanceSpeedCap = math.max(0f, maxSpeed);
+
+        if (clearanceSpeedCap <= 0f)
+            return float3.zero;
+
+        float requiredPadding = math.max(0f, minimumEnemyClearance);
+        float normalizedBodyRadius = math.max(0.05f, bodyRadius);
+        float searchRadius = (normalizedBodyRadius + requiredPadding + math.max(0.05f, occupancyContext.MaxRadius)) * SoftClearanceMultiplier;
+        int minCellX = (int)math.floor((enemyPosition.x - searchRadius) * occupancyContext.InverseCellSize);
+        int maxCellX = (int)math.floor((enemyPosition.x + searchRadius) * occupancyContext.InverseCellSize);
+        int minCellY = (int)math.floor((enemyPosition.z - searchRadius) * occupancyContext.InverseCellSize);
+        int maxCellY = (int)math.floor((enemyPosition.z + searchRadius) * occupancyContext.InverseCellSize);
+        float3 accumulatedDirection = float3.zero;
+        float maximumPenetration = 0f;
+        int contributorCount = 0;
+
+        for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+        {
+            for (int cellY = minCellY; cellY <= maxCellY; cellY++)
+            {
+                int cellKey = EncodeCell(cellX, cellY);
+                NativeParallelMultiHashMapIterator<int> iterator;
+                int occupancyIndex;
+
+                if (occupancyContext.CellMap.TryGetFirstValue(cellKey, out occupancyIndex, out iterator) == false)
+                    continue;
+
+                do
+                {
+                    Entity neighborEntity = occupancyContext.Entities[occupancyIndex];
+
+                    if (neighborEntity == enemyEntity)
+                        continue;
+
+                    float3 neighborPosition = occupancyContext.Positions[occupancyIndex];
+                    float neighborRadius = math.max(0.05f, occupancyContext.Radii[occupancyIndex]);
+                    int neighborPriorityTier = occupancyContext.PriorityTiers[occupancyIndex];
+
+                    if (neighborPriorityTier < selfPriorityTier)
+                        continue;
+
+                    float priorityClearanceMultiplier = ResolvePriorityClearanceMultiplier(selfPriorityTier, neighborPriorityTier);
+                    float requiredClearance = math.max(0.01f, (normalizedBodyRadius + neighborRadius + requiredPadding) * priorityClearanceMultiplier);
+                    float softClearance = requiredClearance * SoftClearanceMultiplier;
+                    float3 delta = enemyPosition - neighborPosition;
+                    delta.y = 0f;
+                    float distanceSquared = math.lengthsq(delta);
+                    float distance = math.sqrt(math.max(0f, distanceSquared));
+
+                    if (distance >= softClearance)
+                        continue;
+
+                    float3 direction = distance > DirectionEpsilon
+                        ? delta / distance
+                        : ResolveDeterministicDirection(enemyEntity, neighborEntity);
+
+                    float penetration = math.max(0f, requiredClearance - distance);
+                    float softWeight = math.saturate((softClearance - distance) / math.max(0.01f, softClearance));
+                    float penetrationWeight = penetration / math.max(0.01f, requiredClearance);
+                    float weight = softWeight + penetrationWeight * 1.5f;
+                    float priorityWeight = ResolvePriorityAvoidanceWeight(selfPriorityTier, neighborPriorityTier);
+                    accumulatedDirection += direction * weight * priorityWeight;
+
+                    if (penetration > maximumPenetration)
+                        maximumPenetration = penetration;
+
+                    contributorCount++;
+                }
+                while (occupancyContext.CellMap.TryGetNextValue(out occupancyIndex, ref iterator));
+            }
+        }
+
+        if (contributorCount <= 0)
+            return float3.zero;
+
+        float3 normalizedDirection = math.normalizesafe(new float3(accumulatedDirection.x, 0f, accumulatedDirection.z), float3.zero);
+
+        if (math.lengthsq(normalizedDirection) <= DirectionEpsilon)
+            return float3.zero;
+
+        float referenceClearance = math.max(0.05f, normalizedBodyRadius + requiredPadding);
+        float penetrationFactor = math.saturate(maximumPenetration / referenceClearance);
+        float clearanceSpeed = math.lerp(clearanceSpeedCap * 0.35f, clearanceSpeedCap, penetrationFactor);
+        return normalizedDirection * clearanceSpeed;
+    }
     #endregion
 
     #region Private Methods
@@ -159,6 +292,7 @@ public static class EnemyPatternWandererUtility
     /// Picks the best Wanderer destination by prioritizing collision-safe trajectories and then designer biases.
     /// </summary>
     /// <param name="enemyEntity">Current enemy entity.</param>
+    /// <param name="selfPriorityTier">Current enemy general priority tier.</param>
     /// <param name="bodyRadius">Current enemy body radius.</param>
     /// <param name="patternConfig">Compiled pattern config.</param>
     /// <param name="enemyPosition">Current enemy position.</param>
@@ -174,6 +308,7 @@ public static class EnemyPatternWandererUtility
     /// <param name="selectedDirectionAngle">Selected direction angle output.</param>
     /// <returns>True when a valid destination is found.</returns>
     private static bool TryPickWanderDestination(Entity enemyEntity,
+                                                 int selfPriorityTier,
                                                  float bodyRadius,
                                                  in EnemyPatternConfig patternConfig,
                                                  float3 enemyPosition,
@@ -265,6 +400,7 @@ public static class EnemyPatternWandererUtility
             }
 
             bool freeTrajectory = TryEvaluateTrajectoryFreedom(enemyEntity,
+                                                               selfPriorityTier,
                                                                enemyPosition,
                                                                candidate,
                                                                math.max(0.01f, bodyRadius),
@@ -313,6 +449,7 @@ public static class EnemyPatternWandererUtility
     /// Evaluates whether a candidate and its segment are clear enough from neighboring enemies.
     /// </summary>
     /// <param name="enemyEntity">Current enemy entity.</param>
+    /// <param name="selfPriorityTier">Current enemy general priority tier.</param>
     /// <param name="origin">Current enemy origin.</param>
     /// <param name="candidate">Candidate destination.</param>
     /// <param name="bodyRadius">Current enemy body radius.</param>
@@ -323,6 +460,7 @@ public static class EnemyPatternWandererUtility
     /// <param name="freeSpaceScore">Output free-space score.</param>
     /// <returns>True when candidate and path are valid.</returns>
     private static bool TryEvaluateTrajectoryFreedom(Entity enemyEntity,
+                                                     int selfPriorityTier,
                                                      float3 origin,
                                                      float3 candidate,
                                                      float bodyRadius,
@@ -378,7 +516,13 @@ public static class EnemyPatternWandererUtility
                     predictedOtherPosition.y = 0f;
 
                     float otherRadius = math.max(0.05f, occupancyContext.Radii[occupancyIndex]);
-                    float requiredClearance = math.max(0.01f, bodyRadius + otherRadius + minimumEnemyClearance);
+                    int otherPriorityTier = occupancyContext.PriorityTiers[occupancyIndex];
+
+                    if (otherPriorityTier < selfPriorityTier)
+                        continue;
+
+                    float priorityClearanceMultiplier = ResolvePriorityClearanceMultiplier(selfPriorityTier, otherPriorityTier);
+                    float requiredClearance = math.max(0.01f, (bodyRadius + otherRadius + minimumEnemyClearance) * priorityClearanceMultiplier);
 
                     float3 deltaToCandidate = candidate - predictedOtherPosition;
                     deltaToCandidate.y = 0f;
@@ -414,6 +558,222 @@ public static class EnemyPatternWandererUtility
         freeSpaceScore = math.saturate(minimumCandidateClearance / normalization);
         freeTrajectoryScore = math.saturate(minimumTrajectoryScore * 0.8f + averageTrajectoryScore * 0.2f);
         return true;
+    }
+
+    /// <summary>
+    /// Evaluates imminent movement conflicts and resolves deterministic right-of-way for Wanderer agents.
+    /// </summary>
+    /// <param name="enemyEntity">Current enemy entity.</param>
+    /// <param name="selfPriorityTier">Current enemy general priority tier.</param>
+    /// <param name="enemyPosition">Current enemy position.</param>
+    /// <param name="desiredVelocity">Current desired velocity toward target.</param>
+    /// <param name="distanceToTarget">Distance to the current Wanderer target.</param>
+    /// <param name="bodyRadius">Current enemy body radius.</param>
+    /// <param name="minimumEnemyClearance">Extra clearance from neighbors.</param>
+    /// <param name="predictionTime">Prediction horizon in seconds.</param>
+    /// <param name="occupancyContext">Occupancy context used for neighbor lookup.</param>
+    /// <returns>True when current enemy should yield and repath.</returns>
+    private static bool ShouldYieldToNeighbor(Entity enemyEntity,
+                                              int selfPriorityTier,
+                                              float3 enemyPosition,
+                                              float3 desiredVelocity,
+                                              float distanceToTarget,
+                                              float bodyRadius,
+                                              float minimumEnemyClearance,
+                                              float predictionTime,
+                                              in OccupancyContext occupancyContext)
+    {
+        float selfSpeed = math.length(new float3(desiredVelocity.x, 0f, desiredVelocity.z));
+
+        if (selfSpeed <= DirectionEpsilon)
+            return false;
+
+        float searchRadius = bodyRadius + minimumEnemyClearance + math.max(0.05f, occupancyContext.MaxRadius) + selfSpeed * predictionTime;
+        int minCellX = (int)math.floor((enemyPosition.x - searchRadius) * occupancyContext.InverseCellSize);
+        int maxCellX = (int)math.floor((enemyPosition.x + searchRadius) * occupancyContext.InverseCellSize);
+        int minCellY = (int)math.floor((enemyPosition.z - searchRadius) * occupancyContext.InverseCellSize);
+        int maxCellY = (int)math.floor((enemyPosition.z + searchRadius) * occupancyContext.InverseCellSize);
+
+        for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+        {
+            for (int cellY = minCellY; cellY <= maxCellY; cellY++)
+            {
+                int cellKey = EncodeCell(cellX, cellY);
+                NativeParallelMultiHashMapIterator<int> iterator;
+                int occupancyIndex;
+
+                if (occupancyContext.CellMap.TryGetFirstValue(cellKey, out occupancyIndex, out iterator) == false)
+                    continue;
+
+                do
+                {
+                    Entity otherEntity = occupancyContext.Entities[occupancyIndex];
+
+                    if (otherEntity == enemyEntity)
+                        continue;
+
+                    float otherRadius = math.max(0.05f, occupancyContext.Radii[occupancyIndex]);
+                    int otherPriorityTier = occupancyContext.PriorityTiers[occupancyIndex];
+
+                    if (otherPriorityTier < selfPriorityTier)
+                        continue;
+
+                    float priorityClearanceMultiplier = ResolvePriorityClearanceMultiplier(selfPriorityTier, otherPriorityTier);
+                    float requiredClearance = math.max(0.01f, (bodyRadius + otherRadius + minimumEnemyClearance) * priorityClearanceMultiplier);
+                    float3 otherPosition = occupancyContext.Positions[occupancyIndex];
+                    float3 otherVelocity = occupancyContext.Velocities[occupancyIndex];
+                    otherVelocity.y = 0f;
+
+                    float3 delta = otherPosition - enemyPosition;
+                    delta.y = 0f;
+                    float distance = math.length(delta);
+
+                    if (selfPriorityTier < otherPriorityTier)
+                    {
+                        float priorityGap = math.min(4f, (float)math.max(1, otherPriorityTier - selfPriorityTier));
+                        float forcedYieldDistance = requiredClearance * (1.6f + priorityGap * 0.35f);
+
+                        if (distance <= forcedYieldDistance)
+                            return true;
+                    }
+                    else if (selfPriorityTier > otherPriorityTier)
+                    {
+                        if (distance > requiredClearance * 1.05f)
+                            continue;
+                    }
+
+                    if (distance <= DirectionEpsilon)
+                    {
+                        if (ShouldYieldByStablePriority(enemyEntity, otherEntity))
+                            return true;
+
+                        continue;
+                    }
+
+                    float softGateDistance = requiredClearance * SoftClearanceMultiplier;
+
+                    if (selfPriorityTier < otherPriorityTier)
+                    {
+                        float priorityGap = math.min(3f, (float)math.max(1, otherPriorityTier - selfPriorityTier));
+                        softGateDistance *= 1f + priorityGap * 0.2f;
+                    }
+
+                    if (distance > softGateDistance)
+                        continue;
+
+                    float otherSpeed = math.length(otherVelocity);
+                    float3 relativeVelocity = desiredVelocity - otherVelocity;
+                    float relativeSpeedSquared = math.lengthsq(relativeVelocity);
+
+                    if (relativeSpeedSquared <= DirectionEpsilon)
+                    {
+                        if (ShouldYieldByStablePriority(enemyEntity, otherEntity))
+                            return true;
+
+                        continue;
+                    }
+
+                    float timeToClosest = -math.dot(delta, relativeVelocity) / relativeSpeedSquared;
+
+                    if (timeToClosest < 0f || timeToClosest > predictionTime)
+                        continue;
+
+                    float3 closestSelfPosition = enemyPosition + desiredVelocity * timeToClosest;
+                    float3 closestOtherPosition = otherPosition + otherVelocity * timeToClosest;
+                    float3 closestDelta = closestOtherPosition - closestSelfPosition;
+                    closestDelta.y = 0f;
+                    float closestDistance = math.length(closestDelta);
+
+                    if (closestDistance > requiredClearance)
+                        continue;
+
+                    if (selfPriorityTier < otherPriorityTier)
+                        return true;
+
+                    float approachDistance = math.max(0f, distance - requiredClearance);
+                    float selfArrivalSeconds = approachDistance / math.max(0.01f, selfSpeed);
+                    float otherArrivalSeconds = approachDistance / math.max(0.01f, otherSpeed);
+
+                    if (selfArrivalSeconds > otherArrivalSeconds + RightOfWayTieSeconds)
+                        return true;
+
+                    if (selfArrivalSeconds + RightOfWayTieSeconds < otherArrivalSeconds)
+                        continue;
+
+                    float distanceBiasThreshold = math.max(0.05f, requiredClearance * 1.25f);
+
+                    if (distanceToTarget > distanceBiasThreshold && ShouldYieldByStablePriority(enemyEntity, otherEntity))
+                        return true;
+                }
+                while (occupancyContext.CellMap.TryGetNextValue(out occupancyIndex, ref iterator));
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Resolves stable deterministic tie-break ordering between two entities.
+    /// </summary>
+    /// <param name="currentEntity">Current entity.</param>
+    /// <param name="otherEntity">Neighbor entity.</param>
+    /// <returns>True when current entity should yield.</returns>
+    private static bool ShouldYieldByStablePriority(Entity currentEntity, Entity otherEntity)
+    {
+        uint currentHash = math.hash(new int2(currentEntity.Index * 3 + 7, currentEntity.Version * 5 + 11));
+        uint otherHash = math.hash(new int2(otherEntity.Index * 3 + 7, otherEntity.Version * 5 + 11));
+
+        if (currentHash == otherHash)
+            return currentEntity.Index > otherEntity.Index;
+
+        return currentHash < otherHash;
+    }
+
+    private static float ResolvePriorityClearanceMultiplier(int selfPriorityTier, int neighborPriorityTier)
+    {
+        if (selfPriorityTier < neighborPriorityTier)
+        {
+            float priorityGap = math.min(6f, (float)math.max(1, neighborPriorityTier - selfPriorityTier));
+            return 1.65f + priorityGap * 0.2f;
+        }
+
+        if (selfPriorityTier > neighborPriorityTier)
+        {
+            float priorityGap = math.min(6f, (float)math.max(1, selfPriorityTier - neighborPriorityTier));
+            return math.max(0.55f, 0.96f - priorityGap * 0.06f);
+        }
+
+        return 1f;
+    }
+
+    private static float ResolvePriorityAvoidanceWeight(int selfPriorityTier, int neighborPriorityTier)
+    {
+        if (selfPriorityTier < neighborPriorityTier)
+        {
+            float priorityGap = math.min(6f, (float)math.max(1, neighborPriorityTier - selfPriorityTier));
+            return 3.1f + priorityGap * 0.9f;
+        }
+
+        if (selfPriorityTier > neighborPriorityTier)
+        {
+            float priorityGap = math.min(6f, (float)math.max(1, selfPriorityTier - neighborPriorityTier));
+            return math.max(0.2f, 0.7f - priorityGap * 0.08f);
+        }
+
+        return 1f;
+    }
+
+    /// <summary>
+    /// Resolves a deterministic planar fallback direction for zero-distance overlap cases.
+    /// </summary>
+    /// <param name="currentEntity">Current entity.</param>
+    /// <param name="otherEntity">Neighbor entity.</param>
+    /// <returns>Normalized planar direction.</returns>
+    private static float3 ResolveDeterministicDirection(Entity currentEntity, Entity otherEntity)
+    {
+        uint hash = math.hash(new int4(currentEntity.Index, currentEntity.Version, otherEntity.Index, otherEntity.Version));
+        float angleRadians = (hash & 0x0000FFFFu) / 65535f * math.PI * 2f;
+        return new float3(math.sin(angleRadians), 0f, math.cos(angleRadians));
     }
 
     /// <summary>

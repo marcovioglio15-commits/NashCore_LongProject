@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -22,6 +23,7 @@ public sealed class EnemyMasterPresetsPanel
     private readonly VisualElement root;
     private readonly List<EnemyMasterPreset> filteredPresets = new List<EnemyMasterPreset>();
     private readonly Dictionary<EnemyManagementWindow.PanelType, SidePanelEntry> sidePanels = new Dictionary<EnemyManagementWindow.PanelType, SidePanelEntry>();
+    private readonly List<GameObject> availableEnemyPrefabs = new List<GameObject>();
 
     private EnemyMasterPresetLibrary library;
     private ListView listView;
@@ -38,7 +40,7 @@ public sealed class EnemyMasterPresetsPanel
     private EnemyMasterPreset selectedPreset;
     private SerializedObject presetSerializedObject;
 
-    private ObjectField enemyPrefabField;
+    private PopupField<GameObject> enemyPrefabPopup;
     private Label activeStatusLabel;
     private Label testUiStatusLabel;
     private GameObject selectedEnemyPrefab;
@@ -378,13 +380,30 @@ public sealed class EnemyMasterPresetsPanel
 
         EnemyMasterPreset duplicatedPreset = ScriptableObject.CreateInstance<EnemyMasterPreset>();
         EditorUtility.CopySerialized(preset, duplicatedPreset);
-        duplicatedPreset.name = preset.name + " Copy";
 
         string originalPath = AssetDatabase.GetAssetPath(preset);
-        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(originalPath);
+
+        if (string.IsNullOrWhiteSpace(originalPath))
+            return;
+
+        string originalDirectory = Path.GetDirectoryName(originalPath);
+
+        if (string.IsNullOrWhiteSpace(originalDirectory))
+            return;
+
+        string sourceDisplayName = string.IsNullOrWhiteSpace(preset.PresetName) ? preset.name : preset.PresetName;
+        string duplicateBaseName = EnemyManagementDraftSession.NormalizeAssetName(sourceDisplayName + " Copy");
+
+        if (string.IsNullOrWhiteSpace(duplicateBaseName))
+            duplicateBaseName = "EnemyMasterPreset Copy";
+
+        string requestedPath = Path.Combine(originalDirectory, duplicateBaseName + ".asset").Replace('\\', '/');
+        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
 
         AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
         Undo.RegisterCreatedObjectUndo(duplicatedPreset, "Duplicate Enemy Master Preset Asset");
+        string finalName = Path.GetFileNameWithoutExtension(duplicatedPath);
+        duplicatedPreset.name = finalName;
 
         SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
         SerializedProperty idProperty = duplicatedSerialized.FindProperty("presetId");
@@ -394,7 +413,7 @@ public sealed class EnemyMasterPresetsPanel
             idProperty.stringValue = Guid.NewGuid().ToString("N");
 
         if (nameProperty != null)
-            nameProperty.stringValue = duplicatedPreset.name;
+            nameProperty.stringValue = finalName;
 
         duplicatedSerialized.ApplyModifiedPropertiesWithoutUndo();
 
@@ -679,46 +698,55 @@ public sealed class EnemyMasterPresetsPanel
     /// </summary>
     private void BuildActivePresetSection()
     {
-        // Create section container and exit if current details host is unavailable.
         VisualElement sectionContainer = CreateDetailsSectionContainer("Active on Enemy Prefab");
 
         if (sectionContainer == null)
             return;
 
-        // Create prefab picker field and persist selected prefab state on change.
-        enemyPrefabField = new ObjectField("Enemy Prefab");
-        enemyPrefabField.objectType = typeof(GameObject);
-        enemyPrefabField.RegisterValueChangedCallback(evt =>
+        RefreshAvailableEnemyPrefabs();
+        int selectedPrefabIndex = ResolveSelectedEnemyPrefabIndex();
+        enemyPrefabPopup = new PopupField<GameObject>("Enemy Prefab",
+                                                      availableEnemyPrefabs,
+                                                      selectedPrefabIndex,
+                                                      ResolveEnemyPrefabDisplayName,
+                                                      ResolveEnemyPrefabDisplayName);
+        enemyPrefabPopup.tooltip = "Project prefab selector filtered to assets containing EnemyAuthoring in hierarchy.";
+        enemyPrefabPopup.RegisterValueChangedCallback(evt =>
         {
-            selectedEnemyPrefab = evt.newValue as GameObject;
+            selectedEnemyPrefab = evt.newValue;
             SaveSelectedPrefabState();
             BuildActiveDetailsSection();
         });
-        // Restore field UI value after section rebuilds.
-        enemyPrefabField.SetValueWithoutNotify(selectedEnemyPrefab);
-        sectionContainer.Add(enemyPrefabField);
+        sectionContainer.Add(enemyPrefabPopup);
 
-        // Create action buttons row for find and assignment operations.
         VisualElement buttonRow = new VisualElement();
         buttonRow.style.flexDirection = FlexDirection.Row;
         buttonRow.style.marginTop = 2f;
 
-        Button findButton = new Button();
-        findButton.text = "Find";
-        findButton.tooltip = "Search the project for a prefab with EnemyAuthoring.";
-        findButton.clicked += FindEnemyPrefab;
-        buttonRow.Add(findButton);
+        Button refreshPrefabsButton = new Button();
+        refreshPrefabsButton.text = "Refresh Prefabs";
+        refreshPrefabsButton.tooltip = "Rescan project prefabs containing EnemyAuthoring.";
+        refreshPrefabsButton.clicked += RefreshEnemyPrefabSelection;
+        buttonRow.Add(refreshPrefabsButton);
+
+        Button pingPrefabButton = new Button();
+        pingPrefabButton.text = "Ping";
+        pingPrefabButton.tooltip = "Highlight selected enemy prefab asset in Project window.";
+        pingPrefabButton.style.marginLeft = 4f;
+        pingPrefabButton.SetEnabled(selectedEnemyPrefab != null);
+        pingPrefabButton.clicked += PingSelectedEnemyPrefab;
+        buttonRow.Add(pingPrefabButton);
 
         Button setActiveButton = new Button();
         setActiveButton.text = "Set Active Preset";
-        setActiveButton.tooltip = "Assign this enemy master preset to the selected enemy prefab.";
+        setActiveButton.tooltip = "Assign selected Master Preset and its sub-presets to this enemy prefab only.";
         setActiveButton.style.marginLeft = 4f;
         setActiveButton.clicked += AssignPresetToPrefab;
+        setActiveButton.SetEnabled(selectedEnemyPrefab != null);
         buttonRow.Add(setActiveButton);
 
         sectionContainer.Add(buttonRow);
 
-        // Add status label reporting whether preset is active on selected prefab.
         activeStatusLabel = new Label();
         activeStatusLabel.style.marginTop = 2f;
         activeStatusLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -1017,25 +1045,104 @@ public sealed class EnemyMasterPresetsPanel
     #endregion
 
     #region Prefab Activation
-    /// <summary>
-    /// Finds the first prefab containing EnemyAuthoring and selects it in Active Preset section.
-    /// Called by Active Preset "Find" button.
-    /// </summary>
-    private void FindEnemyPrefab()
+    private void RefreshAvailableEnemyPrefabs()
     {
-        // Query project prefabs and early-exit with dialog if none match.
-        if (ManagementToolPrefabUtility.TryFindFirstPrefabWithComponent<EnemyAuthoring>(out GameObject prefab) == false)
+        string selectedPrefabPath = string.Empty;
+
+        if (selectedEnemyPrefab != null)
+            selectedPrefabPath = AssetDatabase.GetAssetPath(selectedEnemyPrefab);
+
+        availableEnemyPrefabs.Clear();
+        availableEnemyPrefabs.Add(null);
+
+        string[] searchFolders = new string[] { "Assets" };
+        List<GameObject> prefabAssets = ManagementToolPrefabUtility.FindPrefabsWithComponentInHierarchy<EnemyAuthoring>(searchFolders);
+
+        for (int prefabIndex = 0; prefabIndex < prefabAssets.Count; prefabIndex++)
         {
-            EditorUtility.DisplayDialog("Find Enemy Prefab", "No prefab with EnemyAuthoring was found.", "OK");
+            GameObject prefabAsset = prefabAssets[prefabIndex];
+
+            if (prefabAsset == null)
+                continue;
+
+            availableEnemyPrefabs.Add(prefabAsset);
+        }
+
+        if (string.IsNullOrWhiteSpace(selectedPrefabPath))
+        {
+            selectedEnemyPrefab = null;
             return;
         }
 
-        // Store selected prefab, persist it, and reflect it in UI field.
-        selectedEnemyPrefab = prefab;
-        SaveSelectedPrefabState();
+        for (int prefabIndex = 1; prefabIndex < availableEnemyPrefabs.Count; prefabIndex++)
+        {
+            GameObject prefabAsset = availableEnemyPrefabs[prefabIndex];
+            string prefabPath = AssetDatabase.GetAssetPath(prefabAsset);
 
-        if (enemyPrefabField != null)
-            enemyPrefabField.SetValueWithoutNotify(prefab);
+            if (string.Equals(prefabPath, selectedPrefabPath, StringComparison.Ordinal))
+            {
+                selectedEnemyPrefab = prefabAsset;
+                return;
+            }
+        }
+
+        selectedEnemyPrefab = null;
+        SaveSelectedPrefabState();
+    }
+
+    private int ResolveSelectedEnemyPrefabIndex()
+    {
+        if (selectedEnemyPrefab == null)
+            return 0;
+
+        string selectedPrefabPath = AssetDatabase.GetAssetPath(selectedEnemyPrefab);
+
+        if (string.IsNullOrWhiteSpace(selectedPrefabPath))
+            return 0;
+
+        for (int prefabIndex = 1; prefabIndex < availableEnemyPrefabs.Count; prefabIndex++)
+        {
+            GameObject prefabAsset = availableEnemyPrefabs[prefabIndex];
+            string prefabPath = AssetDatabase.GetAssetPath(prefabAsset);
+
+            if (string.Equals(prefabPath, selectedPrefabPath, StringComparison.Ordinal))
+                return prefabIndex;
+        }
+
+        selectedEnemyPrefab = null;
+        SaveSelectedPrefabState();
+        return 0;
+    }
+
+    private static string ResolveEnemyPrefabDisplayName(GameObject prefabAsset)
+    {
+        if (prefabAsset == null)
+            return "<None>";
+
+        string prefabPath = AssetDatabase.GetAssetPath(prefabAsset);
+
+        if (string.IsNullOrWhiteSpace(prefabPath))
+            return prefabAsset.name;
+
+        return string.Format("{0} ({1})", prefabAsset.name, prefabPath);
+    }
+
+    private static EnemyAuthoring ResolveEnemyAuthoringInPrefab(GameObject prefabAsset)
+    {
+        if (prefabAsset == null)
+            return null;
+
+        EnemyAuthoring directAuthoring = prefabAsset.GetComponent<EnemyAuthoring>();
+
+        if (directAuthoring != null)
+            return directAuthoring;
+
+        return prefabAsset.GetComponentInChildren<EnemyAuthoring>(true);
+    }
+
+    private void RefreshEnemyPrefabSelection()
+    {
+        RefreshAvailableEnemyPrefabs();
 
         if (activeDetailsSection == DetailsSectionType.ActivePreset)
         {
@@ -1043,9 +1150,17 @@ public sealed class EnemyMasterPresetsPanel
             return;
         }
 
-        // Refresh assignment status text.
         RefreshActiveStatus();
         RefreshTestUiStatus();
+    }
+
+    private void PingSelectedEnemyPrefab()
+    {
+        if (selectedEnemyPrefab == null)
+            return;
+
+        Selection.activeObject = selectedEnemyPrefab;
+        EditorGUIUtility.PingObject(selectedEnemyPrefab);
     }
 
     private void AssignPresetToPrefab()
@@ -1062,7 +1177,7 @@ public sealed class EnemyMasterPresetsPanel
             return;
         }
 
-        EnemyAuthoring authoring = selectedEnemyPrefab.GetComponent<EnemyAuthoring>();
+        EnemyAuthoring authoring = ResolveEnemyAuthoringInPrefab(selectedEnemyPrefab);
 
         if (authoring == null)
         {
@@ -1071,17 +1186,23 @@ public sealed class EnemyMasterPresetsPanel
         }
 
         SerializedObject serializedAuthoring = new SerializedObject(authoring);
-        SerializedProperty presetProperty = serializedAuthoring.FindProperty("masterPreset");
+        SerializedProperty masterPresetProperty = serializedAuthoring.FindProperty("masterPreset");
+        SerializedProperty brainPresetProperty = serializedAuthoring.FindProperty("brainPreset");
+        SerializedProperty advancedPatternPresetProperty = serializedAuthoring.FindProperty("advancedPatternPreset");
 
-        if (presetProperty == null)
+        if (masterPresetProperty == null || brainPresetProperty == null || advancedPatternPresetProperty == null)
         {
-            EditorUtility.DisplayDialog("Set Active Preset", "Property 'masterPreset' not found on EnemyAuthoring.", "OK");
+            EditorUtility.DisplayDialog("Set Active Preset",
+                                        "One or more preset properties are missing on EnemyAuthoring (masterPreset, brainPreset, advancedPatternPreset).",
+                                        "OK");
             return;
         }
 
         Undo.RecordObject(authoring, "Set Active Enemy Master Preset");
         serializedAuthoring.Update();
-        presetProperty.objectReferenceValue = selectedPreset;
+        masterPresetProperty.objectReferenceValue = selectedPreset;
+        brainPresetProperty.objectReferenceValue = selectedPreset.BrainPreset;
+        advancedPatternPresetProperty.objectReferenceValue = selectedPreset.AdvancedPatternPreset;
         serializedAuthoring.ApplyModifiedProperties();
         EditorUtility.SetDirty(authoring);
 
@@ -1222,8 +1343,8 @@ public sealed class EnemyMasterPresetsPanel
 
         selectedEnemyPrefab = reloadedPrefab;
 
-        if (enemyPrefabField != null)
-            enemyPrefabField.SetValueWithoutNotify(selectedEnemyPrefab);
+        if (enemyPrefabPopup != null)
+            enemyPrefabPopup.SetValueWithoutNotify(selectedEnemyPrefab);
 
         SaveSelectedPrefabState();
     }
@@ -1245,7 +1366,7 @@ public sealed class EnemyMasterPresetsPanel
             return;
         }
 
-        EnemyAuthoring authoring = selectedEnemyPrefab.GetComponent<EnemyAuthoring>();
+        EnemyAuthoring authoring = ResolveEnemyAuthoringInPrefab(selectedEnemyPrefab);
 
         if (authoring == null)
         {

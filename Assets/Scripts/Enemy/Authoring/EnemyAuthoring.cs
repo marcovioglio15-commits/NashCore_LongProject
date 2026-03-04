@@ -131,6 +131,11 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [SerializeField]
     [HideInInspector] private float visibleDistanceHysteresis = 6f;
 
+    [Tooltip(" fallback general priority tier used for steering right-of-way and visual overlap ordering.")]
+    [FormerlySerializedAs("visibilityPriorityTier")]
+    [SerializeField]
+    [HideInInspector] private int priorityTier;
+
     [Header("Visual References")]
     [Tooltip("Optional Animator used when visual mode is CompanionAnimator.")]
     [SerializeField] private Animator animatorComponent;
@@ -500,6 +505,32 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public int PriorityTier
+    {
+        get
+        {
+            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+
+            if (movementSettings != null)
+                return math.clamp(movementSettings.PriorityTier, -128, 128);
+
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings != null)
+                return math.clamp(visualSettings.VisibilityPriorityTier, -128, 128);
+
+            return math.clamp(priorityTier, -128, 128);
+        }
+    }
+
+    public int VisibilityPriorityTier
+    {
+        get
+        {
+            return PriorityTier;
+        }
+    }
+
     public Animator AnimatorComponent
     {
         get
@@ -648,6 +679,8 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
         if (visibleDistanceHysteresis < 0f)
             visibleDistanceHysteresis = 0f;
+
+        priorityTier = math.clamp(priorityTier, -128, 128);
     }
     #endregion
 
@@ -781,6 +814,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             SeparationRadius = math.max(0.1f, authoring.SeparationRadius),
             SeparationWeight = math.max(0f, authoring.SeparationWeight),
             BodyRadius = math.max(0.05f, authoring.BodyRadius),
+            PriorityTier = math.clamp(authoring.PriorityTier, -128, 128),
             ContactDamageEnabled = authoring.ContactDamageEnabled ? (byte)1 : (byte)0,
             ContactRadius = math.max(0f, authoring.ContactRadius),
             ContactAmountPerTick = math.max(0f, authoring.ContactAmountPerTick),
@@ -860,7 +894,8 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             GpuLoopDuration = math.max(0.05f, authoring.GpuAnimationLoopDuration),
             MaxVisibleDistance = math.max(0f, authoring.MaxVisibleDistance),
             VisibleDistanceHysteresis = math.max(0f, authoring.VisibleDistanceHysteresis),
-            UseDistanceCulling = authoring.EnableDistanceCulling ? (byte)1 : (byte)0
+            UseDistanceCulling = authoring.EnableDistanceCulling ? (byte)1 : (byte)0,
+            VisibilityPriorityTier = math.clamp(authoring.PriorityTier, -128, 128)
         });
 
         AddComponent(entity, new EnemyVisualRuntimeState
@@ -868,7 +903,8 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             AnimationTime = 0f,
             LastDistanceToPlayer = 0f,
             IsVisible = 1,
-            CompanionInitialized = 0
+            CompanionInitialized = 0,
+            AppliedVisibilityPriorityTier = int.MinValue
         });
 
         switch (bakedVisualMode)

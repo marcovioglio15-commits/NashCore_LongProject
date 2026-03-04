@@ -15,6 +15,7 @@ public struct EnemyData : IComponentData
     public float SeparationRadius;
     public float SeparationWeight;
     public float BodyRadius;
+    public int PriorityTier;
     public byte ContactDamageEnabled;
     public float ContactRadius;
     public float ContactAmountPerTick;
@@ -67,6 +68,7 @@ public struct EnemyVisualConfig : IComponentData
     public float MaxVisibleDistance;
     public float VisibleDistanceHysteresis;
     public byte UseDistanceCulling;
+    public int VisibilityPriorityTier;
 }
 
 /// <summary>
@@ -78,6 +80,7 @@ public struct EnemyVisualRuntimeState : IComponentData
     public float LastDistanceToPlayer;
     public byte IsVisible;
     public byte CompanionInitialized;
+    public int AppliedVisibilityPriorityTier;
 }
 
 /// <summary>
