@@ -24,6 +24,7 @@ public partial struct EnemySteeringSystem : ISystem
     private const float SeparationPredictionSpeedScale = 0.04f;
     private const float SeparationPredictionMaxSeconds = 0.55f;
     private const float PriorityApproachUrgencyWeight = 2.2f;
+    private const float SeparationUrgencyMaxBoost = 3.6f;
 
     private const float HighLodRadius = 16f;
     private const float MediumLodRadius = 34f;
@@ -100,6 +101,7 @@ public partial struct EnemySteeringSystem : ISystem
         NativeArray<float> bodyRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<int> priorityTiers = new NativeArray<int>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float3> planarVelocities = new NativeArray<float3>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<byte> wandererMovementFlags = new NativeArray<byte>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> separationRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<int2> cellCoordinates = new NativeArray<int2>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<int> enemyToEvaluatedIndex = new NativeArray<int>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -109,6 +111,7 @@ public partial struct EnemySteeringSystem : ISystem
         ComponentLookup<EnemyElementalRuntimeState> elementalRuntimeLookup = SystemAPI.GetComponentLookup<EnemyElementalRuntimeState>(true);
         ComponentLookup<EnemyShooterControlState> shooterControlLookup = SystemAPI.GetComponentLookup<EnemyShooterControlState>(true);
         ComponentLookup<EnemyCustomPatternMovementTag> customPatternMovementTagLookup = SystemAPI.GetComponentLookup<EnemyCustomPatternMovementTag>(true);
+        ComponentLookup<EnemyPatternConfig> patternConfigLookup = SystemAPI.GetComponentLookup<EnemyPatternConfig>(true);
 
         float maxSeparationRadius = 0.25f;
         float maxBodyRadius = 0.05f;
@@ -134,6 +137,18 @@ public partial struct EnemySteeringSystem : ISystem
             float3 planarVelocity = enemyRuntimeArray[index].Velocity;
             planarVelocity.y = 0f;
             planarVelocities[index] = planarVelocity;
+            wandererMovementFlags[index] = 0;
+
+            bool hasCustomPatternMovementTag = customPatternMovementTagLookup.HasComponent(enemyEntity);
+
+            if (hasCustomPatternMovementTag && patternConfigLookup.HasComponent(enemyEntity))
+            {
+                EnemyPatternConfig patternConfig = patternConfigLookup[enemyEntity];
+
+                if (patternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
+                    patternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd)
+                    wandererMovementFlags[index] = 1;
+            }
 
             if (bodyRadii[index] > maxBodyRadius)
                 maxBodyRadius = bodyRadii[index];
@@ -148,9 +163,7 @@ public partial struct EnemySteeringSystem : ISystem
 
             SteeringLodLevel lodLevel = EvaluateLod(playerPosition, enemyTransform.Position);
             bool shouldEvaluate = ShouldEvaluateLod(lodLevel, frameCount, enemyEntity.Index);
-            bool hasCustomPatternMovement = customPatternMovementTagLookup.HasComponent(enemyEntity);
-
-            if (shouldEvaluate && hasCustomPatternMovement == false)
+            if (shouldEvaluate && hasCustomPatternMovementTag == false)
             {
                 int evaluatedIndex = evaluatedEnemyIndices.Length;
                 enemyToEvaluatedIndex[index] = evaluatedIndex;
@@ -179,6 +192,7 @@ public partial struct EnemySteeringSystem : ISystem
         int evaluatedCount = evaluatedEnemyIndices.Length;
         NativeArray<float3> approachResults = new NativeArray<float3>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float3> separationResults = new NativeArray<float3>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> separationUrgencyResults = new NativeArray<float>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
         if (evaluatedCount > 0)
         {
@@ -200,10 +214,12 @@ public partial struct EnemySteeringSystem : ISystem
                 BodyRadii = bodyRadii,
                 PriorityTiers = priorityTiers,
                 Velocities = planarVelocities,
+                WandererMovementFlags = wandererMovementFlags,
                 SeparationRadii = separationRadii,
                 CellCoordinates = cellCoordinates,
                 CellMap = cellMap,
-                Results = separationResults
+                Results = separationResults,
+                UrgencyResults = separationUrgencyResults
             };
 
             JobHandle approachHandle = approachJob.Schedule(evaluatedCount, 64, state.Dependency);
@@ -243,7 +259,11 @@ public partial struct EnemySteeringSystem : ISystem
                 float3 desiredVelocity = approachResults[evaluatedIndex];
 
                 if (evaluatedSeparationEnabled[evaluatedIndex] != 0)
-                    desiredVelocity += separationResults[evaluatedIndex] * separationWeight;
+                {
+                    float urgency = math.saturate(separationUrgencyResults[evaluatedIndex]);
+                    float urgencyBoost = math.lerp(1f, SeparationUrgencyMaxBoost, urgency);
+                    desiredVelocity += separationResults[evaluatedIndex] * separationWeight * urgencyBoost;
+                }
 
                 float maxSpeed = math.max(0f, speedData[enemyIndex].y);
                 float desiredSpeed = math.length(desiredVelocity);
@@ -333,6 +353,7 @@ public partial struct EnemySteeringSystem : ISystem
         bodyRadii.Dispose();
         priorityTiers.Dispose();
         planarVelocities.Dispose();
+        wandererMovementFlags.Dispose();
         separationRadii.Dispose();
         cellCoordinates.Dispose();
         enemyToEvaluatedIndex.Dispose();
@@ -340,6 +361,7 @@ public partial struct EnemySteeringSystem : ISystem
         evaluatedSeparationEnabled.Dispose();
         approachResults.Dispose();
         separationResults.Dispose();
+        separationUrgencyResults.Dispose();
         cellMap.Dispose();
     }
     #endregion
@@ -462,10 +484,12 @@ public partial struct EnemySteeringSystem : ISystem
         [ReadOnly] public NativeArray<float> BodyRadii;
         [ReadOnly] public NativeArray<int> PriorityTiers;
         [ReadOnly] public NativeArray<float3> Velocities;
+        [ReadOnly] public NativeArray<byte> WandererMovementFlags;
         [ReadOnly] public NativeArray<float> SeparationRadii;
         [ReadOnly] public NativeArray<int2> CellCoordinates;
         [ReadOnly] public NativeParallelMultiHashMap<int, int> CellMap;
         public NativeArray<float3> Results;
+        public NativeArray<float> UrgencyResults;
 
         public void Execute(int index)
         {
@@ -484,6 +508,7 @@ public partial struct EnemySteeringSystem : ISystem
             float selfSpeed = math.length(selfVelocity);
             int2 cell = CellCoordinates[enemyIndex];
             float3 separation = float3.zero;
+            float highestUrgency = 0f;
 
             for (int offsetX = -1; offsetX <= 1; offsetX++)
             {
@@ -508,12 +533,20 @@ public partial struct EnemySteeringSystem : ISystem
                         float neighborSpeed = math.length(neighborVelocity);
                         float neighborBodyRadius = math.max(0.01f, BodyRadii[neighborIndex]);
                         int neighborPriorityTier = PriorityTiers[neighborIndex];
+                        bool neighborIsWanderer = WandererMovementFlags[neighborIndex] != 0;
                         float priorityClearanceMultiplier = ResolvePriorityClearanceMultiplier(selfPriorityTier, neighborPriorityTier);
                         float hardClearanceDistance = (bodyRadius + neighborBodyRadius + SeparationClearancePadding) * priorityClearanceMultiplier;
+
+                        if (neighborIsWanderer)
+                            hardClearanceDistance *= 1.18f;
+
                         float influenceRadius = math.max(separationRadius, hardClearanceDistance * 1.35f);
 
                         if (selfPriorityTier < neighborPriorityTier)
                             influenceRadius = math.max(influenceRadius, hardClearanceDistance * 1.65f);
+
+                        if (neighborIsWanderer)
+                            influenceRadius = math.max(influenceRadius, hardClearanceDistance * 1.95f);
 
                         float relativeSpeed = math.length(selfVelocity - neighborVelocity);
                         float predictionSeconds = math.clamp(SeparationPredictionBaseSeconds + relativeSpeed * SeparationPredictionSpeedScale,
@@ -571,13 +604,43 @@ public partial struct EnemySteeringSystem : ISystem
                         }
 
                         float priorityWeight = ResolvePriorityAvoidanceWeight(selfPriorityTier, neighborPriorityTier);
+
+                        if (neighborIsWanderer)
+                            priorityWeight *= 1.55f;
+
                         separation += direction * math.max(0f, weight) * priorityWeight;
+
+                        float urgencyDistanceGate = math.max(hardClearanceDistance, influenceRadius * 0.8f);
+                        float urgency = math.saturate((urgencyDistanceGate - distance) / math.max(0.01f, urgencyDistanceGate));
+
+                        if (neighborIsWanderer)
+                            urgency = math.max(urgency, math.saturate((influenceRadius - distance) / math.max(0.01f, influenceRadius)));
+
+                        if (selfPriorityTier < neighborPriorityTier)
+                        {
+                            float priorityGap = math.min(4f, (float)math.max(1, neighborPriorityTier - selfPriorityTier));
+                            urgency *= 1f + priorityGap * 0.35f;
+                        }
+
+                        float3 toNeighborDirectionForUrgency = math.normalizesafe(Positions[neighborIndex] - position, float3.zero);
+                        float closingSpeedForUrgency = math.dot(selfVelocity - neighborVelocity, toNeighborDirectionForUrgency);
+
+                        if (closingSpeedForUrgency > 0f)
+                        {
+                            float speedNormalization = math.max(0.1f, selfSpeed + neighborSpeed);
+                            float closingFactor = math.saturate(closingSpeedForUrgency / speedNormalization);
+                            urgency = math.max(urgency, math.saturate(urgency + closingFactor * (neighborIsWanderer ? 0.85f : 0.55f)));
+                        }
+
+                        if (urgency > highestUrgency)
+                            highestUrgency = urgency;
                     }
                     while (CellMap.TryGetNextValue(out neighborIndex, ref iterator));
                 }
             }
 
             Results[index] = separation;
+            UrgencyResults[index] = math.saturate(highestUrgency);
         }
 
         private static float3 ResolveDeterministicSeparationDirection(int enemyIndex, int neighborIndex)

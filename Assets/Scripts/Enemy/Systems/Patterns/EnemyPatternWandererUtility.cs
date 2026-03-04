@@ -109,6 +109,9 @@ public static class EnemyPatternWandererUtility
                 return float3.zero;
             }
 
+            if (patternRuntimeState.WanderRetryTimer > 0f)
+                return float3.zero;
+
             float3 targetDirection = toTarget / math.max(distanceToTarget, DirectionEpsilon);
             float desiredSpeed = maxSpeed > 0f ? math.min(moveSpeed, maxSpeed) : moveSpeed;
             float3 desiredVelocity = targetDirection * math.max(0f, desiredSpeed);
@@ -126,9 +129,8 @@ public static class EnemyPatternWandererUtility
                                       predictionTime,
                                       in occupancyContext))
             {
-                patternRuntimeState.WanderHasTarget = 0;
-                patternRuntimeState.WanderWaitTimer = 0f;
-                patternRuntimeState.WanderRetryTimer = 0f;
+                float yieldRetrySeconds = math.max(0.02f, patternConfig.BasicBlockedPathRetryDelay * 0.45f);
+                patternRuntimeState.WanderRetryTimer = math.max(patternRuntimeState.WanderRetryTimer, yieldRetrySeconds);
                 return float3.zero;
             }
 
@@ -160,7 +162,13 @@ public static class EnemyPatternWandererUtility
             patternRuntimeState.LastWanderDirectionAngle = selectedDirectionAngle;
             patternRuntimeState.WanderInitialized = 1;
             patternRuntimeState.WanderHasTarget = 1;
-            return float3.zero;
+
+            float3 toTarget = selectedTarget - enemyPosition;
+            toTarget.y = 0f;
+            float distanceToTarget = math.length(toTarget);
+            float3 targetDirection = toTarget / math.max(distanceToTarget, DirectionEpsilon);
+            float desiredSpeed = maxSpeed > 0f ? math.min(moveSpeed, maxSpeed) : moveSpeed;
+            return targetDirection * math.max(0f, desiredSpeed);
         }
 
         patternRuntimeState.WanderRetryTimer = math.max(0f, patternConfig.BasicBlockedPathRetryDelay);
