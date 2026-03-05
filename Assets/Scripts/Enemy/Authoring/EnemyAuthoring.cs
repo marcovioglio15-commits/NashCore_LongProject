@@ -141,6 +141,18 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [SerializeField]
     [HideInInspector] private float steeringAggressiveness = 1f;
 
+    [Tooltip(" fallback one-shot VFX prefab spawned each time this enemy receives a projectile hit.")]
+    [SerializeField]
+    [HideInInspector] private GameObject hitVfxPrefab;
+
+    [Tooltip(" fallback hit VFX lifetime in seconds used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float hitVfxLifetimeSeconds = 0.35f;
+
+    [Tooltip(" fallback hit VFX scale multiplier used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float hitVfxScaleMultiplier = 1f;
+
     [Header("Visual References")]
     [Tooltip("Optional Animator used when visual mode is CompanionAnimator.")]
     [SerializeField] private Animator animatorComponent;
@@ -562,6 +574,45 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public GameObject HitVfxPrefab
+    {
+        get
+        {
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return hitVfxPrefab;
+
+            return visualSettings.HitVfxPrefab;
+        }
+    }
+
+    public float HitVfxLifetimeSeconds
+    {
+        get
+        {
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return hitVfxLifetimeSeconds;
+
+            return visualSettings.HitVfxLifetimeSeconds;
+        }
+    }
+
+    public float HitVfxScaleMultiplier
+    {
+        get
+        {
+            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+
+            if (visualSettings == null)
+                return hitVfxScaleMultiplier;
+
+            return visualSettings.HitVfxScaleMultiplier;
+        }
+    }
+
     public Animator AnimatorComponent
     {
         get
@@ -723,6 +774,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
             steeringAggressiveness = 1f;
         else
             steeringAggressiveness = math.clamp(steeringAggressiveness, 0f, 2.5f);
+
+        if (float.IsNaN(hitVfxLifetimeSeconds) || float.IsInfinity(hitVfxLifetimeSeconds) || hitVfxLifetimeSeconds < 0.05f)
+            hitVfxLifetimeSeconds = 0.05f;
+
+        if (float.IsNaN(hitVfxScaleMultiplier) || float.IsInfinity(hitVfxScaleMultiplier) || hitVfxScaleMultiplier < 0.01f)
+            hitVfxScaleMultiplier = 0.01f;
     }
     #endregion
 
@@ -941,6 +998,14 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             VisibilityPriorityTier = math.clamp(authoring.PriorityTier, -128, 128)
         });
 
+        Entity hitVfxPrefabEntity = ResolveHitVfxPrefabEntity(authoring);
+        AddComponent(entity, new EnemyHitVfxConfig
+        {
+            PrefabEntity = hitVfxPrefabEntity,
+            LifetimeSeconds = math.max(0.05f, authoring.HitVfxLifetimeSeconds),
+            ScaleMultiplier = math.max(0.01f, authoring.HitVfxScaleMultiplier)
+        });
+
         AddComponent(entity, new EnemyVisualRuntimeState
         {
             AnimationTime = 0f,
@@ -1125,6 +1190,58 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             return true;
 
         if (projectilePrefabObject.GetComponent<PlayerAuthoring>() != null)
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Resolves and validates the enemy hit-react VFX prefab, then converts it to an entity reference.
+    /// </summary>
+    /// <param name="authoring">Source authoring component that owns fallback and preset-derived visual settings.</param>
+    /// <returns>Converted prefab entity, or Entity.Null when no valid prefab is assigned.</returns>
+    private Entity ResolveHitVfxPrefabEntity(EnemyAuthoring authoring)
+    {
+        if (authoring == null)
+            return Entity.Null;
+
+        GameObject candidatePrefab = authoring.HitVfxPrefab;
+
+        if (candidatePrefab == null)
+            return Entity.Null;
+
+        if (IsInvalidHitVfxPrefab(authoring, candidatePrefab))
+        {
+#if UNITY_EDITOR
+            Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid enemy hit VFX prefab '{0}' on '{1}'. Assign a prefab asset without EnemyAuthoring or PlayerAuthoring components.", candidatePrefab.name, authoring.name), authoring);
+#endif
+            return Entity.Null;
+        }
+
+        return GetEntity(candidatePrefab, TransformUsageFlags.Dynamic);
+    }
+
+    /// <summary>
+    /// Validates that a candidate hit VFX prefab can be safely converted and instantiated at runtime.
+    /// </summary>
+    /// <param name="authoring">Owning enemy authoring component.</param>
+    /// <param name="hitVfxPrefabObject">Candidate prefab assigned to the hit VFX slot.</param>
+    /// <returns>True when the prefab is invalid and must be ignored.</returns>
+    private static bool IsInvalidHitVfxPrefab(EnemyAuthoring authoring, GameObject hitVfxPrefabObject)
+    {
+        if (hitVfxPrefabObject == null)
+            return true;
+
+        if (authoring != null && hitVfxPrefabObject == authoring.gameObject)
+            return true;
+
+        if (hitVfxPrefabObject.scene.IsValid())
+            return true;
+
+        if (hitVfxPrefabObject.GetComponent<EnemyAuthoring>() != null)
+            return true;
+
+        if (hitVfxPrefabObject.GetComponent<PlayerAuthoring>() != null)
             return true;
 
         return false;

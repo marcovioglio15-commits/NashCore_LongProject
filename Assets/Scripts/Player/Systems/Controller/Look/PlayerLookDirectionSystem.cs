@@ -1,6 +1,8 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 #region Systems
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
@@ -31,6 +33,25 @@ public partial struct PlayerLookDirectionSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+        bool useMousePointerLook = PlayerInputRuntime.LookActionUsesMousePointer;
+        Camera camera = null;
+        float2 mouseScreenPosition = float2.zero;
+
+        if (useMousePointerLook)
+        {
+            camera = Camera.main;
+            Mouse mouse = Mouse.current;
+
+            if (camera != null && mouse != null)
+            {
+                Vector2 mousePosition = mouse.position.ReadValue();
+                mouseScreenPosition = new float2(mousePosition.x, mousePosition.y);
+            }
+            else
+            {
+                useMousePointerLook = false;
+            }
+        }
 
         // Iterate over all player entities with the required components
         // (input, movement, look state, controller config, and transform)
@@ -47,6 +68,24 @@ public partial struct PlayerLookDirectionSystem : ISystem
         {
             // Retrieve the look configuration from the controller config
             ref LookConfig lookConfig = ref controllerConfig.ValueRO.Config.Value.Look;
+            float3 playerForward = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
+            float3 fallbackDirection = lookState.ValueRO.CurrentDirection;
+
+            if (math.lengthsq(fallbackDirection) < 1e-6f)
+                fallbackDirection = playerForward;
+
+            if (useMousePointerLook)
+            {
+                if (TryResolveMousePointerDirection(camera,
+                                                    mouseScreenPosition,
+                                                    localTransform.ValueRO.Position,
+                                                    fallbackDirection,
+                                                    out float3 pointerDirection))
+                {
+                    lookState.ValueRW.DesiredDirection = pointerDirection;
+                    continue;
+                }
+            }
 
             // Handle the FollowMovementDirection mode
             if (lookConfig.DirectionsMode == LookDirectionsMode.FollowMovementDirection)
@@ -75,14 +114,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
             float2 lookInput = inputState.ValueRO.Look;
             float deadZone = lookConfig.Values.RotationDeadZone;
             float releaseGraceSeconds = math.max(0f, lookConfig.Values.DigitalReleaseGraceSeconds);
-
-            float3 playerForward = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
             PlayerControllerMath.GetReferenceBasis(ReferenceFrame.WorldForward, playerForward, new float3(0f, 0f, 1f), false, out float3 forward, out float3 right);
-
-            float3 fallbackDirection = lookState.ValueRO.CurrentDirection;
-
-            if (math.lengthsq(fallbackDirection) < 1e-6f)
-                fallbackDirection = forward;
 
             float2 resolvedInput = lookInput;
 
@@ -146,6 +178,48 @@ public partial struct PlayerLookDirectionSystem : ISystem
     #endregion
 
     #region Helpers
+    /// <summary>
+    /// Resolves a planar look direction from the mouse pointer by intersecting a camera ray with the player's Y plane.
+    /// </summary>
+    /// <param name="camera">Active camera used to project the pointer ray into world space.</param>
+    /// <param name="mouseScreenPosition">Current mouse position in screen-space pixels.</param>
+    /// <param name="playerPosition">World position of the player entity.</param>
+    /// <param name="fallbackDirection">Fallback planar direction used when normalization requires a safe default.</param>
+    /// <param name="desiredDirection">Resolved normalized planar look direction.</param>
+    /// <returns>True when the ray/plane intersection yields a valid non-zero planar direction.</returns>
+    private static bool TryResolveMousePointerDirection(Camera camera,
+                                                        float2 mouseScreenPosition,
+                                                        float3 playerPosition,
+                                                        float3 fallbackDirection,
+                                                        out float3 desiredDirection)
+    {
+        desiredDirection = PlayerControllerMath.NormalizePlanar(fallbackDirection, new float3(0f, 0f, 1f));
+
+        if (camera == null)
+            return false;
+
+        Ray mouseRay = camera.ScreenPointToRay(new Vector3(mouseScreenPosition.x, mouseScreenPosition.y, 0f));
+        float denominator = mouseRay.direction.y;
+
+        if (math.abs(denominator) < 1e-5f)
+            return false;
+
+        float hitDistance = (playerPosition.y - mouseRay.origin.y) / denominator;
+
+        if (hitDistance <= 0f)
+            return false;
+
+        float3 hitPoint = mouseRay.origin + mouseRay.direction * hitDistance;
+        float3 pointerDirection = hitPoint - playerPosition;
+        pointerDirection.y = 0f;
+
+        if (math.lengthsq(pointerDirection) < 1e-6f)
+            return false;
+
+        desiredDirection = math.normalizesafe(pointerDirection, desiredDirection);
+        return true;
+    }
+
     private static float3 GetSnappedDirectionFromWorld(float3 worldDirection, float3 forward, float3 right, int directionCount, float offsetDegrees)
     {
         float3 planar = PlayerControllerMath.NormalizePlanar(worldDirection, forward);

@@ -888,6 +888,21 @@ public sealed class EnemyBrainPresetsPanel
                          "visibleDistanceHysteresis",
                          "Visible Distance Hysteresis",
                          "Additional distance band used to avoid visual popping when crossing the culling boundary.");
+        AddPropertyField(container,
+                         visualProperty,
+                         "hitVfxPrefab",
+                         "Hit VFX Prefab",
+                         "Optional one-shot VFX prefab spawned every time this enemy receives a projectile hit.");
+        AddPropertyField(container,
+                         visualProperty,
+                         "hitVfxLifetimeSeconds",
+                         "Hit VFX Lifetime Seconds",
+                         "Lifetime in seconds assigned to each spawned hit VFX instance.");
+        AddPropertyField(container,
+                         visualProperty,
+                         "hitVfxScaleMultiplier",
+                         "Hit VFX Scale Multiplier",
+                         "Uniform scale multiplier applied to the spawned hit VFX instance.");
         return container;
     }
 
