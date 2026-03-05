@@ -99,6 +99,16 @@ public struct EnemyVisualGpuBaked : IComponentData
 }
 
 /// <summary>
+/// Stores hit-react VFX settings used when an enemy is damaged by a projectile.
+/// </summary>
+public struct EnemyHitVfxConfig : IComponentData
+{
+    public Entity PrefabEntity;
+    public float LifetimeSeconds;
+    public float ScaleMultiplier;
+}
+
+/// <summary>
 /// Stores the entity that owns the world-space status bars companion view for an enemy.
 /// </summary>
 public struct EnemyWorldSpaceStatusBarsLink : IComponentData

@@ -400,6 +400,15 @@ public sealed class EnemyBrainVisualSettings
 
     [Tooltip("Relative visibility priority used when enemies overlap visually. Higher values render on top where supported by renderer path.")]
     [SerializeField] private int visibilityPriorityTier;
+
+    [Tooltip("Optional one-shot VFX prefab spawned every time this enemy receives a projectile hit.")]
+    [SerializeField] private GameObject hitVfxPrefab;
+
+    [Tooltip("Lifetime in seconds assigned to each spawned hit VFX instance.")]
+    [SerializeField] private float hitVfxLifetimeSeconds = 0.35f;
+
+    [Tooltip("Uniform scale multiplier applied to the spawned hit VFX instance.")]
+    [SerializeField] private float hitVfxScaleMultiplier = 1f;
     #endregion
 
     #endregion
@@ -460,6 +469,30 @@ public sealed class EnemyBrainVisualSettings
             return visibilityPriorityTier;
         }
     }
+
+    public GameObject HitVfxPrefab
+    {
+        get
+        {
+            return hitVfxPrefab;
+        }
+    }
+
+    public float HitVfxLifetimeSeconds
+    {
+        get
+        {
+            return hitVfxLifetimeSeconds;
+        }
+    }
+
+    public float HitVfxScaleMultiplier
+    {
+        get
+        {
+            return hitVfxScaleMultiplier;
+        }
+    }
     #endregion
 
     #region Methods
@@ -491,6 +524,12 @@ public sealed class EnemyBrainVisualSettings
             visibleDistanceHysteresis = 0f;
 
         visibilityPriorityTier = Mathf.Clamp(visibilityPriorityTier, -128, 128);
+
+        if (float.IsNaN(hitVfxLifetimeSeconds) || float.IsInfinity(hitVfxLifetimeSeconds) || hitVfxLifetimeSeconds < 0.05f)
+            hitVfxLifetimeSeconds = 0.05f;
+
+        if (float.IsNaN(hitVfxScaleMultiplier) || float.IsInfinity(hitVfxScaleMultiplier) || hitVfxScaleMultiplier < 0.01f)
+            hitVfxScaleMultiplier = 0.01f;
     }
     #endregion
 

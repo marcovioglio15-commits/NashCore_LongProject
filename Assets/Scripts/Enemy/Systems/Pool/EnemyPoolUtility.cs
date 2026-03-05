@@ -149,6 +149,14 @@ public static class EnemyPoolUtility
                 AppliedVisibilityPriorityTier = int.MinValue
             });
 
+        if (entityManager.HasComponent<EnemyHitVfxConfig>(enemyEntity) == false)
+            entityManager.AddComponentData(enemyEntity, new EnemyHitVfxConfig
+            {
+                PrefabEntity = Entity.Null,
+                LifetimeSeconds = 0.35f,
+                ScaleMultiplier = 1f
+            });
+
         if (entityManager.HasComponent<EnemyActive>(enemyEntity) == false)
             entityManager.AddComponent<EnemyActive>(enemyEntity);
 

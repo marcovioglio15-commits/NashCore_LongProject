@@ -602,6 +602,7 @@ public partial struct EnemySteeringSystem : ISystem
                 return;
             }
 
+            // Early outs and data retrieval
             int enemyIndex = EvaluatedEnemyIndices[index];
             float separationRadius = math.max(0.01f, SeparationRadii[enemyIndex]);
             float bodyRadius = math.max(0.01f, BodyRadii[enemyIndex]);
@@ -614,6 +615,7 @@ public partial struct EnemySteeringSystem : ISystem
             float3 separation = float3.zero;
             float highestUrgency = 0f;
 
+            // Iterate neighbors in surrounding cells
             for (int offsetX = -1; offsetX <= 1; offsetX++)
             {
                 for (int offsetY = -1; offsetY <= 1; offsetY++)
@@ -630,6 +632,10 @@ public partial struct EnemySteeringSystem : ISystem
                         if (neighborIndex == enemyIndex)
                             continue;
 
+                        // The separation behavior is based on a combination of hard clearance and a softer influence radius,
+                        // both of which are scaled by the aggressiveness settings to allow for more dynamic and varied interactions.
+                        // The prediction of future positions based on current velocities adds an anticipatory element to the separation,
+                        // making it more effective at avoiding collisions in fast-paced scenarios.
                         float3 delta = position - Positions[neighborIndex];
                         delta.y = 0f;
                         float sqrDistance = math.lengthsq(delta);
@@ -664,6 +670,7 @@ public partial struct EnemySteeringSystem : ISystem
                         if (selfPriorityTier < neighborPriorityTier)
                             predictionSeconds = math.min(SeparationPredictionMaxSeconds, predictionSeconds * 1.3f);
 
+                        // Predict future positions based on current velocity to create a more dynamic and anticipatory separation behavior.
                         float3 predictedSelfPosition = position + selfVelocity * predictionSeconds;
                         float3 predictedNeighborPosition = Positions[neighborIndex] + neighborVelocity * predictionSeconds;
                         float3 predictedDelta = predictedSelfPosition - predictedNeighborPosition;
@@ -722,11 +729,15 @@ public partial struct EnemySteeringSystem : ISystem
                         if (selfPriorityTier < neighborPriorityTier)
                             sideStepWeight *= 1.25f;
 
+                        // The lateral direction is determined by the relative movement of the two enemies,
+                        // which encourages them to sidestep rather than just slow down when they are on a collision course.
+                        // The deterministic fallback ensures consistent behavior when movement is minimal or perfectly aligned.
                         float3 lateralDirection = ResolveLateralAvoidanceDirection(direction,
                                                                                    selfVelocity,
                                                                                    neighborVelocity,
                                                                                    enemyIndex,
                                                                                    neighborIndex);
+
                         float3 avoidanceDirection = math.normalizesafe(direction + lateralDirection * sideStepWeight, direction);
                         separation += avoidanceDirection * math.max(0f, weight) * priorityWeight;
 
@@ -752,6 +763,8 @@ public partial struct EnemySteeringSystem : ISystem
                             urgency = math.max(urgency, math.saturate(urgency + closingFactor * (neighborIsWanderer ? 0.85f : 0.55f)));
                         }
 
+                        // The aggressiveness settings of the enemies influence not only the strength of the separation response but also the urgency,
+                        // allowing for more dynamic interactions where more aggressive enemies will react more strongly and urgently to potential collisions.
                         urgency *= ResolveAggressivenessScale(selfSteeringAggressiveness, 0.85f, 1.2f);
 
                         if (urgency > highestUrgency)
