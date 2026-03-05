@@ -34,8 +34,8 @@ MonoBehaviour:
     contactAmountPerTick: 5
     contactTickInterval: 0.75
     areaDamageEnabled: 1
-    areaRadius: 2.25
-    areaAmountPerTickPercent: 2
+    areaRadius: 0
+    areaAmountPerTickPercent: 0
     areaTickInterval: 1
   healthStatistics:
     maxHealth: 5

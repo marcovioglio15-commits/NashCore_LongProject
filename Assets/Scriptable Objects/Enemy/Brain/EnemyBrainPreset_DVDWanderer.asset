@@ -17,8 +17,8 @@ MonoBehaviour:
   description: 
   version: 1.0.0
   movement:
-    moveSpeed: 5
-    maxSpeed: 5
+    moveSpeed: 10
+    maxSpeed: 10
     acceleration: 8
     deceleration: 8
     rotationSpeedDegreesPerSecond: 0
@@ -34,8 +34,8 @@ MonoBehaviour:
     contactAmountPerTick: 5
     contactTickInterval: 0.75
     areaDamageEnabled: 1
-    areaRadius: 2.25
-    areaAmountPerTickPercent: 2
+    areaRadius: 0
+    areaAmountPerTickPercent: 0
     areaTickInterval: 1
   healthStatistics:
     maxHealth: 8
