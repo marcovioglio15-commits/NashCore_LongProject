@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 Shader "Cel Shader/Toon Diffuse"
 
 
@@ -10,6 +12,8 @@ Shader "Cel Shader/Toon Diffuse"
 
 	{
 		_MainTex("Texture", 2D) = "white" {}
+		[NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {} //NEW
+		_BumpScale ("Bump Scale", Range(0,2)) = 1 //NEW
 		_AmbientColor("Ambient Color", Color) = (0,0,0,1)
 		_AmbientColorIntensity("Ambient Color Intensity", Range(0,5)) = 0.5
 		_ShadowSoftness("Shadow Softness", Range(0,0.5)) = 0.1
@@ -58,7 +62,23 @@ Shader "Cel Shader/Toon Diffuse"
 				float3 normal : NORMAL;
 			};
 
+			struct VertexData //NEW
+			{
+				float4 position : POSITION;
+				float3 normal : NORMAL;
+				float2 uv : TEXCOORD0;
+			};
+
+			struct Interpolators  //NEW
+			{
+				float4 position : SV_POSITION;
+				float2 uv : TEXCOORD0;
+				float3 normal : TEXCOORD1;
+			};
+
 			sampler _MainTex;
+			sampler _NormalMap; //NEW
+			float _BumpScale; //NEW
 			float4 _MainTex_ST;
 			float4 _AmbientColor;
 			float _AmbientColorIntensity;
@@ -66,6 +86,15 @@ Shader "Cel Shader/Toon Diffuse"
 			float _ShadowScatter;
 			float _ShadowRangeMin;
 			float _ShadowRangeMax;
+
+			Interpolators ToonNormalMap (v2f v) //NEW
+			{
+				Interpolators i;
+				i.uv = TRANSFORM_TEX(v.uv, _MainTex);
+				i.position = UnityObjectToClipPos(v.vertex);
+				i.normal = v.normal;
+				return i;
+			}
 
 			v2f vert(appdata v)
 			{
@@ -78,6 +107,16 @@ Shader "Cel Shader/Toon Diffuse"
 				return o;
 			}
 
+			void InitializeFragmentNormal (inout Interpolators i) //NEW
+				{
+					//i.normal = UnpackScaleNormal (tex2D(_NormalMap, i.uv), _BumpScale);
+					i.normal.xy = tex2D(_NormalMap, i.uv).wy * 2 - 1;
+					i.normal.xy *= _BumpScale;
+					i.normal.z = sqrt(1 - saturate(dot(i.normal.xy, i.normal.xy)));
+					i.normal = i.normal.xzy;
+					i.normal = normalize(i.normal);
+				}
+
 			// inverse lerp + lerp = REMAP node in Shader Graph.
 
 			// create inverse lerp function to use for Remap:
@@ -89,11 +128,19 @@ Shader "Cel Shader/Toon Diffuse"
 
 			fixed4 frag(v2f i) : SV_Target
 			{
+
 				float shadowScatter = _ShadowScatter / 50; // dividing shadowScatter value to have more precise control over the slider in inspector.
 				float3 lightDir = _WorldSpaceLightPos0.xyz; // getting the world space light (Directional Light in scene).
 
+				// sample the Texture
+				fixed4 col = tex2D(_MainTex, i.uv); //CHANGED POSITION
+
+				i = ToonNormalMap (i); //NEW
+				InitializeFragmentNormal(i); //NEW
+
 				float ramp = dot(lightDir, i.normal); // dot product between the Directional Light and the object's normal vector.
 
+				
 				// REMAP of the dot product:
 				float remapIn = invLerp(-1, 1, ramp);
 				float remapOut = lerp(0, 1, remapIn);
@@ -105,10 +152,7 @@ Shader "Cel Shader/Toon Diffuse"
 				// REMAP of the shadowFloor:
 				float shadowDivide2 = 1 / shadowScatter;
 				float shadowRemapIn = invLerp(shadowDivide2, 0, shadowFloor);
-				float shadowRemapOut = lerp(_ShadowRangeMin, _ShadowRangeMax, shadowRemapIn);
-				
-				// sample the Texture
-				fixed4 col = tex2D(_MainTex, i.uv);
+				float shadowRemapOut = lerp(_ShadowRangeMin, _ShadowRangeMax, shadowRemapIn);			
 
 				// smoothstep between the shadow remap and the shadow softness + adding the ambient color:
 				float3 lighting = smoothstep(0, _ShadowSoftness, shadowRemapOut) + (_AmbientColor * _AmbientColorIntensity);
