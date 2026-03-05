@@ -3452,9 +3452,9 @@ MonoBehaviour:
       useOverridePayload: 1
       overridePayload:
         holdCharge:
-          requiredCharge: 80
-          maximumCharge: 120
-          chargeRatePerSecond: 140
+          requiredCharge: 90
+          maximumCharge: 90
+          chargeRatePerSecond: 30
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -3595,7 +3595,7 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
     - moduleId: Module_GateResource
       stage: 2
-      isEnabled: 1
+      isEnabled: 0
       useOverridePayload: 1
       overridePayload:
         holdCharge:
@@ -4660,12 +4660,12 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 100
-          activationCost: 30
+          maximumEnergy: 50
+          activationCost: 50
           maintenanceCostPerSecond: 0
-          minimumActivationEnergyPercent: 0
-          chargeType: 0
-          chargePerTrigger: 25
+          minimumActivationEnergyPercent: 100
+          chargeType: 1
+          chargePerTrigger: 1
           cooldownSeconds: 1
         suppressShooting:
           suppressBaseShootingWhileActive: 1
@@ -4796,7 +4796,7 @@ MonoBehaviour:
     - moduleId: Module_Dash
       stage: 4
       isEnabled: 1
-      useOverridePayload: 0
+      useOverridePayload: 1
       overridePayload:
         holdCharge:
           requiredCharge: 500
@@ -4862,10 +4862,10 @@ MonoBehaviour:
           damage: 120
           affectAllEnemiesInRadius: 1
         dash:
-          distance: 6
-          duration: 0.18
-          speedTransitionInSeconds: 0.06
-          speedTransitionOutSeconds: 0.08
+          distance: 3
+          duration: 0.1
+          speedTransitionInSeconds: 0.01
+          speedTransitionOutSeconds: 0.01
           grantsInvulnerability: 1
           invulnerabilityExtraTime: 0.1
         bulletTime:
@@ -7555,7 +7555,7 @@ MonoBehaviour:
   secondaryActivePowerUpId: ActiveBasicDash
   equippedPassivePowerUpIds:
   - PassiveEnemiesExplodeOnDeath
-  - PassiveShotgun
+  - PassiveBouncingProjectiles
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT
