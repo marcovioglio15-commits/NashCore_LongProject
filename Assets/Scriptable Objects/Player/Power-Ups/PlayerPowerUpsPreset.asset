@@ -7554,7 +7554,6 @@ MonoBehaviour:
   primaryActivePowerUpId: ActiveChargeShot
   secondaryActivePowerUpId: ActiveBasicDash
   equippedPassivePowerUpIds:
-  - PassiveEnemiesExplodeOnDeath
   - PassiveShotgun
   passiveTools:
   - commonData:

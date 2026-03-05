@@ -48,3 +48,6 @@ MonoBehaviour:
     maxVisibleDistance: 55
     visibleDistanceHysteresis: 6
     visibilityPriorityTier: 1
+    hitVfxPrefab: {fileID: 0}
+    hitVfxLifetimeSeconds: 0.35
+    hitVfxScaleMultiplier: 1
