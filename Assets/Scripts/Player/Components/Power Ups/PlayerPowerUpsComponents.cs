@@ -5,14 +5,7 @@ using UnityEngine;
 public enum PlayerPowerUpCheatCommandType
 {
     None = 0,
-    RefillEnergy = 1,
-    ResetCooldowns = 2,
-    SwapActiveSlots = 3,
-    SetPrimaryActiveKind = 4,
-    SetSecondaryActiveKind = 5,
-    AddPassiveByKind = 6,
-    RemovePassiveByKind = 7,
-    ClearPassives = 8
+    ApplyPresetByIndex = 1
 }
 
 /// <summary>
@@ -41,8 +34,26 @@ public struct PlayerPowerUpsState : IComponentData
 public struct PlayerPowerUpCheatCommand : IBufferElementData
 {
     public PlayerPowerUpCheatCommandType CommandType;
-    public ActiveToolKind ActiveKind;
-    public PassiveToolKind PassiveKind;
+    public int PresetIndex;
+}
+
+/// <summary>
+/// Runtime snapshot metadata for one cheat-selectable power-up preset.
+/// </summary>
+public struct PlayerPowerUpCheatPresetEntry : IBufferElementData
+{
+    public byte IsDefined;
+    public int PassiveStartIndex;
+    public int PassiveCount;
+    public PlayerPowerUpsConfig PowerUpsConfig;
+}
+
+/// <summary>
+/// Flattened passive-tool payloads referenced by PlayerPowerUpCheatPresetEntry.
+/// </summary>
+public struct PlayerPowerUpCheatPresetPassiveElement : IBufferElementData
+{
+    public PlayerPassiveToolConfig Tool;
 }
 
 /// <summary>

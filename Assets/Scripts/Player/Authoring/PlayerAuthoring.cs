@@ -32,6 +32,10 @@ public sealed class PlayerAuthoring : MonoBehaviour
     [FormerlySerializedAs("m_MasterPreset")]
     [SerializeField] private PlayerMasterPreset masterPreset;
 
+    [Header("Cheats")]
+    [Tooltip("Optional power-up preset library used by runtime cheat shortcuts. Ctrl+Number applies the preset at the matching index.")]
+    [SerializeField] private PlayerPowerUpsPresetLibrary powerUpsCheatPresetLibrary;
+
     [Header("Gizmos")]
     [Tooltip("Optional radius for gizmo previews in the editor.")]
     [FormerlySerializedAs("m_GizmoRadius")]
@@ -105,6 +109,14 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return masterPreset;
+        }
+    }
+
+    public PlayerPowerUpsPresetLibrary PowerUpsCheatPresetLibrary
+    {
+        get
+        {
+            return powerUpsCheatPresetLibrary;
         }
     }
 
@@ -757,6 +769,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
             DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer = AddBuffer<EquippedPassiveToolElement>(entity);
             PopulateEquippedPassiveToolsBuffer(authoring, equippedPassiveToolsBuffer, powerUpsPreset);
+            DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntriesBuffer = AddBuffer<PlayerPowerUpCheatPresetEntry>(entity);
+            DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassivesBuffer = AddBuffer<PlayerPowerUpCheatPresetPassiveElement>(entity);
+            PopulatePowerUpCheatPresetBuffers(authoring, cheatPresetEntriesBuffer, cheatPresetPassivesBuffer);
         }
 
         ShootingSettings shootingSettings = controllerPreset.ShootingSettings;
@@ -1315,8 +1330,73 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     }
 
     /// <summary>
+    /// Bakes cheat-selectable power-up preset snapshots from the assigned authoring cheat library.
+    /// </summary>
+    /// <param name="authoring">Owning player authoring component.</param>
+    /// <param name="cheatPresetEntriesBuffer">Destination metadata buffer for baked preset snapshots.</param>
+    /// <param name="cheatPresetPassivesBuffer">Destination flattened passive payload buffer.</param>
+    private void PopulatePowerUpCheatPresetBuffers(PlayerAuthoring authoring,
+                                                   DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntriesBuffer,
+                                                   DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassivesBuffer)
+    {
+        if (authoring == null)
+            return;
+
+        PlayerPowerUpsPresetLibrary cheatPresetLibrary = authoring.PowerUpsCheatPresetLibrary;
+
+        if (cheatPresetLibrary == null)
+            return;
+
+        IReadOnlyList<PlayerPowerUpsPreset> cheatPresets = cheatPresetLibrary.Presets;
+
+        if (cheatPresets == null || cheatPresets.Count <= 0)
+            return;
+
+        List<PlayerPassiveToolConfig> collectedPassiveToolConfigs = new List<PlayerPassiveToolConfig>(8);
+
+        for (int presetIndex = 0; presetIndex < cheatPresets.Count; presetIndex++)
+        {
+            PlayerPowerUpsPreset cheatPreset = cheatPresets[presetIndex];
+            int passiveStartIndex = cheatPresetPassivesBuffer.Length;
+            int passiveCount = 0;
+            byte isDefined = 0;
+            PlayerPowerUpsConfig powerUpsConfigSnapshot = default;
+
+            if (cheatPreset != null)
+            {
+                isDefined = 1;
+                powerUpsConfigSnapshot = BuildPowerUpsConfig(authoring, cheatPreset);
+                CollectEquippedPassiveToolConfigs(authoring, cheatPreset, collectedPassiveToolConfigs);
+
+                for (int passiveToolIndex = 0; passiveToolIndex < collectedPassiveToolConfigs.Count; passiveToolIndex++)
+                {
+                    PlayerPassiveToolConfig passiveToolConfig = collectedPassiveToolConfigs[passiveToolIndex];
+
+                    if (passiveToolConfig.IsDefined == 0)
+                        continue;
+
+                    cheatPresetPassivesBuffer.Add(new PlayerPowerUpCheatPresetPassiveElement
+                    {
+                        Tool = passiveToolConfig
+                    });
+                    passiveCount++;
+                }
+            }
+
+            cheatPresetEntriesBuffer.Add(new PlayerPowerUpCheatPresetEntry
+            {
+                IsDefined = isDefined,
+                PassiveStartIndex = passiveStartIndex,
+                PassiveCount = passiveCount,
+                PowerUpsConfig = powerUpsConfigSnapshot
+            });
+        }
+    }
+
+    /// <summary>
     /// Populates the equipped passive-tools runtime buffer from loadout IDs.
     /// </summary>
+    /// <param name="authoring">Owning player authoring component.</param>
     /// <param name="equippedPassiveToolsBuffer">Target runtime buffer.</param>
     /// <param name="preset">Source power-ups preset.</param>
     private void PopulateEquippedPassiveToolsBuffer(PlayerAuthoring authoring, DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer, PlayerPowerUpsPreset preset)
@@ -1324,6 +1404,37 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (preset == null)
             return;
 
+        List<PlayerPassiveToolConfig> equippedPassiveToolConfigs = new List<PlayerPassiveToolConfig>(8);
+        CollectEquippedPassiveToolConfigs(authoring, preset, equippedPassiveToolConfigs);
+
+        for (int passiveToolIndex = 0; passiveToolIndex < equippedPassiveToolConfigs.Count; passiveToolIndex++)
+        {
+            PlayerPassiveToolConfig passiveToolConfig = equippedPassiveToolConfigs[passiveToolIndex];
+
+            if (passiveToolConfig.IsDefined == 0)
+                continue;
+
+            equippedPassiveToolsBuffer.Add(new EquippedPassiveToolElement
+            {
+                Tool = passiveToolConfig
+            });
+        }
+    }
+
+    /// <summary>
+    /// Resolves and compiles equipped passive tool IDs from one preset into runtime passive configs.
+    /// </summary>
+    /// <param name="authoring">Owning player authoring component.</param>
+    /// <param name="preset">Source power-ups preset.</param>
+    /// <param name="outputPassiveToolConfigs">Destination list that receives compiled passive configs.</param>
+    private void CollectEquippedPassiveToolConfigs(PlayerAuthoring authoring,
+                                                   PlayerPowerUpsPreset preset,
+                                                   List<PlayerPassiveToolConfig> outputPassiveToolConfigs)
+    {
+        if (preset == null || outputPassiveToolConfigs == null)
+            return;
+
+        outputPassiveToolConfigs.Clear();
         IReadOnlyList<ModularPowerUpDefinition> passivePowerUps = preset.PassivePowerUps;
 
         if (passivePowerUps != null && passivePowerUps.Count > 0)
@@ -1355,10 +1466,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 if (passiveToolConfig.IsDefined == 0)
                     continue;
 
-                equippedPassiveToolsBuffer.Add(new EquippedPassiveToolElement
-                {
-                    Tool = passiveToolConfig
-                });
+                outputPassiveToolConfigs.Add(passiveToolConfig);
             }
 
             return;
@@ -1391,10 +1499,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             if (passiveToolConfig.IsDefined == 0)
                 continue;
 
-            equippedPassiveToolsBuffer.Add(new EquippedPassiveToolElement
-            {
-                Tool = passiveToolConfig
-            });
+            outputPassiveToolConfigs.Add(passiveToolConfig);
         }
     }
 

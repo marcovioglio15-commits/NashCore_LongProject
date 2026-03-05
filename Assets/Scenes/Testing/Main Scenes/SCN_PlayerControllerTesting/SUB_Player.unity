@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: bakeAnimatorCompanion
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 875789409346080416, guid: e39b166169c8e7241853910bdb74df86, type: 3}
+      propertyPath: powerUpsCheatPresetLibrary
+      value: 
+      objectReference: {fileID: 11400000, guid: d3fa5aed154f96040bf0d9672006e92c, type: 2}
     - target: {fileID: 1658229343530033249, guid: e39b166169c8e7241853910bdb74df86, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

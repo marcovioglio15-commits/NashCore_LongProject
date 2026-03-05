@@ -83,6 +83,27 @@ public static class PlayerInputRuntime
             return lookActionUsesMousePointer;
         }
     }
+
+    /// <summary>
+    /// Determines whether the current runtime input environment exposes only mouse and keyboard without gamepad/joystick devices.
+    /// </summary>
+    /// <returns>True when mouse and keyboard are available and no controller-like device is connected.</returns>
+    public static bool IsMouseKeyboardOnlyContext()
+    {
+        if (Mouse.current == null)
+            return false;
+
+        if (Keyboard.current == null)
+            return false;
+
+        if (Gamepad.all.Count > 0)
+            return false;
+
+        if (Joystick.all.Count > 0)
+            return false;
+
+        return true;
+    }
     #endregion
 
     #region Methods

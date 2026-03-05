@@ -1,18 +1,10 @@
 using Unity.Entities;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 /// <summary>
-/// Converts keyboard cheat shortcuts into runtime power-up cheat commands.
-/// Works in both editor and player builds.
-/// Shortcut map (hold Ctrl):
-/// F1 refill energy, F2 reset cooldowns, F3 swap active slots.
-/// 1..6 set primary active kind (Bomb, Dash, BulletTime, Shotgun, ChargeShot, Heal).
-/// Shift+1..6 set secondary active kind.
-/// F4/F5 add-remove splitting passive, F6 clear all passives.
-/// 7..9/0 add-remove projectile size and elemental-projectiles passives.
-/// Hold Alt (Ctrl+Alt) for extended passive shortcuts:
-/// F4/F5 add-remove explosion, F6/F7 add-remove elemental trail.
-/// 7/8 add-remove perfect circle, 9/0 add-remove bouncing projectiles.
+/// Converts Ctrl+Shift+Number keyboard shortcuts into runtime commands that swap the whole power-up preset.
+/// Number keys map directly to preset indices in the baked cheat snapshot list (0..9).
 /// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerInputBridgeSystem))]
@@ -22,11 +14,20 @@ public partial struct PlayerPowerUpCheatInputSystem : ISystem
     #region Methods
 
     #region Lifecycle
+    /// <summary>
+    /// Registers update prerequisites for runtime cheat input processing.
+    /// </summary>
+    /// <param name="state">System state used to declare required components.</param>
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerPowerUpCheatCommand>();
+        state.RequireForUpdate<PlayerPowerUpCheatPresetEntry>();
     }
 
+    /// <summary>
+    /// Captures Ctrl+Shift+Number keyboard input and enqueues one preset-swap command for the local player entity.
+    /// </summary>
+    /// <param name="state">Current ECS system state.</param>
     public void OnUpdate(ref SystemState state)
     {
         Keyboard keyboard = Keyboard.current;
@@ -34,184 +35,163 @@ public partial struct PlayerPowerUpCheatInputSystem : ISystem
         if (keyboard == null)
             return;
 
-        bool controlPressed = keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed;
-
-        if (controlPressed == false)
+        if (IsControlPressed(keyboard) == false)
             return;
 
-        if (HasAnyCommandPressedThisFrame(keyboard) == false)
+        if (IsShiftPressed(keyboard) == false)
             return;
 
-        bool shiftPressed = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
-        bool altPressed = keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed;
+        int presetIndex;
 
-        foreach (DynamicBuffer<PlayerPowerUpCheatCommand> cheatBuffer in SystemAPI.Query<DynamicBuffer<PlayerPowerUpCheatCommand>>().WithAll<PlayerControllerConfig>())
+        if (TryResolvePressedPresetIndex(keyboard, out presetIndex) == false)
+            return;
+
+        foreach ((DynamicBuffer<PlayerPowerUpCheatCommand> cheatCommands,
+                  DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntries) in SystemAPI.Query<DynamicBuffer<PlayerPowerUpCheatCommand>,
+                                                                                                     DynamicBuffer<PlayerPowerUpCheatPresetEntry>>().WithAll<PlayerControllerConfig>())
         {
-            EnqueueCommandsForKeyboard(cheatBuffer, keyboard, shiftPressed, altPressed);
+            if (cheatPresetEntries.Length <= 0)
+                break;
+
+            AddApplyPresetCommand(cheatCommands, presetIndex);
             break;
         }
     }
     #endregion
 
     #region Helpers
-    private static bool HasAnyCommandPressedThisFrame(Keyboard keyboard)
+    /// <summary>
+    /// Checks whether at least one Control key is currently pressed.
+    /// </summary>
+    /// <param name="keyboard">Current keyboard device.</param>
+    /// <returns>True when left or right Control is pressed, otherwise false.</returns>
+    private static bool IsControlPressed(Keyboard keyboard)
     {
-        if (keyboard.f1Key.wasPressedThisFrame)
+        if (keyboard.leftCtrlKey.isPressed)
             return true;
 
-        if (keyboard.f2Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.f3Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.f4Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.f5Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.f6Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.f7Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit0Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit1Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit2Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit3Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit4Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit5Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit6Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit7Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit8Key.wasPressedThisFrame)
-            return true;
-
-        if (keyboard.digit9Key.wasPressedThisFrame)
+        if (keyboard.rightCtrlKey.isPressed)
             return true;
 
         return false;
     }
 
-    private static void EnqueueCommandsForKeyboard(DynamicBuffer<PlayerPowerUpCheatCommand> cheatBuffer,
-                                                   Keyboard keyboard,
-                                                   bool shiftPressed,
-                                                   bool altPressed)
+    /// <summary>
+    /// Checks whether at least one Shift key is currently pressed.
+    /// </summary>
+    /// <param name="keyboard">Current keyboard device.</param>
+    /// <returns>True when left or right Shift is pressed, otherwise false.</returns>
+    private static bool IsShiftPressed(Keyboard keyboard)
     {
-        if (keyboard.f1Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.RefillEnergy, ActiveToolKind.Custom, PassiveToolKind.Custom);
+        if (keyboard.leftShiftKey.isPressed)
+            return true;
 
-        if (keyboard.f2Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.ResetCooldowns, ActiveToolKind.Custom, PassiveToolKind.Custom);
+        if (keyboard.rightShiftKey.isPressed)
+            return true;
 
-        if (keyboard.f3Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.SwapActiveSlots, ActiveToolKind.Custom, PassiveToolKind.Custom);
-
-        if (altPressed)
-            EnqueueExtendedPassiveCommands(cheatBuffer, keyboard);
-        else
-            EnqueueDefaultPassiveCommands(cheatBuffer, keyboard);
-
-        TryEnqueueActiveKindCommand(cheatBuffer, keyboard.digit1Key.wasPressedThisFrame, shiftPressed, ActiveToolKind.Bomb);
-        TryEnqueueActiveKindCommand(cheatBuffer, keyboard.digit2Key.wasPressedThisFrame, shiftPressed, ActiveToolKind.Dash);
-        TryEnqueueActiveKindCommand(cheatBuffer, keyboard.digit3Key.wasPressedThisFrame, shiftPressed, ActiveToolKind.BulletTime);
-        TryEnqueueActiveKindCommand(cheatBuffer, keyboard.digit4Key.wasPressedThisFrame, shiftPressed, ActiveToolKind.Shotgun);
-        TryEnqueueActiveKindCommand(cheatBuffer, keyboard.digit5Key.wasPressedThisFrame, shiftPressed, ActiveToolKind.ChargeShot);
-        TryEnqueueActiveKindCommand(cheatBuffer, keyboard.digit6Key.wasPressedThisFrame, shiftPressed, ActiveToolKind.PortableHealthPack);
+        return false;
     }
 
-    private static void EnqueueDefaultPassiveCommands(DynamicBuffer<PlayerPowerUpCheatCommand> cheatBuffer, Keyboard keyboard)
+    /// <summary>
+    /// Resolves which numeric key was pressed this frame and converts it to a preset index.
+    /// </summary>
+    /// <param name="keyboard">Current keyboard device.</param>
+    /// <param name="presetIndex">Resolved preset index when a valid key is pressed.</param>
+    /// <returns>True when a supported numeric key was pressed this frame, otherwise false.</returns>
+    private static bool TryResolvePressedPresetIndex(Keyboard keyboard, out int presetIndex)
     {
-        if (keyboard.f4Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.AddPassiveByKind, ActiveToolKind.Custom, PassiveToolKind.SplittingProjectiles);
-
-        if (keyboard.f5Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.RemovePassiveByKind, ActiveToolKind.Custom, PassiveToolKind.SplittingProjectiles);
-
-        if (keyboard.f6Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.ClearPassives, ActiveToolKind.Custom, PassiveToolKind.Custom);
-
-        if (keyboard.digit7Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.AddPassiveByKind, ActiveToolKind.Custom, PassiveToolKind.ProjectileSize);
-
-        if (keyboard.digit8Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.AddPassiveByKind, ActiveToolKind.Custom, PassiveToolKind.ElementalProjectiles);
-
-        if (keyboard.digit9Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.RemovePassiveByKind, ActiveToolKind.Custom, PassiveToolKind.ProjectileSize);
-
-        if (keyboard.digit0Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.RemovePassiveByKind, ActiveToolKind.Custom, PassiveToolKind.ElementalProjectiles);
-    }
-
-    private static void EnqueueExtendedPassiveCommands(DynamicBuffer<PlayerPowerUpCheatCommand> cheatBuffer, Keyboard keyboard)
-    {
-        if (keyboard.f4Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.AddPassiveByKind, ActiveToolKind.Custom, PassiveToolKind.Explosion);
-
-        if (keyboard.f5Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.RemovePassiveByKind, ActiveToolKind.Custom, PassiveToolKind.Explosion);
-
-        if (keyboard.f6Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.AddPassiveByKind, ActiveToolKind.Custom, PassiveToolKind.ElementalTrail);
-
-        if (keyboard.f7Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.RemovePassiveByKind, ActiveToolKind.Custom, PassiveToolKind.ElementalTrail);
-
-        if (keyboard.digit7Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.AddPassiveByKind, ActiveToolKind.Custom, PassiveToolKind.PerfectCircle);
-
-        if (keyboard.digit8Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.RemovePassiveByKind, ActiveToolKind.Custom, PassiveToolKind.PerfectCircle);
-
-        if (keyboard.digit9Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.AddPassiveByKind, ActiveToolKind.Custom, PassiveToolKind.BouncingProjectiles);
-
-        if (keyboard.digit0Key.wasPressedThisFrame)
-            AddCommand(cheatBuffer, PlayerPowerUpCheatCommandType.RemovePassiveByKind, ActiveToolKind.Custom, PassiveToolKind.BouncingProjectiles);
-    }
-
-    private static void TryEnqueueActiveKindCommand(DynamicBuffer<PlayerPowerUpCheatCommand> cheatBuffer,
-                                                    bool keyPressed,
-                                                    bool shiftPressed,
-                                                    ActiveToolKind activeKind)
-    {
-        if (keyPressed == false)
-            return;
-
-        PlayerPowerUpCheatCommandType commandType = shiftPressed
-            ? PlayerPowerUpCheatCommandType.SetSecondaryActiveKind
-            : PlayerPowerUpCheatCommandType.SetPrimaryActiveKind;
-        AddCommand(cheatBuffer, commandType, activeKind, PassiveToolKind.Custom);
-    }
-
-    private static void AddCommand(DynamicBuffer<PlayerPowerUpCheatCommand> cheatBuffer,
-                                   PlayerPowerUpCheatCommandType commandType,
-                                   ActiveToolKind activeKind,
-                                   PassiveToolKind passiveKind)
-    {
-        cheatBuffer.Add(new PlayerPowerUpCheatCommand
+        if (IsDigitPressedThisFrame(keyboard.digit0Key, keyboard.numpad0Key))
         {
-            CommandType = commandType,
-            ActiveKind = activeKind,
-            PassiveKind = passiveKind
+            presetIndex = 0;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit1Key, keyboard.numpad1Key))
+        {
+            presetIndex = 1;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit2Key, keyboard.numpad2Key))
+        {
+            presetIndex = 2;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit3Key, keyboard.numpad3Key))
+        {
+            presetIndex = 3;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit4Key, keyboard.numpad4Key))
+        {
+            presetIndex = 4;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit5Key, keyboard.numpad5Key))
+        {
+            presetIndex = 5;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit6Key, keyboard.numpad6Key))
+        {
+            presetIndex = 6;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit7Key, keyboard.numpad7Key))
+        {
+            presetIndex = 7;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit8Key, keyboard.numpad8Key))
+        {
+            presetIndex = 8;
+            return true;
+        }
+
+        if (IsDigitPressedThisFrame(keyboard.digit9Key, keyboard.numpad9Key))
+        {
+            presetIndex = 9;
+            return true;
+        }
+
+        presetIndex = -1;
+        return false;
+    }
+
+    /// <summary>
+    /// Checks whether either the main digit key or the matching numpad digit was pressed this frame.
+    /// </summary>
+    /// <param name="digitKey">Main keyboard digit key.</param>
+    /// <param name="numpadKey">Numpad digit key.</param>
+    /// <returns>True when one of the provided keys was pressed this frame, otherwise false.</returns>
+    private static bool IsDigitPressedThisFrame(KeyControl digitKey, KeyControl numpadKey)
+    {
+        if (digitKey != null && digitKey.wasPressedThisFrame)
+            return true;
+
+        if (numpadKey != null && numpadKey.wasPressedThisFrame)
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Enqueues one command that requests a complete preset replacement by index.
+    /// </summary>
+    /// <param name="cheatCommands">Target runtime cheat command buffer.</param>
+    /// <param name="presetIndex">Preset index requested by user input.</param>
+    private static void AddApplyPresetCommand(DynamicBuffer<PlayerPowerUpCheatCommand> cheatCommands, int presetIndex)
+    {
+        cheatCommands.Add(new PlayerPowerUpCheatCommand
+        {
+            CommandType = PlayerPowerUpCheatCommandType.ApplyPresetByIndex,
+            PresetIndex = presetIndex
         });
     }
     #endregion

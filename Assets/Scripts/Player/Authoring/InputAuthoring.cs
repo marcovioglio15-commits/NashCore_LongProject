@@ -99,6 +99,11 @@ public sealed class InputAuthoring : MonoBehaviour
         PlayerInputRuntime.Shutdown();
         SetCursorLock(isLocked : false);
     }
+
+    private void Update()
+    {
+        ApplyCursorPolicy();
+    }
     #endregion
 
     #region Helpers
@@ -217,7 +222,13 @@ public sealed class InputAuthoring : MonoBehaviour
 
     private static void SetCursorLock(bool isLocked)
     {
-        Cursor.lockState = isLocked ? CursorLockMode.Locked : CursorLockMode.None;
+        CursorLockMode desiredLockState = isLocked ? CursorLockMode.Locked : CursorLockMode.None;
+        bool desiredVisibility = !isLocked;
+
+        if (Cursor.lockState == desiredLockState && Cursor.visible == desiredVisibility)
+            return;
+
+        Cursor.lockState = desiredLockState;
         Cursor.visible = !isLocked;
     }
 
@@ -226,7 +237,8 @@ public sealed class InputAuthoring : MonoBehaviour
     /// </summary>
     private static void ApplyCursorPolicy()
     {
-        bool lockCursor = PlayerInputRuntime.LookActionUsesMousePointer == false;
+        bool allowMousePointerMode = PlayerInputRuntime.LookActionUsesMousePointer && PlayerInputRuntime.IsMouseKeyboardOnlyContext();
+        bool lockCursor = allowMousePointerMode == false;
         SetCursorLock(lockCursor);
     }
     #endregion

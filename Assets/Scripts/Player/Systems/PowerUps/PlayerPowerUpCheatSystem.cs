@@ -1,9 +1,8 @@
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
 /// <summary>
-/// Consumes runtime power-up cheat commands and mutates active/passive loadouts at runtime.
+/// Consumes runtime cheat commands and replaces the player's whole power-up loadout with a baked preset snapshot.
 /// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerPowerUpsInitializeSystem))]
@@ -13,22 +12,36 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
     #region Methods
 
     #region Lifecycle
+    /// <summary>
+    /// Registers all component requirements needed by runtime cheat preset application.
+    /// </summary>
+    /// <param name="state">System state used to declare update requirements.</param>
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerPowerUpCheatCommand>();
+        state.RequireForUpdate<PlayerPowerUpCheatPresetEntry>();
+        state.RequireForUpdate<PlayerPowerUpCheatPresetPassiveElement>();
         state.RequireForUpdate<PlayerPowerUpsConfig>();
         state.RequireForUpdate<PlayerPowerUpsState>();
         state.RequireForUpdate<PlayerPassiveToolsState>();
         state.RequireForUpdate<EquippedPassiveToolElement>();
     }
 
+    /// <summary>
+    /// Applies queued cheat commands for each player, replacing runtime config and passives when a preset swap is requested.
+    /// </summary>
+    /// <param name="state">Current ECS system state.</param>
     public void OnUpdate(ref SystemState state)
     {
         foreach ((DynamicBuffer<PlayerPowerUpCheatCommand> cheatCommands,
+                  DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntries,
+                  DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassives,
                   RefRW<PlayerPowerUpsConfig> powerUpsConfig,
                   RefRW<PlayerPowerUpsState> powerUpsState,
                   DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools,
                   RefRW<PlayerPassiveToolsState> passiveToolsState) in SystemAPI.Query<DynamicBuffer<PlayerPowerUpCheatCommand>,
+                                                                                       DynamicBuffer<PlayerPowerUpCheatPresetEntry>,
+                                                                                       DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement>,
                                                                                        RefRW<PlayerPowerUpsConfig>,
                                                                                        RefRW<PlayerPowerUpsState>,
                                                                                        DynamicBuffer<EquippedPassiveToolElement>,
@@ -39,24 +52,23 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
             if (commandCount <= 0)
                 continue;
 
-            bool slotConfigChanged = false;
-            bool passiveToolsChanged = false;
+            bool passivesChanged = false;
 
             for (int commandIndex = 0; commandIndex < commandCount; commandIndex++)
             {
                 PlayerPowerUpCheatCommand cheatCommand = cheatCommands[commandIndex];
-                ProcessCheatCommand(in cheatCommand,
-                                    ref powerUpsConfig.ValueRW,
-                                    ref powerUpsState.ValueRW,
-                                    equippedPassiveTools,
-                                    ref slotConfigChanged,
-                                    ref passiveToolsChanged);
+                bool changed = ProcessCheatCommand(in cheatCommand,
+                                                   cheatPresetEntries,
+                                                   cheatPresetPassives,
+                                                   ref powerUpsConfig.ValueRW,
+                                                   ref powerUpsState.ValueRW,
+                                                   equippedPassiveTools);
+
+                if (changed)
+                    passivesChanged = true;
             }
 
-            if (slotConfigChanged)
-                SanitizeRuntimeStateAfterSlotChanges(ref powerUpsConfig.ValueRW, ref powerUpsState.ValueRW);
-
-            if (passiveToolsChanged)
+            if (passivesChanged)
                 passiveToolsState.ValueRW = BuildPassiveToolsState(equippedPassiveTools);
 
             cheatCommands.Clear();
@@ -65,279 +77,131 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
     #endregion
 
     #region Commands
-    private static void ProcessCheatCommand(in PlayerPowerUpCheatCommand cheatCommand,
+    /// <summary>
+    /// Routes one command to the matching cheat action.
+    /// </summary>
+    /// <param name="cheatCommand">Command payload to process.</param>
+    /// <param name="cheatPresetEntries">Baked preset metadata buffer.</param>
+    /// <param name="cheatPresetPassives">Flattened baked passives buffer.</param>
+    /// <param name="powerUpsConfig">Runtime power-up config to mutate.</param>
+    /// <param name="powerUpsState">Runtime power-up state to reset.</param>
+    /// <param name="equippedPassiveTools">Runtime equipped passives buffer to replace.</param>
+    /// <returns>True when runtime loadout was changed, otherwise false.</returns>
+    private static bool ProcessCheatCommand(in PlayerPowerUpCheatCommand cheatCommand,
+                                            DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntries,
+                                            DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassives,
                                             ref PlayerPowerUpsConfig powerUpsConfig,
                                             ref PlayerPowerUpsState powerUpsState,
-                                            DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools,
-                                            ref bool slotConfigChanged,
-                                            ref bool passiveToolsChanged)
+                                            DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools)
     {
         switch (cheatCommand.CommandType)
         {
-            case PlayerPowerUpCheatCommandType.RefillEnergy:
-                powerUpsState.PrimaryEnergy = math.max(0f, powerUpsConfig.PrimarySlot.MaximumEnergy);
-                powerUpsState.SecondaryEnergy = math.max(0f, powerUpsConfig.SecondarySlot.MaximumEnergy);
-                return;
-            case PlayerPowerUpCheatCommandType.ResetCooldowns:
-                powerUpsState.PrimaryCooldownRemaining = 0f;
-                powerUpsState.SecondaryCooldownRemaining = 0f;
-                return;
-            case PlayerPowerUpCheatCommandType.SwapActiveSlots:
-                SwapActiveSlots(ref powerUpsConfig, ref powerUpsState);
-                slotConfigChanged = true;
-                return;
-            case PlayerPowerUpCheatCommandType.SetPrimaryActiveKind:
-                if (ApplyActiveKindToSlot(ref powerUpsConfig.PrimarySlot, cheatCommand.ActiveKind))
-                {
-                    powerUpsState.PrimaryCharge = 0f;
-                    powerUpsState.PrimaryIsCharging = 0;
-                    slotConfigChanged = true;
-                }
-
-                return;
-            case PlayerPowerUpCheatCommandType.SetSecondaryActiveKind:
-                if (ApplyActiveKindToSlot(ref powerUpsConfig.SecondarySlot, cheatCommand.ActiveKind))
-                {
-                    powerUpsState.SecondaryCharge = 0f;
-                    powerUpsState.SecondaryIsCharging = 0;
-                    slotConfigChanged = true;
-                }
-
-                return;
-            case PlayerPowerUpCheatCommandType.AddPassiveByKind:
-                if (TryAddPassiveByKind(equippedPassiveTools, cheatCommand.PassiveKind))
-                    passiveToolsChanged = true;
-
-                return;
-            case PlayerPowerUpCheatCommandType.RemovePassiveByKind:
-                if (TryRemovePassiveByKind(equippedPassiveTools, cheatCommand.PassiveKind))
-                    passiveToolsChanged = true;
-
-                return;
-            case PlayerPowerUpCheatCommandType.ClearPassives:
-                if (equippedPassiveTools.Length > 0)
-                {
-                    equippedPassiveTools.Clear();
-                    passiveToolsChanged = true;
-                }
-
-                return;
+            case PlayerPowerUpCheatCommandType.ApplyPresetByIndex:
+                return TryApplyPresetByIndex(cheatCommand.PresetIndex,
+                                             cheatPresetEntries,
+                                             cheatPresetPassives,
+                                             ref powerUpsConfig,
+                                             ref powerUpsState,
+                                             equippedPassiveTools);
+            default:
+                return false;
         }
     }
 
-    private static void SwapActiveSlots(ref PlayerPowerUpsConfig powerUpsConfig, ref PlayerPowerUpsState powerUpsState)
+    /// <summary>
+    /// Applies a full preset snapshot by index when the entry exists.
+    /// </summary>
+    /// <param name="presetIndex">Requested snapshot index.</param>
+    /// <param name="cheatPresetEntries">Baked preset metadata buffer.</param>
+    /// <param name="cheatPresetPassives">Flattened baked passives buffer.</param>
+    /// <param name="powerUpsConfig">Runtime power-up config to mutate.</param>
+    /// <param name="powerUpsState">Runtime state to reset after replacement.</param>
+    /// <param name="equippedPassiveTools">Runtime equipped passives buffer to replace.</param>
+    /// <returns>True when the preset was found and applied, otherwise false.</returns>
+    private static bool TryApplyPresetByIndex(int presetIndex,
+                                              DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntries,
+                                              DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassives,
+                                              ref PlayerPowerUpsConfig powerUpsConfig,
+                                              ref PlayerPowerUpsState powerUpsState,
+                                              DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools)
     {
-        PlayerPowerUpSlotConfig primarySlot = powerUpsConfig.PrimarySlot;
-        powerUpsConfig.PrimarySlot = powerUpsConfig.SecondarySlot;
-        powerUpsConfig.SecondarySlot = primarySlot;
-
-        float primaryEnergy = powerUpsState.PrimaryEnergy;
-        powerUpsState.PrimaryEnergy = powerUpsState.SecondaryEnergy;
-        powerUpsState.SecondaryEnergy = primaryEnergy;
-
-        float primaryCooldownRemaining = powerUpsState.PrimaryCooldownRemaining;
-        powerUpsState.PrimaryCooldownRemaining = powerUpsState.SecondaryCooldownRemaining;
-        powerUpsState.SecondaryCooldownRemaining = primaryCooldownRemaining;
-
-        float primaryCharge = powerUpsState.PrimaryCharge;
-        powerUpsState.PrimaryCharge = powerUpsState.SecondaryCharge;
-        powerUpsState.SecondaryCharge = primaryCharge;
-
-        byte primaryIsCharging = powerUpsState.PrimaryIsCharging;
-        powerUpsState.PrimaryIsCharging = powerUpsState.SecondaryIsCharging;
-        powerUpsState.SecondaryIsCharging = primaryIsCharging;
-    }
-
-    private static bool ApplyActiveKindToSlot(ref PlayerPowerUpSlotConfig slotConfig, ActiveToolKind activeKind)
-    {
-        if (activeKind == ActiveToolKind.Custom)
+        if (presetIndex < 0)
             return false;
 
-        if (slotConfig.IsDefined != 0 && slotConfig.ToolKind == activeKind)
+        if (presetIndex >= cheatPresetEntries.Length)
             return false;
 
-        slotConfig.IsDefined = 1;
-        slotConfig.ToolKind = activeKind;
-        slotConfig.ActivationInputMode = PowerUpActivationInputMode.OnPress;
+        PlayerPowerUpCheatPresetEntry cheatPresetEntry = cheatPresetEntries[presetIndex];
 
-        if (slotConfig.CooldownSeconds < 0f)
-            slotConfig.CooldownSeconds = 0f;
+        if (cheatPresetEntry.IsDefined == 0)
+            return false;
 
-        slotConfig.MinimumActivationEnergyPercent = math.clamp(slotConfig.MinimumActivationEnergyPercent, 0f, 100f);
-
-        if (slotConfig.ActivationResource == PowerUpResourceType.Energy && slotConfig.MaximumEnergy <= 0f)
-            slotConfig.MaximumEnergy = 100f;
-
-        if (slotConfig.MaximumEnergy > 0f && slotConfig.ChargePerTrigger <= 0f)
-            slotConfig.ChargePerTrigger = 25f;
-
-        switch (activeKind)
-        {
-            case ActiveToolKind.Bomb:
-                slotConfig.Bomb.CollisionRadius = math.max(0.01f, slotConfig.Bomb.CollisionRadius);
-                slotConfig.Bomb.FuseSeconds = math.max(0.05f, slotConfig.Bomb.FuseSeconds);
-                slotConfig.Bomb.Radius = math.max(0.1f, slotConfig.Bomb.Radius);
-                slotConfig.Bomb.Damage = math.max(0f, slotConfig.Bomb.Damage);
-
-                if (slotConfig.Bomb.EnableDamagePayload == 0)
-                {
-                    slotConfig.Bomb.Radius = 0f;
-                    slotConfig.Bomb.Damage = 0f;
-                    slotConfig.Bomb.AffectAllEnemiesInRadius = 0;
-                }
-
-                break;
-            case ActiveToolKind.Dash:
-                slotConfig.Dash.Distance = math.max(0.1f, slotConfig.Dash.Distance);
-                slotConfig.Dash.Duration = math.max(0.01f, slotConfig.Dash.Duration);
-                slotConfig.Dash.SpeedTransitionInSeconds = math.max(0f, slotConfig.Dash.SpeedTransitionInSeconds);
-                slotConfig.Dash.SpeedTransitionOutSeconds = math.max(0f, slotConfig.Dash.SpeedTransitionOutSeconds);
-                slotConfig.Dash.InvulnerabilityExtraTime = math.max(0f, slotConfig.Dash.InvulnerabilityExtraTime);
-                break;
-            case ActiveToolKind.BulletTime:
-                slotConfig.BulletTime.Duration = math.max(0.05f, slotConfig.BulletTime.Duration);
-                slotConfig.BulletTime.EnemySlowPercent = math.clamp(slotConfig.BulletTime.EnemySlowPercent, 0f, 100f);
-
-                if (slotConfig.BulletTime.EnemySlowPercent <= 0f)
-                    slotConfig.BulletTime.EnemySlowPercent = 40f;
-
-                break;
-            case ActiveToolKind.Shotgun:
-                slotConfig.Shotgun.ProjectileCount = math.max(1, slotConfig.Shotgun.ProjectileCount);
-                slotConfig.Shotgun.ConeAngleDegrees = math.max(0f, slotConfig.Shotgun.ConeAngleDegrees);
-                slotConfig.Shotgun.SizeMultiplier = math.max(0.01f, slotConfig.Shotgun.SizeMultiplier);
-                slotConfig.Shotgun.DamageMultiplier = math.max(0f, slotConfig.Shotgun.DamageMultiplier);
-                slotConfig.Shotgun.SpeedMultiplier = math.max(0f, slotConfig.Shotgun.SpeedMultiplier);
-                slotConfig.Shotgun.RangeMultiplier = math.max(0f, slotConfig.Shotgun.RangeMultiplier);
-                slotConfig.Shotgun.LifetimeMultiplier = math.max(0f, slotConfig.Shotgun.LifetimeMultiplier);
-                slotConfig.Shotgun.MaxPenetrations = math.max(0, slotConfig.Shotgun.MaxPenetrations);
-                slotConfig.Shotgun.ElementalStacksPerHit = math.max(0f, slotConfig.Shotgun.ElementalStacksPerHit);
-                break;
-            case ActiveToolKind.ChargeShot:
-                slotConfig.ChargeShot.RequiredCharge = math.max(1f, slotConfig.ChargeShot.RequiredCharge);
-                slotConfig.ChargeShot.MaximumCharge = math.max(slotConfig.ChargeShot.RequiredCharge, slotConfig.ChargeShot.MaximumCharge);
-                slotConfig.ChargeShot.ChargeRatePerSecond = math.max(1f, slotConfig.ChargeShot.ChargeRatePerSecond);
-                slotConfig.ChargeShot.SizeMultiplier = math.max(0.01f, slotConfig.ChargeShot.SizeMultiplier);
-                slotConfig.ChargeShot.DamageMultiplier = math.max(0f, slotConfig.ChargeShot.DamageMultiplier);
-                slotConfig.ChargeShot.SpeedMultiplier = math.max(0f, slotConfig.ChargeShot.SpeedMultiplier);
-                slotConfig.ChargeShot.RangeMultiplier = math.max(0f, slotConfig.ChargeShot.RangeMultiplier);
-                slotConfig.ChargeShot.LifetimeMultiplier = math.max(0f, slotConfig.ChargeShot.LifetimeMultiplier);
-                slotConfig.ChargeShot.MaxPenetrations = math.max(0, slotConfig.ChargeShot.MaxPenetrations);
-                slotConfig.ChargeShot.ElementalStacksPerHit = math.max(0f, slotConfig.ChargeShot.ElementalStacksPerHit);
-                break;
-            case ActiveToolKind.PortableHealthPack:
-                slotConfig.PortableHealthPack.HealAmount = math.max(1f, slotConfig.PortableHealthPack.HealAmount);
-                slotConfig.PortableHealthPack.DurationSeconds = math.max(0f, slotConfig.PortableHealthPack.DurationSeconds);
-                slotConfig.PortableHealthPack.TickIntervalSeconds = math.max(0.01f, slotConfig.PortableHealthPack.TickIntervalSeconds);
-
-                if (slotConfig.PortableHealthPack.ApplyMode == PowerUpHealApplicationMode.OverTime &&
-                    slotConfig.PortableHealthPack.DurationSeconds <= 0f)
-                    slotConfig.PortableHealthPack.DurationSeconds = 2f;
-
-                break;
-        }
-
+        powerUpsConfig = cheatPresetEntry.PowerUpsConfig;
+        ReplaceEquippedPassivesFromSnapshot(cheatPresetEntry, cheatPresetPassives, equippedPassiveTools);
+        ResetRuntimeStateAfterPresetSwap(ref powerUpsState, in powerUpsConfig);
         return true;
     }
 
-    private static void SanitizeRuntimeStateAfterSlotChanges(ref PlayerPowerUpsConfig powerUpsConfig, ref PlayerPowerUpsState powerUpsState)
+    /// <summary>
+    /// Replaces equipped passive tools with the passive range referenced by one baked preset entry.
+    /// </summary>
+    /// <param name="cheatPresetEntry">Preset metadata containing passive range indices.</param>
+    /// <param name="cheatPresetPassives">Flattened source passive payloads.</param>
+    /// <param name="equippedPassiveTools">Runtime destination buffer to overwrite.</param>
+    private static void ReplaceEquippedPassivesFromSnapshot(in PlayerPowerUpCheatPresetEntry cheatPresetEntry,
+                                                            DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassives,
+                                                            DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools)
+    {
+        equippedPassiveTools.Clear();
+
+        if (cheatPresetPassives.Length <= 0)
+            return;
+
+        int safeStartIndex = math.clamp(cheatPresetEntry.PassiveStartIndex, 0, cheatPresetPassives.Length);
+        int availableCount = cheatPresetPassives.Length - safeStartIndex;
+        int safeCount = math.clamp(cheatPresetEntry.PassiveCount, 0, availableCount);
+
+        for (int passiveOffset = 0; passiveOffset < safeCount; passiveOffset++)
+        {
+            PlayerPassiveToolConfig passiveToolConfig = cheatPresetPassives[safeStartIndex + passiveOffset].Tool;
+
+            if (passiveToolConfig.IsDefined == 0)
+                continue;
+
+            equippedPassiveTools.Add(new EquippedPassiveToolElement
+            {
+                Tool = passiveToolConfig
+            });
+        }
+    }
+
+    /// <summary>
+    /// Resets transient runtime power-up state after a full preset swap.
+    /// </summary>
+    /// <param name="powerUpsState">Runtime state to reset.</param>
+    /// <param name="powerUpsConfig">Runtime config used to initialize slot energy.</param>
+    private static void ResetRuntimeStateAfterPresetSwap(ref PlayerPowerUpsState powerUpsState, in PlayerPowerUpsConfig powerUpsConfig)
     {
         float primaryMaximumEnergy = math.max(0f, powerUpsConfig.PrimarySlot.MaximumEnergy);
         float secondaryMaximumEnergy = math.max(0f, powerUpsConfig.SecondarySlot.MaximumEnergy);
-        powerUpsState.PrimaryEnergy = math.clamp(powerUpsState.PrimaryEnergy, 0f, primaryMaximumEnergy);
-        powerUpsState.SecondaryEnergy = math.clamp(powerUpsState.SecondaryEnergy, 0f, secondaryMaximumEnergy);
-        powerUpsState.PrimaryCooldownRemaining = math.max(0f, powerUpsState.PrimaryCooldownRemaining);
-        powerUpsState.SecondaryCooldownRemaining = math.max(0f, powerUpsState.SecondaryCooldownRemaining);
-
-        if (powerUpsConfig.PrimarySlot.ToolKind == ActiveToolKind.ChargeShot)
-        {
-            float primaryMaximumCharge = math.max(powerUpsConfig.PrimarySlot.ChargeShot.RequiredCharge,
-                                                  powerUpsConfig.PrimarySlot.ChargeShot.MaximumCharge);
-            powerUpsState.PrimaryCharge = math.clamp(powerUpsState.PrimaryCharge, 0f, primaryMaximumCharge);
-        }
-        else
-        {
-            powerUpsState.PrimaryCharge = 0f;
-            powerUpsState.PrimaryIsCharging = 0;
-        }
-
-        if (powerUpsConfig.SecondarySlot.ToolKind == ActiveToolKind.ChargeShot)
-        {
-            float secondaryMaximumCharge = math.max(powerUpsConfig.SecondarySlot.ChargeShot.RequiredCharge,
-                                                    powerUpsConfig.SecondarySlot.ChargeShot.MaximumCharge);
-            powerUpsState.SecondaryCharge = math.clamp(powerUpsState.SecondaryCharge, 0f, secondaryMaximumCharge);
-        }
-        else
-        {
-            powerUpsState.SecondaryCharge = 0f;
-            powerUpsState.SecondaryIsCharging = 0;
-        }
-
+        powerUpsState.PrimaryEnergy = primaryMaximumEnergy;
+        powerUpsState.SecondaryEnergy = secondaryMaximumEnergy;
+        powerUpsState.PrimaryCooldownRemaining = 0f;
+        powerUpsState.SecondaryCooldownRemaining = 0f;
+        powerUpsState.PrimaryCharge = 0f;
+        powerUpsState.SecondaryCharge = 0f;
+        powerUpsState.PrimaryIsCharging = 0;
+        powerUpsState.SecondaryIsCharging = 0;
         powerUpsState.IsShootingSuppressed = 0;
     }
     #endregion
 
     #region Passive Tools
-    private static bool TryAddPassiveByKind(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools, PassiveToolKind passiveKind)
-    {
-        if (passiveKind == PassiveToolKind.Custom)
-            return false;
-
-        if (ContainsPassiveKind(equippedPassiveTools, passiveKind))
-            return false;
-
-        PlayerPassiveToolConfig passiveToolConfig = CreateDefaultPassiveToolConfig(passiveKind);
-
-        if (passiveToolConfig.IsDefined == 0)
-            return false;
-
-        equippedPassiveTools.Add(new EquippedPassiveToolElement
-        {
-            Tool = passiveToolConfig
-        });
-        return true;
-    }
-
-    private static bool TryRemovePassiveByKind(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools, PassiveToolKind passiveKind)
-    {
-        if (passiveKind == PassiveToolKind.Custom)
-            return false;
-
-        bool removedAny = false;
-
-        for (int index = equippedPassiveTools.Length - 1; index >= 0; index--)
-        {
-            EquippedPassiveToolElement equippedPassiveTool = equippedPassiveTools[index];
-
-            if (equippedPassiveTool.Tool.IsDefined == 0)
-                continue;
-
-            if (equippedPassiveTool.Tool.ToolKind != passiveKind)
-                continue;
-
-            equippedPassiveTools.RemoveAt(index);
-            removedAny = true;
-        }
-
-        return removedAny;
-    }
-
-    private static bool ContainsPassiveKind(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools, PassiveToolKind passiveKind)
-    {
-        for (int index = 0; index < equippedPassiveTools.Length; index++)
-        {
-            PlayerPassiveToolConfig passiveTool = equippedPassiveTools[index].Tool;
-
-            if (passiveTool.IsDefined == 0)
-                continue;
-
-            if (passiveTool.ToolKind == passiveKind)
-                return true;
-        }
-
-        return false;
-    }
-
+    /// <summary>
+    /// Rebuilds aggregated passive multipliers and feature flags from equipped passive entries.
+    /// </summary>
+    /// <param name="equippedPassiveTools">Runtime equipped passive-tool buffer.</param>
+    /// <returns>Aggregated passive state used by power-up systems.</returns>
     private static PlayerPassiveToolsState BuildPassiveToolsState(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools)
     {
         PlayerPassiveToolsState passiveToolsState = new PlayerPassiveToolsState
@@ -374,6 +238,11 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
         return passiveToolsState;
     }
 
+    /// <summary>
+    /// Merges one passive-tool payload into the aggregated passive runtime state.
+    /// </summary>
+    /// <param name="passiveToolsState">Accumulated runtime passive state.</param>
+    /// <param name="passiveToolConfig">Passive-tool payload to merge.</param>
     private static void AccumulatePassiveTool(ref PlayerPassiveToolsState passiveToolsState, in PlayerPassiveToolConfig passiveToolConfig)
     {
         if (passiveToolConfig.IsDefined == 0)
@@ -567,158 +436,6 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
                 passiveToolsState.Heal.TriggerMode = passiveToolConfig.Heal.TriggerMode;
             }
         }
-    }
-
-    private static PlayerPassiveToolConfig CreateDefaultPassiveToolConfig(PassiveToolKind passiveKind)
-    {
-        switch (passiveKind)
-        {
-            case PassiveToolKind.ProjectileSize:
-                return new PlayerPassiveToolConfig
-                {
-                    IsDefined = 1,
-                    ToolKind = PassiveToolKind.ProjectileSize,
-                    HasProjectileSize = 1,
-                    ProjectileSize = new ProjectileSizePassiveConfig
-                    {
-                        SizeMultiplier = 1.3f,
-                        DamageMultiplier = 1.15f,
-                        SpeedMultiplier = 1f,
-                        LifetimeSecondsMultiplier = 1f,
-                        LifetimeRangeMultiplier = 1f
-                    }
-                };
-            case PassiveToolKind.ElementalProjectiles:
-                return new PlayerPassiveToolConfig
-                {
-                    IsDefined = 1,
-                    ToolKind = PassiveToolKind.ElementalProjectiles,
-                    HasElementalProjectiles = 1,
-                    ElementalProjectiles = new ElementalProjectilesPassiveConfig
-                    {
-                        Effect = CreateDefaultElementalEffectConfig(ElementType.Fire),
-                        StacksPerHit = 1f
-                    }
-                };
-            case PassiveToolKind.PerfectCircle:
-                return new PlayerPassiveToolConfig
-                {
-                    IsDefined = 1,
-                    ToolKind = PassiveToolKind.PerfectCircle,
-                    HasPerfectCircle = 1,
-                    PerfectCircle = new PerfectCirclePassiveConfig
-                    {
-                        RadialEntrySpeed = 14f,
-                        OrbitalSpeed = 220f,
-                        OrbitRadiusMin = 1.25f,
-                        OrbitRadiusMax = 2.5f,
-                        OrbitPulseFrequency = 1.2f,
-                        OrbitEntryRatio = 0.35f,
-                        OrbitBlendDuration = 0.3f,
-                        HeightOffset = 0f,
-                        GoldenAngleDegrees = 137.5f
-                    }
-                };
-            case PassiveToolKind.BouncingProjectiles:
-                return new PlayerPassiveToolConfig
-                {
-                    IsDefined = 1,
-                    ToolKind = PassiveToolKind.BouncingProjectiles,
-                    HasBouncingProjectiles = 1,
-                    BouncingProjectiles = new BouncingProjectilesPassiveConfig
-                    {
-                        MaxBounces = 2,
-                        SpeedPercentChangePerBounce = -10f,
-                        MinimumSpeedMultiplierAfterBounce = 0.6f,
-                        MaximumSpeedMultiplierAfterBounce = 1f
-                    }
-                };
-            case PassiveToolKind.SplittingProjectiles:
-                FixedList128Bytes<float> customAngles = default;
-
-                return new PlayerPassiveToolConfig
-                {
-                    IsDefined = 1,
-                    ToolKind = PassiveToolKind.SplittingProjectiles,
-                    HasSplittingProjectiles = 1,
-                    SplittingProjectiles = new SplittingProjectilesPassiveConfig
-                    {
-                        TriggerMode = ProjectileSplitTriggerMode.OnEnemyKilled,
-                        DirectionMode = ProjectileSplitDirectionMode.Uniform,
-                        SplitProjectileCount = 3,
-                        SplitOffsetDegrees = 0f,
-                        CustomAnglesDegrees = customAngles,
-                        SplitDamageMultiplier = 0.45f,
-                        SplitSizeMultiplier = 0.9f,
-                        SplitSpeedMultiplier = 0.85f,
-                        SplitLifetimeMultiplier = 0.75f
-                    }
-                };
-            case PassiveToolKind.Explosion:
-                return new PlayerPassiveToolConfig
-                {
-                    IsDefined = 1,
-                    ToolKind = PassiveToolKind.Explosion,
-                    HasExplosion = 1,
-                    Explosion = new ExplosionPassiveConfig
-                    {
-                        TriggerMode = PassiveExplosionTriggerMode.OnEnemyKilled,
-                        CooldownSeconds = 0.7f,
-                        Radius = 2.25f,
-                        Damage = 35f,
-                        AffectAllEnemiesInRadius = 1,
-                        TriggerOffset = float3.zero,
-                        ExplosionVfxPrefabEntity = Entity.Null,
-                        ScaleVfxToRadius = 0,
-                        VfxScaleMultiplier = 1f
-                    }
-                };
-            case PassiveToolKind.ElementalTrail:
-                return new PlayerPassiveToolConfig
-                {
-                    IsDefined = 1,
-                    ToolKind = PassiveToolKind.ElementalTrail,
-                    HasElementalTrail = 1,
-                    ElementalTrail = new ElementalTrailPassiveConfig
-                    {
-                        Effect = CreateDefaultElementalEffectConfig(ElementType.Poison),
-                        TrailSegmentLifetimeSeconds = 3f,
-                        TrailSpawnDistance = 1.25f,
-                        TrailSpawnIntervalSeconds = 0.15f,
-                        TrailRadius = 1.5f,
-                        MaxActiveSegmentsPerPlayer = 18,
-                        StacksPerTick = 1f,
-                        ApplyIntervalSeconds = 0.2f,
-                        TrailAttachedVfxPrefabEntity = Entity.Null,
-                        TrailAttachedVfxScaleMultiplier = 1f,
-                        TrailAttachedVfxOffset = float3.zero
-                    }
-                };
-            default:
-                return default;
-        }
-    }
-
-    private static ElementalEffectConfig CreateDefaultElementalEffectConfig(ElementType elementType)
-    {
-        return new ElementalEffectConfig
-        {
-            ElementType = elementType,
-            EffectKind = ElementalEffectKind.Dots,
-            ProcMode = ElementalProcMode.ProgressiveUntilThreshold,
-            ReapplyMode = ElementalProcReapplyMode.RefreshActiveProc,
-            ProcThresholdStacks = 5f,
-            MaximumStacks = 30f,
-            StackDecayPerSecond = 1f,
-            ConsumeStacksOnProc = 0,
-            DotDamagePerTick = 6f,
-            DotTickInterval = 0.25f,
-            DotDurationSeconds = 2f,
-            ImpedimentSlowPercentPerStack = 8f,
-            ImpedimentProcSlowPercent = 30f,
-            ImpedimentMaxSlowPercent = 80f,
-            ImpedimentDurationSeconds = 1.5f
-        };
     }
     #endregion
 

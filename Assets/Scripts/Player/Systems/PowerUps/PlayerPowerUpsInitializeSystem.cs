@@ -25,6 +25,8 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingPowerUpVfxPoolBufferQuery;
     private EntityQuery missingPowerUpVfxCapConfigQuery;
     private EntityQuery missingPowerUpCheatBufferQuery;
+    private EntityQuery missingPowerUpCheatPresetEntryBufferQuery;
+    private EntityQuery missingPowerUpCheatPresetPassiveBufferQuery;
     #endregion
 
     #region Methods
@@ -113,6 +115,16 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerPowerUpCheatCommand>()
             .Build();
+
+        missingPowerUpCheatPresetEntryBufferQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPowerUpCheatPresetEntry>()
+            .Build();
+
+        missingPowerUpCheatPresetPassiveBufferQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPowerUpCheatPresetPassiveElement>()
+            .Build();
     }
 
     /// <summary>
@@ -138,6 +150,8 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         bool hasMissingPowerUpVfxPoolBuffer = missingPowerUpVfxPoolBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPowerUpVfxCapConfig = missingPowerUpVfxCapConfigQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingPowerUpCheatBuffer = missingPowerUpCheatBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingPowerUpCheatPresetEntryBuffer = missingPowerUpCheatPresetEntryBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingPowerUpCheatPresetPassiveBuffer = missingPowerUpCheatPresetPassiveBufferQuery.IsEmptyIgnoreFilter == false;
 
         if (hasMissingState == false &&
             hasMissingPassiveToolsState == false &&
@@ -154,7 +168,9 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             hasMissingPowerUpVfxRequestBuffer == false &&
             hasMissingPowerUpVfxPoolBuffer == false &&
             hasMissingPowerUpVfxCapConfig == false &&
-            hasMissingPowerUpCheatBuffer == false)
+            hasMissingPowerUpCheatBuffer == false &&
+            hasMissingPowerUpCheatPresetEntryBuffer == false &&
+            hasMissingPowerUpCheatPresetPassiveBuffer == false)
             return;
 
         uint currentKillCount = 0u;
@@ -214,6 +230,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         if (hasMissingPowerUpCheatBuffer)
             AddMissingPowerUpCheatBuffers(ref commandBuffer);
+
+        if (hasMissingPowerUpCheatPresetEntryBuffer)
+            AddMissingPowerUpCheatPresetEntryBuffers(ref commandBuffer);
+
+        if (hasMissingPowerUpCheatPresetPassiveBuffer)
+            AddMissingPowerUpCheatPresetPassiveBuffers(ref commandBuffer);
 
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
@@ -705,6 +727,34 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         for (int index = 0; index < entities.Length; index++)
             commandBuffer.AddBuffer<PlayerPowerUpCheatCommand>(entities[index]);
+
+        entities.Dispose();
+    }
+
+    /// <summary>
+    /// Adds an empty cheat preset metadata buffer to player entities missing it.
+    /// </summary>
+    /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
+    private void AddMissingPowerUpCheatPresetEntryBuffers(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingPowerUpCheatPresetEntryBufferQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+            commandBuffer.AddBuffer<PlayerPowerUpCheatPresetEntry>(entities[index]);
+
+        entities.Dispose();
+    }
+
+    /// <summary>
+    /// Adds an empty flattened cheat preset passive buffer to player entities missing it.
+    /// </summary>
+    /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
+    private void AddMissingPowerUpCheatPresetPassiveBuffers(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingPowerUpCheatPresetPassiveBufferQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+            commandBuffer.AddBuffer<PlayerPowerUpCheatPresetPassiveElement>(entities[index]);
 
         entities.Dispose();
     }
