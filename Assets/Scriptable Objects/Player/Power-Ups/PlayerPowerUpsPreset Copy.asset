@@ -2860,13 +2860,13 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 100
+          maximumEnergy: 50
           activationCost: 50
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 100
           chargeType: 1
-          chargePerTrigger: 5
-          cooldownSeconds: 1
+          chargePerTrigger: 1
+          cooldownSeconds: 3
         suppressShooting:
           suppressBaseShootingWhileActive: 1
           interruptOtherSlotOnEnter: 0
@@ -3019,8 +3019,8 @@ MonoBehaviour:
           interruptOtherSlotOnEnter: 0
           interruptOtherSlotChargingOnly: 1
         projectilePatternCone:
-          projectileCount: 6
-          coneAngleDegrees: 45
+          projectileCount: 15
+          coneAngleDegrees: 60
         projectileTuning:
           sizeMultiplier: 1
           damageMultiplier: 1
@@ -4207,13 +4207,13 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 100
-          activationCost: 100
+          maximumEnergy: 200
+          activationCost: 200
           maintenanceCostPerSecond: 0
           minimumActivationEnergyPercent: 100
           chargeType: 1
-          chargePerTrigger: 35
-          cooldownSeconds: 1
+          chargePerTrigger: 1
+          cooldownSeconds: 5
         suppressShooting:
           suppressBaseShootingWhileActive: 1
           interruptOtherSlotOnEnter: 0
@@ -6961,7 +6961,7 @@ MonoBehaviour:
     - moduleId: Module_ProjectilesPatternCone
       stage: 4
       isEnabled: 1
-      useOverridePayload: 0
+      useOverridePayload: 1
       overridePayload:
         holdCharge:
           requiredCharge: 0
@@ -6984,8 +6984,8 @@ MonoBehaviour:
           interruptOtherSlotOnEnter: 0
           interruptOtherSlotChargingOnly: 0
         projectilePatternCone:
-          projectileCount: 1
-          coneAngleDegrees: 0
+          projectileCount: 3
+          coneAngleDegrees: 30
         projectileTuning:
           sizeMultiplier: 0.01
           damageMultiplier: 0
@@ -7555,7 +7555,8 @@ MonoBehaviour:
   secondaryActivePowerUpId: ActiveGigaBomb
   equippedPassivePowerUpIds:
   - PassiveShotgun
-  - PassiveEnemiesExplodeOnDeath
+  - PassiveBouncingProjectiles
+  - PassiveSplittingProjectiles
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT
