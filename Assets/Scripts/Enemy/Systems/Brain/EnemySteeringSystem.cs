@@ -317,6 +317,8 @@ public partial struct EnemySteeringSystem : ISystem
 
             float3 desiredDisplacement = runtimeState.Velocity * deltaTime;
             float3 position = enemyTransform.Position;
+            float3 resolvedDisplacement = desiredDisplacement;
+            float3 resolvedVelocity = runtimeState.Velocity;
 
             if (wallsEnabled)
             {
@@ -329,16 +331,39 @@ public partial struct EnemySteeringSystem : ISystem
                                                                                        out float3 allowedDisplacement,
                                                                                        out float3 hitNormal);
 
-                position += allowedDisplacement;
+                resolvedDisplacement = allowedDisplacement;
 
                 if (hitWall)
-                    runtimeState.Velocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(runtimeState.Velocity, hitNormal);
+                {
+                    resolvedVelocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(runtimeState.Velocity, hitNormal);
+
+                    if (EnemyWallSteeringUtility.TryResolveCircumnavigationDisplacement(physicsWorldSingleton,
+                                                                                        enemyEntity.Index,
+                                                                                        enemyTransform.Position,
+                                                                                        playerPosition,
+                                                                                        runtimeState.Velocity,
+                                                                                        desiredDisplacement,
+                                                                                        allowedDisplacement,
+                                                                                        hitNormal,
+                                                                                        collisionRadius,
+                                                                                        wallsLayerMask,
+                                                                                        deltaTime,
+                                                                                        out float3 bypassDisplacement,
+                                                                                        out float3 bypassVelocity,
+                                                                                        out float3 bypassHitNormal))
+                    {
+                        resolvedDisplacement = bypassDisplacement;
+                        resolvedVelocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(bypassVelocity, bypassHitNormal);
+                    }
+                }
             }
             else
             {
-                position += desiredDisplacement;
+                resolvedDisplacement = desiredDisplacement;
             }
 
+            position += resolvedDisplacement;
+            runtimeState.Velocity = resolvedVelocity;
             position.y = enemyTransform.Position.y;
             enemyTransform.Position = position;
 

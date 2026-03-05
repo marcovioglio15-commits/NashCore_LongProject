@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.Utilities;
 using Object = UnityEngine.Object;
 
 #region Runtime
@@ -82,6 +84,81 @@ public static class PlayerInputRuntime
         {
             return lookActionUsesMousePointer;
         }
+    }
+
+    /// <summary>
+    /// Resolves whether mouse-pointer look should drive aim in the current runtime context.
+    /// </summary>
+    /// <returns>True when look supports mouse pointer and no controller-like devices are connected.</returns>
+    public static bool ShouldUseMousePointerLook()
+    {
+        if (lookActionUsesMousePointer == false)
+            return false;
+
+        return IsMouseKeyboardOnlyContext();
+    }
+
+    /// <summary>
+    /// Reads look input while excluding pointer controls when the action mixes mouse and controller bindings.
+    /// </summary>
+    /// <param name="lookValue">Resolved look vector.</param>
+    /// <returns>True when a look vector was resolved from the runtime look action.</returns>
+    public static bool TryReadControllerLookVector(out Vector2 lookValue)
+    {
+        lookValue = Vector2.zero;
+
+        if (lookAction == null)
+            return false;
+
+        if (lookAction.enabled == false)
+            return false;
+
+        if (lookActionUsesMousePointer == false)
+        {
+            lookValue = lookAction.ReadValue<Vector2>();
+            return true;
+        }
+
+        ReadOnlyArray<InputControl> controls = lookAction.controls;
+        bool foundNonPointerControl = false;
+        float bestMagnitudeSquared = -1f;
+
+        for (int controlIndex = 0; controlIndex < controls.Count; controlIndex++)
+        {
+            InputControl control = controls[controlIndex];
+
+            if (control == null)
+                continue;
+
+            if (IsPointerDevice(control.device))
+                continue;
+
+            if (TryReadLookControlVector2(control, out Vector2 candidateLookValue) == false)
+                continue;
+
+            float candidateMagnitudeSquared = candidateLookValue.sqrMagnitude;
+
+            if (foundNonPointerControl && candidateMagnitudeSquared <= bestMagnitudeSquared)
+                continue;
+
+            foundNonPointerControl = true;
+            bestMagnitudeSquared = candidateMagnitudeSquared;
+            lookValue = candidateLookValue;
+        }
+
+        if (foundNonPointerControl)
+            return true;
+
+        InputControl activeControl = lookAction.activeControl;
+
+        if (activeControl == null)
+            return false;
+
+        if (IsPointerDevice(activeControl.device))
+            return false;
+
+        lookValue = lookAction.ReadValue<Vector2>();
+        return true;
     }
 
     /// <summary>
@@ -264,6 +341,30 @@ public static class PlayerInputRuntime
         }
 
         return false;
+    }
+
+    private static bool IsPointerDevice(InputDevice device)
+    {
+        if (device == null)
+            return false;
+
+        if (device is Pointer)
+            return true;
+
+        return false;
+    }
+
+    private static bool TryReadLookControlVector2(InputControl control, out Vector2 lookValue)
+    {
+        lookValue = Vector2.zero;
+
+        Vector2Control vector2Control = control as Vector2Control;
+
+        if (vector2Control == null)
+            return false;
+
+        lookValue = vector2Control.ReadValue();
+        return true;
     }
     #endregion
 

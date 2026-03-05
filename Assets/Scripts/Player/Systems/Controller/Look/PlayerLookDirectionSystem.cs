@@ -33,7 +33,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
-        bool useMousePointerLook = PlayerInputRuntime.LookActionUsesMousePointer && PlayerInputRuntime.IsMouseKeyboardOnlyContext();
+        bool useMousePointerLook = PlayerInputRuntime.ShouldUseMousePointerLook();
         Camera camera = null;
         float2 mouseScreenPosition = float2.zero;
 

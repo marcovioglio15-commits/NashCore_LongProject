@@ -237,7 +237,7 @@ public sealed class InputAuthoring : MonoBehaviour
     /// </summary>
     private static void ApplyCursorPolicy()
     {
-        bool allowMousePointerMode = PlayerInputRuntime.LookActionUsesMousePointer && PlayerInputRuntime.IsMouseKeyboardOnlyContext();
+        bool allowMousePointerMode = PlayerInputRuntime.ShouldUseMousePointerLook();
         bool lockCursor = allowMousePointerMode == false;
         SetCursorLock(lockCursor);
     }
