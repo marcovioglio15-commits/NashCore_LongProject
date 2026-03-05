@@ -343,6 +343,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                     in passiveToolsState,
                     moveInput,
                     lastValidMovementDirection,
+                    playerEntity,
                     ref dashState,
                     ref bulletTimeState,
                     bombRequests,
@@ -692,6 +693,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                     in PlayerPassiveToolsState passiveToolsState,
                                     float2 moveInput,
                                     float3 lastValidMovementDirection,
+                                    Entity playerEntity,
                                     ref PlayerDashState dashState,
                                     ref PlayerBulletTimeState bulletTimeState,
                                     DynamicBuffer<PlayerBombSpawnRequest> bombRequests,
@@ -700,7 +702,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         switch (slotConfig.ToolKind)
         {
             case ActiveToolKind.Bomb:
-                ExecuteBomb(slotConfig, in localTransform, in lookState, in movementState, bombRequests);
+                ExecuteBomb(slotConfig, in localTransform, in lookState, in movementState, playerEntity, bombRequests);
                 return;
             case ActiveToolKind.Dash:
                 ExecuteDash(slotConfig,
@@ -731,6 +733,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                     in LocalTransform localTransform,
                                     in PlayerLookState lookState,
                                     in PlayerMovementState movementState,
+                                    Entity playerEntity,
                                     DynamicBuffer<PlayerBombSpawnRequest> bombRequests)
     {
         float3 bombDirection = ResolveBombActivationDirection(in movementState, in localTransform);
@@ -743,9 +746,13 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         float radius = enableDamagePayload != 0 ? math.max(0.1f, slotConfig.Bomb.Radius) : 0f;
         float damage = enableDamagePayload != 0 ? math.max(0f, slotConfig.Bomb.Damage) : 0f;
         byte affectAll = enableDamagePayload != 0 ? slotConfig.Bomb.AffectAllEnemiesInRadius : (byte)0;
+        Entity explosionVfxPrefabEntity = enableDamagePayload != 0 ? slotConfig.Bomb.ExplosionVfxPrefabEntity : Entity.Null;
+        byte scaleVfxToRadius = enableDamagePayload != 0 ? slotConfig.Bomb.ScaleVfxToRadius : (byte)0;
+        float vfxScaleMultiplier = enableDamagePayload != 0 ? math.max(0.01f, slotConfig.Bomb.VfxScaleMultiplier) : 1f;
 
         bombRequests.Add(new PlayerBombSpawnRequest
         {
+            OwnerEntity = playerEntity,
             BombPrefabEntity = slotConfig.BombPrefabEntity,
             Position = spawnPosition,
             Rotation = quaternion.LookRotationSafe(bombDirection, new float3(0f, 1f, 0f)),
@@ -757,7 +764,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             FuseSeconds = math.max(0.05f, slotConfig.Bomb.FuseSeconds),
             Radius = radius,
             Damage = damage,
-            AffectAllEnemiesInRadius = affectAll
+            AffectAllEnemiesInRadius = affectAll,
+            ExplosionVfxPrefabEntity = explosionVfxPrefabEntity,
+            ScaleVfxToRadius = scaleVfxToRadius,
+            VfxScaleMultiplier = vfxScaleMultiplier
         });
     }
 

@@ -1746,6 +1746,16 @@ public sealed class BombToolData
 
     [Tooltip("When enabled, all enemies in radius are affected by the explosion.")]
     [SerializeField] private bool affectAllEnemiesInRadius = true;
+
+    [Header("Explosion VFX (Optional)")]
+    [Tooltip("Optional VFX prefab spawned when the bomb detonates.")]
+    [SerializeField] private GameObject explosionVfxPrefab;
+
+    [Tooltip("When enabled, bomb explosion VFX scale is multiplied by explosion radius.")]
+    [SerializeField] private bool scaleVfxToRadius = true;
+
+    [Tooltip("Additional scale multiplier applied to bomb explosion VFX.")]
+    [SerializeField] private float vfxScaleMultiplier = 1f;
     #endregion
 
     #endregion
@@ -1854,6 +1864,30 @@ public sealed class BombToolData
             return affectAllEnemiesInRadius;
         }
     }
+
+    public GameObject ExplosionVfxPrefab
+    {
+        get
+        {
+            return explosionVfxPrefab;
+        }
+    }
+
+    public bool ScaleVfxToRadius
+    {
+        get
+        {
+            return scaleVfxToRadius;
+        }
+    }
+
+    public float VfxScaleMultiplier
+    {
+        get
+        {
+            return vfxScaleMultiplier;
+        }
+    }
     #endregion
 
     #region Methods
@@ -1894,6 +1928,9 @@ public sealed class BombToolData
 
         if (damage < 0f)
             damage = 0f;
+
+        if (vfxScaleMultiplier < 0.01f)
+            vfxScaleMultiplier = 0.01f;
     }
     #endregion
 

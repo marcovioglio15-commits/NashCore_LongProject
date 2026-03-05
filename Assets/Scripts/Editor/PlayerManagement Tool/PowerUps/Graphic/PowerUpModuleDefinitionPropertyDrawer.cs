@@ -228,6 +228,9 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
         SerializedProperty radiusProperty = spawnPayloadProperty.FindPropertyRelative("radius");
         SerializedProperty damageProperty = spawnPayloadProperty.FindPropertyRelative("damage");
         SerializedProperty affectAllEnemiesInRadiusProperty = spawnPayloadProperty.FindPropertyRelative("affectAllEnemiesInRadius");
+        SerializedProperty explosionVfxPrefabProperty = spawnPayloadProperty.FindPropertyRelative("explosionVfxPrefab");
+        SerializedProperty scaleVfxToRadiusProperty = spawnPayloadProperty.FindPropertyRelative("scaleVfxToRadius");
+        SerializedProperty vfxScaleMultiplierProperty = spawnPayloadProperty.FindPropertyRelative("vfxScaleMultiplier");
 
         if (prefabProperty == null ||
             spawnOffsetProperty == null ||
@@ -241,7 +244,10 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
             enableDamagePayloadProperty == null ||
             radiusProperty == null ||
             damageProperty == null ||
-            affectAllEnemiesInRadiusProperty == null)
+            affectAllEnemiesInRadiusProperty == null ||
+            explosionVfxPrefabProperty == null ||
+            scaleVfxToRadiusProperty == null ||
+            vfxScaleMultiplierProperty == null)
         {
             HelpBox errorBox = new HelpBox("Spawn object payload fields are missing.", HelpBoxMessageType.Warning);
             payloadContainer.Add(errorBox);
@@ -278,6 +284,9 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
         AddField(damageContainer, radiusProperty, "Radius");
         AddField(damageContainer, damageProperty, "Damage");
         AddField(damageContainer, affectAllEnemiesInRadiusProperty, "Affect All Enemies In Radius");
+        AddField(damageContainer, explosionVfxPrefabProperty, "Explosion VFX Prefab");
+        AddField(damageContainer, scaleVfxToRadiusProperty, "Scale VFX To Radius");
+        AddField(damageContainer, vfxScaleMultiplierProperty, "VFX Scale Multiplier");
 
         UpdateDamageContainerVisibility(enableDamagePayloadProperty, damageContainer);
         payloadContainer.TrackPropertyValue(enableDamagePayloadProperty, changedProperty =>

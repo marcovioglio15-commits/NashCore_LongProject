@@ -35,6 +35,8 @@ public partial struct PlayerBombExplosionSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
+        BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
+        EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
         NativeArray<Entity> bombEntities = bombQuery.ToEntityArray(Allocator.Temp);
         NativeArray<BombFuseState> bombFuseStates = bombQuery.ToComponentDataArray<BombFuseState>(Allocator.Temp);
@@ -82,7 +84,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
             BombFuseState fuseState = bombFuseStates[bombIndex];
 
             if (enemyCount > 0)
-                ApplyExplosionToEnemies(ref state,
+                ApplyExplosionToEnemies(entityManager,
                                         in fuseState,
                                         enemyCount,
                                         in enemyEntities,
@@ -92,12 +94,15 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                         ref enemyDirtyFlags,
                                         in enemyCellMap,
                                         inverseCellSize,
-                                        maximumEnemyRadius);
+                                        maximumEnemyRadius,
+                                        ref commandBuffer);
+
+            EnqueueExplosionVfxRequest(in fuseState, ref vfxRequestLookup);
 
             Entity bombEntity = bombEntities[bombIndex];
 
             if (entityManager.Exists(bombEntity))
-                entityManager.DestroyEntity(bombEntity);
+                commandBuffer.DestroyEntity(bombEntity);
         }
 
         if (enemyCount > 0)
@@ -125,13 +130,47 @@ public partial struct PlayerBombExplosionSystem : ISystem
             enemyCellMap.Dispose();
         }
 
+        commandBuffer.Playback(entityManager);
+        commandBuffer.Dispose();
         bombEntities.Dispose();
         bombFuseStates.Dispose();
     }
     #endregion
 
     #region Helpers
-    private static void ApplyExplosionToEnemies(ref SystemState state,
+    private static void EnqueueExplosionVfxRequest(in BombFuseState fuseState, ref BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup)
+    {
+        if (fuseState.OwnerEntity == Entity.Null)
+            return;
+
+        if (fuseState.ExplosionVfxPrefabEntity == Entity.Null)
+            return;
+
+        if (vfxRequestLookup.HasBuffer(fuseState.OwnerEntity) == false)
+            return;
+
+        DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests = vfxRequestLookup[fuseState.OwnerEntity];
+        float scaleMultiplier = math.max(0.01f, fuseState.VfxScaleMultiplier);
+
+        if (fuseState.ScaleVfxToRadius != 0)
+            scaleMultiplier *= math.max(0.1f, fuseState.Radius);
+
+        vfxRequests.Add(new PlayerPowerUpVfxSpawnRequest
+        {
+            PrefabEntity = fuseState.ExplosionVfxPrefabEntity,
+            Position = fuseState.Position,
+            Rotation = quaternion.identity,
+            UniformScale = scaleMultiplier,
+            LifetimeSeconds = 2f,
+            FollowTargetEntity = Entity.Null,
+            FollowPositionOffset = float3.zero,
+            FollowValidationEntity = Entity.Null,
+            FollowValidationSpawnVersion = 0u,
+            Velocity = float3.zero
+        });
+    }
+
+    private static void ApplyExplosionToEnemies(EntityManager entityManager,
                                                 in BombFuseState fuseState,
                                                 int enemyCount,
                                                 in NativeArray<Entity> enemyEntities,
@@ -141,7 +180,8 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                                 ref NativeArray<byte> enemyDirtyFlags,
                                                 in NativeParallelMultiHashMap<int, int> enemyCellMap,
                                                 float inverseCellSize,
-                                                float maximumEnemyRadius)
+                                                float maximumEnemyRadius,
+                                                ref EntityCommandBuffer commandBuffer)
     {
         float explosionRadius = math.max(0.1f, fuseState.Radius);
         float explosionRadiusSquared = explosionRadius * explosionRadius;
@@ -177,7 +217,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
                         if (enemyIndex < 0 || enemyIndex >= enemyCount)
                             continue;
 
-                        ApplyExplosionDamageToEnemy(ref state,
+                        ApplyExplosionDamageToEnemy(entityManager,
                                                     in fuseState,
                                                     enemyIndex,
                                                     explosionRadiusSquared,
@@ -186,7 +226,8 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                                     ref enemyHealthArray,
                                                     in enemyPositions,
                                                     in enemyBodyRadii,
-                                                    ref enemyDirtyFlags);
+                                                    ref enemyDirtyFlags,
+                                                    ref commandBuffer);
                     }
                     while (enemyCellMap.TryGetNextValue(out enemyIndex, ref iterator));
                 }
@@ -245,7 +286,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
         if (closestEnemyIndex < 0)
             return;
 
-        ApplyExplosionDamageToEnemy(ref state,
+        ApplyExplosionDamageToEnemy(entityManager,
                                     in fuseState,
                                     closestEnemyIndex,
                                     explosionRadiusSquared,
@@ -254,10 +295,11 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                     ref enemyHealthArray,
                                     in enemyPositions,
                                     in enemyBodyRadii,
-                                    ref enemyDirtyFlags);
+                                    ref enemyDirtyFlags,
+                                    ref commandBuffer);
     }
 
-    private static void ApplyExplosionDamageToEnemy(ref SystemState state,
+    private static void ApplyExplosionDamageToEnemy(EntityManager entityManager,
                                                     in BombFuseState fuseState,
                                                     int enemyIndex,
                                                     float explosionRadiusSquared,
@@ -266,10 +308,10 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                                     ref NativeArray<EnemyHealth> enemyHealthArray,
                                                     in NativeArray<float3> enemyPositions,
                                                     in NativeArray<float> enemyBodyRadii,
-                                                    ref NativeArray<byte> enemyDirtyFlags)
+                                                    ref NativeArray<byte> enemyDirtyFlags,
+                                                    ref EntityCommandBuffer commandBuffer)
     {
         Entity enemyEntity = enemyEntities[enemyIndex];
-        EntityManager entityManager = state.EntityManager;
 
         if (entityManager.Exists(enemyEntity) == false)
             return;
@@ -296,10 +338,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
         if (enemyHealth.Current > 0f)
             return;
 
-        if (entityManager.HasComponent<EnemyDespawnRequest>(enemyEntity))
-            return;
-
-        entityManager.AddComponentData(enemyEntity, new EnemyDespawnRequest
+        commandBuffer.AddComponent(enemyEntity, new EnemyDespawnRequest
         {
             Reason = EnemyDespawnReason.Killed
         });

@@ -69,6 +69,9 @@ public struct BombPowerUpConfig
     public float Radius;
     public float Damage;
     public byte AffectAllEnemiesInRadius;
+    public Entity ExplosionVfxPrefabEntity;
+    public byte ScaleVfxToRadius;
+    public float VfxScaleMultiplier;
 }
 
 /// <summary>

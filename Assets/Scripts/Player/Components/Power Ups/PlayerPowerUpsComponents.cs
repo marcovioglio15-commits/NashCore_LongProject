@@ -128,6 +128,7 @@ public struct PlayerHealOverTimeState : IComponentData
 /// </summary>
 public struct PlayerBombSpawnRequest : IBufferElementData
 {
+    public Entity OwnerEntity;
     public Entity BombPrefabEntity;
     public float3 Position;
     public quaternion Rotation;
@@ -140,6 +141,9 @@ public struct PlayerBombSpawnRequest : IBufferElementData
     public float Radius;
     public float Damage;
     public byte AffectAllEnemiesInRadius;
+    public Entity ExplosionVfxPrefabEntity;
+    public byte ScaleVfxToRadius;
+    public float VfxScaleMultiplier;
 }
 
 /// <summary>
@@ -147,6 +151,7 @@ public struct PlayerBombSpawnRequest : IBufferElementData
 /// </summary>
 public struct BombFuseState : IComponentData
 {
+    public Entity OwnerEntity;
     public float3 Position;
     public float3 Velocity;
     public float CollisionRadius;
@@ -157,6 +162,9 @@ public struct BombFuseState : IComponentData
     public float Radius;
     public float Damage;
     public byte AffectAllEnemiesInRadius;
+    public Entity ExplosionVfxPrefabEntity;
+    public byte ScaleVfxToRadius;
+    public float VfxScaleMultiplier;
 }
 
 /// <summary>

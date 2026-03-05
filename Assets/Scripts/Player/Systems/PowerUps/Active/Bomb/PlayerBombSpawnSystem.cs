@@ -43,6 +43,7 @@ public partial struct PlayerBombSpawnSystem : ISystem
 
                 BombFuseState fuseState = new BombFuseState
                 {
+                    OwnerEntity = request.OwnerEntity,
                     Position = request.Position,
                     Velocity = request.Velocity,
                     CollisionRadius = math.max(0.01f, request.CollisionRadius),
@@ -52,7 +53,10 @@ public partial struct PlayerBombSpawnSystem : ISystem
                     FuseRemaining = math.max(0.05f, request.FuseSeconds),
                     Radius = math.max(0.1f, request.Radius),
                     Damage = math.max(0f, request.Damage),
-                    AffectAllEnemiesInRadius = request.AffectAllEnemiesInRadius
+                    AffectAllEnemiesInRadius = request.AffectAllEnemiesInRadius,
+                    ExplosionVfxPrefabEntity = request.ExplosionVfxPrefabEntity,
+                    ScaleVfxToRadius = request.ScaleVfxToRadius,
+                    VfxScaleMultiplier = math.max(0.01f, request.VfxScaleMultiplier)
                 };
 
                 if (entityManager.HasComponent<BombFuseState>(request.BombPrefabEntity))

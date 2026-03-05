@@ -1639,6 +1639,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         float bombPayloadRadius = 0.1f;
         float bombPayloadDamage = 0f;
         bool bombPayloadAffectAllEnemies = false;
+        GameObject bombExplosionVfxPrefab = null;
+        bool bombScaleVfxToRadius = true;
+        float bombVfxScaleMultiplier = 1f;
         bool hasDash = false;
         float dashDistance = 0f;
         float dashDuration = 0.01f;
@@ -1836,6 +1839,14 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                     bombPayloadRadius = math.max(bombPayloadRadius, math.max(0.1f, bombModuleData.Radius));
                     bombPayloadDamage += math.max(0f, bombModuleData.Damage);
                     bombPayloadAffectAllEnemies = bombPayloadAffectAllEnemies || bombModuleData.AffectAllEnemiesInRadius;
+
+                    if (bombExplosionVfxPrefab == null && bombModuleData.ExplosionVfxPrefab != null)
+                    {
+                        bombExplosionVfxPrefab = bombModuleData.ExplosionVfxPrefab;
+                        bombScaleVfxToRadius = bombModuleData.ScaleVfxToRadius;
+                        bombVfxScaleMultiplier = math.max(0.01f, bombModuleData.VfxScaleMultiplier);
+                    }
+
                     break;
                 case PowerUpModuleKind.DeathExplosion:
                     hasExplosionData = true;
@@ -1914,6 +1925,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             return default;
 
         Entity bombPrefabEntity = Entity.Null;
+        Entity bombExplosionVfxPrefabEntity = Entity.Null;
 
         if (resolvedToolKind == ActiveToolKind.Bomb && bombPrefab != null)
         {
@@ -1926,6 +1938,18 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                     Debug.LogError(string.Format("[PlayerAuthoringBaker] Invalid bomb prefab '{0}' on '{1}'. Assign a dedicated bomb prefab without PlayerAuthoring.", bombPrefab.name, authoring.name), authoring);
 #endif
             }
+        }
+
+        if (resolvedToolKind == ActiveToolKind.Bomb)
+        {
+            if (authoring != null && authoring.BakePowerUpVfxEntityPrefabs)
+                bombExplosionVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, bombExplosionVfxPrefab, "Bomb Explosion VFX");
+#if UNITY_EDITOR
+            else if (authoring != null && bombExplosionVfxPrefab != null)
+                Debug.LogWarning(string.Format("[PlayerAuthoringBaker] Bomb explosion VFX prefab is assigned on '{0}', but BakePowerUpVfxEntityPrefabs is disabled. SpawnObject explosion VFX will not spawn at runtime.",
+                                               authoring.name),
+                                 authoring);
+#endif
         }
 
         float bombRadius = math.max(0.1f, bombPayloadRadius);
@@ -2000,7 +2024,10 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 EnableDamagePayload = bombEnableDamagePayload,
                 Radius = bombRadius,
                 Damage = bombDamage,
-                AffectAllEnemiesInRadius = bombAffectAll
+                AffectAllEnemiesInRadius = bombAffectAll,
+                ExplosionVfxPrefabEntity = bombExplosionVfxPrefabEntity,
+                ScaleVfxToRadius = bombScaleVfxToRadius ? (byte)1 : (byte)0,
+                VfxScaleMultiplier = math.max(0.01f, bombVfxScaleMultiplier)
             },
             Dash = new DashPowerUpConfig
             {
@@ -2886,6 +2913,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         DashToolData dashData = activeTool.DashData;
         BulletTimeToolData bulletTimeData = activeTool.BulletTimeData;
         Entity bombPrefabEntity = Entity.Null;
+        Entity bombExplosionVfxPrefabEntity = Entity.Null;
 
         if (activeTool.ToolKind == ActiveToolKind.Bomb && bombData != null && bombData.BombPrefab != null)
         {
@@ -2900,6 +2928,18 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                     Debug.LogError(string.Format("[PlayerAuthoringBaker] Invalid bomb prefab '{0}' on '{1}'. Assign a dedicated bomb prefab without PlayerAuthoring.", bombPrefab.name, authoring.name), authoring);
 #endif
             }
+        }
+
+        if (activeTool.ToolKind == ActiveToolKind.Bomb && bombData != null)
+        {
+            if (authoring != null && authoring.BakePowerUpVfxEntityPrefabs)
+                bombExplosionVfxPrefabEntity = ResolveOptionalPowerUpPrefabEntity(authoring, bombData.ExplosionVfxPrefab, "Bomb Explosion VFX");
+#if UNITY_EDITOR
+            else if (authoring != null && bombData.ExplosionVfxPrefab != null)
+                Debug.LogWarning(string.Format("[PlayerAuthoringBaker] Bomb explosion VFX prefab is assigned on '{0}', but BakePowerUpVfxEntityPrefabs is disabled. SpawnObject explosion VFX will not spawn at runtime.",
+                                               authoring.name),
+                                 authoring);
+#endif
         }
 
         // Clamp and sanitize values to ensure stability.
@@ -2921,6 +2961,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         float bombRadius = bombData != null ? math.max(0.1f, bombData.Radius) : 0.1f;
         float bombDamage = bombData != null ? math.max(0f, bombData.Damage) : 0f;
         byte bombAffectAll = bombData != null && bombData.AffectAllEnemiesInRadius ? (byte)1 : (byte)0;
+        byte bombScaleVfxToRadius = bombData != null && bombData.ScaleVfxToRadius ? (byte)1 : (byte)0;
+        float bombVfxScaleMultiplier = bombData != null ? math.max(0.01f, bombData.VfxScaleMultiplier) : 1f;
         float dashDistance = dashData != null ? math.max(0f, dashData.Distance) : 0f;
         float dashDuration = dashData != null ? math.max(0.01f, dashData.Duration) : 0.01f;
         float dashSpeedTransitionInSeconds = dashData != null ? math.max(0f, dashData.SpeedTransitionInSeconds) : 0f;
@@ -2966,7 +3008,10 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 EnableDamagePayload = bombEnableDamagePayload,
                 Radius = bombRadius,
                 Damage = bombDamage,
-                AffectAllEnemiesInRadius = bombAffectAll
+                AffectAllEnemiesInRadius = bombAffectAll,
+                ExplosionVfxPrefabEntity = bombExplosionVfxPrefabEntity,
+                ScaleVfxToRadius = bombScaleVfxToRadius,
+                VfxScaleMultiplier = bombVfxScaleMultiplier
             },
             Dash = new DashPowerUpConfig
             {
