@@ -25,6 +25,13 @@ public partial struct EnemySteeringSystem : ISystem
     private const float SeparationPredictionMaxSeconds = 0.55f;
     private const float PriorityApproachUrgencyWeight = 2.2f;
     private const float SeparationUrgencyMaxBoost = 3.6f;
+    private const float PriorityYieldMaxSpeedBoost = 0.75f;
+    private const float PriorityYieldMaxAccelerationBoost = 2.25f;
+    private const float PriorityYieldGapNormalization = 6f;
+    private const float PriorityYieldGapSpeedScaleMin = 0.62f;
+    private const float PriorityYieldGapSpeedScaleMax = 1.45f;
+    private const float PriorityYieldGapAccelerationScaleMin = 0.7f;
+    private const float PriorityYieldGapAccelerationScaleMax = 1.7f;
     private const float DefaultSteeringAggressiveness = 1f;
     private const float MinimumSteeringAggressiveness = 0f;
     private const float MaximumSteeringAggressiveness = 2.5f;
@@ -209,6 +216,8 @@ public partial struct EnemySteeringSystem : ISystem
         NativeArray<float3> approachResults = new NativeArray<float3>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float3> separationResults = new NativeArray<float3>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> separationUrgencyResults = new NativeArray<float>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> priorityYieldUrgencyResults = new NativeArray<float>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> priorityYieldGapResults = new NativeArray<float>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
         if (evaluatedCount > 0)
         {
@@ -236,7 +245,9 @@ public partial struct EnemySteeringSystem : ISystem
                 CellCoordinates = cellCoordinates,
                 CellMap = cellMap,
                 Results = separationResults,
-                UrgencyResults = separationUrgencyResults
+                UrgencyResults = separationUrgencyResults,
+                YieldUrgencyResults = priorityYieldUrgencyResults,
+                YieldPriorityGapResults = priorityYieldGapResults
             };
 
             JobHandle approachHandle = approachJob.Schedule(evaluatedCount, 64, state.Dependency);
@@ -267,14 +278,17 @@ public partial struct EnemySteeringSystem : ISystem
             EnemyData enemyData = enemyDataArray[enemyIndex];
             EnemyRuntimeState runtimeState = enemyRuntimeArray[enemyIndex];
             LocalTransform enemyTransform = enemyTransforms[enemyIndex];
+            float velocityMaxSpeed = math.max(0f, speedData[enemyIndex].y);
+            float enemySteeringAggressiveness = steeringAggressiveness[enemyIndex];
 
             int evaluatedIndex = enemyToEvaluatedIndex[enemyIndex];
 
             if (evaluatedIndex >= 0)
             {
                 float separationWeight = math.max(0f, enemyData.SeparationWeight);
-                float enemySteeringAggressiveness = steeringAggressiveness[enemyIndex];
                 float3 desiredVelocity = approachResults[evaluatedIndex];
+                float priorityYieldUrgency = 0f;
+                float priorityYieldGap = 0f;
 
                 if (evaluatedSeparationEnabled[evaluatedIndex] != 0)
                 {
@@ -282,13 +296,20 @@ public partial struct EnemySteeringSystem : ISystem
                     float urgencyBoost = math.lerp(1f, SeparationUrgencyMaxBoost, urgency);
                     float separationResponseScale = ResolveAggressivenessScale(enemySteeringAggressiveness, 0.72f, 1.95f);
                     desiredVelocity += separationResults[evaluatedIndex] * separationWeight * urgencyBoost * separationResponseScale * enemySteeringAggressiveness;
+                    priorityYieldUrgency = math.saturate(priorityYieldUrgencyResults[evaluatedIndex]);
+                    priorityYieldGap = math.saturate(priorityYieldGapResults[evaluatedIndex]);
                 }
 
-                float maxSpeed = math.max(0f, speedData[enemyIndex].y);
+                if (velocityMaxSpeed > 0f && priorityYieldUrgency > 0f)
+                {
+                    float speedBoost = ResolvePriorityYieldSpeedBoost(priorityYieldUrgency, priorityYieldGap, enemySteeringAggressiveness);
+                    velocityMaxSpeed *= 1f + speedBoost;
+                }
+
                 float desiredSpeed = math.length(desiredVelocity);
 
-                if (maxSpeed > 0f && desiredSpeed > maxSpeed && desiredSpeed > DirectionEpsilon)
-                    desiredVelocity *= maxSpeed / desiredSpeed;
+                if (velocityMaxSpeed > 0f && desiredSpeed > velocityMaxSpeed && desiredSpeed > DirectionEpsilon)
+                    desiredVelocity *= velocityMaxSpeed / desiredSpeed;
 
                 float acceleration = math.max(0f, enemyData.Acceleration);
                 float deceleration = math.max(0f, enemyData.Deceleration);
@@ -296,6 +317,13 @@ public partial struct EnemySteeringSystem : ISystem
                                                                    desiredVelocity,
                                                                    acceleration,
                                                                    deceleration);
+
+                if (priorityYieldUrgency > 0f)
+                {
+                    float accelerationBoost = ResolvePriorityYieldAccelerationBoost(priorityYieldUrgency, priorityYieldGap, enemySteeringAggressiveness);
+                    accelerationRate *= 1f + accelerationBoost;
+                }
+
                 float maxVelocityDelta = accelerationRate * deltaTime;
                 float3 velocityDelta = desiredVelocity - runtimeState.Velocity;
                 float velocityDeltaMagnitude = math.length(velocityDelta);
@@ -307,7 +335,6 @@ public partial struct EnemySteeringSystem : ISystem
             }
 
             float velocityMagnitude = math.length(runtimeState.Velocity);
-            float velocityMaxSpeed = math.max(0f, speedData[enemyIndex].y);
 
             if (velocityMaxSpeed > 0f && velocityMagnitude > velocityMaxSpeed && velocityMagnitude > DirectionEpsilon)
                 runtimeState.Velocity *= velocityMaxSpeed / velocityMagnitude;
@@ -370,7 +397,6 @@ public partial struct EnemySteeringSystem : ISystem
             float planarVelocitySquared = runtimeState.Velocity.x * runtimeState.Velocity.x + runtimeState.Velocity.z * runtimeState.Velocity.z;
             float rotationSpeedDegreesPerSecond = enemyData.RotationSpeedDegreesPerSecond;
             bool hasSelfRotation = math.abs(rotationSpeedDegreesPerSecond) > RotationSpeedEpsilon;
-            float enemySteeringAggressivenessForLook = steeringAggressiveness[enemyIndex];
 
             if (hasSelfRotation)
             {
@@ -386,7 +412,7 @@ public partial struct EnemySteeringSystem : ISystem
                 if (planarSpeed > lookSpeedThreshold)
                 {
                     float3 forward = math.normalizesafe(new float3(runtimeState.Velocity.x, 0f, runtimeState.Velocity.z), ForwardAxis);
-                    float lookTurnRateDegrees = ResolveAggressivenessScale(enemySteeringAggressivenessForLook,
+                    float lookTurnRateDegrees = ResolveAggressivenessScale(enemySteeringAggressiveness,
                                                                            LookRotationMinDegreesPerSecond,
                                                                            LookRotationMaxDegreesPerSecond);
                     float maxRadiansDelta = math.radians(lookTurnRateDegrees) * deltaTime;
@@ -418,6 +444,8 @@ public partial struct EnemySteeringSystem : ISystem
         approachResults.Dispose();
         separationResults.Dispose();
         separationUrgencyResults.Dispose();
+        priorityYieldUrgencyResults.Dispose();
+        priorityYieldGapResults.Dispose();
         cellMap.Dispose();
     }
     #endregion
@@ -485,6 +513,48 @@ public partial struct EnemySteeringSystem : ISystem
         float normalizedAggressiveness = math.saturate((aggressiveness - MinimumSteeringAggressiveness) /
                                                        math.max(0.0001f, MaximumSteeringAggressiveness - MinimumSteeringAggressiveness));
         return math.lerp(minimumScale, maximumScale, normalizedAggressiveness);
+    }
+
+    /// <summary>
+    /// Resolves temporary max-speed boost applied while yielding to higher-priority neighbors.
+    /// </summary>
+    /// <param name="yieldUrgency">Yield urgency in [0..1].</param>
+    /// <param name="priorityGapNormalized">Normalized priority-tier gap in [0..1].</param>
+    /// <param name="aggressiveness">Resolved steering aggressiveness.</param>
+    /// <returns>Additional speed ratio in [0..+].</returns>
+    private static float ResolvePriorityYieldSpeedBoost(float yieldUrgency, float priorityGapNormalized, float aggressiveness)
+    {
+        float normalizedUrgency = math.saturate(yieldUrgency);
+
+        if (normalizedUrgency <= 0f)
+            return 0f;
+
+        float aggressivenessScale = ResolveAggressivenessScale(aggressiveness, 0.85f, 1.25f);
+        float gapScale = math.lerp(PriorityYieldGapSpeedScaleMin,
+                                   PriorityYieldGapSpeedScaleMax,
+                                   math.saturate(priorityGapNormalized));
+        return normalizedUrgency * PriorityYieldMaxSpeedBoost * aggressivenessScale * gapScale;
+    }
+
+    /// <summary>
+    /// Resolves temporary acceleration boost applied while yielding to higher-priority neighbors.
+    /// </summary>
+    /// <param name="yieldUrgency">Yield urgency in [0..1].</param>
+    /// <param name="priorityGapNormalized">Normalized priority-tier gap in [0..1].</param>
+    /// <param name="aggressiveness">Resolved steering aggressiveness.</param>
+    /// <returns>Additional acceleration ratio in [0..+].</returns>
+    private static float ResolvePriorityYieldAccelerationBoost(float yieldUrgency, float priorityGapNormalized, float aggressiveness)
+    {
+        float normalizedUrgency = math.saturate(yieldUrgency);
+
+        if (normalizedUrgency <= 0f)
+            return 0f;
+
+        float aggressivenessScale = ResolveAggressivenessScale(aggressiveness, 0.9f, 1.35f);
+        float gapScale = math.lerp(PriorityYieldGapAccelerationScaleMin,
+                                   PriorityYieldGapAccelerationScaleMax,
+                                   math.saturate(priorityGapNormalized));
+        return normalizedUrgency * PriorityYieldMaxAccelerationBoost * aggressivenessScale * gapScale;
     }
 
     /// <summary>
@@ -618,12 +688,17 @@ public partial struct EnemySteeringSystem : ISystem
         [ReadOnly] public NativeParallelMultiHashMap<int, int> CellMap;
         public NativeArray<float3> Results;
         public NativeArray<float> UrgencyResults;
+        public NativeArray<float> YieldUrgencyResults;
+        public NativeArray<float> YieldPriorityGapResults;
 
         public void Execute(int index)
         {
             if (SeparationEnabled[index] == 0)
             {
                 Results[index] = float3.zero;
+                UrgencyResults[index] = 0f;
+                YieldUrgencyResults[index] = 0f;
+                YieldPriorityGapResults[index] = 0f;
                 return;
             }
 
@@ -639,6 +714,8 @@ public partial struct EnemySteeringSystem : ISystem
             int2 cell = CellCoordinates[enemyIndex];
             float3 separation = float3.zero;
             float highestUrgency = 0f;
+            float highestYieldUrgency = 0f;
+            float highestYieldPriorityGap = 0f;
 
             // Iterate neighbors in surrounding cells
             for (int offsetX = -1; offsetX <= 1; offsetX++)
@@ -734,13 +811,30 @@ public partial struct EnemySteeringSystem : ISystem
                         {
                             float3 toNeighborDirection = math.normalizesafe(Positions[neighborIndex] - position, float3.zero);
                             float closingSpeed = math.dot(selfVelocity - neighborVelocity, toNeighborDirection);
+                            float closingFactor = 0f;
 
                             if (closingSpeed > 0f)
                             {
                                 float speedNormalization = math.max(0.1f, selfSpeed + neighborSpeed);
-                                float closingFactor = math.saturate(closingSpeed / speedNormalization);
+                                closingFactor = math.saturate(closingSpeed / speedNormalization);
                                 weight *= 1f + closingFactor * PriorityApproachUrgencyWeight;
                             }
+
+                            float priorityGap = math.min(PriorityYieldGapNormalization, (float)math.max(1, neighborPriorityTier - selfPriorityTier));
+                            float priorityGapNormalized = math.saturate(priorityGap / PriorityYieldGapNormalization);
+                            float yieldDistanceGate = math.max(hardClearanceDistance * 1.1f, influenceRadius * 0.92f);
+                            float distanceUrgency = math.saturate((yieldDistanceGate - distance) / math.max(0.01f, yieldDistanceGate));
+                            float yieldUrgency = math.saturate(distanceUrgency * 0.72f + closingFactor * 0.28f);
+                            yieldUrgency *= 1f + priorityGapNormalized * 0.45f;
+
+                            if (neighborIsWanderer)
+                                yieldUrgency = math.max(yieldUrgency, math.saturate(distanceUrgency + 0.12f));
+
+                            if (yieldUrgency > highestYieldUrgency)
+                                highestYieldUrgency = yieldUrgency;
+
+                            if (priorityGapNormalized > highestYieldPriorityGap)
+                                highestYieldPriorityGap = priorityGapNormalized;
                         }
 
                         float priorityWeight = ResolvePriorityAvoidanceWeight(selfPriorityTier, neighborPriorityTier);
@@ -801,6 +895,8 @@ public partial struct EnemySteeringSystem : ISystem
 
             Results[index] = separation;
             UrgencyResults[index] = math.saturate(highestUrgency);
+            YieldUrgencyResults[index] = math.saturate(highestYieldUrgency);
+            YieldPriorityGapResults[index] = math.saturate(highestYieldPriorityGap);
         }
 
         private static float3 ResolveDeterministicSeparationDirection(int enemyIndex, int neighborIndex)

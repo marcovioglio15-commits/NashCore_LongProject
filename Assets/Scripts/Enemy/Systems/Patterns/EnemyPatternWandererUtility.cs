@@ -13,6 +13,7 @@ public static class EnemyPatternWandererUtility
     private const float ClearancePredictionMinimumSeconds = 0.1f;
     private const float RightOfWayTieSeconds = 0.02f;
     private const float SoftClearanceMultiplier = 1.35f;
+    private const float PriorityYieldGapNormalization = 6f;
     private const float MinimumSteeringAggressiveness = 0f;
     private const float MaximumSteeringAggressiveness = 2.5f;
     #endregion
@@ -128,6 +129,8 @@ public static class EnemyPatternWandererUtility
                                                                               minimumEnemyClearance,
                                                                               desiredSpeed,
                                                                               resolvedSteeringAggressiveness,
+                                                                              out float _,
+                                                                              out float _,
                                                                               in occupancyContext);
                 float retrySideStepScale = ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.55f, 0.95f);
 
@@ -159,6 +162,8 @@ public static class EnemyPatternWandererUtility
                                                                               minimumEnemyClearance,
                                                                               desiredSpeed,
                                                                               resolvedSteeringAggressiveness,
+                                                                              out float _,
+                                                                              out float _,
                                                                               in occupancyContext);
                 float3 yieldCorrectionVelocity = ComposeYieldCorrectionVelocity(desiredVelocity,
                                                                                 yieldClearanceVelocity,
@@ -188,6 +193,8 @@ public static class EnemyPatternWandererUtility
                                                                           minimumEnemyClearance,
                                                                           desiredSpeed,
                                                                           resolvedSteeringAggressiveness,
+                                                                          out float _,
+                                                                          out float _,
                                                                           in occupancyContext);
             float retryDriftScale = ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.5f, 0.9f);
 
@@ -255,6 +262,8 @@ public static class EnemyPatternWandererUtility
     /// <param name="minimumEnemyClearance">Extra minimum clearance from neighbors.</param>
     /// <param name="maxSpeed">Current movement speed cap.</param>
     /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
+    /// <param name="priorityYieldUrgency">Output urgency in [0..1] when yielding to higher-priority neighbors is required.</param>
+    /// <param name="priorityYieldGapNormalized">Output normalized priority-tier gap in [0..1] for active yield pressure.</param>
     /// <param name="occupancyContext">Occupancy context used for neighbor lookup.</param>
     /// <returns>Planar clearance velocity contribution.</returns>
     public static float3 ResolveLocalClearanceVelocity(Entity enemyEntity,
@@ -264,8 +273,12 @@ public static class EnemyPatternWandererUtility
                                                        float minimumEnemyClearance,
                                                        float maxSpeed,
                                                        float steeringAggressiveness,
+                                                       out float priorityYieldUrgency,
+                                                       out float priorityYieldGapNormalized,
                                                        in OccupancyContext occupancyContext)
     {
+        priorityYieldUrgency = 0f;
+        priorityYieldGapNormalized = 0f;
         float clearanceSpeedCap = math.max(0f, maxSpeed);
 
         if (clearanceSpeedCap <= 0f)
@@ -337,7 +350,23 @@ public static class EnemyPatternWandererUtility
                     float sideStepWeight = softWeight * ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.28f, 0.95f);
 
                     if (selfPriorityTier < neighborPriorityTier)
+                    {
                         sideStepWeight *= 1.2f;
+
+                        float priorityGap = math.min(PriorityYieldGapNormalization, (float)math.max(1, neighborPriorityTier - selfPriorityTier));
+                        float normalizedPriorityGap = math.saturate(priorityGap / PriorityYieldGapNormalization);
+                        float urgencyDistanceGate = math.max(requiredClearance, softClearance * 0.9f);
+                        float distanceUrgency = math.saturate((urgencyDistanceGate - distance) / math.max(0.01f, urgencyDistanceGate));
+                        float penetrationUrgency = math.saturate(penetration / math.max(0.01f, requiredClearance));
+                        float yieldUrgency = math.saturate(distanceUrgency * 0.68f + penetrationUrgency * 0.32f);
+                        yieldUrgency *= 1f + normalizedPriorityGap * 0.4f;
+
+                        if (yieldUrgency > priorityYieldUrgency)
+                            priorityYieldUrgency = yieldUrgency;
+
+                        if (normalizedPriorityGap > priorityYieldGapNormalized)
+                            priorityYieldGapNormalized = normalizedPriorityGap;
+                    }
 
                     float3 lateralDirection = ResolveLateralDirection(direction, enemyEntity, neighborEntity);
                     float3 adjustedDirection = math.normalizesafe(direction + lateralDirection * sideStepWeight, direction);
@@ -364,6 +393,8 @@ public static class EnemyPatternWandererUtility
         float penetrationFactor = math.saturate(maximumPenetration / referenceClearance);
         float clearanceMaxSpeed = clearanceSpeedCap * ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.85f, 1.6f);
         float clearanceSpeed = math.lerp(clearanceSpeedCap * 0.35f, clearanceMaxSpeed, penetrationFactor);
+        priorityYieldUrgency = math.saturate(priorityYieldUrgency);
+        priorityYieldGapNormalized = math.saturate(priorityYieldGapNormalized);
         return normalizedDirection * clearanceSpeed * resolvedSteeringAggressiveness;
     }
     #endregion

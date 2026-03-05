@@ -24,6 +24,12 @@ public partial struct EnemyPatternMovementSystem : ISystem
     private const float DvdMinimumForwardSpeedRatio = 0.8f;
     private const float WallBlockedRepathThreshold = 0.72f;
     private const float WallClearanceCorrectionRepathThreshold = 0.3f;
+    private const float PriorityYieldMaxSpeedBoost = 0.65f;
+    private const float PriorityYieldMaxAccelerationBoost = 1.9f;
+    private const float PriorityYieldGapSpeedScaleMin = 0.62f;
+    private const float PriorityYieldGapSpeedScaleMax = 1.4f;
+    private const float PriorityYieldGapAccelerationScaleMin = 0.72f;
+    private const float PriorityYieldGapAccelerationScaleMax = 1.58f;
     private const float MinimumSteeringAggressiveness = 0f;
     private const float MaximumSteeringAggressiveness = 2.5f;
     #endregion
@@ -185,6 +191,8 @@ public partial struct EnemyPatternMovementSystem : ISystem
             bool movementLocked = shooterControlLookup.HasComponent(enemyEntity) && shooterControlLookup[enemyEntity].MovementLocked != 0;
             bool ignoreSteeringAndPriority = ShouldIgnoreSteeringAndPriority(in currentPatternConfig);
             float3 desiredVelocity = float3.zero;
+            float priorityYieldUrgency = 0f;
+            float priorityYieldGapNormalized = 0f;
 
             // Determine desired velocity based on movement pattern kind and configuration.
             switch (currentPatternConfig.MovementKind)
@@ -239,7 +247,15 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                                                          minimumEnemyClearance,
                                                                                                          clearanceSpeedCap,
                                                                                                          steeringAggressiveness,
+                                                                                                         out float clearanceYieldUrgency,
+                                                                                                         out float clearanceYieldGapNormalized,
                                                                                                          in occupancyContext);
+
+                    if (clearanceYieldUrgency > priorityYieldUrgency)
+                        priorityYieldUrgency = clearanceYieldUrgency;
+
+                    if (clearanceYieldGapNormalized > priorityYieldGapNormalized)
+                        priorityYieldGapNormalized = clearanceYieldGapNormalized;
 
                     if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic)
                     {
@@ -264,16 +280,31 @@ public partial struct EnemyPatternMovementSystem : ISystem
             if (movementLocked)
                 desiredVelocity = float3.zero;
 
+            float effectiveMaxSpeed = maxSpeed;
+
+            if (movementLocked == false && effectiveMaxSpeed > 0f && priorityYieldUrgency > 0f)
+            {
+                float speedBoost = ResolvePriorityYieldSpeedBoost(priorityYieldUrgency, priorityYieldGapNormalized, steeringAggressiveness);
+                effectiveMaxSpeed *= 1f + speedBoost;
+            }
+
             float desiredSpeed = math.length(desiredVelocity);
 
-            if (maxSpeed > 0f && desiredSpeed > maxSpeed && desiredSpeed > DirectionEpsilon)
-                desiredVelocity *= maxSpeed / desiredSpeed;
+            if (effectiveMaxSpeed > 0f && desiredSpeed > effectiveMaxSpeed && desiredSpeed > DirectionEpsilon)
+                desiredVelocity *= effectiveMaxSpeed / desiredSpeed;
 
             float3 velocityDelta = desiredVelocity - currentEnemyRuntimeState.Velocity;
             float accelerationRate = ResolveVelocityChangeRate(currentEnemyRuntimeState.Velocity,
                                                                desiredVelocity,
                                                                acceleration,
                                                                deceleration);
+
+            if (movementLocked == false && priorityYieldUrgency > 0f)
+            {
+                float accelerationBoost = ResolvePriorityYieldAccelerationBoost(priorityYieldUrgency, priorityYieldGapNormalized, steeringAggressiveness);
+                accelerationRate *= 1f + accelerationBoost;
+            }
+
             float maxVelocityDelta = accelerationRate * deltaTime;
             float velocityDeltaMagnitude = math.length(velocityDelta);
 
@@ -282,12 +313,12 @@ public partial struct EnemyPatternMovementSystem : ISystem
             else
                 currentEnemyRuntimeState.Velocity = desiredVelocity;
 
-            if (maxSpeed > 0f)
+            if (effectiveMaxSpeed > 0f)
             {
                 float velocityMagnitude = math.length(currentEnemyRuntimeState.Velocity);
 
-                if (velocityMagnitude > maxSpeed && velocityMagnitude > DirectionEpsilon)
-                    currentEnemyRuntimeState.Velocity *= maxSpeed / velocityMagnitude;
+                if (velocityMagnitude > effectiveMaxSpeed && velocityMagnitude > DirectionEpsilon)
+                    currentEnemyRuntimeState.Velocity *= effectiveMaxSpeed / velocityMagnitude;
             }
 
             float3 desiredDisplacement = currentEnemyRuntimeState.Velocity * deltaTime;
@@ -517,6 +548,48 @@ public partial struct EnemyPatternMovementSystem : ISystem
         float normalizedAggressiveness = math.saturate((aggressiveness - MinimumSteeringAggressiveness) /
                                                        math.max(0.0001f, MaximumSteeringAggressiveness - MinimumSteeringAggressiveness));
         return math.lerp(minimumScale, maximumScale, normalizedAggressiveness);
+    }
+
+    /// <summary>
+    /// Resolves temporary max-speed boost applied while yielding to higher-priority neighbors.
+    /// </summary>
+    /// <param name="yieldUrgency">Yield urgency in [0..1].</param>
+    /// <param name="priorityGapNormalized">Normalized priority-tier gap in [0..1].</param>
+    /// <param name="aggressiveness">Resolved steering aggressiveness.</param>
+    /// <returns>Additional speed ratio in [0..+].</returns>
+    private static float ResolvePriorityYieldSpeedBoost(float yieldUrgency, float priorityGapNormalized, float aggressiveness)
+    {
+        float normalizedUrgency = math.saturate(yieldUrgency);
+
+        if (normalizedUrgency <= 0f)
+            return 0f;
+
+        float aggressivenessScale = ResolveAggressivenessScale(aggressiveness, 0.85f, 1.22f);
+        float gapScale = math.lerp(PriorityYieldGapSpeedScaleMin,
+                                   PriorityYieldGapSpeedScaleMax,
+                                   math.saturate(priorityGapNormalized));
+        return normalizedUrgency * PriorityYieldMaxSpeedBoost * aggressivenessScale * gapScale;
+    }
+
+    /// <summary>
+    /// Resolves temporary acceleration boost applied while yielding to higher-priority neighbors.
+    /// </summary>
+    /// <param name="yieldUrgency">Yield urgency in [0..1].</param>
+    /// <param name="priorityGapNormalized">Normalized priority-tier gap in [0..1].</param>
+    /// <param name="aggressiveness">Resolved steering aggressiveness.</param>
+    /// <returns>Additional acceleration ratio in [0..+].</returns>
+    private static float ResolvePriorityYieldAccelerationBoost(float yieldUrgency, float priorityGapNormalized, float aggressiveness)
+    {
+        float normalizedUrgency = math.saturate(yieldUrgency);
+
+        if (normalizedUrgency <= 0f)
+            return 0f;
+
+        float aggressivenessScale = ResolveAggressivenessScale(aggressiveness, 0.9f, 1.3f);
+        float gapScale = math.lerp(PriorityYieldGapAccelerationScaleMin,
+                                   PriorityYieldGapAccelerationScaleMax,
+                                   math.saturate(priorityGapNormalized));
+        return normalizedUrgency * PriorityYieldMaxAccelerationBoost * aggressivenessScale * gapScale;
     }
 
     /// <summary>
