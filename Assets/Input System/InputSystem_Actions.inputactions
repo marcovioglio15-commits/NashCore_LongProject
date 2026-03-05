@@ -205,67 +205,23 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "Arrows",
-                    "id": "45fa3b88-4047-4e03-9f2f-c0cd19f40650",
-                    "path": "Dpad",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Look",
-                    "isComposite": true,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "up",
-                    "id": "026c1492-38d4-43ee-b673-4a7bfdaad00c",
-                    "path": "<Keyboard>/upArrow",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Keyboard&Mouse",
-                    "action": "Look",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
-                    "name": "down",
-                    "id": "f593a91d-9125-4d80-bb84-62e2ddd71e42",
-                    "path": "<Keyboard>/downArrow",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Keyboard&Mouse",
-                    "action": "Look",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
-                    "name": "left",
-                    "id": "492f42e3-9093-4f45-a259-705a0dbf47df",
-                    "path": "<Keyboard>/leftArrow",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Keyboard&Mouse",
-                    "action": "Look",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
-                    "name": "right",
-                    "id": "6fcc9fca-50a7-4ccc-850e-2045994f0950",
-                    "path": "<Keyboard>/rightArrow",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Keyboard&Mouse",
-                    "action": "Look",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
                     "name": "",
                     "id": "6e50f640-d4e9-4cb7-9aa8-784b1fe7900a",
                     "path": "<Gamepad>/rightStick",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Gamepad",
+                    "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "02447fc7-c9ed-4320-8c99-0dff669f20ca",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
                     "action": "Look",
                     "isComposite": false,
                     "isPartOfComposite": false

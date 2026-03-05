@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Object = UnityEngine.Object;
 
 #region Runtime
 /// <summary>
@@ -16,6 +18,7 @@ public static class PlayerInputRuntime
     private static InputAction shootAction;
     private static InputAction powerUpPrimaryAction;
     private static InputAction powerUpSecondaryAction;
+    private static bool lookActionUsesMousePointer;
 
     private static string moveActionId;
     private static string lookActionId;
@@ -72,6 +75,14 @@ public static class PlayerInputRuntime
             return powerUpSecondaryAction;
         }
     }
+
+    public static bool LookActionUsesMousePointer
+    {
+        get
+        {
+            return lookActionUsesMousePointer;
+        }
+    }
     #endregion
 
     #region Methods
@@ -123,6 +134,7 @@ public static class PlayerInputRuntime
         shootAction = ResolveAction(instantiatedAsset, shootActionId, "Shoot");
         powerUpPrimaryAction = ResolveAction(instantiatedAsset, powerUpPrimaryActionId, "PowerUpPrimary");
         powerUpSecondaryAction = ResolveAction(instantiatedAsset, powerUpSecondaryActionId, "PowerUpSecondary");
+        lookActionUsesMousePointer = ResolveLookActionUsesMousePointer(lookAction);
 
 #if UNITY_EDITOR
         LogInitializationStatus(instantiatedAsset);
@@ -144,6 +156,7 @@ public static class PlayerInputRuntime
         shootAction = null;
         powerUpPrimaryAction = null;
         powerUpSecondaryAction = null;
+        lookActionUsesMousePointer = false;
 
         moveActionId = null;
         lookActionId = null;
@@ -203,6 +216,34 @@ public static class PlayerInputRuntime
 
         return asset.FindAction(fallbackName, false);
     }
+
+    /// <summary>
+    /// Checks whether the resolved look action includes at least one mouse binding path.
+    /// </summary>
+    /// <param name="action">Resolved look action from the runtime input asset.</param>
+    /// <returns>True when at least one binding path references the Mouse device.</returns>
+    private static bool ResolveLookActionUsesMousePointer(InputAction action)
+    {
+        if (action == null)
+            return false;
+
+        for (int bindingIndex = 0; bindingIndex < action.bindings.Count; bindingIndex++)
+        {
+            InputBinding binding = action.bindings[bindingIndex];
+            string bindingPath = binding.effectivePath;
+
+            if (string.IsNullOrWhiteSpace(bindingPath))
+                bindingPath = binding.path;
+
+            if (string.IsNullOrWhiteSpace(bindingPath))
+                continue;
+
+            if (bindingPath.IndexOf("<Mouse>", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+        }
+
+        return false;
+    }
     #endregion
 
 #if UNITY_EDITOR
@@ -212,13 +253,14 @@ public static class PlayerInputRuntime
         if (asset == null)
             return;
 
-        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5}",
+        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | MousePointerLook: {6}",
                                        asset.name,
                                        BuildActionStatus(moveAction),
                                        BuildActionStatus(lookAction),
                                        BuildActionStatus(shootAction),
                                        BuildActionStatus(powerUpPrimaryAction),
-                                       BuildActionStatus(powerUpSecondaryAction));
+                                       BuildActionStatus(powerUpSecondaryAction),
+                                       lookActionUsesMousePointer);
         Debug.Log(message, asset);
     }
 

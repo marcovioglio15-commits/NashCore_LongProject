@@ -32,6 +32,7 @@ public partial struct PlayerInputBridgeSystem : ISystem
         float powerUpPrimary = 0f;
         float powerUpSecondary = 0f;
         bool isInputReady = PlayerInputRuntime.IsReady;
+        bool useMousePointerLook = PlayerInputRuntime.LookActionUsesMousePointer;
 
         if (isInputReady)
         {
@@ -41,7 +42,7 @@ public partial struct PlayerInputBridgeSystem : ISystem
                 move = new float2(moveValue.x, moveValue.y);
             }
 
-            if (lookAction != null)
+            if (lookAction != null && useMousePointerLook == false)
             {
                 Vector2 lookValue = lookAction.ReadValue<Vector2>();
                 look = new float2(lookValue.x, lookValue.y);

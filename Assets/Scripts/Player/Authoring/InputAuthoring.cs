@@ -56,6 +56,7 @@ public sealed class InputAuthoring : MonoBehaviour
         if (inputActionsAsset == null)
         {
             PlayerInputRuntime.Shutdown();
+            SetCursorLock(isLocked : false);
             return;
         }
 
@@ -86,6 +87,7 @@ public sealed class InputAuthoring : MonoBehaviour
                                       shootActionId,
                                       primaryPowerUpActionId,
                                       secondaryPowerUpActionId);
+        ApplyCursorPolicy();
 
         #if UNITY_EDITOR
         LogPlayerEntitiesPresence(logPlayerEntityDiagnostics);
@@ -95,6 +97,7 @@ public sealed class InputAuthoring : MonoBehaviour
     private void OnDisable()
     {
         PlayerInputRuntime.Shutdown();
+        SetCursorLock(isLocked : false);
     }
     #endregion
 
@@ -216,6 +219,15 @@ public sealed class InputAuthoring : MonoBehaviour
     {
         Cursor.lockState = isLocked ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !isLocked;
+    }
+
+    /// <summary>
+    /// Applies cursor lock/visibility policy based on the resolved runtime look input mode.
+    /// </summary>
+    private static void ApplyCursorPolicy()
+    {
+        bool lockCursor = PlayerInputRuntime.LookActionUsesMousePointer == false;
+        SetCursorLock(lockCursor);
     }
     #endregion
 
