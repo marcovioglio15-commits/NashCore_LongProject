@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAuthoring
   masterPreset: {fileID: 11400000, guid: 2aa7920f2d0dab444bbb97e34b3f90d8, type: 2}
+  powerUpsCheatPresetLibrary: {fileID: 0}
   gizmoRadius: 2
   weaponReference: {fileID: 6701674403326256358}
   animatorComponent: {fileID: 3375395559904907071}
