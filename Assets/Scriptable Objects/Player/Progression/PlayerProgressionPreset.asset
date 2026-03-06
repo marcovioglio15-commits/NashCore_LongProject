@@ -17,5 +17,5 @@ MonoBehaviour:
   description: 
   version: 1.0.0
   baseStats:
-    health: 100
+    health: 999999
     experience: 0

@@ -209,7 +209,7 @@ public partial struct EnemySteeringSystem : ISystem
             int cellY = (int)math.floor(position.z * inverseCellSize);
             int2 cell = new int2(cellX, cellY);
             cellCoordinates[index] = cell;
-            cellMap.Add(EncodeCell(cellX, cellY), index);
+            cellMap.Add(EnemySpatialHashUtility.EncodeCell(cellX, cellY), index);
         }
 
         int evaluatedCount = evaluatedEnemyIndices.Length;
@@ -480,14 +480,6 @@ public partial struct EnemySteeringSystem : ISystem
         return token % interval == 0;
     }
 
-    private static int EncodeCell(int x, int y)
-    {
-        unchecked
-        {
-            return (x * 73856093) ^ (y * 19349663);
-        }
-    }
-
     /// <summary>
     /// Resolves one steering aggressiveness value with safe defaults and clamps.
     /// </summary>
@@ -722,7 +714,7 @@ public partial struct EnemySteeringSystem : ISystem
             {
                 for (int offsetY = -1; offsetY <= 1; offsetY++)
                 {
-                    int key = EncodeCell(cell.x + offsetX, cell.y + offsetY);
+                    int key = EnemySpatialHashUtility.EncodeCell(cell.x + offsetX, cell.y + offsetY);
                     NativeParallelMultiHashMapIterator<int> iterator;
                     int neighborIndex;
 
@@ -984,13 +976,6 @@ public partial struct EnemySteeringSystem : ISystem
             return 1.2f;
         }
 
-        private static int EncodeCell(int x, int y)
-        {
-            unchecked
-            {
-                return (x * 73856093) ^ (y * 19349663);
-            }
-        }
     }
     #endregion
 

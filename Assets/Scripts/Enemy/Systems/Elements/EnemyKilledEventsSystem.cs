@@ -47,18 +47,38 @@ public partial struct EnemyKilledEventsSystem : ISystem
         killedEventsBuffer.Clear();
 
         foreach ((RefRO<EnemyDespawnRequest> despawnRequest,
+                  RefRO<EnemyData> enemyData,
                   RefRO<LocalTransform> enemyTransform,
-                  Entity enemyEntity) in SystemAPI.Query<RefRO<EnemyDespawnRequest>, RefRO<LocalTransform>>().WithEntityAccess())
+                  Entity enemyEntity) in SystemAPI.Query<RefRO<EnemyDespawnRequest>,
+                                                         RefRO<EnemyData>,
+                                                         RefRO<LocalTransform>>()
+                                                 .WithEntityAccess())
         {
             if (despawnRequest.ValueRO.Reason != EnemyDespawnReason.Killed)
                 continue;
 
+            float3 killedEventPosition = ResolveKilledEventPosition(enemyTransform.ValueRO.Position, enemyData.ValueRO.BodyRadius);
+
             killedEventsBuffer.Add(new EnemyKilledEventElement
             {
                 EnemyEntity = enemyEntity,
-                Position = enemyTransform.ValueRO.Position
+                Position = killedEventPosition
             });
         }
+    }
+
+    /// <summary>
+    /// Resolves a stable world position used by death-triggered gameplay VFX spawned from killed events.
+    /// </summary>
+    /// <param name="enemyPosition">Enemy transform position sampled before pooled finalize-despawn.</param>
+    /// <param name="bodyRadius">Enemy body radius used to add a small upward safety offset.</param>
+    /// <returns>Adjusted kill-event world position with vertical lift to avoid floor clipping.</returns>
+    private static float3 ResolveKilledEventPosition(float3 enemyPosition, float bodyRadius)
+    {
+        float3 resolvedPosition = enemyPosition;
+        float verticalOffset = math.max(0.05f, math.max(0f, bodyRadius) * 0.35f);
+        resolvedPosition.y += verticalOffset;
+        return resolvedPosition;
     }
     #endregion
 

@@ -35,6 +35,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
+        ComponentLookup<LocalTransform> localTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
@@ -97,7 +98,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
                                         maximumEnemyRadius,
                                         ref commandBuffer);
 
-            EnqueueExplosionVfxRequest(in fuseState, ref vfxRequestLookup);
+            EnqueueExplosionVfxRequest(in fuseState, in localTransformLookup, ref vfxRequestLookup);
 
             Entity bombEntity = bombEntities[bombIndex];
 
@@ -138,7 +139,9 @@ public partial struct PlayerBombExplosionSystem : ISystem
     #endregion
 
     #region Helpers
-    private static void EnqueueExplosionVfxRequest(in BombFuseState fuseState, ref BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup)
+    private static void EnqueueExplosionVfxRequest(in BombFuseState fuseState,
+                                                   in ComponentLookup<LocalTransform> localTransformLookup,
+                                                   ref BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup)
     {
         if (fuseState.OwnerEntity == Entity.Null)
             return;
@@ -155,10 +158,20 @@ public partial struct PlayerBombExplosionSystem : ISystem
         if (fuseState.ScaleVfxToRadius != 0)
             scaleMultiplier *= math.max(0.1f, fuseState.Radius);
 
+        float3 explosionVfxPosition = fuseState.Position;
+
+        if (localTransformLookup.HasComponent(fuseState.OwnerEntity))
+        {
+            float ownerFloorReferenceY = localTransformLookup[fuseState.OwnerEntity].Position.y;
+
+            if (explosionVfxPosition.y < ownerFloorReferenceY)
+                explosionVfxPosition.y = ownerFloorReferenceY;
+        }
+
         vfxRequests.Add(new PlayerPowerUpVfxSpawnRequest
         {
             PrefabEntity = fuseState.ExplosionVfxPrefabEntity,
-            Position = fuseState.Position,
+            Position = explosionVfxPosition,
             Rotation = quaternion.identity,
             UniformScale = scaleMultiplier,
             LifetimeSeconds = 2f,

@@ -171,17 +171,10 @@ public partial struct EnemyProjectileHitSystem : ISystem
             }
         }
 
-        float cellSize = math.max(0.25f, maxEnemyRadius);
+        float cellSize = EnemySpatialHashUtility.ResolveCellSize(maxEnemyRadius);
         float inverseCellSize = 1f / cellSize;
         NativeParallelMultiHashMap<int, int> enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.TempJob);
-
-        for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
-        {
-            float3 enemyPosition = enemyPositions[enemyIndex];
-            int cellX = (int)math.floor(enemyPosition.x * inverseCellSize);
-            int cellY = (int)math.floor(enemyPosition.z * inverseCellSize);
-            enemyCellMap.Add(EncodeCell(cellX, cellY), enemyIndex);
-        }
+        EnemySpatialHashUtility.BuildCellMap(in enemyPositions, inverseCellSize, ref enemyCellMap);
 
         NativeArray<float3> projectilePositions = new NativeArray<float3>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> projectileRadii = new NativeArray<float>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -407,14 +400,6 @@ public partial struct EnemyProjectileHitSystem : ISystem
     #endregion
 
     #region Helpers
-    private static int EncodeCell(int x, int y)
-    {
-        unchecked
-        {
-            return (x * 73856093) ^ (y * 19349663);
-        }
-    }
-
     private static void TryEnqueueSplitRequests(in Projectile projectileData,
                                                 in ProjectileSplitState splitState,
                                                 in LocalTransform projectileTransform,
@@ -863,10 +848,13 @@ public partial struct EnemyProjectileHitSystem : ISystem
             float3 projectilePosition = ProjectilePositions[index];
             float projectileRadius = math.max(0.005f, ProjectileRadii[index]);
             float searchRadius = math.max(0.01f, projectileRadius + math.max(0.05f, MaxEnemyRadius));
-            int minCellX = (int)math.floor((projectilePosition.x - searchRadius) * InverseCellSize);
-            int maxCellX = (int)math.floor((projectilePosition.x + searchRadius) * InverseCellSize);
-            int minCellY = (int)math.floor((projectilePosition.z - searchRadius) * InverseCellSize);
-            int maxCellY = (int)math.floor((projectilePosition.z + searchRadius) * InverseCellSize);
+            EnemySpatialHashUtility.ResolveCellBounds(projectilePosition,
+                                                      searchRadius,
+                                                      InverseCellSize,
+                                                      out int minCellX,
+                                                      out int maxCellX,
+                                                      out int minCellY,
+                                                      out int maxCellY);
 
             NativeStream.Writer streamWriter = HitStreamWriter;
             streamWriter.BeginForEachIndex(index);
@@ -875,7 +863,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             {
                 for (int cellY = minCellY; cellY <= maxCellY; cellY++)
                 {
-                    int key = EncodeCell(cellX, cellY);
+                    int key = EnemySpatialHashUtility.EncodeCell(cellX, cellY);
                     NativeParallelMultiHashMapIterator<int> iterator;
                     int enemyIndex;
 
@@ -900,14 +888,6 @@ public partial struct EnemyProjectileHitSystem : ISystem
             }
 
             streamWriter.EndForEachIndex();
-        }
-
-        private static int EncodeCell(int x, int y)
-        {
-            unchecked
-            {
-                return (x * 73856093) ^ (y * 19349663);
-            }
         }
     }
     #endregion

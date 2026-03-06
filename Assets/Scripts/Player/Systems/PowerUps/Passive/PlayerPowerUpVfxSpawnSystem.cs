@@ -38,6 +38,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
                 continue;
 
             PlayerPowerUpVfxCapConfig capConfig = SanitizeCapConfig(in vfxCapConfig.ValueRO);
+            float areaInverseCellSize = ResolveInverseAreaCellSize(capConfig.CellSize);
             int estimatedCapacity = math.max(8, vfxPool.Length + vfxRequests.Length);
             NativeParallelHashMap<VfxAreaKey, int> areaCounts = new NativeParallelHashMap<VfxAreaKey, int>(estimatedCapacity, Allocator.Temp);
             NativeParallelHashMap<VfxTargetKey, int> targetCounts = new NativeParallelHashMap<VfxTargetKey, int>(estimatedCapacity, Allocator.Temp);
@@ -46,6 +47,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
             BuildActiveVfxSnapshot(entityManager,
                                    vfxPool,
                                    in capConfig,
+                                   areaInverseCellSize,
                                    ref areaCounts,
                                    ref targetCounts,
                                    ref targetInstances,
@@ -87,7 +89,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
 
                 if (applyAreaCap)
                 {
-                    areaCapKey = BuildAreaKey(request.PrefabEntity, request.Position, capConfig.CellSize);
+                    areaCapKey = BuildAreaKey(request.PrefabEntity, request.Position, areaInverseCellSize);
                     int areaCount;
 
                     if (areaCounts.TryGetValue(areaCapKey, out areaCount) && areaCount >= capConfig.MaxSamePrefabPerCell)
@@ -227,6 +229,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
     private static void BuildActiveVfxSnapshot(EntityManager entityManager,
                                                DynamicBuffer<PlayerPowerUpVfxPoolElement> vfxPool,
                                                in PlayerPowerUpVfxCapConfig capConfig,
+                                               float areaInverseCellSize,
                                                ref NativeParallelHashMap<VfxAreaKey, int> areaCounts,
                                                ref NativeParallelHashMap<VfxTargetKey, int> targetCounts,
                                                ref NativeParallelHashMap<VfxTargetKey, Entity> targetInstances,
@@ -256,7 +259,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
                 entityManager.HasComponent<LocalTransform>(vfxEntity))
             {
                 LocalTransform localTransform = entityManager.GetComponentData<LocalTransform>(vfxEntity);
-                VfxAreaKey areaKey = BuildAreaKey(poolElement.PrefabEntity, localTransform.Position, capConfig.CellSize);
+                VfxAreaKey areaKey = BuildAreaKey(poolElement.PrefabEntity, localTransform.Position, areaInverseCellSize);
                 IncrementAreaCount(ref areaCounts, in areaKey);
             }
 
@@ -307,9 +310,13 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
         return true;
     }
 
-    private static VfxAreaKey BuildAreaKey(Entity prefabEntity, float3 position, float cellSize)
+    private static float ResolveInverseAreaCellSize(float cellSize)
     {
-        float inverseCellSize = 1f / math.max(0.1f, cellSize);
+        return 1f / math.max(0.1f, cellSize);
+    }
+
+    private static VfxAreaKey BuildAreaKey(Entity prefabEntity, float3 position, float inverseCellSize)
+    {
         int cellX = (int)math.floor(position.x * inverseCellSize);
         int cellY = (int)math.floor(position.z * inverseCellSize);
 

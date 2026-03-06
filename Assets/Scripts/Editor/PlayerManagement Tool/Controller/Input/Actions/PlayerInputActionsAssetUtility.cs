@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary) are present in the asset, and if not, it creates them with default bindings. 
+/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, and cheat preset bindings) are present in the asset, and if not, it creates them with default bindings. 
 /// The utility also handles asset creation and folder management within the Unity Editor.
 /// </summary>
 public static class PlayerInputActionsAssetUtility
@@ -42,7 +42,7 @@ public static class PlayerInputActionsAssetUtility
     #region Private Methods
     /// <summary>
     /// This method checks the provided input action asset for the presence of required actions 
-    /// (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary) within a "Player" action map. If any of the required actions are missing, 
+    /// (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, CheatPresetDigit, CheatModifierControl, CheatModifierShift) within a "Player" action map. If any of the required actions are missing, 
     /// it creates them with default configurations and bindings. If any changes are made to the asset, 
     /// it marks it as dirty and saves the changes to ensure they persist in the Unity Editor.
     /// </summary>
@@ -67,6 +67,9 @@ public static class PlayerInputActionsAssetUtility
         changed |= EnsureAction(map, "Shoot", InputActionType.Button, "Button", AddDefaultShootBindings);
         changed |= EnsureAction(map, "PowerUpPrimary", InputActionType.Button, "Button", AddDefaultPowerUpPrimaryBindings);
         changed |= EnsureAction(map, "PowerUpSecondary", InputActionType.Button, "Button", AddDefaultPowerUpSecondaryBindings);
+        changed |= EnsureAction(map, "CheatPresetDigit", InputActionType.Button, "Button", AddDefaultCheatPresetDigitBindings);
+        changed |= EnsureAction(map, "CheatModifierControl", InputActionType.Button, "Button", AddDefaultCheatModifierControlBindings);
+        changed |= EnsureAction(map, "CheatModifierShift", InputActionType.Button, "Button", AddDefaultCheatModifierShiftBindings);
 
         if (changed)
         {
@@ -185,12 +188,69 @@ public static class PlayerInputActionsAssetUtility
         action.AddBinding("<Keyboard>/e");
     }
 
+    /// <summary>
+    /// Adds default bindings for digit selection used by runtime power-up preset cheat swaps.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultCheatPresetDigitBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Keyboard>/0");
+        action.AddBinding("<Keyboard>/1");
+        action.AddBinding("<Keyboard>/2");
+        action.AddBinding("<Keyboard>/3");
+        action.AddBinding("<Keyboard>/4");
+        action.AddBinding("<Keyboard>/5");
+        action.AddBinding("<Keyboard>/6");
+        action.AddBinding("<Keyboard>/7");
+        action.AddBinding("<Keyboard>/8");
+        action.AddBinding("<Keyboard>/9");
+        action.AddBinding("<Keyboard>/numpad0");
+        action.AddBinding("<Keyboard>/numpad1");
+        action.AddBinding("<Keyboard>/numpad2");
+        action.AddBinding("<Keyboard>/numpad3");
+        action.AddBinding("<Keyboard>/numpad4");
+        action.AddBinding("<Keyboard>/numpad5");
+        action.AddBinding("<Keyboard>/numpad6");
+        action.AddBinding("<Keyboard>/numpad7");
+        action.AddBinding("<Keyboard>/numpad8");
+        action.AddBinding("<Keyboard>/numpad9");
+    }
+
+    /// <summary>
+    /// Adds default bindings for the cheat Control modifier action.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultCheatModifierControlBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Keyboard>/leftCtrl");
+        action.AddBinding("<Keyboard>/rightCtrl");
+    }
+
+    /// <summary>
+    /// Adds default bindings for the cheat Shift modifier action.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultCheatModifierShiftBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Keyboard>/leftShift");
+        action.AddBinding("<Keyboard>/rightShift");
+    }
+
 
 
 
     /// <summary>
     /// This method creates a new input action asset with a "Player" action map containing 
-    /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary) and their default bindings.
+    /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, and cheat preset actions) and their default bindings.
     /// </summary>
     /// <returns> Returns the created InputActionAsset instance. </returns>
     private static InputActionAsset CreateDefaultAsset()
@@ -214,6 +274,15 @@ public static class PlayerInputActionsAssetUtility
 
         InputAction powerUpSecondary = map.AddAction("PowerUpSecondary", InputActionType.Button, null, null, null, null, "Button");
         AddDefaultPowerUpSecondaryBindings(powerUpSecondary);
+
+        InputAction cheatPresetDigit = map.AddAction("CheatPresetDigit", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultCheatPresetDigitBindings(cheatPresetDigit);
+
+        InputAction cheatModifierControl = map.AddAction("CheatModifierControl", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultCheatModifierControlBindings(cheatModifierControl);
+
+        InputAction cheatModifierShift = map.AddAction("CheatModifierShift", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultCheatModifierShiftBindings(cheatModifierShift);
 
         asset.AddActionMap(map);
 

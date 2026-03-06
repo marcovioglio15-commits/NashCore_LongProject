@@ -20,6 +20,9 @@ public static class PlayerInputRuntime
     private static InputAction shootAction;
     private static InputAction powerUpPrimaryAction;
     private static InputAction powerUpSecondaryAction;
+    private static InputAction cheatPresetDigitAction;
+    private static InputAction cheatModifierControlAction;
+    private static InputAction cheatModifierShiftAction;
     private static bool lookActionUsesMousePointer;
 
     private static string moveActionId;
@@ -75,6 +78,30 @@ public static class PlayerInputRuntime
         get
         {
             return powerUpSecondaryAction;
+        }
+    }
+
+    public static InputAction CheatPresetDigitAction
+    {
+        get
+        {
+            return cheatPresetDigitAction;
+        }
+    }
+
+    public static InputAction CheatModifierControlAction
+    {
+        get
+        {
+            return cheatModifierControlAction;
+        }
+    }
+
+    public static InputAction CheatModifierShiftAction
+    {
+        get
+        {
+            return cheatModifierShiftAction;
         }
     }
 
@@ -232,6 +259,9 @@ public static class PlayerInputRuntime
         shootAction = ResolveAction(instantiatedAsset, shootActionId, "Shoot");
         powerUpPrimaryAction = ResolveAction(instantiatedAsset, powerUpPrimaryActionId, "PowerUpPrimary");
         powerUpSecondaryAction = ResolveAction(instantiatedAsset, powerUpSecondaryActionId, "PowerUpSecondary");
+        cheatPresetDigitAction = ResolveAction(instantiatedAsset, null, "CheatPresetDigit");
+        cheatModifierControlAction = ResolveAction(instantiatedAsset, null, "CheatModifierControl");
+        cheatModifierShiftAction = ResolveAction(instantiatedAsset, null, "CheatModifierShift");
         lookActionUsesMousePointer = ResolveLookActionUsesMousePointer(lookAction);
 
 #if UNITY_EDITOR
@@ -254,6 +284,9 @@ public static class PlayerInputRuntime
         shootAction = null;
         powerUpPrimaryAction = null;
         powerUpSecondaryAction = null;
+        cheatPresetDigitAction = null;
+        cheatModifierControlAction = null;
+        cheatModifierShiftAction = null;
         lookActionUsesMousePointer = false;
 
         moveActionId = null;
@@ -375,13 +408,16 @@ public static class PlayerInputRuntime
         if (asset == null)
             return;
 
-        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | MousePointerLook: {6}",
+        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | CheatPresetDigit: {6} | CheatModifierControl: {7} | CheatModifierShift: {8} | MousePointerLook: {9}",
                                        asset.name,
                                        BuildActionStatus(moveAction),
                                        BuildActionStatus(lookAction),
                                        BuildActionStatus(shootAction),
                                        BuildActionStatus(powerUpPrimaryAction),
                                        BuildActionStatus(powerUpSecondaryAction),
+                                       BuildActionStatus(cheatPresetDigitAction),
+                                       BuildActionStatus(cheatModifierControlAction),
+                                       BuildActionStatus(cheatModifierShiftAction),
                                        lookActionUsesMousePointer);
         Debug.Log(message, asset);
     }

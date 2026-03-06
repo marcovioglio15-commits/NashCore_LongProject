@@ -30,20 +30,28 @@ public partial struct PlayerPowerUpCheatInputSystem : ISystem
     /// <param name="state">Current ECS system state.</param>
     public void OnUpdate(ref SystemState state)
     {
-        Keyboard keyboard = Keyboard.current;
+        InputAction cheatPresetDigitAction = PlayerInputRuntime.CheatPresetDigitAction;
+        InputAction cheatModifierControlAction = PlayerInputRuntime.CheatModifierControlAction;
+        InputAction cheatModifierShiftAction = PlayerInputRuntime.CheatModifierShiftAction;
 
-        if (keyboard == null)
+        if (IsCheatActionReady(cheatPresetDigitAction) == false)
             return;
 
-        if (IsControlPressed(keyboard) == false)
+        if (IsCheatActionReady(cheatModifierControlAction) == false)
             return;
 
-        if (IsShiftPressed(keyboard) == false)
+        if (IsCheatActionReady(cheatModifierShiftAction) == false)
+            return;
+
+        if (cheatModifierControlAction.IsPressed() == false)
+            return;
+
+        if (cheatModifierShiftAction.IsPressed() == false)
             return;
 
         int presetIndex;
 
-        if (TryResolvePressedPresetIndex(keyboard, out presetIndex) == false)
+        if (TryResolvePressedPresetIndex(cheatPresetDigitAction, out presetIndex) == false)
             return;
 
         foreach ((DynamicBuffer<PlayerPowerUpCheatCommand> cheatCommands,
@@ -61,124 +69,92 @@ public partial struct PlayerPowerUpCheatInputSystem : ISystem
 
     #region Helpers
     /// <summary>
-    /// Checks whether at least one Control key is currently pressed.
+    /// Checks whether one runtime cheat input action is resolved and currently enabled.
     /// </summary>
-    /// <param name="keyboard">Current keyboard device.</param>
-    /// <returns>True when left or right Control is pressed, otherwise false.</returns>
-    private static bool IsControlPressed(Keyboard keyboard)
+    /// <param name="action">Resolved action from PlayerInputRuntime.</param>
+    /// <returns>True when the action exists and is enabled.</returns>
+    private static bool IsCheatActionReady(InputAction action)
     {
-        if (keyboard.leftCtrlKey.isPressed)
-            return true;
+        if (action == null)
+            return false;
 
-        if (keyboard.rightCtrlKey.isPressed)
-            return true;
+        if (action.enabled == false)
+            return false;
 
-        return false;
+        return true;
     }
 
     /// <summary>
-    /// Checks whether at least one Shift key is currently pressed.
+    /// Resolves which preset digit action was pressed this frame and converts the pressed key to the target preset index.
     /// </summary>
-    /// <param name="keyboard">Current keyboard device.</param>
-    /// <returns>True when left or right Shift is pressed, otherwise false.</returns>
-    private static bool IsShiftPressed(Keyboard keyboard)
-    {
-        if (keyboard.leftShiftKey.isPressed)
-            return true;
-
-        if (keyboard.rightShiftKey.isPressed)
-            return true;
-
-        return false;
-    }
-
-    /// <summary>
-    /// Resolves which numeric key was pressed this frame and converts it to a preset index.
-    /// </summary>
-    /// <param name="keyboard">Current keyboard device.</param>
+    /// <param name="presetDigitAction">Button action bound to digit and numpad digit keys.</param>
     /// <param name="presetIndex">Resolved preset index when a valid key is pressed.</param>
     /// <returns>True when a supported numeric key was pressed this frame, otherwise false.</returns>
-    private static bool TryResolvePressedPresetIndex(Keyboard keyboard, out int presetIndex)
+    private static bool TryResolvePressedPresetIndex(InputAction presetDigitAction, out int presetIndex)
     {
-        if (IsDigitPressedThisFrame(keyboard.digit0Key, keyboard.numpad0Key))
-        {
-            presetIndex = 0;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit1Key, keyboard.numpad1Key))
-        {
-            presetIndex = 1;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit2Key, keyboard.numpad2Key))
-        {
-            presetIndex = 2;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit3Key, keyboard.numpad3Key))
-        {
-            presetIndex = 3;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit4Key, keyboard.numpad4Key))
-        {
-            presetIndex = 4;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit5Key, keyboard.numpad5Key))
-        {
-            presetIndex = 5;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit6Key, keyboard.numpad6Key))
-        {
-            presetIndex = 6;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit7Key, keyboard.numpad7Key))
-        {
-            presetIndex = 7;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit8Key, keyboard.numpad8Key))
-        {
-            presetIndex = 8;
-            return true;
-        }
-
-        if (IsDigitPressedThisFrame(keyboard.digit9Key, keyboard.numpad9Key))
-        {
-            presetIndex = 9;
-            return true;
-        }
-
         presetIndex = -1;
-        return false;
-    }
 
-    /// <summary>
-    /// Checks whether either the main digit key or the matching numpad digit was pressed this frame.
-    /// </summary>
-    /// <param name="digitKey">Main keyboard digit key.</param>
-    /// <param name="numpadKey">Numpad digit key.</param>
-    /// <returns>True when one of the provided keys was pressed this frame, otherwise false.</returns>
-    private static bool IsDigitPressedThisFrame(KeyControl digitKey, KeyControl numpadKey)
-    {
-        if (digitKey != null && digitKey.wasPressedThisFrame)
-            return true;
+        if (presetDigitAction == null)
+            return false;
 
-        if (numpadKey != null && numpadKey.wasPressedThisFrame)
-            return true;
+        if (presetDigitAction.WasPressedThisFrame() == false)
+            return false;
 
-        return false;
+        InputControl activeControl = presetDigitAction.activeControl;
+
+        if (activeControl == null)
+            return false;
+
+        KeyControl keyControl = activeControl as KeyControl;
+
+        if (keyControl == null)
+            return false;
+
+        switch (keyControl.keyCode)
+        {
+            case Key.Digit0:
+            case Key.Numpad0:
+                presetIndex = 0;
+                return true;
+            case Key.Digit1:
+            case Key.Numpad1:
+                presetIndex = 1;
+                return true;
+            case Key.Digit2:
+            case Key.Numpad2:
+                presetIndex = 2;
+                return true;
+            case Key.Digit3:
+            case Key.Numpad3:
+                presetIndex = 3;
+                return true;
+            case Key.Digit4:
+            case Key.Numpad4:
+                presetIndex = 4;
+                return true;
+            case Key.Digit5:
+            case Key.Numpad5:
+                presetIndex = 5;
+                return true;
+            case Key.Digit6:
+            case Key.Numpad6:
+                presetIndex = 6;
+                return true;
+            case Key.Digit7:
+            case Key.Numpad7:
+                presetIndex = 7;
+                return true;
+            case Key.Digit8:
+            case Key.Numpad8:
+                presetIndex = 8;
+                return true;
+            case Key.Digit9:
+            case Key.Numpad9:
+                presetIndex = 9;
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>

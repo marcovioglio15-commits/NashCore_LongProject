@@ -81,7 +81,7 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
                     if (killedEventsBuffer.Length == 0)
                         break;
 
-                    triggerPosition = killedEventsBuffer[0].Position;
+                    triggerPosition = ResolveKilledTriggerPosition(killedEventsBuffer[0].Position, playerTransform.ValueRO.Position.y);
                     shouldTrigger = cooldownReady;
                     break;
             }
@@ -104,6 +104,9 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
     {
         float3 worldPosition = triggerOrigin + explosionConfig.TriggerOffset;
 
+        if (worldPosition.y < triggerOrigin.y)
+            worldPosition.y = triggerOrigin.y;
+
         explosionRequests.Add(new PlayerExplosionRequest
         {
             Position = worldPosition,
@@ -114,6 +117,22 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
             ScaleVfxToRadius = explosionConfig.ScaleVfxToRadius,
             VfxScaleMultiplier = math.max(0.01f, explosionConfig.VfxScaleMultiplier)
         });
+    }
+
+    /// <summary>
+    /// Clamps kill-triggered explosion positions so one-shot VFX cannot spawn below the gameplay floor reference.
+    /// </summary>
+    /// <param name="killedEventPosition">Position captured by EnemyKilledEventsSystem for the killed target.</param>
+    /// <param name="playerFloorReferenceY">Current player Y used as local floor reference in flat/near-flat arenas.</param>
+    /// <returns>Sanitized trigger position with a minimum Y floor safeguard.</returns>
+    private static float3 ResolveKilledTriggerPosition(float3 killedEventPosition, float playerFloorReferenceY)
+    {
+        float3 resolvedPosition = killedEventPosition;
+
+        if (resolvedPosition.y < playerFloorReferenceY)
+            resolvedPosition.y = playerFloorReferenceY;
+
+        return resolvedPosition;
     }
     #endregion
 
