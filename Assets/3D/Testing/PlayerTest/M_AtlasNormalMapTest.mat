@@ -125,10 +125,10 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _ShadowRangeMax: -0.58
-    - _ShadowRangeMin: 0.177
-    - _ShadowScatter: 5.13
-    - _ShadowSoftness: 0.129
+    - _ShadowRangeMax: -0.51
+    - _ShadowRangeMin: 0.242
+    - _ShadowScatter: 6.54
+    - _ShadowSoftness: 0.13
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1

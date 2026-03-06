@@ -12,8 +12,8 @@ Shader "Cel Shader/Toon Diffuse"
 
 	{
 		_MainTex("Texture", 2D) = "white" {}
-		[NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {} //NEW
-		_BumpScale ("Bump Scale", Range(0,2)) = 1 //NEW
+		[NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {} //added 05-03-2026
+		_BumpScale ("Bump Scale", Range(0,2)) = 1 //added 05-03-2026
 		_AmbientColor("Ambient Color", Color) = (0,0,0,1)
 		_AmbientColorIntensity("Ambient Color Intensity", Range(0,5)) = 0.5
 		_ShadowSoftness("Shadow Softness", Range(0,0.5)) = 0.1
@@ -62,14 +62,14 @@ Shader "Cel Shader/Toon Diffuse"
 				float3 normal : NORMAL;
 			};
 
-			struct VertexData //NEW
+			struct VertexData //added 05-03-2026
 			{
 				float4 position : POSITION;
 				float3 normal : NORMAL;
 				float2 uv : TEXCOORD0;
 			};
 
-			struct Interpolators  //NEW
+			struct Interpolators  //added 05-03-2026
 			{
 				float4 position : SV_POSITION;
 				float2 uv : TEXCOORD0;
@@ -77,8 +77,8 @@ Shader "Cel Shader/Toon Diffuse"
 			};
 
 			sampler _MainTex;
-			sampler _NormalMap; //NEW
-			float _BumpScale; //NEW
+			sampler _NormalMap; //added 05-03-2026
+			float _BumpScale; //added 05-03-2026
 			float4 _MainTex_ST;
 			float4 _AmbientColor;
 			float _AmbientColorIntensity;
@@ -87,7 +87,7 @@ Shader "Cel Shader/Toon Diffuse"
 			float _ShadowRangeMin;
 			float _ShadowRangeMax;
 
-			Interpolators ToonNormalMap (v2f v) //NEW
+			Interpolators ToonNormalMap (v2f v) //added 05-03-2026
 			{
 				Interpolators i;
 				i.uv = TRANSFORM_TEX(v.uv, _MainTex);
@@ -107,12 +107,15 @@ Shader "Cel Shader/Toon Diffuse"
 				return o;
 			}
 
-			void InitializeFragmentNormal (inout Interpolators i) //NEW
+			void InitializeFragmentNormal (inout Interpolators i) //added 05-03-2026
 				{
-					//i.normal = UnpackScaleNormal (tex2D(_NormalMap, i.uv), _BumpScale);
+					//DISCARDED i.normal = UnpackScaleNormal (tex2D(_NormalMap, i.uv), _BumpScale);
+
+					//calculate normal vectors for normal map (math of UnpackScaleNormals, which doesn't work)
 					i.normal.xy = tex2D(_NormalMap, i.uv).wy * 2 - 1;
 					i.normal.xy *= _BumpScale;
 					i.normal.z = sqrt(1 - saturate(dot(i.normal.xy, i.normal.xy)));
+
 					i.normal = i.normal.xzy;
 					i.normal = normalize(i.normal);
 				}
@@ -133,12 +136,16 @@ Shader "Cel Shader/Toon Diffuse"
 				float3 lightDir = _WorldSpaceLightPos0.xyz; // getting the world space light (Directional Light in scene).
 
 				// sample the Texture
-				fixed4 col = tex2D(_MainTex, i.uv); //CHANGED POSITION
+				fixed4 col = tex2D(_MainTex, i.uv); //changed position 05-03-2026
 
-				i = ToonNormalMap (i); //NEW
-				InitializeFragmentNormal(i); //NEW
+				float firstRamp = dot(lightDir, i.normal); // NEW 06-03-2026
+															// dot product between the Directional Light and the object's normal vector.
 
-				float ramp = dot(lightDir, i.normal); // dot product between the Directional Light and the object's normal vector.
+				i = ToonNormalMap (i); //added 05-03-2026
+				InitializeFragmentNormal(i); //added 05-03-2026
+
+				float ramp = dot(firstRamp, i.normal); // dot product between the first dot and the normal map
+														//CHANGED 06-03-2026
 
 				
 				// REMAP of the dot product:
