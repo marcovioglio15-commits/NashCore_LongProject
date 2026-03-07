@@ -503,12 +503,11 @@ public sealed class PlayerAnimationBindingsPresetsPanel
         return section;
     }
 
-    private PropertyField CreatePropertyField(string propertyName, string labelOverride)
+    private VisualElement CreatePropertyField(string propertyName, string labelOverride)
     {
         SerializedProperty property = selectedPresetSerializedObject.FindProperty(propertyName);
-        PropertyField field = new PropertyField(property, labelOverride);
-        field.BindProperty(property);
-        field.RegisterCallback<SerializedPropertyChangeEvent>(evt => PlayerManagementDraftSession.MarkDirty());
+        SerializedProperty scalingRulesProperty = selectedPresetSerializedObject.FindProperty("scalingRules");
+        VisualElement field = PlayerScalingFieldElementFactory.CreateField(property, scalingRulesProperty, labelOverride);
         return field;
     }
 

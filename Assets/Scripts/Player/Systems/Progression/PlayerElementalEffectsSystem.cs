@@ -17,6 +17,7 @@ public partial struct PlayerElementalEffectsSystem : ISystem
         state.RequireForUpdate<PlayerElementalRuntimeState>();
         state.RequireForUpdate<PlayerElementStackElement>();
         state.RequireForUpdate<PlayerHealth>();
+        state.RequireForUpdate<PlayerShield>();
     }
 
     public void OnUpdate(ref SystemState state)
@@ -27,9 +28,11 @@ public partial struct PlayerElementalEffectsSystem : ISystem
             return;
 
         foreach ((RefRW<PlayerHealth> playerHealth,
+                  RefRW<PlayerShield> playerShield,
                   RefRW<PlayerElementalRuntimeState> elementalRuntimeState,
                   DynamicBuffer<PlayerElementStackElement> elementalStacks)
                  in SystemAPI.Query<RefRW<PlayerHealth>,
+                                    RefRW<PlayerShield>,
                                     RefRW<PlayerElementalRuntimeState>,
                                     DynamicBuffer<PlayerElementStackElement>>()
                              .WithAll<PlayerControllerConfig>())
@@ -61,12 +64,11 @@ public partial struct PlayerElementalEffectsSystem : ISystem
                 continue;
 
             PlayerHealth nextHealth = playerHealth.ValueRO;
-            nextHealth.Current -= accumulatedDotDamage;
-
-            if (nextHealth.Current < 0f)
-                nextHealth.Current = 0f;
+            PlayerShield nextShield = playerShield.ValueRO;
+            PlayerDamageUtility.ApplyFlatShieldDamage(ref nextHealth, ref nextShield, accumulatedDotDamage);
 
             playerHealth.ValueRW = nextHealth;
+            playerShield.ValueRW = nextShield;
         }
     }
     #endregion

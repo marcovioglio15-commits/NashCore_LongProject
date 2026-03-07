@@ -93,7 +93,7 @@ public sealed class EnemyPatternModuleDefinition
     [Tooltip("Module category used to resolve runtime behavior.")]
     [SerializeField] private EnemyPatternModuleKind moduleKind = EnemyPatternModuleKind.Grunt;
 
-    [Tooltip("Optional designer notes for this module definition.")]
+    [Tooltip("Optional notes for this module definition.")]
     [SerializeField] private string notes;
 
     [Tooltip("Kind-specific payload values used by this module.")]
@@ -322,7 +322,7 @@ public sealed class EnemyPatternDefinition
     [Tooltip("Display name shown in Pattern Assemble and Loadout sections.")]
     [SerializeField] private string displayName = "New Pattern";
 
-    [Tooltip("Optional designer description for this pattern.")]
+    [Tooltip("Optional description for this pattern.")]
     [SerializeField] private string description;
 
     [Tooltip("If enabled, this pattern should not be replaced by procedural runtime swaps.")]

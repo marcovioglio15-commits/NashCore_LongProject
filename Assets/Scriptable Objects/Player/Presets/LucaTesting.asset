@@ -117,6 +117,11 @@ MonoBehaviour:
       damage: 1
     initialPoolCapacity: 512
     poolExpandBatch: 128
+  healthStatistics:
+    maxHealth: 100
+    maxShield: 0
+    legacyHealthMigrated: 0
+  scalingRules: []
   moveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
   lookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
   shootActionId: a1c9633a-dc63-42a5-ae60-1a5d6f5f171b

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine.Serialization;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     [FormerlySerializedAs("m_PresetId")]
     [SerializeField] private string presetId;
 
-    [Tooltip("Human-readable preset name for designers.")]
+    [Tooltip("Preset name.")]
     [FormerlySerializedAs("m_PresetName")]
     [SerializeField] private string presetName = "New Player Preset";
 
@@ -38,6 +39,13 @@ public sealed class PlayerControllerPreset : ScriptableObject
 
     [Tooltip("Shooting configuration block.")]
     [SerializeField] private ShootingSettings shootingSettings = new ShootingSettings();
+
+    [Tooltip("Health and shield configuration block.")]
+    [SerializeField] private PlayerHealthStatisticsSettings healthStatistics = new PlayerHealthStatisticsSettings();
+
+    [Header("Scaling")]
+    [Tooltip("Optional formula-based scaling rules applied to numeric controller properties during bake.")]
+    [SerializeField] private List<PlayerStatScalingRule> scalingRules = new List<PlayerStatScalingRule>();
 
     [Header("Input Actions")]
     [Tooltip("Selected action ID for movement input.")]
@@ -118,6 +126,22 @@ public sealed class PlayerControllerPreset : ScriptableObject
         }
     }
 
+    public PlayerHealthStatisticsSettings HealthStatistics
+    {
+        get
+        {
+            return healthStatistics;
+        }
+    }
+
+    public IReadOnlyList<PlayerStatScalingRule> ScalingRules
+    {
+        get
+        {
+            return scalingRules;
+        }
+    }
+
     public string MoveActionId
     {
         get
@@ -162,10 +186,128 @@ public sealed class PlayerControllerPreset : ScriptableObject
         if (shootingSettings == null)
             shootingSettings = new ShootingSettings();
 
+        if (healthStatistics == null)
+            healthStatistics = new PlayerHealthStatisticsSettings();
+
+        if (scalingRules == null)
+            scalingRules = new List<PlayerStatScalingRule>();
+
         movementSettings.Validate();
         lookSettings.Validate();
         cameraSettings.Validate();
         shootingSettings.Validate();
+        healthStatistics.Validate();
+        ValidateScalingRules();
+    }
+    #endregion
+
+    #region Validation
+    private void ValidateScalingRules()
+    {
+        for (int index = 0; index < scalingRules.Count; index++)
+        {
+            PlayerStatScalingRule scalingRule = scalingRules[index];
+
+            if (scalingRule != null)
+                continue;
+
+            scalingRule = new PlayerStatScalingRule();
+            scalingRule.Configure(string.Empty, false, string.Empty);
+            scalingRules[index] = scalingRule;
+        }
+
+        for (int index = scalingRules.Count - 1; index >= 0; index--)
+        {
+            PlayerStatScalingRule scalingRule = scalingRules[index];
+            scalingRule.Validate();
+
+            if (string.IsNullOrWhiteSpace(scalingRule.StatKey))
+                scalingRules.RemoveAt(index);
+        }
+    }
+    #endregion
+
+    #region Migration
+    /// <summary>
+    /// Applies legacy progression health to this controller preset one time.
+    /// </summary>
+    /// <param name="legacyMaxHealth">Legacy max-health value extracted from old progression preset data.</param>
+    /// <returns>True when this preset was modified, otherwise false.</returns>
+    public bool TryApplyLegacyMaxHealth(float legacyMaxHealth)
+    {
+        if (healthStatistics == null)
+            healthStatistics = new PlayerHealthStatisticsSettings();
+
+        return healthStatistics.TryApplyLegacyMaxHealth(legacyMaxHealth);
+    }
+    #endregion
+}
+
+[Serializable]
+public sealed class PlayerHealthStatisticsSettings
+{
+    #region Serialized Fields
+    [Tooltip("Maximum and initial health assigned to the player when initialized at runtime.")]
+    [SerializeField] private float maxHealth = 100f;
+
+    [Tooltip("Maximum and initial shield reserve assigned to the player when initialized at runtime. Shield absorbs damage before health.")]
+    [SerializeField] private float maxShield;
+
+    [Tooltip("Internal migration marker used to import legacy progression health only once.")]
+    [SerializeField] private bool legacyHealthMigrated;
+    #endregion
+
+    #region Properties
+    public float MaxHealth
+    {
+        get
+        {
+            return maxHealth;
+        }
+    }
+
+    public float MaxShield
+    {
+        get
+        {
+            return maxShield;
+        }
+    }
+    #endregion
+
+    #region Validation
+    public void Validate()
+    {
+        if (maxHealth < 1f)
+            maxHealth = 1f;
+
+        if (maxShield < 0f)
+            maxShield = 0f;
+    }
+    #endregion
+
+    #region Migration
+    /// <summary>
+    /// Imports legacy max-health value from old progression presets when not already migrated.
+    /// </summary>
+    /// <param name="legacyMaxHealth">Legacy max-health value to apply.</param>
+    /// <returns>True when this instance was modified, otherwise false.</returns>
+    public bool TryApplyLegacyMaxHealth(float legacyMaxHealth)
+    {
+        if (legacyHealthMigrated)
+            return false;
+
+        float sanitizedLegacyMaxHealth = Mathf.Max(1f, legacyMaxHealth);
+        bool changed = false;
+
+        if (Mathf.Approximately(maxHealth, sanitizedLegacyMaxHealth) == false)
+        {
+            maxHealth = sanitizedLegacyMaxHealth;
+            changed = true;
+        }
+
+        legacyHealthMigrated = true;
+        return changed || legacyHealthMigrated;
     }
     #endregion
 }

@@ -16,6 +16,7 @@ MonoBehaviour:
   presetName: PlayerAnimationBindingsPreset
   description: 
   version: 1.0.0
+  scalingRules: []
   animatorController: {fileID: 9100000, guid: d668587abcbd5084f96f693fed712a69, type: 2}
   upperBodyAvatarMask: {fileID: 31900000, guid: b366f425f1efca34aba1f310df5dc233, type: 2}
   lowerBodyAvatarMask: {fileID: 31900000, guid: aeb923ceb29199c4696bcc7457d8250f, type: 2}

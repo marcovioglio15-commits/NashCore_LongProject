@@ -283,8 +283,10 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
         if (property == null)
             return;
 
-        PropertyField field = new PropertyField(property, label);
-        field.BindProperty(property);
+        SerializedProperty scalingRulesProperty = property.serializedObject != null
+            ? property.serializedObject.FindProperty("scalingRules")
+            : null;
+        VisualElement field = PlayerScalingFieldElementFactory.CreateField(property, scalingRulesProperty, label);
         parent.Add(field);
     }
 

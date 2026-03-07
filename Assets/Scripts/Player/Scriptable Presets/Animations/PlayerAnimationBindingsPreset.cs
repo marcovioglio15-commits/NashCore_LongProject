@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -49,7 +50,7 @@ public sealed class PlayerAnimationBindingsPreset : ScriptableObject
     [SerializeField]
     private string presetId;
 
-    [Tooltip("Human-readable animation bindings preset name for designers.")]
+    [Tooltip("Animation bindings preset name.")]
     [FormerlySerializedAs("m_PresetName")]
     [SerializeField]
     private string presetName = "New Animation Bindings Preset";
@@ -63,6 +64,11 @@ public sealed class PlayerAnimationBindingsPreset : ScriptableObject
     [FormerlySerializedAs("m_Version")]
     [SerializeField]
     private string version = "1.0.0";
+
+    [Header("Scaling")]
+    [Tooltip("Optional formula-based scaling rules applied to numeric animation binding properties during bake.")]
+    [SerializeField]
+    private List<PlayerStatScalingRule> scalingRules = new List<PlayerStatScalingRule>();
     #endregion
 
     #region Animator Setup
@@ -288,6 +294,14 @@ public sealed class PlayerAnimationBindingsPreset : ScriptableObject
         get
         {
             return version;
+        }
+    }
+
+    public IReadOnlyList<PlayerStatScalingRule> ScalingRules
+    {
+        get
+        {
+            return scalingRules;
         }
     }
     #endregion
@@ -742,6 +756,9 @@ public sealed class PlayerAnimationBindingsPreset : ScriptableObject
         if (string.IsNullOrWhiteSpace(presetId))
             presetId = Guid.NewGuid().ToString("N");
 
+        if (scalingRules == null)
+            scalingRules = new List<PlayerStatScalingRule>();
+
         floatDampTime = Mathf.Max(0f, floatDampTime);
         movingSpeedThreshold = Mathf.Max(0f, movingSpeedThreshold);
 
@@ -762,6 +779,7 @@ public sealed class PlayerAnimationBindingsPreset : ScriptableObject
         proceduralRecoilParameter = TrimParameter(proceduralRecoilParameter, DefaultProceduralRecoilParameter);
         proceduralAimWeightParameter = TrimParameter(proceduralAimWeightParameter, DefaultProceduralAimWeightParameter);
         proceduralLeanParameter = TrimParameter(proceduralLeanParameter, DefaultProceduralLeanParameter);
+        ValidateScalingRules();
     }
     #endregion
 
@@ -772,6 +790,30 @@ public sealed class PlayerAnimationBindingsPreset : ScriptableObject
             return fallbackValue;
 
         return parameterName.Trim();
+    }
+
+    private void ValidateScalingRules()
+    {
+        for (int index = 0; index < scalingRules.Count; index++)
+        {
+            PlayerStatScalingRule scalingRule = scalingRules[index];
+
+            if (scalingRule != null)
+                continue;
+
+            scalingRule = new PlayerStatScalingRule();
+            scalingRule.Configure(string.Empty, false, string.Empty);
+            scalingRules[index] = scalingRule;
+        }
+
+        for (int index = scalingRules.Count - 1; index >= 0; index--)
+        {
+            PlayerStatScalingRule scalingRule = scalingRules[index];
+            scalingRule.Validate();
+
+            if (string.IsNullOrWhiteSpace(scalingRule.StatKey))
+                scalingRules.RemoveAt(index);
+        }
     }
     #endregion
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -13,7 +14,7 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     [FormerlySerializedAs("m_PresetId")]
     [SerializeField] private string presetId;
 
-    [Tooltip("Human-readable progression preset name for designers.")]
+    [Tooltip("Progression preset name.")]
     [FormerlySerializedAs("m_PresetName")]
     [SerializeField] private string presetName = "New Progression Preset";
 
@@ -25,9 +26,19 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     [FormerlySerializedAs("m_Version")]
     [SerializeField] private string version = "1.0.0";
 
-    [Header("Base Stats")]
-    [Tooltip("Baseline player stats applied at runtime before level-up modifiers.")]
-    [SerializeField] private PlayerProgressionBaseStats baseStats = new PlayerProgressionBaseStats();
+    [Header("Scalable Stats")]
+    [Tooltip("Scalable stats used as runtime progression variables and formula inputs.")]
+    [SerializeField] private List<PlayerScalableStatDefinition> scalableStats = new List<PlayerScalableStatDefinition>();
+
+    [Header("Scaling")]
+    [Tooltip("Optional formula-based scaling rules applied to numeric progression properties during bake.")]
+    [SerializeField] private List<PlayerStatScalingRule> scalingRules = new List<PlayerStatScalingRule>();
+
+    [Tooltip("Legacy base stats storage kept for backward-compatible migration from old presets.")]
+    [FormerlySerializedAs("baseStats")]
+    [HideInInspector]
+    [SerializeField] private LegacyPlayerProgressionBaseStats legacyBaseStats = new LegacyPlayerProgressionBaseStats();
+
     #endregion
 
     #endregion
@@ -65,16 +76,42 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         }
     }
 
-    public PlayerProgressionBaseStats BaseStats
+    public IReadOnlyList<PlayerScalableStatDefinition> ScalableStats
     {
         get
         {
-            return baseStats;
+            return scalableStats;
+        }
+    }
+
+    public IReadOnlyList<PlayerStatScalingRule> ScalingRules
+    {
+        get
+        {
+            return scalingRules;
         }
     }
     #endregion
 
     #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Returns legacy health data when an old preset still contains migrated base-stat health.
+    /// </summary>
+    /// <param name="legacyHealth">Resolved legacy health value when available.</param>
+    /// <returns>True when legacy health data exists, otherwise false.</returns>
+    public bool TryGetLegacyHealth(out float legacyHealth)
+    {
+        legacyHealth = 0f;
+
+        if (legacyBaseStats == null)
+            return false;
+
+        legacyHealth = Mathf.Max(1f, legacyBaseStats.Health);
+        return true;
+    }
+    #endregion
 
     #region Unity Methods
     private void OnValidate()
@@ -82,27 +119,116 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         if (string.IsNullOrWhiteSpace(presetId))
             presetId = Guid.NewGuid().ToString("N");
 
-        if (baseStats == null)
-            baseStats = new PlayerProgressionBaseStats();
+        if (scalableStats == null)
+            scalableStats = new List<PlayerScalableStatDefinition>();
 
-        baseStats.Validate();
+        if (scalingRules == null)
+            scalingRules = new List<PlayerStatScalingRule>();
+
+        if (legacyBaseStats == null)
+            legacyBaseStats = new LegacyPlayerProgressionBaseStats();
+
+        legacyBaseStats.Validate();
+        ValidateScalableStats();
+        ValidateScalingRules();
     }
+    #endregion
+
+    #region Validation
+    private void ValidateScalableStats()
+    {
+        for (int index = 0; index < scalableStats.Count; index++)
+        {
+            PlayerScalableStatDefinition statDefinition = scalableStats[index];
+
+            if (statDefinition != null)
+                continue;
+
+            statDefinition = new PlayerScalableStatDefinition();
+            statDefinition.Configure(string.Format("stat{0}", index + 1), PlayerScalableStatType.Float, 0f);
+            scalableStats[index] = statDefinition;
+        }
+
+        for (int index = 0; index < scalableStats.Count; index++)
+        {
+            PlayerScalableStatDefinition statDefinition = scalableStats[index];
+            string fallbackName = string.Format("stat{0}", index + 1);
+            statDefinition.Validate(fallbackName);
+        }
+
+        EnsureUniqueScalableStatNames();
+    }
+
+    private void EnsureUniqueScalableStatNames()
+    {
+        HashSet<string> visitedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < scalableStats.Count; index++)
+        {
+            PlayerScalableStatDefinition statDefinition = scalableStats[index];
+            string baseName = statDefinition.StatName;
+
+            if (visitedNames.Add(baseName))
+                continue;
+
+            string uniqueName = baseName;
+            int suffix = 2;
+
+            while (visitedNames.Contains(uniqueName))
+            {
+                uniqueName = string.Format("{0}_{1}", baseName, suffix);
+                suffix += 1;
+            }
+
+            statDefinition.Configure(uniqueName, statDefinition.StatType, statDefinition.DefaultValue);
+            visitedNames.Add(uniqueName);
+        }
+    }
+
+    private void ValidateScalingRules()
+    {
+        for (int index = 0; index < scalingRules.Count; index++)
+        {
+            PlayerStatScalingRule scalingRule = scalingRules[index];
+
+            if (scalingRule != null)
+                continue;
+
+            scalingRule = new PlayerStatScalingRule();
+            scalingRule.Configure(string.Empty, false, string.Empty);
+            scalingRules[index] = scalingRule;
+        }
+
+        for (int index = scalingRules.Count - 1; index >= 0; index--)
+        {
+            PlayerStatScalingRule scalingRule = scalingRules[index];
+            scalingRule.Validate();
+
+            if (string.IsNullOrWhiteSpace(scalingRule.StatKey))
+            {
+                scalingRules.RemoveAt(index);
+                continue;
+            }
+        }
+    }
+
     #endregion
 
     #endregion
 }
 
+/// <summary>
+/// Stores deprecated progression base stats for one-time migration into the scalable stat model.
+/// </summary>
 [Serializable]
-public sealed class PlayerProgressionBaseStats
+public sealed class LegacyPlayerProgressionBaseStats
 {
     #region Fields
 
     #region Serialized Fields
-    [Tooltip("Maximum health assigned to the player when this progression preset is initialized.")]
+    [Tooltip("Legacy maximum health value used before health moved to controller presets.")]
     [SerializeField] private float health = 100f;
 
-    [Tooltip("Starting experience value assigned to the player when this progression preset is initialized.")]
-    [SerializeField] private float experience;
     #endregion
 
     #endregion
@@ -115,26 +241,19 @@ public sealed class PlayerProgressionBaseStats
             return health;
         }
     }
-
-    public float Experience
-    {
-        get
-        {
-            return experience;
-        }
-    }
     #endregion
 
     #region Methods
 
     #region Validation
+    /// <summary>
+    /// Sanitizes legacy values to avoid invalid migration data.
+    /// </summary>
+    /// <returns>Void.</returns>
     public void Validate()
     {
         if (health < 1f)
             health = 1f;
-
-        if (experience < 0f)
-            experience = 0f;
     }
     #endregion
 

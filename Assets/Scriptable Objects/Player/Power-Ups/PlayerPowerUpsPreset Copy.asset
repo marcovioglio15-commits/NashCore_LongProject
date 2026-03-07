@@ -16,6 +16,7 @@ MonoBehaviour:
   presetName: PlayerPowerUpsPreset Copy
   description: 
   version: 1.0.0
+  scalingRules: []
   primaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
   secondaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
   dropPoolCatalog:
@@ -1300,7 +1301,7 @@ MonoBehaviour:
         enableDamagePayload: 1
         damage: 120
         affectAllEnemiesInRadius: 1
-        explosionVfxPrefab: {fileID: 0}
+        explosionVfxPrefab: {fileID: 1211940420721360282, guid: 28a3caab1d07a7941b99718216a0fea3, type: 3}
         scaleVfxToRadius: 1
         vfxScaleMultiplier: 1
       dash:

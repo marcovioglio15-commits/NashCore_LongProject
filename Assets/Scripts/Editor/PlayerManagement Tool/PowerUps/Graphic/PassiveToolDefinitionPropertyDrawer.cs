@@ -97,10 +97,10 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
         if (parent == null || property == null)
             return;
 
-        PropertyField field = string.IsNullOrWhiteSpace(labelOverride)
-            ? new PropertyField(property)
-            : new PropertyField(property, labelOverride);
-        field.BindProperty(property);
+        SerializedProperty scalingRulesProperty = property.serializedObject != null
+            ? property.serializedObject.FindProperty("scalingRules")
+            : null;
+        VisualElement field = PlayerScalingFieldElementFactory.CreateField(property, scalingRulesProperty, labelOverride);
         parent.Add(field);
     }
 

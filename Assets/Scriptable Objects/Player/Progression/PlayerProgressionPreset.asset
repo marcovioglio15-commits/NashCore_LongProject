@@ -16,6 +16,10 @@ MonoBehaviour:
   presetName: PlayerProgressionPreset
   description: 
   version: 1.0.0
-  baseStats:
+  scalableStats:
+  - statName: FireRate
+    statType: 0
+    defaultValue: 6
+  scalingRules: []
+  legacyBaseStats:
     health: 1e+10
-    experience: 0

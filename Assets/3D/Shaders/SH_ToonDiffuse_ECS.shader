@@ -21,13 +21,13 @@ Shader "Cel Shader/Toon Diffuse ECS"
 
     SubShader
     {
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend SrcAlpha OneMinusSrcAlpha //added 07-03-2026
 
         Tags
         {
-            "Queue" = "Transparent"
-            "IgnoreProjector" = "True"
-            "RenderType" = "Transparent"
+            "Queue" = "Transparent" //added 07-03-2026
+            "IgnoreProjector" = "True" //added 07-03-2026
+            "RenderType" = "Transparent" //added 07-03-2026
             "RenderPipeline" = "UniversalPipeline"
         }
 
@@ -190,7 +190,7 @@ Shader "Cel Shader/Toon Diffuse ECS"
 
                 // URP texture sampling equivalent to tex2D.
                 half4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
-                float3 meshNormalWS = NormalizeNormalPerPixel(input.normalWS);
+                float3 meshNormalWS = NormalizeNormalPerPixel(input.normalWS); //added 07-03-2026
 
                 // uv is transformed in vertex, then transformed again before normal-map sampling.
                 float2 toonNormalUv = TRANSFORM_TEX(input.uv, _MainTex);
@@ -199,8 +199,8 @@ Shader "Cel Shader/Toon Diffuse ECS"
                 // Main light retrieval in URP.
                 Light mainLight = GetMainLight();
                 float3 lightDir = mainLight.direction;
-                float firstRamp = dot(lightDir, meshNormalWS);
-                float ramp = dot(firstRamp.xxx, toonNormal);
+                float firstRamp = dot(lightDir, meshNormalWS); //added 07-03-2026
+                float ramp = dot(firstRamp.xxx, toonNormal); //added 07-03-2026
 
                 // Toon ramp math ported 1:1.
                 float remapOut = InverseLerp(-1.0, 1.0, ramp);

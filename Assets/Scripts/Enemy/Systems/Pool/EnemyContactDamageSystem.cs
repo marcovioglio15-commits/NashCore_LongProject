@@ -23,7 +23,7 @@ public partial struct EnemyContactDamageSystem : ISystem
         state.RequireForUpdate<EnemyRuntimeState>();
 
         playerQuery = SystemAPI.QueryBuilder()
-            .WithAll<PlayerControllerConfig, LocalTransform, PlayerHealth>()
+            .WithAll<PlayerControllerConfig, LocalTransform, PlayerHealth, PlayerShield>()
             .Build();
 
         state.RequireForUpdate(playerQuery);
@@ -36,16 +36,19 @@ public partial struct EnemyContactDamageSystem : ISystem
         Entity playerEntity = Entity.Null;
         LocalTransform playerTransform = default;
         PlayerHealth playerHealth = default;
+        PlayerShield playerShield = default;
 
         foreach ((RefRO<LocalTransform> candidatePlayerTransform,
                   RefRO<PlayerHealth> candidatePlayerHealth,
-                  Entity candidatePlayerEntity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerHealth>>()
+                  RefRO<PlayerShield> candidatePlayerShield,
+                  Entity candidatePlayerEntity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerHealth>, RefRO<PlayerShield>>()
                                                             .WithAll<PlayerControllerConfig>()
                                                             .WithEntityAccess())
         {
             playerEntity = candidatePlayerEntity;
             playerTransform = candidatePlayerTransform.ValueRO;
             playerHealth = candidatePlayerHealth.ValueRO;
+            playerShield = candidatePlayerShield.ValueRO;
             break;
         }
 
@@ -141,12 +144,10 @@ public partial struct EnemyContactDamageSystem : ISystem
         if (totalDamage <= 0f)
             return;
 
-        playerHealth.Current -= totalDamage;
-
-        if (playerHealth.Current < 0f)
-            playerHealth.Current = 0f;
+        PlayerDamageUtility.ApplyFlatShieldDamage(ref playerHealth, ref playerShield, totalDamage);
 
         entityManager.SetComponentData(playerEntity, playerHealth);
+        entityManager.SetComponentData(playerEntity, playerShield);
     }
     #endregion
 

@@ -13,6 +13,18 @@ public struct PlayerControllerConfigBlob
     public LookConfig Look;
     public CameraConfig Camera;
     public ShootingConfig Shooting;
+    public HealthStatisticsConfig HealthStatistics;
+}
+#endregion
+
+#region Health Statistics
+/// <summary>
+/// Holds configuration data related to player health and shield reserves.
+/// </summary>
+public struct HealthStatisticsConfig
+{
+    public float MaxHealth;
+    public float MaxShield;
 }
 #endregion
 

@@ -1,20 +1,23 @@
+using Unity.Entities;
+
 #region Root Blob
 /// <summary>
-/// Holds progression configuration data for player initialization.
+/// Holds progression configuration data used to initialize scalable runtime stats.
 /// </summary>
 public struct PlayerProgressionConfigBlob
 {
-    public PlayerProgressionBaseStatsBlob BaseStats;
+    public BlobArray<PlayerScalableStatBlob> ScalableStats;
 }
 #endregion
 
-#region Base Stats
+#region Scalable Stats
 /// <summary>
-/// Holds baseline player progression stats.
+/// Stores one scalable stat entry baked from progression presets.
 /// </summary>
-public struct PlayerProgressionBaseStatsBlob
+public struct PlayerScalableStatBlob
 {
-    public float Health;
-    public float Experience;
+    public BlobString Name;
+    public byte Type;
+    public float DefaultValue;
 }
 #endregion

@@ -21,6 +21,16 @@ public sealed class HUDManager : MonoBehaviour
     [Tooltip("Hide health bar image when no player entity with PlayerHealth is available.")]
     [SerializeField] private bool hideHealthBarWhenPlayerMissing = true;
 
+    [Header("Shield")]
+    [Tooltip("UI Image used as fillable shield bar. Fill method should be Horizontal or Radial.")]
+    [SerializeField] private Image playerShieldFillImage;
+
+    [Tooltip("Seconds used to smooth visual shield fill transitions. Set 0 for immediate updates.")]
+    [SerializeField] private float shieldBarSmoothingSeconds = 0.08f;
+
+    [Tooltip("Hide shield bar image when no player entity with PlayerShield is available.")]
+    [SerializeField] private bool hideShieldBarWhenPlayerMissing = true;
+
     [Header("Power Ups - Energy")]
     [Tooltip("Primary slot energy fill image. Displayed only when the primary slot has an energy module.")]
     [SerializeField] private Image primaryEnergyFillImage;
@@ -60,6 +70,7 @@ public sealed class HUDManager : MonoBehaviour
     private bool playerQueryInitialized;
     private Entity cachedPlayerEntity;
     private float displayedHealthNormalized = 1f;
+    private float displayedShieldNormalized;
     private float displayedPrimaryEnergyNormalized = 1f;
     private float displayedSecondaryEnergyNormalized = 1f;
     private float displayedPrimaryChargeNormalized;
@@ -91,6 +102,7 @@ public sealed class HUDManager : MonoBehaviour
         }
 
         UpdateHealthBar(playerEntity);
+        UpdateShieldBar(playerEntity);
         UpdatePowerUpBars(playerEntity);
     }
     #endregion
@@ -197,6 +209,29 @@ public sealed class HUDManager : MonoBehaviour
                                                      targetNormalizedValue,
                                                      healthBarSmoothingSeconds);
         ApplyFill(playerHealthFillImage, displayedHealthNormalized);
+    }
+
+    private void UpdateShieldBar(Entity playerEntity)
+    {
+        if (playerShieldFillImage == null)
+            return;
+
+        if (entityManager.HasComponent<PlayerShield>(playerEntity) == false)
+        {
+            HandleMissingShieldBar();
+            return;
+        }
+
+        PlayerShield playerShield = entityManager.GetComponentData<PlayerShield>(playerEntity);
+        float targetNormalizedValue = 0f;
+
+        if (playerShield.Max > 0f)
+            targetNormalizedValue = Mathf.Clamp01(playerShield.Current / playerShield.Max);
+
+        displayedShieldNormalized = SmoothNormalized(displayedShieldNormalized,
+                                                     targetNormalizedValue,
+                                                     shieldBarSmoothingSeconds);
+        ApplyFill(playerShieldFillImage, displayedShieldNormalized);
     }
 
     private void UpdatePowerUpBars(Entity playerEntity)
@@ -324,12 +359,18 @@ public sealed class HUDManager : MonoBehaviour
 
         if (chargeBarSmoothingSeconds < 0f)
             chargeBarSmoothingSeconds = 0f;
+
+        if (shieldBarSmoothingSeconds < 0f)
+            shieldBarSmoothingSeconds = 0f;
     }
 
     private void ApplyInitialVisualState()
     {
         if (playerHealthFillImage != null)
             ApplyFill(playerHealthFillImage, displayedHealthNormalized);
+
+        if (playerShieldFillImage != null)
+            ApplyFill(playerShieldFillImage, displayedShieldNormalized);
 
         if (primaryEnergyFillImage != null)
             ApplyFill(primaryEnergyFillImage, displayedPrimaryEnergyNormalized);
@@ -347,6 +388,7 @@ public sealed class HUDManager : MonoBehaviour
     private void HandleMissingPlayer()
     {
         HandleMissingHealthBar();
+        HandleMissingShieldBar();
         HandleMissingPowerUpBars();
     }
 
@@ -362,6 +404,20 @@ public sealed class HUDManager : MonoBehaviour
         }
 
         ApplyFill(playerHealthFillImage, displayedHealthNormalized);
+    }
+
+    private void HandleMissingShieldBar()
+    {
+        if (playerShieldFillImage == null)
+            return;
+
+        if (hideShieldBarWhenPlayerMissing)
+        {
+            playerShieldFillImage.enabled = false;
+            return;
+        }
+
+        ApplyFill(playerShieldFillImage, displayedShieldNormalized);
     }
 
     private void HandleMissingPowerUpBars()

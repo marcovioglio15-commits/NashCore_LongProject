@@ -1,5 +1,8 @@
 using System;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [CreateAssetMenu(fileName = "PlayerMasterPreset", menuName = "Player/Master Preset", order = 9)]
 public sealed class PlayerMasterPreset : ScriptableObject
@@ -9,7 +12,7 @@ public sealed class PlayerMasterPreset : ScriptableObject
     [Header("Metadata")]
     [SerializeField] private string m_PresetId;
 
-    [Tooltip("Human-readable master preset name for designers.")]
+    [Tooltip("Master preset name.")]
     [SerializeField] private string m_PresetName = "New Player Master Preset";
 
     [Tooltip("Short description of the master preset use case.")]
@@ -118,6 +121,31 @@ public sealed class PlayerMasterPreset : ScriptableObject
 
         if (string.IsNullOrWhiteSpace(wallsLayerName))
             wallsLayerName = "Walls";
+
+        TryMigrateLegacyProgressionHealth();
+    }
+    #endregion
+
+    #region Migration
+    private void TryMigrateLegacyProgressionHealth()
+    {
+        if (m_ControllerPreset == null)
+            return;
+
+        if (m_ProgressionPreset == null)
+            return;
+
+        if (m_ProgressionPreset.TryGetLegacyHealth(out float legacyHealth) == false)
+            return;
+
+        bool changed = m_ControllerPreset.TryApplyLegacyMaxHealth(legacyHealth);
+
+#if UNITY_EDITOR
+        if (changed)
+            EditorUtility.SetDirty(m_ControllerPreset);
+#else
+        _ = changed;
+#endif
     }
     #endregion
 }

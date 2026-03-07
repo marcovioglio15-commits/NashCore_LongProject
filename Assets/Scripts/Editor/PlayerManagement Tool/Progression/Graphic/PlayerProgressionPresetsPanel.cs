@@ -556,30 +556,112 @@ public sealed class PlayerProgressionPresetsPanel
         sectionContentRoot.Add(idRow);
     }
 
-    private void BuildBaseStatsSection()
+    private void BuildScalableStatsSection()
     {
-        VisualElement baseStatsContainer = CreateSectionContainer("Base Stats");
+        VisualElement scalableStatsContainer = CreateSectionContainer("Scalable Stats");
+        SerializedProperty scalableStatsProperty = presetSerializedObject.FindProperty("scalableStats");
+        SerializedProperty scalingRulesProperty = presetSerializedObject.FindProperty("scalingRules");
 
-        SerializedProperty baseStatsProperty = presetSerializedObject.FindProperty("baseStats");
-
-        if (baseStatsProperty == null)
+        if (scalableStatsProperty == null || scalingRulesProperty == null)
         {
-            Label missingLabel = new Label("Base stats data is missing on this preset.");
+            Label missingLabel = new Label("Scalable stats data is missing on this preset.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-            baseStatsContainer.Add(missingLabel);
+            scalableStatsContainer.Add(missingLabel);
             return;
         }
 
-        SerializedProperty healthProperty = baseStatsProperty.FindPropertyRelative("health");
-        SerializedProperty experienceProperty = baseStatsProperty.FindPropertyRelative("experience");
+        Label infoLabel = new Label("Manage custom variables used by formulas. Use [this] to reference current field value.");
+        infoLabel.style.marginBottom = 4f;
+        scalableStatsContainer.Add(infoLabel);
 
-        PropertyField healthField = new PropertyField(healthProperty);
-        healthField.BindProperty(healthProperty);
-        baseStatsContainer.Add(healthField);
+        VisualElement warningsRoot = new VisualElement();
+        warningsRoot.style.marginBottom = 4f;
+        scalableStatsContainer.Add(warningsRoot);
+        RefreshScalableStatsWarnings(warningsRoot, scalableStatsProperty, scalingRulesProperty);
 
-        PropertyField experienceField = new PropertyField(experienceProperty);
-        experienceField.BindProperty(experienceProperty);
-        baseStatsContainer.Add(experienceField);
+        PropertyField scalableStatsField = new PropertyField(scalableStatsProperty, "Scalable Stats");
+        scalableStatsField.BindProperty(scalableStatsProperty);
+        scalableStatsField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            PlayerManagementDraftSession.MarkDirty();
+            RefreshScalableStatsWarnings(warningsRoot, scalableStatsProperty, scalingRulesProperty);
+        });
+        scalableStatsContainer.Add(scalableStatsField);
+
+        scalableStatsContainer.RegisterCallback<ChangeEvent<string>>(evt =>
+        {
+            RefreshScalableStatsWarnings(warningsRoot, scalableStatsProperty, scalingRulesProperty);
+        });
+
+        scalableStatsContainer.RegisterCallback<ChangeEvent<bool>>(evt =>
+        {
+            RefreshScalableStatsWarnings(warningsRoot, scalableStatsProperty, scalingRulesProperty);
+        });
+    }
+
+    private void RefreshScalableStatsWarnings(VisualElement warningsRoot,
+                                              SerializedProperty scalableStatsProperty,
+                                              SerializedProperty scalingRulesProperty)
+    {
+        if (warningsRoot == null || scalableStatsProperty == null)
+            return;
+
+        warningsRoot.Clear();
+
+        for (int statIndex = 0; statIndex < scalableStatsProperty.arraySize; statIndex++)
+        {
+            SerializedProperty statElementProperty = scalableStatsProperty.GetArrayElementAtIndex(statIndex);
+            SerializedProperty statNameProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("statName") : null;
+            string statName = statNameProperty != null ? statNameProperty.stringValue : string.Empty;
+            string warningText = ValidateScalableStatEntry(statName, statIndex, scalableStatsProperty);
+
+            if (string.IsNullOrWhiteSpace(warningText))
+                continue;
+
+            HelpBox warningBox = new HelpBox(string.Format("Stat {0}: {1}", statIndex + 1, warningText), HelpBoxMessageType.Warning);
+            warningBox.style.marginBottom = 2f;
+            warningsRoot.Add(warningBox);
+        }
+
+        List<string> dependencyWarnings = PlayerScalingDependencyValidationUtility.BuildScalableStatsDependencyWarnings(scalableStatsProperty,
+                                                                                                                         scalingRulesProperty);
+
+        for (int warningIndex = 0; warningIndex < dependencyWarnings.Count; warningIndex++)
+        {
+            string dependencyWarning = dependencyWarnings[warningIndex];
+
+            if (string.IsNullOrWhiteSpace(dependencyWarning))
+                continue;
+
+            HelpBox warningBox = new HelpBox(dependencyWarning, HelpBoxMessageType.Warning);
+            warningBox.style.marginBottom = 2f;
+            warningsRoot.Add(warningBox);
+        }
+    }
+
+    private string ValidateScalableStatEntry(string statName, int statIndex, SerializedProperty scalableStatsProperty)
+    {
+        if (PlayerScalableStatNameUtility.IsValid(statName) == false)
+            return "Invalid name. Use letters/digits/underscore, start with letter or underscore, and avoid 'this'.";
+
+        for (int index = 0; index < scalableStatsProperty.arraySize; index++)
+        {
+            if (index == statIndex)
+                continue;
+
+            SerializedProperty otherStatElement = scalableStatsProperty.GetArrayElementAtIndex(index);
+            SerializedProperty otherStatNameProperty = otherStatElement != null ? otherStatElement.FindPropertyRelative("statName") : null;
+
+            if (otherStatNameProperty == null)
+                continue;
+
+            if (string.Equals(otherStatNameProperty.stringValue, statName, StringComparison.OrdinalIgnoreCase) == false)
+                continue;
+
+            return "Duplicate name.";
+        }
+
+        return string.Empty;
     }
 
     private VisualElement BuildSectionButtons()
@@ -590,7 +672,7 @@ public sealed class PlayerProgressionPresetsPanel
         buttonsRoot.style.marginBottom = 6f;
 
         AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
-        AddSectionButton(buttonsRoot, SectionType.BaseStats, "Base Stats");
+        AddSectionButton(buttonsRoot, SectionType.ScalableStats, "Scalable Stats");
         return buttonsRoot;
     }
 
@@ -629,8 +711,8 @@ public sealed class PlayerProgressionPresetsPanel
             case SectionType.Metadata:
                 BuildMetadataSection();
                 return;
-            case SectionType.BaseStats:
-                BuildBaseStatsSection();
+            case SectionType.ScalableStats:
+                BuildScalableStatsSection();
                 return;
         }
     }
@@ -742,7 +824,7 @@ public sealed class PlayerProgressionPresetsPanel
     private enum SectionType
     {
         Metadata = 0,
-        BaseStats = 1
+        ScalableStats = 1
     }
     #endregion
 }

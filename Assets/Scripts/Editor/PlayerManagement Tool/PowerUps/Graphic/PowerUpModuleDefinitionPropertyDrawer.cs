@@ -205,9 +205,48 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
                 return;
         }
 
-        PropertyField payloadField = new PropertyField(payloadProperty, payloadLabel);
-        payloadField.BindProperty(payloadProperty);
-        payloadContainer.Add(payloadField);
+        BuildDefaultPayloadUi(payloadContainer, payloadProperty, payloadLabel);
+    }
+
+    private static void BuildDefaultPayloadUi(VisualElement payloadContainer,
+                                              SerializedProperty payloadProperty,
+                                              string payloadLabel)
+    {
+        if (payloadContainer == null || payloadProperty == null)
+            return;
+
+        string resolvedLabel = string.IsNullOrWhiteSpace(payloadLabel) ? payloadProperty.displayName : payloadLabel;
+        Foldout payloadFoldout = new Foldout
+        {
+            text = resolvedLabel,
+            value = true
+        };
+        payloadContainer.Add(payloadFoldout);
+
+        if (payloadProperty.hasVisibleChildren == false)
+        {
+            AddField(payloadFoldout, payloadProperty, resolvedLabel);
+            return;
+        }
+
+        SerializedProperty iterator = payloadProperty.Copy();
+        SerializedProperty endProperty = iterator.GetEndProperty();
+        int parentDepth = payloadProperty.depth;
+        bool enterChildren = true;
+
+        while (iterator.NextVisible(enterChildren))
+        {
+            if (SerializedProperty.EqualContents(iterator, endProperty))
+                break;
+
+            enterChildren = false;
+
+            if (iterator.depth != parentDepth + 1)
+                continue;
+
+            SerializedProperty childProperty = iterator.Copy();
+            AddField(payloadFoldout, childProperty, childProperty.displayName);
+        }
     }
 
     private static void BuildSpawnObjectPayloadUi(VisualElement payloadContainer, SerializedProperty spawnPayloadProperty)
@@ -993,8 +1032,10 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
             return;
         }
 
-        PropertyField field = new PropertyField(property, label);
-        field.BindProperty(property);
+        SerializedProperty scalingRulesProperty = property.serializedObject != null
+            ? property.serializedObject.FindProperty("scalingRules")
+            : null;
+        VisualElement field = PlayerScalingFieldElementFactory.CreateField(property, scalingRulesProperty, label);
         parent.Add(field);
     }
 

@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -13,6 +14,15 @@ using Unity.Transforms;
 [UpdateAfter(typeof(ProjectilePoolInitializeSystem))]
 public partial struct ProjectileSpawnSystem : ISystem
 {
+    #region Nested Types
+    private struct PoolExpansionRequest
+    {
+        public Entity ShooterEntity;
+        public Entity ProjectilePrefab;
+        public int ExpandCount;
+    }
+    #endregion
+
     #region Constants
     private const float MinimumProjectileScale = 0.0001f;
     #endregion
@@ -49,8 +59,34 @@ public partial struct ProjectileSpawnSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
-        ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
+        NativeList<PoolExpansionRequest> expansionRequests = new NativeList<PoolExpansionRequest>(Allocator.Temp);
 
+        try
+        {
+            CollectPoolExpansionRequests(ref state, entityManager, ref expansionRequests);
+            ExecutePoolExpansionRequests(entityManager, in expansionRequests);
+
+            // Refresh lookup after structural changes performed during pool expansion.
+            ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
+            ProcessShootRequests(ref state, entityManager, in passiveToolsLookup);
+        }
+        finally
+        {
+            if (expansionRequests.IsCreated)
+                expansionRequests.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Collects pool expansion requests without applying structural changes during entity iteration.
+    /// </summary>
+    /// <param name="entityManager">EntityManager used to inspect shooter state and buffers.</param>
+    /// <param name="expansionRequests">Mutable list that receives expansion requests.</param>
+    /// <returns>Void.</returns>
+    private void CollectPoolExpansionRequests(ref SystemState state,
+                                              EntityManager entityManager,
+                                              ref NativeList<PoolExpansionRequest> expansionRequests)
+    {
         foreach ((DynamicBuffer<ShootRequest> shootRequests,
                   DynamicBuffer<ProjectilePoolElement> projectilePool,
                   RefRO<ShooterProjectilePrefab> projectilePrefab,
@@ -61,42 +97,101 @@ public partial struct ProjectileSpawnSystem : ISystem
                                                            RefRO<ProjectilePoolState>>()
                                                    .WithEntityAccess())
         {
-            if (entityManager.Exists(shooterEntity) == false)
+            if (IsShooterEligibleForSpawn(entityManager, shooterEntity, shootRequests.Length, poolStateValue.ValueRO) == false)
                 continue;
 
-            if (entityManager.HasComponent<Projectile>(shooterEntity))
+            Entity prefabEntity = projectilePrefab.ValueRO.PrefabEntity;
+
+            if (IsValidPrefab(entityManager, prefabEntity) == false)
+            {
+                shootRequests.Clear();
+                continue;
+            }
+
+            int missingProjectiles = shootRequests.Length - projectilePool.Length;
+
+            if (missingProjectiles <= 0)
                 continue;
 
-            if (shootRequests.Length == 0)
+            int expandBatch = math.max(1, poolStateValue.ValueRO.ExpandBatch);
+            int expandCount = math.max(expandBatch, missingProjectiles);
+            expansionRequests.Add(new PoolExpansionRequest
+            {
+                ShooterEntity = shooterEntity,
+                ProjectilePrefab = prefabEntity,
+                ExpandCount = expandCount
+            });
+        }
+    }
+
+    /// <summary>
+    /// Executes queued pool expansion requests after entity iteration to avoid structural-change exceptions.
+    /// </summary>
+    /// <param name="entityManager">EntityManager used for pool expansion operations.</param>
+    /// <param name="expansionRequests">Queued expansion requests collected during query iteration.</param>
+    /// <returns>Void.</returns>
+    private static void ExecutePoolExpansionRequests(EntityManager entityManager, in NativeList<PoolExpansionRequest> expansionRequests)
+    {
+        for (int requestIndex = 0; requestIndex < expansionRequests.Length; requestIndex++)
+        {
+            PoolExpansionRequest expansionRequest = expansionRequests[requestIndex];
+
+            if (expansionRequest.ExpandCount <= 0)
                 continue;
 
-            ProjectilePoolState poolState = poolStateValue.ValueRO;
+            if (entityManager.Exists(expansionRequest.ShooterEntity) == false)
+                continue;
 
-            if (poolState.Initialized == 0)
+            if (entityManager.HasComponent<Projectile>(expansionRequest.ShooterEntity))
+                continue;
+
+            if (entityManager.HasBuffer<ProjectilePoolElement>(expansionRequest.ShooterEntity) == false)
+                continue;
+
+            if (IsValidPrefab(entityManager, expansionRequest.ProjectilePrefab) == false)
+                continue;
+
+            ProjectilePoolUtility.ExpandPool(entityManager,
+                                             expansionRequest.ShooterEntity,
+                                             expansionRequest.ProjectilePrefab,
+                                             expansionRequest.ExpandCount);
+        }
+    }
+
+    /// <summary>
+    /// Spawns projectiles for all pending shoot requests using already initialized pooled entities.
+    /// </summary>
+    /// <param name="entityManager">EntityManager used for component read/write operations.</param>
+    /// <param name="passiveToolsLookup">Read-only lookup for passive tool runtime state.</param>
+    /// <returns>Void.</returns>
+    private void ProcessShootRequests(ref SystemState state,
+                                      EntityManager entityManager,
+                                      in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup)
+    {
+        foreach ((DynamicBuffer<ShootRequest> shootRequests,
+                  DynamicBuffer<ProjectilePoolElement> projectilePool,
+                  RefRO<ShooterProjectilePrefab> projectilePrefab,
+                  RefRO<ProjectilePoolState> poolStateValue,
+                  Entity shooterEntity) in SystemAPI.Query<DynamicBuffer<ShootRequest>,
+                                                           DynamicBuffer<ProjectilePoolElement>,
+                                                           RefRO<ShooterProjectilePrefab>,
+                                                           RefRO<ProjectilePoolState>>()
+                                                   .WithEntityAccess())
+        {
+            if (IsShooterEligibleForSpawn(entityManager, shooterEntity, shootRequests.Length, poolStateValue.ValueRO) == false)
                 continue;
 
             DynamicBuffer<ShootRequest> shooterShootRequests = shootRequests;
             DynamicBuffer<ProjectilePoolElement> shooterProjectilePool = projectilePool;
             Entity prefabEntity = projectilePrefab.ValueRO.PrefabEntity;
 
-            if (prefabEntity == Entity.Null || entityManager.Exists(prefabEntity) == false)
+            if (IsValidPrefab(entityManager, prefabEntity) == false)
             {
                 shooterShootRequests.Clear();
                 continue;
             }
 
             PlayerPassiveToolsState passiveToolsState = ResolvePassiveToolsState(shooterEntity, in passiveToolsLookup);
-            int missingProjectiles = shooterShootRequests.Length - shooterProjectilePool.Length;
-
-            if (missingProjectiles > 0)
-            {
-                int expandBatch = math.max(1, poolState.ExpandBatch);
-                int expandCount = math.max(expandBatch, missingProjectiles);
-                ProjectilePoolUtility.ExpandPool(entityManager, shooterEntity, prefabEntity, expandCount);
-                shooterShootRequests = entityManager.GetBuffer<ShootRequest>(shooterEntity);
-                shooterProjectilePool = entityManager.GetBuffer<ProjectilePoolElement>(shooterEntity);
-            }
-
             int requestsCount = shooterShootRequests.Length;
 
             for (int requestIndex = 0; requestIndex < requestsCount; requestIndex++)
@@ -122,18 +217,7 @@ public partial struct ProjectileSpawnSystem : ISystem
                 projectileTransform.Position = request.Position;
                 projectileTransform.Rotation = quaternion.LookRotationSafe(direction, new float3(0f, 1f, 0f));
 
-                float baseScale = 1f;
-
-                if (entityManager.HasComponent<ProjectileBaseScale>(projectileEntity))
-                    baseScale = math.max(MinimumProjectileScale, entityManager.GetComponentData<ProjectileBaseScale>(projectileEntity).Value);
-                else
-                {
-                    baseScale = math.max(MinimumProjectileScale, projectileTransform.Scale);
-                    entityManager.AddComponentData(projectileEntity, new ProjectileBaseScale
-                    {
-                        Value = baseScale
-                    });
-                }
+                float baseScale = ResolveProjectileBaseScale(entityManager, projectileEntity, projectileTransform.Scale);
 
                 float scaleMultiplier = math.max(0.01f, request.ProjectileScaleMultiplier);
                 projectileTransform.Scale = baseScale * scaleMultiplier;
@@ -187,6 +271,65 @@ public partial struct ProjectileSpawnSystem : ISystem
 
             shooterShootRequests.Clear();
         }
+    }
+
+    /// <summary>
+    /// Checks whether a shooter can be processed for pool expansion and request spawning.
+    /// </summary>
+    /// <param name="entityManager">EntityManager used for component existence checks.</param>
+    /// <param name="shooterEntity">Shooter entity to inspect.</param>
+    /// <param name="shootRequestsCount">Current number of queued shoot requests.</param>
+    /// <param name="poolState">Current shooter projectile pool state.</param>
+    /// <returns>True when shooter is valid and initialized for spawn processing.</returns>
+    private static bool IsShooterEligibleForSpawn(EntityManager entityManager,
+                                                  Entity shooterEntity,
+                                                  int shootRequestsCount,
+                                                  ProjectilePoolState poolState)
+    {
+        if (entityManager.Exists(shooterEntity) == false)
+            return false;
+
+        if (entityManager.HasComponent<Projectile>(shooterEntity))
+            return false;
+
+        if (shootRequestsCount <= 0)
+            return false;
+
+        if (poolState.Initialized == 0)
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Validates that a projectile prefab entity exists before it is used for pool expansion.
+    /// </summary>
+    /// <param name="entityManager">EntityManager used for existence checks.</param>
+    /// <param name="prefabEntity">Candidate projectile prefab entity.</param>
+    /// <returns>True when prefab is non-null and alive in the world.</returns>
+    private static bool IsValidPrefab(EntityManager entityManager, Entity prefabEntity)
+    {
+        if (prefabEntity == Entity.Null)
+            return false;
+
+        return entityManager.Exists(prefabEntity);
+    }
+
+    /// <summary>
+    /// Resolves cached projectile base scale without performing structural changes during query iteration.
+    /// </summary>
+    /// <param name="entityManager">EntityManager used for optional ProjectileBaseScale lookup.</param>
+    /// <param name="projectileEntity">Projectile entity being spawned.</param>
+    /// <param name="transformScale">Current LocalTransform scale fallback.</param>
+    /// <returns>Clamped base scale value used for spawn scale multiplier.</returns>
+    private static float ResolveProjectileBaseScale(EntityManager entityManager,
+                                                    Entity projectileEntity,
+                                                    float transformScale)
+    {
+        if (entityManager.HasComponent<ProjectileBaseScale>(projectileEntity))
+            return math.max(MinimumProjectileScale, entityManager.GetComponentData<ProjectileBaseScale>(projectileEntity).Value);
+
+        return math.max(MinimumProjectileScale, transformScale);
     }
 
     private static PlayerPassiveToolsState ResolvePassiveToolsState(Entity shooterEntity, in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup)

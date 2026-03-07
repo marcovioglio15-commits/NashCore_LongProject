@@ -698,6 +698,7 @@ public sealed class PlayerControllerPresetsPanel
         AddSectionButton(buttonsRoot, SectionType.Look, "Look");
         AddSectionButton(buttonsRoot, SectionType.Shooting, "Shooting");
         AddSectionButton(buttonsRoot, SectionType.Camera, "Camera");
+        AddSectionButton(buttonsRoot, SectionType.HealthStatistics, "Health Statistics");
         return buttonsRoot;
     }
 
@@ -748,6 +749,9 @@ public sealed class PlayerControllerPresetsPanel
             case SectionType.Camera:
                 BuildCameraSection();
                 return;
+            case SectionType.HealthStatistics:
+                BuildHealthStatisticsSection();
+                return;
         }
     }
 
@@ -790,6 +794,7 @@ public sealed class PlayerControllerPresetsPanel
         SerializedProperty offsetProperty = movementProperty.FindPropertyRelative("directionOffsetDegrees");
         SerializedProperty referenceProperty = movementProperty.FindPropertyRelative("movementReference");
         SerializedProperty valuesProperty = movementProperty.FindPropertyRelative("values");
+        SerializedProperty scalingRulesProperty = m_PresetSerializedObject.FindProperty("scalingRules");
 
         EnumField modeField = new EnumField("Allowed Directions");
         modeField.BindProperty(modeProperty);
@@ -798,9 +803,10 @@ public sealed class PlayerControllerPresetsPanel
         VisualElement discreteContainer = new VisualElement();
         discreteContainer.style.marginLeft = 8f;
 
-        IntegerField countField = new IntegerField("Direction Count");
-        countField.BindProperty(countProperty);
-        discreteContainer.Add(countField);
+        VisualElement countFieldElement = PlayerScalingFieldElementFactory.CreateField(countProperty,
+                                                                                       scalingRulesProperty,
+                                                                                       "Direction Count");
+        discreteContainer.Add(countFieldElement);
 
         PieChartElement pieChart = new PieChartElement();
         Slider movementZoomSlider = CreatePieZoomSlider(pieChart);
@@ -819,7 +825,9 @@ public sealed class PlayerControllerPresetsPanel
         Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, moveActionProperty, InputActionSelectionElement.SelectionMode.Movement);
         section.Add(bindingsFoldout);
 
-        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
+        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty,
+                                                   scalingRulesProperty,
+                                                   new string[]
         {
             "baseSpeed",
             "maxSpeed",
@@ -851,7 +859,7 @@ public sealed class PlayerControllerPresetsPanel
             updateView();
         });
 
-        countField.RegisterValueChangedCallback(evt =>
+        countFieldElement.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
         {
             updateView();
         });
@@ -886,6 +894,7 @@ public sealed class PlayerControllerPresetsPanel
         SerializedProperty samplingProperty = lookProperty.FindPropertyRelative("m_MultiplierSampling");
         SerializedProperty maxSpeedMultipliersProperty = lookProperty.FindPropertyRelative("m_DiscreteDirectionMaxSpeedMultipliers");
         SerializedProperty accelerationMultipliersProperty = lookProperty.FindPropertyRelative("m_DiscreteDirectionAccelerationMultipliers");
+        SerializedProperty scalingRulesProperty = m_PresetSerializedObject.FindProperty("scalingRules");
 
         // Cone properties
         SerializedProperty frontEnabledProperty = lookProperty.FindPropertyRelative("m_FrontConeEnabled");
@@ -921,9 +930,10 @@ public sealed class PlayerControllerPresetsPanel
         discreteContainer.style.marginLeft = 8f;
 
         // Direction Count Field
-        IntegerField countField = new IntegerField("Direction Count");
-        countField.BindProperty(countProperty);
-        discreteContainer.Add(countField);
+        VisualElement countFieldElement = PlayerScalingFieldElementFactory.CreateField(countProperty,
+                                                                                       scalingRulesProperty,
+                                                                                       "Direction Count");
+        discreteContainer.Add(countFieldElement);
 
         // Direction Offset Field
         //FloatField offsetField = new FloatField("Direction Offset");
@@ -964,8 +974,9 @@ public sealed class PlayerControllerPresetsPanel
         section.Add(rotationModeField);
 
         // Rotation Speed Field
-        FloatField rotationSpeedField = new FloatField("Rotation Speed");
-        rotationSpeedField.BindProperty(rotationSpeedProperty);
+        VisualElement rotationSpeedField = PlayerScalingFieldElementFactory.CreateField(rotationSpeedProperty,
+                                                                                        scalingRulesProperty,
+                                                                                        "Rotation Speed");
         section.Add(rotationSpeedField);
 
         // Multiplier Sampling Field
@@ -983,7 +994,9 @@ public sealed class PlayerControllerPresetsPanel
 
         // Values Foldout
         SerializedProperty valuesProperty = lookProperty.FindPropertyRelative("m_Values");
-        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
+        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty,
+                                                   scalingRulesProperty,
+                                                   new string[]
         {
             "m_RotationDamping",
             "m_RotationMaxSpeed",
@@ -1041,7 +1054,7 @@ public sealed class PlayerControllerPresetsPanel
             updateView();
         });
 
-        countField.RegisterValueChangedCallback(evt =>
+        countFieldElement.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
         {
             updateView();
         });
@@ -1163,6 +1176,7 @@ public sealed class PlayerControllerPresetsPanel
         SerializedProperty valuesProperty = shootingProperty.FindPropertyRelative("values");
         SerializedProperty initialPoolCapacityProperty = shootingProperty.FindPropertyRelative("initialPoolCapacity");
         SerializedProperty poolExpandBatchProperty = shootingProperty.FindPropertyRelative("poolExpandBatch");
+        SerializedProperty scalingRulesProperty = m_PresetSerializedObject.FindProperty("scalingRules");
 
         // Build Shooting Settings UI
         EnumField triggerModeField = new EnumField("Trigger Mode");
@@ -1190,7 +1204,9 @@ public sealed class PlayerControllerPresetsPanel
         Foldout bindingsFoldout = BuildBindingsFoldout(m_InputAsset, m_PresetSerializedObject, shootActionProperty, InputActionSelectionElement.SelectionMode.Shooting);
         section.Add(bindingsFoldout);
 
-        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
+        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty,
+                                                   scalingRulesProperty,
+                                                   new string[]
         {
             "shootSpeed",
             "rateOfFire",
@@ -1205,14 +1221,16 @@ public sealed class PlayerControllerPresetsPanel
         objectPoolFoldout.text = "Object Pool";
         objectPoolFoldout.value = true;
 
-        IntegerField initialPoolCapacityField = new IntegerField("Initial Capacity");
+        VisualElement initialPoolCapacityField = PlayerScalingFieldElementFactory.CreateField(initialPoolCapacityProperty,
+                                                                                               scalingRulesProperty,
+                                                                                               "Initial Capacity");
         initialPoolCapacityField.tooltip = "Number of projectiles pre-created when the pool initializes.";
-        initialPoolCapacityField.BindProperty(initialPoolCapacityProperty);
         objectPoolFoldout.Add(initialPoolCapacityField);
 
-        IntegerField poolExpandBatchField = new IntegerField("Expand Batch");
+        VisualElement poolExpandBatchField = PlayerScalingFieldElementFactory.CreateField(poolExpandBatchProperty,
+                                                                                           scalingRulesProperty,
+                                                                                           "Expand Batch");
         poolExpandBatchField.tooltip = "Number of projectiles created each time the pool needs expansion.";
-        poolExpandBatchField.BindProperty(poolExpandBatchProperty);
         objectPoolFoldout.Add(poolExpandBatchField);
 
         section.Add(objectPoolFoldout);
@@ -1240,6 +1258,7 @@ public sealed class PlayerControllerPresetsPanel
         SerializedProperty offsetProperty = cameraProperty.FindPropertyRelative("followOffset");
         SerializedProperty anchorProperty = cameraProperty.FindPropertyRelative("roomAnchor");
         SerializedProperty valuesProperty = cameraProperty.FindPropertyRelative("values");
+        SerializedProperty scalingRulesProperty = m_PresetSerializedObject.FindProperty("scalingRules");
 
         EnumField behaviorField = new EnumField("Camera Behavior");
         behaviorField.BindProperty(behaviorProperty);
@@ -1254,7 +1273,9 @@ public sealed class PlayerControllerPresetsPanel
         anchorField.BindProperty(anchorProperty);
         section.Add(anchorField);
 
-        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty, new string[]
+        Foldout valuesFoldout = BuildValuesFoldout(valuesProperty,
+                                                   scalingRulesProperty,
+                                                   new string[]
         {
             "followSpeed",
             "cameraLag",
@@ -1280,6 +1301,45 @@ public sealed class PlayerControllerPresetsPanel
     }
     #endregion
 
+    #region Health Statistics Section
+    /// <summary>
+    /// Builds the health statistics section with max health and max shield values.
+    /// </summary>
+    /// <returns>Void.</returns>
+    private void BuildHealthStatisticsSection()
+    {
+        VisualElement section = CreateSectionContainer("Health Statistics");
+
+        if (section == null)
+            return;
+
+        SerializedProperty healthStatisticsProperty = m_PresetSerializedObject.FindProperty("healthStatistics");
+        SerializedProperty scalingRulesProperty = m_PresetSerializedObject.FindProperty("scalingRules");
+
+        if (healthStatisticsProperty == null || scalingRulesProperty == null)
+        {
+            Label missingLabel = new Label("Health statistics data is missing on this preset.");
+            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            section.Add(missingLabel);
+            return;
+        }
+
+        SerializedProperty maxHealthProperty = healthStatisticsProperty.FindPropertyRelative("maxHealth");
+        SerializedProperty maxShieldProperty = healthStatisticsProperty.FindPropertyRelative("maxShield");
+
+        if (maxHealthProperty == null || maxShieldProperty == null)
+        {
+            Label missingFieldsLabel = new Label("Health statistics fields are missing on this preset.");
+            missingFieldsLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            section.Add(missingFieldsLabel);
+            return;
+        }
+
+        section.Add(PlayerScalingFieldElementFactory.CreateField(maxHealthProperty, scalingRulesProperty, "Max Health"));
+        section.Add(PlayerScalingFieldElementFactory.CreateField(maxShieldProperty, scalingRulesProperty, "Max Shield"));
+    }
+    #endregion
+
     #region Helpers
     /// <summary>
     /// This method constructs a foldout containing a scrollable list of property fields 
@@ -1289,9 +1349,12 @@ public sealed class PlayerControllerPresetsPanel
     /// organized manner.
     /// </summary>
     /// <param name="valuesProperty"></param>
+    /// <param name="scalingRulesProperty"></param>
     /// <param name="fieldNames"></param>
     /// <returns></returns>
-    private Foldout BuildValuesFoldout(SerializedProperty valuesProperty, string[] fieldNames)
+    private Foldout BuildValuesFoldout(SerializedProperty valuesProperty,
+                                       SerializedProperty scalingRulesProperty,
+                                       string[] fieldNames)
     {
         Foldout foldout = new Foldout();
         foldout.text = "Values";
@@ -1310,9 +1373,8 @@ public sealed class PlayerControllerPresetsPanel
                 if (fieldProperty == null)
                     continue;
 
-                PropertyField propertyField = new PropertyField(fieldProperty);
-                propertyField.BindProperty(fieldProperty);
-                scrollView.Add(propertyField);
+                VisualElement scaledField = PlayerScalingFieldElementFactory.CreateField(fieldProperty, scalingRulesProperty);
+                scrollView.Add(scaledField);
             }
         }
 
@@ -2048,7 +2110,8 @@ public sealed class PlayerControllerPresetsPanel
         Movement = 1,
         Look = 2,
         Shooting = 3,
-        Camera = 4
+        Camera = 4,
+        HealthStatistics = 5
     }
     #endregion
 }

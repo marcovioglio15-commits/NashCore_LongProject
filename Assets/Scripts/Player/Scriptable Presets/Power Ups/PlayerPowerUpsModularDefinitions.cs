@@ -1509,7 +1509,7 @@ public sealed class PowerUpModuleDefinition
     [HideInInspector]
     [SerializeField] private PowerUpModuleStage defaultStage = PowerUpModuleStage.Execute;
 
-    [Tooltip("Optional designer notes for this module.")]
+    [Tooltip("Optional notes for this module.")]
     [SerializeField] private string notes;
 
     [Tooltip("Payload used by this module kind.")]

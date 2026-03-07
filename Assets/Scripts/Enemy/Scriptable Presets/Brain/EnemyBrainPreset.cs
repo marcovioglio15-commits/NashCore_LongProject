@@ -546,7 +546,7 @@ public sealed class EnemyBrainPreset : ScriptableObject
     [Tooltip("Unique ID for this preset, used for stable references.")]
     [SerializeField] private string presetId;
 
-    [Tooltip("Human-readable preset name for designers.")]
+    [Tooltip("Preset name.")]
     [SerializeField] private string presetName = "New Enemy Brain Preset";
 
     [Tooltip("Short description of the preset use case.")]

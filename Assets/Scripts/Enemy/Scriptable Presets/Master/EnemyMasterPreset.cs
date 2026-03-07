@@ -11,7 +11,7 @@ public sealed class EnemyMasterPreset : ScriptableObject
     [Tooltip("Unique ID for this enemy master preset, used for stable references.")]
     [SerializeField] private string presetId;
 
-    [Tooltip("Human-readable enemy master preset name for designers.")]
+    [Tooltip("Enemy master preset name.")]
     [SerializeField] private string presetName = "New Enemy Master Preset";
 
     [Tooltip("Short description of this enemy master preset.")]

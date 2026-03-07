@@ -34,26 +34,33 @@ public static class ProjectilePoolUtility
             return;
 
         NativeArray<Entity> spawnedProjectiles = new NativeArray<Entity>(count, Allocator.Temp);
-        entityManager.Instantiate(projectilePrefab, spawnedProjectiles);
 
-        for (int index = 0; index < spawnedProjectiles.Length; index++)
+        try
         {
-            Entity projectileEntity = spawnedProjectiles[index];
-            EnsureProjectileComponents(entityManager, projectileEntity);
-            EnsureProjectileBaseScale(entityManager, projectileEntity);
-            SetProjectileParked(entityManager, projectileEntity);
-            entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, false);
-        }
+            entityManager.Instantiate(projectilePrefab, spawnedProjectiles);
 
-        DynamicBuffer<ProjectilePoolElement> projectilePool = entityManager.GetBuffer<ProjectilePoolElement>(shooterEntity);
-
-        for (int index = 0; index < spawnedProjectiles.Length; index++)
-            projectilePool.Add(new ProjectilePoolElement
+            for (int index = 0; index < spawnedProjectiles.Length; index++)
             {
-                ProjectileEntity = spawnedProjectiles[index]
-            });
+                Entity projectileEntity = spawnedProjectiles[index];
+                EnsureProjectileComponents(entityManager, projectileEntity);
+                EnsureProjectileBaseScale(entityManager, projectileEntity);
+                SetProjectileParked(entityManager, projectileEntity);
+                entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, false);
+            }
 
-        spawnedProjectiles.Dispose();
+            DynamicBuffer<ProjectilePoolElement> projectilePool = entityManager.GetBuffer<ProjectilePoolElement>(shooterEntity);
+
+            for (int index = 0; index < spawnedProjectiles.Length; index++)
+                projectilePool.Add(new ProjectilePoolElement
+                {
+                    ProjectileEntity = spawnedProjectiles[index]
+                });
+        }
+        finally
+        {
+            if (spawnedProjectiles.IsCreated)
+                spawnedProjectiles.Dispose();
+        }
     }
 
 

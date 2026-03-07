@@ -2370,7 +2370,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     [FormerlySerializedAs("m_PresetId")]
     [SerializeField] private string presetId;
 
-    [Tooltip("Human-readable power ups preset name for designers.")]
+    [Tooltip("Power ups preset name.")]
     [FormerlySerializedAs("m_PresetName")]
     [SerializeField] private string presetName = "New Power Ups Preset";
 
@@ -2381,6 +2381,10 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     [Tooltip("Semantic version of this preset.")]
     [FormerlySerializedAs("m_Version")]
     [SerializeField] private string version = "1.0.0";
+
+    [Header("Scaling")]
+    [Tooltip("Optional formula-based scaling rules applied to numeric power-up properties during bake.")]
+    [SerializeField] private List<PlayerStatScalingRule> scalingRules = new List<PlayerStatScalingRule>();
 
     [Header("Input")]
     [Tooltip("Input Action ID used for the primary active tool slot.")]
@@ -2491,6 +2495,14 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         get
         {
             return version;
+        }
+    }
+
+    public IReadOnlyList<PlayerStatScalingRule> ScalingRules
+    {
+        get
+        {
+            return scalingRules;
         }
     }
 
@@ -3083,6 +3095,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         if (dropPoolCatalog == null)
             dropPoolCatalog = new List<string>();
 
+        if (scalingRules == null)
+            scalingRules = new List<PlayerStatScalingRule>();
+
         if (moduleDefinitions == null)
             moduleDefinitions = new List<PowerUpModuleDefinition>();
 
@@ -3119,6 +3134,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     {
         GenerateDefaultModularSetupIfEmpty();
         MigrateModuleDefinitionsToUnifiedKinds();
+        ValidateScalingRules();
 
         for (int index = 0; index < passiveTools.Count; index++)
         {
@@ -3205,6 +3221,30 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         ValidateActivePowerUpLoadout();
         ValidatePassivePowerUpLoadout();
         ValidateToolLoadout();
+    }
+
+    private void ValidateScalingRules()
+    {
+        for (int index = 0; index < scalingRules.Count; index++)
+        {
+            PlayerStatScalingRule scalingRule = scalingRules[index];
+
+            if (scalingRule != null)
+                continue;
+
+            scalingRule = new PlayerStatScalingRule();
+            scalingRule.Configure(string.Empty, false, string.Empty);
+            scalingRules[index] = scalingRule;
+        }
+
+        for (int index = scalingRules.Count - 1; index >= 0; index--)
+        {
+            PlayerStatScalingRule scalingRule = scalingRules[index];
+            scalingRule.Validate();
+
+            if (string.IsNullOrWhiteSpace(scalingRule.StatKey))
+                scalingRules.RemoveAt(index);
+        }
     }
 
     private void MigrateModuleDefinitionsToUnifiedKinds()

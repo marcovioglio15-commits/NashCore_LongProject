@@ -59,6 +59,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
         ComponentLookup<PlayerHealth> healthLookup = SystemAPI.GetComponentLookup<PlayerHealth>(false);
+        ComponentLookup<PlayerShield> shieldLookup = SystemAPI.GetComponentLookup<PlayerShield>(false);
         ComponentLookup<PlayerLookState> lookLookup = SystemAPI.GetComponentLookup<PlayerLookState>(true);
         ComponentLookup<PlayerMovementState> movementLookup = SystemAPI.GetComponentLookup<PlayerMovementState>(true);
         ComponentLookup<PlayerControllerConfig> controllerLookup = SystemAPI.GetComponentLookup<PlayerControllerConfig>(true);
@@ -134,6 +135,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             byte isShootingSuppressed = 0;
             bool healthChanged = false;
             PlayerHealth updatedHealth = default;
+            bool shieldChanged = false;
+            PlayerShield updatedShield = default;
 
             ProcessSlotInput(in powerUpsConfig.ValueRO.PrimarySlot,
                              in powerUpsConfig.ValueRO.SecondarySlot,
@@ -163,7 +166,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                              entity,
                              ref healthLookup,
                              ref updatedHealth,
-                             ref healthChanged);
+                             ref healthChanged,
+                             ref shieldLookup,
+                             ref updatedShield,
+                             ref shieldChanged);
 
             ProcessSlotInput(in powerUpsConfig.ValueRO.SecondarySlot,
                              in powerUpsConfig.ValueRO.PrimarySlot,
@@ -193,10 +199,16 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                              entity,
                              ref healthLookup,
                              ref updatedHealth,
-                             ref healthChanged);
+                             ref healthChanged,
+                             ref shieldLookup,
+                             ref updatedShield,
+                             ref shieldChanged);
 
             if (healthChanged)
                 healthLookup[entity] = updatedHealth;
+
+            if (shieldChanged)
+                shieldLookup[entity] = updatedShield;
 
             powerUpsState.ValueRW.PrimaryEnergy = primaryEnergy;
             powerUpsState.ValueRW.SecondaryEnergy = secondaryEnergy;
@@ -242,7 +254,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                          Entity playerEntity,
                                          ref ComponentLookup<PlayerHealth> healthLookup,
                                          ref PlayerHealth updatedHealth,
-                                         ref bool healthChanged)
+                                         ref bool healthChanged,
+                                         ref ComponentLookup<PlayerShield> shieldLookup,
+                                         ref PlayerShield updatedShield,
+                                         ref bool shieldChanged)
     {
         if (slotConfig.IsDefined == 0)
             return;
@@ -272,6 +287,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                   ref healthLookup,
                                   ref updatedHealth,
                                   ref healthChanged,
+                                  ref shieldLookup,
+                                  ref updatedShield,
+                                  ref shieldChanged,
                                   ref dashState,
                                   ref bulletTimeState);
             return;
@@ -315,7 +333,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                  playerEntity,
                                  ref healthLookup,
                                  ref updatedHealth,
-                                 ref healthChanged) == false)
+                                 ref healthChanged,
+                                 ref shieldLookup,
+                                 ref updatedShield,
+                                 ref shieldChanged) == false)
             return;
 
         ConsumeActivationCost(slotConfig,
@@ -323,7 +344,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                               playerEntity,
                               ref healthLookup,
                               ref updatedHealth,
-                              ref healthChanged);
+                              ref healthChanged,
+                              ref shieldLookup,
+                              ref updatedShield,
+                              ref shieldChanged);
 
         if (slotConfig.InterruptOtherSlotOnEnter != 0 && otherSlotConfig.IsDefined != 0)
             InterruptOtherSlot(slotConfig,
@@ -378,6 +402,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                               ref ComponentLookup<PlayerHealth> healthLookup,
                                               ref PlayerHealth updatedHealth,
                                               ref bool healthChanged,
+                                              ref ComponentLookup<PlayerShield> shieldLookup,
+                                              ref PlayerShield updatedShield,
+                                              ref bool shieldChanged,
                                               ref PlayerDashState dashState,
                                               ref PlayerBulletTimeState bulletTimeState)
     {
@@ -405,7 +432,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                      playerEntity,
                                      ref healthLookup,
                                      ref updatedHealth,
-                                     ref healthChanged) == false)
+                                     ref healthChanged,
+                                     ref shieldLookup,
+                                     ref updatedShield,
+                                     ref shieldChanged) == false)
             {
                 isCharging = 0;
                 charge = 0f;
@@ -423,7 +453,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                      playerEntity,
                                      ref healthLookup,
                                      ref updatedHealth,
-                                     ref healthChanged) == false)
+                                     ref healthChanged,
+                                     ref shieldLookup,
+                                     ref updatedShield,
+                                     ref shieldChanged) == false)
             {
                 isCharging = 0;
                 charge = 0f;
@@ -456,14 +489,20 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                  playerEntity,
                                  ref healthLookup,
                                  ref updatedHealth,
-                                 ref healthChanged))
+                                 ref healthChanged,
+                                 ref shieldLookup,
+                                 ref updatedShield,
+                                 ref shieldChanged))
         {
             ConsumeActivationCost(slotConfig,
                                   ref slotEnergy,
                                   playerEntity,
                                   ref healthLookup,
                                   ref updatedHealth,
-                                  ref healthChanged);
+                                  ref healthChanged,
+                                  ref shieldLookup,
+                                  ref updatedShield,
+                                  ref shieldChanged);
 
             if (slotConfig.InterruptOtherSlotOnEnter != 0 && hasOtherSlotDefinition)
                 InterruptOtherSlot(slotConfig,
@@ -587,7 +626,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                              Entity playerEntity,
                                              ref ComponentLookup<PlayerHealth> healthLookup,
                                              ref PlayerHealth updatedHealth,
-                                             ref bool healthChanged)
+                                             ref bool healthChanged,
+                                             ref ComponentLookup<PlayerShield> shieldLookup,
+                                             ref PlayerShield updatedShield,
+                                             ref bool shieldChanged)
     {
         float maximumEnergy = math.max(0f, slotConfig.MaximumEnergy);
         float activationCost = math.max(0f, slotConfig.ActivationCost);
@@ -634,7 +676,22 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
                 return true;
             case PowerUpResourceType.Shield:
-                return false;
+                if (shieldChanged == false)
+                {
+                    if (shieldLookup.HasComponent(playerEntity) == false)
+                        return false;
+
+                    updatedShield = shieldLookup[playerEntity];
+                    shieldChanged = true;
+                }
+
+                if (activationCost <= 0f)
+                    return true;
+
+                if (updatedShield.Current + EnergyEpsilon < activationCost)
+                    return false;
+
+                return true;
             default:
                 return false;
         }
@@ -645,7 +702,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                               Entity playerEntity,
                                               ref ComponentLookup<PlayerHealth> healthLookup,
                                               ref PlayerHealth updatedHealth,
-                                              ref bool healthChanged)
+                                              ref bool healthChanged,
+                                              ref ComponentLookup<PlayerShield> shieldLookup,
+                                              ref PlayerShield updatedShield,
+                                              ref bool shieldChanged)
     {
         float activationCost = math.max(0f, slotConfig.ActivationCost);
 
@@ -678,6 +738,25 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
                 if (updatedHealth.Current < 0f)
                     updatedHealth.Current = 0f;
+
+                return;
+            case PowerUpResourceType.Shield:
+                if (shieldChanged == false)
+                {
+                    if (shieldLookup.HasComponent(playerEntity) == false)
+                        return;
+
+                    updatedShield = shieldLookup[playerEntity];
+                    shieldChanged = true;
+                }
+
+                if (activationCost <= 0f)
+                    return;
+
+                updatedShield.Current -= activationCost;
+
+                if (updatedShield.Current < 0f)
+                    updatedShield.Current = 0f;
 
                 return;
         }

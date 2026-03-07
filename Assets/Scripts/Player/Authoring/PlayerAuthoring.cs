@@ -671,8 +671,30 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (controllerPreset == null)
             return;
 
+        PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
+        PlayerPowerUpsPreset powerUpsPreset = authoring.GetPowerUpsPreset();
+        PlayerAnimationBindingsPreset animationBindingsPreset = authoring.MasterPreset != null ? authoring.MasterPreset.AnimationBindingsPreset : null;
+
+#if UNITY_EDITOR
+        PlayerScaledPresetScope scaledPresetScope = PlayerPresetScalingBakeUtility.CreateScope(controllerPreset,
+                                                                                               progressionPreset,
+                                                                                               powerUpsPreset,
+                                                                                               animationBindingsPreset);
+        controllerPreset = scaledPresetScope.ControllerPreset;
+        progressionPreset = scaledPresetScope.ProgressionPreset;
+        powerUpsPreset = scaledPresetScope.PowerUpsPreset;
+        animationBindingsPreset = scaledPresetScope.AnimationBindingsPreset;
+
+        try
+        {
+#endif
+
         // Create entity and build configuration blob
         Entity entity = GetEntity(TransformUsageFlags.Dynamic);
+#if UNITY_EDITOR
+        TryAddScalingDebugBuffers(entity,
+                                  scaledPresetScope);
+#endif
         BlobAssetReference<PlayerControllerConfigBlob> blob = BuildConfigBlob(controllerPreset);
         AddBlobAsset(ref blob, out Unity.Entities.Hash128 _);
 
@@ -686,7 +708,6 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         PlayerWorldLayersConfig worldLayersConfig = BuildWorldLayersConfig(authoring.MasterPreset);
         AddComponent(entity, worldLayersConfig);
-        PlayerAnimationBindingsPreset animationBindingsPreset = authoring.MasterPreset != null ? authoring.MasterPreset.AnimationBindingsPreset : null;
         Animator resolvedAnimatorComponent = ResolveAnimatorComponent(authoring);
         GameObject resolvedRuntimeVisualBridgePrefab = ResolveRuntimeVisualBridgePrefab(authoring);
 
@@ -725,8 +746,6 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                            authoring.name),
                              authoring);
         }
-        PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
-
         if (progressionPreset != null)
         {
             BlobAssetReference<PlayerProgressionConfigBlob> progressionBlob = BuildProgressionConfigBlob(progressionPreset);
@@ -739,8 +758,6 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
             AddComponent(entity, progressionConfig);
         }
-
-        PlayerPowerUpsPreset powerUpsPreset = authoring.GetPowerUpsPreset();
 
         if (powerUpsPreset != null)
         {
@@ -830,6 +847,14 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         };
 
         AddComponent(entity, cameraAnchor);
+#if UNITY_EDITOR
+        }
+        finally
+        {
+            if (scaledPresetScope != null)
+                scaledPresetScope.Dispose();
+        }
+#endif
     }
     #endregion
 
@@ -1002,6 +1027,51 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         return null;
     }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Adds editor-only runtime debug buffers derived from scaling rules that enable Debug in Console.
+    /// </summary>
+    /// <param name="entity">Target baked player entity receiving debug buffers.</param>
+    /// <param name="scaledPresetScope">Scaled preset scope containing evaluated debug snapshots for [this] and final values.</param>
+    /// <returns>Void.</returns>
+    private void TryAddScalingDebugBuffers(Entity entity,
+                                           PlayerScaledPresetScope scaledPresetScope)
+    {
+        if (UnityEditor.BuildPipeline.isBuildingPlayer)
+            return;
+
+        IReadOnlyList<PlayerScalingDebugRuleSnapshot> debugRuleSnapshots = scaledPresetScope != null
+            ? scaledPresetScope.DebugRuleSnapshots
+            : null;
+        bool hasDebugRuleSnapshots = debugRuleSnapshots != null && debugRuleSnapshots.Count > 0;
+
+        if (hasDebugRuleSnapshots == false)
+            return;
+
+        DynamicBuffer<PlayerScalingDebugRuleElement> debugRuleBuffer = AddBuffer<PlayerScalingDebugRuleElement>(entity);
+
+        for (int index = 0; index < debugRuleSnapshots.Count; index++)
+        {
+            PlayerScalingDebugRuleSnapshot snapshot = debugRuleSnapshots[index];
+            string presetTypeLabel = string.IsNullOrWhiteSpace(snapshot.PresetTypeLabel) ? "Preset" : snapshot.PresetTypeLabel;
+            string targetDisplayName = string.IsNullOrWhiteSpace(snapshot.TargetDisplayName) ? "Scaled Stat" : snapshot.TargetDisplayName;
+            string statKey = string.IsNullOrWhiteSpace(snapshot.StatKey) ? "<unknown>" : snapshot.StatKey;
+            string formula = string.IsNullOrWhiteSpace(snapshot.Formula) ? "[this]" : snapshot.Formula;
+            Color debugColor = snapshot.DebugColor;
+            debugRuleBuffer.Add(new PlayerScalingDebugRuleElement
+            {
+                PresetTypeLabel = new FixedString64Bytes(presetTypeLabel),
+                TargetDisplayName = new FixedString64Bytes(targetDisplayName),
+                StatKey = new FixedString128Bytes(statKey),
+                Formula = new FixedString512Bytes(formula),
+                ThisValue = snapshot.ThisValue,
+                FinalValue = snapshot.FinalValue,
+                DebugColor = new float4(debugColor.r, debugColor.g, debugColor.b, debugColor.a)
+            });
+        }
+    }
+#endif
     #endregion
 
     #region Blob Building
@@ -1019,6 +1089,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         FillLookConfig(ref root, preset.LookSettings, ref builder);
         FillCameraConfig(ref root, preset.CameraSettings);
         FillShootingConfig(ref root, preset.ShootingSettings);
+        FillHealthStatisticsConfig(ref root, preset.HealthStatistics);
 
         BlobAssetReference<PlayerControllerConfigBlob> blob = builder.CreateBlobAssetReference<PlayerControllerConfigBlob>(Unity.Collections.Allocator.Persistent);
         builder.Dispose();
@@ -1175,22 +1246,30 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     {
         BlobBuilder builder = new BlobBuilder(Unity.Collections.Allocator.Temp);
         ref PlayerProgressionConfigBlob root = ref builder.ConstructRoot<PlayerProgressionConfigBlob>();
+        IReadOnlyList<PlayerScalableStatDefinition> scalableStats = preset != null ? preset.ScalableStats : null;
+        int scalableStatsCount = scalableStats != null ? scalableStats.Count : 0;
+        BlobBuilderArray<PlayerScalableStatBlob> scalableStatsArray = builder.Allocate(ref root.ScalableStats, scalableStatsCount);
 
-        PlayerProgressionBaseStats progressionBaseStats = preset.BaseStats;
-        float health = progressionBaseStats != null ? progressionBaseStats.Health : 100f;
-        float experience = progressionBaseStats != null ? progressionBaseStats.Experience : 0f;
-
-        if (health < 1f)
-            health = 1f;
-
-        if (experience < 0f)
-            experience = 0f;
-
-        root.BaseStats = new PlayerProgressionBaseStatsBlob
+        for (int index = 0; index < scalableStatsCount; index++)
         {
-            Health = health,
-            Experience = experience
-        };
+            PlayerScalableStatDefinition scalableStat = scalableStats[index];
+            string statName = scalableStat != null ? scalableStat.StatName : string.Format("stat{0}", index + 1);
+            float defaultValue = scalableStat != null ? scalableStat.DefaultValue : 0f;
+            PlayerScalableStatType statType = scalableStat != null ? scalableStat.StatType : PlayerScalableStatType.Float;
+
+            if (statType == PlayerScalableStatType.Integer)
+                defaultValue = Mathf.Round(defaultValue);
+
+            if (string.IsNullOrWhiteSpace(statName))
+                statName = string.Format("stat{0}", index + 1);
+
+            scalableStatsArray[index] = new PlayerScalableStatBlob
+            {
+                Type = (byte)statType,
+                DefaultValue = defaultValue
+            };
+            builder.AllocateString(ref scalableStatsArray[index].Name, statName);
+        }
 
         BlobAssetReference<PlayerProgressionConfigBlob> blob = builder.CreateBlobAssetReference<PlayerProgressionConfigBlob>(Unity.Collections.Allocator.Persistent);
         builder.Dispose();
@@ -3220,6 +3299,30 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         };
 
         root.Shooting = shootingConfig;
+    }
+
+    /// <summary>
+    /// Populates health and shield runtime configuration in the player controller config blob.
+    /// </summary>
+    /// <param name="root">Reference to the player controller config blob to update with health statistics.</param>
+    /// <param name="healthStatistics">Health settings used to fill maximum health and shield values.</param>
+    private void FillHealthStatisticsConfig(ref PlayerControllerConfigBlob root, PlayerHealthStatisticsSettings healthStatistics)
+    {
+        if (healthStatistics == null)
+        {
+            root.HealthStatistics = new HealthStatisticsConfig
+            {
+                MaxHealth = 100f,
+                MaxShield = 0f
+            };
+            return;
+        }
+
+        root.HealthStatistics = new HealthStatisticsConfig
+        {
+            MaxHealth = math.max(1f, healthStatistics.MaxHealth),
+            MaxShield = math.max(0f, healthStatistics.MaxShield)
+        };
     }
     #endregion
 
