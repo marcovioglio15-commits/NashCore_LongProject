@@ -11,10 +11,13 @@ Shader "Cel Shader/Toon Outline ECS"
 
     SubShader
     {
+        Blend SrcAlpha OneMinusSrcAlpha
+
         Tags
         {
-            "RenderType" = "Opaque"
-            "Queue" = "Geometry"
+            "RenderType" = "Transparent"
+            "Queue" = "Transparent+1"
+            "IgnoreProjector" = "True"
             "RenderPipeline" = "UniversalPipeline"
         }
 
@@ -27,7 +30,7 @@ Shader "Cel Shader/Toon Outline ECS"
             }
 
             Cull Front
-            ZWrite On
+            ZWrite Off
             ZTest LEqual
 
             HLSLPROGRAM

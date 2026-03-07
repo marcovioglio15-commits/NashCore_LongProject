@@ -4,8 +4,8 @@ Shader "Cel Shader/Toon Diffuse ECS"
     Properties
     {
         [MainTexture] _MainTex("Texture", 2D) = "white" {}
-        [NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {} //NEW
-        _BumpScale("Bump Scale", Range(0,2)) = 1 //NEW
+        [NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {} //added 05-03-2026
+        _BumpScale("Bump Scale", Range(0,2)) = 1 //added 05-03-2026
         _AmbientColor("Ambient Color", Color) = (0,0,0,1)
         _AmbientColorIntensity("Ambient Color Intensity", Range(0,5)) = 0.5
         _ShadowSoftness("Shadow Softness", Range(0,0.5)) = 0.1
@@ -21,10 +21,13 @@ Shader "Cel Shader/Toon Diffuse ECS"
 
     SubShader
     {
+        Blend SrcAlpha OneMinusSrcAlpha
+
         Tags
         {
-            "RenderType" = "Opaque"
-            "Queue" = "Geometry"
+            "Queue" = "Transparent"
+            "IgnoreProjector" = "True"
+            "RenderType" = "Transparent"
             "RenderPipeline" = "UniversalPipeline"
         }
 
@@ -59,7 +62,7 @@ Shader "Cel Shader/Toon Diffuse ECS"
             // and batching will be broken.
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
-                float _BumpScale; //NEW
+                float _BumpScale; //added 05-03-2026
                 float4 _AmbientColor;
                 float _AmbientColorIntensity;
                 float _ShadowSoftness;
@@ -72,8 +75,8 @@ Shader "Cel Shader/Toon Diffuse ECS"
             // URP/HLSL texture declaration style (replaces "sampler2D + tex2D").
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
-            TEXTURE2D(_NormalMap); //NEW
-            SAMPLER(sampler_NormalMap); //NEW
+            TEXTURE2D(_NormalMap); //added 05-03-2026
+            SAMPLER(sampler_NormalMap); //added 05-03-2026
 
             #if defined(DOTS_INSTANCING_ON)
             // Registers DOTS-overridable per-instance metadata.
@@ -133,7 +136,7 @@ Shader "Cel Shader/Toon Diffuse ECS"
                 return (value - minValue) / (maxValue - minValue);
             }
 
-            //NEW: mirrors SH_ToonDiffuse normal-map decode logic.
+            //added 05-03-2026: mirrors SH_ToonDiffuse normal-map decode logic.
             float3 ResolveToonNormalFromMap(float2 uv)
             {
                 float3 normal;
@@ -187,16 +190,17 @@ Shader "Cel Shader/Toon Diffuse ECS"
 
                 // URP texture sampling equivalent to tex2D.
                 half4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
-                float3 normalWS = NormalizeNormalPerPixel(input.normalWS);
+                float3 meshNormalWS = NormalizeNormalPerPixel(input.normalWS);
 
                 // uv is transformed in vertex, then transformed again before normal-map sampling.
                 float2 toonNormalUv = TRANSFORM_TEX(input.uv, _MainTex);
-                normalWS = ResolveToonNormalFromMap(toonNormalUv); //NEW
+                float3 toonNormal = ResolveToonNormalFromMap(toonNormalUv); //added 05-03-2026
 
                 // Main light retrieval in URP.
                 Light mainLight = GetMainLight();
                 float3 lightDir = mainLight.direction;
-                float ramp = dot(lightDir, normalWS);
+                float firstRamp = dot(lightDir, meshNormalWS);
+                float ramp = dot(firstRamp.xxx, toonNormal);
 
                 // Toon ramp math ported 1:1.
                 float remapOut = InverseLerp(-1.0, 1.0, ramp);

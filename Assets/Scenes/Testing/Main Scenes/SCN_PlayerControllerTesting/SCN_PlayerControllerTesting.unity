@@ -4105,6 +4105,9 @@ MonoBehaviour:
   playerHealthFillImage: {fileID: 1874725240}
   healthBarSmoothingSeconds: 0.2
   hideHealthBarWhenPlayerMissing: 1
+  playerShieldFillImage: {fileID: 0}
+  shieldBarSmoothingSeconds: 0.08
+  hideShieldBarWhenPlayerMissing: 1
   primaryEnergyFillImage: {fileID: 259145677}
   secondaryEnergyFillImage: {fileID: 695505114}
   energyBarSmoothingSeconds: 0.08
