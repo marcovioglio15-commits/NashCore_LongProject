@@ -34,11 +34,22 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     [Tooltip("Optional formula-based scaling rules applied to numeric progression properties during bake.")]
     [SerializeField] private List<PlayerStatScalingRule> scalingRules = new List<PlayerStatScalingRule>();
 
+    [Header("Milestones")]
+    [Tooltip("Game phase progression definitions used to resolve level-up experience at runtime.")]
+    [SerializeField] private List<PlayerGamePhaseDefinition> gamePhasesDefinition = new List<PlayerGamePhaseDefinition>();
+
+    [Tooltip("Legacy fallback used to migrate old single-threshold presets into the first game phase.")]
+    [FormerlySerializedAs("experienceRequiredPerLevel")]
+    [HideInInspector]
+    [SerializeField] private float legacyExperienceRequiredPerLevel = 100f;
+
+    [Tooltip("Radius around the player used to attract experience drops before collection.")]
+    [SerializeField] private float experiencePickupRadius = 5f;
+
     [Tooltip("Legacy base stats storage kept for backward-compatible migration from old presets.")]
     [FormerlySerializedAs("baseStats")]
     [HideInInspector]
     [SerializeField] private LegacyPlayerProgressionBaseStats legacyBaseStats = new LegacyPlayerProgressionBaseStats();
-
     #endregion
 
     #endregion
@@ -91,6 +102,22 @@ public sealed class PlayerProgressionPreset : ScriptableObject
             return scalingRules;
         }
     }
+
+    public IReadOnlyList<PlayerGamePhaseDefinition> GamePhasesDefinition
+    {
+        get
+        {
+            return gamePhasesDefinition;
+        }
+    }
+
+    public float ExperiencePickupRadius
+    {
+        get
+        {
+            return experiencePickupRadius;
+        }
+    }
     #endregion
 
     #region Methods
@@ -106,7 +133,9 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         legacyHealth = 0f;
 
         if (legacyBaseStats == null)
+        {
             return false;
+        }
 
         legacyHealth = Mathf.Max(1f, legacyBaseStats.Health);
         return true;
@@ -117,20 +146,34 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     private void OnValidate()
     {
         if (string.IsNullOrWhiteSpace(presetId))
+        {
             presetId = Guid.NewGuid().ToString("N");
+        }
 
         if (scalableStats == null)
+        {
             scalableStats = new List<PlayerScalableStatDefinition>();
+        }
 
         if (scalingRules == null)
+        {
             scalingRules = new List<PlayerStatScalingRule>();
+        }
+
+        if (gamePhasesDefinition == null)
+        {
+            gamePhasesDefinition = new List<PlayerGamePhaseDefinition>();
+        }
 
         if (legacyBaseStats == null)
+        {
             legacyBaseStats = new LegacyPlayerProgressionBaseStats();
+        }
 
         legacyBaseStats.Validate();
         ValidateScalableStats();
         ValidateScalingRules();
+        ValidateMilestones();
     }
     #endregion
 
@@ -142,7 +185,9 @@ public sealed class PlayerProgressionPreset : ScriptableObject
             PlayerScalableStatDefinition statDefinition = scalableStats[index];
 
             if (statDefinition != null)
+            {
                 continue;
+            }
 
             statDefinition = new PlayerScalableStatDefinition();
             statDefinition.Configure(string.Format("stat{0}", index + 1), PlayerScalableStatType.Float, 0f);
@@ -169,7 +214,9 @@ public sealed class PlayerProgressionPreset : ScriptableObject
             string baseName = statDefinition.StatName;
 
             if (visitedNames.Add(baseName))
+            {
                 continue;
+            }
 
             string uniqueName = baseName;
             int suffix = 2;
@@ -192,7 +239,9 @@ public sealed class PlayerProgressionPreset : ScriptableObject
             PlayerStatScalingRule scalingRule = scalingRules[index];
 
             if (scalingRule != null)
+            {
                 continue;
+            }
 
             scalingRule = new PlayerStatScalingRule();
             scalingRule.Configure(string.Empty, false, string.Empty);
@@ -207,11 +256,136 @@ public sealed class PlayerProgressionPreset : ScriptableObject
             if (string.IsNullOrWhiteSpace(scalingRule.StatKey))
             {
                 scalingRules.RemoveAt(index);
-                continue;
             }
         }
     }
 
+    private void ValidateMilestones()
+    {
+        if (legacyExperienceRequiredPerLevel < 1f)
+        {
+            legacyExperienceRequiredPerLevel = 1f;
+        }
+
+        if (experiencePickupRadius < 0f)
+        {
+            experiencePickupRadius = 0f;
+        }
+
+        if (gamePhasesDefinition == null)
+        {
+            gamePhasesDefinition = new List<PlayerGamePhaseDefinition>();
+        }
+
+        EnsureAtLeastOneGamePhase();
+        ValidateGamePhasesDefinition();
+    }
+
+    private void EnsureAtLeastOneGamePhase()
+    {
+        if (gamePhasesDefinition.Count > 0)
+        {
+            return;
+        }
+
+        PlayerGamePhaseDefinition defaultPhase = new PlayerGamePhaseDefinition();
+        defaultPhase.Configure("Phase0",
+                               1,
+                               Mathf.Max(1f, legacyExperienceRequiredPerLevel),
+                               0f);
+        gamePhasesDefinition.Add(defaultPhase);
+    }
+
+    private void ValidateGamePhasesDefinition()
+    {
+        for (int index = 0; index < gamePhasesDefinition.Count; index++)
+        {
+            PlayerGamePhaseDefinition gamePhase = gamePhasesDefinition[index];
+
+            if (gamePhase == null)
+            {
+                gamePhase = new PlayerGamePhaseDefinition();
+                gamePhasesDefinition[index] = gamePhase;
+            }
+
+            int minimumStartLevel = index == 0 ? 1 : gamePhasesDefinition[index - 1].StartsAtLevel;
+            string fallbackPhaseID = string.Format("Phase{0}", index);
+            gamePhase.Validate(fallbackPhaseID, minimumStartLevel, legacyExperienceRequiredPerLevel);
+        }
+
+        gamePhasesDefinition.Sort(CompareGamePhasesByStartLevel);
+        EnsureUniqueGamePhaseIDs();
+        EnsureAscendingGamePhaseStartLevels();
+    }
+
+    private static int CompareGamePhasesByStartLevel(PlayerGamePhaseDefinition leftPhase, PlayerGamePhaseDefinition rightPhase)
+    {
+        int leftLevel = leftPhase != null ? leftPhase.StartsAtLevel : 1;
+        int rightLevel = rightPhase != null ? rightPhase.StartsAtLevel : 1;
+        return leftLevel.CompareTo(rightLevel);
+    }
+
+    private void EnsureUniqueGamePhaseIDs()
+    {
+        HashSet<string> visitedIDs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < gamePhasesDefinition.Count; index++)
+        {
+            PlayerGamePhaseDefinition gamePhase = gamePhasesDefinition[index];
+            string phaseID = gamePhase.PhaseID;
+
+            if (string.IsNullOrWhiteSpace(phaseID))
+            {
+                phaseID = string.Format("Phase{0}", index);
+            }
+
+            if (visitedIDs.Add(phaseID))
+            {
+                continue;
+            }
+
+            int suffix = 1;
+            string uniquePhaseID = string.Format("{0}_{1}", phaseID, suffix);
+
+            while (visitedIDs.Contains(uniquePhaseID))
+            {
+                suffix += 1;
+                uniquePhaseID = string.Format("{0}_{1}", phaseID, suffix);
+            }
+
+            gamePhase.Configure(uniquePhaseID,
+                                gamePhase.StartsAtLevel,
+                                gamePhase.StartingRequiredLevelUpExp,
+                                gamePhase.RequiredExperienceGrouth);
+            visitedIDs.Add(uniquePhaseID);
+        }
+    }
+
+    private void EnsureAscendingGamePhaseStartLevels()
+    {
+        if (gamePhasesDefinition.Count == 0)
+        {
+            return;
+        }
+
+        for (int index = 0; index < gamePhasesDefinition.Count; index++)
+        {
+            PlayerGamePhaseDefinition gamePhase = gamePhasesDefinition[index];
+            int minimumStartLevel = index == 0 ? 1 : gamePhasesDefinition[index - 1].StartsAtLevel + 1;
+            int resolvedStartLevel = gamePhase.StartsAtLevel;
+
+            if (resolvedStartLevel < minimumStartLevel)
+            {
+                resolvedStartLevel = minimumStartLevel;
+            }
+
+            gamePhase.Configure(gamePhase.PhaseID,
+                                resolvedStartLevel,
+                                gamePhase.StartingRequiredLevelUpExp,
+                                gamePhase.RequiredExperienceGrouth);
+            gamePhase.ValidateMilestonesAgainstStartLevel();
+        }
+    }
     #endregion
 
     #endregion
@@ -228,7 +402,6 @@ public sealed class LegacyPlayerProgressionBaseStats
     #region Serialized Fields
     [Tooltip("Legacy maximum health value used before health moved to controller presets.")]
     [SerializeField] private float health = 100f;
-
     #endregion
 
     #endregion
@@ -253,7 +426,9 @@ public sealed class LegacyPlayerProgressionBaseStats
     public void Validate()
     {
         if (health < 1f)
+        {
             health = 1f;
+        }
     }
     #endregion
 

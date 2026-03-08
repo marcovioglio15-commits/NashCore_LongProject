@@ -599,6 +599,47 @@ public sealed class PlayerProgressionPresetsPanel
         });
     }
 
+    private void BuildMilestonesSection()
+    {
+        VisualElement milestonesContainer = CreateSectionContainer("Milestones");
+        SerializedProperty gamePhasesDefinitionProperty = presetSerializedObject.FindProperty("gamePhasesDefinition");
+        SerializedProperty experiencePickupRadiusProperty = presetSerializedObject.FindProperty("experiencePickupRadius");
+
+        if (gamePhasesDefinitionProperty == null || experiencePickupRadiusProperty == null)
+        {
+            Label missingLabel = new Label("Milestones data is missing on this preset.");
+            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            milestonesContainer.Add(missingLabel);
+            return;
+        }
+
+        Label infoLabel = new Label("Define game phases, linear growth, and milestone spikes used by runtime level-up.");
+        infoLabel.style.marginBottom = 4f;
+        milestonesContainer.Add(infoLabel);
+
+        Foldout gamePhasesFoldout = new Foldout();
+        gamePhasesFoldout.text = "Game Phases Definition";
+        gamePhasesFoldout.value = true;
+        gamePhasesFoldout.style.marginBottom = 4f;
+        milestonesContainer.Add(gamePhasesFoldout);
+
+        PropertyField gamePhasesField = new PropertyField(gamePhasesDefinitionProperty, "Phases");
+        gamePhasesField.BindProperty(gamePhasesDefinitionProperty);
+        gamePhasesField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            PlayerManagementDraftSession.MarkDirty();
+        });
+        gamePhasesFoldout.Add(gamePhasesField);
+
+        PropertyField pickupRadiusField = new PropertyField(experiencePickupRadiusProperty, "Experience Pickup Radius");
+        pickupRadiusField.BindProperty(experiencePickupRadiusProperty);
+        pickupRadiusField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            PlayerManagementDraftSession.MarkDirty();
+        });
+        milestonesContainer.Add(pickupRadiusField);
+    }
+
     private void RefreshScalableStatsWarnings(VisualElement warningsRoot,
                                               SerializedProperty scalableStatsProperty,
                                               SerializedProperty scalingRulesProperty)
@@ -672,6 +713,7 @@ public sealed class PlayerProgressionPresetsPanel
         buttonsRoot.style.marginBottom = 6f;
 
         AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
+        AddSectionButton(buttonsRoot, SectionType.Milestones, "Milestones");
         AddSectionButton(buttonsRoot, SectionType.ScalableStats, "Scalable Stats");
         return buttonsRoot;
     }
@@ -710,6 +752,9 @@ public sealed class PlayerProgressionPresetsPanel
         {
             case SectionType.Metadata:
                 BuildMetadataSection();
+                return;
+            case SectionType.Milestones:
+                BuildMilestonesSection();
                 return;
             case SectionType.ScalableStats:
                 BuildScalableStatsSection();
@@ -824,7 +869,8 @@ public sealed class PlayerProgressionPresetsPanel
     private enum SectionType
     {
         Metadata = 0,
-        ScalableStats = 1
+        Milestones = 1,
+        ScalableStats = 2
     }
     #endregion
 }

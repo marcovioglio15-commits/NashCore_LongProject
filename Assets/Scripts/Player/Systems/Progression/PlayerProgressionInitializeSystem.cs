@@ -12,6 +12,8 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     private EntityQuery missingHealthQuery;
     private EntityQuery missingShieldQuery;
     private EntityQuery missingExperienceQuery;
+    private EntityQuery missingLevelQuery;
+    private EntityQuery missingExperienceCollectionQuery;
     private EntityQuery missingScalableStatsBufferQuery;
     #endregion
 
@@ -42,6 +44,16 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             .WithNone<PlayerExperience>()
             .Build();
 
+        missingLevelQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerProgressionConfig>()
+            .WithNone<PlayerLevel>()
+            .Build();
+
+        missingExperienceCollectionQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerProgressionConfig>()
+            .WithNone<PlayerExperienceCollection>()
+            .Build();
+
         missingScalableStatsBufferQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerProgressionConfig>()
             .WithNone<PlayerScalableStatElement>()
@@ -58,13 +70,20 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
         bool hasMissingHealth = missingHealthQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingShield = missingShieldQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingExperience = missingExperienceQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingLevel = missingLevelQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingExperienceCollection = missingExperienceCollectionQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingScalableStatsBuffer = missingScalableStatsBufferQuery.IsEmptyIgnoreFilter == false;
 
         if (hasMissingHealth == false &&
             hasMissingShield == false &&
             hasMissingExperience == false &&
+            hasMissingLevel == false &&
+            hasMissingExperienceCollection == false &&
             hasMissingScalableStatsBuffer == false)
+        {
+            state.Enabled = false;
             return;
+        }
 
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
@@ -77,11 +96,32 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
         if (hasMissingExperience)
             AddMissingExperience(ref commandBuffer);
 
+        if (hasMissingLevel)
+            AddMissingLevel(ref commandBuffer);
+
+        if (hasMissingExperienceCollection)
+            AddMissingExperienceCollection(ref commandBuffer);
+
         if (hasMissingScalableStatsBuffer)
             AddMissingScalableStatsBuffer(ref commandBuffer);
 
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
+
+        bool hasRemainingMissingHealth = missingHealthQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingShield = missingShieldQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingExperience = missingExperienceQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingLevel = missingLevelQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingExperienceCollection = missingExperienceCollectionQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingScalableStatsBuffer = missingScalableStatsBufferQuery.IsEmptyIgnoreFilter == false;
+
+        if (hasRemainingMissingHealth == false &&
+            hasRemainingMissingShield == false &&
+            hasRemainingMissingExperience == false &&
+            hasRemainingMissingLevel == false &&
+            hasRemainingMissingExperienceCollection == false &&
+            hasRemainingMissingScalableStatsBuffer == false)
+            state.Enabled = false;
     }
     #endregion
 
@@ -184,6 +224,67 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     }
 
     /// <summary>
+    /// Adds PlayerLevel runtime data from progression milestones with safe defaults.
+    /// </summary>
+    /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
+    /// <returns>Void.</returns>
+    private void AddMissingLevel(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingLevelQuery.ToEntityArray(Allocator.Temp);
+        NativeArray<PlayerProgressionConfig> configs = missingLevelQuery.ToComponentDataArray<PlayerProgressionConfig>(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+        {
+            Entity entity = entities[index];
+            PlayerProgressionConfig progressionConfig = configs[index];
+            float requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig,
+                                                                                                                    1,
+                                                                                                                    out int activeGamePhaseIndex,
+                                                                                                                    out bool _,
+                                                                                                                    out int _);
+
+            commandBuffer.AddComponent(entity, new PlayerLevel
+            {
+                Current = 1,
+                ActiveGamePhaseIndex = activeGamePhaseIndex,
+                RequiredExperienceForNextLevel = requiredExperienceForNextLevel
+            });
+        }
+
+        entities.Dispose();
+        configs.Dispose();
+    }
+
+    /// <summary>
+    /// Adds PlayerExperienceCollection runtime data from progression milestones with safe defaults.
+    /// </summary>
+    /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
+    /// <returns>Void.</returns>
+    private void AddMissingExperienceCollection(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingExperienceCollectionQuery.ToEntityArray(Allocator.Temp);
+        NativeArray<PlayerProgressionConfig> configs = missingExperienceCollectionQuery.ToComponentDataArray<PlayerProgressionConfig>(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+        {
+            Entity entity = entities[index];
+            PlayerProgressionConfig progressionConfig = configs[index];
+            float pickupRadius = ResolveExperiencePickupRadius(progressionConfig, 0f);
+
+            if (pickupRadius < 0f)
+                pickupRadius = 0f;
+
+            commandBuffer.AddComponent(entity, new PlayerExperienceCollection
+            {
+                PickupRadius = pickupRadius
+            });
+        }
+
+        entities.Dispose();
+        configs.Dispose();
+    }
+
+    /// <summary>
     /// Adds PlayerScalableStatElement buffer populated from progression scalable stat defaults.
     /// </summary>
     /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
@@ -251,6 +352,19 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
         }
 
         return fallbackValue;
+    }
+
+    private static float ResolveExperiencePickupRadius(PlayerProgressionConfig progressionConfig, float fallbackValue)
+    {
+        if (progressionConfig.Config.IsCreated == false)
+            return fallbackValue;
+
+        float pickupRadius = progressionConfig.Config.Value.ExperiencePickupRadius;
+
+        if (pickupRadius < 0f)
+            return 0f;
+
+        return pickupRadius;
     }
     #endregion
 

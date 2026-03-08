@@ -21,5 +21,15 @@ MonoBehaviour:
     statType: 0
     defaultValue: 6
   scalingRules: []
+  gamePhasesDefinition:
+  - phaseID: Phase0
+    startsAtLevel: 1
+    startingRequiredLevelUpExp: 10
+    requiredExperienceGrouth: 10
+    milestones:
+    - milestoneLevel: 1
+      specialExpRequirement: 100
+  legacyExperienceRequiredPerLevel: 100
+  experiencePickupRadius: 5
   legacyBaseStats:
     health: 1e+10

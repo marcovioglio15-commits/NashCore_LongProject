@@ -1246,35 +1246,110 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     {
         BlobBuilder builder = new BlobBuilder(Unity.Collections.Allocator.Temp);
         ref PlayerProgressionConfigBlob root = ref builder.ConstructRoot<PlayerProgressionConfigBlob>();
-        IReadOnlyList<PlayerScalableStatDefinition> scalableStats = preset != null ? preset.ScalableStats : null;
-        int scalableStatsCount = scalableStats != null ? scalableStats.Count : 0;
-        BlobBuilderArray<PlayerScalableStatBlob> scalableStatsArray = builder.Allocate(ref root.ScalableStats, scalableStatsCount);
-
-        for (int index = 0; index < scalableStatsCount; index++)
-        {
-            PlayerScalableStatDefinition scalableStat = scalableStats[index];
-            string statName = scalableStat != null ? scalableStat.StatName : string.Format("stat{0}", index + 1);
-            float defaultValue = scalableStat != null ? scalableStat.DefaultValue : 0f;
-            PlayerScalableStatType statType = scalableStat != null ? scalableStat.StatType : PlayerScalableStatType.Float;
-
-            if (statType == PlayerScalableStatType.Integer)
-                defaultValue = Mathf.Round(defaultValue);
-
-            if (string.IsNullOrWhiteSpace(statName))
-                statName = string.Format("stat{0}", index + 1);
-
-            scalableStatsArray[index] = new PlayerScalableStatBlob
-            {
-                Type = (byte)statType,
-                DefaultValue = defaultValue
-            };
-            builder.AllocateString(ref scalableStatsArray[index].Name, statName);
-        }
+        root.ExperiencePickupRadius = preset != null ? math.max(0f, preset.ExperiencePickupRadius) : 0f;
+        BakeProgressionGamePhases(builder, ref root, preset);
+        BakeProgressionScalableStats(builder, ref root, preset);
 
         BlobAssetReference<PlayerProgressionConfigBlob> blob = builder.CreateBlobAssetReference<PlayerProgressionConfigBlob>(Unity.Collections.Allocator.Persistent);
         builder.Dispose();
 
         return blob;
+    }
+
+    /// <summary>
+    /// Bakes game phase progression definitions and milestone overrides into the progression blob.
+    /// </summary>
+    /// <param name="builder">Blob builder used to allocate nested arrays/strings.</param>
+    /// <param name="root">Progression blob root being populated.</param>
+    /// <param name="preset">Source progression preset data.</param>
+    /// <returns>Void.</returns>
+    private static void BakeProgressionGamePhases(BlobBuilder builder,
+                                                  ref PlayerProgressionConfigBlob root,
+                                                  PlayerProgressionPreset preset)
+    {
+        IReadOnlyList<PlayerGamePhaseDefinition> gamePhases = preset != null ? preset.GamePhasesDefinition : null;
+        int gamePhasesCount = gamePhases != null && gamePhases.Count > 0 ? gamePhases.Count : 1;
+        BlobBuilderArray<PlayerGamePhaseBlob> gamePhasesArray = builder.Allocate(ref root.GamePhases, gamePhasesCount);
+
+        for (int phaseIndex = 0; phaseIndex < gamePhasesCount; phaseIndex++)
+        {
+            PlayerGamePhaseDefinition gamePhase = gamePhases != null && phaseIndex < gamePhases.Count ? gamePhases[phaseIndex] : null;
+            string phaseID = gamePhase != null ? gamePhase.PhaseID : string.Format("Phase{0}", phaseIndex);
+            int startsAtLevel = gamePhase != null ? math.max(1, gamePhase.StartsAtLevel) : 1;
+            float startingRequiredLevelUpExp = gamePhase != null ? math.max(1f, gamePhase.StartingRequiredLevelUpExp) : 100f;
+            float requiredExperienceGrouth = gamePhase != null ? math.max(0f, gamePhase.RequiredExperienceGrouth) : 0f;
+
+            if (string.IsNullOrWhiteSpace(phaseID))
+            {
+                phaseID = string.Format("Phase{0}", phaseIndex);
+            }
+
+            gamePhasesArray[phaseIndex] = new PlayerGamePhaseBlob
+            {
+                StartsAtLevel = startsAtLevel,
+                StartingRequiredLevelUpExp = startingRequiredLevelUpExp,
+                RequiredExperienceGrouth = requiredExperienceGrouth
+            };
+            builder.AllocateString(ref gamePhasesArray[phaseIndex].PhaseID, phaseID);
+
+            IReadOnlyList<PlayerLevelUpMilestoneDefinition> milestones = gamePhase != null ? gamePhase.Milestones : null;
+            int milestonesCount = milestones != null ? milestones.Count : 0;
+            BlobBuilderArray<PlayerLevelUpMilestoneBlob> milestoneArray = builder.Allocate(ref gamePhasesArray[phaseIndex].Milestones, milestonesCount);
+
+            for (int milestoneIndex = 0; milestoneIndex < milestonesCount; milestoneIndex++)
+            {
+                PlayerLevelUpMilestoneDefinition milestone = milestones[milestoneIndex];
+                int milestoneLevel = milestone != null ? math.max(startsAtLevel, milestone.MilestoneLevel) : startsAtLevel;
+                float specialExpRequirement = milestone != null ? math.max(1f, milestone.SpecialExpRequirement) : startingRequiredLevelUpExp;
+
+                milestoneArray[milestoneIndex] = new PlayerLevelUpMilestoneBlob
+                {
+                    MilestoneLevel = milestoneLevel,
+                    SpecialExpRequirement = specialExpRequirement
+                };
+            }
+        }
+    }
+
+    /// <summary>
+    /// Bakes scalable stat defaults into the progression blob.
+    /// </summary>
+    /// <param name="builder">Blob builder used to allocate nested arrays/strings.</param>
+    /// <param name="root">Progression blob root being populated.</param>
+    /// <param name="preset">Source progression preset data.</param>
+    /// <returns>Void.</returns>
+    private static void BakeProgressionScalableStats(BlobBuilder builder,
+                                                     ref PlayerProgressionConfigBlob root,
+                                                     PlayerProgressionPreset preset)
+    {
+        IReadOnlyList<PlayerScalableStatDefinition> scalableStats = preset != null ? preset.ScalableStats : null;
+        int scalableStatsCount = scalableStats != null ? scalableStats.Count : 0;
+        BlobBuilderArray<PlayerScalableStatBlob> scalableStatsArray = builder.Allocate(ref root.ScalableStats, scalableStatsCount);
+
+        for (int statIndex = 0; statIndex < scalableStatsCount; statIndex++)
+        {
+            PlayerScalableStatDefinition scalableStat = scalableStats[statIndex];
+            string statName = scalableStat != null ? scalableStat.StatName : string.Format("stat{0}", statIndex + 1);
+            float defaultValue = scalableStat != null ? scalableStat.DefaultValue : 0f;
+            PlayerScalableStatType statType = scalableStat != null ? scalableStat.StatType : PlayerScalableStatType.Float;
+
+            if (statType == PlayerScalableStatType.Integer)
+            {
+                defaultValue = Mathf.Round(defaultValue);
+            }
+
+            if (string.IsNullOrWhiteSpace(statName))
+            {
+                statName = string.Format("stat{0}", statIndex + 1);
+            }
+
+            scalableStatsArray[statIndex] = new PlayerScalableStatBlob
+            {
+                Type = (byte)statType,
+                DefaultValue = defaultValue
+            };
+            builder.AllocateString(ref scalableStatsArray[statIndex].Name, statName);
+        }
     }
 
     /// <summary>

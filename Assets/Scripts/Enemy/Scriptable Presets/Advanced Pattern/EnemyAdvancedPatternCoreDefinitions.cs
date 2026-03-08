@@ -19,6 +19,9 @@ public sealed class EnemyPatternModulePayloadData
 
     [Tooltip("Shooter payload used when module kind is Shooter.")]
     [SerializeField] private EnemyShooterModuleData shooter = new EnemyShooterModuleData();
+
+    [Tooltip("DropItems payload used when module kind is DropItems.")]
+    [SerializeField] private EnemyDropItemsModuleData dropItems = new EnemyDropItemsModuleData();
     #endregion
 
     #endregion
@@ -47,6 +50,14 @@ public sealed class EnemyPatternModulePayloadData
             return shooter;
         }
     }
+
+    public EnemyDropItemsModuleData DropItems
+    {
+        get
+        {
+            return dropItems;
+        }
+    }
     #endregion
 
     #region Methods
@@ -66,9 +77,13 @@ public sealed class EnemyPatternModulePayloadData
         if (shooter == null)
             shooter = new EnemyShooterModuleData();
 
+        if (dropItems == null)
+            dropItems = new EnemyDropItemsModuleData();
+
         stationary.Validate();
         wanderer.Validate();
         shooter.Validate();
+        dropItems.Validate();
     }
     #endregion
 
@@ -187,6 +202,7 @@ public sealed class EnemyPatternModuleDefinition
             case EnemyPatternModuleKind.Grunt:
             case EnemyPatternModuleKind.Wanderer:
             case EnemyPatternModuleKind.Shooter:
+            case EnemyPatternModuleKind.DropItems:
                 break;
 
             default:

@@ -171,7 +171,10 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             hasMissingPowerUpCheatBuffer == false &&
             hasMissingPowerUpCheatPresetEntryBuffer == false &&
             hasMissingPowerUpCheatPresetPassiveBuffer == false)
+        {
+            state.Enabled = false;
             return;
+        }
 
         uint currentKillCount = 0u;
 
@@ -239,6 +242,45 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
 
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
+
+        bool hasRemainingMissingState = missingStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPassiveToolsState = missingPassiveToolsStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingDash = missingDashQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingBulletTimeState = missingBulletTimeStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingHealOverTimeState = missingHealOverTimeStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPassiveExplosionState = missingPassiveExplosionStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPassiveHealState = missingPassiveHealStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingElementalTrailState = missingElementalTrailStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingElementalTrailAttachedVfxState = missingElementalTrailAttachedVfxStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingBombRequestBuffer = missingBombRequestBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingElementalTrailSegmentBuffer = missingElementalTrailSegmentBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingExplosionRequestBuffer = missingExplosionRequestBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPowerUpVfxRequestBuffer = missingPowerUpVfxRequestBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPowerUpVfxPoolBuffer = missingPowerUpVfxPoolBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPowerUpVfxCapConfig = missingPowerUpVfxCapConfigQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPowerUpCheatBuffer = missingPowerUpCheatBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPowerUpCheatPresetEntryBuffer = missingPowerUpCheatPresetEntryBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingPowerUpCheatPresetPassiveBuffer = missingPowerUpCheatPresetPassiveBufferQuery.IsEmptyIgnoreFilter == false;
+
+        if (hasRemainingMissingState == false &&
+            hasRemainingMissingPassiveToolsState == false &&
+            hasRemainingMissingDash == false &&
+            hasRemainingMissingBulletTimeState == false &&
+            hasRemainingMissingHealOverTimeState == false &&
+            hasRemainingMissingPassiveExplosionState == false &&
+            hasRemainingMissingPassiveHealState == false &&
+            hasRemainingMissingElementalTrailState == false &&
+            hasRemainingMissingElementalTrailAttachedVfxState == false &&
+            hasRemainingMissingBombRequestBuffer == false &&
+            hasRemainingMissingElementalTrailSegmentBuffer == false &&
+            hasRemainingMissingExplosionRequestBuffer == false &&
+            hasRemainingMissingPowerUpVfxRequestBuffer == false &&
+            hasRemainingMissingPowerUpVfxPoolBuffer == false &&
+            hasRemainingMissingPowerUpVfxCapConfig == false &&
+            hasRemainingMissingPowerUpCheatBuffer == false &&
+            hasRemainingMissingPowerUpCheatPresetEntryBuffer == false &&
+            hasRemainingMissingPowerUpCheatPresetPassiveBuffer == false)
+            state.Enabled = false;
     }
     #endregion
 

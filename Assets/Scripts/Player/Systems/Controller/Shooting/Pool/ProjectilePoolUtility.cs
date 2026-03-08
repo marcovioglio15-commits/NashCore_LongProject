@@ -15,6 +15,12 @@ public static class ProjectilePoolUtility
     private const float MinimumBaseScale = 0.0001f;
     #endregion
 
+    #region Properties
+    public static float3 ParkedPosition => ParkingPosition;
+    #endregion
+
+    #region Methods
+
     #region Public Methods
     /// <summary>
     /// Expands the projectile pool for a shooter entity by instantiating additional projectile entities and
@@ -139,9 +145,50 @@ public static class ProjectilePoolUtility
             return;
 
         LocalTransform parkedTransform = entityManager.GetComponentData<LocalTransform>(projectileEntity);
-        parkedTransform.Position = ParkingPosition;
+        parkedTransform.Position = ParkedPosition;
         entityManager.SetComponentData(projectileEntity, parkedTransform);
     }
+
+    /// <summary>
+    /// Sets one LocalTransform to projectile parked position without EntityManager access.
+    /// </summary>
+    /// <param name="localTransform">Projectile transform to park.</param>
+    /// <returns>Void.</returns>
+    public static void SetProjectileParked(ref LocalTransform localTransform)
+    {
+        localTransform.Position = ParkedPosition;
+    }
+
+    /// <summary>
+    /// Parks one projectile, disables its active flag, and pushes it back into the owner pool buffer.
+    /// This is used by collision/despawn systems to keep pool-return logic centralized and allocation-free.
+    /// </summary>
+    /// <param name="projectileEntity">Projectile entity to despawn and return.</param>
+    /// <param name="shooterEntity">Shooter entity that owns the projectile pool buffer.</param>
+    /// <param name="projectileTransform">Current projectile transform that will be parked.</param>
+    /// <param name="poolLookup">Lookup used to access shooter projectile pools.</param>
+    /// <param name="projectileActiveLookup">Lookup used to disable the projectile active component.</param>
+    /// <returns>Void.</returns>
+    public static void DespawnToPool(Entity projectileEntity,
+                                     Entity shooterEntity,
+                                     ref LocalTransform projectileTransform,
+                                     ref BufferLookup<ProjectilePoolElement> poolLookup,
+                                     ref ComponentLookup<ProjectileActive> projectileActiveLookup)
+    {
+        SetProjectileParked(ref projectileTransform);
+        projectileActiveLookup.SetComponentEnabled(projectileEntity, false);
+
+        if (poolLookup.HasBuffer(shooterEntity) == false)
+            return;
+
+        DynamicBuffer<ProjectilePoolElement> shooterPool = poolLookup[shooterEntity];
+        shooterPool.Add(new ProjectilePoolElement
+        {
+            ProjectileEntity = projectileEntity
+        });
+    }
+    #endregion
+
     #endregion
 }
 #endregion

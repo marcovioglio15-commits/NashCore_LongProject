@@ -173,6 +173,7 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
                                overridePayloadContainer);
     }
 
+
     /// <summary>
     /// Updates module info help box from resolution state.
     /// </summary>
@@ -198,6 +199,9 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
         moduleInfoBox.text = string.Format("Selected module: {0} | Kind: {1}", displayName, moduleKind);
         moduleInfoBox.messageType = HelpBoxMessageType.Info;
     }
+
+
+
 
     /// <summary>
     /// Rebuilds override payload block based on current toggle and resolved module kind.

@@ -13,14 +13,20 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
 {
     #region Constants
     private const float CameraResolveRetryIntervalSeconds = 0.5f;
+    private const float HighLodDistance = 16f;
+    private const float MediumLodDistance = 32f;
+    private const int MediumLodUpdateInterval = 3;
+    private const int LowLodUpdateInterval = 6;
     #endregion
 
     #region Fields
     private EntityQuery enemyQuery;
     private static Camera cachedMainCamera;
     private static Transform cachedMainCameraTransform;
+    private static int cachedMainCameraInstanceId;
     private static float nextCameraResolveTime;
     private static EnemyWorldSpaceStatusBarsView fallbackTemplateView;
+    private static Dictionary<Entity, EnemyWorldSpaceStatusBarsView> cachedViewsByEntity;
     private static Dictionary<Entity, EnemyWorldSpaceStatusBarsView> fallbackViewsByEnemy;
     private static Stack<EnemyWorldSpaceStatusBarsView> fallbackViewPool;
     private static List<Entity> fallbackReleaseCandidates;
@@ -37,8 +43,10 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
 
         cachedMainCamera = null;
         cachedMainCameraTransform = null;
+        cachedMainCameraInstanceId = 0;
         nextCameraResolveTime = 0f;
         fallbackTemplateView = null;
+        cachedViewsByEntity = new Dictionary<Entity, EnemyWorldSpaceStatusBarsView>(1024);
         fallbackViewsByEnemy = new Dictionary<Entity, EnemyWorldSpaceStatusBarsView>(512);
         fallbackViewPool = new Stack<EnemyWorldSpaceStatusBarsView>(256);
         fallbackReleaseCandidates = new List<Entity>(256);
@@ -52,12 +60,16 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
         ResolveMainCameraTransform(elapsedTime);
         Transform cameraTransform = cachedMainCameraTransform;
         Camera mainCamera = cachedMainCamera;
-        SyncStatusBarsViews(ref state, entityManager, SystemAPI.Time.DeltaTime, cameraTransform, mainCamera);
+        bool hasCameraChanged = ResolveMainCameraChanged(mainCamera);
+        SyncStatusBarsViews(ref state, entityManager, SystemAPI.Time.DeltaTime, cameraTransform, mainCamera, hasCameraChanged);
         ReleaseInactiveFallbackViews(entityManager);
     }
 
     public void OnDestroy(ref SystemState state)
     {
+        if (cachedViewsByEntity != null)
+            cachedViewsByEntity.Clear();
+
         DestroyAllFallbackViews();
     }
     #endregion
@@ -117,10 +129,18 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
                                      EntityManager entityManager,
                                      float deltaTime,
                                      Transform mainCameraTransform,
-                                     Camera mainCamera)
+                                     Camera mainCamera,
+                                     bool hasCameraChanged)
     {
         if (enemyQuery.IsEmptyIgnoreFilter)
             return;
+
+        int frameCount = Time.frameCount;
+        bool canEvaluateDistanceLod = mainCameraTransform != null;
+        float3 cameraPosition = float3.zero;
+
+        if (canEvaluateDistanceLod)
+            cameraPosition = mainCameraTransform.position;
 
         foreach ((RefRO<EnemyHealth> enemyHealth,
                   RefRO<EnemyVisualRuntimeState> visualRuntimeState,
@@ -134,32 +154,26 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
                              .WithAll<EnemyActive>()
                              .WithEntityAccess())
         {
-            bool enemyActive = entityManager.IsComponentEnabled<EnemyActive>(enemyEntity);
+            if (canEvaluateDistanceLod)
+            {
+                float3 enemyWorldPosition = enemyTransform.ValueRO.Position;
+                StatusBarsLodLevel lodLevel = EvaluateStatusBarsLod(cameraPosition, enemyWorldPosition);
 
-            if (enemyActive == false)
-                continue;
+                if (ShouldUpdateStatusBarsLod(lodLevel, frameCount, enemyEntity.Index) == false)
+                    continue;
+            }
 
             EnemyWorldSpaceStatusBarsRuntimeLink currentRuntimeLink = runtimeLink.ValueRO;
             Entity statusBarsViewEntity = currentRuntimeLink.ViewEntity;
-            bool hasValidRuntimeLink = IsValidStatusBarsViewEntity(entityManager, statusBarsViewEntity);
+            EnemyWorldSpaceStatusBarsView statusBarsView = TryResolveCachedStatusBarsView(entityManager, statusBarsViewEntity);
 
-            if (hasValidRuntimeLink == false)
+            if (statusBarsView == null)
             {
                 statusBarsViewEntity = ResolveStatusBarsViewEntity(entityManager, enemyEntity);
                 currentRuntimeLink.ViewEntity = statusBarsViewEntity;
                 runtimeLink.ValueRW = currentRuntimeLink;
+                statusBarsView = TryResolveCachedStatusBarsView(entityManager, statusBarsViewEntity);
             }
-
-            if (statusBarsViewEntity == Entity.Null)
-                continue;
-
-            if (entityManager.Exists(statusBarsViewEntity) == false)
-                continue;
-
-            if (entityManager.HasComponent<EnemyWorldSpaceStatusBarsView>(statusBarsViewEntity) == false)
-                continue;
-
-            EnemyWorldSpaceStatusBarsView statusBarsView = entityManager.GetComponentObject<EnemyWorldSpaceStatusBarsView>(statusBarsViewEntity);
 
             if (statusBarsView == null)
                 continue;
@@ -169,7 +183,8 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
             if (statusBarsView == null)
                 continue;
 
-            statusBarsView.SyncCanvasCamera(mainCamera);
+            if (hasCameraChanged && mainCamera != null)
+                statusBarsView.SyncCanvasCamera(mainCamera);
             float3 enemyPositionFloat3 = enemyTransform.ValueRO.Position;
             Vector3 enemyPosition = new Vector3(enemyPositionFloat3.x, enemyPositionFloat3.y, enemyPositionFloat3.z);
             statusBarsView.SyncWorldPose(enemyPosition, mainCameraTransform);
@@ -188,10 +203,51 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
             bool enemyVisible = visualRuntimeState.ValueRO.IsVisible != 0;
             statusBarsView.SyncFromRuntime(normalizedHealth,
                                            normalizedShield,
-                                           enemyActive,
+                                           true,
                                            enemyVisible,
                                            deltaTime);
         }
+    }
+
+    private static StatusBarsLodLevel EvaluateStatusBarsLod(float3 cameraPosition, float3 enemyPosition)
+    {
+        float3 delta = enemyPosition - cameraPosition;
+        float sqrDistance = math.lengthsq(delta);
+        float highDistanceSquared = HighLodDistance * HighLodDistance;
+
+        if (sqrDistance <= highDistanceSquared)
+            return StatusBarsLodLevel.High;
+
+        float mediumDistanceSquared = MediumLodDistance * MediumLodDistance;
+
+        if (sqrDistance <= mediumDistanceSquared)
+            return StatusBarsLodLevel.Medium;
+
+        return StatusBarsLodLevel.Low;
+    }
+
+    private static bool ShouldUpdateStatusBarsLod(StatusBarsLodLevel lodLevel, int frameCount, int stableIndex)
+    {
+        if (lodLevel == StatusBarsLodLevel.High)
+            return true;
+
+        int interval = lodLevel == StatusBarsLodLevel.Medium ? MediumLodUpdateInterval : LowLodUpdateInterval;
+        int token = frameCount + math.abs(stableIndex);
+        return token % interval == 0;
+    }
+
+    private static bool ResolveMainCameraChanged(Camera mainCamera)
+    {
+        int currentCameraInstanceId = 0;
+
+        if (mainCamera != null)
+            currentCameraInstanceId = mainCamera.GetInstanceID();
+
+        if (currentCameraInstanceId == cachedMainCameraInstanceId)
+            return false;
+
+        cachedMainCameraInstanceId = currentCameraInstanceId;
+        return true;
     }
 
     private static bool IsValidStatusBarsViewEntity(EntityManager entityManager, Entity statusBarsViewEntity)
@@ -207,6 +263,34 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
         }
 
         return entityManager.HasComponent<EnemyWorldSpaceStatusBarsView>(statusBarsViewEntity);
+    }
+
+    private static EnemyWorldSpaceStatusBarsView TryResolveCachedStatusBarsView(EntityManager entityManager, Entity statusBarsViewEntity)
+    {
+        if (statusBarsViewEntity == Entity.Null)
+            return null;
+
+        if (cachedViewsByEntity == null)
+            cachedViewsByEntity = new Dictionary<Entity, EnemyWorldSpaceStatusBarsView>(1024);
+
+        if (cachedViewsByEntity.TryGetValue(statusBarsViewEntity, out EnemyWorldSpaceStatusBarsView cachedView))
+        {
+            if (cachedView != null)
+                return cachedView;
+
+            cachedViewsByEntity.Remove(statusBarsViewEntity);
+        }
+
+        if (IsValidStatusBarsViewEntity(entityManager, statusBarsViewEntity) == false)
+            return null;
+
+        EnemyWorldSpaceStatusBarsView resolvedView = entityManager.GetComponentObject<EnemyWorldSpaceStatusBarsView>(statusBarsViewEntity);
+
+        if (resolvedView == null)
+            return null;
+
+        cachedViewsByEntity[statusBarsViewEntity] = resolvedView;
+        return resolvedView;
     }
 
     private static Entity ResolveStatusBarsViewEntity(EntityManager entityManager, Entity enemyEntity)
@@ -475,6 +559,15 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
         }
 
         fallbackTemplateView = null;
+    }
+    #endregion
+
+    #region Nested Types
+    private enum StatusBarsLodLevel : byte
+    {
+        High = 0,
+        Medium = 1,
+        Low = 2
     }
     #endregion
 

@@ -449,6 +449,7 @@ public sealed class PlayerMasterPresetsPanel
     private void SelectPreset(PlayerMasterPreset preset)
     {
         m_SelectedPreset = preset;
+        PlayerManagementSelectionContext.SetActiveMasterPreset(m_SelectedPreset);
         m_DetailsRoot.Clear();
         m_DetailSectionButtonsRoot = null;
         m_DetailSectionContentRoot = null;

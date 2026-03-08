@@ -29,7 +29,7 @@ MonoBehaviour:
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   - statKey: moduleDefinitions.Array.data[moduleId:Module_SpawnObject].data.bomb.radius
     addScaling: 0
-    formula: '[this] + [FireRate]^2 /3'
+    formula: '[this] + log([FireRate])'
     debugInConsole: 0
     debugColor: {r: 1, g: 0.6046631, b: 0.015686274, a: 1}
   - statKey: moduleDefinitions.Array.data[moduleId:Module_Dash].data.dash.distance

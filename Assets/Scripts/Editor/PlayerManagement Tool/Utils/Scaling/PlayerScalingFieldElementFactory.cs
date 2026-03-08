@@ -118,6 +118,11 @@ public static class PlayerScalingFieldElementFactory
         warningBox.style.display = DisplayStyle.None;
         formulaContainer.Add(warningBox);
 
+        Label availableVariablesLabel = new Label();
+        availableVariablesLabel.style.marginTop = 2f;
+        availableVariablesLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+        formulaContainer.Add(availableVariablesLabel);
+
         RefreshFromSerializedState();
 
         addScalingToggle.RegisterValueChangedCallback(evt =>
@@ -262,6 +267,8 @@ public static class PlayerScalingFieldElementFactory
 
             formulaContainer.style.display = addScaling ? DisplayStyle.Flex : DisplayStyle.None;
             debugColorField.style.display = addScaling && debugInConsole ? DisplayStyle.Flex : DisplayStyle.None;
+            ISet<string> resolvedAllowedVariables = ResolveAllowedVariables(allowedVariables, scalingRulesProperty);
+            availableVariablesLabel.text = BuildAvailableVariablesLabelText(resolvedAllowedVariables);
 
             if (addScaling == false)
             {
@@ -276,8 +283,6 @@ public static class PlayerScalingFieldElementFactory
                 warningBox.style.display = DisplayStyle.Flex;
                 return;
             }
-
-            ISet<string> resolvedAllowedVariables = ResolveAllowedVariables(allowedVariables, scalingRulesProperty);
 
             if (PlayerScalingFormulaValidationUtility.TryValidateFormula(formulaValue, resolvedAllowedVariables, out string warningMessage))
             {
@@ -488,30 +493,62 @@ public static class PlayerScalingFieldElementFactory
 
     private static ISet<string> ResolveAllowedVariables(ISet<string> inputAllowedVariables, SerializedProperty scalingRulesProperty)
     {
+        HashSet<string> mergedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (inputAllowedVariables != null)
+        {
+            foreach (string variable in inputAllowedVariables)
+                mergedVariables.Add(variable);
+        }
+
         if (scalingRulesProperty == null)
-            return inputAllowedVariables;
+            return mergedVariables;
 
         SerializedObject serializedObject = scalingRulesProperty.serializedObject;
 
         if (serializedObject == null)
-            return inputAllowedVariables;
+            return mergedVariables;
+
+        HashSet<string> scopedVariables = PlayerScalingFormulaValidationUtility.BuildScopedVariableSet(serializedObject);
+
+        foreach (string variable in scopedVariables)
+            mergedVariables.Add(variable);
 
         SerializedProperty scalableStatsProperty = serializedObject.FindProperty("scalableStats");
 
         if (scalableStatsProperty == null)
-            return inputAllowedVariables;
+            return mergedVariables;
 
-        HashSet<string> scalableVariables = PlayerScalingFormulaValidationUtility.BuildVariableSet(scalableStatsProperty);
+        HashSet<string> localScalableVariables = PlayerScalingFormulaValidationUtility.BuildVariableSet(scalableStatsProperty);
 
-        if (inputAllowedVariables == null)
-            return scalableVariables;
-
-        HashSet<string> mergedVariables = new HashSet<string>(inputAllowedVariables, StringComparer.OrdinalIgnoreCase);
-
-        foreach (string variable in scalableVariables)
+        foreach (string variable in localScalableVariables)
             mergedVariables.Add(variable);
 
         return mergedVariables;
+    }
+
+    private static string BuildAvailableVariablesLabelText(ISet<string> allowedVariables)
+    {
+        if (allowedVariables == null || allowedVariables.Count == 0)
+            return "Available Variables: [this]";
+
+        List<string> sortedVariables = new List<string>(allowedVariables);
+        sortedVariables.Sort(StringComparer.OrdinalIgnoreCase);
+
+        if (sortedVariables.Count == 1)
+            return string.Format("Available Variables: [this], [{0}]", sortedVariables[0]);
+
+        string joinedVariables = string.Empty;
+
+        for (int index = 0; index < sortedVariables.Count; index++)
+        {
+            if (index > 0)
+                joinedVariables += ", ";
+
+            joinedVariables += string.Format("[{0}]", sortedVariables[index]);
+        }
+
+        return string.Format("Available Variables: [this], {0}", joinedVariables);
     }
     #endregion
 

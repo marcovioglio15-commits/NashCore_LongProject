@@ -59,6 +59,11 @@ public static class EnemyWallSteeringUtility
         if (wallsLayerMask == 0)
             return false;
 
+        CollisionFilter wallsCollisionFilter = WorldWallCollisionUtility.BuildWallsCollisionFilter(wallsLayerMask);
+
+        if (wallsCollisionFilter.CollidesWith == 0u)
+            return false;
+
         if (deltaTime <= MinimumDeltaTime)
             return false;
 
@@ -105,7 +110,7 @@ public static class EnemyWallSteeringUtility
                                                                    deltaTime,
                                                                    toPlayerDirection,
                                                                    collisionRadius,
-                                                                   wallsLayerMask,
+                                                                   wallsCollisionFilter,
                                                                    out float firstCandidateScore,
                                                                    out float firstCandidateDistance,
                                                                    out float3 firstCandidateDisplacement,
@@ -118,7 +123,7 @@ public static class EnemyWallSteeringUtility
                                                                     deltaTime,
                                                                     toPlayerDirection,
                                                                     collisionRadius,
-                                                                    wallsLayerMask,
+                                                                    wallsCollisionFilter,
                                                                     out float secondCandidateScore,
                                                                     out float secondCandidateDistance,
                                                                     out float3 secondCandidateDisplacement,
@@ -181,7 +186,7 @@ public static class EnemyWallSteeringUtility
                                                           float deltaTime,
                                                           float3 toPlayerDirection,
                                                           float collisionRadius,
-                                                          int wallsLayerMask,
+                                                          in CollisionFilter wallsCollisionFilter,
                                                           out float candidateScore,
                                                           out float candidateDistance,
                                                           out float3 candidateDisplacement,
@@ -209,7 +214,7 @@ public static class EnemyWallSteeringUtility
                                                                                startPosition,
                                                                                candidateRequestedDisplacement,
                                                                                collisionRadius,
-                                                                               wallsLayerMask,
+                                                                               wallsCollisionFilter,
                                                                                out float3 allowedDisplacement,
                                                                                out float3 hitNormal);
         float distance = math.length(allowedDisplacement);

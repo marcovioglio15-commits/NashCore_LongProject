@@ -12,6 +12,10 @@ using Unity.Collections;
 [UpdateAfter(typeof(PlayerControllerInitializeSystem))]
 public partial struct ProjectilePoolInitializeSystem : ISystem
 {
+    #region Fields
+    private EntityQuery poolCandidateQuery;
+    #endregion
+
     #region Nested Types
     private struct PoolInitializationRequest
     {
@@ -32,6 +36,10 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
         state.RequireForUpdate<ShooterProjectilePrefab>();
         state.RequireForUpdate<ProjectilePoolState>();
         state.RequireForUpdate<ProjectilePoolElement>();
+
+        poolCandidateQuery = SystemAPI.QueryBuilder()
+            .WithAll<ShooterProjectilePrefab, ProjectilePoolState, ProjectilePoolElement>()
+            .Build();
     }
     #endregion
 
@@ -44,15 +52,22 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
-        NativeList<PoolInitializationRequest> initializationRequests = new NativeList<PoolInitializationRequest>(Allocator.Temp);
+        int candidateCount = poolCandidateQuery.CalculateEntityCountWithoutFiltering();
+
+        if (candidateCount <= 0)
+            return;
+
+        NativeList<PoolInitializationRequest> initializationRequests = new NativeList<PoolInitializationRequest>(math.max(4, candidateCount), Allocator.Temp);
 
         try
         {
             // Gather initialization requests for shooter entities that have not yet initialized their projectile pools.
             foreach ((RefRW<ProjectilePoolState> poolState,
                       RefRO<ShooterProjectilePrefab> projectilePrefab,
+                      DynamicBuffer<ProjectilePoolElement> _,
                       Entity shooterEntity) in SystemAPI.Query<RefRW<ProjectilePoolState>,
-                                                               RefRO<ShooterProjectilePrefab>>().WithEntityAccess())
+                                                               RefRO<ShooterProjectilePrefab>,
+                                                               DynamicBuffer<ProjectilePoolElement>>().WithEntityAccess())
             {
                 if (entityManager.HasComponent<EnemyActive>(shooterEntity) &&
                     entityManager.IsComponentEnabled<EnemyActive>(shooterEntity) == false)
@@ -74,6 +89,9 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
                 });
             }
 
+            if (initializationRequests.Length <= 0)
+                return;
+
             // Process each initialization request, expanding the projectile pool for each shooter entity as needed.
             for (int requestIndex = 0; requestIndex < initializationRequests.Length; requestIndex++)
             {
@@ -85,18 +103,12 @@ public partial struct ProjectilePoolInitializeSystem : ISystem
                 if (entityManager.HasComponent<Projectile>(request.ShooterEntity))
                     continue;
 
-                if (entityManager.HasBuffer<ProjectilePoolElement>(request.ShooterEntity) == false)
-                    continue;
-
                 if (request.InitialCapacity > 0)
                     ProjectilePoolUtility.ExpandPool(entityManager, request.ShooterEntity, request.ProjectilePrefab, request.InitialCapacity);
 
-                if (entityManager.HasComponent<ProjectilePoolState>(request.ShooterEntity))
-                {
-                    ProjectilePoolState poolState = entityManager.GetComponentData<ProjectilePoolState>(request.ShooterEntity);
-                    poolState.Initialized = 1;
-                    entityManager.SetComponentData(request.ShooterEntity, poolState);
-                }
+                ProjectilePoolState poolState = entityManager.GetComponentData<ProjectilePoolState>(request.ShooterEntity);
+                poolState.Initialized = 1;
+                entityManager.SetComponentData(request.ShooterEntity, poolState);
             }
         }
         finally

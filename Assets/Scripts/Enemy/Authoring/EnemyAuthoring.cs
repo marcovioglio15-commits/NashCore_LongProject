@@ -2,6 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
+using System.Collections.Generic;
 
 /// <summary>
 /// Authoring component that defines ECS enemy movement, steering, damage and visual settings.
@@ -985,6 +986,8 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         if (compiledPattern.ShooterConfigs.Count > 0)
             TryBakeShooterRuntime(authoring, entity, compiledPattern);
 
+        TryBakeDropItemsRuntime(authoring, entity, compiledPattern);
+
         EnemyVisualMode bakedVisualMode = ResolveBakedVisualMode(authoring, out Animator resolvedAnimatorComponent);
 
         AddComponent(entity, new EnemyVisualConfig
@@ -1042,6 +1045,12 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         {
             SpawnerEntity = Entity.Null
         });
+
+        AddComponent(entity, new EnemyElementalRuntimeState
+        {
+            SlowPercent = 0f
+        });
+        AddBuffer<EnemyElementStackElement>(entity);
 
         Entity anchorEntity = Entity.Null;
 
@@ -1190,6 +1199,101 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             return true;
 
         if (projectilePrefabObject.GetComponent<PlayerAuthoring>() != null)
+            return true;
+
+        return false;
+    }
+
+    private void TryBakeDropItemsRuntime(EnemyAuthoring authoring, Entity entity, EnemyCompiledPatternBakeResult compiledPattern)
+    {
+        if (authoring == null)
+            return;
+
+        if (compiledPattern == null)
+            return;
+
+        EnemyDropItemsConfig dropItemsConfig = compiledPattern.DropItemsConfig;
+
+        if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
+            return;
+
+        if (dropItemsConfig.TotalExperienceDrop <= 0f)
+            return;
+
+        if (compiledPattern.ExperienceDropDefinitions == null || compiledPattern.ExperienceDropDefinitions.Count <= 0)
+            return;
+
+        List<EnemyExperienceDropDefinitionElement> stagedDefinitions = new List<EnemyExperienceDropDefinitionElement>(compiledPattern.ExperienceDropDefinitions.Count);
+        List<float> stagedAmounts = new List<float>(compiledPattern.ExperienceDropDefinitions.Count);
+
+        for (int definitionIndex = 0; definitionIndex < compiledPattern.ExperienceDropDefinitions.Count; definitionIndex++)
+        {
+            EnemyCompiledExperienceDropDefinition compiledDefinition = compiledPattern.ExperienceDropDefinitions[definitionIndex];
+            GameObject dropPrefab = compiledDefinition.Prefab;
+
+            if (dropPrefab == null)
+                continue;
+
+            if (IsInvalidExperienceDropPrefab(authoring, dropPrefab))
+            {
+#if UNITY_EDITOR
+                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid experience drop prefab '{0}' on '{1}'. Assign a prefab asset without EnemyAuthoring or PlayerAuthoring components.", dropPrefab.name, authoring.name), authoring);
+#endif
+                continue;
+            }
+
+            float experienceAmount = math.max(0f, compiledDefinition.ExperienceAmount);
+
+            if (experienceAmount <= 0f)
+                continue;
+
+            Entity dropPrefabEntity = GetEntity(dropPrefab, TransformUsageFlags.Dynamic);
+            stagedDefinitions.Add(new EnemyExperienceDropDefinitionElement
+            {
+                PrefabEntity = dropPrefabEntity,
+                ExperienceAmount = experienceAmount
+            });
+            stagedAmounts.Add(experienceAmount);
+        }
+
+        if (stagedDefinitions.Count <= 0)
+            return;
+
+        int estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsForPreview(stagedAmounts,
+                                                                                                     dropItemsConfig.TotalExperienceDrop,
+                                                                                                     dropItemsConfig.Distribution,
+                                                                                                     out float _,
+                                                                                                     out float _);
+        dropItemsConfig.EstimatedDropsPerDeath = math.max(1, estimatedDropsPerDeath);
+        dropItemsConfig.DropRadius = math.max(0f, dropItemsConfig.DropRadius);
+        dropItemsConfig.AttractionSpeed = math.max(0f, dropItemsConfig.AttractionSpeed);
+        dropItemsConfig.CollectDistance = math.max(0.01f, dropItemsConfig.CollectDistance);
+        dropItemsConfig.CollectDistancePerPlayerSpeed = math.max(0f, dropItemsConfig.CollectDistancePerPlayerSpeed);
+        dropItemsConfig.SpawnAnimationMinDuration = math.max(0f, dropItemsConfig.SpawnAnimationMinDuration);
+        dropItemsConfig.SpawnAnimationMaxDuration = math.max(dropItemsConfig.SpawnAnimationMinDuration, dropItemsConfig.SpawnAnimationMaxDuration);
+
+        AddComponent(entity, dropItemsConfig);
+        DynamicBuffer<EnemyExperienceDropDefinitionElement> definitionsBuffer = AddBuffer<EnemyExperienceDropDefinitionElement>(entity);
+
+        for (int definitionIndex = 0; definitionIndex < stagedDefinitions.Count; definitionIndex++)
+            definitionsBuffer.Add(stagedDefinitions[definitionIndex]);
+    }
+
+    private static bool IsInvalidExperienceDropPrefab(EnemyAuthoring authoring, GameObject dropPrefabObject)
+    {
+        if (dropPrefabObject == null)
+            return true;
+
+        if (authoring != null && dropPrefabObject == authoring.gameObject)
+            return true;
+
+        if (dropPrefabObject.scene.IsValid())
+            return true;
+
+        if (dropPrefabObject.GetComponent<EnemyAuthoring>() != null)
+            return true;
+
+        if (dropPrefabObject.GetComponent<PlayerAuthoring>() != null)
             return true;
 
         return false;

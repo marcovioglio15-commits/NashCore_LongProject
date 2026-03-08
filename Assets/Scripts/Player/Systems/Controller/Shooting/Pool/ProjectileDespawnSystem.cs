@@ -13,42 +13,44 @@ using Unity.Transforms;
 [UpdateAfter(typeof(ProjectileSimulationSystem))]
 public partial struct ProjectileDespawnSystem : ISystem
 {
+    #region Methods
+
     #region Lifecycle
     /// <summary>
-    /// Configures the system to require updates for entities that have the Projectile,
-    /// ProjectileRuntimeState, and ProjectileOwner components, as well as the ProjectileActive tag component. 
-    /// This ensures that the system
+    /// Configures component requirements for projectile despawn evaluation.
     /// </summary>
+    /// <param name="state">Current ECS system state.</param>
+    /// <returns>Void.</returns>
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<Projectile>();
         state.RequireForUpdate<ProjectileRuntimeState>();
         state.RequireForUpdate<ProjectileOwner>();
-        state.RequireForUpdate<ProjectileSplitState>();
         state.RequireForUpdate<ProjectilePerfectCircleState>();
         state.RequireForUpdate<LocalTransform>();
         state.RequireForUpdate<ProjectileActive>();
     }
 
     /// <summary>
-    /// updates the system by iterating through all active projectile entities 
-    /// and checking if they have exceeded their maximum range or lifetime.
+    /// Evaluates active projectiles and returns expired ones to pool, including optional split spawn enqueue.
     /// </summary>
-    /// <param name="state"></param>
+    /// <param name="state">Current ECS system state.</param>
+    /// <returns>Void.</returns>
     public void OnUpdate(ref SystemState state)
     {
         BufferLookup<ProjectilePoolElement> poolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
         BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
         ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
+        ComponentLookup<ProjectileSplitState> projectileSplitStateLookup = SystemAPI.GetComponentLookup<ProjectileSplitState>(false);
+        ComponentLookup<ProjectileElementalPayload> projectileElementalPayloadLookup = SystemAPI.GetComponentLookup<ProjectileElementalPayload>(true);
+        ComponentLookup<ProjectileActive> projectileActiveLookup = SystemAPI.GetComponentLookup<ProjectileActive>(false);
 
         foreach ((RefRO<Projectile> projectile,
                   RefRO<ProjectileRuntimeState> runtimeState,
                   RefRO<ProjectilePerfectCircleState> perfectCircleState,
-                  RefRO<ProjectileElementalPayload> elementalPayload,
-                  RefRW<ProjectileSplitState> splitState,
-                  RefRO<LocalTransform> projectileTransform,
+                  RefRW<LocalTransform> projectileTransform,
                   RefRO<ProjectileOwner> owner,
-                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileRuntimeState>, RefRO<ProjectilePerfectCircleState>, RefRO<ProjectileElementalPayload>, RefRW<ProjectileSplitState>, RefRO<LocalTransform>, RefRO<ProjectileOwner>>()
+                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileRuntimeState>, RefRO<ProjectilePerfectCircleState>, RefRW<LocalTransform>, RefRO<ProjectileOwner>>()
                                                       .WithAll<ProjectileActive>()
                                                       .WithEntityAccess())
         {
@@ -67,39 +69,51 @@ public partial struct ProjectileDespawnSystem : ISystem
             else if (reachedRange == false && reachedLifetime == false)
                 continue;
 
-            if (ProjectileSplitUtility.ShouldSplitOnDespawn(in splitState.ValueRO))
+            if (projectileSplitStateLookup.HasComponent(projectileEntity))
             {
-                float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntity,
-                                                                            projectileTransform.ValueRO.Scale,
-                                                                            in projectileBaseScaleLookup);
-                ProjectileSplitUtility.TryEnqueueSplitRequests(in projectile.ValueRO,
-                                                               in splitState.ValueRO,
-                                                               in projectileTransform.ValueRO,
-                                                               currentScaleMultiplier,
-                                                               in elementalPayload.ValueRO,
-                                                               in owner.ValueRO,
-                                                               ref shootRequestLookup);
-                splitState.ValueRW.CanSplit = 0;
+                ProjectileSplitState projectileSplitState = projectileSplitStateLookup[projectileEntity];
+
+                if (ProjectileSplitUtility.ShouldSplitOnDespawn(in projectileSplitState))
+                {
+                    ProjectileElementalPayload projectileElementalPayload = default(ProjectileElementalPayload);
+
+                    if (projectileElementalPayloadLookup.HasComponent(projectileEntity))
+                        projectileElementalPayload = projectileElementalPayloadLookup[projectileEntity];
+
+                    float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntity,
+                                                                                 projectileTransform.ValueRO.Scale,
+                                                                                 in projectileBaseScaleLookup);
+                    ProjectileSplitUtility.TryEnqueueSplitRequests(in projectile.ValueRO,
+                                                                   in projectileSplitState,
+                                                                   in projectileTransform.ValueRO,
+                                                                   currentScaleMultiplier,
+                                                                   in projectileElementalPayload,
+                                                                   in owner.ValueRO,
+                                                                   ref shootRequestLookup);
+                    projectileSplitState.CanSplit = 0;
+                    projectileSplitStateLookup[projectileEntity] = projectileSplitState;
+                }
             }
 
-            ProjectilePoolUtility.SetProjectileParked(state.EntityManager, projectileEntity);
-            state.EntityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, false);
-
-            Entity shooterEntity = owner.ValueRO.ShooterEntity;
-
-            if (poolLookup.HasBuffer(shooterEntity) == false)
-                continue;
-
-            DynamicBuffer<ProjectilePoolElement> shooterPool = poolLookup[shooterEntity];
-            shooterPool.Add(new ProjectilePoolElement
-            {
-                ProjectileEntity = projectileEntity
-            });
+            LocalTransform parkedTransform = projectileTransform.ValueRO;
+            ProjectilePoolUtility.DespawnToPool(projectileEntity,
+                                                owner.ValueRO.ShooterEntity,
+                                                ref parkedTransform,
+                                                ref poolLookup,
+                                                ref projectileActiveLookup);
+            projectileTransform.ValueRW = parkedTransform;
         }
     }
     #endregion
 
     #region Helpers
+    /// <summary>
+    /// Resolves runtime projectile scale multiplier relative to cached base scale.
+    /// </summary>
+    /// <param name="projectileEntity">Projectile entity to evaluate.</param>
+    /// <param name="currentScale">Current runtime transform scale.</param>
+    /// <param name="projectileBaseScaleLookup">Lookup used to read base scale components.</param>
+    /// <returns>Multiplier used by split spawn logic.</returns>
     private static float ResolveCurrentScaleMultiplier(Entity projectileEntity,
                                                        float currentScale,
                                                        in ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup)
@@ -112,5 +126,6 @@ public partial struct ProjectileDespawnSystem : ISystem
     }
     #endregion
 
+    #endregion
 
 }

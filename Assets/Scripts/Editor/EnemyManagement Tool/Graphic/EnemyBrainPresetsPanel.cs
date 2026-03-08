@@ -63,7 +63,6 @@ public sealed class EnemyBrainPresetsPanel
     #endregion
 
     #region Methods
-
     #region Public Methods
     public void RefreshFromSessionChange()
     {
@@ -84,6 +83,7 @@ public sealed class EnemyBrainPresetsPanel
 
         SelectPreset(previouslySelectedPreset);
     }
+
 
     public void SelectPresetFromExternal(EnemyBrainPreset preset)
     {
@@ -339,10 +339,13 @@ public sealed class EnemyBrainPresetsPanel
             listView.SetSelection(index);
     }
 
+
+
     private void DuplicatePreset()
     {
         DuplicatePreset(selectedPreset);
     }
+
 
     private void DuplicatePreset(EnemyBrainPreset preset)
     {
@@ -402,10 +405,13 @@ public sealed class EnemyBrainPresetsPanel
             listView.SetSelection(index);
     }
 
+
+
     private void DeletePreset()
     {
         DeletePreset(selectedPreset);
     }
+
 
     private void DeletePreset(EnemyBrainPreset preset)
     {
@@ -456,6 +462,7 @@ public sealed class EnemyBrainPresetsPanel
         BuildActiveDetailsSection();
     }
 
+
     private VisualElement BuildDetailsSectionButtons()
     {
         VisualElement buttonsRoot = new VisualElement();
@@ -468,6 +475,8 @@ public sealed class EnemyBrainPresetsPanel
         return buttonsRoot;
     }
 
+
+
     private void AddDetailsSectionButton(VisualElement parent, SectionType sectionType, string buttonLabel)
     {
         Button sectionButton = new Button(() => SetActiveSection(sectionType));
@@ -476,6 +485,8 @@ public sealed class EnemyBrainPresetsPanel
         sectionButton.style.marginBottom = 4f;
         parent.Add(sectionButton);
     }
+
+
 
     /// <summary>
     /// Sets active top-level details section and persists it for next reopen.
@@ -490,6 +501,7 @@ public sealed class EnemyBrainPresetsPanel
         ManagementToolStateUtility.SaveEnumValue(ActiveSectionStateKey, activeSection);
         BuildActiveDetailsSection();
     }
+
 
     private void BuildActiveDetailsSection()
     {
@@ -577,6 +589,7 @@ public sealed class EnemyBrainPresetsPanel
         sectionContainer.Add(idRow);
     }
 
+
     private void BuildBrainSection()
     {
         VisualElement sectionContainer = CreateDetailsSectionContainer("Brain");
@@ -612,6 +625,7 @@ public sealed class EnemyBrainPresetsPanel
 
         SetActiveBrainSubSection(activeBrainSubSection);
     }
+
 
     /// <summary>
     /// Sets active Brain subsection tab and persists it for reopen.
@@ -655,6 +669,8 @@ public sealed class EnemyBrainPresetsPanel
         };
     }
 
+
+
     private void ShowActiveBrainSubSection()
     {
         if (brainSubSectionContentHost == null)
@@ -671,6 +687,7 @@ public sealed class EnemyBrainPresetsPanel
         UpdateBrainSubSectionTabStyles();
     }
 
+
     private void UpdateBrainSubSectionTabStyles()
     {
         foreach (KeyValuePair<BrainSubSectionType, BrainSubSectionTabEntry> tabEntry in brainSubSectionTabs)
@@ -683,6 +700,7 @@ public sealed class EnemyBrainPresetsPanel
             tabEntry.Value.TabButton.style.backgroundColor = isActive ? new Color(0.18f, 0.18f, 0.18f, 0.6f) : Color.clear;
         }
     }
+
 
     private VisualElement BuildMovementSubSection()
     {
@@ -730,6 +748,8 @@ public sealed class EnemyBrainPresetsPanel
         return container;
     }
 
+
+
     private VisualElement BuildSteeringSubSection()
     {
         SerializedProperty steeringProperty = presetSerializedObject.FindProperty("steering");
@@ -755,6 +775,7 @@ public sealed class EnemyBrainPresetsPanel
                          "Physical body radius used for projectile hit checks and overlap handling.");
         return container;
     }
+
 
     private VisualElement BuildDamageSubSection()
     {
@@ -815,6 +836,7 @@ public sealed class EnemyBrainPresetsPanel
         return container;
     }
 
+
     private Foldout CreateToggleableDamageFoldout(SerializedProperty toggleProperty, string title)
     {
         Foldout foldout = new Foldout();
@@ -828,6 +850,8 @@ public sealed class EnemyBrainPresetsPanel
         });
         return foldout;
     }
+
+
 
     private VisualElement BuildHealthStatisticsSubSection()
     {
@@ -906,6 +930,7 @@ public sealed class EnemyBrainPresetsPanel
         return container;
     }
 
+
     private VisualElement CreateDetailsSectionContainer(string sectionTitle)
     {
         if (detailsSectionContentRoot == null)
@@ -922,6 +947,8 @@ public sealed class EnemyBrainPresetsPanel
         return container;
     }
 
+
+
     private VisualElement CreateBrainSubSectionContainer(string sectionTitle)
     {
         VisualElement container = new VisualElement();
@@ -934,6 +961,7 @@ public sealed class EnemyBrainPresetsPanel
 
         return container;
     }
+
 
     private void AddPropertyField(VisualElement panel,
                                   SerializedProperty parentProperty,
@@ -962,6 +990,8 @@ public sealed class EnemyBrainPresetsPanel
         panel.Add(propertyField);
     }
 
+
+
     private void RegeneratePresetId()
     {
         if (selectedPreset == null)
@@ -978,6 +1008,9 @@ public sealed class EnemyBrainPresetsPanel
         presetSerializedObject.ApplyModifiedProperties();
         EnemyManagementDraftSession.MarkDirty();
     }
+
+
+
 
     private void HandlePresetNameChanged(string newName)
     {
@@ -1010,6 +1043,7 @@ public sealed class EnemyBrainPresetsPanel
         RefreshPresetList();
     }
 
+
     private void ShowRenamePopup(VisualElement anchor, EnemyBrainPreset preset)
     {
         if (anchor == null || preset == null)
@@ -1019,6 +1053,7 @@ public sealed class EnemyBrainPresetsPanel
         string title = "Rename Enemy Brain Preset";
         PresetRenamePopup.Show(anchorRect, title, preset.PresetName, newName => RenamePreset(preset, newName));
     }
+
 
     private string GetPresetDisplayName(EnemyBrainPreset preset)
     {
@@ -1044,6 +1079,8 @@ public sealed class EnemyBrainPresetsPanel
         Brain = 1
     }
 
+
+
     private enum BrainSubSectionType
     {
         Movement = 0,
@@ -1052,6 +1089,7 @@ public sealed class EnemyBrainPresetsPanel
         HealthStatistics = 3,
         Visual = 4
     }
+
 
     private sealed class BrainSubSectionTabEntry
     {

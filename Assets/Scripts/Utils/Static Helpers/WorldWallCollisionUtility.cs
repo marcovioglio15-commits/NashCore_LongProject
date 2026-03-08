@@ -74,11 +74,12 @@ public static class WorldWallCollisionUtility
                                                      out float3 allowedDisplacement,
                                                      out float3 hitNormal)
     {
+        CollisionFilter wallCollisionFilter = BuildWallsCollisionFilter(wallsLayerMask);
         return TryResolveBlockedDisplacement(physicsWorldSingleton,
                                              startPosition,
                                              desiredDisplacement,
                                              collisionRadius,
-                                             wallsLayerMask,
+                                             wallCollisionFilter,
                                              ContactSkinWidth,
                                              out allowedDisplacement,
                                              out hitNormal);
@@ -108,10 +109,48 @@ public static class WorldWallCollisionUtility
                                                      out float3 allowedDisplacement,
                                                      out float3 hitNormal)
     {
+        CollisionFilter wallCollisionFilter = BuildWallsCollisionFilter(wallsLayerMask);
+        return TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                             startPosition,
+                                             desiredDisplacement,
+                                             collisionRadius,
+                                             wallCollisionFilter,
+                                             contactSkinWidth,
+                                             out allowedDisplacement,
+                                             out hitNormal);
+    }
+
+    public static bool TryResolveBlockedDisplacement(in PhysicsWorldSingleton physicsWorldSingleton,
+                                                     float3 startPosition,
+                                                     float3 desiredDisplacement,
+                                                     float collisionRadius,
+                                                     in CollisionFilter wallCollisionFilter,
+                                                     out float3 allowedDisplacement,
+                                                     out float3 hitNormal)
+    {
+        return TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                             startPosition,
+                                             desiredDisplacement,
+                                             collisionRadius,
+                                             wallCollisionFilter,
+                                             ContactSkinWidth,
+                                             out allowedDisplacement,
+                                             out hitNormal);
+    }
+
+    public static bool TryResolveBlockedDisplacement(in PhysicsWorldSingleton physicsWorldSingleton,
+                                                     float3 startPosition,
+                                                     float3 desiredDisplacement,
+                                                     float collisionRadius,
+                                                     in CollisionFilter wallCollisionFilter,
+                                                     float contactSkinWidth,
+                                                     out float3 allowedDisplacement,
+                                                     out float3 hitNormal)
+    {
         allowedDisplacement = desiredDisplacement;
         hitNormal = float3.zero;
 
-        if (wallsLayerMask == 0)
+        if (wallCollisionFilter.CollidesWith == 0u)
             return false;
 
         float distance = math.length(desiredDisplacement);
@@ -122,7 +161,6 @@ public static class WorldWallCollisionUtility
         float3 direction = desiredDisplacement / distance;
         float radius = math.max(MinimumSweepRadius, collisionRadius);
         float clampedContactSkinWidth = math.max(0f, contactSkinWidth);
-        CollisionFilter filter = BuildWallsCollisionFilter(wallsLayerMask);
         float maxDistance = distance + clampedContactSkinWidth;
 
         if (physicsWorldSingleton.SphereCast(startPosition,
@@ -130,7 +168,7 @@ public static class WorldWallCollisionUtility
                                              direction,
                                              maxDistance,
                                              out ColliderCastHit hitInfo,
-                                             filter,
+                                             wallCollisionFilter,
                                              QueryInteraction.IgnoreTriggers) == false)
         {
             return false;

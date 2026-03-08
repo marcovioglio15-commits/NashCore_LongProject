@@ -175,6 +175,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -240,6 +244,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -318,6 +326,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -428,6 +440,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -506,6 +522,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -572,6 +592,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -637,6 +661,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -778,6 +806,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -802,7 +834,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &211502234
 Transform:
@@ -893,6 +925,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -987,6 +1023,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1076,6 +1116,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1100,7 +1144,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &315651702
 Transform:
@@ -1184,6 +1228,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1388,6 +1436,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1453,6 +1505,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (16)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1532,6 +1588,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1610,6 +1670,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1676,6 +1740,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1741,6 +1809,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1833,6 +1905,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 25c23a32d4783ae49a5cef5fe77e8e52, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1894,6 +1970,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (18)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1920,7 +2000,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!108 &410087040
 Light:
@@ -2107,6 +2187,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 25c23a32d4783ae49a5cef5fe77e8e52, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2167,6 +2251,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (13)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2234,6 +2322,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2260,7 +2352,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &468014117
 Transform:
@@ -2348,7 +2440,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!4 &469707186
 Transform:
@@ -2440,6 +2532,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2505,6 +2601,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (16)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2584,6 +2684,14 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 7cea6e3ad2fa61a418a3339d277ab598, type: 2}
+    - target: {fileID: -7640558969779515294, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: -7146521406498821007, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: -6093592463355912122, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -2592,6 +2700,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 7cea6e3ad2fa61a418a3339d277ab598, type: 2}
+    - target: {fileID: -1599826595754709761, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: -1120989108687609925, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -2600,6 +2712,18 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 7cea6e3ad2fa61a418a3339d277ab598, type: 2}
+    - target: {fileID: -466329591000292508, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: -208595431880416365, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 281855664364225751, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 451073451779226413, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -2607,6 +2731,14 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: m_Name
       value: SM_Test_BackgroundNeuron
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 6324240423935976452, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 6745302439343835087, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -2676,6 +2808,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2742,6 +2878,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2807,6 +2947,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2886,6 +3030,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2951,6 +3099,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (13)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3029,6 +3181,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3112,6 +3268,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 01421e27e145e934baef1d1367e053f8, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3138,7 +3298,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &577753938
 Transform:
@@ -3268,6 +3428,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3333,6 +3497,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (18)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3473,6 +3641,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e7431bad4f49a234db7ec4ff45fa3f7b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3546,6 +3718,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3611,6 +3787,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (16)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3719,13 +3899,65 @@ PrefabInstance:
       propertyPath: m_Name
       value: Secondary Active Slot
       objectReference: {fileID: 0}
+    - target: {fileID: 3000374800558430022, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 3910385624538325109, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
       propertyPath: m_Name
       value: SecondaryActiveSlot_Charge
       objectReference: {fileID: 0}
+    - target: {fileID: 3910385624538325109, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 5282250757647438552, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5282250757647438552, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5282250757647438552, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5282250757647438552, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6062359793240718685, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
       propertyPath: m_Name
       value: SecondaryActiveSlot_Energy
+      objectReference: {fileID: 0}
+    - target: {fileID: 6062359793240718685, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 6984106237178003189, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6984106237178003189, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6984106237178003189, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6984106237178003189, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7328098429582689907, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 7466149821162350216, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3822,6 +4054,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3900,6 +4136,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3977,6 +4217,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4068,6 +4312,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 25c23a32d4783ae49a5cef5fe77e8e52, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4088,7 +4336,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!114 &750304364
 MonoBehaviour:
@@ -4206,6 +4454,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4272,6 +4524,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4337,6 +4593,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4415,6 +4675,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4531,6 +4795,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (18)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4640,6 +4908,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4706,6 +4978,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (14)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4730,7 +5006,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!4 &926900213
 Transform:
@@ -4822,6 +5098,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4908,6 +5188,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 25c23a32d4783ae49a5cef5fe77e8e52, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4968,6 +5252,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5047,6 +5335,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5113,6 +5405,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5137,7 +5433,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!4 &1013259618
 Transform:
@@ -5233,6 +5529,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5298,6 +5598,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5455,6 +5759,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5521,6 +5829,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5586,6 +5898,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (17)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5665,6 +5981,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5742,6 +6062,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5821,6 +6145,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5892,6 +6220,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5958,6 +6290,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5987,7 +6323,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &1168684704
 Transform:
@@ -6072,6 +6408,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6137,6 +6477,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6224,6 +6568,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 31d68350095045540a7b379aa5f1b387, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6243,7 +6591,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!4 &1200450623
 Transform:
@@ -6339,6 +6687,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6416,6 +6768,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6495,6 +6851,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6561,6 +6921,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6626,6 +6990,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (11)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6705,6 +7073,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6771,6 +7143,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (15)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6795,7 +7171,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &1363495621
 Transform:
@@ -6891,6 +7267,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6956,6 +7336,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7035,6 +7419,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7100,6 +7488,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7225,6 +7617,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (15)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7302,6 +7698,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7381,6 +7781,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7459,6 +7863,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7524,6 +7932,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (15)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7603,6 +8015,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7680,6 +8096,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7759,6 +8179,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7837,6 +8261,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7863,7 +8291,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!114 &1575232185
 MonoBehaviour:
@@ -7982,6 +8410,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8060,6 +8492,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8126,6 +8562,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8158,7 +8598,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!114 &1660581007
 MonoBehaviour:
@@ -8313,6 +8753,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8391,6 +8835,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8456,6 +8904,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (14)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8540,6 +8992,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8606,6 +9062,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8671,6 +9131,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8750,6 +9214,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8827,6 +9295,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8906,6 +9378,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8984,6 +9460,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9049,6 +9529,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (14)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9128,6 +9612,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9194,6 +9682,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9259,6 +9751,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9338,6 +9834,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9364,7 +9864,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!224 &1874725239
 RectTransform:
@@ -9437,7 +9937,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!4 &1888905378
 Transform:
@@ -9533,6 +10033,14 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 7cea6e3ad2fa61a418a3339d277ab598, type: 2}
+    - target: {fileID: -7640558969779515294, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: -7146521406498821007, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: -6093592463355912122, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -9541,6 +10049,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 7cea6e3ad2fa61a418a3339d277ab598, type: 2}
+    - target: {fileID: -1599826595754709761, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: -1120989108687609925, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -9549,6 +10061,18 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 7cea6e3ad2fa61a418a3339d277ab598, type: 2}
+    - target: {fileID: -466329591000292508, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: -208595431880416365, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 281855664364225751, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 451073451779226413, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -9556,6 +10080,14 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: m_Name
       value: SM_Test_BackgroundNeuron (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 6324240423935976452, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 6745302439343835087, guid: aa1812e94e6eb6141a229a7c7b60c43e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -9652,6 +10184,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (13)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9738,6 +10274,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0d8b3ffc5cd20564ca8a42b9ce0f4ed9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9799,6 +10339,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9823,7 +10367,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!4 &1965720614
 Transform:
@@ -9865,7 +10409,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!4 &1972866944
 Transform:
@@ -9954,6 +10498,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10019,6 +10567,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10098,6 +10650,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10175,6 +10731,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10254,6 +10814,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10319,6 +10883,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (12)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10396,6 +10964,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10475,6 +11047,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10552,6 +11128,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_House (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10631,6 +11211,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10709,6 +11293,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10774,6 +11362,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
       propertyPath: m_Name
       value: SM_Blockout_Hexagon (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fcff6b84d33f070479f742ffef51cd8d, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10853,6 +11445,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Blockout_House (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 32fbee298cb5b5248b0a76ff79f6b08f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10877,7 +11473,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!4 &2146810157
 Transform:
@@ -11074,13 +11670,65 @@ PrefabInstance:
       propertyPath: m_Name
       value: Primary Active Slot
       objectReference: {fileID: 0}
+    - target: {fileID: 3000374800558430022, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 3910385624538325109, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
       propertyPath: m_Name
       value: PrimaryActiveSlot_Charge
       objectReference: {fileID: 0}
+    - target: {fileID: 3910385624538325109, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 5282250757647438552, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5282250757647438552, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5282250757647438552, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5282250757647438552, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6062359793240718685, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
       propertyPath: m_Name
       value: PrimaryActiveSlot_Energy
+      objectReference: {fileID: 0}
+    - target: {fileID: 6062359793240718685, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 6984106237178003189, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6984106237178003189, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6984106237178003189, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6984106237178003189, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7328098429582689907, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 7466149821162350216, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

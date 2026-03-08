@@ -47,20 +47,48 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3597e1a6814d4df49c96f8a7147488ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAuthoring
+  masterPreset: {fileID: 0}
+  brainPreset: {fileID: 0}
+  advancedPatternPreset: {fileID: 0}
   moveSpeed: 3
   maxSpeed: 4
   acceleration: 8
+  deceleration: 8
+  rotationSpeedDegreesPerSecond: 0
   separationRadius: 1.1
   separationWeight: 2
   bodyRadius: 1
   contactRadius: 2
-  contactDamage: 5
-  contactInterval: 0.75
+  contactDamageEnabled: 1
+  contactAmountPerTick: 5
+  contactTickInterval: 0.75
+  areaDamageEnabled: 0
+  areaRadius: 2.25
+  areaAmountPerTickPercent: 2
+  areaTickInterval: 1
   maxHealth: 100
+  maxShield: 0
+  visualMode: 1
+  visualAnimationSpeed: 1
+  gpuAnimationLoopDuration: 1
+  enableDistanceCulling: 1
+  maxVisibleDistance: 55
+  visibleDistanceHysteresis: 6
+  priorityTier: 0
+  steeringAggressiveness: 1
+  hitVfxPrefab: {fileID: 0}
+  hitVfxLifetimeSeconds: 0.35
+  hitVfxScaleMultiplier: 1
+  animatorComponent: {fileID: 0}
   elementalVfxAnchor: {fileID: 7624880062243014312}
+  worldSpaceStatusBarsView: {fileID: 0}
   drawContactRadiusGizmo: 1
+  drawAreaRadiusGizmo: 1
   drawSeparationRadiusGizmo: 0
   drawBodyRadiusGizmo: 0
+  drawAggressivenessRadiusGizmo: 0
+  drawVisualDistanceGizmo: 1
+  drawWorldSpaceBarsGizmo: 1
 --- !u!33 &2362197013061763177
 MeshFilter:
   m_ObjectHideFlags: 0

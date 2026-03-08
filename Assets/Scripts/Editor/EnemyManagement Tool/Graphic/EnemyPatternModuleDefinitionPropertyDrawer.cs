@@ -108,6 +108,9 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
             case EnemyPatternModuleKind.Shooter:
                 return "Shooter: emits periodic projectiles with burst and elemental options.";
 
+            case EnemyPatternModuleKind.DropItems:
+                return "DropItems: spawns configured drops on enemy death, including experience drops.";
+
             default:
                 return "Unknown module kind.";
         }

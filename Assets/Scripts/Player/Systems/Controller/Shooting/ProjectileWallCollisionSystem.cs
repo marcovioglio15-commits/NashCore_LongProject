@@ -41,20 +41,21 @@ public partial struct ProjectileWallCollisionSystem : ISystem
             return;
 
         float deltaTime = SystemAPI.Time.DeltaTime;
-        EntityManager entityManager = state.EntityManager;
+        CollisionFilter wallsCollisionFilter = WorldWallCollisionUtility.BuildWallsCollisionFilter(wallsLayerMask);
         BufferLookup<ProjectilePoolElement> poolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
         BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
         ComponentLookup<PlayerMovementState> movementStateLookup = SystemAPI.GetComponentLookup<PlayerMovementState>(true);
         ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
+        ComponentLookup<ProjectileBounceState> projectileBounceStateLookup = SystemAPI.GetComponentLookup<ProjectileBounceState>(false);
+        ComponentLookup<ProjectileSplitState> projectileSplitStateLookup = SystemAPI.GetComponentLookup<ProjectileSplitState>(false);
+        ComponentLookup<ProjectileElementalPayload> projectileElementalPayloadLookup = SystemAPI.GetComponentLookup<ProjectileElementalPayload>(true);
+        ComponentLookup<ProjectileActive> projectileActiveLookup = SystemAPI.GetComponentLookup<ProjectileActive>(false);
 
-        foreach ((RefRO<Projectile> projectile,
+        foreach ((RefRW<Projectile> projectile,
                   RefRO<ProjectileOwner> owner,
                   RefRO<ProjectilePerfectCircleState> perfectCircleState,
-                  RefRO<ProjectileElementalPayload> elementalPayload,
-                  RefRW<ProjectileBounceState> bounceState,
-                  RefRW<ProjectileSplitState> splitState,
                   RefRW<LocalTransform> projectileTransform,
-                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileOwner>, RefRO<ProjectilePerfectCircleState>, RefRO<ProjectileElementalPayload>, RefRW<ProjectileBounceState>, RefRW<ProjectileSplitState>, RefRW<LocalTransform>>()
+                  Entity projectileEntity) in SystemAPI.Query<RefRW<Projectile>, RefRO<ProjectileOwner>, RefRO<ProjectilePerfectCircleState>, RefRW<LocalTransform>>()
                                                        .WithAll<ProjectileActive>()
                                                        .WithEntityAccess())
         {
@@ -77,7 +78,7 @@ public partial struct ProjectileWallCollisionSystem : ISystem
                                                                                    startPosition,
                                                                                    displacement,
                                                                                    collisionRadius,
-                                                                                   wallsLayerMask,
+                                                                                   wallsCollisionFilter,
                                                                                    out float3 allowedDisplacement,
                                                                                    out float3 wallNormal);
 
@@ -89,40 +90,51 @@ public partial struct ProjectileWallCollisionSystem : ISystem
             resolvedTransform.Position = resolvedPosition;
             projectileTransform.ValueRW = resolvedTransform;
 
-            if (TryApplyBounce(ref projectileData, ref bounceState.ValueRW, wallNormal))
+            if (projectileBounceStateLookup.HasComponent(projectileEntity))
             {
-                entityManager.SetComponentData(projectileEntity, projectileData);
-                continue;
+                ProjectileBounceState projectileBounceState = projectileBounceStateLookup[projectileEntity];
+
+                if (TryApplyBounce(ref projectileData, ref projectileBounceState, wallNormal))
+                {
+                    projectile.ValueRW = projectileData;
+                    projectileBounceStateLookup[projectileEntity] = projectileBounceState;
+                    continue;
+                }
             }
 
-            if (ProjectileSplitUtility.ShouldSplitOnDespawn(in splitState.ValueRO))
+            if (projectileSplitStateLookup.HasComponent(projectileEntity))
             {
-                float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntity,
-                                                                            projectileTransform.ValueRO.Scale,
-                                                                            in projectileBaseScaleLookup);
-                ProjectileSplitUtility.TryEnqueueSplitRequests(in projectileData,
-                                                               in splitState.ValueRO,
-                                                               in projectileTransform.ValueRO,
-                                                               currentScaleMultiplier,
-                                                               in elementalPayload.ValueRO,
-                                                               in owner.ValueRO,
-                                                               ref shootRequestLookup);
-                splitState.ValueRW.CanSplit = 0;
+                ProjectileSplitState projectileSplitState = projectileSplitStateLookup[projectileEntity];
+
+                if (ProjectileSplitUtility.ShouldSplitOnDespawn(in projectileSplitState))
+                {
+                    ProjectileElementalPayload projectileElementalPayload = default(ProjectileElementalPayload);
+
+                    if (projectileElementalPayloadLookup.HasComponent(projectileEntity))
+                        projectileElementalPayload = projectileElementalPayloadLookup[projectileEntity];
+
+                    float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntity,
+                                                                                 projectileTransform.ValueRO.Scale,
+                                                                                 in projectileBaseScaleLookup);
+                    ProjectileSplitUtility.TryEnqueueSplitRequests(in projectileData,
+                                                                   in projectileSplitState,
+                                                                   in projectileTransform.ValueRO,
+                                                                   currentScaleMultiplier,
+                                                                   in projectileElementalPayload,
+                                                                   in owner.ValueRO,
+                                                                   ref shootRequestLookup);
+                    projectileSplitState.CanSplit = 0;
+                    projectileSplitStateLookup[projectileEntity] = projectileSplitState;
+                }
             }
 
-            ProjectilePoolUtility.SetProjectileParked(entityManager, projectileEntity);
-            entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, false);
-
-            Entity shooterEntity = owner.ValueRO.ShooterEntity;
-
-            if (poolLookup.HasBuffer(shooterEntity) == false)
-                continue;
-
-            DynamicBuffer<ProjectilePoolElement> shooterPool = poolLookup[shooterEntity];
-            shooterPool.Add(new ProjectilePoolElement
-            {
-                ProjectileEntity = projectileEntity
-            });
+            LocalTransform parkedTransform = projectileTransform.ValueRO;
+            ProjectilePoolUtility.DespawnToPool(projectileEntity,
+                                                owner.ValueRO.ShooterEntity,
+                                                ref parkedTransform,
+                                                ref poolLookup,
+                                                ref projectileActiveLookup);
+            projectileTransform.ValueRW = parkedTransform;
         }
     }
     #endregion

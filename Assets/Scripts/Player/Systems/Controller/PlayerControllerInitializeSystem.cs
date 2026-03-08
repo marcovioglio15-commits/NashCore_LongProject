@@ -104,7 +104,10 @@ public partial struct PlayerControllerInitializeSystem : ISystem
             hasMissingProjectilePoolState == false &&
             hasMissingShootRequestBuffer == false &&
             hasMissingProjectilePoolBuffer == false)
+        {
+            state.Enabled = false;
             return;
+        }
 
         // Create an EntityCommandBuffer to batch add components and buffers to entities
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
@@ -240,6 +243,25 @@ public partial struct PlayerControllerInitializeSystem : ISystem
         // and buffer additions to the entities, then dispose of the command buffer
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
+
+        bool hasRemainingMissingInput = missingInputStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingMovement = missingMovementStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingLook = missingLookStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingModifiers = missingMovementModifiersQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingShootingState = missingShootingStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingProjectilePoolState = missingProjectilePoolStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingShootRequestBuffer = missingShootRequestBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingProjectilePoolBuffer = missingProjectilePoolBufferQuery.IsEmptyIgnoreFilter == false;
+
+        if (hasRemainingMissingInput == false &&
+            hasRemainingMissingMovement == false &&
+            hasRemainingMissingLook == false &&
+            hasRemainingMissingModifiers == false &&
+            hasRemainingMissingShootingState == false &&
+            hasRemainingMissingProjectilePoolState == false &&
+            hasRemainingMissingShootRequestBuffer == false &&
+            hasRemainingMissingProjectilePoolBuffer == false)
+            state.Enabled = false;
     }
 
     #endregion

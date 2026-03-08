@@ -6,7 +6,8 @@ public enum EnemyPatternModuleKind
     Stationary = 0,
     Grunt = 1,
     Wanderer = 2,
-    Shooter = 3
+    Shooter = 3,
+    DropItems = 4
 }
 
 /// <summary>
@@ -45,4 +46,12 @@ public enum EnemyCompiledMovementPatternKind : byte
     Stationary = 1,
     WandererBasic = 2,
     WandererDvd = 3
+}
+
+/// <summary>
+/// Declares drop-items payload categories supported by DropItems modules.
+/// </summary>
+public enum EnemyDropItemsPayloadKind
+{
+    Experience = 0
 }

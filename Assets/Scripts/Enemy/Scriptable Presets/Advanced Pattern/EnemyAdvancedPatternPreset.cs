@@ -15,6 +15,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
     private const string DefaultModuleIdGrunt = "Module_Grunt";
     private const string DefaultModuleIdWanderer = "Module_Wanderer";
     private const string DefaultModuleIdShooter = "Module_Shooter";
+    private const string DefaultModuleIdDropItems = "Module_DropItems";
     #endregion
 
     #region Fields
@@ -258,6 +259,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
         definitions.Add(CreateDefaultModule(DefaultModuleIdGrunt, "Grunt", EnemyPatternModuleKind.Grunt, "Uses standard chase and separation from Brain settings."));
         definitions.Add(CreateDefaultModule(DefaultModuleIdWanderer, "Wanderer", EnemyPatternModuleKind.Wanderer, "Uses autonomous wandering behavior."));
         definitions.Add(CreateDefaultModule(DefaultModuleIdShooter, "Shooter", EnemyPatternModuleKind.Shooter, "Shoots periodic projectiles toward the player."));
+        definitions.Add(CreateDefaultModule(DefaultModuleIdDropItems, "Drop Items", EnemyPatternModuleKind.DropItems, "Spawns collectible drops (for now experience drops) at enemy death."));
         return definitions;
     }
 
@@ -303,19 +305,25 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
 
             if (definition == null)
             {
-                moduleDefinitions.RemoveAt(index);
-                index--;
-                continue;
+                definition = new EnemyPatternModuleDefinition();
+                moduleDefinitions[index] = definition;
             }
 
             definition.Validate();
             string normalizedId = NormalizeId(definition.ModuleId, "Module_Custom");
+            string uniqueId = ResolveUniqueId(normalizedId, moduleIds, "Module_Custom");
 
-            if (moduleIds.Add(normalizedId))
-                continue;
+            if (string.Equals(definition.ModuleId, uniqueId, StringComparison.Ordinal) == false)
+            {
+                definition.Configure(uniqueId,
+                                     definition.DisplayName,
+                                     definition.ModuleKind,
+                                     definition.Notes,
+                                     definition.Data);
+                definition.Validate();
+            }
 
-            moduleDefinitions.RemoveAt(index);
-            index--;
+            moduleIds.Add(uniqueId);
         }
     }
 

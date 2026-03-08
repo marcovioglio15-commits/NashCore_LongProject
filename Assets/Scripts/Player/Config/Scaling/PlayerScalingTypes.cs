@@ -136,7 +136,7 @@ public sealed class PlayerStatScalingRule
     [Tooltip("Mathematical expression using [this] and/or [ScalableStatName] variables.")]
     [SerializeField] private string formula;
 
-    [Tooltip("When enabled, runtime editor-only debug logs print referenced scalable stat values each frame.")]
+    [Tooltip("When enabled, runtime editor-only debug logs print scaling formulas only when tracked values change.")]
     [SerializeField] private bool debugInConsole;
 
     [Tooltip("Editor-only debug color used for this specific rule when Debug in Console is enabled.")]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEngine;
 
 /// <summary>
 /// Provides editor-side validation helpers for formula strings used by Add Scaling fields.
@@ -13,6 +14,8 @@ public static class PlayerScalingFormulaValidationUtility
 
     #region Fields
     private static readonly HashSet<string> globalVariableCache = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, HashSet<string>> scopedVariableCacheByKey = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+    private static readonly Dictionary<string, double> scopedVariableCacheTimeByKey = new Dictionary<string, double>(StringComparer.Ordinal);
     private static double lastGlobalVariableCacheRefreshTime = -1000d;
     #endregion
 
@@ -109,6 +112,39 @@ public static class PlayerScalingFormulaValidationUtility
 
         return variableSet;
     }
+
+    /// <summary>
+    /// Builds a scalable variable scope for the current edited preset, constrained by the active master preset context.
+    /// </summary>
+    /// <param name="serializedObject">Serialized object that owns the currently edited scaling rules.</param>
+    /// <returns>Case-insensitive set of scoped scalable stat names valid for this preset context.</returns>
+    public static HashSet<string> BuildScopedVariableSet(SerializedObject serializedObject)
+    {
+        HashSet<string> variableSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (serializedObject == null)
+            return variableSet;
+
+        UnityEngine.Object targetObject = serializedObject.targetObject;
+
+        if (targetObject == null)
+            return variableSet;
+
+        string cacheKey = BuildScopedCacheKey(targetObject, PlayerManagementSelectionContext.ActiveMasterPreset);
+        double currentTime = EditorApplication.timeSinceStartup;
+
+        if (scopedVariableCacheByKey.TryGetValue(cacheKey, out HashSet<string> cachedVariables) &&
+            scopedVariableCacheTimeByKey.TryGetValue(cacheKey, out double cachedTime) &&
+            currentTime - cachedTime < GlobalVariableCacheDurationSeconds)
+            return new HashSet<string>(cachedVariables, StringComparer.OrdinalIgnoreCase);
+
+        HashSet<string> scopedVariables = BuildScopedVariableSetInternal(targetObject);
+        scopedVariableCacheByKey[cacheKey] = new HashSet<string>(scopedVariables, StringComparer.OrdinalIgnoreCase);
+        scopedVariableCacheTimeByKey[cacheKey] = currentTime;
+
+        TrimScopedCache();
+        return scopedVariables;
+    }
     #endregion
 
     #region Helpers
@@ -176,6 +212,79 @@ public static class PlayerScalingFormulaValidationUtility
             return inputAllowedVariables;
 
         return BuildGlobalVariableSet();
+    }
+
+    private static string BuildScopedCacheKey(UnityEngine.Object targetObject, PlayerMasterPreset activeMasterPreset)
+    {
+        int targetInstanceId = targetObject != null ? targetObject.GetInstanceID() : 0;
+        int masterInstanceId = activeMasterPreset != null ? activeMasterPreset.GetInstanceID() : 0;
+        return string.Format("{0}:{1}", targetInstanceId, masterInstanceId);
+    }
+
+    private static HashSet<string> BuildScopedVariableSetInternal(UnityEngine.Object targetObject)
+    {
+        HashSet<string> scopedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (targetObject == null)
+            return scopedVariables;
+
+        PlayerProgressionPreset progressionPreset = targetObject as PlayerProgressionPreset;
+
+        if (progressionPreset != null)
+        {
+            CollectVariablesFromPreset(progressionPreset, scopedVariables);
+            return scopedVariables;
+        }
+
+        if (TryCollectFromActiveMasterScope(targetObject, scopedVariables))
+            return scopedVariables;
+
+        return scopedVariables;
+    }
+
+    private static bool TryCollectFromActiveMasterScope(UnityEngine.Object targetObject, HashSet<string> variables)
+    {
+        if (variables == null)
+            return false;
+
+        PlayerMasterPreset activeMasterPreset = PlayerManagementSelectionContext.ActiveMasterPreset;
+
+        if (activeMasterPreset == null)
+            return false;
+
+        if (DoesMasterReferenceTarget(activeMasterPreset, targetObject) == false)
+            return false;
+
+        CollectVariablesFromPreset(activeMasterPreset.ProgressionPreset, variables);
+        return true;
+    }
+
+    private static bool DoesMasterReferenceTarget(PlayerMasterPreset masterPreset, UnityEngine.Object targetObject)
+    {
+        if (masterPreset == null || targetObject == null)
+            return false;
+
+        PlayerControllerPreset controllerPreset = targetObject as PlayerControllerPreset;
+
+        if (controllerPreset != null)
+            return masterPreset.ControllerPreset == controllerPreset;
+
+        PlayerProgressionPreset progressionPreset = targetObject as PlayerProgressionPreset;
+
+        if (progressionPreset != null)
+            return masterPreset.ProgressionPreset == progressionPreset;
+
+        PlayerPowerUpsPreset powerUpsPreset = targetObject as PlayerPowerUpsPreset;
+
+        if (powerUpsPreset != null)
+            return masterPreset.PowerUpsPreset == powerUpsPreset;
+
+        PlayerAnimationBindingsPreset animationPreset = targetObject as PlayerAnimationBindingsPreset;
+
+        if (animationPreset != null)
+            return masterPreset.AnimationBindingsPreset == animationPreset;
+
+        return false;
     }
 
     private static ISet<string> BuildGlobalVariableSet()
@@ -254,6 +363,17 @@ public static class PlayerScalingFormulaValidationUtility
 
             variables.Add(statName);
         }
+    }
+
+    private static void TrimScopedCache()
+    {
+        const int MaxScopedCacheEntries = 256;
+
+        if (scopedVariableCacheByKey.Count <= MaxScopedCacheEntries)
+            return;
+
+        scopedVariableCacheByKey.Clear();
+        scopedVariableCacheTimeByKey.Clear();
     }
     #endregion
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -88,6 +89,9 @@ public static class EnemyAdvancedPatternDrawerUtility
 
             case EnemyPatternModuleKind.Shooter:
                 return BuildShooterPayloadEditor(payloadDataProperty, payloadContainer);
+
+            case EnemyPatternModuleKind.DropItems:
+                return BuildDropItemsPayloadEditor(payloadDataProperty, payloadContainer);
 
             case EnemyPatternModuleKind.Grunt:
                 HelpBox noPayloadBox = new HelpBox("No payload is required for this module kind.", HelpBoxMessageType.Info);
@@ -240,6 +244,111 @@ public static class EnemyAdvancedPatternDrawerUtility
         }
 
         AddField(payloadContainer, stationaryProperty.FindPropertyRelative("freezeRotation"), "Freeze Rotation");
+        return true;
+    }
+
+    /// <summary>
+    /// Builds payload editor for DropItems modules.
+    /// </summary>
+    /// <param name="payloadDataProperty">Payload data root.</param>
+    /// <param name="payloadContainer">Target UI container.</param>
+    /// <returns>Returns true when UI is built.</returns>
+    private static bool BuildDropItemsPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
+    {
+        SerializedProperty dropItemsProperty = payloadDataProperty.FindPropertyRelative("dropItems");
+
+        if (dropItemsProperty == null)
+        {
+            HelpBox missingBox = new HelpBox("DropItems payload data is missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(missingBox);
+            return false;
+        }
+
+        SerializedProperty dropPayloadKindProperty = dropItemsProperty.FindPropertyRelative("dropPayloadKind");
+        SerializedProperty experienceProperty = dropItemsProperty.FindPropertyRelative("experience");
+
+        if (dropPayloadKindProperty == null || experienceProperty == null)
+        {
+            HelpBox missingFieldsBox = new HelpBox("DropItems payload fields are missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(missingFieldsBox);
+            return false;
+        }
+
+        AddField(payloadContainer, dropPayloadKindProperty, "Drop Kind");
+
+        Foldout experienceFoldout = new Foldout();
+        experienceFoldout.text = "Experience";
+        experienceFoldout.value = true;
+        payloadContainer.Add(experienceFoldout);
+
+        SerializedProperty dropDefinitionsProperty = experienceProperty.FindPropertyRelative("dropDefinitions");
+        SerializedProperty complessiveExperienceDropProperty = experienceProperty.FindPropertyRelative("complessiveExperienceDrop");
+        SerializedProperty dropsDistributionProperty = experienceProperty.FindPropertyRelative("dropsDistribution");
+        SerializedProperty dropRadiusProperty = experienceProperty.FindPropertyRelative("dropRadius");
+        SerializedProperty collectionMovementProperty = experienceProperty.FindPropertyRelative("collectionMovement");
+
+        if (dropDefinitionsProperty == null ||
+            complessiveExperienceDropProperty == null ||
+            dropsDistributionProperty == null ||
+            dropRadiusProperty == null ||
+            collectionMovementProperty == null)
+        {
+            HelpBox missingExperienceFieldsBox = new HelpBox("Experience drop settings are missing.", HelpBoxMessageType.Warning);
+            experienceFoldout.Add(missingExperienceFieldsBox);
+            return false;
+        }
+
+        Foldout dropDefinitionFoldout = new Foldout();
+        dropDefinitionFoldout.text = "Drop Definition";
+        dropDefinitionFoldout.value = true;
+        experienceFoldout.Add(dropDefinitionFoldout);
+        AddField(dropDefinitionFoldout, dropDefinitionsProperty, "Definitions");
+
+        AddField(experienceFoldout, complessiveExperienceDropProperty, "Complessive Experience Drop");
+        AddField(experienceFoldout, dropsDistributionProperty, "Drops Distribution");
+        AddField(experienceFoldout, dropRadiusProperty, "Drop Radius");
+
+        Foldout collectionMovementFoldout = new Foldout();
+        collectionMovementFoldout.text = "Collection Movement";
+        collectionMovementFoldout.value = true;
+        experienceFoldout.Add(collectionMovementFoldout);
+        SerializedProperty moveSpeedProperty = collectionMovementProperty.FindPropertyRelative("moveSpeed");
+        SerializedProperty collectDistanceProperty = collectionMovementProperty.FindPropertyRelative("collectDistance");
+        SerializedProperty collectDistancePerPlayerSpeedProperty = collectionMovementProperty.FindPropertyRelative("collectDistancePerPlayerSpeed");
+        SerializedProperty spawnAnimationMinDurationProperty = collectionMovementProperty.FindPropertyRelative("spawnAnimationMinDuration");
+        SerializedProperty spawnAnimationMaxDurationProperty = collectionMovementProperty.FindPropertyRelative("spawnAnimationMaxDuration");
+        AddField(collectionMovementFoldout, moveSpeedProperty, "Move Speed");
+        AddField(collectionMovementFoldout, collectDistanceProperty, "Collect Distance");
+        AddField(collectionMovementFoldout, collectDistancePerPlayerSpeedProperty, "Collect Distance Per Player Speed");
+        AddField(collectionMovementFoldout, spawnAnimationMinDurationProperty, "Spawn Animation Min Duration");
+        AddField(collectionMovementFoldout, spawnAnimationMaxDurationProperty, "Spawn Animation Max Duration");
+
+        HelpBox distributionWarningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+        distributionWarningBox.style.marginTop = 4f;
+        experienceFoldout.Add(distributionWarningBox);
+
+        RefreshDropItemsDistributionWarning(dropDefinitionsProperty,
+                                            complessiveExperienceDropProperty,
+                                            dropsDistributionProperty,
+                                            distributionWarningBox);
+
+        if (payloadDataProperty.serializedObject != null)
+        {
+            payloadContainer.TrackSerializedObjectValue(payloadDataProperty.serializedObject, changedObject =>
+            {
+                RefreshDropItemsDistributionWarning(dropDefinitionsProperty,
+                                                    complessiveExperienceDropProperty,
+                                                    dropsDistributionProperty,
+                                                    distributionWarningBox);
+            });
+        }
+
+        UpdateDropPayloadVisibility(dropPayloadKindProperty, experienceFoldout);
+        payloadContainer.TrackPropertyValue(dropPayloadKindProperty, changedProperty =>
+        {
+            UpdateDropPayloadVisibility(changedProperty, experienceFoldout);
+        });
+
         return true;
     }
 
@@ -500,6 +609,129 @@ public static class EnemyAdvancedPatternDrawerUtility
         }
 
         container.style.display = toggleProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    /// <summary>
+    /// Updates DropItems payload visibility from selected drop payload kind.
+    /// </summary>
+    /// <param name="dropPayloadKindProperty">Drop payload kind property.</param>
+    /// <param name="experienceFoldout">Experience settings foldout.</param>
+    /// <returns>Void.</returns>
+    private static void UpdateDropPayloadVisibility(SerializedProperty dropPayloadKindProperty, VisualElement experienceFoldout)
+    {
+        EnemyDropItemsPayloadKind payloadKind = EnemyDropItemsPayloadKind.Experience;
+
+        if (dropPayloadKindProperty != null && dropPayloadKindProperty.propertyType == SerializedPropertyType.Enum)
+            payloadKind = (EnemyDropItemsPayloadKind)dropPayloadKindProperty.enumValueIndex;
+
+        if (experienceFoldout != null)
+            experienceFoldout.style.display = payloadKind == EnemyDropItemsPayloadKind.Experience ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    /// <summary>
+    /// Refreshes warning state for non-exact DropItems experience distribution settings.
+    /// </summary>
+    /// <param name="dropDefinitionsProperty">Experience drop definitions list property.</param>
+    /// <param name="totalExperienceDropProperty">Total experience property.</param>
+    /// <param name="distributionProperty">Distribution slider property.</param>
+    /// <param name="warningBox">Warning UI element.</param>
+    /// <returns>Void.</returns>
+    private static void RefreshDropItemsDistributionWarning(SerializedProperty dropDefinitionsProperty,
+                                                            SerializedProperty totalExperienceDropProperty,
+                                                            SerializedProperty distributionProperty,
+                                                            HelpBox warningBox)
+    {
+        if (warningBox == null)
+            return;
+
+        warningBox.style.display = DisplayStyle.None;
+        warningBox.text = string.Empty;
+
+        if (dropDefinitionsProperty == null ||
+            totalExperienceDropProperty == null ||
+            distributionProperty == null)
+            return;
+
+        float totalExperienceDrop = math.max(0f, totalExperienceDropProperty.floatValue);
+
+        if (totalExperienceDrop <= 0f)
+            return;
+
+        List<float> definitionValues = BuildDropDefinitionValues(dropDefinitionsProperty);
+
+        if (definitionValues.Count <= 0)
+        {
+            warningBox.text = "No valid drop definition is available: assign at least one entry with positive Experience Amount.";
+            warningBox.style.display = DisplayStyle.Flex;
+            return;
+        }
+
+        float distribution = math.clamp(distributionProperty.floatValue, 0f, 1f);
+        float deliveredExperience;
+        float absoluteError;
+        int estimatedDropCount = EnemyExperienceDropDistributionUtility.EstimateDropsForPreview(definitionValues,
+                                                                                                 totalExperienceDrop,
+                                                                                                 distribution,
+                                                                                                 out deliveredExperience,
+                                                                                                 out absoluteError);
+
+        if (estimatedDropCount <= 0)
+        {
+            warningBox.text = "Current settings cannot produce any drop with the configured values.";
+            warningBox.style.display = DisplayStyle.Flex;
+            return;
+        }
+
+        if (absoluteError <= 0.01f)
+            return;
+
+        warningBox.text = string.Format("Exact distribution is not possible with current settings. Requested: {0:0.###} XP | Estimated delivered: {1:0.###} XP | Error: {2:0.###} XP.",
+                                        totalExperienceDrop,
+                                        deliveredExperience,
+                                        absoluteError);
+        warningBox.style.display = DisplayStyle.Flex;
+    }
+
+    /// <summary>
+    /// Builds a list of positive Experience Amount values from serialized drop definitions.
+    /// </summary>
+    /// <param name="dropDefinitionsProperty">Drop definitions serialized array.</param>
+    /// <returns>Returns positive definition values used by warning estimation.</returns>
+    private static List<float> BuildDropDefinitionValues(SerializedProperty dropDefinitionsProperty)
+    {
+        List<float> values = new List<float>();
+
+        if (dropDefinitionsProperty == null || dropDefinitionsProperty.isArray == false)
+            return values;
+
+        for (int definitionIndex = 0; definitionIndex < dropDefinitionsProperty.arraySize; definitionIndex++)
+        {
+            SerializedProperty definitionProperty = dropDefinitionsProperty.GetArrayElementAtIndex(definitionIndex);
+
+            if (definitionProperty == null)
+                continue;
+
+            SerializedProperty amountProperty = definitionProperty.FindPropertyRelative("experienceAmount");
+            SerializedProperty prefabProperty = definitionProperty.FindPropertyRelative("dropPrefab");
+
+            if (amountProperty == null || amountProperty.propertyType != SerializedPropertyType.Float)
+                continue;
+
+            if (prefabProperty == null || prefabProperty.propertyType != SerializedPropertyType.ObjectReference)
+                continue;
+
+            if (prefabProperty.objectReferenceValue == null)
+                continue;
+
+            float value = amountProperty.floatValue;
+
+            if (value <= 0f)
+                continue;
+
+            values.Add(value);
+        }
+
+        return values;
     }
 
     /// <summary>

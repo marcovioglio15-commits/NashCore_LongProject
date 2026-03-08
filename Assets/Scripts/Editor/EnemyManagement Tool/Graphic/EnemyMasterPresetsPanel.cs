@@ -25,6 +25,8 @@ public sealed class EnemyMasterPresetsPanel
     private readonly Dictionary<EnemyManagementWindow.PanelType, SidePanelEntry> sidePanels = new Dictionary<EnemyManagementWindow.PanelType, SidePanelEntry>();
     private readonly List<GameObject> availableEnemyPrefabs = new List<GameObject>();
 
+
+
     private EnemyMasterPresetLibrary library;
     private ListView listView;
     private ToolbarSearchField searchField;
@@ -37,8 +39,10 @@ public sealed class EnemyMasterPresetsPanel
     private EnemyManagementWindow.PanelType activePanel = EnemyManagementWindow.PanelType.EnemyMasterPresets;
     private DetailsSectionType activeDetailsSection = DetailsSectionType.Metadata;
 
+
     private EnemyMasterPreset selectedPreset;
     private SerializedObject presetSerializedObject;
+
 
     private PopupField<GameObject> enemyPrefabPopup;
     private Label activeStatusLabel;
@@ -105,6 +109,7 @@ public sealed class EnemyMasterPresetsPanel
         BuildPanelsContainer();
     }
 
+
     private VisualElement BuildMainContent()
     {
         VisualElement container = new VisualElement();
@@ -122,6 +127,8 @@ public sealed class EnemyMasterPresetsPanel
 
         return container;
     }
+
+
 
     private void BuildPanelsContainer()
     {
@@ -209,6 +216,7 @@ public sealed class EnemyMasterPresetsPanel
         return leftPane;
     }
 
+
     private VisualElement BuildRightPane()
     {
         VisualElement rightPane = new VisualElement();
@@ -245,6 +253,7 @@ public sealed class EnemyMasterPresetsPanel
         return label;
     }
 
+
     private void BindPresetItem(VisualElement element, int index)
     {
         Label label = element as Label;
@@ -274,6 +283,8 @@ public sealed class EnemyMasterPresetsPanel
         label.tooltip = string.IsNullOrWhiteSpace(preset.Description) ? string.Empty : preset.Description;
     }
 
+
+
     private void OnPresetSelectionChanged(IEnumerable<object> selection)
     {
         foreach (object item in selection)
@@ -289,6 +300,7 @@ public sealed class EnemyMasterPresetsPanel
 
         SelectPreset(null);
     }
+
 
     private void RefreshPresetList()
     {
@@ -330,6 +342,7 @@ public sealed class EnemyMasterPresetsPanel
                 listView.SetSelectionWithoutNotify(new int[] { 0 });
         }
     }
+
 
     private bool IsMatchingSearch(EnemyMasterPreset preset, string searchText)
     {

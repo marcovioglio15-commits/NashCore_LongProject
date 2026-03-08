@@ -16,7 +16,12 @@ MonoBehaviour:
   presetName: PlayerPowerUpsPreset Copy
   description: 
   version: 1.0.0
-  scalingRules: []
+  scalingRules:
+  - statKey: moduleDefinitions.Array.data[moduleId:Module_SpawnObject].data.bomb.radius
+    addScaling: 1
+    formula: '[this] * [FireRate]^2'
+    debugInConsole: 1
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   primaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
   secondaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
   dropPoolCatalog:

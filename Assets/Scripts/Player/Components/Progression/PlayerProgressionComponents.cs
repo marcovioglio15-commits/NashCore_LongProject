@@ -29,6 +29,24 @@ public struct PlayerExperience : IComponentData
 }
 
 /// <summary>
+/// Stores runtime level progression state for the player.
+/// </summary>
+public struct PlayerLevel : IComponentData
+{
+    public int Current;
+    public int ActiveGamePhaseIndex;
+    public float RequiredExperienceForNextLevel;
+}
+
+/// <summary>
+/// Stores player experience drop attraction radius used for collection.
+/// </summary>
+public struct PlayerExperienceCollection : IComponentData
+{
+    public float PickupRadius;
+}
+
+/// <summary>
 /// Stores one runtime scalable stat value keyed by name.
 /// </summary>
 public struct PlayerScalableStatElement : IBufferElementData

@@ -25,6 +25,7 @@ public static class EnemyAdvancedPatternBakeUtility
         result.ShooterProjectilePoolInitialCapacity = preset != null ? math.max(0, preset.ShooterProjectilePoolInitialCapacity) : 0;
         result.ShooterProjectilePoolExpandBatch = preset != null ? math.max(1, preset.ShooterProjectilePoolExpandBatch) : 1;
         result.HasShooterRuntimeSettings = false;
+        result.DropItemsConfig = BuildDefaultDropItemsConfig();
 
         if (preset == null)
             return result;
@@ -73,6 +74,10 @@ public static class EnemyAdvancedPatternBakeUtility
                     case EnemyPatternModuleKind.Shooter:
                         TryAddShooterModule(resolvedPayload, result.ShooterConfigs, ref result);
                         break;
+
+                    case EnemyPatternModuleKind.DropItems:
+                        TryApplyDropItemsModule(resolvedPayload, ref result);
+                        break;
                 }
             }
         }
@@ -109,6 +114,23 @@ public static class EnemyAdvancedPatternBakeUtility
             DvdFixedInitialDirectionDegrees = 45f,
             DvdCornerNudgeDistance = 0.08f,
             DvdIgnoreSteeringAndPriority = 0
+        };
+    }
+
+    private static EnemyDropItemsConfig BuildDefaultDropItemsConfig()
+    {
+        return new EnemyDropItemsConfig
+        {
+            PayloadKind = EnemyDropItemsPayloadKind.Experience,
+            TotalExperienceDrop = 0f,
+            Distribution = 0.5f,
+            DropRadius = 0.6f,
+            AttractionSpeed = 0f,
+            CollectDistance = 0.3f,
+            CollectDistancePerPlayerSpeed = 0.05f,
+            SpawnAnimationMinDuration = 0.08f,
+            SpawnAnimationMaxDuration = 0.16f,
+            EstimatedDropsPerDeath = 0
         };
     }
 
@@ -297,6 +319,91 @@ public static class EnemyAdvancedPatternBakeUtility
         shooterConfigs.Add(shooterConfig);
     }
 
+    private static void TryApplyDropItemsModule(EnemyPatternModulePayloadData payload,
+                                                ref EnemyCompiledPatternBakeResult result)
+    {
+        if (payload == null || payload.DropItems == null)
+            return;
+
+        if (payload.DropItems.DropPayloadKind != EnemyDropItemsPayloadKind.Experience)
+            return;
+
+        EnemyExperienceDropPayload experiencePayload = payload.DropItems.Experience;
+
+        if (experiencePayload == null)
+            return;
+
+        float totalExperienceDrop = math.max(0f, experiencePayload.ComplessiveExperienceDrop);
+        float distribution = math.clamp(experiencePayload.DropsDistribution, 0f, 1f);
+        float dropRadius = math.max(0f, experiencePayload.DropRadius);
+        EnemyExperienceDropCollectionSettings collectionMovement = experiencePayload.CollectionMovement;
+        float attractionSpeed = 0f;
+        float collectDistance = 0.3f;
+        float collectDistancePerPlayerSpeed = 0.05f;
+        float spawnAnimationMinDuration = 0.08f;
+        float spawnAnimationMaxDuration = 0.16f;
+
+        if (collectionMovement != null)
+        {
+            attractionSpeed = math.max(0f, collectionMovement.MoveSpeed);
+            collectDistance = math.max(0.01f, collectionMovement.CollectDistance);
+            collectDistancePerPlayerSpeed = math.max(0f, collectionMovement.CollectDistancePerPlayerSpeed);
+            spawnAnimationMinDuration = math.max(0f, collectionMovement.SpawnAnimationMinDuration);
+            spawnAnimationMaxDuration = math.max(spawnAnimationMinDuration, collectionMovement.SpawnAnimationMaxDuration);
+        }
+
+        result.ExperienceDropDefinitions.Clear();
+
+        IReadOnlyList<EnemyExperienceDropDefinitionData> definitions = experiencePayload.DropDefinitions;
+
+        if (definitions != null)
+        {
+            for (int definitionIndex = 0; definitionIndex < definitions.Count; definitionIndex++)
+            {
+                EnemyExperienceDropDefinitionData definition = definitions[definitionIndex];
+
+                if (definition == null)
+                    continue;
+
+                float amount = math.max(0f, definition.ExperienceAmount);
+
+                if (amount <= 0f)
+                    continue;
+
+                result.ExperienceDropDefinitions.Add(new EnemyCompiledExperienceDropDefinition
+                {
+                    Prefab = definition.DropPrefab,
+                    ExperienceAmount = amount
+                });
+            }
+        }
+
+        List<float> previewValues = new List<float>(result.ExperienceDropDefinitions.Count);
+
+        for (int definitionIndex = 0; definitionIndex < result.ExperienceDropDefinitions.Count; definitionIndex++)
+            previewValues.Add(result.ExperienceDropDefinitions[definitionIndex].ExperienceAmount);
+
+        int estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsForPreview(previewValues,
+                                                                                                     totalExperienceDrop,
+                                                                                                     distribution,
+                                                                                                     out float _,
+                                                                                                     out float _);
+
+        result.DropItemsConfig = new EnemyDropItemsConfig
+        {
+            PayloadKind = EnemyDropItemsPayloadKind.Experience,
+            TotalExperienceDrop = totalExperienceDrop,
+            Distribution = distribution,
+            DropRadius = dropRadius,
+            AttractionSpeed = attractionSpeed,
+            CollectDistance = collectDistance,
+            CollectDistancePerPlayerSpeed = collectDistancePerPlayerSpeed,
+            SpawnAnimationMinDuration = spawnAnimationMinDuration,
+            SpawnAnimationMaxDuration = spawnAnimationMaxDuration,
+            EstimatedDropsPerDeath = math.max(0, estimatedDropsPerDeath)
+        };
+    }
+
     private static void TryAssignShooterRuntimeSettings(EnemyShooterModuleData shooterData, ref EnemyCompiledPatternBakeResult result)
     {
         if (result.HasShooterRuntimeSettings)
@@ -362,6 +469,19 @@ public sealed class EnemyCompiledPatternBakeResult
     public int ShooterProjectilePoolInitialCapacity;
     public int ShooterProjectilePoolExpandBatch;
     public bool HasShooterRuntimeSettings;
+    public EnemyDropItemsConfig DropItemsConfig;
     public readonly List<EnemyShooterConfigElement> ShooterConfigs = new List<EnemyShooterConfigElement>();
+    public readonly List<EnemyCompiledExperienceDropDefinition> ExperienceDropDefinitions = new List<EnemyCompiledExperienceDropDefinition>();
+    #endregion
+}
+
+/// <summary>
+/// Stores one compiled experience drop-definition entry before entity conversion in baker.
+/// </summary>
+public struct EnemyCompiledExperienceDropDefinition
+{
+    #region Fields
+    public GameObject Prefab;
+    public float ExperienceAmount;
     #endregion
 }
