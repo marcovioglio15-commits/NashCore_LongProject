@@ -330,11 +330,6 @@ public static class EnemyAdvancedPatternDrawerUtility
         distributionWarningBox.style.marginTop = 4f;
         experienceFoldout.Add(distributionWarningBox);
 
-        bool isApplyingCompatibleRange = false;
-        TrySnapDropItemsExperienceRange(dropDefinitionsProperty,
-                                        complessiveExperienceDropMinimumProperty,
-                                        complessiveExperienceDropMaximumProperty,
-                                        dropsDistributionProperty);
         RefreshDropItemsDistributionWarning(dropDefinitionsProperty,
                                             complessiveExperienceDropMinimumProperty,
                                             complessiveExperienceDropMaximumProperty,
@@ -345,20 +340,11 @@ public static class EnemyAdvancedPatternDrawerUtility
         {
             payloadContainer.TrackSerializedObjectValue(payloadDataProperty.serializedObject, changedObject =>
             {
-                if (isApplyingCompatibleRange)
-                    return;
-
-                isApplyingCompatibleRange = true;
-                TrySnapDropItemsExperienceRange(dropDefinitionsProperty,
-                                                complessiveExperienceDropMinimumProperty,
-                                                complessiveExperienceDropMaximumProperty,
-                                                dropsDistributionProperty);
                 RefreshDropItemsDistributionWarning(dropDefinitionsProperty,
                                                     complessiveExperienceDropMinimumProperty,
                                                     complessiveExperienceDropMaximumProperty,
                                                     dropsDistributionProperty,
                                                     distributionWarningBox);
-                isApplyingCompatibleRange = false;
             });
         }
 
@@ -648,64 +634,6 @@ public static class EnemyAdvancedPatternDrawerUtility
     }
 
     /// <summary>
-    /// Snaps the editable total-experience range to compatible values when compatible totals exist.
-    /// </summary>
-    /// <param name="dropDefinitionsProperty">Experience drop definitions list property.</param>
-    /// <param name="minimumTotalExperienceDropProperty">Minimum total experience property.</param>
-    /// <param name="maximumTotalExperienceDropProperty">Maximum total experience property.</param>
-    /// <param name="distributionProperty">Distribution slider property.</param>
-    /// <returns>Void.</returns>
-    private static void TrySnapDropItemsExperienceRange(SerializedProperty dropDefinitionsProperty,
-                                                        SerializedProperty minimumTotalExperienceDropProperty,
-                                                        SerializedProperty maximumTotalExperienceDropProperty,
-                                                        SerializedProperty distributionProperty)
-    {
-        if (dropDefinitionsProperty == null ||
-            minimumTotalExperienceDropProperty == null ||
-            maximumTotalExperienceDropProperty == null ||
-            distributionProperty == null)
-            return;
-
-        if (minimumTotalExperienceDropProperty.propertyType != SerializedPropertyType.Float ||
-            maximumTotalExperienceDropProperty.propertyType != SerializedPropertyType.Float ||
-            distributionProperty.propertyType != SerializedPropertyType.Float)
-            return;
-
-        List<float> definitionValues = BuildDropDefinitionValues(dropDefinitionsProperty);
-
-        if (definitionValues.Count <= 0)
-            return;
-
-        float distribution = math.clamp(distributionProperty.floatValue, 0f, 1f);
-        float requestedMinimumTotal = math.max(0f, minimumTotalExperienceDropProperty.floatValue);
-        float requestedMaximumTotal = math.max(requestedMinimumTotal, maximumTotalExperienceDropProperty.floatValue);
-        float resolvedMinimumTotal;
-        float resolvedMaximumTotal;
-
-        if (EnemyExperienceDropDistributionUtility.TryResolveCompatiblePreviewRange(definitionValues,
-                                                                                    requestedMinimumTotal,
-                                                                                    requestedMaximumTotal,
-                                                                                    distribution,
-                                                                                    out resolvedMinimumTotal,
-                                                                                    out resolvedMaximumTotal) == false)
-            return;
-
-        if (AreApproximatelyEqual(minimumTotalExperienceDropProperty.floatValue, resolvedMinimumTotal) &&
-            AreApproximatelyEqual(maximumTotalExperienceDropProperty.floatValue, resolvedMaximumTotal))
-            return;
-
-        SerializedObject serializedObject = minimumTotalExperienceDropProperty.serializedObject;
-
-        if (serializedObject == null)
-            return;
-
-        serializedObject.Update();
-        minimumTotalExperienceDropProperty.floatValue = resolvedMinimumTotal;
-        maximumTotalExperienceDropProperty.floatValue = math.max(resolvedMinimumTotal, resolvedMaximumTotal);
-        serializedObject.ApplyModifiedProperties();
-    }
-
-    /// <summary>
     /// Refreshes warning state for DropItems experience range incompatibility.
     /// </summary>
     /// <param name="dropDefinitionsProperty">Experience drop definitions list property.</param>
@@ -764,19 +692,25 @@ public static class EnemyAdvancedPatternDrawerUtility
                                                                                     out resolvedMaximumTotal))
             return;
 
-        warningBox.text = "No compatible total experience value exists inside the current Min/Max range with the configured drop definitions.";
-        warningBox.style.display = DisplayStyle.Flex;
-    }
+        float suggestedMinimumTotal;
+        float suggestedMaximumTotal;
 
-    /// <summary>
-    /// Compares two float values using a tiny epsilon to avoid noisy serialized rewrites.
-    /// </summary>
-    /// <param name="leftValue">First value to compare.</param>
-    /// <param name="rightValue">Second value to compare.</param>
-    /// <returns>True when both values are approximately equal.</returns>
-    private static bool AreApproximatelyEqual(float leftValue, float rightValue)
-    {
-        return math.abs(leftValue - rightValue) <= 0.0001f;
+        if (EnemyExperienceDropDistributionUtility.TryResolveSuggestedPreviewRange(definitionValues,
+                                                                                   minimumTotalExperienceDrop,
+                                                                                   maximumTotalExperienceDrop,
+                                                                                   distribution,
+                                                                                   out suggestedMinimumTotal,
+                                                                                   out suggestedMaximumTotal))
+        {
+            warningBox.text = string.Format("No compatible total experience value exists in the current Min/Max range. Suggested compatible range: {0:0.###} - {1:0.###} XP.",
+                                            suggestedMinimumTotal,
+                                            suggestedMaximumTotal);
+            warningBox.style.display = DisplayStyle.Flex;
+            return;
+        }
+
+        warningBox.text = "No compatible total experience value exists with the current drop definitions and distribution settings.";
+        warningBox.style.display = DisplayStyle.Flex;
     }
 
     /// <summary>

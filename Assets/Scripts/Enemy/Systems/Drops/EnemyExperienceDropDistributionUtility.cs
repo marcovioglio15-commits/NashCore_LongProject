@@ -12,6 +12,7 @@ public static class EnemyExperienceDropDistributionUtility
     private const float CompatibilityTolerance = 0.01f;
     private const int CompatibilityQuantizationScale = 100;
     private const int MaxCompatibilitySearchSteps = 262144;
+    private const int MaxSuggestedRangeExpansionIterations = 10;
     private const int MaxPlanSteps = 4096;
     #endregion
 
@@ -315,6 +316,67 @@ public static class EnemyExperienceDropDistributionUtility
         resolvedMinimumTotal = ConvertUnitsToTotal(compatibleMinimumUnits, quantizationStepUnits);
         resolvedMaximumTotal = ConvertUnitsToTotal(compatibleMaximumUnits, quantizationStepUnits);
         return true;
+    }
+
+    /// <summary>
+    /// Resolves one suggested compatible preview range near the requested range without mutating inputs.
+    /// </summary>
+    /// <param name="definitionExperienceValues">Preview definition values collected from serialized properties.</param>
+    /// <param name="requestedMinimumTotal">Requested minimum total experience.</param>
+    /// <param name="requestedMaximumTotal">Requested maximum total experience.</param>
+    /// <param name="distribution">Distribution bias where 0 favors low values and 1 favors high values.</param>
+    /// <param name="suggestedMinimumTotal">Suggested compatible minimum total.</param>
+    /// <param name="suggestedMaximumTotal">Suggested compatible maximum total.</param>
+    /// <returns>True when a nearby compatible range is found, otherwise false.</returns>
+    public static bool TryResolveSuggestedPreviewRange(IReadOnlyList<float> definitionExperienceValues,
+                                                       float requestedMinimumTotal,
+                                                       float requestedMaximumTotal,
+                                                       float distribution,
+                                                       out float suggestedMinimumTotal,
+                                                       out float suggestedMaximumTotal)
+    {
+        suggestedMinimumTotal = 0f;
+        suggestedMaximumTotal = 0f;
+
+        if (definitionExperienceValues == null || definitionExperienceValues.Count <= 0)
+            return false;
+
+        float sanitizedMinimumTotal = math.max(0f, requestedMinimumTotal);
+        float sanitizedMaximumTotal = math.max(sanitizedMinimumTotal, requestedMaximumTotal);
+        float clampedDistribution = math.clamp(distribution, 0f, 1f);
+
+        if (TryResolveCompatiblePreviewRange(definitionExperienceValues,
+                                             sanitizedMinimumTotal,
+                                             sanitizedMaximumTotal,
+                                             clampedDistribution,
+                                             out suggestedMinimumTotal,
+                                             out suggestedMaximumTotal))
+            return true;
+
+        float minimumDefinitionValue;
+
+        if (TryResolvePreviewBounds(definitionExperienceValues, out minimumDefinitionValue, out float _) == false)
+            return false;
+
+        float expansionStep = math.max(0.01f, minimumDefinitionValue);
+
+        for (int expansionIndex = 0; expansionIndex < MaxSuggestedRangeExpansionIterations; expansionIndex++)
+        {
+            int expansionMultiplier = 1 << expansionIndex;
+            float expansionAmount = expansionStep * expansionMultiplier;
+            float expandedMinimumTotal = math.max(0f, sanitizedMinimumTotal - expansionAmount);
+            float expandedMaximumTotal = sanitizedMaximumTotal + expansionAmount;
+
+            if (TryResolveCompatiblePreviewRange(definitionExperienceValues,
+                                                 expandedMinimumTotal,
+                                                 expandedMaximumTotal,
+                                                 clampedDistribution,
+                                                 out suggestedMinimumTotal,
+                                                 out suggestedMaximumTotal))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>
