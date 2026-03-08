@@ -154,7 +154,7 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
         if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
             return;
 
-        if (dropItemsConfig.TotalExperienceDrop <= 0f)
+        if (dropItemsConfig.MaximumTotalExperienceDrop <= 0f)
             return;
 
         if (entityManager.HasBuffer<EnemyExperienceDropDefinitionElement>(spawner.EnemyPrefab) == false)
@@ -172,7 +172,7 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
             float deliveredExperience;
             float absoluteError;
             estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsPerDeath(definitions,
-                                                                                                   dropItemsConfig.TotalExperienceDrop,
+                                                                                                   dropItemsConfig.MaximumTotalExperienceDrop,
                                                                                                    dropItemsConfig.Distribution,
                                                                                                    out deliveredExperience,
                                                                                                    out absoluteError);

@@ -101,7 +101,8 @@ MonoBehaviour:
         dropPayloadKind: 0
         experience:
           dropDefinitions: []
-          complessiveExperienceDrop: 10
+          complessiveExperienceDropMinimum: 10
+          complessiveExperienceDropMaximum: 10
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
@@ -191,7 +192,8 @@ MonoBehaviour:
         dropPayloadKind: 0
         experience:
           dropDefinitions: []
-          complessiveExperienceDrop: 10
+          complessiveExperienceDropMinimum: 10
+          complessiveExperienceDropMaximum: 10
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
@@ -281,7 +283,8 @@ MonoBehaviour:
         dropPayloadKind: 0
         experience:
           dropDefinitions: []
-          complessiveExperienceDrop: 10
+          complessiveExperienceDropMinimum: 10
+          complessiveExperienceDropMaximum: 10
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
@@ -371,7 +374,8 @@ MonoBehaviour:
         dropPayloadKind: 0
         experience:
           dropDefinitions: []
-          complessiveExperienceDrop: 10
+          complessiveExperienceDropMinimum: 10
+          complessiveExperienceDropMaximum: 10
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
@@ -467,7 +471,8 @@ MonoBehaviour:
             experienceAmount: 6
           - dropPrefab: {fileID: 6858454939034102764, guid: b4ca66a6a67765143825d976eb834132, type: 3}
             experienceAmount: 9
-          complessiveExperienceDrop: 30
+          complessiveExperienceDropMinimum: 30
+          complessiveExperienceDropMaximum: 30
           dropsDistribution: 1
           dropRadius: 1.2
           collectionMovement:
@@ -562,7 +567,8 @@ MonoBehaviour:
           dropPayloadKind: 0
           experience:
             dropDefinitions: []
-            complessiveExperienceDrop: 10
+            complessiveExperienceDropMinimum: 10
+            complessiveExperienceDropMaximum: 10
             dropsDistribution: 0.5
             dropRadius: 0.6
             collectionMovement:
@@ -651,7 +657,8 @@ MonoBehaviour:
           dropPayloadKind: 0
           experience:
             dropDefinitions: []
-            complessiveExperienceDrop: 10
+            complessiveExperienceDropMinimum: 10
+            complessiveExperienceDropMaximum: 10
             dropsDistribution: 0.5
             dropRadius: 0.6
             collectionMovement:

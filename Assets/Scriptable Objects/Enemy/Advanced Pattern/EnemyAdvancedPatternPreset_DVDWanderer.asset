@@ -101,7 +101,8 @@ MonoBehaviour:
         dropPayloadKind: 0
         experience:
           dropDefinitions: []
-          complessiveExperienceDrop: 10
+          complessiveExperienceDropMinimum: 10
+          complessiveExperienceDropMaximum: 10
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
@@ -191,7 +192,8 @@ MonoBehaviour:
         dropPayloadKind: 0
         experience:
           dropDefinitions: []
-          complessiveExperienceDrop: 10
+          complessiveExperienceDropMinimum: 10
+          complessiveExperienceDropMaximum: 10
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
@@ -281,7 +283,8 @@ MonoBehaviour:
         dropPayloadKind: 0
         experience:
           dropDefinitions: []
-          complessiveExperienceDrop: 10
+          complessiveExperienceDropMinimum: 10
+          complessiveExperienceDropMaximum: 10
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
@@ -371,7 +374,8 @@ MonoBehaviour:
         dropPayloadKind: 0
         experience:
           dropDefinitions: []
-          complessiveExperienceDrop: 10
+          complessiveExperienceDropMinimum: 10
+          complessiveExperienceDropMaximum: 10
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
@@ -466,7 +470,8 @@ MonoBehaviour:
           dropPayloadKind: 0
           experience:
             dropDefinitions: []
-            complessiveExperienceDrop: 10
+            complessiveExperienceDropMinimum: 10
+            complessiveExperienceDropMaximum: 10
             dropsDistribution: 0.5
             dropRadius: 0.6
             collectionMovement:

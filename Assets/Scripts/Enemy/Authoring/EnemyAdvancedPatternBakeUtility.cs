@@ -122,7 +122,8 @@ public static class EnemyAdvancedPatternBakeUtility
         return new EnemyDropItemsConfig
         {
             PayloadKind = EnemyDropItemsPayloadKind.Experience,
-            TotalExperienceDrop = 0f,
+            MinimumTotalExperienceDrop = 0f,
+            MaximumTotalExperienceDrop = 0f,
             Distribution = 0.5f,
             DropRadius = 0.6f,
             AttractionSpeed = 0f,
@@ -333,7 +334,8 @@ public static class EnemyAdvancedPatternBakeUtility
         if (experiencePayload == null)
             return;
 
-        float totalExperienceDrop = math.max(0f, experiencePayload.ComplessiveExperienceDrop);
+        float minimumTotalExperienceDrop = math.max(0f, experiencePayload.ComplessiveExperienceDropMinimum);
+        float maximumTotalExperienceDrop = math.max(minimumTotalExperienceDrop, experiencePayload.ComplessiveExperienceDropMaximum);
         float distribution = math.clamp(experiencePayload.DropsDistribution, 0f, 1f);
         float dropRadius = math.max(0f, experiencePayload.DropRadius);
         EnemyExperienceDropCollectionSettings collectionMovement = experiencePayload.CollectionMovement;
@@ -384,7 +386,7 @@ public static class EnemyAdvancedPatternBakeUtility
             previewValues.Add(result.ExperienceDropDefinitions[definitionIndex].ExperienceAmount);
 
         int estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsForPreview(previewValues,
-                                                                                                     totalExperienceDrop,
+                                                                                                     maximumTotalExperienceDrop,
                                                                                                      distribution,
                                                                                                      out float _,
                                                                                                      out float _);
@@ -392,7 +394,8 @@ public static class EnemyAdvancedPatternBakeUtility
         result.DropItemsConfig = new EnemyDropItemsConfig
         {
             PayloadKind = EnemyDropItemsPayloadKind.Experience,
-            TotalExperienceDrop = totalExperienceDrop,
+            MinimumTotalExperienceDrop = minimumTotalExperienceDrop,
+            MaximumTotalExperienceDrop = maximumTotalExperienceDrop,
             Distribution = distribution,
             DropRadius = dropRadius,
             AttractionSpeed = attractionSpeed,

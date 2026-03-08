@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Declares one drop-definition entry for experience drops.
@@ -165,8 +166,12 @@ public sealed class EnemyExperienceDropPayload
     [Tooltip("Definitions catalog used to compose the spawned experience drops.")]
     [SerializeField] private List<EnemyExperienceDropDefinitionData> dropDefinitions = new List<EnemyExperienceDropDefinitionData>();
 
-    [Tooltip("Total experience dropped at enemy death, distributed over the defined drop entries.")]
-    [SerializeField] private float complessiveExperienceDrop = 10f;
+    [Tooltip("Minimum total experience dropped at enemy death, distributed over the defined drop entries.")]
+    [FormerlySerializedAs("complessiveExperienceDrop")]
+    [SerializeField] private float complessiveExperienceDropMinimum = 10f;
+
+    [Tooltip("Maximum total experience dropped at enemy death, distributed over the defined drop entries.")]
+    [SerializeField] private float complessiveExperienceDropMaximum;
 
     [Tooltip("Distribution bias for drop composition: 0 favors low-value drops count, 1 favors high-value drops count.")]
     [Range(0f, 1f)]
@@ -190,11 +195,19 @@ public sealed class EnemyExperienceDropPayload
         }
     }
 
-    public float ComplessiveExperienceDrop
+    public float ComplessiveExperienceDropMinimum
     {
         get
         {
-            return complessiveExperienceDrop;
+            return complessiveExperienceDropMinimum;
+        }
+    }
+
+    public float ComplessiveExperienceDropMaximum
+    {
+        get
+        {
+            return complessiveExperienceDropMaximum;
         }
     }
 
@@ -248,8 +261,11 @@ public sealed class EnemyExperienceDropPayload
             definition.Validate();
         }
 
-        if (complessiveExperienceDrop < 0f)
-            complessiveExperienceDrop = 0f;
+        if (complessiveExperienceDropMinimum < 0f)
+            complessiveExperienceDropMinimum = 0f;
+
+        if (complessiveExperienceDropMaximum < complessiveExperienceDropMinimum)
+            complessiveExperienceDropMaximum = complessiveExperienceDropMinimum;
 
         if (dropsDistribution < 0f)
             dropsDistribution = 0f;

@@ -1217,7 +1217,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
             return;
 
-        if (dropItemsConfig.TotalExperienceDrop <= 0f)
+        if (dropItemsConfig.MaximumTotalExperienceDrop <= 0f)
             return;
 
         if (compiledPattern.ExperienceDropDefinitions == null || compiledPattern.ExperienceDropDefinitions.Count <= 0)
@@ -1260,11 +1260,13 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             return;
 
         int estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsForPreview(stagedAmounts,
-                                                                                                     dropItemsConfig.TotalExperienceDrop,
+                                                                                                     dropItemsConfig.MaximumTotalExperienceDrop,
                                                                                                      dropItemsConfig.Distribution,
                                                                                                      out float _,
                                                                                                      out float _);
         dropItemsConfig.EstimatedDropsPerDeath = math.max(1, estimatedDropsPerDeath);
+        dropItemsConfig.MinimumTotalExperienceDrop = math.max(0f, dropItemsConfig.MinimumTotalExperienceDrop);
+        dropItemsConfig.MaximumTotalExperienceDrop = math.max(dropItemsConfig.MinimumTotalExperienceDrop, dropItemsConfig.MaximumTotalExperienceDrop);
         dropItemsConfig.DropRadius = math.max(0f, dropItemsConfig.DropRadius);
         dropItemsConfig.AttractionSpeed = math.max(0f, dropItemsConfig.AttractionSpeed);
         dropItemsConfig.CollectDistance = math.max(0.01f, dropItemsConfig.CollectDistance);

@@ -8,7 +8,8 @@ using Unity.Mathematics;
 public struct EnemyDropItemsConfig : IComponentData
 {
     public EnemyDropItemsPayloadKind PayloadKind;
-    public float TotalExperienceDrop;
+    public float MinimumTotalExperienceDrop;
+    public float MaximumTotalExperienceDrop;
     public float Distribution;
     public float DropRadius;
     public float AttractionSpeed;

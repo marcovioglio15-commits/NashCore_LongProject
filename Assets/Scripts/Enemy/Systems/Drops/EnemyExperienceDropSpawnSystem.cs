@@ -64,7 +64,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         try
         {
             for (int killedIndex = 0; killedIndex < killedEventsSnapshot.Length; killedIndex++)
-                SpawnDropsForKilledEnemy(entityManager, poolMapSnapshot, killedEventsSnapshot[killedIndex]);
+                SpawnDropsForKilledEnemy(entityManager, poolMapSnapshot, killedEventsSnapshot[killedIndex], killedIndex);
         }
         finally
         {
@@ -80,7 +80,8 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
     #region Spawn
     private static void SpawnDropsForKilledEnemy(EntityManager entityManager,
                                                  NativeArray<EnemyExperienceDropPoolMapElement> poolMap,
-                                                 EnemyKilledEventElement killedEvent)
+                                                 EnemyKilledEventElement killedEvent,
+                                                 int killEventIndex)
     {
         Entity enemyEntity = killedEvent.EnemyEntity;
 
@@ -98,15 +99,29 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
             return;
 
-        if (dropItemsConfig.TotalExperienceDrop <= 0f)
-            return;
-
         DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions = entityManager.GetBuffer<EnemyExperienceDropDefinitionElement>(enemyEntity);
 
         if (definitions.Length <= 0)
             return;
 
-        float remainingExperience = dropItemsConfig.TotalExperienceDrop;
+        float minimumTotalExperienceDrop = math.max(0f, dropItemsConfig.MinimumTotalExperienceDrop);
+        float maximumTotalExperienceDrop = math.max(minimumTotalExperienceDrop, dropItemsConfig.MaximumTotalExperienceDrop);
+
+        if (maximumTotalExperienceDrop <= 0f)
+            return;
+
+        uint randomSeed = ResolveDropTotalRandomSeed(enemyEntity, killEventIndex);
+        float resolvedTotalExperienceDrop;
+
+        if (EnemyExperienceDropDistributionUtility.TryResolveRandomCompatibleTotal(definitions,
+                                                                                   minimumTotalExperienceDrop,
+                                                                                   maximumTotalExperienceDrop,
+                                                                                   dropItemsConfig.Distribution,
+                                                                                   randomSeed,
+                                                                                   out resolvedTotalExperienceDrop) == false)
+            return;
+
+        float remainingExperience = resolvedTotalExperienceDrop;
         float dropRadius = math.max(0f, dropItemsConfig.DropRadius);
         float attractionSpeed = math.max(0f, dropItemsConfig.AttractionSpeed);
         float collectDistance = math.max(0.01f, dropItemsConfig.CollectDistance);
@@ -175,6 +190,20 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
     #endregion
 
     #region Helpers
+    private static uint ResolveDropTotalRandomSeed(Entity enemyEntity, int killEventIndex)
+    {
+        int sanitizedKillEventIndex = math.max(0, killEventIndex);
+        uint seed = math.hash(new int4(enemyEntity.Index,
+                                       enemyEntity.Version,
+                                       sanitizedKillEventIndex + 1,
+                                       19349663));
+
+        if (seed == 0u)
+            return 1u;
+
+        return seed;
+    }
+
     private static float3 ResolveDropSpawnPosition(float3 centerPosition, int dropIndex, float dropRadius)
     {
         if (dropRadius <= PrecisionEpsilon)
