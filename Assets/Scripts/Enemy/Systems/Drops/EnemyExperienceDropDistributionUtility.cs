@@ -9,7 +9,7 @@ public static class EnemyExperienceDropDistributionUtility
 {
     #region Constants
     private const float PrecisionEpsilon = 0.0001f;
-    private const float CompatibilityTolerance = 0.01f;
+    private const float CompatibilityTolerance = 0.0001f;
     private const int CompatibilityQuantizationScale = 100;
     private const int MaxCompatibilitySearchSteps = 262144;
     private const int MaxSuggestedRangeExpansionIterations = 10;

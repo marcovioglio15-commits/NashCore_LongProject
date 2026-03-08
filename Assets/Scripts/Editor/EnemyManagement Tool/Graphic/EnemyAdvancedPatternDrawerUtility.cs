@@ -330,21 +330,32 @@ public static class EnemyAdvancedPatternDrawerUtility
         distributionWarningBox.style.marginTop = 4f;
         experienceFoldout.Add(distributionWarningBox);
 
-        RefreshDropItemsDistributionWarning(dropDefinitionsProperty,
-                                            complessiveExperienceDropMinimumProperty,
-                                            complessiveExperienceDropMaximumProperty,
-                                            dropsDistributionProperty,
-                                            distributionWarningBox);
+        bool isUpdatingDropItemsWarning = false;
+        RefreshDropItemsRangeWarning();
+
+        experienceFoldout.RegisterCallback<SerializedPropertyChangeEvent>(changedEvent =>
+        {
+            RefreshDropItemsRangeWarning();
+        });
+
+        payloadContainer.TrackPropertyValue(complessiveExperienceDropMinimumProperty, changedProperty =>
+        {
+            RefreshDropItemsRangeWarning();
+        });
+        payloadContainer.TrackPropertyValue(complessiveExperienceDropMaximumProperty, changedProperty =>
+        {
+            RefreshDropItemsRangeWarning();
+        });
+        payloadContainer.TrackPropertyValue(dropsDistributionProperty, changedProperty =>
+        {
+            RefreshDropItemsRangeWarning();
+        });
 
         if (payloadDataProperty.serializedObject != null)
         {
             payloadContainer.TrackSerializedObjectValue(payloadDataProperty.serializedObject, changedObject =>
             {
-                RefreshDropItemsDistributionWarning(dropDefinitionsProperty,
-                                                    complessiveExperienceDropMinimumProperty,
-                                                    complessiveExperienceDropMaximumProperty,
-                                                    dropsDistributionProperty,
-                                                    distributionWarningBox);
+                RefreshDropItemsRangeWarning();
             });
         }
 
@@ -355,6 +366,20 @@ public static class EnemyAdvancedPatternDrawerUtility
         });
 
         return true;
+
+        void RefreshDropItemsRangeWarning()
+        {
+            if (isUpdatingDropItemsWarning)
+                return;
+
+            isUpdatingDropItemsWarning = true;
+            RefreshDropItemsDistributionWarning(dropDefinitionsProperty,
+                                                complessiveExperienceDropMinimumProperty,
+                                                complessiveExperienceDropMaximumProperty,
+                                                dropsDistributionProperty,
+                                                distributionWarningBox);
+            isUpdatingDropItemsWarning = false;
+        }
     }
 
     /// <summary>
@@ -665,13 +690,43 @@ public static class EnemyAdvancedPatternDrawerUtility
             distributionProperty.propertyType != SerializedPropertyType.Float)
             return;
 
-        float minimumTotalExperienceDrop = math.max(0f, minimumTotalExperienceDropProperty.floatValue);
-        float maximumTotalExperienceDrop = math.max(minimumTotalExperienceDrop, maximumTotalExperienceDropProperty.floatValue);
+        float rawMinimumTotalExperienceDrop = minimumTotalExperienceDropProperty.floatValue;
+        float rawMaximumTotalExperienceDrop = maximumTotalExperienceDropProperty.floatValue;
+        bool hasInvertedRange = rawMaximumTotalExperienceDrop < rawMinimumTotalExperienceDrop;
+        bool hasNegativeRangeValue = rawMinimumTotalExperienceDrop < 0f || rawMaximumTotalExperienceDrop < 0f;
+        float minimumTotalExperienceDrop = math.max(0f, rawMinimumTotalExperienceDrop);
+        float maximumTotalExperienceDrop = math.max(0f, rawMaximumTotalExperienceDrop);
+        float distribution = math.clamp(distributionProperty.floatValue, 0f, 1f);
+        List<float> definitionValues = BuildDropDefinitionValues(dropDefinitionsProperty);
+
+        if (hasNegativeRangeValue)
+        {
+            warningBox.text = "Invalid range: Min and Max must be greater or equal to 0.";
+            warningBox.style.display = DisplayStyle.Flex;
+            return;
+        }
+
+        if (hasInvertedRange)
+        {
+            string suggestedRangeSuffix = BuildSuggestedRangeSuffix(definitionValues,
+                                                                    minimumTotalExperienceDrop,
+                                                                    maximumTotalExperienceDrop,
+                                                                    distribution);
+            warningBox.text = string.Format("Invalid range: Max must be greater or equal to Min.{0}", suggestedRangeSuffix);
+            warningBox.style.display = DisplayStyle.Flex;
+            return;
+        }
 
         if (maximumTotalExperienceDrop <= 0f)
+        {
+            string suggestedRangeSuffix = BuildSuggestedRangeSuffix(definitionValues,
+                                                                    minimumTotalExperienceDrop,
+                                                                    math.max(minimumTotalExperienceDrop, 1f),
+                                                                    distribution);
+            warningBox.text = string.Format("Invalid range: Max must be greater than 0 to drop experience.{0}", suggestedRangeSuffix);
+            warningBox.style.display = DisplayStyle.Flex;
             return;
-
-        List<float> definitionValues = BuildDropDefinitionValues(dropDefinitionsProperty);
+        }
 
         if (definitionValues.Count <= 0)
         {
@@ -680,7 +735,6 @@ public static class EnemyAdvancedPatternDrawerUtility
             return;
         }
 
-        float distribution = math.clamp(distributionProperty.floatValue, 0f, 1f);
         float resolvedMinimumTotal;
         float resolvedMaximumTotal;
 
@@ -690,7 +744,20 @@ public static class EnemyAdvancedPatternDrawerUtility
                                                                                     distribution,
                                                                                     out resolvedMinimumTotal,
                                                                                     out resolvedMaximumTotal))
+        {
+            if (AreRangeEndpointsCompatible(minimumTotalExperienceDrop,
+                                            maximumTotalExperienceDrop,
+                                            resolvedMinimumTotal,
+                                            resolvedMaximumTotal))
+                return;
+
+            warningBox.text = BuildRangeNotOptimalWarning(minimumTotalExperienceDrop,
+                                                          maximumTotalExperienceDrop,
+                                                          resolvedMinimumTotal,
+                                                          resolvedMaximumTotal);
+            warningBox.style.display = DisplayStyle.Flex;
             return;
+        }
 
         float suggestedMinimumTotal;
         float suggestedMaximumTotal;
@@ -709,8 +776,95 @@ public static class EnemyAdvancedPatternDrawerUtility
             return;
         }
 
-        warningBox.text = "No compatible total experience value exists with the current drop definitions and distribution settings.";
+        warningBox.text = string.Format("No compatible total experience value exists with the current drop definitions and distribution settings.{0}",
+                                        BuildSuggestedRangeSuffix(definitionValues,
+                                                                  minimumTotalExperienceDrop,
+                                                                  maximumTotalExperienceDrop,
+                                                                  distribution));
         warningBox.style.display = DisplayStyle.Flex;
+    }
+
+    /// <summary>
+    /// Checks whether requested range endpoints are already compatible with resolved range endpoints.
+    /// </summary>
+    /// <param name="requestedMinimumTotal">Requested minimum total experience.</param>
+    /// <param name="requestedMaximumTotal">Requested maximum total experience.</param>
+    /// <param name="resolvedMinimumTotal">Resolved compatible minimum total experience.</param>
+    /// <param name="resolvedMaximumTotal">Resolved compatible maximum total experience.</param>
+    /// <returns>Returns true when both endpoints are compatible.</returns>
+    private static bool AreRangeEndpointsCompatible(float requestedMinimumTotal,
+                                                    float requestedMaximumTotal,
+                                                    float resolvedMinimumTotal,
+                                                    float resolvedMaximumTotal)
+    {
+        const float EndpointCompatibilityTolerance = 0.0001f;
+        bool minimumIsCompatible = math.abs(requestedMinimumTotal - resolvedMinimumTotal) <= EndpointCompatibilityTolerance;
+        bool maximumIsCompatible = math.abs(requestedMaximumTotal - resolvedMaximumTotal) <= EndpointCompatibilityTolerance;
+        return minimumIsCompatible && maximumIsCompatible;
+    }
+
+    /// <summary>
+    /// Builds warning text when Min or Max is not directly compatible with current distribution.
+    /// </summary>
+    /// <param name="requestedMinimumTotal">Requested minimum total experience.</param>
+    /// <param name="requestedMaximumTotal">Requested maximum total experience.</param>
+    /// <param name="resolvedMinimumTotal">Resolved compatible minimum total experience.</param>
+    /// <param name="resolvedMaximumTotal">Resolved compatible maximum total experience.</param>
+    /// <returns>Returns one warning string describing which endpoint is incompatible.</returns>
+    private static string BuildRangeNotOptimalWarning(float requestedMinimumTotal,
+                                                      float requestedMaximumTotal,
+                                                      float resolvedMinimumTotal,
+                                                      float resolvedMaximumTotal)
+    {
+        const float EndpointCompatibilityTolerance = 0.0001f;
+        bool minimumIsCompatible = math.abs(requestedMinimumTotal - resolvedMinimumTotal) <= EndpointCompatibilityTolerance;
+        bool maximumIsCompatible = math.abs(requestedMaximumTotal - resolvedMaximumTotal) <= EndpointCompatibilityTolerance;
+
+        if (minimumIsCompatible == false && maximumIsCompatible == false)
+            return string.Format("Range not optimal: Min and Max are not compatible with current distribution. Compatible range inside selection: {0:0.###} - {1:0.###} XP.",
+                                 resolvedMinimumTotal,
+                                 resolvedMaximumTotal);
+
+        if (minimumIsCompatible == false)
+            return string.Format("Range not optimal: Min is not compatible with current distribution. Suggested Min: {0:0.###} XP. Compatible range inside selection: {0:0.###} - {1:0.###} XP.",
+                                 resolvedMinimumTotal,
+                                 resolvedMaximumTotal);
+
+        return string.Format("Range not optimal: Max is not compatible with current distribution. Suggested Max: {0:0.###} XP. Compatible range inside selection: {1:0.###} - {0:0.###} XP.",
+                             resolvedMaximumTotal,
+                             resolvedMinimumTotal);
+    }
+
+    /// <summary>
+    /// Builds warning suffix text containing one suggested compatible range when available.
+    /// </summary>
+    /// <param name="definitionValues">Positive drop definition values with assigned prefabs.</param>
+    /// <param name="requestedMinimumTotal">Requested minimum total experience.</param>
+    /// <param name="requestedMaximumTotal">Requested maximum total experience.</param>
+    /// <param name="distribution">Distribution bias where 0 favors low values and 1 favors high values.</param>
+    /// <returns>Suggested range suffix text, or empty when unavailable.</returns>
+    private static string BuildSuggestedRangeSuffix(IReadOnlyList<float> definitionValues,
+                                                    float requestedMinimumTotal,
+                                                    float requestedMaximumTotal,
+                                                    float distribution)
+    {
+        if (definitionValues == null || definitionValues.Count <= 0)
+            return string.Empty;
+
+        float suggestedMinimumTotal;
+        float suggestedMaximumTotal;
+
+        if (EnemyExperienceDropDistributionUtility.TryResolveSuggestedPreviewRange(definitionValues,
+                                                                                   requestedMinimumTotal,
+                                                                                   requestedMaximumTotal,
+                                                                                   distribution,
+                                                                                   out suggestedMinimumTotal,
+                                                                                   out suggestedMaximumTotal) == false)
+            return string.Empty;
+
+        return string.Format(" Suggested compatible range: {0:0.###} - {1:0.###} XP.",
+                             suggestedMinimumTotal,
+                             suggestedMaximumTotal);
     }
 
     /// <summary>

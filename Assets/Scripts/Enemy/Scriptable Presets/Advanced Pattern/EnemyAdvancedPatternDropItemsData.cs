@@ -261,12 +261,6 @@ public sealed class EnemyExperienceDropPayload
             definition.Validate();
         }
 
-        if (complessiveExperienceDropMinimum < 0f)
-            complessiveExperienceDropMinimum = 0f;
-
-        if (complessiveExperienceDropMaximum < complessiveExperienceDropMinimum)
-            complessiveExperienceDropMaximum = complessiveExperienceDropMinimum;
-
         if (dropsDistribution < 0f)
             dropsDistribution = 0f;
 
