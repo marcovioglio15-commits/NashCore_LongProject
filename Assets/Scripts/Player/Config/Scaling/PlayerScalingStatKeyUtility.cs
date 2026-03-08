@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.Text;
 using UnityEditor;
 
@@ -9,12 +10,18 @@ using UnityEditor;
 public static class PlayerScalingStatKeyUtility
 {
     #region Constants
-    private static readonly string[] StableIdPropertyNames =
+    private static readonly string[] StableStringIdPropertyNames =
     {
         "powerUpId",
         "moduleId",
         "presetId",
-        "statName"
+        "statName",
+        "phaseID"
+    };
+
+    private static readonly string[] StableIntegerIdPropertyNames =
+    {
+        "milestoneLevel"
     };
     #endregion
 
@@ -129,7 +136,10 @@ public static class PlayerScalingStatKeyUtility
                 string stableToken = ResolveStableArrayElementToken(arrayElementProperty);
 
                 if (string.IsNullOrWhiteSpace(stableToken) == false)
-                    ReplaceLastArrayToken(outputBuilder, stableToken);
+                {
+                    string resolvedDataSegment = BuildStableDataSegmentWithFallbackIndex(dataSegment, stableToken);
+                    ReplaceLastArrayToken(outputBuilder, resolvedDataSegment);
+                }
 
                 segmentIndex += 2;
                 continue;
@@ -264,7 +274,10 @@ public static class PlayerScalingStatKeyUtility
             return true;
         }
 
-        if (TryParseStableArrayDataToken(dataSegment, out string idPropertyName, out string idPropertyValue) == false)
+        if (TryParseStableArrayDataToken(dataSegment,
+                                         out int fallbackIndex,
+                                         out string idPropertyName,
+                                         out string idPropertyValue) == false)
             return false;
 
         string arrayPath = resolvedPathBuilder.ToString();
@@ -279,10 +292,16 @@ public static class PlayerScalingStatKeyUtility
 
         int resolvedIndex = FindArrayElementIndexByStableId(arrayProperty, idPropertyName, idPropertyValue);
 
-        if (resolvedIndex < 0)
+        if (resolvedIndex >= 0)
+        {
+            resolvedArrayDataSegment = string.Format("data[{0}]", resolvedIndex);
+            return true;
+        }
+
+        if (fallbackIndex < 0 || fallbackIndex >= arrayProperty.arraySize)
             return false;
 
-        resolvedArrayDataSegment = string.Format("data[{0}]", resolvedIndex);
+        resolvedArrayDataSegment = string.Format("data[{0}]", fallbackIndex);
         return true;
     }
 
@@ -306,9 +325,11 @@ public static class PlayerScalingStatKeyUtility
     }
 
     private static bool TryParseStableArrayDataToken(string dataSegment,
+                                                     out int fallbackIndex,
                                                      out string idPropertyName,
                                                      out string idPropertyValue)
     {
+        fallbackIndex = -1;
         idPropertyName = string.Empty;
         idPropertyValue = string.Empty;
 
@@ -319,13 +340,27 @@ public static class PlayerScalingStatKeyUtility
             return false;
 
         string tokenContent = dataSegment.Substring(5, dataSegment.Length - 6);
-        int separatorIndex = tokenContent.IndexOf(':');
+        string stableToken = tokenContent;
+        int fallbackSeparatorIndex = tokenContent.IndexOf('|');
 
-        if (separatorIndex <= 0 || separatorIndex >= tokenContent.Length - 1)
+        if (fallbackSeparatorIndex > 0 && fallbackSeparatorIndex < tokenContent.Length - 1)
+        {
+            string fallbackIndexText = tokenContent.Substring(0, fallbackSeparatorIndex).Trim();
+            string stableTokenCandidate = tokenContent.Substring(fallbackSeparatorIndex + 1).Trim();
+
+            if (int.TryParse(fallbackIndexText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedFallbackIndex))
+                fallbackIndex = parsedFallbackIndex;
+
+            stableToken = stableTokenCandidate;
+        }
+
+        int separatorIndex = stableToken.IndexOf(':');
+
+        if (separatorIndex <= 0 || separatorIndex >= stableToken.Length - 1)
             return false;
 
-        idPropertyName = tokenContent.Substring(0, separatorIndex).Trim();
-        idPropertyValue = tokenContent.Substring(separatorIndex + 1).Trim();
+        idPropertyName = stableToken.Substring(0, separatorIndex).Trim();
+        idPropertyValue = stableToken.Substring(separatorIndex + 1).Trim();
 
         if (string.IsNullOrWhiteSpace(idPropertyName))
             return false;
@@ -355,15 +390,10 @@ public static class PlayerScalingStatKeyUtility
 
             SerializedProperty idProperty = arrayElement.FindPropertyRelative(idPropertyName);
 
-            if (idProperty == null || idProperty.propertyType != SerializedPropertyType.String)
+            if (idProperty == null)
                 continue;
 
-            string candidateValue = idProperty.stringValue;
-
-            if (string.IsNullOrWhiteSpace(candidateValue))
-                continue;
-
-            if (string.Equals(candidateValue.Trim(), idPropertyValue, StringComparison.OrdinalIgnoreCase) == false)
+            if (IsMatchingStableIdProperty(idProperty, idPropertyValue) == false)
                 continue;
 
             return elementIndex;
@@ -372,14 +402,43 @@ public static class PlayerScalingStatKeyUtility
         return -1;
     }
 
+    private static bool IsMatchingStableIdProperty(SerializedProperty idProperty, string tokenValue)
+    {
+        if (idProperty == null)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(tokenValue))
+            return false;
+
+        if (idProperty.propertyType == SerializedPropertyType.String)
+        {
+            string candidateValue = idProperty.stringValue;
+
+            if (string.IsNullOrWhiteSpace(candidateValue))
+                return false;
+
+            return string.Equals(candidateValue.Trim(), tokenValue, StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (idProperty.propertyType == SerializedPropertyType.Integer)
+        {
+            if (int.TryParse(tokenValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedInteger) == false)
+                return false;
+
+            return idProperty.intValue == parsedInteger;
+        }
+
+        return false;
+    }
+
     private static string ResolveStableArrayElementToken(SerializedProperty arrayElementProperty)
     {
         if (arrayElementProperty == null)
             return string.Empty;
 
-        for (int candidateIndex = 0; candidateIndex < StableIdPropertyNames.Length; candidateIndex++)
+        for (int candidateIndex = 0; candidateIndex < StableStringIdPropertyNames.Length; candidateIndex++)
         {
-            string candidateName = StableIdPropertyNames[candidateIndex];
+            string candidateName = StableStringIdPropertyNames[candidateIndex];
             SerializedProperty candidateProperty = arrayElementProperty.FindPropertyRelative(candidateName);
 
             if (candidateProperty == null)
@@ -392,10 +451,41 @@ public static class PlayerScalingStatKeyUtility
                 continue;
 
             string sanitizedValue = candidateProperty.stringValue.Trim();
-            return string.Format("data[{0}:{1}]", candidateName, sanitizedValue);
+            return string.Format("{0}:{1}", candidateName, sanitizedValue);
+        }
+
+        for (int candidateIndex = 0; candidateIndex < StableIntegerIdPropertyNames.Length; candidateIndex++)
+        {
+            string candidateName = StableIntegerIdPropertyNames[candidateIndex];
+            SerializedProperty candidateProperty = arrayElementProperty.FindPropertyRelative(candidateName);
+
+            if (candidateProperty == null)
+                continue;
+
+            if (candidateProperty.propertyType != SerializedPropertyType.Integer)
+                continue;
+
+            return string.Format(CultureInfo.InvariantCulture, "{0}:{1}", candidateName, candidateProperty.intValue);
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Builds one stable array token that stores both current index and semantic ID.
+    /// </summary>
+    /// <param name="dataSegment">Original data segment in Unity format (for example data[3]).</param>
+    /// <param name="stableToken">Semantic stable token in key:value form.</param>
+    /// <returns>Combined segment with index fallback when available.</returns>
+    private static string BuildStableDataSegmentWithFallbackIndex(string dataSegment, string stableToken)
+    {
+        if (string.IsNullOrWhiteSpace(stableToken))
+            return dataSegment;
+
+        if (TryParseNumericArrayDataToken(dataSegment, out int indexValue) == false)
+            return string.Format("data[{0}]", stableToken);
+
+        return string.Format(CultureInfo.InvariantCulture, "data[{0}|{1}]", indexValue, stableToken);
     }
 
     private static void ReplaceLastArrayToken(StringBuilder pathBuilder, string replacementToken)

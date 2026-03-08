@@ -127,7 +127,7 @@ public static class PlayerScalingFieldElementFactory
 
         addScalingToggle.RegisterValueChangedCallback(evt =>
         {
-            SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, statKey);
+            SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, targetProperty, statKey);
 
             if (ruleProperty == null)
                 return;
@@ -152,7 +152,7 @@ public static class PlayerScalingFieldElementFactory
 
         formulaField.RegisterValueChangedCallback(evt =>
         {
-            SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, statKey);
+            SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, targetProperty, statKey);
 
             if (ruleProperty == null)
                 return;
@@ -173,7 +173,7 @@ public static class PlayerScalingFieldElementFactory
 
         debugInConsoleToggle.RegisterValueChangedCallback(evt =>
         {
-            SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, statKey);
+            SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, targetProperty, statKey);
 
             if (ruleProperty == null)
                 return;
@@ -199,7 +199,7 @@ public static class PlayerScalingFieldElementFactory
 
         debugColorField.RegisterValueChangedCallback(evt =>
         {
-            SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, statKey);
+            SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, targetProperty, statKey);
 
             if (ruleProperty == null)
                 return;
@@ -227,7 +227,10 @@ public static class PlayerScalingFieldElementFactory
 
         void RefreshFromSerializedState()
         {
-            SerializedProperty ruleProperty = FindRuleProperty(scalingRulesProperty, statKey);
+            SerializedProperty ruleProperty = FindRuleProperty(scalingRulesProperty,
+                                                               targetProperty,
+                                                               statKey,
+                                                               true);
             bool addScaling = false;
             string formulaValue = string.Empty;
             bool debugInConsole = false;
@@ -396,7 +399,18 @@ public static class PlayerScalingFieldElementFactory
         return false;
     }
 
-    private static SerializedProperty FindRuleProperty(SerializedProperty scalingRulesProperty, string statKey)
+    /// <summary>
+    /// Finds one scaling rule by stat key and, when needed, by resolved target property equivalence.
+    /// </summary>
+    /// <param name="scalingRulesProperty">Serialized scaling-rules array.</param>
+    /// <param name="targetProperty">Current numeric property rendered by the field.</param>
+    /// <param name="statKey">Current normalized stat key for the field.</param>
+    /// <param name="autoRepairStatKey">When true, rewrites legacy rule keys to the current key.</param>
+    /// <returns>Resolved scaling-rule property, or null when not found.</returns>
+    private static SerializedProperty FindRuleProperty(SerializedProperty scalingRulesProperty,
+                                                       SerializedProperty targetProperty,
+                                                       string statKey,
+                                                       bool autoRepairStatKey)
     {
         if (scalingRulesProperty == null)
             return null;
@@ -405,6 +419,11 @@ public static class PlayerScalingFieldElementFactory
             return null;
 
         if (scalingRulesProperty.isArray == false)
+            return null;
+
+        SerializedObject serializedObject = scalingRulesProperty.serializedObject;
+
+        if (serializedObject == null)
             return null;
 
         for (int index = 0; index < scalingRulesProperty.arraySize; index++)
@@ -419,8 +438,25 @@ public static class PlayerScalingFieldElementFactory
             if (ruleStatKeyProperty == null)
                 continue;
 
-            if (string.Equals(ruleStatKeyProperty.stringValue, statKey, System.StringComparison.Ordinal) == false)
+            string ruleStatKey = ruleStatKeyProperty.stringValue;
+
+            if (string.IsNullOrWhiteSpace(ruleStatKey))
                 continue;
+
+            if (string.Equals(ruleStatKey, statKey, StringComparison.Ordinal))
+                return ruleProperty;
+
+            if (targetProperty == null)
+                continue;
+
+            if (PlayerScalingStatKeyUtility.TryFindPropertyByStatKey(serializedObject, ruleStatKey, out SerializedProperty resolvedProperty) == false)
+                continue;
+
+            if (AreSameSerializedProperty(resolvedProperty, targetProperty) == false)
+                continue;
+
+            if (autoRepairStatKey)
+                TryRepairRuleStatKey(ruleStatKeyProperty, statKey);
 
             return ruleProperty;
         }
@@ -428,9 +464,21 @@ public static class PlayerScalingFieldElementFactory
         return null;
     }
 
-    private static SerializedProperty EnsureRuleProperty(SerializedProperty scalingRulesProperty, string statKey)
+    /// <summary>
+    /// Ensures one scaling rule exists for the current target property and stat key.
+    /// </summary>
+    /// <param name="scalingRulesProperty">Serialized scaling-rules array.</param>
+    /// <param name="targetProperty">Current numeric property rendered by the field.</param>
+    /// <param name="statKey">Current normalized stat key for the field.</param>
+    /// <returns>Existing or newly created scaling-rule property.</returns>
+    private static SerializedProperty EnsureRuleProperty(SerializedProperty scalingRulesProperty,
+                                                         SerializedProperty targetProperty,
+                                                         string statKey)
     {
-        SerializedProperty ruleProperty = FindRuleProperty(scalingRulesProperty, statKey);
+        SerializedProperty ruleProperty = FindRuleProperty(scalingRulesProperty,
+                                                           targetProperty,
+                                                           statKey,
+                                                           true);
 
         if (ruleProperty != null)
             return ruleProperty;
@@ -477,6 +525,54 @@ public static class PlayerScalingFieldElementFactory
         return insertedRule;
     }
 
+    /// <summary>
+    /// Compares two serialized properties by owner object and exact property path.
+    /// </summary>
+    /// <param name="leftProperty">First property to compare.</param>
+    /// <param name="rightProperty">Second property to compare.</param>
+    /// <returns>True when both references point to the same serialized field.</returns>
+    private static bool AreSameSerializedProperty(SerializedProperty leftProperty, SerializedProperty rightProperty)
+    {
+        if (leftProperty == null || rightProperty == null)
+            return false;
+
+        if (leftProperty.serializedObject == null || rightProperty.serializedObject == null)
+            return false;
+
+        if (leftProperty.serializedObject.targetObject != rightProperty.serializedObject.targetObject)
+            return false;
+
+        return string.Equals(leftProperty.propertyPath, rightProperty.propertyPath, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Updates one rule stat key when a legacy key still resolves to the current field.
+    /// </summary>
+    /// <param name="ruleStatKeyProperty">Serialized statKey property inside the rule element.</param>
+    /// <param name="newStatKey">Current normalized stat key to store.</param>
+    /// <returns>Void.</returns>
+    private static void TryRepairRuleStatKey(SerializedProperty ruleStatKeyProperty, string newStatKey)
+    {
+        if (ruleStatKeyProperty == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(newStatKey))
+            return;
+
+        if (string.Equals(ruleStatKeyProperty.stringValue, newStatKey, StringComparison.Ordinal))
+            return;
+
+        SerializedObject serializedObject = ruleStatKeyProperty.serializedObject;
+
+        if (serializedObject == null)
+            return;
+
+        serializedObject.Update();
+        ruleStatKeyProperty.stringValue = newStatKey;
+        serializedObject.ApplyModifiedProperties();
+        PlayerManagementDraftSession.MarkDirty();
+    }
+
     private static bool AreColorsApproximatelyEqual(Color leftColor, Color rightColor)
     {
         if (Mathf.Abs(leftColor.r - rightColor.r) > 0.0001f)
@@ -512,16 +608,6 @@ public static class PlayerScalingFieldElementFactory
         HashSet<string> scopedVariables = PlayerScalingFormulaValidationUtility.BuildScopedVariableSet(serializedObject);
 
         foreach (string variable in scopedVariables)
-            mergedVariables.Add(variable);
-
-        SerializedProperty scalableStatsProperty = serializedObject.FindProperty("scalableStats");
-
-        if (scalableStatsProperty == null)
-            return mergedVariables;
-
-        HashSet<string> localScalableVariables = PlayerScalingFormulaValidationUtility.BuildVariableSet(scalableStatsProperty);
-
-        foreach (string variable in localScalableVariables)
             mergedVariables.Add(variable);
 
         return mergedVariables;

@@ -17,22 +17,22 @@ MonoBehaviour:
   description: 
   version: 1.0.0
   scalingRules:
-  - statKey: activePowerUps.Array.data[1].moduleBindings.Array.data[moduleId:Module_GateResource].overridePayload.resourceGate.cooldownSeconds
+  - statKey: activePowerUps.Array.data[1].moduleBindings.Array.data[2|moduleId:Module_GateResource].overridePayload.resourceGate.cooldownSeconds
     addScaling: 0
     formula: 
     debugInConsole: 0
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  - statKey: moduleDefinitions.Array.data[moduleId:Module_TriggerHoldCharge].data.holdCharge.requiredCharge
+  - statKey: moduleDefinitions.Array.data[2|moduleId:Module_TriggerHoldCharge].data.holdCharge.requiredCharge
     addScaling: 0
     formula: 
     debugInConsole: 0
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  - statKey: moduleDefinitions.Array.data[moduleId:Module_SpawnObject].data.bomb.radius
+  - statKey: moduleDefinitions.Array.data[8|moduleId:Module_SpawnObject].data.bomb.radius
     addScaling: 0
     formula: '[this] + log([FireRate])'
     debugInConsole: 0
     debugColor: {r: 1, g: 0.6046631, b: 0.015686274, a: 1}
-  - statKey: moduleDefinitions.Array.data[moduleId:Module_Dash].data.dash.distance
+  - statKey: moduleDefinitions.Array.data[9|moduleId:Module_Dash].data.dash.distance
     addScaling: 0
     formula: 
     debugInConsole: 0

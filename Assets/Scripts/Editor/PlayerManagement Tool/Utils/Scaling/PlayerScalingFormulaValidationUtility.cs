@@ -228,6 +228,9 @@ public static class PlayerScalingFormulaValidationUtility
         if (targetObject == null)
             return scopedVariables;
 
+        if (TryCollectFromActiveMasterScope(targetObject, scopedVariables))
+            return scopedVariables;
+
         PlayerProgressionPreset progressionPreset = targetObject as PlayerProgressionPreset;
 
         if (progressionPreset != null)
@@ -235,9 +238,6 @@ public static class PlayerScalingFormulaValidationUtility
             CollectVariablesFromPreset(progressionPreset, scopedVariables);
             return scopedVariables;
         }
-
-        if (TryCollectFromActiveMasterScope(targetObject, scopedVariables))
-            return scopedVariables;
 
         return scopedVariables;
     }

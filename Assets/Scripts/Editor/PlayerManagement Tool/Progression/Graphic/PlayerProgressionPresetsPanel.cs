@@ -14,6 +14,17 @@ public sealed class PlayerProgressionPresetsPanel
     #region Constants
     private const float LeftPaneWidth = 280f;
     private const string ActiveSectionStateKey = "NashCore.PlayerManagement.Progression.ActiveSection";
+    private static readonly HashSet<string> MilestonesExcludedRootPropertyNames = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "presetId",
+        "presetName",
+        "description",
+        "version",
+        "scalableStats",
+        "scalingRules",
+        "legacyExperienceRequiredPerLevel",
+        "legacyBaseStats"
+    };
     #endregion
 
     #region Fields
@@ -604,6 +615,7 @@ public sealed class PlayerProgressionPresetsPanel
         VisualElement milestonesContainer = CreateSectionContainer("Milestones");
         SerializedProperty gamePhasesDefinitionProperty = presetSerializedObject.FindProperty("gamePhasesDefinition");
         SerializedProperty experiencePickupRadiusProperty = presetSerializedObject.FindProperty("experiencePickupRadius");
+        SerializedProperty scalingRulesProperty = presetSerializedObject.FindProperty("scalingRules");
 
         if (gamePhasesDefinitionProperty == null || experiencePickupRadiusProperty == null)
         {
@@ -617,27 +629,67 @@ public sealed class PlayerProgressionPresetsPanel
         infoLabel.style.marginBottom = 4f;
         milestonesContainer.Add(infoLabel);
 
-        Foldout gamePhasesFoldout = new Foldout();
-        gamePhasesFoldout.text = "Game Phases Definition";
-        gamePhasesFoldout.value = true;
-        gamePhasesFoldout.style.marginBottom = 4f;
-        milestonesContainer.Add(gamePhasesFoldout);
+        SerializedProperty iterator = presetSerializedObject.GetIterator();
+        bool enterChildren = true;
+        bool hasVisibleMilestonesField = false;
 
-        PropertyField gamePhasesField = new PropertyField(gamePhasesDefinitionProperty, "Phases");
-        gamePhasesField.BindProperty(gamePhasesDefinitionProperty);
-        gamePhasesField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        while (iterator.NextVisible(enterChildren))
         {
-            PlayerManagementDraftSession.MarkDirty();
-        });
-        gamePhasesFoldout.Add(gamePhasesField);
+            enterChildren = false;
 
-        PropertyField pickupRadiusField = new PropertyField(experiencePickupRadiusProperty, "Experience Pickup Radius");
-        pickupRadiusField.BindProperty(experiencePickupRadiusProperty);
-        pickupRadiusField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+            if (iterator.depth != 0)
+                continue;
+
+            SerializedProperty rootProperty = iterator.Copy();
+
+            if (ShouldSkipMilestonesRootProperty(rootProperty))
+                continue;
+
+            hasVisibleMilestonesField = true;
+
+            if (string.Equals(rootProperty.name, "gamePhasesDefinition", StringComparison.Ordinal))
+            {
+                Foldout gamePhasesFoldout = new Foldout();
+                gamePhasesFoldout.text = "Game Phases Definition";
+                gamePhasesFoldout.value = true;
+                gamePhasesFoldout.style.marginBottom = 4f;
+                milestonesContainer.Add(gamePhasesFoldout);
+
+                VisualElement scalableGamePhasesField = PlayerScalingFieldElementFactory.CreateField(rootProperty,
+                                                                                                      scalingRulesProperty,
+                                                                                                      "Phases");
+                gamePhasesFoldout.Add(scalableGamePhasesField);
+                continue;
+            }
+
+            string labelOverride = rootProperty.displayName;
+
+            if (string.Equals(rootProperty.name, "experiencePickupRadius", StringComparison.Ordinal))
+                labelOverride = "Experience Pickup Radius";
+
+            VisualElement scalableField = PlayerScalingFieldElementFactory.CreateField(rootProperty,
+                                                                                        scalingRulesProperty,
+                                                                                        labelOverride);
+            milestonesContainer.Add(scalableField);
+        }
+
+        if (hasVisibleMilestonesField == false)
         {
-            PlayerManagementDraftSession.MarkDirty();
-        });
-        milestonesContainer.Add(pickupRadiusField);
+            Label noFieldsLabel = new Label("No milestone fields available on this preset.");
+            noFieldsLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            milestonesContainer.Add(noFieldsLabel);
+        }
+    }
+
+    private static bool ShouldSkipMilestonesRootProperty(SerializedProperty property)
+    {
+        if (property == null)
+            return true;
+
+        if (string.Equals(property.name, "m_Script", StringComparison.Ordinal))
+            return true;
+
+        return MilestonesExcludedRootPropertyNames.Contains(property.name);
     }
 
     private void RefreshScalableStatsWarnings(VisualElement warningsRoot,

@@ -20,7 +20,12 @@ MonoBehaviour:
   - statName: FireRate
     statType: 0
     defaultValue: 6
-  scalingRules: []
+  scalingRules:
+  - statKey: gamePhasesDefinition.Array.data[0|phaseID:Phase0].requiredExperienceGrouth
+    addScaling: 0
+    formula: '[this] * [FireRate]'
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   gamePhasesDefinition:
   - phaseID: Phase0
     startsAtLevel: 1
