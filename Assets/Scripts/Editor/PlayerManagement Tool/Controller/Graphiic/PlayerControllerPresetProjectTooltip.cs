@@ -46,7 +46,7 @@ public static class PlayerControllerPresetProjectTooltip
 
         string tooltip;
 
-        if (TooltipCache.TryGetValue(guid, out tooltip) == false)
+        if (!TooltipCache.TryGetValue(guid, out tooltip))
         {
             string assetPath = AssetDatabase.GUIDToAssetPath(guid);
             PlayerControllerPreset preset = AssetDatabase.LoadAssetAtPath<PlayerControllerPreset>(assetPath);

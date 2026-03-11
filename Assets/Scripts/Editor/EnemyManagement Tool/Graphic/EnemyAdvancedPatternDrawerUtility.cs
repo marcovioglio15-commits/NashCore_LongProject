@@ -50,7 +50,7 @@ public static class EnemyAdvancedPatternDrawerUtility
 
         int enumValue = moduleKindProperty.enumValueIndex;
 
-        if (Enum.IsDefined(typeof(EnemyPatternModuleKind), enumValue) == false)
+        if (!Enum.IsDefined(typeof(EnemyPatternModuleKind), enumValue))
             return EnemyPatternModuleKind.Grunt;
 
         return (EnemyPatternModuleKind)enumValue;
@@ -209,13 +209,13 @@ public static class EnemyAdvancedPatternDrawerUtility
             if (moduleIdProperty == null)
                 continue;
 
-            if (string.Equals(moduleIdProperty.stringValue, moduleId, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(moduleIdProperty.stringValue, moduleId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             SerializedProperty moduleKindProperty = moduleDefinitionProperty.FindPropertyRelative("moduleKind");
             SerializedProperty displayNameProperty = moduleDefinitionProperty.FindPropertyRelative("displayName");
             moduleKind = ResolveModuleKind(moduleKindProperty);
-            displayName = displayNameProperty != null && string.IsNullOrWhiteSpace(displayNameProperty.stringValue) == false
+            displayName = displayNameProperty != null && !string.IsNullOrWhiteSpace(displayNameProperty.stringValue)
                 ? displayNameProperty.stringValue
                 : moduleId;
             return true;
@@ -820,12 +820,12 @@ public static class EnemyAdvancedPatternDrawerUtility
         bool minimumIsCompatible = math.abs(requestedMinimumTotal - resolvedMinimumTotal) <= EndpointCompatibilityTolerance;
         bool maximumIsCompatible = math.abs(requestedMaximumTotal - resolvedMaximumTotal) <= EndpointCompatibilityTolerance;
 
-        if (minimumIsCompatible == false && maximumIsCompatible == false)
+        if (!minimumIsCompatible && !maximumIsCompatible)
             return string.Format("Range not optimal: Min and Max are not compatible with current distribution. Compatible range inside selection: {0:0.###} - {1:0.###} XP.",
                                  resolvedMinimumTotal,
                                  resolvedMaximumTotal);
 
-        if (minimumIsCompatible == false)
+        if (!minimumIsCompatible)
             return string.Format("Range not optimal: Min is not compatible with current distribution. Suggested Min: {0:0.###} XP. Compatible range inside selection: {0:0.###} - {1:0.###} XP.",
                                  resolvedMinimumTotal,
                                  resolvedMaximumTotal);
@@ -854,12 +854,12 @@ public static class EnemyAdvancedPatternDrawerUtility
         float suggestedMinimumTotal;
         float suggestedMaximumTotal;
 
-        if (EnemyExperienceDropDistributionUtility.TryResolveSuggestedPreviewRange(definitionValues,
+        if (!EnemyExperienceDropDistributionUtility.TryResolveSuggestedPreviewRange(definitionValues,
                                                                                    requestedMinimumTotal,
                                                                                    requestedMaximumTotal,
                                                                                    distribution,
                                                                                    out suggestedMinimumTotal,
-                                                                                   out suggestedMaximumTotal) == false)
+                                                                                   out suggestedMaximumTotal))
             return string.Empty;
 
         return string.Format(" Suggested compatible range: {0:0.###} - {1:0.###} XP.",
@@ -876,7 +876,7 @@ public static class EnemyAdvancedPatternDrawerUtility
     {
         List<float> values = new List<float>();
 
-        if (dropDefinitionsProperty == null || dropDefinitionsProperty.isArray == false)
+        if (dropDefinitionsProperty == null || !dropDefinitionsProperty.isArray)
             return values;
 
         for (int definitionIndex = 0; definitionIndex < dropDefinitionsProperty.arraySize; definitionIndex++)

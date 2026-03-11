@@ -413,7 +413,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     /// <param name="coneAngle">The total angle, in degrees, of the cone's spread.</param>
     private void DrawConeGizmo(Vector3 center, bool enabled, float centerAngle, float coneAngle)
     {
-        if (enabled == false)
+        if (!enabled)
             return;
 
         float halfAngle = coneAngle * 0.5f;
@@ -483,7 +483,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     /// </summary>
     private void DrawAnimationDebugGizmo()
     {
-        if (drawAnimationDebugGizmos == false)
+        if (!drawAnimationDebugGizmos)
             return;
 
         float axisLength = Mathf.Max(0.1f, animationDebugAxisLength);
@@ -503,7 +503,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     /// </summary>
     private void DrawRuntimeVisualBridgeGizmo()
     {
-        if (drawRuntimeVisualBridgeGizmo == false)
+        if (!drawRuntimeVisualBridgeGizmo)
             return;
 
         Vector3 origin = transform.position + Vector3.up * 0.03f;
@@ -618,7 +618,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
             if (commonData == null)
                 continue;
 
-            if (string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return activeTool;
@@ -786,6 +786,14 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
             DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer = AddBuffer<EquippedPassiveToolElement>(entity);
             PopulateEquippedPassiveToolsBuffer(authoring, equippedPassiveToolsBuffer, powerUpsPreset);
+            DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer = AddBuffer<PlayerPowerUpUnlockCatalogElement>(entity);
+            DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer = AddBuffer<PlayerPowerUpTierDefinitionElement>(entity);
+            DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer = AddBuffer<PlayerPowerUpTierEntryElement>(entity);
+            PopulatePowerUpUnlockTierBuffers(authoring,
+                                             powerUpsPreset,
+                                             powerUpUnlockCatalogBuffer,
+                                             powerUpTierDefinitionsBuffer,
+                                             powerUpTierEntriesBuffer);
             DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntriesBuffer = AddBuffer<PlayerPowerUpCheatPresetEntry>(entity);
             DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassivesBuffer = AddBuffer<PlayerPowerUpCheatPresetPassiveElement>(entity);
             PopulatePowerUpCheatPresetBuffers(authoring, cheatPresetEntriesBuffer, cheatPresetPassivesBuffer);
@@ -930,7 +938,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         // Companion animators must resolve to real scene instances during baking.
         // Asset/prefab-stage animators can produce unstable Unity object refs in SubScene streaming.
-        if (animator.gameObject.scene.IsValid() == false)
+        if (!animator.gameObject.scene.IsValid())
             return false;
 
         Transform authoringTransform = authoring.transform;
@@ -1046,7 +1054,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             : null;
         bool hasDebugRuleSnapshots = debugRuleSnapshots != null && debugRuleSnapshots.Count > 0;
 
-        if (hasDebugRuleSnapshots == false)
+        if (!hasDebugRuleSnapshots)
             return;
 
         DynamicBuffer<PlayerScalingDebugRuleElement> debugRuleBuffer = AddBuffer<PlayerScalingDebugRuleElement>(entity);
@@ -1247,8 +1255,10 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         BlobBuilder builder = new BlobBuilder(Unity.Collections.Allocator.Temp);
         ref PlayerProgressionConfigBlob root = ref builder.ConstructRoot<PlayerProgressionConfigBlob>();
         root.ExperiencePickupRadius = preset != null ? math.max(0f, preset.ExperiencePickupRadius) : 0f;
+        root.EquippedScheduleIndex = -1;
         BakeProgressionGamePhases(builder, ref root, preset);
         BakeProgressionScalableStats(builder, ref root, preset);
+        BakeProgressionSchedules(builder, ref root, preset);
 
         BlobAssetReference<PlayerProgressionConfigBlob> blob = builder.CreateBlobAssetReference<PlayerProgressionConfigBlob>(Unity.Collections.Allocator.Persistent);
         builder.Dispose();
@@ -1301,12 +1311,32 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 PlayerLevelUpMilestoneDefinition milestone = milestones[milestoneIndex];
                 int milestoneLevel = milestone != null ? math.max(startsAtLevel, milestone.MilestoneLevel) : startsAtLevel;
                 float specialExpRequirement = milestone != null ? math.max(1f, milestone.SpecialExpRequirement) : startingRequiredLevelUpExp;
+                int powerUpUnlockRollCount = milestone != null ? math.max(0, milestone.PowerUpUnlockRollCount) : 0;
 
                 milestoneArray[milestoneIndex] = new PlayerLevelUpMilestoneBlob
                 {
                     MilestoneLevel = milestoneLevel,
-                    SpecialExpRequirement = specialExpRequirement
+                    SpecialExpRequirement = specialExpRequirement,
+                    PowerUpUnlockRollCount = powerUpUnlockRollCount
                 };
+
+                IReadOnlyList<PlayerMilestoneTierRollDefinition> tierRolls = milestone != null ? milestone.MilestoneTierRolls : null;
+                int tierRollCount = tierRolls != null ? tierRolls.Count : 0;
+                BlobBuilderArray<PlayerMilestoneTierRollBlob> tierRollArray = builder.Allocate(ref milestoneArray[milestoneIndex].TierRolls, tierRollCount);
+
+                for (int tierRollIndex = 0; tierRollIndex < tierRollCount; tierRollIndex++)
+                {
+                    PlayerMilestoneTierRollDefinition tierRoll = tierRolls[tierRollIndex];
+                    string tierId = tierRoll != null && !string.IsNullOrWhiteSpace(tierRoll.TierId)
+                        ? tierRoll.TierId.Trim()
+                        : string.Empty;
+                    float selectionWeight = tierRoll != null ? math.max(0f, tierRoll.SelectionWeight) : 0f;
+                    tierRollArray[tierRollIndex] = new PlayerMilestoneTierRollBlob
+                    {
+                        SelectionWeight = selectionWeight
+                    };
+                    builder.AllocateString(ref tierRollArray[tierRollIndex].TierId, tierId);
+                }
             }
         }
     }
@@ -1353,8 +1383,70 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     }
 
     /// <summary>
+    /// Bakes repeating level-up schedules and resolves equipped schedule index.
+    /// </summary>
+    /// <param name="builder">Blob builder used to allocate nested arrays/strings.</param>
+    /// <param name="root">Progression blob root being populated.</param>
+    /// <param name="preset">Source progression preset data.</param>
+    /// <returns>Void.</returns>
+    private static void BakeProgressionSchedules(BlobBuilder builder,
+                                                 ref PlayerProgressionConfigBlob root,
+                                                 PlayerProgressionPreset preset)
+    {
+        IReadOnlyList<PlayerLevelUpScheduleDefinition> schedules = preset != null ? preset.Schedules : null;
+        int schedulesCount = schedules != null ? schedules.Count : 0;
+        BlobBuilderArray<PlayerLevelUpScheduleBlob> schedulesArray = builder.Allocate(ref root.Schedules, schedulesCount);
+        root.EquippedScheduleIndex = -1;
+        string equippedScheduleId = preset != null ? preset.EquippedScheduleId : string.Empty;
+
+        for (int scheduleIndex = 0; scheduleIndex < schedulesCount; scheduleIndex++)
+        {
+            PlayerLevelUpScheduleDefinition schedule = schedules[scheduleIndex];
+            string scheduleId = schedule != null && !string.IsNullOrWhiteSpace(schedule.ScheduleId)
+                ? schedule.ScheduleId.Trim()
+                : string.Format("Schedule{0}", scheduleIndex + 1);
+            schedulesArray[scheduleIndex] = new PlayerLevelUpScheduleBlob();
+            builder.AllocateString(ref schedulesArray[scheduleIndex].ScheduleId, scheduleId);
+
+            IReadOnlyList<PlayerLevelUpScheduleStepDefinition> sequence = schedule != null ? schedule.Sequence : null;
+            int stepCount = sequence != null ? sequence.Count : 0;
+            BlobBuilderArray<PlayerLevelUpScheduleStepBlob> stepArray = builder.Allocate(ref schedulesArray[scheduleIndex].Steps, stepCount);
+
+            for (int stepIndex = 0; stepIndex < stepCount; stepIndex++)
+            {
+                PlayerLevelUpScheduleStepDefinition step = sequence[stepIndex];
+                string statName = step != null && !string.IsNullOrWhiteSpace(step.StatName)
+                    ? step.StatName.Trim()
+                    : string.Empty;
+                PlayerLevelUpScheduleApplyMode applyMode = step != null ? step.ApplyMode : PlayerLevelUpScheduleApplyMode.Flat;
+                float value = step != null ? step.Value : 0f;
+                stepArray[stepIndex] = new PlayerLevelUpScheduleStepBlob
+                {
+                    ApplyMode = (byte)applyMode,
+                    Value = value
+                };
+                builder.AllocateString(ref stepArray[stepIndex].StatName, statName);
+            }
+
+            if (root.EquippedScheduleIndex >= 0 || string.IsNullOrWhiteSpace(equippedScheduleId))
+                continue;
+
+            if (!string.Equals(scheduleId, equippedScheduleId, System.StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            root.EquippedScheduleIndex = scheduleIndex;
+        }
+
+        if (root.EquippedScheduleIndex >= 0 || schedulesCount <= 0)
+            return;
+
+        root.EquippedScheduleIndex = 0;
+    }
+
+    /// <summary>
     /// Builds runtime power-up config from the selected power-ups preset.
     /// </summary>
+    /// <param name="authoring">Owning player authoring component.</param>
     /// <param name="preset">Source power-ups preset.</param>
     /// <returns>Runtime power-up config with resolved primary/secondary loadout slots.</returns>
     private PlayerPowerUpsConfig BuildPowerUpsConfig(PlayerAuthoring authoring, PlayerPowerUpsPreset preset)
@@ -1362,26 +1454,60 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (preset == null)
             return default;
 
+        PlayerPowerUpsConfig legacyLoadoutConfig = BuildLegacyLoadoutPowerUpsConfig(authoring, preset);
         IReadOnlyList<ModularPowerUpDefinition> activePowerUps = preset.ActivePowerUps;
 
         if (activePowerUps != null && activePowerUps.Count > 0)
         {
-            ModularPowerUpDefinition primaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.PrimaryActivePowerUpId, -1);
-            ModularPowerUpDefinition secondaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.SecondaryActivePowerUpId, -1);
+            int secondaryFallbackIndex = activePowerUps.Count > 1 ? 1 : 0;
+            ModularPowerUpDefinition primaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.PrimaryActivePowerUpId, 0);
+            ModularPowerUpDefinition secondaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.SecondaryActivePowerUpId, secondaryFallbackIndex);
+
+            if (activePowerUps.Count > 1 && ReferenceEquals(primaryPowerUp, secondaryPowerUp))
+                secondaryPowerUp = ResolveLoadoutActivePowerUp(preset, string.Empty, 1);
+
             PlayerPowerUpSlotConfig primaryCompiledSlot = BuildSlotConfigFromModularPowerUp(authoring, preset, primaryPowerUp);
             PlayerPowerUpSlotConfig secondaryCompiledSlot = BuildSlotConfigFromModularPowerUp(authoring, preset, secondaryPowerUp);
 
-            return new PlayerPowerUpsConfig
+            if (primaryCompiledSlot.IsDefined == 0)
+                primaryCompiledSlot = legacyLoadoutConfig.PrimarySlot;
+
+            if (secondaryCompiledSlot.IsDefined == 0)
+                secondaryCompiledSlot = legacyLoadoutConfig.SecondarySlot;
+
+            if (primaryCompiledSlot.IsDefined != 0 || secondaryCompiledSlot.IsDefined != 0)
             {
-                PrimarySlot = primaryCompiledSlot,
-                SecondarySlot = secondaryCompiledSlot
-            };
+                return new PlayerPowerUpsConfig
+                {
+                    PrimarySlot = primaryCompiledSlot,
+                    SecondarySlot = secondaryCompiledSlot
+                };
+            }
+
+            return legacyLoadoutConfig;
         }
 
-        ActiveToolDefinition primaryTool = ResolveLoadoutTool(preset, preset.PrimaryActiveToolId, -1);
-        ActiveToolDefinition secondaryTool = ResolveLoadoutTool(preset, preset.SecondaryActiveToolId, -1);
+        return legacyLoadoutConfig;
+    }
+
+    /// <summary>
+    /// Builds legacy active-tool startup loadout used as fallback when modular loadout resolution fails.
+    /// </summary>
+    /// <param name="authoring">Owning player authoring component.</param>
+    /// <param name="preset">Source power-ups preset.</param>
+    /// <returns>Legacy startup loadout config built from active-tool IDs.</returns>
+    private PlayerPowerUpsConfig BuildLegacyLoadoutPowerUpsConfig(PlayerAuthoring authoring, PlayerPowerUpsPreset preset)
+    {
+        ActiveToolDefinition primaryTool = ResolveLoadoutTool(preset, preset.PrimaryActiveToolId, 0);
+        ActiveToolDefinition secondaryTool = ResolveLoadoutTool(preset, preset.SecondaryActiveToolId, 1);
         PlayerPowerUpSlotConfig primarySlotConfig = BuildSlotConfig(authoring, primaryTool);
         PlayerPowerUpSlotConfig secondarySlotConfig = BuildSlotConfig(authoring, secondaryTool);
+
+        if (secondarySlotConfig.IsDefined == 0)
+            secondarySlotConfig = BuildSlotConfig(authoring, ResolveLoadoutTool(preset, string.Empty, 1));
+
+        if (primarySlotConfig.IsDefined == 0)
+            primarySlotConfig = BuildSlotConfig(authoring, ResolveLoadoutTool(preset, string.Empty, 0));
 
         return new PlayerPowerUpsConfig
         {
@@ -1576,6 +1702,295 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     }
 
     /// <summary>
+    /// Compiles modular unlock catalog and tier buffers used by milestone runtime extraction rolls.
+    /// </summary>
+    /// <param name="authoring">Owning player authoring component.</param>
+    /// <param name="preset">Source power-ups preset.</param>
+    /// <param name="powerUpUnlockCatalogBuffer">Destination unlock catalog buffer.</param>
+    /// <param name="powerUpTierDefinitionsBuffer">Destination tier metadata buffer.</param>
+    /// <param name="powerUpTierEntriesBuffer">Destination flattened tier-entry buffer.</param>
+    /// <returns>Void.</returns>
+    private void PopulatePowerUpUnlockTierBuffers(PlayerAuthoring authoring,
+                                                  PlayerPowerUpsPreset preset,
+                                                  DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
+                                                  DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer,
+                                                  DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer)
+    {
+        powerUpUnlockCatalogBuffer.Clear();
+        powerUpTierDefinitionsBuffer.Clear();
+        powerUpTierEntriesBuffer.Clear();
+
+        if (preset == null)
+            return;
+
+        Dictionary<string, int> unlockCatalogIndexByKey = new Dictionary<string, int>(System.StringComparer.OrdinalIgnoreCase);
+        IReadOnlyList<ModularPowerUpDefinition> activePowerUps = preset.ActivePowerUps;
+        IReadOnlyList<ModularPowerUpDefinition> passivePowerUps = preset.PassivePowerUps;
+        AddUnlockCatalogEntries(authoring,
+                                preset,
+                                activePowerUps,
+                                PlayerPowerUpUnlockKind.Active,
+                                powerUpUnlockCatalogBuffer,
+                                unlockCatalogIndexByKey);
+        AddUnlockCatalogEntries(authoring,
+                                preset,
+                                passivePowerUps,
+                                PlayerPowerUpUnlockKind.Passive,
+                                powerUpUnlockCatalogBuffer,
+                                unlockCatalogIndexByKey);
+        MarkInitialLoadoutUnlocks(preset,
+                                  activePowerUps,
+                                  powerUpUnlockCatalogBuffer,
+                                  unlockCatalogIndexByKey);
+        BuildTierBuffers(preset,
+                         powerUpUnlockCatalogBuffer,
+                         powerUpTierDefinitionsBuffer,
+                         powerUpTierEntriesBuffer,
+                         unlockCatalogIndexByKey);
+        EnsureFallbackTierIfMissing(powerUpUnlockCatalogBuffer,
+                                    powerUpTierDefinitionsBuffer,
+                                    powerUpTierEntriesBuffer);
+    }
+
+    private void AddUnlockCatalogEntries(PlayerAuthoring authoring,
+                                         PlayerPowerUpsPreset preset,
+                                         IReadOnlyList<ModularPowerUpDefinition> powerUps,
+                                         PlayerPowerUpUnlockKind unlockKind,
+                                         DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
+                                         Dictionary<string, int> unlockCatalogIndexByKey)
+    {
+        if (powerUps == null)
+            return;
+
+        for (int powerUpIndex = 0; powerUpIndex < powerUps.Count; powerUpIndex++)
+        {
+            ModularPowerUpDefinition powerUp = powerUps[powerUpIndex];
+
+            if (powerUp == null || powerUp.CommonData == null || string.IsNullOrWhiteSpace(powerUp.CommonData.PowerUpId))
+                continue;
+
+            string powerUpId = powerUp.CommonData.PowerUpId.Trim();
+            string catalogKey = BuildUnlockCatalogKey(unlockKind, powerUpId);
+
+            if (unlockCatalogIndexByKey.ContainsKey(catalogKey))
+                continue;
+
+            PlayerPowerUpUnlockCatalogElement unlockCatalogEntry = new PlayerPowerUpUnlockCatalogElement
+            {
+                PowerUpId = new FixedString64Bytes(powerUpId),
+                DisplayName = new FixedString64Bytes(string.IsNullOrWhiteSpace(powerUp.CommonData.DisplayName) ? powerUpId : powerUp.CommonData.DisplayName.Trim()),
+                Description = new FixedString128Bytes(string.IsNullOrWhiteSpace(powerUp.CommonData.Description) ? string.Empty : powerUp.CommonData.Description.Trim()),
+                UnlockKind = unlockKind,
+                IsUnlocked = 0,
+                ActiveSlotConfig = default,
+                PassiveToolConfig = default
+            };
+
+            if (unlockKind == PlayerPowerUpUnlockKind.Active)
+                unlockCatalogEntry.ActiveSlotConfig = BuildSlotConfigFromModularPowerUp(authoring, preset, powerUp);
+            else
+                unlockCatalogEntry.PassiveToolConfig = BuildPassiveToolConfigFromModularPowerUp(authoring, preset, powerUp);
+
+            int catalogIndex = powerUpUnlockCatalogBuffer.Length;
+            powerUpUnlockCatalogBuffer.Add(unlockCatalogEntry);
+            unlockCatalogIndexByKey.Add(catalogKey, catalogIndex);
+        }
+    }
+
+    /// <summary>
+    /// Marks startup loadout entries as already unlocked so milestone extraction cannot roll them again.
+    /// </summary>
+    /// <param name="preset">Source power-ups preset.</param>
+    /// <param name="activePowerUps">Modular active power-up definitions used by loadout resolution.</param>
+    /// <param name="powerUpUnlockCatalogBuffer">Runtime unlock catalog buffer.</param>
+    /// <param name="unlockCatalogIndexByKey">Catalog lookup keyed by unlock kind + power-up ID.</param>
+    /// <returns>Void.</returns>
+    private static void MarkInitialLoadoutUnlocks(PlayerPowerUpsPreset preset,
+                                                  IReadOnlyList<ModularPowerUpDefinition> activePowerUps,
+                                                  DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
+                                                  Dictionary<string, int> unlockCatalogIndexByKey)
+    {
+        if (preset == null)
+            return;
+
+        ResolveActiveLoadoutPowerUpIds(preset, activePowerUps, out string primaryActivePowerUpId, out string secondaryActivePowerUpId);
+        TryMarkUnlocked(PlayerPowerUpUnlockKind.Active, primaryActivePowerUpId, powerUpUnlockCatalogBuffer, unlockCatalogIndexByKey);
+        TryMarkUnlocked(PlayerPowerUpUnlockKind.Active, secondaryActivePowerUpId, powerUpUnlockCatalogBuffer, unlockCatalogIndexByKey);
+        IReadOnlyList<string> equippedPassivePowerUpIds = preset.EquippedPassivePowerUpIds;
+
+        if (equippedPassivePowerUpIds == null || equippedPassivePowerUpIds.Count <= 0)
+            equippedPassivePowerUpIds = preset.EquippedPassiveToolIds;
+
+        if (equippedPassivePowerUpIds == null)
+            return;
+
+        for (int passiveIndex = 0; passiveIndex < equippedPassivePowerUpIds.Count; passiveIndex++)
+            TryMarkUnlocked(PlayerPowerUpUnlockKind.Passive, equippedPassivePowerUpIds[passiveIndex], powerUpUnlockCatalogBuffer, unlockCatalogIndexByKey);
+    }
+
+    /// <summary>
+    /// Resolves startup primary/secondary modular loadout IDs using the same fallback rules used for runtime slot compilation.
+    /// </summary>
+    /// <param name="preset">Source power-ups preset containing startup loadout IDs.</param>
+    /// <param name="activePowerUps">Available modular active power-ups.</param>
+    /// <param name="primaryActivePowerUpId">Resolved primary modular power-up ID.</param>
+    /// <param name="secondaryActivePowerUpId">Resolved secondary modular power-up ID.</param>
+    /// <returns>Void.</returns>
+    private static void ResolveActiveLoadoutPowerUpIds(PlayerPowerUpsPreset preset,
+                                                       IReadOnlyList<ModularPowerUpDefinition> activePowerUps,
+                                                       out string primaryActivePowerUpId,
+                                                       out string secondaryActivePowerUpId)
+    {
+        primaryActivePowerUpId = string.Empty;
+        secondaryActivePowerUpId = string.Empty;
+
+        if (preset == null || activePowerUps == null || activePowerUps.Count <= 0)
+            return;
+
+        int secondaryFallbackIndex = activePowerUps.Count > 1 ? 1 : 0;
+        ModularPowerUpDefinition primaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.PrimaryActivePowerUpId, 0);
+        ModularPowerUpDefinition secondaryPowerUp = ResolveLoadoutActivePowerUp(preset, preset.SecondaryActivePowerUpId, secondaryFallbackIndex);
+
+        if (activePowerUps.Count > 1 && ReferenceEquals(primaryPowerUp, secondaryPowerUp))
+            secondaryPowerUp = ResolveLoadoutActivePowerUp(preset, string.Empty, 1);
+
+        primaryActivePowerUpId = ResolvePowerUpId(primaryPowerUp);
+        secondaryActivePowerUpId = ResolvePowerUpId(secondaryPowerUp);
+    }
+
+    /// <summary>
+    /// Extracts a normalized modular power-up ID from one definition.
+    /// </summary>
+    /// <param name="powerUp">Modular power-up definition to inspect.</param>
+    /// <returns>Trimmed power-up ID when available; otherwise empty string.</returns>
+    private static string ResolvePowerUpId(ModularPowerUpDefinition powerUp)
+    {
+        if (powerUp == null || powerUp.CommonData == null || string.IsNullOrWhiteSpace(powerUp.CommonData.PowerUpId))
+            return string.Empty;
+
+        return powerUp.CommonData.PowerUpId.Trim();
+    }
+
+    private static void BuildTierBuffers(PlayerPowerUpsPreset preset,
+                                         DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
+                                         DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer,
+                                         DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer,
+                                         Dictionary<string, int> unlockCatalogIndexByKey)
+    {
+        IReadOnlyList<PowerUpTierLevelDefinition> tierLevels = preset.TierLevels;
+
+        if (tierLevels == null)
+            return;
+
+        for (int tierIndex = 0; tierIndex < tierLevels.Count; tierIndex++)
+        {
+            PowerUpTierLevelDefinition tierLevel = tierLevels[tierIndex];
+
+            if (tierLevel == null || string.IsNullOrWhiteSpace(tierLevel.TierId))
+                continue;
+
+            int tierEntriesStartIndex = powerUpTierEntriesBuffer.Length;
+            IReadOnlyList<PowerUpTierEntryDefinition> tierEntries = tierLevel.Entries;
+
+            if (tierEntries != null)
+            {
+                for (int entryIndex = 0; entryIndex < tierEntries.Count; entryIndex++)
+                {
+                    PowerUpTierEntryDefinition tierEntry = tierEntries[entryIndex];
+
+                    if (tierEntry == null || string.IsNullOrWhiteSpace(tierEntry.PowerUpId))
+                        continue;
+
+                    PlayerPowerUpUnlockKind unlockKind = tierEntry.EntryKind == PowerUpTierEntryKind.Active
+                        ? PlayerPowerUpUnlockKind.Active
+                        : PlayerPowerUpUnlockKind.Passive;
+                    string catalogKey = BuildUnlockCatalogKey(unlockKind, tierEntry.PowerUpId);
+
+                    if (!unlockCatalogIndexByKey.TryGetValue(catalogKey, out int catalogIndex))
+                        continue;
+
+                    if (catalogIndex < 0 || catalogIndex >= powerUpUnlockCatalogBuffer.Length)
+                        continue;
+
+                    if (powerUpUnlockCatalogBuffer[catalogIndex].IsUnlocked != 0)
+                        continue;
+
+                    powerUpTierEntriesBuffer.Add(new PlayerPowerUpTierEntryElement
+                    {
+                        CatalogIndex = catalogIndex,
+                        SelectionWeight = math.max(0f, tierEntry.SelectionWeight)
+                    });
+                }
+            }
+
+            int tierEntriesCount = powerUpTierEntriesBuffer.Length - tierEntriesStartIndex;
+            powerUpTierDefinitionsBuffer.Add(new PlayerPowerUpTierDefinitionElement
+            {
+                TierId = new FixedString64Bytes(tierLevel.TierId.Trim()),
+                EntryStartIndex = tierEntriesStartIndex,
+                EntryCount = tierEntriesCount
+            });
+        }
+    }
+
+    private static void EnsureFallbackTierIfMissing(DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
+                                                    DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer,
+                                                    DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer)
+    {
+        if (powerUpTierDefinitionsBuffer.Length > 0)
+            return;
+
+        int startIndex = powerUpTierEntriesBuffer.Length;
+
+        for (int catalogIndex = 0; catalogIndex < powerUpUnlockCatalogBuffer.Length; catalogIndex++)
+        {
+            if (powerUpUnlockCatalogBuffer[catalogIndex].IsUnlocked != 0)
+                continue;
+
+            powerUpTierEntriesBuffer.Add(new PlayerPowerUpTierEntryElement
+            {
+                CatalogIndex = catalogIndex,
+                SelectionWeight = 1f
+            });
+        }
+
+        powerUpTierDefinitionsBuffer.Add(new PlayerPowerUpTierDefinitionElement
+        {
+            TierId = new FixedString64Bytes("Default"),
+            EntryStartIndex = startIndex,
+            EntryCount = powerUpTierEntriesBuffer.Length - startIndex
+        });
+    }
+
+    private static void TryMarkUnlocked(PlayerPowerUpUnlockKind unlockKind,
+                                        string powerUpId,
+                                        DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
+                                        Dictionary<string, int> unlockCatalogIndexByKey)
+    {
+        if (string.IsNullOrWhiteSpace(powerUpId))
+            return;
+
+        string catalogKey = BuildUnlockCatalogKey(unlockKind, powerUpId.Trim());
+
+        if (!unlockCatalogIndexByKey.TryGetValue(catalogKey, out int catalogIndex))
+            return;
+
+        if (catalogIndex < 0 || catalogIndex >= powerUpUnlockCatalogBuffer.Length)
+            return;
+
+        PlayerPowerUpUnlockCatalogElement catalogEntry = powerUpUnlockCatalogBuffer[catalogIndex];
+        catalogEntry.IsUnlocked = 1;
+        powerUpUnlockCatalogBuffer[catalogIndex] = catalogEntry;
+    }
+
+    private static string BuildUnlockCatalogKey(PlayerPowerUpUnlockKind unlockKind, string powerUpId)
+    {
+        return string.Format("{0}|{1}",
+                             unlockKind == PlayerPowerUpUnlockKind.Active ? "A" : "P",
+                             string.IsNullOrWhiteSpace(powerUpId) ? string.Empty : powerUpId.Trim());
+    }
+
+    /// <summary>
     /// Resolves and compiles equipped passive tool IDs from one preset into runtime passive configs.
     /// </summary>
     /// <param name="authoring">Owning player authoring component.</param>
@@ -1607,7 +2022,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 if (string.IsNullOrWhiteSpace(passivePowerUpId))
                     continue;
 
-                if (visitedPassivePowerUpIds.Add(passivePowerUpId) == false)
+                if (!visitedPassivePowerUpIds.Add(passivePowerUpId))
                     continue;
 
                 ModularPowerUpDefinition passivePowerUp = ResolveLoadoutPassivePowerUp(preset, passivePowerUpId);
@@ -1640,7 +2055,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             if (string.IsNullOrWhiteSpace(passiveToolId))
                 continue;
 
-            if (visitedPassiveToolIds.Add(passiveToolId) == false)
+            if (!visitedPassiveToolIds.Add(passiveToolId))
                 continue;
 
             PassiveToolDefinition passiveTool = ResolveLoadoutPassiveTool(preset, passiveToolId);
@@ -1667,7 +2082,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (activePowerUps == null)
             return null;
 
-        if (string.IsNullOrWhiteSpace(powerUpId) == false)
+        if (!string.IsNullOrWhiteSpace(powerUpId))
         {
             for (int index = 0; index < activePowerUps.Count; index++)
             {
@@ -1681,7 +2096,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 if (commonData == null)
                     continue;
 
-                if (string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase) == false)
+                if (!string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 return activePowerUp;
@@ -1704,7 +2119,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (passivePowerUps == null)
             return null;
 
-        if (string.IsNullOrWhiteSpace(powerUpId) == false)
+        if (!string.IsNullOrWhiteSpace(powerUpId))
         {
             for (int index = 0; index < passivePowerUps.Count; index++)
             {
@@ -1718,7 +2133,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 if (commonData == null)
                     continue;
 
-                if (string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase) == false)
+                if (!string.Equals(commonData.PowerUpId, powerUpId, System.StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 return passivePowerUp;
@@ -1843,7 +2258,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             if (binding == null)
                 continue;
 
-            if (binding.IsEnabled == false)
+            if (!binding.IsEnabled)
                 continue;
 
             PowerUpModuleDefinition moduleDefinition = ResolveModuleDefinitionById(preset, binding.ModuleId);
@@ -1864,7 +2279,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                     if (resourceGateData == null)
                         break;
 
-                    if (hasGateResource == false)
+                    if (!hasGateResource)
                     {
                         hasGateResource = true;
                         activationResource = resourceGateData.ActivationResource;
@@ -1895,7 +2310,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
                     if (candidateCooldownSeconds > 0f)
                     {
-                        if (hasCooldownSeconds == false)
+                        if (!hasCooldownSeconds)
                         {
                             hasCooldownSeconds = true;
                             cooldownSeconds = candidateCooldownSeconds;
@@ -2083,7 +2498,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         if (resolvedToolKind == ActiveToolKind.Bomb && bombPrefab != null)
         {
-            if (IsInvalidBombPrefab(authoring, bombPrefab) == false)
+            if (!IsInvalidBombPrefab(authoring, bombPrefab))
                 bombPrefabEntity = GetEntity(bombPrefab, TransformUsageFlags.Dynamic);
             else
             {
@@ -2142,7 +2557,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         float chargeShotRate = math.max(0f, holdChargeRatePerSecond);
         PowerUpActivationInputMode activationInputMode = PowerUpActivationInputMode.OnPress;
 
-        if (hasTriggerRelease && hasTriggerPress == false && hasHoldCharge == false)
+        if (hasTriggerRelease && !hasTriggerPress && !hasHoldCharge)
             activationInputMode = PowerUpActivationInputMode.OnRelease;
 
         return new PlayerPowerUpSlotConfig
@@ -2299,7 +2714,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             if (binding == null)
                 continue;
 
-            if (binding.IsEnabled == false)
+            if (!binding.IsEnabled)
                 continue;
 
             PowerUpModuleDefinition moduleDefinition = ResolveModuleDefinitionById(preset, binding.ModuleId);
@@ -2323,7 +2738,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
                     if (candidateCooldownSeconds > 0f)
                     {
-                        if (hasSharedCooldown == false)
+                        if (!hasSharedCooldown)
                         {
                             hasSharedCooldown = true;
                             sharedCooldownSeconds = candidateCooldownSeconds;
@@ -2368,7 +2783,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                     if (candidateExplosionConfig.Radius <= 0f && candidateExplosionConfig.Damage <= 0f)
                         break;
 
-                    if (hasExplosion == false)
+                    if (!hasExplosion)
                     {
                         hasExplosion = true;
                         explosionConfig = candidateExplosionConfig;
@@ -2391,7 +2806,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 case PowerUpModuleKind.OrbitalProjectiles:
                     PerfectCirclePassiveConfig candidateOrbitConfig = BuildPerfectCirclePassiveConfig(payload.ProjectileOrbitOverride);
 
-                    if (hasOrbit == false)
+                    if (!hasOrbit)
                     {
                         hasOrbit = true;
                         orbitConfig = candidateOrbitConfig;
@@ -2411,7 +2826,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 case PowerUpModuleKind.BouncingProjectiles:
                     BouncingProjectilesPassiveConfig candidateBounceConfig = BuildBouncingProjectilesPassiveConfig(payload.ProjectileBounceOnWalls);
 
-                    if (hasBounce == false)
+                    if (!hasBounce)
                     {
                         hasBounce = true;
                         bounceConfig = candidateBounceConfig;
@@ -2433,7 +2848,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 case PowerUpModuleKind.ProjectileSplit:
                     SplittingProjectilesPassiveConfig candidateSplitConfig = BuildSplittingProjectilesPassiveConfig(payload.ProjectileSplit);
 
-                    if (hasSplit == false)
+                    if (!hasSplit)
                     {
                         hasSplit = true;
                         splitConfig = candidateSplitConfig;
@@ -2592,7 +3007,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                              config.HasElementalTrail != 0 ||
                              config.HasHeal != 0;
 
-        if (hasAnyPayload == false)
+        if (!hasAnyPayload)
             return default;
 
         config.IsDefined = 1;
@@ -2621,7 +3036,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                            PowerUpTriggerEventType triggerEventType,
                                                                            PassiveExplosionTriggerMode fallback)
     {
-        if (hasTriggerEvent == false)
+        if (!hasTriggerEvent)
             return fallback;
 
         switch (triggerEventType)
@@ -2639,7 +3054,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                       PowerUpTriggerEventType triggerEventType,
                                                                       ProjectileSplitTriggerMode fallback)
     {
-        if (hasTriggerEvent == false)
+        if (!hasTriggerEvent)
             return fallback;
 
         switch (triggerEventType)
@@ -2657,7 +3072,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                         PowerUpTriggerEventType triggerEventType,
                                                                         PassiveHealTriggerMode fallback)
     {
-        if (hasTriggerEvent == false)
+        if (!hasTriggerEvent)
             return fallback;
 
         switch (triggerEventType)
@@ -2698,7 +3113,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (activeTools == null)
             return null;
 
-        if (string.IsNullOrWhiteSpace(toolId) == false)
+        if (!string.IsNullOrWhiteSpace(toolId))
         {
             for (int index = 0; index < activeTools.Count; index++)
             {
@@ -2712,7 +3127,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 if (commonData == null)
                     continue;
 
-                if (string.Equals(commonData.PowerUpId, toolId, System.StringComparison.OrdinalIgnoreCase) == false)
+                if (!string.Equals(commonData.PowerUpId, toolId, System.StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 return activeTool;
@@ -2741,7 +3156,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (passiveTools == null)
             return null;
 
-        if (string.IsNullOrWhiteSpace(toolId) == false)
+        if (!string.IsNullOrWhiteSpace(toolId))
         {
             for (int index = 0; index < passiveTools.Count; index++)
             {
@@ -2755,7 +3170,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 if (commonData == null)
                     continue;
 
-                if (string.Equals(commonData.PowerUpId, toolId, System.StringComparison.OrdinalIgnoreCase) == false)
+                if (!string.Equals(commonData.PowerUpId, toolId, System.StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 return passiveTool;
@@ -3073,7 +3488,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         {
             GameObject bombPrefab = bombData.BombPrefab;
 
-            if (IsInvalidBombPrefab(authoring, bombPrefab) == false)
+            if (!IsInvalidBombPrefab(authoring, bombPrefab))
                 bombPrefabEntity = GetEntity(bombPrefab, TransformUsageFlags.Dynamic);
             else
             {

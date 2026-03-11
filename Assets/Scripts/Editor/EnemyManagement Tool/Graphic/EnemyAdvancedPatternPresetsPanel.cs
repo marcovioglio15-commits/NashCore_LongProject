@@ -90,7 +90,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         RefreshPresetList();
         int presetIndex = filteredPresets.IndexOf(preset);
 
-        if (presetIndex < 0 && searchField != null && string.IsNullOrWhiteSpace(searchField.value) == false)
+        if (presetIndex < 0 && searchField != null && !string.IsNullOrWhiteSpace(searchField.value))
         {
             searchField.SetValueWithoutNotify(string.Empty);
             RefreshPresetList();
@@ -287,7 +287,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
             return;
         }
 
-        if (selectedPreset == null || filteredPresets.Contains(selectedPreset) == false)
+        if (selectedPreset == null || !filteredPresets.Contains(selectedPreset))
         {
             SelectPreset(filteredPresets[0]);
 
@@ -408,7 +408,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
 
         bool confirmed = EditorUtility.DisplayDialog("Delete Enemy Advanced Pattern Preset", "Delete the selected preset asset?", "Delete", "Cancel");
 
-        if (confirmed == false)
+        if (!confirmed)
             return;
 
         Undo.RecordObject(library, "Delete Enemy Advanced Pattern Preset");
@@ -957,7 +957,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
                 continue;
             }
 
-            if (validIds.Contains(patternId) == false)
+            if (!validIds.Contains(patternId))
             {
                 activePatternIdsProperty.DeleteArrayElementAtIndex(index);
                 index--;
@@ -965,7 +965,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
                 continue;
             }
 
-            if (visited.Add(patternId) == false)
+            if (!visited.Add(patternId))
             {
                 activePatternIdsProperty.DeleteArrayElementAtIndex(index);
                 index--;
@@ -1005,7 +1005,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         {
             string patternId = loadoutOptions[optionIndex].PatternId;
 
-            if (ContainsPatternLoadoutId(activePatternIdsProperty, patternId) == false)
+            if (!ContainsPatternLoadoutId(activePatternIdsProperty, patternId))
             {
                 return true;
             }
@@ -1078,7 +1078,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
             return string.Empty;
         }
 
-        if (string.IsNullOrWhiteSpace(selectedPatternId) == false)
+        if (!string.IsNullOrWhiteSpace(selectedPatternId))
         {
             for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)
             {

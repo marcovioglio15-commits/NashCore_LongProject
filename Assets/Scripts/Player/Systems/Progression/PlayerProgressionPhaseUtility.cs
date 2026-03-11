@@ -35,7 +35,7 @@ public static class PlayerProgressionPhaseUtility
             levelValue = 1;
         }
 
-        if (progressionConfig.Config.IsCreated == false)
+        if (!progressionConfig.Config.IsCreated)
         {
             activeGamePhaseIndex = 0;
             isMilestoneRequirement = false;
@@ -59,7 +59,7 @@ public static class PlayerProgressionPhaseUtility
     /// <returns>Index of the active game phase, or 0 when data is missing.</returns>
     public static int ResolveActiveGamePhaseIndex(PlayerProgressionConfig progressionConfig, int levelValue)
     {
-        if (progressionConfig.Config.IsCreated == false)
+        if (!progressionConfig.Config.IsCreated)
         {
             return 0;
         }
@@ -76,7 +76,7 @@ public static class PlayerProgressionPhaseUtility
     /// <returns>Phase ID string with safe fallback when index/data is invalid.</returns>
     public static string ResolvePhaseID(PlayerProgressionConfig progressionConfig, int phaseIndex)
     {
-        if (progressionConfig.Config.IsCreated == false)
+        if (!progressionConfig.Config.IsCreated)
         {
             return DefaultPhaseID;
         }

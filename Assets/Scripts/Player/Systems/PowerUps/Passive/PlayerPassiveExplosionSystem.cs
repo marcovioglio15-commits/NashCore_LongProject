@@ -57,7 +57,7 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
                     shouldTrigger = cooldownReady;
                     break;
                 case PassiveExplosionTriggerMode.OnPlayerDamaged:
-                    if (healthLookup.HasComponent(playerEntity) == false)
+                    if (!healthLookup.HasComponent(playerEntity))
                         break;
 
                     float currentHealth = healthLookup[playerEntity].Current;
@@ -75,7 +75,7 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
                     passiveExplosionState.ValueRW.PreviousObservedHealth = currentHealth;
                     break;
                 case PassiveExplosionTriggerMode.OnEnemyKilled:
-                    if (hasKilledEvents == false)
+                    if (!hasKilledEvents)
                         break;
 
                     if (killedEventsBuffer.Length == 0)

@@ -48,7 +48,7 @@ public static class EnemyStatusBarsTestUiPrefabUtility
     {
         message = string.Empty;
 
-        if (TryResolvePrefabPath(enemyPrefab, out string prefabPath, out message) == false)
+        if (!TryResolvePrefabPath(enemyPrefab, out string prefabPath, out message))
             return false;
 
         EnemyTestUiSettings resolvedSettings = settings;
@@ -133,7 +133,7 @@ public static class EnemyStatusBarsTestUiPrefabUtility
     {
         message = string.Empty;
 
-        if (TryResolvePrefabPath(enemyPrefab, out string prefabPath, out message) == false)
+        if (!TryResolvePrefabPath(enemyPrefab, out string prefabPath, out message))
             return false;
 
         GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
@@ -184,7 +184,7 @@ public static class EnemyStatusBarsTestUiPrefabUtility
                 serializedAuthoring.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            if (hasGeneratedRoot == false && clearedAssignedView == false)
+            if (!hasGeneratedRoot && !clearedAssignedView)
             {
                 message = "No generated test UI found on selected enemy prefab.";
                 return false;
@@ -381,7 +381,7 @@ public static class EnemyStatusBarsTestUiPrefabUtility
             if (childTransform == null)
                 continue;
 
-            if (string.Equals(childTransform.name, TestUiRootObjectName, StringComparison.Ordinal) == false)
+            if (!string.Equals(childTransform.name, TestUiRootObjectName, StringComparison.Ordinal))
                 continue;
 
             UnityEngine.Object.DestroyImmediate(childTransform.gameObject);

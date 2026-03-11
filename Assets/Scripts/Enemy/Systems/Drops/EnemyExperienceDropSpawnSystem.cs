@@ -58,6 +58,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         if (killedEventsBuffer.Length <= 0)
             return;
 
+        // Snapshot buffers to keep iteration stable even if later systems mutate the live buffers.
         NativeArray<EnemyExperienceDropPoolMapElement> poolMapSnapshot = poolMap.ToNativeArray(Allocator.Temp);
         NativeArray<EnemyKilledEventElement> killedEventsSnapshot = killedEventsBuffer.ToNativeArray(Allocator.Temp);
 
@@ -129,6 +130,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         float spawnAnimationMinDuration = math.max(0f, dropItemsConfig.SpawnAnimationMinDuration);
         float spawnAnimationMaxDuration = math.max(spawnAnimationMinDuration, dropItemsConfig.SpawnAnimationMaxDuration);
 
+        // Greedy decomposition: emit drops until the resolved total is exhausted or no valid definition fits.
         for (int stepIndex = 0; stepIndex < MaxSpawnStepsPerEnemy; stepIndex++)
         {
             if (remainingExperience <= PrecisionEpsilon)
@@ -209,6 +211,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         if (dropRadius <= PrecisionEpsilon)
             return centerPosition;
 
+        // Deterministic low-discrepancy samples spread drops without clustering and without per-frame RNG state.
         int sampleIndex = dropIndex + 1;
         float radialSample = ResolveHaltonSequence(sampleIndex, 2);
         float angularSample = ResolveHaltonSequence(sampleIndex, 3);

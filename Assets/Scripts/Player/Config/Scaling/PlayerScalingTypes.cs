@@ -71,7 +71,7 @@ public sealed class PlayerScalableStatDefinition
         bool changed = false;
         string sanitizedName = PlayerScalableStatNameUtility.Sanitize(statName, fallbackName);
 
-        if (string.Equals(statName, sanitizedName, StringComparison.Ordinal) == false)
+        if (!string.Equals(statName, sanitizedName, StringComparison.Ordinal))
         {
             statName = sanitizedName;
             changed = true;
@@ -82,7 +82,7 @@ public sealed class PlayerScalableStatDefinition
         if (statType == PlayerScalableStatType.Integer)
             sanitizedDefaultValue = Mathf.Round(sanitizedDefaultValue);
 
-        if (Mathf.Approximately(sanitizedDefaultValue, defaultValue) == false)
+        if (!Mathf.Approximately(sanitizedDefaultValue, defaultValue))
         {
             defaultValue = sanitizedDefaultValue;
             changed = true;
@@ -227,7 +227,7 @@ public sealed class PlayerStatScalingRule
             changed = true;
         }
 
-        if (addScaling == false && debugInConsole)
+        if (!addScaling && debugInConsole)
         {
             debugInConsole = false;
             changed = true;
@@ -235,7 +235,7 @@ public sealed class PlayerStatScalingRule
 
         Color sanitizedDebugColor = SanitizeDebugColor(debugColor);
 
-        if (AreColorsApproximatelyEqual(debugColor, sanitizedDebugColor) == false)
+        if (!AreColorsApproximatelyEqual(debugColor, sanitizedDebugColor))
         {
             debugColor = sanitizedDebugColor;
             changed = true;
@@ -380,7 +380,7 @@ public static class PlayerScalableStatNameUtility
         if (string.Equals(name, ReservedThisName, StringComparison.OrdinalIgnoreCase))
             return false;
 
-        if (char.IsLetter(name[0]) == false && name[0] != '_')
+        if (!char.IsLetter(name[0]) && name[0] != '_')
             return false;
 
         for (int index = 0; index < name.Length; index++)
@@ -421,7 +421,7 @@ public static class PlayerScalableStatNameUtility
             if (string.IsNullOrWhiteSpace(definition.StatName))
                 continue;
 
-            if (visitedNames.Add(definition.StatName) == false)
+            if (!visitedNames.Add(definition.StatName))
                 return false;
         }
 

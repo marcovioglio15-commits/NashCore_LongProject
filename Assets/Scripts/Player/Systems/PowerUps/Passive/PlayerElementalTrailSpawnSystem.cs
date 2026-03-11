@@ -53,7 +53,7 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
             ElementalTrailPassiveConfig trailConfig = passiveToolsState.ValueRO.ElementalTrail;
             bool hasValidPayload = trailConfig.TrailRadius > 0f && trailConfig.StacksPerTick > 0f;
 
-            if (hasValidPayload == false)
+            if (!hasValidPayload)
             {
                 trailState.ValueRW = currentTrailState;
                 continue;
@@ -75,7 +75,7 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
             bool distanceTriggered = trailConfig.TrailSpawnDistance > 0f && movedDistance >= trailConfig.TrailSpawnDistance;
             bool timerTriggered = nextSpawnTimer <= 0f;
 
-            if (distanceTriggered == false && timerTriggered == false)
+            if (!distanceTriggered && !timerTriggered)
             {
                 currentTrailState.SpawnTimer = nextSpawnTimer;
                 trailState.ValueRW = currentTrailState;
@@ -146,14 +146,14 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
                 continue;
             }
 
-            if (entityManager.Exists(segmentEntity) == false)
+            if (!entityManager.Exists(segmentEntity))
             {
                 trailSegments.RemoveAt(index);
                 index--;
                 continue;
             }
 
-            if (entityManager.HasComponent<ElementalTrailSegment>(segmentEntity) == false)
+            if (!entityManager.HasComponent<ElementalTrailSegment>(segmentEntity))
             {
                 trailSegments.RemoveAt(index);
                 index--;

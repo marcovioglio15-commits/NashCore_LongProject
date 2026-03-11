@@ -22,6 +22,8 @@ public sealed class PlayerProgressionPresetsPanel
         "version",
         "scalableStats",
         "scalingRules",
+        "schedules",
+        "equippedScheduleId",
         "legacyExperienceRequiredPerLevel",
         "legacyBaseStats"
     };
@@ -318,7 +320,7 @@ public sealed class PlayerProgressionPresetsPanel
             return;
         }
 
-        if (selectedPreset == null || filteredPresets.Contains(selectedPreset) == false)
+        if (selectedPreset == null || !filteredPresets.Contains(selectedPreset))
         {
             SelectPreset(filteredPresets[0]);
 
@@ -465,7 +467,7 @@ public sealed class PlayerProgressionPresetsPanel
 
         bool confirmed = EditorUtility.DisplayDialog("Delete Progression Preset", "Delete the selected progression preset asset?", "Delete", "Cancel");
 
-        if (confirmed == false)
+        if (!confirmed)
         {
             return;
         }
@@ -673,12 +675,60 @@ public sealed class PlayerProgressionPresetsPanel
             milestonesContainer.Add(scalableField);
         }
 
-        if (hasVisibleMilestonesField == false)
+        if (!hasVisibleMilestonesField)
         {
             Label noFieldsLabel = new Label("No milestone fields available on this preset.");
             noFieldsLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
             milestonesContainer.Add(noFieldsLabel);
         }
+    }
+
+    private void BuildSchedulesSection()
+    {
+        VisualElement schedulesContainer = CreateSectionContainer("Schedules");
+        SerializedProperty schedulesProperty = presetSerializedObject.FindProperty("schedules");
+        SerializedProperty equippedScheduleIdProperty = presetSerializedObject.FindProperty("equippedScheduleId");
+
+        if (schedulesProperty == null || equippedScheduleIdProperty == null)
+        {
+            Label missingLabel = new Label("Schedule data is missing on this preset.");
+            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            schedulesContainer.Add(missingLabel);
+            return;
+        }
+
+        Label infoLabel = new Label("Define repeating level-up stat sequences and select the schedule equipped at runtime.");
+        infoLabel.style.marginBottom = 4f;
+        schedulesContainer.Add(infoLabel);
+
+        List<string> scheduleIdOptions = BuildScheduleIdOptions(schedulesProperty);
+        List<string> popupOptions = new List<string>();
+        popupOptions.Add("<None>");
+
+        for (int optionIndex = 0; optionIndex < scheduleIdOptions.Count; optionIndex++)
+            popupOptions.Add(scheduleIdOptions[optionIndex]);
+
+        string selectedLabel = ResolveSchedulePopupLabel(popupOptions, equippedScheduleIdProperty.stringValue);
+        PopupField<string> equippedSchedulePopup = new PopupField<string>("Equipped Schedule", popupOptions, selectedLabel);
+        equippedSchedulePopup.RegisterValueChangedCallback(evt =>
+        {
+            presetSerializedObject.Update();
+            equippedScheduleIdProperty.stringValue = string.Equals(evt.newValue, "<None>", StringComparison.Ordinal) ? string.Empty : evt.newValue;
+            presetSerializedObject.ApplyModifiedProperties();
+            PlayerManagementDraftSession.MarkDirty();
+        });
+        schedulesContainer.Add(equippedSchedulePopup);
+
+        if (scheduleIdOptions.Count <= 0)
+        {
+            HelpBox warningBox = new HelpBox("No schedules available. Create at least one schedule to enable runtime level-up sequencing.", HelpBoxMessageType.Warning);
+            warningBox.style.marginBottom = 4f;
+            schedulesContainer.Add(warningBox);
+        }
+
+        PropertyField schedulesField = new PropertyField(schedulesProperty, "Schedule Definitions");
+        schedulesField.BindProperty(schedulesProperty);
+        schedulesContainer.Add(schedulesField);
     }
 
     private static bool ShouldSkipMilestonesRootProperty(SerializedProperty property)
@@ -690,6 +740,58 @@ public sealed class PlayerProgressionPresetsPanel
             return true;
 
         return MilestonesExcludedRootPropertyNames.Contains(property.name);
+    }
+
+    private static List<string> BuildScheduleIdOptions(SerializedProperty schedulesProperty)
+    {
+        List<string> options = new List<string>();
+
+        if (schedulesProperty == null)
+            return options;
+
+        HashSet<string> visitedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int scheduleIndex = 0; scheduleIndex < schedulesProperty.arraySize; scheduleIndex++)
+        {
+            SerializedProperty scheduleProperty = schedulesProperty.GetArrayElementAtIndex(scheduleIndex);
+
+            if (scheduleProperty == null)
+                continue;
+
+            SerializedProperty scheduleIdProperty = scheduleProperty.FindPropertyRelative("scheduleId");
+
+            if (scheduleIdProperty == null || string.IsNullOrWhiteSpace(scheduleIdProperty.stringValue))
+                continue;
+
+            string scheduleId = scheduleIdProperty.stringValue.Trim();
+
+            if (!visitedIds.Add(scheduleId))
+                continue;
+
+            options.Add(scheduleId);
+        }
+
+        options.Sort(StringComparer.OrdinalIgnoreCase);
+        return options;
+    }
+
+    private static string ResolveSchedulePopupLabel(List<string> popupOptions, string equippedScheduleId)
+    {
+        if (popupOptions == null || popupOptions.Count <= 0)
+            return "<None>";
+
+        if (string.IsNullOrWhiteSpace(equippedScheduleId))
+            return "<None>";
+
+        for (int optionIndex = 0; optionIndex < popupOptions.Count; optionIndex++)
+        {
+            string option = popupOptions[optionIndex];
+
+            if (string.Equals(option, equippedScheduleId, StringComparison.OrdinalIgnoreCase))
+                return option;
+        }
+
+        return "<None>";
     }
 
     private void RefreshScalableStatsWarnings(VisualElement warningsRoot,
@@ -734,7 +836,7 @@ public sealed class PlayerProgressionPresetsPanel
 
     private string ValidateScalableStatEntry(string statName, int statIndex, SerializedProperty scalableStatsProperty)
     {
-        if (PlayerScalableStatNameUtility.IsValid(statName) == false)
+        if (!PlayerScalableStatNameUtility.IsValid(statName))
             return "Invalid name. Use letters/digits/underscore, start with letter or underscore, and avoid 'this'.";
 
         for (int index = 0; index < scalableStatsProperty.arraySize; index++)
@@ -748,7 +850,7 @@ public sealed class PlayerProgressionPresetsPanel
             if (otherStatNameProperty == null)
                 continue;
 
-            if (string.Equals(otherStatNameProperty.stringValue, statName, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(otherStatNameProperty.stringValue, statName, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return "Duplicate name.";
@@ -766,6 +868,7 @@ public sealed class PlayerProgressionPresetsPanel
 
         AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
         AddSectionButton(buttonsRoot, SectionType.Milestones, "Milestones");
+        AddSectionButton(buttonsRoot, SectionType.Schedules, "Schedules");
         AddSectionButton(buttonsRoot, SectionType.ScalableStats, "Scalable Stats");
         return buttonsRoot;
     }
@@ -807,6 +910,9 @@ public sealed class PlayerProgressionPresetsPanel
                 return;
             case SectionType.Milestones:
                 BuildMilestonesSection();
+                return;
+            case SectionType.Schedules:
+                BuildSchedulesSection();
                 return;
             case SectionType.ScalableStats:
                 BuildScalableStatsSection();
@@ -922,7 +1028,8 @@ public sealed class PlayerProgressionPresetsPanel
     {
         Metadata = 0,
         Milestones = 1,
-        ScalableStats = 2
+        Schedules = 2,
+        ScalableStats = 3
     }
     #endregion
 }

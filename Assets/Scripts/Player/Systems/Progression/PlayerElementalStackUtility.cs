@@ -30,7 +30,7 @@ public static class PlayerElementalStackUtility
         if (stacksToAdd <= 0f)
             return false;
 
-        if (stackLookup.HasBuffer(playerEntity) == false)
+        if (!stackLookup.HasBuffer(playerEntity))
             return false;
 
         DynamicBuffer<PlayerElementStackElement> stackBuffer = stackLookup[playerEntity];
@@ -146,7 +146,7 @@ public static class PlayerElementalStackUtility
                 bool wasDotActive = stackElement.DotRemainingSeconds > 0f;
                 stackElement.DotRemainingSeconds = math.max(stackElement.DotRemainingSeconds, dotDurationSeconds);
 
-                if (wasDotActive == false ||
+                if (!wasDotActive ||
                     stackElement.DotTickTimer <= 0f ||
                     stackElement.DotTickTimer > dotTickInterval)
                     stackElement.DotTickTimer = dotTickInterval;

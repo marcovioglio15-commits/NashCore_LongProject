@@ -106,7 +106,7 @@ public static class EnemyManagementDraftSession
 
     public static void RecomputePendingChanges()
     {
-        if (isInitialized == false)
+        if (!isInitialized)
         {
             hasPendingChanges = false;
             return;
@@ -130,13 +130,13 @@ public static class EnemyManagementDraftSession
 
         foreach (KeyValuePair<string, string> baselineEntry in baselineJsonByPath)
         {
-            if (currentState.TryGetValue(baselineEntry.Key, out string currentJson) == false)
+            if (!currentState.TryGetValue(baselineEntry.Key, out string currentJson))
             {
                 hasPendingChanges = true;
                 return;
             }
 
-            if (string.Equals(baselineEntry.Value, currentJson, StringComparison.Ordinal) == false)
+            if (!string.Equals(baselineEntry.Value, currentJson, StringComparison.Ordinal))
             {
                 hasPendingChanges = true;
                 return;
@@ -159,7 +159,7 @@ public static class EnemyManagementDraftSession
 
     public static void Discard()
     {
-        if (isInitialized == false)
+        if (!isInitialized)
             return;
 
         RestoreBaselineAssets();
@@ -334,7 +334,7 @@ public static class EnemyManagementDraftSession
         {
             string currentPath = currentPaths[pathIndex];
 
-            if (currentPath.StartsWith(TrackedEnemyAssetsRoot, StringComparison.Ordinal) == false)
+            if (!currentPath.StartsWith(TrackedEnemyAssetsRoot, StringComparison.Ordinal))
                 continue;
 
             if (baselineJsonByPath.ContainsKey(currentPath))
@@ -381,7 +381,7 @@ public static class EnemyManagementDraftSession
 
             UnityEngine.Object assetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
 
-            if (IsRenamablePresetAsset(assetObject) == false)
+            if (!IsRenamablePresetAsset(assetObject))
                 continue;
 
             string currentFileName = Path.GetFileNameWithoutExtension(assetPath);
@@ -407,7 +407,7 @@ public static class EnemyManagementDraftSession
             string uniquePath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
             string renameError = AssetDatabase.MoveAsset(assetPath, uniquePath);
 
-            if (string.IsNullOrWhiteSpace(renameError) == false)
+            if (!string.IsNullOrWhiteSpace(renameError))
             {
                 Debug.LogWarning(string.Format("EnemyManagementDraftSession: failed to rename asset '{0}' to '{1}'. Error: {2}",
                                                assetPath,
@@ -479,7 +479,7 @@ public static class EnemyManagementDraftSession
         {
             string stagedPath = stagedPaths[pathIndex];
 
-            if (IsPathReferencedByLibraries(stagedPath) == false)
+            if (!IsPathReferencedByLibraries(stagedPath))
                 continue;
 
             stagedDeletePaths.Remove(stagedPath);
@@ -516,7 +516,7 @@ public static class EnemyManagementDraftSession
 
             string presetPath = AssetDatabase.GetAssetPath(preset);
 
-            if (string.Equals(presetPath, assetPath, StringComparison.Ordinal) == false)
+            if (!string.Equals(presetPath, assetPath, StringComparison.Ordinal))
                 continue;
 
             return true;

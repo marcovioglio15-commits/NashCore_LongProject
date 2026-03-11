@@ -307,7 +307,7 @@ public static class PlayerInputActionsAssetUtility
         string parentFolder = System.IO.Path.GetDirectoryName(folderPath);
         string folderName = System.IO.Path.GetFileName(folderPath);
 
-        if (string.IsNullOrWhiteSpace(parentFolder) == false && AssetDatabase.IsValidFolder(parentFolder) == false)
+        if (!string.IsNullOrWhiteSpace(parentFolder) && !AssetDatabase.IsValidFolder(parentFolder))
             EnsureFolder(parentFolder);
 
         AssetDatabase.CreateFolder(parentFolder, folderName);

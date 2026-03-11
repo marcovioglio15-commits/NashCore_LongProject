@@ -74,7 +74,7 @@ public partial struct PlayerMovementApplySystem : ISystem
                                                                                               out float3 correctionDisplacement,
                                                                                               out float3 correctionNormal);
 
-                    if (hasCorrection == false)
+                    if (!hasCorrection)
                         break;
 
                     resolvedPosition += correctionDisplacement;

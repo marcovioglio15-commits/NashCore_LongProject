@@ -67,19 +67,19 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// <returns>Void.</returns>
     public void OnUpdate(ref SystemState state)
     {
-        bool hasMissingHealth = missingHealthQuery.IsEmptyIgnoreFilter == false;
-        bool hasMissingShield = missingShieldQuery.IsEmptyIgnoreFilter == false;
-        bool hasMissingExperience = missingExperienceQuery.IsEmptyIgnoreFilter == false;
-        bool hasMissingLevel = missingLevelQuery.IsEmptyIgnoreFilter == false;
-        bool hasMissingExperienceCollection = missingExperienceCollectionQuery.IsEmptyIgnoreFilter == false;
-        bool hasMissingScalableStatsBuffer = missingScalableStatsBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingHealth = !missingHealthQuery.IsEmptyIgnoreFilter;
+        bool hasMissingShield = !missingShieldQuery.IsEmptyIgnoreFilter;
+        bool hasMissingExperience = !missingExperienceQuery.IsEmptyIgnoreFilter;
+        bool hasMissingLevel = !missingLevelQuery.IsEmptyIgnoreFilter;
+        bool hasMissingExperienceCollection = !missingExperienceCollectionQuery.IsEmptyIgnoreFilter;
+        bool hasMissingScalableStatsBuffer = !missingScalableStatsBufferQuery.IsEmptyIgnoreFilter;
 
-        if (hasMissingHealth == false &&
-            hasMissingShield == false &&
-            hasMissingExperience == false &&
-            hasMissingLevel == false &&
-            hasMissingExperienceCollection == false &&
-            hasMissingScalableStatsBuffer == false)
+        if (!hasMissingHealth &&
+            !hasMissingShield &&
+            !hasMissingExperience &&
+            !hasMissingLevel &&
+            !hasMissingExperienceCollection &&
+            !hasMissingScalableStatsBuffer)
         {
             state.Enabled = false;
             return;
@@ -108,19 +108,19 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
 
-        bool hasRemainingMissingHealth = missingHealthQuery.IsEmptyIgnoreFilter == false;
-        bool hasRemainingMissingShield = missingShieldQuery.IsEmptyIgnoreFilter == false;
-        bool hasRemainingMissingExperience = missingExperienceQuery.IsEmptyIgnoreFilter == false;
-        bool hasRemainingMissingLevel = missingLevelQuery.IsEmptyIgnoreFilter == false;
-        bool hasRemainingMissingExperienceCollection = missingExperienceCollectionQuery.IsEmptyIgnoreFilter == false;
-        bool hasRemainingMissingScalableStatsBuffer = missingScalableStatsBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasRemainingMissingHealth = !missingHealthQuery.IsEmptyIgnoreFilter;
+        bool hasRemainingMissingShield = !missingShieldQuery.IsEmptyIgnoreFilter;
+        bool hasRemainingMissingExperience = !missingExperienceQuery.IsEmptyIgnoreFilter;
+        bool hasRemainingMissingLevel = !missingLevelQuery.IsEmptyIgnoreFilter;
+        bool hasRemainingMissingExperienceCollection = !missingExperienceCollectionQuery.IsEmptyIgnoreFilter;
+        bool hasRemainingMissingScalableStatsBuffer = !missingScalableStatsBufferQuery.IsEmptyIgnoreFilter;
 
-        if (hasRemainingMissingHealth == false &&
-            hasRemainingMissingShield == false &&
-            hasRemainingMissingExperience == false &&
-            hasRemainingMissingLevel == false &&
-            hasRemainingMissingExperienceCollection == false &&
-            hasRemainingMissingScalableStatsBuffer == false)
+        if (!hasRemainingMissingHealth &&
+            !hasRemainingMissingShield &&
+            !hasRemainingMissingExperience &&
+            !hasRemainingMissingLevel &&
+            !hasRemainingMissingExperienceCollection &&
+            !hasRemainingMissingScalableStatsBuffer)
             state.Enabled = false;
     }
     #endregion
@@ -141,7 +141,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             Entity entity = entities[index];
             PlayerControllerConfig controllerConfig = configs[index];
 
-            if (controllerConfig.Config.IsCreated == false)
+            if (!controllerConfig.Config.IsCreated)
                 continue;
 
             float maxHealth = controllerConfig.Config.Value.HealthStatistics.MaxHealth;
@@ -175,7 +175,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             Entity entity = entities[index];
             PlayerControllerConfig controllerConfig = configs[index];
 
-            if (controllerConfig.Config.IsCreated == false)
+            if (!controllerConfig.Config.IsCreated)
                 continue;
 
             float maxShield = controllerConfig.Config.Value.HealthStatistics.MaxShield;
@@ -300,7 +300,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             PlayerProgressionConfig progressionConfig = configs[entityIndex];
             DynamicBuffer<PlayerScalableStatElement> scalableStatsBuffer = commandBuffer.AddBuffer<PlayerScalableStatElement>(entity);
 
-            if (progressionConfig.Config.IsCreated == false)
+            if (!progressionConfig.Config.IsCreated)
                 continue;
 
             ref BlobArray<PlayerScalableStatBlob> scalableStats = ref progressionConfig.Config.Value.ScalableStats;
@@ -330,7 +330,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
 
     private static float ResolveScalableStatDefaultValue(PlayerProgressionConfig progressionConfig, string statName, float fallbackValue)
     {
-        if (progressionConfig.Config.IsCreated == false)
+        if (!progressionConfig.Config.IsCreated)
             return fallbackValue;
 
         ref BlobArray<PlayerScalableStatBlob> scalableStats = ref progressionConfig.Config.Value.ScalableStats;
@@ -340,7 +340,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             ref PlayerScalableStatBlob scalableStat = ref scalableStats[index];
             string scalableStatName = scalableStat.Name.ToString();
 
-            if (string.Equals(scalableStatName, statName, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(scalableStatName, statName, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             float resolvedValue = scalableStat.DefaultValue;
@@ -356,7 +356,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
 
     private static float ResolveExperiencePickupRadius(PlayerProgressionConfig progressionConfig, float fallbackValue)
     {
-        if (progressionConfig.Config.IsCreated == false)
+        if (!progressionConfig.Config.IsCreated)
             return fallbackValue;
 
         float pickupRadius = progressionConfig.Config.Value.ExperiencePickupRadius;

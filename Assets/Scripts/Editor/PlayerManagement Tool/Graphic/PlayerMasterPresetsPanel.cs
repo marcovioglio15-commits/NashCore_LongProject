@@ -143,7 +143,7 @@ public sealed class PlayerMasterPresetsPanel
         AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot, null, null, null, null);
         RestoreOpenSidePanels();
 
-        if (m_SidePanels.ContainsKey(m_ActivePanel) == false)
+        if (!m_SidePanels.ContainsKey(m_ActivePanel))
             m_ActivePanel = PlayerManagementWindow.PanelType.PlayerMasterPresets;
 
         SetActivePanel(m_ActivePanel);
@@ -317,7 +317,7 @@ public sealed class PlayerMasterPresetsPanel
             return;
         }
 
-        if (m_SelectedPreset == null || m_FilteredPresets.Contains(m_SelectedPreset) == false)
+        if (m_SelectedPreset == null || !m_FilteredPresets.Contains(m_SelectedPreset))
         {
             SelectPreset(m_FilteredPresets[0]);
 
@@ -433,7 +433,7 @@ public sealed class PlayerMasterPresetsPanel
 
         bool confirmed = EditorUtility.DisplayDialog("Delete Master Preset", "Delete the selected master preset asset?", "Delete", "Cancel");
 
-        if (confirmed == false)
+        if (!confirmed)
             return;
 
         Undo.RecordObject(m_Library, "Delete Master Preset");
@@ -810,7 +810,7 @@ public sealed class PlayerMasterPresetsPanel
         });
         sectionContainer.Add(wallsLayerField);
 
-        if (configuredLayerIndex < 0 && string.IsNullOrWhiteSpace(configuredLayerName) == false)
+        if (configuredLayerIndex < 0 && !string.IsNullOrWhiteSpace(configuredLayerName))
         {
             HelpBox warningBox = new HelpBox(string.Format("Layer '{0}' does not exist. Select an existing layer.", configuredLayerName), HelpBoxMessageType.Warning);
             sectionContainer.Add(warningBox);
@@ -1020,7 +1020,7 @@ public sealed class PlayerMasterPresetsPanel
     private void FindPlayerPrefab()
     {
         // Resolve candidate prefab and show dialog when not found.
-        if (ManagementToolPrefabUtility.TryFindFirstPrefabWithComponent<PlayerAuthoring>(out GameObject prefab) == false)
+        if (!ManagementToolPrefabUtility.TryFindFirstPrefabWithComponent<PlayerAuthoring>(out GameObject prefab))
         {
             EditorUtility.DisplayDialog("Find Player Prefab", "No prefab with PlayerAuthoring was found.", "OK");
             return;
@@ -1148,7 +1148,7 @@ public sealed class PlayerMasterPresetsPanel
             return;
 
         // Resolve side panel entry and remove its tab UI.
-        if (m_SidePanels.TryGetValue(panelType, out SidePanelEntry entry) == false)
+        if (!m_SidePanels.TryGetValue(panelType, out SidePanelEntry entry))
             return;
 
         if (entry != null && entry.TabContainer != null)
@@ -1403,7 +1403,7 @@ public sealed class PlayerMasterPresetsPanel
     private void SetActivePanel(PlayerManagementWindow.PanelType panelType)
     {
         // Resolve panel entry and guard against missing content host.
-        if (m_SidePanels.TryGetValue(panelType, out SidePanelEntry entry) == false)
+        if (!m_SidePanels.TryGetValue(panelType, out SidePanelEntry entry))
             return;
 
         if (m_ContentHost == null)
@@ -1412,7 +1412,7 @@ public sealed class PlayerMasterPresetsPanel
         // Persist selected panel except while startup restore is in progress.
         m_ActivePanel = panelType;
 
-        if (m_SuppressStateWrite == false)
+        if (!m_SuppressStateWrite)
             ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, m_ActivePanel);
 
         // Swap visible panel root and refresh tab styles.
@@ -1532,7 +1532,7 @@ public sealed class PlayerMasterPresetsPanel
         string parentFolder = Path.GetDirectoryName(folderPath);
         string folderName = Path.GetFileName(folderPath);
 
-        if (string.IsNullOrWhiteSpace(parentFolder) == false && AssetDatabase.IsValidFolder(parentFolder) == false)
+        if (!string.IsNullOrWhiteSpace(parentFolder) && !AssetDatabase.IsValidFolder(parentFolder))
             EnsureFolder(parentFolder);
 
         AssetDatabase.CreateFolder(parentFolder, folderName);

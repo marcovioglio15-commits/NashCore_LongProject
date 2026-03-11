@@ -2393,8 +2393,12 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     [Tooltip("Input Action ID used for the secondary active tool slot.")]
     [SerializeField] private string secondaryToolActionId;
 
-    [Header("Drop Pools")]
-    [Tooltip("Global pool catalog available for power-up entries.")]
+    [Header("Tiers")]
+    [Tooltip("Tier catalog used by progression milestones to roll weighted modular power-ups.")]
+    [SerializeField] private List<PowerUpTierLevelDefinition> tierLevels = new List<PowerUpTierLevelDefinition>();
+
+    [Tooltip("Legacy drop-pool catalog kept only for migration to the tier model.")]
+    [HideInInspector]
     [SerializeField] private List<string> dropPoolCatalog = new List<string>
     {
         "Milestone",
@@ -2519,6 +2523,14 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         get
         {
             return secondaryToolActionId;
+        }
+    }
+
+    public IReadOnlyList<PowerUpTierLevelDefinition> TierLevels
+    {
+        get
+        {
+            return tierLevels;
         }
     }
 
@@ -3092,6 +3104,9 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     private void ValidateCollections()
     {
+        if (tierLevels == null)
+            tierLevels = new List<PowerUpTierLevelDefinition>();
+
         if (dropPoolCatalog == null)
             dropPoolCatalog = new List<string>();
 
@@ -3215,6 +3230,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             passivePowerUp.Validate();
         }
 
+        ValidateTierLevels();
         ValidateElementalVfxAssignments();
         MigrateLoadoutIds();
 
@@ -3245,6 +3261,163 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             if (string.IsNullOrWhiteSpace(scalingRule.StatKey))
                 scalingRules.RemoveAt(index);
         }
+    }
+
+    private void ValidateTierLevels()
+    {
+        EnsureDefaultTierLevelsIfMissing();
+        HashSet<string> validActivePowerUpIds = CollectModularPowerUpIds(activePowerUps);
+        HashSet<string> validPassivePowerUpIds = CollectModularPowerUpIds(passivePowerUps);
+        HashSet<string> visitedTierIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int tierIndex = 0; tierIndex < tierLevels.Count; tierIndex++)
+        {
+            PowerUpTierLevelDefinition tierLevel = tierLevels[tierIndex];
+
+            if (tierLevel == null)
+            {
+                tierLevel = new PowerUpTierLevelDefinition();
+                tierLevels[tierIndex] = tierLevel;
+            }
+
+            string fallbackTierId = string.Format("Tier{0}", tierIndex + 1);
+            tierLevel.Validate(fallbackTierId);
+        }
+
+        for (int tierIndex = tierLevels.Count - 1; tierIndex >= 0; tierIndex--)
+        {
+            PowerUpTierLevelDefinition tierLevel = tierLevels[tierIndex];
+
+            if (tierLevel == null)
+            {
+                tierLevels.RemoveAt(tierIndex);
+                continue;
+            }
+
+            tierLevel.RemoveInvalidEntries(validActivePowerUpIds, validPassivePowerUpIds);
+            string tierId = tierLevel.TierId;
+
+            if (string.IsNullOrWhiteSpace(tierId))
+            {
+                tierLevels.RemoveAt(tierIndex);
+                continue;
+            }
+
+            if (visitedTierIds.Add(tierId))
+                continue;
+
+            tierLevels.RemoveAt(tierIndex);
+        }
+    }
+
+    private void EnsureDefaultTierLevelsIfMissing()
+    {
+        if (tierLevels.Count > 0)
+            return;
+
+        List<string> legacyPoolIds = BuildDefaultDropPools();
+
+        if (legacyPoolIds.Count <= 0)
+        {
+            tierLevels.Add(new PowerUpTierLevelDefinition());
+            return;
+        }
+
+        for (int poolIndex = 0; poolIndex < legacyPoolIds.Count; poolIndex++)
+        {
+            string poolId = legacyPoolIds[poolIndex];
+
+            if (string.IsNullOrWhiteSpace(poolId))
+                continue;
+
+            PowerUpTierLevelDefinition tierLevel = new PowerUpTierLevelDefinition();
+            tierLevel.Configure(poolId, BuildTierEntriesFromLegacyPool(poolId));
+            tierLevel.Validate(poolId);
+            tierLevels.Add(tierLevel);
+        }
+
+        if (tierLevels.Count <= 0)
+            tierLevels.Add(new PowerUpTierLevelDefinition());
+    }
+
+    private List<PowerUpTierEntryDefinition> BuildTierEntriesFromLegacyPool(string legacyPoolId)
+    {
+        List<PowerUpTierEntryDefinition> entries = new List<PowerUpTierEntryDefinition>();
+        AddTierEntriesFromLegacyPool(entries, activePowerUps, PowerUpTierEntryKind.Active, legacyPoolId);
+        AddTierEntriesFromLegacyPool(entries, passivePowerUps, PowerUpTierEntryKind.Passive, legacyPoolId);
+        return entries;
+    }
+
+    private static void AddTierEntriesFromLegacyPool(List<PowerUpTierEntryDefinition> destinationEntries,
+                                                     List<ModularPowerUpDefinition> modularPowerUps,
+                                                     PowerUpTierEntryKind entryKind,
+                                                     string legacyPoolId)
+    {
+        if (destinationEntries == null || modularPowerUps == null || string.IsNullOrWhiteSpace(legacyPoolId))
+            return;
+
+        for (int powerUpIndex = 0; powerUpIndex < modularPowerUps.Count; powerUpIndex++)
+        {
+            ModularPowerUpDefinition modularPowerUp = modularPowerUps[powerUpIndex];
+
+            if (modularPowerUp == null)
+                continue;
+
+            PowerUpCommonData commonData = modularPowerUp.CommonData;
+
+            if (commonData == null || string.IsNullOrWhiteSpace(commonData.PowerUpId))
+                continue;
+
+            IReadOnlyList<string> legacyPools = commonData.DropPools;
+            bool isInLegacyPool = false;
+
+            if (legacyPools != null)
+            {
+                for (int poolIndex = 0; poolIndex < legacyPools.Count; poolIndex++)
+                {
+                    string poolId = legacyPools[poolIndex];
+
+                    if (!string.Equals(poolId, legacyPoolId, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    isInLegacyPool = true;
+                    break;
+                }
+            }
+
+            if (!isInLegacyPool)
+                continue;
+
+            PowerUpTierEntryDefinition entry = new PowerUpTierEntryDefinition();
+            entry.Configure(entryKind, commonData.PowerUpId, 1f);
+            entry.Validate(commonData.PowerUpId);
+            destinationEntries.Add(entry);
+        }
+    }
+
+    private static HashSet<string> CollectModularPowerUpIds(List<ModularPowerUpDefinition> modularPowerUps)
+    {
+        HashSet<string> powerUpIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (modularPowerUps == null)
+            return powerUpIds;
+
+        for (int powerUpIndex = 0; powerUpIndex < modularPowerUps.Count; powerUpIndex++)
+        {
+            ModularPowerUpDefinition modularPowerUp = modularPowerUps[powerUpIndex];
+
+            if (modularPowerUp == null)
+                continue;
+
+            PowerUpCommonData commonData = modularPowerUp.CommonData;
+
+            if (commonData == null || string.IsNullOrWhiteSpace(commonData.PowerUpId))
+                continue;
+
+            powerUpIds.Add(commonData.PowerUpId.Trim());
+        }
+
+        return powerUpIds;
     }
 
     private void MigrateModuleDefinitionsToUnifiedKinds()
@@ -3389,7 +3562,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             validModuleIds.Add(mappedModuleId);
         }
 
-        if (validModuleIds.Contains(ModuleIdTriggerEvent) == false)
+        if (!validModuleIds.Contains(ModuleIdTriggerEvent))
         {
             moduleDefinitions.Add(CreateModuleDefinition(ModuleIdTriggerEvent,
                                                          "Trigger Event",
@@ -3596,7 +3769,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             if (moduleDefinition == null)
                 continue;
 
-            if (string.Equals(moduleDefinition.ModuleId, moduleId, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(moduleDefinition.ModuleId, moduleId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return moduleDefinition;
@@ -3607,12 +3780,12 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     private void ValidateActivePowerUpLoadout()
     {
-        if (string.IsNullOrWhiteSpace(primaryActivePowerUpId) == false &&
-            HasActivePowerUpWithId(primaryActivePowerUpId) == false)
+        if (!string.IsNullOrWhiteSpace(primaryActivePowerUpId) &&
+            !HasActivePowerUpWithId(primaryActivePowerUpId))
             primaryActivePowerUpId = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(secondaryActivePowerUpId) == false &&
-            HasActivePowerUpWithId(secondaryActivePowerUpId) == false)
+        if (!string.IsNullOrWhiteSpace(secondaryActivePowerUpId) &&
+            !HasActivePowerUpWithId(secondaryActivePowerUpId))
             secondaryActivePowerUpId = string.Empty;
     }
 
@@ -3634,7 +3807,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                 continue;
             }
 
-            if (HasPassivePowerUpWithId(equippedPassivePowerUpId) == false)
+            if (!HasPassivePowerUpWithId(equippedPassivePowerUpId))
             {
                 equippedPassivePowerUpIds.RemoveAt(index);
                 index--;
@@ -3651,12 +3824,12 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
 
     private void ValidateToolLoadout()
     {
-        if (string.IsNullOrWhiteSpace(primaryActiveToolId) == false &&
-            HasActiveToolWithId(primaryActiveToolId) == false)
+        if (!string.IsNullOrWhiteSpace(primaryActiveToolId) &&
+            !HasActiveToolWithId(primaryActiveToolId))
             primaryActiveToolId = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(secondaryActiveToolId) == false &&
-            HasActiveToolWithId(secondaryActiveToolId) == false)
+        if (!string.IsNullOrWhiteSpace(secondaryActiveToolId) &&
+            !HasActiveToolWithId(secondaryActiveToolId))
             secondaryActiveToolId = string.Empty;
 
         if (string.IsNullOrWhiteSpace(primaryActiveToolId) && activeTools.Count > 0)
@@ -3691,7 +3864,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                 continue;
             }
 
-            if (visitedElements.Add(entry.ElementType) == false)
+            if (!visitedElements.Add(entry.ElementType))
             {
                 elementalVfxByElement.RemoveAt(index);
                 index--;
@@ -3725,11 +3898,11 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     private void MigrateLoadoutIds()
     {
         if (string.IsNullOrWhiteSpace(primaryActivePowerUpId) &&
-            string.IsNullOrWhiteSpace(primaryActiveToolId) == false)
+            !string.IsNullOrWhiteSpace(primaryActiveToolId))
             primaryActivePowerUpId = primaryActiveToolId;
 
         if (string.IsNullOrWhiteSpace(secondaryActivePowerUpId) &&
-            string.IsNullOrWhiteSpace(secondaryActiveToolId) == false)
+            !string.IsNullOrWhiteSpace(secondaryActiveToolId))
             secondaryActivePowerUpId = secondaryActiveToolId;
 
         if (equippedPassivePowerUpIds == null)
@@ -3769,7 +3942,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             if (commonData == null)
                 continue;
 
-            if (string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return true;
@@ -3848,7 +4021,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             if (commonData == null)
                 continue;
 
-            if (string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return true;
@@ -3897,7 +4070,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             if (commonData == null)
                 continue;
 
-            if (string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return true;
@@ -3976,7 +4149,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
             if (commonData == null)
                 continue;
 
-            if (string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(commonData.PowerUpId, powerUpId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return true;
@@ -4028,7 +4201,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
                 continue;
             }
 
-            if (HasPassiveToolWithId(equippedPassiveToolId) == false)
+            if (!HasPassiveToolWithId(equippedPassiveToolId))
             {
                 equippedPassiveToolIds.RemoveAt(index);
                 index--;
@@ -4074,7 +4247,7 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         if (string.IsNullOrWhiteSpace(PassiveToolId))
             return;
 
-        if (HasPassiveToolWithId(PassiveToolId) == false)
+        if (!HasPassiveToolWithId(PassiveToolId))
             return;
 
         for (int index = 0; index < equippedPassiveToolIds.Count; index++)

@@ -150,7 +150,7 @@ public sealed class PassiveToolDefinitionPropertyDrawer : PropertyDrawer
 
         PassiveToolKind sanitizedKind = selectedKind;
 
-        if (SupportedKinds.Contains(sanitizedKind) == false)
+        if (!SupportedKinds.Contains(sanitizedKind))
             sanitizedKind = PassiveToolKind.ProjectileSize;
 
         if (toolKindProperty.enumValueIndex == (int)sanitizedKind)

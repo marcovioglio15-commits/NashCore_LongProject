@@ -204,7 +204,7 @@ public sealed class PlayerGamePhaseDefinition
 }
 
 /// <summary>
-/// Defines one level milestone override used to create one-time experience spikes.
+/// Defines one level milestone override used to create one-time experience spikes and optional power-up unlock rolls.
 /// </summary>
 [Serializable]
 public sealed class PlayerLevelUpMilestoneDefinition
@@ -217,6 +217,12 @@ public sealed class PlayerLevelUpMilestoneDefinition
 
     [Tooltip("Special required experience applied when this milestone level is active.")]
     [SerializeField] private float specialExpRequirement = 300f;
+
+    [Tooltip("Number of power-up extractions rolled when this milestone level is reached.")]
+    [SerializeField] private int powerUpUnlockRollCount = 1;
+
+    [Tooltip("Weighted tier candidates used to resolve milestone power-up extractions.")]
+    [SerializeField] private List<PlayerMilestoneTierRollDefinition> milestoneTierRolls = new List<PlayerMilestoneTierRollDefinition>();
     #endregion
 
     #endregion
@@ -235,6 +241,22 @@ public sealed class PlayerLevelUpMilestoneDefinition
         get
         {
             return specialExpRequirement;
+        }
+    }
+
+    public int PowerUpUnlockRollCount
+    {
+        get
+        {
+            return powerUpUnlockRollCount;
+        }
+    }
+
+    public IReadOnlyList<PlayerMilestoneTierRollDefinition> MilestoneTierRolls
+    {
+        get
+        {
+            return milestoneTierRolls;
         }
     }
     #endregion
@@ -263,6 +285,45 @@ public sealed class PlayerLevelUpMilestoneDefinition
         if (specialExpRequirement < 1f)
         {
             specialExpRequirement = Mathf.Max(1f, fallbackSpecialRequirement);
+        }
+
+        if (powerUpUnlockRollCount < 0)
+        {
+            powerUpUnlockRollCount = 0;
+        }
+
+        if (milestoneTierRolls == null)
+        {
+            milestoneTierRolls = new List<PlayerMilestoneTierRollDefinition>();
+        }
+
+        for (int tierRollIndex = 0; tierRollIndex < milestoneTierRolls.Count; tierRollIndex++)
+        {
+            PlayerMilestoneTierRollDefinition tierRoll = milestoneTierRolls[tierRollIndex];
+
+            if (tierRoll != null)
+            {
+                continue;
+            }
+
+            tierRoll = new PlayerMilestoneTierRollDefinition();
+            milestoneTierRolls[tierRollIndex] = tierRoll;
+        }
+
+        HashSet<string> visitedTierIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+
+        for (int tierRollIndex = milestoneTierRolls.Count - 1; tierRollIndex >= 0; tierRollIndex--)
+        {
+            PlayerMilestoneTierRollDefinition tierRoll = milestoneTierRolls[tierRollIndex];
+            tierRoll.Validate(string.Empty);
+
+            if (string.IsNullOrWhiteSpace(tierRoll.TierId))
+                continue;
+
+            if (visitedTierIds.Add(tierRoll.TierId))
+                continue;
+
+            milestoneTierRolls.RemoveAt(tierRollIndex);
         }
     }
     #endregion

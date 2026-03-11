@@ -67,7 +67,7 @@ public static class EnemyMasterPresetLibraryUtility
         string parentFolder = Path.GetDirectoryName(folderPath);
         string folderName = Path.GetFileName(folderPath);
 
-        if (string.IsNullOrWhiteSpace(parentFolder) == false && AssetDatabase.IsValidFolder(parentFolder) == false)
+        if (!string.IsNullOrWhiteSpace(parentFolder) && !AssetDatabase.IsValidFolder(parentFolder))
             EnsureFolder(parentFolder);
 
         AssetDatabase.CreateFolder(parentFolder, folderName);

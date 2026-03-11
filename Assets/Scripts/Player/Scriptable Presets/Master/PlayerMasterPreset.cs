@@ -135,7 +135,7 @@ public sealed class PlayerMasterPreset : ScriptableObject
         if (m_ProgressionPreset == null)
             return;
 
-        if (m_ProgressionPreset.TryGetLegacyHealth(out float legacyHealth) == false)
+        if (!m_ProgressionPreset.TryGetLegacyHealth(out float legacyHealth))
             return;
 
         bool changed = m_ControllerPreset.TryApplyLegacyMaxHealth(legacyHealth);

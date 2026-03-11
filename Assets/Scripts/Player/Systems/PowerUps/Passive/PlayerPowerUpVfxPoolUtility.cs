@@ -20,7 +20,7 @@ public static class PlayerPowerUpVfxPoolUtility
         if (prefabEntity == Entity.Null)
             return Entity.Null;
 
-        if (entityManager.Exists(prefabEntity) == false)
+        if (!entityManager.Exists(prefabEntity))
             return Entity.Null;
 
         for (int index = 0; index < poolBuffer.Length; index++)
@@ -40,7 +40,7 @@ public static class PlayerPowerUpVfxPoolUtility
             if (pooledEntity.Index < 0)
                 continue;
 
-            if (entityManager.Exists(pooledEntity) == false)
+            if (!entityManager.Exists(pooledEntity))
             {
                 poolBuffer.RemoveAt(index);
                 index--;
@@ -77,7 +77,7 @@ public static class PlayerPowerUpVfxPoolUtility
         if (vfxEntity.Index < 0)
             return;
 
-        if (entityManager.Exists(vfxEntity) == false)
+        if (!entityManager.Exists(vfxEntity))
             return;
 
         commandBuffer.RemoveComponent<PlayerPowerUpVfxLifetime>(vfxEntity);

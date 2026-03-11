@@ -82,25 +82,25 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                     DynamicBuffer<PlayerBombSpawnRequest>,
                                     DynamicBuffer<ShootRequest>>().WithEntityAccess())
         {
-            if (lookLookup.HasComponent(entity) == false)
+            if (!lookLookup.HasComponent(entity))
                 continue;
 
-            if (movementLookup.HasComponent(entity) == false)
+            if (!movementLookup.HasComponent(entity))
                 continue;
 
-            if (controllerLookup.HasComponent(entity) == false)
+            if (!controllerLookup.HasComponent(entity))
                 continue;
 
-            if (passiveToolsLookup.HasComponent(entity) == false)
+            if (!passiveToolsLookup.HasComponent(entity))
                 continue;
 
-            if (transformLookup.HasComponent(entity) == false)
+            if (!transformLookup.HasComponent(entity))
                 continue;
 
-            if (bulletTimeLookup.HasComponent(entity) == false)
+            if (!bulletTimeLookup.HasComponent(entity))
                 continue;
 
-            if (healOverTimeLookup.HasComponent(entity) == false)
+            if (!healOverTimeLookup.HasComponent(entity))
                 continue;
 
             PlayerLookState lookState = lookLookup[entity];
@@ -114,8 +114,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             bool secondaryPressed = inputState.ValueRO.PowerUpSecondary > InputPressThreshold;
             bool primaryPressedThisFrame = primaryPressed && powerUpsState.ValueRO.PreviousPrimaryPressed == 0;
             bool secondaryPressedThisFrame = secondaryPressed && powerUpsState.ValueRO.PreviousSecondaryPressed == 0;
-            bool primaryReleasedThisFrame = primaryPressed == false && powerUpsState.ValueRO.PreviousPrimaryPressed != 0;
-            bool secondaryReleasedThisFrame = secondaryPressed == false && powerUpsState.ValueRO.PreviousSecondaryPressed != 0;
+            bool primaryReleasedThisFrame = !primaryPressed && powerUpsState.ValueRO.PreviousPrimaryPressed != 0;
+            bool secondaryReleasedThisFrame = !secondaryPressed && powerUpsState.ValueRO.PreviousSecondaryPressed != 0;
             float3 desiredDirection = movementState.DesiredDirection;
 
             if (math.lengthsq(desiredDirection) > DirectionLengthEpsilon)
@@ -138,6 +138,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             bool shieldChanged = false;
             PlayerShield updatedShield = default;
 
+            // Process both slots every frame so cooldown/charge/cost rules stay symmetric and can interrupt each other.
             ProcessSlotInput(in powerUpsConfig.ValueRO.PrimarySlot,
                              in powerUpsConfig.ValueRO.SecondarySlot,
                              primaryPressed,
@@ -204,6 +205,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                              ref updatedShield,
                              ref shieldChanged);
 
+            // Commit phase: write lookups only once after both slot passes have finalized state transitions.
             if (healthChanged)
                 healthLookup[entity] = updatedHealth;
 
@@ -307,36 +309,36 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                 break;
         }
 
-        if (activationTriggered == false)
+        if (!activationTriggered)
             return;
 
         if (cooldownRemaining > 0f)
             return;
 
-        if (CanExecuteTool(slotConfig,
-                           dashState,
-                           bulletTimeState,
-                           healOverTimeState,
-                           movementState,
-                           controllerConfig,
-                           localTransform,
-                           moveInput,
-                           lastValidMovementDirection,
-                           playerEntity,
-                           ref healthLookup,
-                           ref updatedHealth,
-                           ref healthChanged) == false)
+        if (!CanExecuteTool(slotConfig,
+                            dashState,
+                            bulletTimeState,
+                            healOverTimeState,
+                            movementState,
+                            controllerConfig,
+                            localTransform,
+                            moveInput,
+                            lastValidMovementDirection,
+                            playerEntity,
+                            ref healthLookup,
+                            ref updatedHealth,
+                            ref healthChanged))
             return;
 
-        if (CanPayActivationCost(slotConfig,
-                                 slotEnergy,
-                                 playerEntity,
-                                 ref healthLookup,
-                                 ref updatedHealth,
-                                 ref healthChanged,
-                                 ref shieldLookup,
-                                 ref updatedShield,
-                                 ref shieldChanged) == false)
+        if (!CanPayActivationCost(slotConfig,
+                                  slotEnergy,
+                                  playerEntity,
+                                  ref healthLookup,
+                                  ref updatedHealth,
+                                  ref healthChanged,
+                                  ref shieldLookup,
+                                  ref updatedShield,
+                                  ref shieldChanged))
             return;
 
         ConsumeActivationCost(slotConfig,
@@ -427,15 +429,15 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
         if (pressedThisFrame)
         {
-            if (CanPayActivationCost(slotConfig,
-                                     slotEnergy,
-                                     playerEntity,
-                                     ref healthLookup,
-                                     ref updatedHealth,
-                                     ref healthChanged,
-                                     ref shieldLookup,
-                                     ref updatedShield,
-                                     ref shieldChanged) == false)
+            if (!CanPayActivationCost(slotConfig,
+                                      slotEnergy,
+                                      playerEntity,
+                                      ref healthLookup,
+                                      ref updatedHealth,
+                                      ref healthChanged,
+                                      ref shieldLookup,
+                                      ref updatedShield,
+                                      ref shieldChanged))
             {
                 isCharging = 0;
                 charge = 0f;
@@ -448,15 +450,15 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
         if (isCharging != 0 && isPressed)
         {
-            if (CanPayActivationCost(slotConfig,
-                                     slotEnergy,
-                                     playerEntity,
-                                     ref healthLookup,
-                                     ref updatedHealth,
-                                     ref healthChanged,
-                                     ref shieldLookup,
-                                     ref updatedShield,
-                                     ref shieldChanged) == false)
+            if (!CanPayActivationCost(slotConfig,
+                                      slotEnergy,
+                                      playerEntity,
+                                      ref healthLookup,
+                                      ref updatedHealth,
+                                      ref healthChanged,
+                                      ref shieldLookup,
+                                      ref updatedShield,
+                                      ref shieldChanged))
             {
                 isCharging = 0;
                 charge = 0f;
@@ -475,7 +477,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                 isShootingSuppressed = 1;
         }
 
-        if (releasedThisFrame == false)
+        if (!releasedThisFrame)
             return;
 
         if (isCharging == 0)
@@ -560,7 +562,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                       in localTransform,
                                                       moveInput,
                                                       lastValidMovementDirection,
-                                                      out float3 _) == false)
+                                                      out float3 _))
                     return false;
 
                 return true;
@@ -592,9 +594,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                     healOverTimeState.IsActive != 0)
                     return false;
 
-                if (healthChanged == false)
+                if (!healthChanged)
                 {
-                    if (healthLookup.HasComponent(playerEntity) == false)
+                    if (!healthLookup.HasComponent(playerEntity))
                         return false;
 
                     updatedHealth = healthLookup[playerEntity];
@@ -659,9 +661,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
                 return true;
             case PowerUpResourceType.Health:
-                if (healthChanged == false)
+                if (!healthChanged)
                 {
-                    if (healthLookup.HasComponent(playerEntity) == false)
+                    if (!healthLookup.HasComponent(playerEntity))
                         return false;
 
                     updatedHealth = healthLookup[playerEntity];
@@ -676,9 +678,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
                 return true;
             case PowerUpResourceType.Shield:
-                if (shieldChanged == false)
+                if (!shieldChanged)
                 {
-                    if (shieldLookup.HasComponent(playerEntity) == false)
+                    if (!shieldLookup.HasComponent(playerEntity))
                         return false;
 
                     updatedShield = shieldLookup[playerEntity];
@@ -722,9 +724,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
                 return;
             case PowerUpResourceType.Health:
-                if (healthChanged == false)
+                if (!healthChanged)
                 {
-                    if (healthLookup.HasComponent(playerEntity) == false)
+                    if (!healthLookup.HasComponent(playerEntity))
                         return;
 
                     updatedHealth = healthLookup[playerEntity];
@@ -741,9 +743,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
                 return;
             case PowerUpResourceType.Shield:
-                if (shieldChanged == false)
+                if (!shieldChanged)
                 {
-                    if (shieldLookup.HasComponent(playerEntity) == false)
+                    if (!shieldLookup.HasComponent(playerEntity))
                         return;
 
                     updatedShield = shieldLookup[playerEntity];
@@ -858,12 +860,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                     float3 lastValidMovementDirection,
                                     ref PlayerDashState dashState)
     {
-        if (TryResolveDashActivationDirection(in movementState,
-                                              in controllerConfig,
-                                              in localTransform,
-                                              moveInput,
-                                              lastValidMovementDirection,
-                                              out float3 dashDirection) == false)
+        if (!TryResolveDashActivationDirection(in movementState,
+                                               in controllerConfig,
+                                               in localTransform,
+                                               moveInput,
+                                               lastValidMovementDirection,
+                                               out float3 dashDirection))
             return;
 
         float dashDuration = math.max(0.01f, slotConfig.Dash.Duration);
@@ -1035,9 +1037,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                   ref bool healthChanged,
                                                   ref PlayerHealOverTimeState healOverTimeState)
     {
-        if (healthChanged == false)
+        if (!healthChanged)
         {
-            if (healthLookup.HasComponent(playerEntity) == false)
+            if (!healthLookup.HasComponent(playerEntity))
                 return;
 
             updatedHealth = healthLookup[playerEntity];
@@ -1322,19 +1324,19 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         byte previousMask = movementState.PrevMoveMask;
         byte currentMask = movementState.CurrMoveMask;
 
-        if (PlayerControllerMath.IsDiagonalMask(previousMask) == false)
+        if (!PlayerControllerMath.IsDiagonalMask(previousMask))
         {
             dashDirection = float3.zero;
             return false;
         }
 
-        if (PlayerControllerMath.IsSingleAxisMask(currentMask) == false)
+        if (!PlayerControllerMath.IsSingleAxisMask(currentMask))
         {
             dashDirection = float3.zero;
             return false;
         }
 
-        if (PlayerControllerMath.IsReleaseOnly(previousMask, currentMask) == false)
+        if (!PlayerControllerMath.IsReleaseOnly(previousMask, currentMask))
         {
             dashDirection = float3.zero;
             return false;

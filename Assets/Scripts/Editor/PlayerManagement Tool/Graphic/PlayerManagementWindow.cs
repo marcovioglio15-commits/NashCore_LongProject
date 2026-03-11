@@ -50,7 +50,7 @@ public sealed class PlayerManagementWindow : EditorWindow
         saveChangesMessage = "There are unapplied changes in Player Management Tool. Apply before closing?";
 
         // Ensure a draft session exists before UI interactions begin.
-        if (PlayerManagementDraftSession.IsInitialized == false)
+        if (!PlayerManagementDraftSession.IsInitialized)
             PlayerManagementDraftSession.BeginSession();
 
         // Restore previously active panel and sync unsaved state flag.
@@ -85,7 +85,7 @@ public sealed class PlayerManagementWindow : EditorWindow
     private void OnDestroy()
     {
         // Keep the session only when there are unresolved pending changes.
-        if (hasUnsavedChanges == false)
+        if (!hasUnsavedChanges)
             PlayerManagementDraftSession.EndSession();
     }
 
@@ -203,7 +203,7 @@ public sealed class PlayerManagementWindow : EditorWindow
         toggle.value = isDefault;
         toggle.RegisterValueChangedCallback(evt =>
         {
-            if (evt.newValue == false)
+            if (!evt.newValue)
                 return;
 
             ShowPanel(panelType);

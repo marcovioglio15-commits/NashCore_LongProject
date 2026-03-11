@@ -62,6 +62,10 @@ public sealed class HUDManager : MonoBehaviour
 
     [Tooltip("Hide charge bars when the corresponding slot has no charge module.")]
     [SerializeField] private bool hideChargeBarsWhenModuleMissing = true;
+
+    [Header("Milestone Power-Up Selection")]
+    [Tooltip("Serialized HUD section that renders milestone choices and sends ECS selection commands.")]
+    [SerializeField] private HUDMilestoneSelectionSection milestoneSelectionSection = new HUDMilestoneSelectionSection();
     #endregion
 
     private World defaultWorld;
@@ -83,19 +87,25 @@ public sealed class HUDManager : MonoBehaviour
     private void Awake()
     {
         ClampSettings();
+        milestoneSelectionSection.Initialize();
         TryInitializeEcsBindings();
         ApplyInitialVisualState();
     }
 
+    private void OnDestroy()
+    {
+        milestoneSelectionSection.Dispose();
+    }
+
     private void Update()
     {
-        if (TryInitializeEcsBindings() == false)
+        if (!TryInitializeEcsBindings())
         {
             HandleMissingPlayer();
             return;
         }
 
-        if (TryResolvePlayerEntity(out Entity playerEntity) == false)
+        if (!TryResolvePlayerEntity(out Entity playerEntity))
         {
             HandleMissingPlayer();
             return;
@@ -104,6 +114,7 @@ public sealed class HUDManager : MonoBehaviour
         UpdateHealthBar(playerEntity);
         UpdateShieldBar(playerEntity);
         UpdatePowerUpBars(playerEntity);
+        milestoneSelectionSection.Update(entityManager, playerEntity);
     }
     #endregion
 
@@ -112,7 +123,7 @@ public sealed class HUDManager : MonoBehaviour
     {
         World currentWorld = World.DefaultGameObjectInjectionWorld;
 
-        if (currentWorld == null || currentWorld.IsCreated == false)
+        if (currentWorld == null || !currentWorld.IsCreated)
         {
             defaultWorld = null;
             playerQueryInitialized = false;
@@ -120,7 +131,7 @@ public sealed class HUDManager : MonoBehaviour
             return false;
         }
 
-        if (ReferenceEquals(defaultWorld, currentWorld) == false)
+        if (!ReferenceEquals(defaultWorld, currentWorld))
         {
             defaultWorld = currentWorld;
             playerQueryInitialized = false;
@@ -129,7 +140,7 @@ public sealed class HUDManager : MonoBehaviour
 
         entityManager = defaultWorld.EntityManager;
 
-        if (playerQueryInitialized == false)
+        if (!playerQueryInitialized)
         {
             EntityQueryDesc queryDescription = new EntityQueryDesc
             {
@@ -174,7 +185,7 @@ public sealed class HUDManager : MonoBehaviour
 
         Entity resolvedPlayerEntity = playerQuery.GetSingletonEntity();
 
-        if (entityManager.Exists(resolvedPlayerEntity) == false)
+        if (!entityManager.Exists(resolvedPlayerEntity))
         {
             playerEntity = Entity.Null;
             cachedPlayerEntity = Entity.Null;
@@ -193,7 +204,7 @@ public sealed class HUDManager : MonoBehaviour
         if (playerHealthFillImage == null)
             return;
 
-        if (entityManager.HasComponent<PlayerHealth>(playerEntity) == false)
+        if (!entityManager.HasComponent<PlayerHealth>(playerEntity))
         {
             HandleMissingHealthBar();
             return;
@@ -216,7 +227,7 @@ public sealed class HUDManager : MonoBehaviour
         if (playerShieldFillImage == null)
             return;
 
-        if (entityManager.HasComponent<PlayerShield>(playerEntity) == false)
+        if (!entityManager.HasComponent<PlayerShield>(playerEntity))
         {
             HandleMissingShieldBar();
             return;
@@ -236,11 +247,11 @@ public sealed class HUDManager : MonoBehaviour
 
     private void UpdatePowerUpBars(Entity playerEntity)
     {
-        if (HasAnyPowerUpBars() == false)
+        if (!HasAnyPowerUpBars())
             return;
 
-        if (entityManager.HasComponent<PlayerPowerUpsConfig>(playerEntity) == false ||
-            entityManager.HasComponent<PlayerPowerUpsState>(playerEntity) == false)
+        if (!entityManager.HasComponent<PlayerPowerUpsConfig>(playerEntity) ||
+            !entityManager.HasComponent<PlayerPowerUpsState>(playerEntity))
         {
             HandleMissingPowerUpBars();
             return;
@@ -277,7 +288,7 @@ public sealed class HUDManager : MonoBehaviour
         if (fillImage == null)
             return;
 
-        if (HasEnergyModule(in slotConfig) == false)
+        if (!HasEnergyModule(in slotConfig))
         {
             displayedNormalized = 0f;
 
@@ -312,7 +323,7 @@ public sealed class HUDManager : MonoBehaviour
         if (fillImage == null)
             return;
 
-        if (HasChargeModule(in slotConfig) == false)
+        if (!HasChargeModule(in slotConfig))
         {
             displayedNormalized = 0f;
 
@@ -326,7 +337,7 @@ public sealed class HUDManager : MonoBehaviour
             return;
         }
 
-        if (CanDisplayChargeProgress(in slotConfig, currentEnergy) == false)
+        if (!CanDisplayChargeProgress(in slotConfig, currentEnergy))
         {
             displayedNormalized = SmoothNormalized(displayedNormalized,
                                                    0f,
@@ -383,6 +394,8 @@ public sealed class HUDManager : MonoBehaviour
 
         if (secondaryChargeFillImage != null)
             ApplyFill(secondaryChargeFillImage, displayedSecondaryChargeNormalized);
+
+        milestoneSelectionSection.HandleMissingPlayer();
     }
 
     private void HandleMissingPlayer()
@@ -390,6 +403,7 @@ public sealed class HUDManager : MonoBehaviour
         HandleMissingHealthBar();
         HandleMissingShieldBar();
         HandleMissingPowerUpBars();
+        milestoneSelectionSection.HandleMissingPlayer();
     }
 
     private void HandleMissingHealthBar()

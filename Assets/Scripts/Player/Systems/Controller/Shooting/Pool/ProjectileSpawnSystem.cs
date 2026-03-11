@@ -63,6 +63,7 @@ public partial struct ProjectileSpawnSystem : ISystem
 
         try
         {
+            // Two-phase flow: collect requests first, then apply structural pool growth outside query iteration.
             CollectPoolExpansionRequests(ref state, entityManager, ref expansionRequests);
             ExecutePoolExpansionRequests(entityManager, in expansionRequests);
 
@@ -199,6 +200,7 @@ public partial struct ProjectileSpawnSystem : ISystem
                 if (shooterProjectilePool.Length == 0)
                     break;
 
+                // The pool works as a stack so acquire is O(1) without shifting buffer contents.
                 int lastIndex = shooterProjectilePool.Length - 1;
                 Entity projectileEntity = shooterProjectilePool[lastIndex].ProjectileEntity;
                 shooterProjectilePool.RemoveAt(lastIndex);

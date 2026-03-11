@@ -103,7 +103,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
                     continue;
                 }
 
-                if (camera.isActiveAndEnabled == false)
+                if (!camera.isActiveAndEnabled)
                 {
                     continue;
                 }
@@ -159,7 +159,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
                 float3 enemyWorldPosition = enemyTransform.ValueRO.Position;
                 StatusBarsLodLevel lodLevel = EvaluateStatusBarsLod(cameraPosition, enemyWorldPosition);
 
-                if (ShouldUpdateStatusBarsLod(lodLevel, frameCount, enemyEntity.Index) == false)
+                if (!ShouldUpdateStatusBarsLod(lodLevel, frameCount, enemyEntity.Index))
                     continue;
             }
 
@@ -257,7 +257,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
             return false;
         }
 
-        if (entityManager.Exists(statusBarsViewEntity) == false)
+        if (!entityManager.Exists(statusBarsViewEntity))
         {
             return false;
         }
@@ -281,7 +281,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
             cachedViewsByEntity.Remove(statusBarsViewEntity);
         }
 
-        if (IsValidStatusBarsViewEntity(entityManager, statusBarsViewEntity) == false)
+        if (!IsValidStatusBarsViewEntity(entityManager, statusBarsViewEntity))
             return null;
 
         EnemyWorldSpaceStatusBarsView resolvedView = entityManager.GetComponentObject<EnemyWorldSpaceStatusBarsView>(statusBarsViewEntity);
@@ -322,7 +322,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
 
     private static Entity ResolveStatusBarsViewEntityFromLinkedGroup(EntityManager entityManager, Entity enemyEntity)
     {
-        if (entityManager.HasBuffer<LinkedEntityGroup>(enemyEntity) == false)
+        if (!entityManager.HasBuffer<LinkedEntityGroup>(enemyEntity))
         {
             return Entity.Null;
         }
@@ -338,7 +338,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
                 continue;
             }
 
-            if (entityManager.HasComponent<EnemyWorldSpaceStatusBarsView>(linkedEntity) == false)
+            if (!entityManager.HasComponent<EnemyWorldSpaceStatusBarsView>(linkedEntity))
             {
                 continue;
             }
@@ -379,7 +379,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
                 GameObject fallbackObject = fallbackView.gameObject;
 
                 if (fallbackObject != null &&
-                    fallbackObject.activeSelf == false)
+                    !fallbackObject.activeSelf)
                 {
                     fallbackObject.SetActive(true);
                 }
@@ -464,15 +464,15 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
             Entity enemyEntity = pair.Key;
             bool shouldRelease = false;
 
-            if (entityManager.Exists(enemyEntity) == false)
+            if (!entityManager.Exists(enemyEntity))
             {
                 shouldRelease = true;
             }
-            else if (entityManager.HasComponent<EnemyActive>(enemyEntity) == false)
+            else if (!entityManager.HasComponent<EnemyActive>(enemyEntity))
             {
                 shouldRelease = true;
             }
-            else if (entityManager.IsComponentEnabled<EnemyActive>(enemyEntity) == false)
+            else if (!entityManager.IsComponentEnabled<EnemyActive>(enemyEntity))
             {
                 shouldRelease = true;
             }

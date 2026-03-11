@@ -45,10 +45,10 @@ public partial struct PlayerDeathSceneReloadSystem : ISystem
             break;
         }
 
-        if (hasAnyPlayer == false)
+        if (!hasAnyPlayer)
             return;
 
-        if (hasDeadPlayer == false)
+        if (!hasDeadPlayer)
         {
             reloadQueued = false;
             return;
@@ -60,7 +60,7 @@ public partial struct PlayerDeathSceneReloadSystem : ISystem
         reloadQueued = true;
         Scene activeScene = SceneManager.GetActiveScene();
 
-        if (activeScene.IsValid() == false)
+        if (!activeScene.IsValid())
             return;
 
         if (activeScene.buildIndex >= 0)

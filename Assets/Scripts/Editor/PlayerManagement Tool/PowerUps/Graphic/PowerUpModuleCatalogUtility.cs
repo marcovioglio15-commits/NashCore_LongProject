@@ -131,7 +131,7 @@ public static class PowerUpModuleCatalogUtility
 
         int enumValue = moduleKindProperty.enumValueIndex;
 
-        if (Enum.IsDefined(typeof(PowerUpModuleKind), enumValue) == false)
+        if (!Enum.IsDefined(typeof(PowerUpModuleKind), enumValue))
             return default;
 
         return (PowerUpModuleKind)enumValue;
@@ -144,7 +144,7 @@ public static class PowerUpModuleCatalogUtility
 
         int enumValue = defaultStageProperty.enumValueIndex;
 
-        if (Enum.IsDefined(typeof(PowerUpModuleStage), enumValue) == false)
+        if (!Enum.IsDefined(typeof(PowerUpModuleStage), enumValue))
             return PowerUpModuleStage.Execute;
 
         return (PowerUpModuleStage)enumValue;

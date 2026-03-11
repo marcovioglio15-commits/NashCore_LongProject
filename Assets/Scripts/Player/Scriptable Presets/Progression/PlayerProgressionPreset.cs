@@ -38,6 +38,13 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     [Tooltip("Game phase progression definitions used to resolve level-up experience at runtime.")]
     [SerializeField] private List<PlayerGamePhaseDefinition> gamePhasesDefinition = new List<PlayerGamePhaseDefinition>();
 
+    [Header("Schedules")]
+    [Tooltip("Level-up stat-growth schedules that run at every level-up, including non-milestone levels.")]
+    [SerializeField] private List<PlayerLevelUpScheduleDefinition> schedules = new List<PlayerLevelUpScheduleDefinition>();
+
+    [Tooltip("Schedule ID currently equipped on this progression preset.")]
+    [SerializeField] private string equippedScheduleId;
+
     [Tooltip("Legacy fallback used to migrate old single-threshold presets into the first game phase.")]
     [FormerlySerializedAs("experienceRequiredPerLevel")]
     [HideInInspector]
@@ -111,6 +118,22 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         }
     }
 
+    public IReadOnlyList<PlayerLevelUpScheduleDefinition> Schedules
+    {
+        get
+        {
+            return schedules;
+        }
+    }
+
+    public string EquippedScheduleId
+    {
+        get
+        {
+            return equippedScheduleId;
+        }
+    }
+
     public float ExperiencePickupRadius
     {
         get
@@ -165,6 +188,11 @@ public sealed class PlayerProgressionPreset : ScriptableObject
             gamePhasesDefinition = new List<PlayerGamePhaseDefinition>();
         }
 
+        if (schedules == null)
+        {
+            schedules = new List<PlayerLevelUpScheduleDefinition>();
+        }
+
         if (legacyBaseStats == null)
         {
             legacyBaseStats = new LegacyPlayerProgressionBaseStats();
@@ -174,6 +202,7 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         ValidateScalableStats();
         ValidateScalingRules();
         ValidateMilestones();
+        ValidateSchedules();
     }
     #endregion
 
@@ -279,6 +308,111 @@ public sealed class PlayerProgressionPreset : ScriptableObject
 
         EnsureAtLeastOneGamePhase();
         ValidateGamePhasesDefinition();
+    }
+
+    private void ValidateSchedules()
+    {
+        if (schedules == null)
+        {
+            schedules = new List<PlayerLevelUpScheduleDefinition>();
+        }
+
+        HashSet<string> validScalableStatNames = BuildScalableStatNameSet();
+
+        for (int scheduleIndex = 0; scheduleIndex < schedules.Count; scheduleIndex++)
+        {
+            PlayerLevelUpScheduleDefinition schedule = schedules[scheduleIndex];
+
+            if (schedule != null)
+            {
+                continue;
+            }
+
+            schedule = new PlayerLevelUpScheduleDefinition();
+            schedules[scheduleIndex] = schedule;
+        }
+
+        HashSet<string> visitedScheduleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int scheduleIndex = schedules.Count - 1; scheduleIndex >= 0; scheduleIndex--)
+        {
+            PlayerLevelUpScheduleDefinition schedule = schedules[scheduleIndex];
+            string fallbackScheduleId = string.Format("Schedule{0}", scheduleIndex + 1);
+            schedule.Validate(fallbackScheduleId);
+            schedule.RemoveInvalidStatSteps(validScalableStatNames);
+
+            if (string.IsNullOrWhiteSpace(schedule.ScheduleId))
+            {
+                schedules.RemoveAt(scheduleIndex);
+                continue;
+            }
+
+            if (visitedScheduleIds.Add(schedule.ScheduleId))
+            {
+                continue;
+            }
+
+            schedules.RemoveAt(scheduleIndex);
+        }
+
+        if (string.IsNullOrWhiteSpace(equippedScheduleId))
+        {
+            equippedScheduleId = schedules.Count > 0 ? schedules[0].ScheduleId : string.Empty;
+            return;
+        }
+
+        equippedScheduleId = equippedScheduleId.Trim();
+
+        if (HasScheduleId(equippedScheduleId))
+        {
+            return;
+        }
+
+        equippedScheduleId = schedules.Count > 0 ? schedules[0].ScheduleId : string.Empty;
+    }
+
+    private HashSet<string> BuildScalableStatNameSet()
+    {
+        HashSet<string> statNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int statIndex = 0; statIndex < scalableStats.Count; statIndex++)
+        {
+            PlayerScalableStatDefinition scalableStat = scalableStats[statIndex];
+
+            if (scalableStat == null || string.IsNullOrWhiteSpace(scalableStat.StatName))
+            {
+                continue;
+            }
+
+            statNames.Add(scalableStat.StatName.Trim());
+        }
+
+        return statNames;
+    }
+
+    private bool HasScheduleId(string scheduleId)
+    {
+        if (string.IsNullOrWhiteSpace(scheduleId))
+        {
+            return false;
+        }
+
+        for (int scheduleIndex = 0; scheduleIndex < schedules.Count; scheduleIndex++)
+        {
+            PlayerLevelUpScheduleDefinition schedule = schedules[scheduleIndex];
+
+            if (schedule == null)
+            {
+                continue;
+            }
+
+            if (string.Equals(schedule.ScheduleId, scheduleId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void EnsureAtLeastOneGamePhase()

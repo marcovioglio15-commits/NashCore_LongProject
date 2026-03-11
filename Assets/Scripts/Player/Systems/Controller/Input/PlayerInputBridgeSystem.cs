@@ -70,6 +70,8 @@ public partial struct PlayerInputBridgeSystem : ISystem
 
         bool assignedLocalInput = false;
 
+        // Single local input source by design: only the first matching player receives live input.
+        // Additional player entities are explicitly zeroed to prevent duplicated actions.
         foreach (RefRW<PlayerInputState> inputState in SystemAPI.Query<RefRW<PlayerInputState>>().WithAll<PlayerControllerConfig>())
         {
             if (assignedLocalInput == false)

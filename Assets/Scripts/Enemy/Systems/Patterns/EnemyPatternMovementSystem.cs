@@ -74,7 +74,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
         if (playerEntity == Entity.Null)
             return;
 
-        if (entityManager.Exists(playerEntity) == false)
+        if (!entityManager.Exists(playerEntity))
             return;
 
         float enemyTimeScale = 1f;
@@ -236,7 +236,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
                 currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd)
             {
-                if (ignoreSteeringAndPriority == false)
+                if (!ignoreSteeringAndPriority)
                 {
                     float clearanceSpeedCap = maxSpeed > 0f ? maxSpeed : moveSpeed;
                     float minimumEnemyClearance = math.max(0f, currentPatternConfig.BasicMinimumEnemyClearance);
@@ -282,7 +282,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
 
             float effectiveMaxSpeed = maxSpeed;
 
-            if (movementLocked == false && effectiveMaxSpeed > 0f && priorityYieldUrgency > 0f)
+            if (!movementLocked && effectiveMaxSpeed > 0f && priorityYieldUrgency > 0f)
             {
                 float speedBoost = ResolvePriorityYieldSpeedBoost(priorityYieldUrgency, priorityYieldGapNormalized, steeringAggressiveness);
                 effectiveMaxSpeed *= 1f + speedBoost;
@@ -299,7 +299,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                acceleration,
                                                                deceleration);
 
-            if (movementLocked == false && priorityYieldUrgency > 0f)
+            if (!movementLocked && priorityYieldUrgency > 0f)
             {
                 float accelerationBoost = ResolvePriorityYieldAccelerationBoost(priorityYieldUrgency, priorityYieldGapNormalized, steeringAggressiveness);
                 accelerationRate *= 1f + accelerationBoost;
@@ -419,7 +419,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             bool freezeRotation = currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.Stationary &&
                                   currentPatternConfig.StationaryFreezeRotation != 0;
 
-            if (freezeRotation == false)
+            if (!freezeRotation)
             {
                 float rotationSpeedDegreesPerSecond = currentEnemyData.RotationSpeedDegreesPerSecond;
                 bool hasSelfRotation = math.abs(rotationSpeedDegreesPerSecond) > RotationSpeedEpsilon;

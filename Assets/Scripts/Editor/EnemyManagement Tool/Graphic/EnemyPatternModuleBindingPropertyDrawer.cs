@@ -148,10 +148,10 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
 
         string resolvedModuleId = EnemyAdvancedPatternDrawerUtility.ResolveInitialModuleId(moduleIdProperty.stringValue, moduleOptions);
 
-        if (string.Equals(modulePopup.value, resolvedModuleId, StringComparison.Ordinal) == false)
+        if (!string.Equals(modulePopup.value, resolvedModuleId, StringComparison.Ordinal))
             modulePopup.SetValueWithoutNotify(resolvedModuleId);
 
-        if (string.Equals(moduleIdProperty.stringValue, resolvedModuleId, StringComparison.Ordinal) == false)
+        if (!string.Equals(moduleIdProperty.stringValue, resolvedModuleId, StringComparison.Ordinal))
         {
             moduleIdProperty.serializedObject.Update();
             moduleIdProperty.stringValue = resolvedModuleId;
@@ -189,7 +189,7 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
         if (moduleInfoBox == null)
             return;
 
-        if (moduleResolved == false)
+        if (!moduleResolved)
         {
             moduleInfoBox.text = "Selected module could not be resolved from Modules Definition.";
             moduleInfoBox.messageType = HelpBoxMessageType.Warning;
@@ -225,10 +225,10 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
         bool showOverride = useOverridePayloadProperty != null && useOverridePayloadProperty.boolValue;
         overridePayloadContainer.style.display = showOverride ? DisplayStyle.Flex : DisplayStyle.None;
 
-        if (showOverride == false)
+        if (!showOverride)
             return;
 
-        if (moduleResolved == false)
+        if (!moduleResolved)
         {
             HelpBox selectModuleBox = new HelpBox("Select a valid module to edit override payload.", HelpBoxMessageType.Warning);
             overridePayloadContainer.Add(selectModuleBox);

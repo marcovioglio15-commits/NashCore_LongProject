@@ -9,6 +9,8 @@ public struct PlayerProgressionConfigBlob
     public float ExperiencePickupRadius;
     public BlobArray<PlayerGamePhaseBlob> GamePhases;
     public BlobArray<PlayerScalableStatBlob> ScalableStats;
+    public BlobArray<PlayerLevelUpScheduleBlob> Schedules;
+    public int EquippedScheduleIndex;
 }
 #endregion
 
@@ -34,6 +36,19 @@ public struct PlayerLevelUpMilestoneBlob
 {
     public int MilestoneLevel;
     public float SpecialExpRequirement;
+    public int PowerUpUnlockRollCount;
+    public BlobArray<PlayerMilestoneTierRollBlob> TierRolls;
+}
+#endregion
+
+#region Milestone Tier Rolls
+/// <summary>
+/// Stores one weighted tier candidate used by milestone-based power-up extraction rolls.
+/// </summary>
+public struct PlayerMilestoneTierRollBlob
+{
+    public BlobString TierId;
+    public float SelectionWeight;
 }
 #endregion
 
@@ -46,5 +61,26 @@ public struct PlayerScalableStatBlob
     public BlobString Name;
     public byte Type;
     public float DefaultValue;
+}
+#endregion
+
+#region Schedules
+/// <summary>
+/// Stores one repeating level-up schedule made of ordered scalable-stat steps.
+/// </summary>
+public struct PlayerLevelUpScheduleBlob
+{
+    public BlobString ScheduleId;
+    public BlobArray<PlayerLevelUpScheduleStepBlob> Steps;
+}
+
+/// <summary>
+/// Stores one schedule step applied on level-up.
+/// </summary>
+public struct PlayerLevelUpScheduleStepBlob
+{
+    public BlobString StatName;
+    public byte ApplyMode;
+    public float Value;
 }
 #endregion

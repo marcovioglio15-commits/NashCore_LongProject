@@ -48,7 +48,7 @@ public sealed class EnemyManagementWindow : EditorWindow
         saveChangesMessage = "There are unapplied changes in Enemy Management Tool. Apply before closing?";
 
         // Ensure draft session exists before rendering panel content.
-        if (EnemyManagementDraftSession.IsInitialized == false)
+        if (!EnemyManagementDraftSession.IsInitialized)
             EnemyManagementDraftSession.BeginSession();
 
         // Restore last active top-level panel and clamp unsupported values.
@@ -88,7 +88,7 @@ public sealed class EnemyManagementWindow : EditorWindow
     private void OnDestroy()
     {
         // Keep session alive only if unsaved changes still exist.
-        if (hasUnsavedChanges == false)
+        if (!hasUnsavedChanges)
             EnemyManagementDraftSession.EndSession();
     }
 
@@ -206,7 +206,7 @@ public sealed class EnemyManagementWindow : EditorWindow
         toggle.value = isDefault;
         toggle.RegisterValueChangedCallback(evt =>
         {
-            if (evt.newValue == false)
+            if (!evt.newValue)
                 return;
 
             ShowPanel(panelType);

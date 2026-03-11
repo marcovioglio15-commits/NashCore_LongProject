@@ -94,7 +94,7 @@ public static class PlayerAnimationBindingsPresetEditorUtility
         string sourceName = string.IsNullOrWhiteSpace(sourcePreset.name) ? "PlayerAnimationBindingsPreset" : sourcePreset.name;
         string duplicatePath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(DefaultPresetFolder, sourceName + "_Copy.asset"));
 
-        if (AssetDatabase.CopyAsset(sourcePath, duplicatePath) == false)
+        if (!AssetDatabase.CopyAsset(sourcePath, duplicatePath))
             return null;
 
         AssetDatabase.SaveAssets();
@@ -134,10 +134,10 @@ public static class PlayerAnimationBindingsPresetEditorUtility
         if (string.IsNullOrWhiteSpace(presetPath))
             return false;
 
-        if (EditorUtility.DisplayDialog("Delete Animation Bindings Preset",
+        if (!EditorUtility.DisplayDialog("Delete Animation Bindings Preset",
                                         string.Format("Delete '{0}'? This action cannot be undone.", preset.name),
                                         "Delete",
-                                        "Cancel") == false)
+                                        "Cancel"))
             return false;
 
         bool deleted = AssetDatabase.DeleteAsset(presetPath);
@@ -163,7 +163,7 @@ public static class PlayerAnimationBindingsPresetEditorUtility
         if (string.IsNullOrWhiteSpace(folderPath))
             return clips;
 
-        if (AssetDatabase.IsValidFolder(folderPath) == false)
+        if (!AssetDatabase.IsValidFolder(folderPath))
             return clips;
 
         List<string> searchFolders = new List<string>();
@@ -177,7 +177,7 @@ public static class PlayerAnimationBindingsPresetEditorUtility
             {
                 string candidatePath = AssetDatabase.GUIDToAssetPath(subFolderGuids[guidIndex]);
 
-                if (AssetDatabase.IsValidFolder(candidatePath) == false)
+                if (!AssetDatabase.IsValidFolder(candidatePath))
                     continue;
 
                 if (searchFolders.Contains(candidatePath))
@@ -224,7 +224,7 @@ public static class PlayerAnimationBindingsPresetEditorUtility
             PlayerAnimationClipSlot slot = SupportedClipSlots[slotIndex];
             AnimationClip currentClip = targetPreset.GetClip(slot);
 
-            if (overwriteAssignedSlots == false && currentClip != null)
+            if (!overwriteAssignedSlots && currentClip != null)
                 continue;
 
             AnimationClip bestClip = FindBestClip(slot, availableClips);
@@ -302,7 +302,7 @@ public static class PlayerAnimationBindingsPresetEditorUtility
 
         EnsureFolder(parentPath);
 
-        if (AssetDatabase.IsValidFolder(folderPath) == false)
+        if (!AssetDatabase.IsValidFolder(folderPath))
             AssetDatabase.CreateFolder(parentPath, folderName);
     }
 
@@ -355,7 +355,7 @@ public static class PlayerAnimationBindingsPresetEditorUtility
             if (string.IsNullOrWhiteSpace(keyword))
                 continue;
 
-            if (normalized.Contains(keyword) == false)
+            if (!normalized.Contains(keyword))
                 continue;
 
             score += 10;

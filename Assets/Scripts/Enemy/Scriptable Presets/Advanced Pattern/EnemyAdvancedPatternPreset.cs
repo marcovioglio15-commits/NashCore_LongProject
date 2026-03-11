@@ -165,7 +165,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
             if (definition == null)
                 continue;
 
-            if (string.Equals(definition.ModuleId, normalizedModuleId, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(definition.ModuleId, normalizedModuleId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return definition;
@@ -193,7 +193,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
             if (pattern == null)
                 continue;
 
-            if (string.Equals(pattern.PatternId, normalizedPatternId, StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(pattern.PatternId, normalizedPatternId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             return pattern;
@@ -313,7 +313,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
             string normalizedId = NormalizeId(definition.ModuleId, "Module_Custom");
             string uniqueId = ResolveUniqueId(normalizedId, moduleIds, "Module_Custom");
 
-            if (string.Equals(definition.ModuleId, uniqueId, StringComparison.Ordinal) == false)
+            if (!string.Equals(definition.ModuleId, uniqueId, StringComparison.Ordinal))
             {
                 definition.Configure(uniqueId,
                                      definition.DisplayName,
@@ -346,7 +346,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
             string normalizedId = NormalizeId(pattern.PatternId, "Pattern_Custom");
             string uniqueId = ResolveUniqueId(normalizedId, patternIds, "Pattern_Custom");
 
-            if (string.Equals(pattern.PatternId, uniqueId, StringComparison.Ordinal) == false)
+            if (!string.Equals(pattern.PatternId, uniqueId, StringComparison.Ordinal))
             {
                 pattern.Configure(uniqueId,
                                   pattern.DisplayName,
@@ -386,14 +386,14 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
                 continue;
             }
 
-            if (validPatternIds.Contains(loadoutId) == false)
+            if (!validPatternIds.Contains(loadoutId))
             {
                 activePatternIds.RemoveAt(index);
                 index--;
                 continue;
             }
 
-            if (visited.Add(loadoutId) == false)
+            if (!visited.Add(loadoutId))
             {
                 activePatternIds.RemoveAt(index);
                 index--;
@@ -424,7 +424,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
         if (usedIds == null)
             return normalizedBaseId;
 
-        if (usedIds.Contains(normalizedBaseId) == false)
+        if (!usedIds.Contains(normalizedBaseId))
             return normalizedBaseId;
 
         int suffix = 2;
@@ -433,7 +433,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
         {
             string indexedId = string.Format("{0}_{1}", normalizedBaseId, suffix);
 
-            if (usedIds.Contains(indexedId) == false)
+            if (!usedIds.Contains(indexedId))
                 return indexedId;
 
             suffix++;

@@ -35,7 +35,7 @@ public static class EntitiesSceneStreamingInitGuard
 
     private static void EnsureInitialized(string context)
     {
-        if (TryResolveReflectionMembers() == false)
+        if (!TryResolveReflectionMembers())
             return;
 
         if (IsUnityObjectRefsCreated())
@@ -45,7 +45,7 @@ public static class EntitiesSceneStreamingInitGuard
         {
             s_InitMethod.Invoke(null, null);
 
-            if (LogForcedInitialization && s_HasLoggedFallbackInit == false)
+            if (LogForcedInitialization && !s_HasLoggedFallbackInit)
             {
                 s_HasLoggedFallbackInit = true;
                 Debug.Log(

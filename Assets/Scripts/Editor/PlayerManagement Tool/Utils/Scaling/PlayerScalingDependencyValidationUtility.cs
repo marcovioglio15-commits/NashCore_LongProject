@@ -25,7 +25,7 @@ public static class PlayerScalingDependencyValidationUtility
         if (scalableStatsProperty == null || scalingRulesProperty == null)
             return warnings;
 
-        if (scalableStatsProperty.isArray == false || scalingRulesProperty.isArray == false)
+        if (!scalableStatsProperty.isArray || !scalingRulesProperty.isArray)
             return warnings;
 
         Dictionary<string, string> statNameByStatKey = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -79,10 +79,10 @@ public static class PlayerScalingDependencyValidationUtility
                 ? string.Empty
                 : statNameProperty.stringValue.Trim();
 
-            if (PlayerScalableStatNameUtility.IsValid(statName) == false)
+            if (!PlayerScalableStatNameUtility.IsValid(statName))
                 continue;
 
-            if (canonicalStatNameByLookup.ContainsKey(statName) == false)
+            if (!canonicalStatNameByLookup.ContainsKey(statName))
                 canonicalStatNameByLookup[statName] = statName;
 
             string statKey = PlayerScalingStatKeyUtility.BuildStatKey(defaultValueProperty);
@@ -122,7 +122,7 @@ public static class PlayerScalingDependencyValidationUtility
                 formulaProperty.propertyType != SerializedPropertyType.String)
                 continue;
 
-            if (addScalingProperty.boolValue == false)
+            if (!addScalingProperty.boolValue)
                 continue;
 
             string statKey = statKeyProperty.stringValue;
@@ -131,15 +131,15 @@ public static class PlayerScalingDependencyValidationUtility
             if (string.IsNullOrWhiteSpace(statKey) || string.IsNullOrWhiteSpace(formula))
                 continue;
 
-            if (statNameByStatKey.TryGetValue(statKey, out string sourceStatName) == false)
+            if (!statNameByStatKey.TryGetValue(statKey, out string sourceStatName))
                 continue;
 
-            if (dependencyGraph.TryGetValue(sourceStatName, out HashSet<string> dependencies) == false)
+            if (!dependencyGraph.TryGetValue(sourceStatName, out HashSet<string> dependencies))
                 continue;
 
             PlayerStatFormulaCompileResult compileResult = PlayerStatFormulaEngine.Compile(formula, true);
 
-            if (compileResult.IsValid == false || compileResult.CompiledFormula == null)
+            if (!compileResult.IsValid || compileResult.CompiledFormula == null)
                 continue;
 
             IReadOnlyList<string> variableNames = compileResult.CompiledFormula.VariableNames;
@@ -151,7 +151,7 @@ public static class PlayerScalingDependencyValidationUtility
                 if (string.Equals(variableName, PlayerScalableStatNameUtility.ReservedThisName, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                if (canonicalStatNameByLookup.TryGetValue(variableName, out string targetStatName) == false)
+                if (!canonicalStatNameByLookup.TryGetValue(variableName, out string targetStatName))
                     continue;
 
                 dependencies.Add(targetStatName);
@@ -214,7 +214,7 @@ public static class PlayerScalingDependencyValidationUtility
 
         foreach (string dependencyNode in dependencies)
         {
-            if (discoveryIndexByNode.ContainsKey(dependencyNode) == false)
+            if (!discoveryIndexByNode.ContainsKey(dependencyNode))
             {
                 StrongConnect(dependencyNode,
                               dependencyGraph,
@@ -260,7 +260,7 @@ public static class PlayerScalingDependencyValidationUtility
 
     private static bool HasSelfDependency(Dictionary<string, HashSet<string>> dependencyGraph, string nodeName)
     {
-        if (dependencyGraph.TryGetValue(nodeName, out HashSet<string> dependencies) == false)
+        if (!dependencyGraph.TryGetValue(nodeName, out HashSet<string> dependencies))
             return false;
 
         return dependencies.Contains(nodeName);

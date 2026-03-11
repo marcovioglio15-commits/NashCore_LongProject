@@ -66,7 +66,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
             GameObject trailPrefab = ResolveTrailPrefab(entityManager, playerEntity);
             bool shouldBeActive = passiveToolsState.ValueRO.HasElementalTrail != 0 && trailPrefab != null;
 
-            if (shouldBeActive == false)
+            if (!shouldBeActive)
             {
                 SetManagedInstanceActive(playerEntity, false, float3.zero, 1f, 0.02f);
                 trailAttachedVfxState.ValueRW = default;
@@ -96,7 +96,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
     #region Helpers
     private static GameObject ResolveTrailPrefab(EntityManager entityManager, Entity playerEntity)
     {
-        if (entityManager.HasComponent<PlayerElementalTrailAttachedVfxPrefabReference>(playerEntity) == false)
+        if (!entityManager.HasComponent<PlayerElementalTrailAttachedVfxPrefabReference>(playerEntity))
             return null;
 
         PlayerElementalTrailAttachedVfxPrefabReference prefabReference = entityManager.GetComponentData<PlayerElementalTrailAttachedVfxPrefabReference>(playerEntity);
@@ -113,7 +113,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
                                    managedInstance.InstanceObject == null ||
                                    managedInstance.SourcePrefab != trailPrefab;
 
-            if (requiresRebuild == false)
+            if (!requiresRebuild)
                 return managedInstance;
 
             DestroyManagedInstance(managedInstance);
@@ -157,13 +157,13 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
     {
         ManagedTrailVfxInstance managedInstance;
 
-        if (managedInstances.TryGetValue(playerEntity, out managedInstance) == false)
+        if (!managedInstances.TryGetValue(playerEntity, out managedInstance))
             return;
 
         if (managedInstance == null || managedInstance.InstanceObject == null)
             return;
 
-        if (isActive == false)
+        if (!isActive)
         {
             ApplyTrailRenderersState(managedInstance, false, 0f);
 
@@ -181,7 +181,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
         instanceTransform.rotation = Quaternion.identity;
         instanceTransform.localScale = new Vector3(uniformScale, uniformScale, uniformScale);
 
-        if (managedInstance.InstanceObject.activeSelf == false)
+        if (!managedInstance.InstanceObject.activeSelf)
             managedInstance.InstanceObject.SetActive(true);
 
         ApplyTrailRenderersState(managedInstance, true, desiredTrailWidth);
@@ -199,7 +199,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
             if (trailRenderer == null)
                 continue;
 
-            if (isEmitting && trailRenderer.enabled == false)
+            if (isEmitting && !trailRenderer.enabled)
                 trailRenderer.Clear();
 
             trailRenderer.enabled = isEmitting;
@@ -278,7 +278,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
 
     private static void ReleasePooledTrailEntityIfAny(EntityManager entityManager, Entity vfxEntity)
     {
-        if (IsValidEntity(entityManager, vfxEntity) == false)
+        if (!IsValidEntity(entityManager, vfxEntity))
             return;
 
         if (entityManager.HasComponent<PlayerPowerUpVfxLifetime>(vfxEntity))
@@ -302,7 +302,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
         if (entity.Index < 0)
             return false;
 
-        if (entityManager.Exists(entity) == false)
+        if (!entityManager.Exists(entity))
             return false;
 
         return true;

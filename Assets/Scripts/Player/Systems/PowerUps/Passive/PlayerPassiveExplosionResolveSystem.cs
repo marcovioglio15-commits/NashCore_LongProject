@@ -97,7 +97,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
 
             Entity enemyEntity = enemyEntities[enemyIndex];
 
-            if (entityManager.Exists(enemyEntity) == false)
+            if (!entityManager.Exists(enemyEntity))
                 continue;
 
             entityManager.SetComponentData(enemyEntity, enemyHealthArray[enemyIndex]);
@@ -173,7 +173,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
                     NativeParallelMultiHashMapIterator<int> iterator;
                     int enemyIndex;
 
-                    if (enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator) == false)
+                    if (!enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator))
                         continue;
 
                     do
@@ -219,7 +219,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
                 NativeParallelMultiHashMapIterator<int> iterator;
                 int enemyIndex;
 
-                if (enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator) == false)
+                if (!enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator))
                     continue;
 
                 do

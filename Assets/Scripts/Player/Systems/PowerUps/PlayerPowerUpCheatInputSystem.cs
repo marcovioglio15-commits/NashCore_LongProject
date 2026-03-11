@@ -34,32 +34,46 @@ public partial struct PlayerPowerUpCheatInputSystem : ISystem
         InputAction cheatModifierControlAction = PlayerInputRuntime.CheatModifierControlAction;
         InputAction cheatModifierShiftAction = PlayerInputRuntime.CheatModifierShiftAction;
 
-        if (IsCheatActionReady(cheatPresetDigitAction) == false)
+        if (!IsCheatActionReady(cheatPresetDigitAction))
+        {
             return;
+        }
 
-        if (IsCheatActionReady(cheatModifierControlAction) == false)
+        if (!IsCheatActionReady(cheatModifierControlAction))
+        {
             return;
+        }
 
-        if (IsCheatActionReady(cheatModifierShiftAction) == false)
+        if (!IsCheatActionReady(cheatModifierShiftAction))
+        {
             return;
+        }
 
-        if (cheatModifierControlAction.IsPressed() == false)
+        if (!cheatModifierControlAction.IsPressed())
+        {
             return;
+        }
 
-        if (cheatModifierShiftAction.IsPressed() == false)
+        if (!cheatModifierShiftAction.IsPressed())
+        {
             return;
+        }
 
         int presetIndex;
 
-        if (TryResolvePressedPresetIndex(cheatPresetDigitAction, out presetIndex) == false)
+        if (!TryResolvePressedPresetIndex(cheatPresetDigitAction, out presetIndex))
+        {
             return;
+        }
 
         foreach ((DynamicBuffer<PlayerPowerUpCheatCommand> cheatCommands,
                   DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntries) in SystemAPI.Query<DynamicBuffer<PlayerPowerUpCheatCommand>,
                                                                                                      DynamicBuffer<PlayerPowerUpCheatPresetEntry>>().WithAll<PlayerControllerConfig>())
         {
             if (cheatPresetEntries.Length <= 0)
+            {
                 break;
+            }
 
             AddApplyPresetCommand(cheatCommands, presetIndex);
             break;
@@ -76,10 +90,14 @@ public partial struct PlayerPowerUpCheatInputSystem : ISystem
     private static bool IsCheatActionReady(InputAction action)
     {
         if (action == null)
+        {
             return false;
+        }
 
-        if (action.enabled == false)
+        if (!action.enabled)
+        {
             return false;
+        }
 
         return true;
     }
@@ -95,20 +113,28 @@ public partial struct PlayerPowerUpCheatInputSystem : ISystem
         presetIndex = -1;
 
         if (presetDigitAction == null)
+        {
             return false;
+        }
 
-        if (presetDigitAction.WasPressedThisFrame() == false)
+        if (!presetDigitAction.WasPressedThisFrame())
+        {
             return false;
+        }
 
         InputControl activeControl = presetDigitAction.activeControl;
 
         if (activeControl == null)
+        {
             return false;
+        }
 
         KeyControl keyControl = activeControl as KeyControl;
 
         if (keyControl == null)
+        {
             return false;
+        }
 
         switch (keyControl.keyCode)
         {

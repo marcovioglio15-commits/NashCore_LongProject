@@ -37,12 +37,12 @@ public static class PlayerScalingFormulaValidationUtility
 
         ISet<string> resolvedAllowedVariables = ResolveAllowedVariables(allowedVariables);
 
-        if (TryValidateBracketVariables(formula, resolvedAllowedVariables, out warningMessage) == false)
+        if (!TryValidateBracketVariables(formula, resolvedAllowedVariables, out warningMessage))
             return false;
 
         PlayerStatFormulaCompileResult compileResult = PlayerStatFormulaEngine.Compile(formula, true);
 
-        if (compileResult.IsValid == false || compileResult.CompiledFormula == null)
+        if (!compileResult.IsValid || compileResult.CompiledFormula == null)
         {
             warningMessage = string.IsNullOrWhiteSpace(compileResult.ErrorMessage)
                 ? "Formula is invalid."
@@ -81,7 +81,7 @@ public static class PlayerScalingFormulaValidationUtility
         if (scalableStatsProperty == null)
             return variableSet;
 
-        if (scalableStatsProperty.isArray == false)
+        if (!scalableStatsProperty.isArray)
             return variableSet;
 
         for (int index = 0; index < scalableStatsProperty.arraySize; index++)
@@ -104,7 +104,7 @@ public static class PlayerScalingFormulaValidationUtility
 
             string statName = statNameProperty.stringValue.Trim();
 
-            if (PlayerScalableStatNameUtility.IsValid(statName) == false)
+            if (!PlayerScalableStatNameUtility.IsValid(statName))
                 continue;
 
             variableSet.Add(statName);
@@ -188,13 +188,13 @@ public static class PlayerScalingFormulaValidationUtility
                 continue;
             }
 
-            if (PlayerScalableStatNameUtility.IsValid(variableName) == false)
+            if (!PlayerScalableStatNameUtility.IsValid(variableName))
             {
                 warningMessage = string.Format("Token [{0}] is not a valid variable name.", variableName);
                 return false;
             }
 
-            if (allowedVariables != null && allowedVariables.Contains(variableName) == false)
+            if (allowedVariables != null && !allowedVariables.Contains(variableName))
             {
                 warningMessage = string.Format("Unknown scalable stat variable [{0}].", variableName);
                 return false;
@@ -252,7 +252,7 @@ public static class PlayerScalingFormulaValidationUtility
         if (activeMasterPreset == null)
             return false;
 
-        if (DoesMasterReferenceTarget(activeMasterPreset, targetObject) == false)
+        if (!DoesMasterReferenceTarget(activeMasterPreset, targetObject))
             return false;
 
         CollectVariablesFromPreset(activeMasterPreset.ProgressionPreset, variables);
@@ -358,7 +358,7 @@ public static class PlayerScalingFormulaValidationUtility
 
             statName = statName.Trim();
 
-            if (PlayerScalableStatNameUtility.IsValid(statName) == false)
+            if (!PlayerScalableStatNameUtility.IsValid(statName))
                 continue;
 
             variables.Add(statName);

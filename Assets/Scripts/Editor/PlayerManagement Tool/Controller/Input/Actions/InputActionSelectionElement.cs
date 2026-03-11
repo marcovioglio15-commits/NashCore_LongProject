@@ -269,7 +269,7 @@ public sealed class InputActionSelectionElement : VisualElement
         string assetPath = AssetDatabase.GetAssetPath(targetObject);
         string assetGuid = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(assetPath) == false)
+        if (!string.IsNullOrWhiteSpace(assetPath))
             assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
 
         if (string.IsNullOrWhiteSpace(assetGuid))

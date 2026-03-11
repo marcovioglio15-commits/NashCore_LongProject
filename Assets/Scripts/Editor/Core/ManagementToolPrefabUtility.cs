@@ -66,7 +66,7 @@ public static class ManagementToolPrefabUtility
             if (candidatePrefab == null)
                 continue;
 
-            if (HasComponentInHierarchy<TComponent>(candidatePrefab) == false)
+            if (!HasComponentInHierarchy<TComponent>(candidatePrefab))
                 continue;
 
             matchingPrefabs.Add(candidatePrefab);

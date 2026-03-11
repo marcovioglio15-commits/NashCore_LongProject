@@ -159,7 +159,7 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
         if (infoBox == null)
             return;
 
-        if (moduleResolved == false)
+        if (!moduleResolved)
         {
             infoBox.text = "Selected module could not be resolved from Modules Management.";
             infoBox.messageType = HelpBoxMessageType.Warning;
@@ -186,10 +186,10 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
         overrideContainer.style.display = showOverride ? DisplayStyle.Flex : DisplayStyle.None;
         overrideContainer.Clear();
 
-        if (showOverride == false)
+        if (!showOverride)
             return;
 
-        if (moduleResolved == false)
+        if (!moduleResolved)
         {
             HelpBox moduleMissingBox = new HelpBox("Select a valid module to configure override payload.", HelpBoxMessageType.Warning);
             overrideContainer.Add(moduleMissingBox);
@@ -200,7 +200,7 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
         string payloadLabel;
         bool hasPayload = PowerUpModuleEnumDescriptions.TryGetPayloadProperty(moduleKind, out relativePath, out payloadLabel);
 
-        if (hasPayload == false)
+        if (!hasPayload)
         {
             HelpBox noPayloadBox = new HelpBox("Selected module kind does not use payload data.", HelpBoxMessageType.Info);
             overrideContainer.Add(noPayloadBox);
@@ -259,14 +259,14 @@ public sealed class PowerUpModuleBindingPropertyDrawer : PropertyDrawer
             if (moduleIdProperty == null)
                 continue;
 
-            if (string.Equals(moduleIdProperty.stringValue, moduleId, System.StringComparison.OrdinalIgnoreCase) == false)
+            if (!string.Equals(moduleIdProperty.stringValue, moduleId, System.StringComparison.OrdinalIgnoreCase))
                 continue;
 
             SerializedProperty moduleKindProperty = moduleElement.FindPropertyRelative("moduleKind");
             SerializedProperty displayNameProperty = moduleElement.FindPropertyRelative("displayName");
             moduleKind = ResolveModuleKindFromEnumProperty(moduleKindProperty);
             defaultStage = PowerUpModuleKindUtility.ResolveStageFromKind(moduleKind);
-            displayName = displayNameProperty != null && string.IsNullOrWhiteSpace(displayNameProperty.stringValue) == false
+            displayName = displayNameProperty != null && !string.IsNullOrWhiteSpace(displayNameProperty.stringValue)
                 ? displayNameProperty.stringValue
                 : moduleId;
             return true;

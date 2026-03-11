@@ -293,7 +293,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             return;
         }
 
-        if (selectedPreset == null || filteredPresets.Contains(selectedPreset) == false)
+        if (selectedPreset == null || !filteredPresets.Contains(selectedPreset))
         {
             SelectPreset(filteredPresets[0]);
 
@@ -410,7 +410,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         bool confirmed = EditorUtility.DisplayDialog("Delete Power Ups Preset", "Delete the selected power ups preset?", "Delete", "Cancel");
 
-        if (confirmed == false)
+        if (!confirmed)
             return;
 
         Undo.RecordObject(library, "Delete Power Ups Preset");
@@ -518,7 +518,7 @@ public sealed class PlayerPowerUpsPresetsPanel
         buttonsRoot.style.marginBottom = 6f;
 
         AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
-        AddSectionButton(buttonsRoot, SectionType.DropPools, "Drop Pools");
+        AddSectionButton(buttonsRoot, SectionType.Tiers, "Tiers");
         AddSectionButton(buttonsRoot, SectionType.ModulesManagement, "Modules Management");
         AddSectionButton(buttonsRoot, SectionType.ActivePowerUps, "Active Power Ups");
         AddSectionButton(buttonsRoot, SectionType.PassivePowerUps, "Passive Power Ups");
@@ -562,8 +562,8 @@ public sealed class PlayerPowerUpsPresetsPanel
             case SectionType.Metadata:
                 BuildMetadataSection();
                 return;
-            case SectionType.DropPools:
-                BuildDropPoolsSection();
+            case SectionType.Tiers:
+                BuildTiersSection();
                 return;
             case SectionType.ModulesManagement:
                 BuildModulesManagementSection();
@@ -639,26 +639,39 @@ public sealed class PlayerPowerUpsPresetsPanel
         sectionContentRoot.Add(idRow);
     }
 
-    private void BuildDropPoolsSection()
+    private void BuildTiersSection()
     {
-        Label header = new Label("Drop Pool Catalog");
+        Label header = new Label("Tier Levels");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
         sectionContentRoot.Add(header);
 
-        SerializedProperty dropPoolCatalogProperty = presetSerializedObject.FindProperty("dropPoolCatalog");
+        SerializedProperty tierLevelsProperty = presetSerializedObject.FindProperty("tierLevels");
 
-        if (dropPoolCatalogProperty == null)
+        if (tierLevelsProperty == null)
         {
-            Label missingLabel = new Label("Drop pool catalog property is missing.");
+            Label missingLabel = new Label("Tier levels property is missing.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
             sectionContentRoot.Add(missingLabel);
             return;
         }
 
-        PropertyField catalogField = new PropertyField(dropPoolCatalogProperty);
-        catalogField.BindProperty(dropPoolCatalogProperty);
-        sectionContentRoot.Add(catalogField);
+        Label infoLabel = new Label("Create weighted tiers and map modular Active/Passive power-ups using enum-style ID selectors.");
+        infoLabel.style.marginBottom = 4f;
+        sectionContentRoot.Add(infoLabel);
+
+        PropertyField tierLevelsField = new PropertyField(tierLevelsProperty, "Tier Levels");
+        tierLevelsField.BindProperty(tierLevelsProperty);
+        sectionContentRoot.Add(tierLevelsField);
+
+        List<string> tierIdOptions = PowerUpTierOptionsUtility.BuildTierIdOptions(presetSerializedObject);
+
+        if (tierIdOptions.Count > 0)
+            return;
+
+        HelpBox warningBox = new HelpBox("No tier IDs configured. Milestone tier extraction will show warnings until at least one tier is defined.", HelpBoxMessageType.Warning);
+        warningBox.style.marginTop = 4f;
+        sectionContentRoot.Add(warningBox);
     }
 
     private void BuildModulesManagementSection()
@@ -843,7 +856,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             string foldoutStateKey = BuildModuleFoldoutStateKey(moduleId, moduleIndex);
             validFoldoutStateKeys.Add(foldoutStateKey);
 
-            if (IsMatchingModuleFilters(moduleId, displayName) == false)
+            if (!IsMatchingModuleFilters(moduleId, displayName))
             {
                 continue;
             }
@@ -1065,7 +1078,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             string moduleId = ResolveModuleDefinitionId(moduleProperty);
             string displayName = ResolveModuleDefinitionDisplayName(moduleProperty);
 
-            if (IsMatchingModuleFilters(moduleId, displayName) == false)
+            if (!IsMatchingModuleFilters(moduleId, displayName))
                 continue;
 
             string stateKey = BuildModuleFoldoutStateKey(moduleId, moduleIndex);
@@ -1108,7 +1121,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
     private bool IsMatchingModuleFilters(string moduleId, string displayName)
     {
-        if (string.IsNullOrWhiteSpace(moduleIdFilterText) == false)
+        if (!string.IsNullOrWhiteSpace(moduleIdFilterText))
         {
             string resolvedModuleId = string.IsNullOrWhiteSpace(moduleId) ? string.Empty : moduleId;
 
@@ -1118,7 +1131,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             }
         }
 
-        if (string.IsNullOrWhiteSpace(moduleDisplayNameFilterText) == false)
+        if (!string.IsNullOrWhiteSpace(moduleDisplayNameFilterText))
         {
             string resolvedDisplayName = string.IsNullOrWhiteSpace(displayName) ? string.Empty : displayName;
 
@@ -1235,7 +1248,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             existingModuleIds.Add(existingModuleId.Trim());
         }
 
-        if (existingModuleIds.Contains(sanitizedBaseModuleId) == false)
+        if (!existingModuleIds.Contains(sanitizedBaseModuleId))
         {
             return sanitizedBaseModuleId;
         }
@@ -1654,7 +1667,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             string foldoutStateKey = BuildPowerUpFoldoutStateKey(isActiveSection, powerUpId, powerUpIndex);
             validFoldoutStateKeys.Add(foldoutStateKey);
 
-            if (IsMatchingPowerUpFilters(powerUpId, displayName, powerUpIdFilterValue, displayNameFilterValue) == false)
+            if (!IsMatchingPowerUpFilters(powerUpId, displayName, powerUpIdFilterValue, displayNameFilterValue))
                 continue;
 
             VisualElement card = CreatePowerUpDefinitionCard(powerUpsProperty,
@@ -1919,7 +1932,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             string powerUpId = ResolvePowerUpDefinitionId(powerUpProperty);
             string displayName = ResolvePowerUpDefinitionDisplayName(powerUpProperty);
 
-            if (IsMatchingPowerUpFilters(powerUpId, displayName, powerUpIdFilterValue, displayNameFilterValue) == false)
+            if (!IsMatchingPowerUpFilters(powerUpId, displayName, powerUpIdFilterValue, displayNameFilterValue))
                 continue;
 
             string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, powerUpId, powerUpIndex);
@@ -1999,7 +2012,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
     private static bool IsMatchingPowerUpFilters(string powerUpId, string displayName, string powerUpIdFilterValue, string displayNameFilterValue)
     {
-        if (string.IsNullOrWhiteSpace(powerUpIdFilterValue) == false)
+        if (!string.IsNullOrWhiteSpace(powerUpIdFilterValue))
         {
             string resolvedPowerUpId = string.IsNullOrWhiteSpace(powerUpId) ? string.Empty : powerUpId;
 
@@ -2007,7 +2020,7 @@ public sealed class PlayerPowerUpsPresetsPanel
                 return false;
         }
 
-        if (string.IsNullOrWhiteSpace(displayNameFilterValue) == false)
+        if (!string.IsNullOrWhiteSpace(displayNameFilterValue))
         {
             string resolvedDisplayName = string.IsNullOrWhiteSpace(displayName) ? string.Empty : displayName;
 
@@ -2163,7 +2176,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
             SerializedProperty isEnabledProperty = bindingProperty.FindPropertyRelative("isEnabled");
 
-            if (isEnabledProperty != null && isEnabledProperty.boolValue == false)
+            if (isEnabledProperty != null && !isEnabledProperty.boolValue)
                 continue;
 
             string moduleId = ModularPowerUpBindingDrawerUtility.ResolveBindingModuleId(bindingProperty);
@@ -2174,7 +2187,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             string normalizedModuleId = moduleId.Trim();
             PowerUpModuleCatalogEntry moduleEntry;
 
-            if (PowerUpModuleCatalogUtility.TryResolveModuleInfo(moduleCatalogById, normalizedModuleId, out moduleEntry) == false)
+            if (!PowerUpModuleCatalogUtility.TryResolveModuleInfo(moduleCatalogById, normalizedModuleId, out moduleEntry))
             {
                 AddUniqueString(unresolvedModuleIds, normalizedModuleId);
                 continue;
@@ -2205,7 +2218,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             ? BuildActiveCoverageWarning(moduleKinds)
             : BuildPassiveCoverageWarning(moduleKinds);
 
-        if (string.IsNullOrWhiteSpace(contextWarning) == false)
+        if (!string.IsNullOrWhiteSpace(contextWarning))
             warningLines.Add(contextWarning);
 
         if (warningLines.Count <= 0)
@@ -2299,7 +2312,7 @@ public sealed class PlayerPowerUpsPresetsPanel
         if (executeKindCount > 1)
             warningLines.Add("Multiple execute modules found. Runtime priority is: TriggerHoldCharge > ProjectilesPatternCone > SpawnObject > Dash > TimeDilationEnemies > Heal.");
 
-        if (hasDeathExplosion && hasSpawnObject == false)
+        if (hasDeathExplosion && !hasSpawnObject)
             warningLines.Add("DeathExplosion is ignored unless SpawnObject is also bound.");
 
         if (hasTriggerEvent)
@@ -2331,13 +2344,13 @@ public sealed class PlayerPowerUpsPresetsPanel
         bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
         bool hasAnyPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal;
 
-        if (hasAnyPassiveRuntimeConsumer == false)
+        if (!hasAnyPassiveRuntimeConsumer)
             warningLines.Add("No passive runtime module found. This passive power up compiles as undefined.");
 
-        if (hasTriggerEvent && hasExplosion == false && hasSplit == false && hasHeal == false)
+        if (hasTriggerEvent && !hasExplosion && !hasSplit && !hasHeal)
             warningLines.Add("TriggerEvent has no passive consumer without DeathExplosion, ProjectileSplit, or Heal.");
 
-        if (hasGateResource && hasHeal == false)
+        if (hasGateResource && !hasHeal)
             warningLines.Add("GateResource in Passive currently only contributes cooldown data to Heal modules.");
 
         if (warningLines.Count <= 0)
@@ -2382,7 +2395,7 @@ public sealed class PlayerPowerUpsPresetsPanel
             existingPowerUpIds.Add(existingPowerUpId.Trim());
         }
 
-        if (existingPowerUpIds.Contains(sanitizedBasePowerUpId) == false)
+        if (!existingPowerUpIds.Contains(sanitizedBasePowerUpId))
             return sanitizedBasePowerUpId;
 
         for (int suffix = 2; suffix < int.MaxValue; suffix++)
@@ -2614,8 +2627,8 @@ public sealed class PlayerPowerUpsPresetsPanel
         string primaryId = ResolveSelectedToolId(primaryActivePowerUpIdProperty.stringValue, loadoutOptions);
         string secondaryId = ResolveSelectedToolId(secondaryActivePowerUpIdProperty.stringValue, loadoutOptions);
 
-        if (string.IsNullOrWhiteSpace(primaryId) == false &&
-            string.IsNullOrWhiteSpace(secondaryId) == false &&
+        if (!string.IsNullOrWhiteSpace(primaryId) &&
+            !string.IsNullOrWhiteSpace(secondaryId) &&
             string.Equals(primaryId, secondaryId, StringComparison.OrdinalIgnoreCase))
         {
             HelpBox sameSlotWarning = new HelpBox("Primary and Secondary currently reference the same active power up.", HelpBoxMessageType.Warning);
@@ -2696,7 +2709,7 @@ public sealed class PlayerPowerUpsPresetsPanel
         if (options == null || options.Count == 0)
             return string.Empty;
 
-        if (string.IsNullOrWhiteSpace(selectedToolId) == false)
+        if (!string.IsNullOrWhiteSpace(selectedToolId))
         {
             for (int index = 0; index < options.Count; index++)
             {
@@ -2713,7 +2726,7 @@ public sealed class PlayerPowerUpsPresetsPanel
         if (options == null || options.Count == 0)
             return default;
 
-        if (string.IsNullOrWhiteSpace(selectedToolId) == false)
+        if (!string.IsNullOrWhiteSpace(selectedToolId))
         {
             for (int index = 0; index < options.Count; index++)
             {
@@ -3001,7 +3014,7 @@ public sealed class PlayerPowerUpsPresetsPanel
                 continue;
             }
 
-            if (ContainsPassiveToolId(passiveToolIds, passiveToolId) == false)
+            if (!ContainsPassiveToolId(passiveToolIds, passiveToolId))
             {
                 equippedPassiveToolIdsProperty.DeleteArrayElementAtIndex(index);
                 changed = true;
@@ -3106,7 +3119,7 @@ public sealed class PlayerPowerUpsPresetsPanel
         if (passiveToolIds == null || passiveToolIds.Count == 0)
             return string.Empty;
 
-        if (string.IsNullOrWhiteSpace(selectedToolId) == false)
+        if (!string.IsNullOrWhiteSpace(selectedToolId))
         {
             for (int index = 0; index < passiveToolIds.Count; index++)
             {
@@ -3163,7 +3176,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         string currentActionId = actionIdProperty.stringValue;
 
-        if (string.IsNullOrWhiteSpace(currentActionId) == false)
+        if (!string.IsNullOrWhiteSpace(currentActionId))
         {
             InputAction existingAction = inputAsset.FindAction(currentActionId, false);
 
@@ -3234,7 +3247,7 @@ public sealed class PlayerPowerUpsPresetsPanel
     private enum SectionType
     {
         Metadata = 0,
-        DropPools = 1,
+        Tiers = 1,
         ModulesManagement = 2,
         ActivePowerUps = 3,
         PassivePowerUps = 4,

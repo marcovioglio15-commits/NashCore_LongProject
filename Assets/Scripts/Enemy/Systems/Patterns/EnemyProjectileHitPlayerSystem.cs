@@ -63,7 +63,7 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
         if (playerEntity == Entity.Null)
             return;
 
-        if (entityManager.Exists(playerEntity) == false)
+        if (!entityManager.Exists(playerEntity))
             return;
 
         if (playerHealth.Current <= 0f)
@@ -142,7 +142,7 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
         ProjectilePoolUtility.SetProjectileParked(entityManager, projectileEntity);
         entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, false);
 
-        if (projectilePoolLookup.HasBuffer(shooterEntity) == false)
+        if (!projectilePoolLookup.HasBuffer(shooterEntity))
             return;
 
         DynamicBuffer<ProjectilePoolElement> shooterPool = projectilePoolLookup[shooterEntity];

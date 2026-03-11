@@ -309,7 +309,7 @@ public static class EnemyPatternWandererUtility
                 NativeParallelMultiHashMapIterator<int> iterator;
                 int occupancyIndex;
 
-                if (occupancyContext.CellMap.TryGetFirstValue(cellKey, out occupancyIndex, out iterator) == false)
+                if (!occupancyContext.CellMap.TryGetFirstValue(cellKey, out occupancyIndex, out iterator))
                     continue;
 
                 do
@@ -522,7 +522,7 @@ public static class EnemyPatternWandererUtility
                                                                out float freeTrajectoryScore,
                                                                out float freeSpaceScore);
 
-            if (freeTrajectory == false)
+            if (!freeTrajectory)
                 continue;
 
             float3 toPlayer = playerPosition - candidate;
@@ -612,7 +612,7 @@ public static class EnemyPatternWandererUtility
                 NativeParallelMultiHashMapIterator<int> iterator;
                 int occupancyIndex;
 
-                if (occupancyContext.CellMap.TryGetFirstValue(cellKey, out occupancyIndex, out iterator) == false)
+                if (!occupancyContext.CellMap.TryGetFirstValue(cellKey, out occupancyIndex, out iterator))
                     continue;
 
                 do
@@ -722,7 +722,7 @@ public static class EnemyPatternWandererUtility
                 NativeParallelMultiHashMapIterator<int> iterator;
                 int occupancyIndex;
 
-                if (occupancyContext.CellMap.TryGetFirstValue(cellKey, out occupancyIndex, out iterator) == false)
+                if (!occupancyContext.CellMap.TryGetFirstValue(cellKey, out occupancyIndex, out iterator))
                     continue;
 
                 do

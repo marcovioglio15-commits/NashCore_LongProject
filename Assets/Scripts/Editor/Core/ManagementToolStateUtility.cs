@@ -32,7 +32,7 @@ public static class ManagementToolStateUtility
         int fallbackIntValue = Convert.ToInt32(fallbackValue, CultureInfo.InvariantCulture);
         int savedValue = EditorPrefs.GetInt(stateKey, fallbackIntValue);
 
-        if (Enum.IsDefined(typeof(TEnum), savedValue) == false)
+        if (!Enum.IsDefined(typeof(TEnum), savedValue))
             return fallbackValue;
 
         object boxedValue = Enum.ToObject(typeof(TEnum), savedValue);
@@ -86,10 +86,10 @@ public static class ManagementToolStateUtility
         {
             string token = tokens[index];
 
-            if (int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedValue) == false)
+            if (!int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedValue))
                 continue;
 
-            if (Enum.IsDefined(typeof(TEnum), parsedValue) == false)
+            if (!Enum.IsDefined(typeof(TEnum), parsedValue))
                 continue;
 
             if (uniqueValues.Contains(parsedValue))

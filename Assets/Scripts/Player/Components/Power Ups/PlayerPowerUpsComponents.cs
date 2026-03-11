@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -54,6 +55,78 @@ public struct PlayerPowerUpCheatPresetEntry : IBufferElementData
 public struct PlayerPowerUpCheatPresetPassiveElement : IBufferElementData
 {
     public PlayerPassiveToolConfig Tool;
+}
+
+/// <summary>
+/// Runtime payload kind baked for one unlockable modular power-up catalog entry.
+/// </summary>
+public enum PlayerPowerUpUnlockKind : byte
+{
+    Active = 0,
+    Passive = 1
+}
+
+/// <summary>
+/// One unlockable modular power-up entry baked for milestone tier extraction.
+/// </summary>
+public struct PlayerPowerUpUnlockCatalogElement : IBufferElementData
+{
+    public FixedString64Bytes PowerUpId;
+    public FixedString64Bytes DisplayName;
+    public FixedString128Bytes Description;
+    public PlayerPowerUpUnlockKind UnlockKind;
+    public byte IsUnlocked;
+    public PlayerPowerUpSlotConfig ActiveSlotConfig;
+    public PlayerPassiveToolConfig PassiveToolConfig;
+}
+
+/// <summary>
+/// Tier metadata pointing to a contiguous range inside the flattened tier-entry buffer.
+/// </summary>
+public struct PlayerPowerUpTierDefinitionElement : IBufferElementData
+{
+    public FixedString64Bytes TierId;
+    public int EntryStartIndex;
+    public int EntryCount;
+}
+
+/// <summary>
+/// Flattened weighted tier entry referencing one unlock catalog index.
+/// </summary>
+public struct PlayerPowerUpTierEntryElement : IBufferElementData
+{
+    public int CatalogIndex;
+    public float SelectionWeight;
+}
+
+/// <summary>
+/// Runtime milestone-selection state used to pause gameplay and expose power-up choices to HUD.
+/// </summary>
+public struct PlayerMilestonePowerUpSelectionState : IComponentData
+{
+    public byte IsSelectionActive;
+    public int MilestoneLevel;
+    public int OfferCount;
+}
+
+/// <summary>
+/// One rolled power-up option presented to the player at milestone selection time.
+/// </summary>
+public struct PlayerMilestonePowerUpSelectionOfferElement : IBufferElementData
+{
+    public int CatalogIndex;
+    public FixedString64Bytes PowerUpId;
+    public FixedString64Bytes DisplayName;
+    public FixedString128Bytes Description;
+    public PlayerPowerUpUnlockKind UnlockKind;
+}
+
+/// <summary>
+/// One HUD-to-ECS command selecting a rolled power-up option.
+/// </summary>
+public struct PlayerMilestonePowerUpSelectionCommand : IBufferElementData
+{
+    public int OfferIndex;
 }
 
 /// <summary>

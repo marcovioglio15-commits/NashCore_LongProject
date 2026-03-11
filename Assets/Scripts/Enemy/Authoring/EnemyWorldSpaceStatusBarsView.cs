@@ -93,7 +93,7 @@ public sealed class EnemyWorldSpaceStatusBarsView : MonoBehaviour
         Vector3 targetPosition = enemyPosition + worldOffset;
         selfTransform.position = targetPosition;
 
-        if (billboardToCamera == false)
+        if (!billboardToCamera)
         {
             return;
         }
@@ -127,7 +127,7 @@ public sealed class EnemyWorldSpaceStatusBarsView : MonoBehaviour
             return;
         }
 
-        if (TryResolveCanvas() == false)
+        if (!TryResolveCanvas())
         {
             return;
         }
@@ -217,26 +217,26 @@ public sealed class EnemyWorldSpaceStatusBarsView : MonoBehaviour
 
     private bool ResolveImmediateRefresh(bool enemyActive)
     {
-        if (enemyActiveStateInitialized == false)
+        if (!enemyActiveStateInitialized)
         {
             enemyActiveStateInitialized = true;
             lastEnemyActiveState = enemyActive;
             return true;
         }
 
-        bool transitionedToActive = enemyActive && lastEnemyActiveState == false;
+        bool transitionedToActive = enemyActive && !lastEnemyActiveState;
         lastEnemyActiveState = enemyActive;
         return transitionedToActive;
     }
 
     private bool ResolveBarVisibility(bool enemyActive, bool enemyVisible)
     {
-        if (hideWhenEnemyInactive && enemyActive == false)
+        if (hideWhenEnemyInactive && !enemyActive)
         {
             return false;
         }
 
-        if (hideWhenEnemyCulled && enemyVisible == false)
+        if (hideWhenEnemyCulled && !enemyVisible)
         {
             return false;
         }
@@ -339,7 +339,7 @@ public sealed class EnemyWorldSpaceStatusBarsView : MonoBehaviour
 
         if (TryResolveCanvas() &&
             cachedCanvas.renderMode == RenderMode.WorldSpace &&
-            cachedCanvas.overrideSorting == false)
+            !cachedCanvas.overrideSorting)
         {
             cachedCanvas.overrideSorting = true;
         }
@@ -347,7 +347,7 @@ public sealed class EnemyWorldSpaceStatusBarsView : MonoBehaviour
 
     private bool ShouldUseYawOnlyBillboarding(Transform cameraTransform)
     {
-        if (billboardYawOnly == false)
+        if (!billboardYawOnly)
         {
             return false;
         }

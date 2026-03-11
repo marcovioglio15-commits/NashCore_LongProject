@@ -33,10 +33,10 @@ public partial struct PlayerElementalInitializeSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
-        bool hasMissingRuntimeState = missingElementalRuntimeStateQuery.IsEmptyIgnoreFilter == false;
-        bool hasMissingStackBuffer = missingElementalStackBufferQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingRuntimeState = !missingElementalRuntimeStateQuery.IsEmptyIgnoreFilter;
+        bool hasMissingStackBuffer = !missingElementalStackBufferQuery.IsEmptyIgnoreFilter;
 
-        if (hasMissingRuntimeState == false && hasMissingStackBuffer == false)
+        if (!hasMissingRuntimeState && !hasMissingStackBuffer)
             return;
 
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);

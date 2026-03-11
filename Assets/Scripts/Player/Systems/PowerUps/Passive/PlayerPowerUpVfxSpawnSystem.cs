@@ -60,7 +60,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
                 if (request.PrefabEntity == Entity.Null)
                     continue;
 
-                if (entityManager.Exists(request.PrefabEntity) == false)
+                if (!entityManager.Exists(request.PrefabEntity))
                     continue;
 
                 bool hasTargetCapKey = TryBuildTargetKey(in request, out VfxTargetKey targetCapKey);
@@ -190,7 +190,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
 
                     Entity existingTargetVfxEntity;
 
-                    if (targetInstances.TryGetValue(targetCapKey, out existingTargetVfxEntity) == false)
+                    if (!targetInstances.TryGetValue(targetCapKey, out existingTargetVfxEntity))
                         targetInstances.TryAdd(targetCapKey, vfxEntity);
                 }
             }
@@ -243,19 +243,19 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
             if (vfxEntity == Entity.Null || vfxEntity.Index < 0)
                 continue;
 
-            if (entityManager.Exists(vfxEntity) == false)
+            if (!entityManager.Exists(vfxEntity))
                 continue;
 
-            if (entityManager.IsEnabled(vfxEntity) == false)
+            if (!entityManager.IsEnabled(vfxEntity))
                 continue;
 
-            if (entityManager.HasComponent<PlayerPowerUpVfxLifetime>(vfxEntity) == false)
+            if (!entityManager.HasComponent<PlayerPowerUpVfxLifetime>(vfxEntity))
                 continue;
 
             activeOneShotCount++;
 
             if (capConfig.MaxSamePrefabPerCell > 0 &&
-                entityManager.HasComponent<PlayerPowerUpVfxFollowTarget>(vfxEntity) == false &&
+                !entityManager.HasComponent<PlayerPowerUpVfxFollowTarget>(vfxEntity) &&
                 entityManager.HasComponent<LocalTransform>(vfxEntity))
             {
                 LocalTransform localTransform = entityManager.GetComponentData<LocalTransform>(vfxEntity);
@@ -282,7 +282,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
 
                 Entity existingTargetVfxEntity;
 
-                if (targetInstances.TryGetValue(targetKey, out existingTargetVfxEntity) == false)
+                if (!targetInstances.TryGetValue(targetKey, out existingTargetVfxEntity))
                     targetInstances.TryAdd(targetKey, vfxEntity);
             }
         }
@@ -362,10 +362,10 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
         if (vfxEntity == Entity.Null || vfxEntity.Index < 0)
             return;
 
-        if (entityManager.Exists(vfxEntity) == false)
+        if (!entityManager.Exists(vfxEntity))
             return;
 
-        if (entityManager.HasComponent<PlayerPowerUpVfxLifetime>(vfxEntity) == false)
+        if (!entityManager.HasComponent<PlayerPowerUpVfxLifetime>(vfxEntity))
             return;
 
         PlayerPowerUpVfxLifetime currentLifetime = entityManager.GetComponentData<PlayerPowerUpVfxLifetime>(vfxEntity);

@@ -50,14 +50,14 @@ public partial struct PlayerPowerUpVfxLifetimeSystem : ISystem
             {
                 Entity validationEntity = followTarget.ValueRO.ValidationEntity;
 
-                if (validationEntity == Entity.Null || enemyRuntimeLookup.HasComponent(validationEntity) == false)
+                if (validationEntity == Entity.Null || !enemyRuntimeLookup.HasComponent(validationEntity))
                 {
                     ReleaseOrDestroyVfxEntity(state.EntityManager, ref commandBuffer, vfxEntity);
                     continue;
                 }
 
-                if (enemyActiveLookup.HasComponent(validationEntity) == false ||
-                    enemyActiveLookup.IsComponentEnabled(validationEntity) == false)
+                if (!enemyActiveLookup.HasComponent(validationEntity) ||
+                    !enemyActiveLookup.IsComponentEnabled(validationEntity))
                 {
                     ReleaseOrDestroyVfxEntity(state.EntityManager, ref commandBuffer, vfxEntity);
                     continue;

@@ -43,7 +43,7 @@ public sealed class PlayerPowerUpsPresetLibrary : ScriptableObject
         if (preset == null)
             return;
 
-        if (presets.Contains(preset) == false)
+        if (!presets.Contains(preset))
             return;
 
         presets.Remove(preset);

@@ -189,7 +189,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
         {
             PendingAnimatorAssignment assignment = pendingAnimatorAssignments[assignmentIndex];
 
-            if (entityManager.Exists(assignment.PlayerEntity) == false)
+            if (!entityManager.Exists(assignment.PlayerEntity))
             {
                 continue;
             }
@@ -253,7 +253,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
         {
             PendingRenderVisibilityAssignment assignment = pendingRenderVisibilityAssignments[assignmentIndex];
 
-            if (entityManager.Exists(assignment.PlayerEntity) == false)
+            if (!entityManager.Exists(assignment.PlayerEntity))
             {
                 appliedRenderHiddenState.Remove(assignment.PlayerEntity);
                 continue;
@@ -282,7 +282,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
         {
             Entity hierarchyEntity = hierarchyTraversalEntities[entityIndex];
 
-            if (entityManager.HasComponent<MaterialMeshInfo>(hierarchyEntity) == false)
+            if (!entityManager.HasComponent<MaterialMeshInfo>(hierarchyEntity))
             {
                 continue;
             }
@@ -291,7 +291,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
 
             if (hidden)
             {
-                if (hasDisableRendering == false)
+                if (!hasDisableRendering)
                 {
                     entityManager.AddComponent<DisableRendering>(hierarchyEntity);
                 }
@@ -310,7 +310,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
     {
         outputEntities.Clear();
 
-        if (IsValidEntity(entityManager, rootEntity) == false)
+        if (!IsValidEntity(entityManager, rootEntity))
         {
             return;
         }
@@ -321,7 +321,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
         {
             Entity currentEntity = outputEntities[entityIndex];
 
-            if (entityManager.HasBuffer<Child>(currentEntity) == false)
+            if (!entityManager.HasBuffer<Child>(currentEntity))
             {
                 continue;
             }
@@ -342,7 +342,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
 
     private static Animator ResolveAnimatorComponent(EntityManager entityManager, Entity playerEntity)
     {
-        if (entityManager.HasComponent<Animator>(playerEntity) == false)
+        if (!entityManager.HasComponent<Animator>(playerEntity))
         {
             return null;
         }
@@ -360,7 +360,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
                                    managedInstance.InstanceObject == null ||
                                    managedInstance.SourcePrefab != runtimeVisualPrefab;
 
-            if (requiresRebuild == false)
+            if (!requiresRebuild)
             {
                 return managedInstance;
             }
@@ -499,7 +499,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
             return false;
         }
 
-        if (entityManager.Exists(entity) == false)
+        if (!entityManager.Exists(entity))
         {
             return false;
         }

@@ -129,7 +129,7 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
             stageProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        if (EqualityComparer<PowerUpModuleKind>.Default.Equals(moduleKindPopup.value, moduleKind) == false)
+        if (!EqualityComparer<PowerUpModuleKind>.Default.Equals(moduleKindPopup.value, moduleKind))
         {
             moduleKindPopup.SetValueWithoutNotify(moduleKind);
         }
@@ -156,7 +156,7 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
         string payloadLabel;
         bool hasPayload = PowerUpModuleEnumDescriptions.TryGetPayloadProperty(moduleKind, out relativePath, out payloadLabel);
 
-        if (hasPayload == false)
+        if (!hasPayload)
         {
             HelpBox infoBox = new HelpBox("No payload is required for this module kind.", HelpBoxMessageType.Info);
             payloadContainer.Add(infoBox);
@@ -223,7 +223,7 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
         };
         payloadContainer.Add(payloadFoldout);
 
-        if (payloadProperty.hasVisibleChildren == false)
+        if (!payloadProperty.hasVisibleChildren)
         {
             AddField(payloadFoldout, payloadProperty, resolvedLabel);
             return;

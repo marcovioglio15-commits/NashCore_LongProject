@@ -1,0 +1,236 @@
+using Unity.Entities;
+
+/// <summary>
+/// Snapshot of missing runtime power-up data used by PlayerPowerUpsInitializeSystem.
+/// </summary>
+internal readonly struct PlayerPowerUpsMissingRuntimeFlags
+{
+    #region Fields
+    public readonly bool HasMissingState;
+    public readonly bool HasMissingPassiveToolsState;
+    public readonly bool HasMissingDash;
+    public readonly bool HasMissingBulletTimeState;
+    public readonly bool HasMissingHealOverTimeState;
+    public readonly bool HasMissingPassiveExplosionState;
+    public readonly bool HasMissingPassiveHealState;
+    public readonly bool HasMissingElementalTrailState;
+    public readonly bool HasMissingElementalTrailAttachedVfxState;
+    public readonly bool HasMissingBombRequestBuffer;
+    public readonly bool HasMissingElementalTrailSegmentBuffer;
+    public readonly bool HasMissingExplosionRequestBuffer;
+    public readonly bool HasMissingPowerUpVfxRequestBuffer;
+    public readonly bool HasMissingPowerUpVfxPoolBuffer;
+    public readonly bool HasMissingPowerUpVfxCapConfig;
+    public readonly bool HasMissingPowerUpCheatBuffer;
+    public readonly bool HasMissingPowerUpCheatPresetEntryBuffer;
+    public readonly bool HasMissingPowerUpCheatPresetPassiveBuffer;
+    public readonly bool HasMissingPowerUpUnlockCatalogBuffer;
+    public readonly bool HasMissingPowerUpTierDefinitionBuffer;
+    public readonly bool HasMissingPowerUpTierEntryBuffer;
+    public readonly bool HasMissingMilestoneSelectionState;
+    public readonly bool HasMissingMilestoneSelectionOfferBuffer;
+    public readonly bool HasMissingMilestoneSelectionCommandBuffer;
+    #endregion
+
+    #region Properties
+    public bool HasAnyMissing
+    {
+        get
+        {
+            return HasMissingState ||
+                   HasMissingPassiveToolsState ||
+                   HasMissingDash ||
+                   HasMissingBulletTimeState ||
+                   HasMissingHealOverTimeState ||
+                   HasMissingPassiveExplosionState ||
+                   HasMissingPassiveHealState ||
+                   HasMissingElementalTrailState ||
+                   HasMissingElementalTrailAttachedVfxState ||
+                   HasMissingBombRequestBuffer ||
+                   HasMissingElementalTrailSegmentBuffer ||
+                   HasMissingExplosionRequestBuffer ||
+                   HasMissingPowerUpVfxRequestBuffer ||
+                   HasMissingPowerUpVfxPoolBuffer ||
+                   HasMissingPowerUpVfxCapConfig ||
+                   HasMissingPowerUpCheatBuffer ||
+                   HasMissingPowerUpCheatPresetEntryBuffer ||
+                   HasMissingPowerUpCheatPresetPassiveBuffer ||
+                   HasMissingPowerUpUnlockCatalogBuffer ||
+                   HasMissingPowerUpTierDefinitionBuffer ||
+                   HasMissingPowerUpTierEntryBuffer ||
+                   HasMissingMilestoneSelectionState ||
+                   HasMissingMilestoneSelectionOfferBuffer ||
+                   HasMissingMilestoneSelectionCommandBuffer;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Lifecycle
+    /// <summary>
+    /// Creates a new immutable snapshot of missing power-up runtime flags.
+    /// </summary>
+    /// <param name="hasMissingState">True when PlayerPowerUpsState is missing.</param>
+    /// <param name="hasMissingPassiveToolsState">True when PlayerPassiveToolsState is missing.</param>
+    /// <param name="hasMissingDash">True when PlayerDashState is missing.</param>
+    /// <param name="hasMissingBulletTimeState">True when PlayerBulletTimeState is missing.</param>
+    /// <param name="hasMissingHealOverTimeState">True when PlayerHealOverTimeState is missing.</param>
+    /// <param name="hasMissingPassiveExplosionState">True when PlayerPassiveExplosionState is missing.</param>
+    /// <param name="hasMissingPassiveHealState">True when PlayerPassiveHealState is missing.</param>
+    /// <param name="hasMissingElementalTrailState">True when PlayerElementalTrailState is missing.</param>
+    /// <param name="hasMissingElementalTrailAttachedVfxState">True when PlayerElementalTrailAttachedVfxState is missing.</param>
+    /// <param name="hasMissingBombRequestBuffer">True when PlayerBombSpawnRequest buffer is missing.</param>
+    /// <param name="hasMissingElementalTrailSegmentBuffer">True when PlayerElementalTrailSegmentElement buffer is missing.</param>
+    /// <param name="hasMissingExplosionRequestBuffer">True when PlayerExplosionRequest buffer is missing.</param>
+    /// <param name="hasMissingPowerUpVfxRequestBuffer">True when PlayerPowerUpVfxSpawnRequest buffer is missing.</param>
+    /// <param name="hasMissingPowerUpVfxPoolBuffer">True when PlayerPowerUpVfxPoolElement buffer is missing.</param>
+    /// <param name="hasMissingPowerUpVfxCapConfig">True when PlayerPowerUpVfxCapConfig is missing.</param>
+    /// <param name="hasMissingPowerUpCheatBuffer">True when PlayerPowerUpCheatCommand buffer is missing.</param>
+    /// <param name="hasMissingPowerUpCheatPresetEntryBuffer">True when PlayerPowerUpCheatPresetEntry buffer is missing.</param>
+    /// <param name="hasMissingPowerUpCheatPresetPassiveBuffer">True when PlayerPowerUpCheatPresetPassiveElement buffer is missing.</param>
+    /// <param name="hasMissingPowerUpUnlockCatalogBuffer">True when PlayerPowerUpUnlockCatalogElement buffer is missing.</param>
+    /// <param name="hasMissingPowerUpTierDefinitionBuffer">True when PlayerPowerUpTierDefinitionElement buffer is missing.</param>
+    /// <param name="hasMissingPowerUpTierEntryBuffer">True when PlayerPowerUpTierEntryElement buffer is missing.</param>
+    /// <param name="hasMissingMilestoneSelectionState">True when PlayerMilestonePowerUpSelectionState is missing.</param>
+    /// <param name="hasMissingMilestoneSelectionOfferBuffer">True when PlayerMilestonePowerUpSelectionOfferElement buffer is missing.</param>
+    /// <param name="hasMissingMilestoneSelectionCommandBuffer">True when PlayerMilestonePowerUpSelectionCommand buffer is missing.</param>
+    /// <returns>A populated immutable snapshot.</returns>
+    public PlayerPowerUpsMissingRuntimeFlags(
+        bool hasMissingState,
+        bool hasMissingPassiveToolsState,
+        bool hasMissingDash,
+        bool hasMissingBulletTimeState,
+        bool hasMissingHealOverTimeState,
+        bool hasMissingPassiveExplosionState,
+        bool hasMissingPassiveHealState,
+        bool hasMissingElementalTrailState,
+        bool hasMissingElementalTrailAttachedVfxState,
+        bool hasMissingBombRequestBuffer,
+        bool hasMissingElementalTrailSegmentBuffer,
+        bool hasMissingExplosionRequestBuffer,
+        bool hasMissingPowerUpVfxRequestBuffer,
+        bool hasMissingPowerUpVfxPoolBuffer,
+        bool hasMissingPowerUpVfxCapConfig,
+        bool hasMissingPowerUpCheatBuffer,
+        bool hasMissingPowerUpCheatPresetEntryBuffer,
+        bool hasMissingPowerUpCheatPresetPassiveBuffer,
+        bool hasMissingPowerUpUnlockCatalogBuffer,
+        bool hasMissingPowerUpTierDefinitionBuffer,
+        bool hasMissingPowerUpTierEntryBuffer,
+        bool hasMissingMilestoneSelectionState,
+        bool hasMissingMilestoneSelectionOfferBuffer,
+        bool hasMissingMilestoneSelectionCommandBuffer)
+    {
+        HasMissingState = hasMissingState;
+        HasMissingPassiveToolsState = hasMissingPassiveToolsState;
+        HasMissingDash = hasMissingDash;
+        HasMissingBulletTimeState = hasMissingBulletTimeState;
+        HasMissingHealOverTimeState = hasMissingHealOverTimeState;
+        HasMissingPassiveExplosionState = hasMissingPassiveExplosionState;
+        HasMissingPassiveHealState = hasMissingPassiveHealState;
+        HasMissingElementalTrailState = hasMissingElementalTrailState;
+        HasMissingElementalTrailAttachedVfxState = hasMissingElementalTrailAttachedVfxState;
+        HasMissingBombRequestBuffer = hasMissingBombRequestBuffer;
+        HasMissingElementalTrailSegmentBuffer = hasMissingElementalTrailSegmentBuffer;
+        HasMissingExplosionRequestBuffer = hasMissingExplosionRequestBuffer;
+        HasMissingPowerUpVfxRequestBuffer = hasMissingPowerUpVfxRequestBuffer;
+        HasMissingPowerUpVfxPoolBuffer = hasMissingPowerUpVfxPoolBuffer;
+        HasMissingPowerUpVfxCapConfig = hasMissingPowerUpVfxCapConfig;
+        HasMissingPowerUpCheatBuffer = hasMissingPowerUpCheatBuffer;
+        HasMissingPowerUpCheatPresetEntryBuffer = hasMissingPowerUpCheatPresetEntryBuffer;
+        HasMissingPowerUpCheatPresetPassiveBuffer = hasMissingPowerUpCheatPresetPassiveBuffer;
+        HasMissingPowerUpUnlockCatalogBuffer = hasMissingPowerUpUnlockCatalogBuffer;
+        HasMissingPowerUpTierDefinitionBuffer = hasMissingPowerUpTierDefinitionBuffer;
+        HasMissingPowerUpTierEntryBuffer = hasMissingPowerUpTierEntryBuffer;
+        HasMissingMilestoneSelectionState = hasMissingMilestoneSelectionState;
+        HasMissingMilestoneSelectionOfferBuffer = hasMissingMilestoneSelectionOfferBuffer;
+        HasMissingMilestoneSelectionCommandBuffer = hasMissingMilestoneSelectionCommandBuffer;
+    }
+    #endregion
+
+    #region Factories
+    /// <summary>
+    /// Evaluates all runtime bootstrap queries and returns a snapshot of missing data.
+    /// </summary>
+    /// <param name="missingStateQuery">Query for entities missing PlayerPowerUpsState.</param>
+    /// <param name="missingPassiveToolsStateQuery">Query for entities missing PlayerPassiveToolsState.</param>
+    /// <param name="missingDashQuery">Query for entities missing PlayerDashState.</param>
+    /// <param name="missingBulletTimeStateQuery">Query for entities missing PlayerBulletTimeState.</param>
+    /// <param name="missingHealOverTimeStateQuery">Query for entities missing PlayerHealOverTimeState.</param>
+    /// <param name="missingPassiveExplosionStateQuery">Query for entities missing PlayerPassiveExplosionState.</param>
+    /// <param name="missingPassiveHealStateQuery">Query for entities missing PlayerPassiveHealState.</param>
+    /// <param name="missingElementalTrailStateQuery">Query for entities missing PlayerElementalTrailState.</param>
+    /// <param name="missingElementalTrailAttachedVfxStateQuery">Query for entities missing PlayerElementalTrailAttachedVfxState.</param>
+    /// <param name="missingBombRequestBufferQuery">Query for entities missing PlayerBombSpawnRequest buffer.</param>
+    /// <param name="missingElementalTrailSegmentBufferQuery">Query for entities missing PlayerElementalTrailSegmentElement buffer.</param>
+    /// <param name="missingExplosionRequestBufferQuery">Query for entities missing PlayerExplosionRequest buffer.</param>
+    /// <param name="missingPowerUpVfxRequestBufferQuery">Query for entities missing PlayerPowerUpVfxSpawnRequest buffer.</param>
+    /// <param name="missingPowerUpVfxPoolBufferQuery">Query for entities missing PlayerPowerUpVfxPoolElement buffer.</param>
+    /// <param name="missingPowerUpVfxCapConfigQuery">Query for entities missing PlayerPowerUpVfxCapConfig.</param>
+    /// <param name="missingPowerUpCheatBufferQuery">Query for entities missing PlayerPowerUpCheatCommand buffer.</param>
+    /// <param name="missingPowerUpCheatPresetEntryBufferQuery">Query for entities missing PlayerPowerUpCheatPresetEntry buffer.</param>
+    /// <param name="missingPowerUpCheatPresetPassiveBufferQuery">Query for entities missing PlayerPowerUpCheatPresetPassiveElement buffer.</param>
+    /// <param name="missingPowerUpUnlockCatalogBufferQuery">Query for entities missing PlayerPowerUpUnlockCatalogElement buffer.</param>
+    /// <param name="missingPowerUpTierDefinitionBufferQuery">Query for entities missing PlayerPowerUpTierDefinitionElement buffer.</param>
+    /// <param name="missingPowerUpTierEntryBufferQuery">Query for entities missing PlayerPowerUpTierEntryElement buffer.</param>
+    /// <param name="missingMilestoneSelectionStateQuery">Query for entities missing PlayerMilestonePowerUpSelectionState.</param>
+    /// <param name="missingMilestoneSelectionOfferBufferQuery">Query for entities missing PlayerMilestonePowerUpSelectionOfferElement buffer.</param>
+    /// <param name="missingMilestoneSelectionCommandBufferQuery">Query for entities missing PlayerMilestonePowerUpSelectionCommand buffer.</param>
+    /// <returns>A snapshot of all missing-runtime flags.</returns>
+    public static PlayerPowerUpsMissingRuntimeFlags Create(
+        in EntityQuery missingStateQuery,
+        in EntityQuery missingPassiveToolsStateQuery,
+        in EntityQuery missingDashQuery,
+        in EntityQuery missingBulletTimeStateQuery,
+        in EntityQuery missingHealOverTimeStateQuery,
+        in EntityQuery missingPassiveExplosionStateQuery,
+        in EntityQuery missingPassiveHealStateQuery,
+        in EntityQuery missingElementalTrailStateQuery,
+        in EntityQuery missingElementalTrailAttachedVfxStateQuery,
+        in EntityQuery missingBombRequestBufferQuery,
+        in EntityQuery missingElementalTrailSegmentBufferQuery,
+        in EntityQuery missingExplosionRequestBufferQuery,
+        in EntityQuery missingPowerUpVfxRequestBufferQuery,
+        in EntityQuery missingPowerUpVfxPoolBufferQuery,
+        in EntityQuery missingPowerUpVfxCapConfigQuery,
+        in EntityQuery missingPowerUpCheatBufferQuery,
+        in EntityQuery missingPowerUpCheatPresetEntryBufferQuery,
+        in EntityQuery missingPowerUpCheatPresetPassiveBufferQuery,
+        in EntityQuery missingPowerUpUnlockCatalogBufferQuery,
+        in EntityQuery missingPowerUpTierDefinitionBufferQuery,
+        in EntityQuery missingPowerUpTierEntryBufferQuery,
+        in EntityQuery missingMilestoneSelectionStateQuery,
+        in EntityQuery missingMilestoneSelectionOfferBufferQuery,
+        in EntityQuery missingMilestoneSelectionCommandBufferQuery)
+    {
+        return new PlayerPowerUpsMissingRuntimeFlags(
+            !missingStateQuery.IsEmptyIgnoreFilter,
+            !missingPassiveToolsStateQuery.IsEmptyIgnoreFilter,
+            !missingDashQuery.IsEmptyIgnoreFilter,
+            !missingBulletTimeStateQuery.IsEmptyIgnoreFilter,
+            !missingHealOverTimeStateQuery.IsEmptyIgnoreFilter,
+            !missingPassiveExplosionStateQuery.IsEmptyIgnoreFilter,
+            !missingPassiveHealStateQuery.IsEmptyIgnoreFilter,
+            !missingElementalTrailStateQuery.IsEmptyIgnoreFilter,
+            !missingElementalTrailAttachedVfxStateQuery.IsEmptyIgnoreFilter,
+            !missingBombRequestBufferQuery.IsEmptyIgnoreFilter,
+            !missingElementalTrailSegmentBufferQuery.IsEmptyIgnoreFilter,
+            !missingExplosionRequestBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpVfxRequestBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpVfxPoolBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpVfxCapConfigQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpCheatBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpCheatPresetEntryBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpCheatPresetPassiveBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpUnlockCatalogBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpTierDefinitionBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpTierEntryBufferQuery.IsEmptyIgnoreFilter,
+            !missingMilestoneSelectionStateQuery.IsEmptyIgnoreFilter,
+            !missingMilestoneSelectionOfferBufferQuery.IsEmptyIgnoreFilter,
+            !missingMilestoneSelectionCommandBufferQuery.IsEmptyIgnoreFilter);
+    }
+    #endregion
+
+    #endregion
+}

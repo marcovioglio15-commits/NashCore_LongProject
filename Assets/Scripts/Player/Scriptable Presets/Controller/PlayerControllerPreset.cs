@@ -300,7 +300,7 @@ public sealed class PlayerHealthStatisticsSettings
         float sanitizedLegacyMaxHealth = Mathf.Max(1f, legacyMaxHealth);
         bool changed = false;
 
-        if (Mathf.Approximately(maxHealth, sanitizedLegacyMaxHealth) == false)
+        if (!Mathf.Approximately(maxHealth, sanitizedLegacyMaxHealth))
         {
             maxHealth = sanitizedLegacyMaxHealth;
             changed = true;

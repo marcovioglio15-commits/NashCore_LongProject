@@ -42,7 +42,7 @@ public static class ModularPowerUpBindingDrawerUtility
 
         int enumValue = stageProperty.enumValueIndex;
 
-        if (Enum.IsDefined(typeof(PowerUpModuleStage), enumValue) == false)
+        if (!Enum.IsDefined(typeof(PowerUpModuleStage), enumValue))
             return PowerUpModuleStage.Execute;
 
         return (PowerUpModuleStage)enumValue;
@@ -113,7 +113,7 @@ public static class ModularPowerUpBindingDrawerUtility
                                                 string moduleIdFilterValue,
                                                 string displayNameFilterValue)
     {
-        if (string.IsNullOrWhiteSpace(moduleIdFilterValue) == false)
+        if (!string.IsNullOrWhiteSpace(moduleIdFilterValue))
         {
             string resolvedModuleId = string.IsNullOrWhiteSpace(moduleId) ? string.Empty : moduleId;
 
@@ -121,7 +121,7 @@ public static class ModularPowerUpBindingDrawerUtility
                 return false;
         }
 
-        if (string.IsNullOrWhiteSpace(displayNameFilterValue) == false)
+        if (!string.IsNullOrWhiteSpace(displayNameFilterValue))
         {
             string resolvedDisplayName = string.IsNullOrWhiteSpace(displayName) ? string.Empty : displayName;
 

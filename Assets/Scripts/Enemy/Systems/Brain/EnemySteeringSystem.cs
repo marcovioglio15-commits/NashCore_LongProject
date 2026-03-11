@@ -82,7 +82,7 @@ public partial struct EnemySteeringSystem : ISystem
         if (enemyCount <= 0)
             return;
 
-        if (SystemAPI.TryGetSingletonEntity<PlayerControllerConfig>(out Entity playerEntity) == false)
+        if (!SystemAPI.TryGetSingletonEntity<PlayerControllerConfig>(out Entity playerEntity))
             return;
 
         float3 playerPosition = SystemAPI.GetComponent<LocalTransform>(playerEntity).Position;
@@ -175,9 +175,10 @@ public partial struct EnemySteeringSystem : ISystem
 
             enemyToEvaluatedIndex[index] = -1;
 
+            // LOD gating reduces per-frame steering cost for far enemies while keeping a stable cadence.
             SteeringLodLevel lodLevel = EvaluateLod(playerPosition, enemyTransform.Position);
             bool shouldEvaluate = ShouldEvaluateLod(lodLevel, frameCount, enemyEntity.Index);
-            if (shouldEvaluate && hasCustomPatternMovementTag == false)
+            if (shouldEvaluate && !hasCustomPatternMovementTag)
             {
                 int evaluatedIndex = evaluatedEnemyIndices.Length;
                 enemyToEvaluatedIndex[index] = evaluatedIndex;
@@ -219,6 +220,7 @@ public partial struct EnemySteeringSystem : ISystem
             priorityYieldUrgencyResults = new NativeArray<float>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             priorityYieldGapResults = new NativeArray<float>(evaluatedCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
+            // Approach and separation are independent, so they run in parallel and sync once before integration.
             EnemyApproachJob approachJob = new EnemyApproachJob
             {
                 EvaluatedEnemyIndices = evaluatedEnemyIndices.AsArray(),
@@ -353,6 +355,7 @@ public partial struct EnemySteeringSystem : ISystem
                 {
                     resolvedVelocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(runtimeState.Velocity, hitNormal);
 
+                    // If direct motion is blocked, try a short wall-circumnavigation displacement before stopping.
                     if (evaluatedIndex >= 0 &&
                         EnemyWallSteeringUtility.TryResolveCircumnavigationDisplacement(physicsWorldSingleton,
                                                                                         enemyEntity.Index,
@@ -714,7 +717,7 @@ public partial struct EnemySteeringSystem : ISystem
                     NativeParallelMultiHashMapIterator<int> iterator;
                     int neighborIndex;
 
-                    if (CellMap.TryGetFirstValue(key, out neighborIndex, out iterator) == false)
+                    if (!CellMap.TryGetFirstValue(key, out neighborIndex, out iterator))
                         continue;
 
                     do

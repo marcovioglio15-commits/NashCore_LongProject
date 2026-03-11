@@ -96,7 +96,7 @@ public sealed class EnemyBrainPresetsPanel
         RefreshPresetList();
         int presetIndex = filteredPresets.IndexOf(preset);
 
-        if (presetIndex < 0 && searchField != null && string.IsNullOrWhiteSpace(searchField.value) == false)
+        if (presetIndex < 0 && searchField != null && !string.IsNullOrWhiteSpace(searchField.value))
         {
             searchField.SetValueWithoutNotify(string.Empty);
             RefreshPresetList();
@@ -293,7 +293,7 @@ public sealed class EnemyBrainPresetsPanel
             return;
         }
 
-        if (selectedPreset == null || filteredPresets.Contains(selectedPreset) == false)
+        if (selectedPreset == null || !filteredPresets.Contains(selectedPreset))
         {
             SelectPreset(filteredPresets[0]);
 
@@ -420,7 +420,7 @@ public sealed class EnemyBrainPresetsPanel
 
         bool confirmed = EditorUtility.DisplayDialog("Delete Enemy Brain Preset", "Delete the selected preset asset?", "Delete", "Cancel");
 
-        if (confirmed == false)
+        if (!confirmed)
             return;
 
         Undo.RecordObject(library, "Delete Enemy Brain Preset");
@@ -620,7 +620,7 @@ public sealed class EnemyBrainPresetsPanel
         AddBrainSubSectionTab(BrainSubSectionType.HealthStatistics, "Health Statistics", BuildHealthStatisticsSubSection());
         AddBrainSubSectionTab(BrainSubSectionType.Visual, "Visual", BuildVisualSubSection());
 
-        if (brainSubSectionTabs.ContainsKey(activeBrainSubSection) == false)
+        if (!brainSubSectionTabs.ContainsKey(activeBrainSubSection))
             activeBrainSubSection = BrainSubSectionType.Movement;
 
         SetActiveBrainSubSection(activeBrainSubSection);
@@ -676,7 +676,7 @@ public sealed class EnemyBrainPresetsPanel
         if (brainSubSectionContentHost == null)
             return;
 
-        if (brainSubSectionTabs.TryGetValue(activeBrainSubSection, out BrainSubSectionTabEntry tabEntry) == false)
+        if (!brainSubSectionTabs.TryGetValue(activeBrainSubSection, out BrainSubSectionTabEntry tabEntry))
             return;
 
         if (tabEntry == null || tabEntry.Content == null)

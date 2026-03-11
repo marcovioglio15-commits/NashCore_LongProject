@@ -155,7 +155,7 @@ public sealed class EnemyMasterPresetsPanel
                null);
         RestoreOpenSidePanels();
 
-        if (sidePanels.ContainsKey(activePanel) == false)
+        if (!sidePanels.ContainsKey(activePanel))
             activePanel = EnemyManagementWindow.PanelType.EnemyMasterPresets;
 
         SetActivePanel(activePanel);
@@ -334,7 +334,7 @@ public sealed class EnemyMasterPresetsPanel
             return;
         }
 
-        if (selectedPreset == null || filteredPresets.Contains(selectedPreset) == false)
+        if (selectedPreset == null || !filteredPresets.Contains(selectedPreset))
         {
             SelectPreset(filteredPresets[0]);
 
@@ -456,7 +456,7 @@ public sealed class EnemyMasterPresetsPanel
 
         bool confirmed = EditorUtility.DisplayDialog("Delete Enemy Master Preset", "Delete the selected enemy master preset asset?", "Delete", "Cancel");
 
-        if (confirmed == false)
+        if (!confirmed)
             return;
 
         Undo.RecordObject(library, "Delete Enemy Master Preset");
@@ -1245,21 +1245,21 @@ public sealed class EnemyMasterPresetsPanel
 
         EnemyWorldSpaceStatusBarsView assignedView = authoring.WorldSpaceStatusBarsView;
 
-        if (assignedView != null && EnemyStatusBarsTestUiPrefabUtility.IsGeneratedTestUiView(assignedView) == false)
+        if (assignedView != null && !EnemyStatusBarsTestUiPrefabUtility.IsGeneratedTestUiView(assignedView))
         {
             bool replaceCustomView = EditorUtility.DisplayDialog("Generate Test UI",
                                                                  "Selected prefab already has a custom world-space status bars view assigned. Replace it with generated test UI?",
                                                                  "Replace",
                                                                  "Cancel");
 
-            if (replaceCustomView == false)
+            if (!replaceCustomView)
                 return;
         }
 
         EnemyTestUiSettings testUiSettings = selectedPreset != null ? selectedPreset.TestUiSettings : null;
         bool generated = EnemyStatusBarsTestUiPrefabUtility.TryGenerateTestUi(selectedEnemyPrefab, testUiSettings, out string message);
 
-        if (generated == false)
+        if (!generated)
         {
             EditorUtility.DisplayDialog("Generate Test UI", message, "OK");
             return;
@@ -1284,12 +1284,12 @@ public sealed class EnemyMasterPresetsPanel
                                                      "Delete",
                                                      "Cancel");
 
-        if (confirmed == false)
+        if (!confirmed)
             return;
 
         bool deleted = EnemyStatusBarsTestUiPrefabUtility.TryDeleteTestUi(selectedEnemyPrefab, out string message);
 
-        if (deleted == false)
+        if (!deleted)
         {
             EditorUtility.DisplayDialog("Delete Test UI", message, "OK");
             return;
@@ -1431,7 +1431,7 @@ public sealed class EnemyMasterPresetsPanel
             return;
 
         // Resolve side panel entry and remove its tab UI.
-        if (sidePanels.TryGetValue(panelType, out SidePanelEntry entry) == false)
+        if (!sidePanels.TryGetValue(panelType, out SidePanelEntry entry))
             return;
 
         if (entry != null && entry.TabContainer != null)
@@ -1626,7 +1626,7 @@ public sealed class EnemyMasterPresetsPanel
     private void SetActivePanel(EnemyManagementWindow.PanelType panelType)
     {
         // Resolve target entry and guard against missing content host.
-        if (sidePanels.TryGetValue(panelType, out SidePanelEntry entry) == false)
+        if (!sidePanels.TryGetValue(panelType, out SidePanelEntry entry))
             return;
 
         if (contentHost == null)
@@ -1635,7 +1635,7 @@ public sealed class EnemyMasterPresetsPanel
         // Persist active panel unless initialization restore is suppressing writes.
         activePanel = panelType;
 
-        if (suppressStateWrite == false)
+        if (!suppressStateWrite)
             ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, activePanel);
 
         // Swap visible content and refresh tab visuals.

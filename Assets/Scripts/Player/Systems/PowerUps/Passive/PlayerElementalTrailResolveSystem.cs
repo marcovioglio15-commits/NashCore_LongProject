@@ -132,7 +132,7 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
                         NativeParallelMultiHashMapIterator<int> iterator;
                         int enemyIndex;
 
-                        if (enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator) == false)
+                        if (!enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator))
                             continue;
 
                         do
@@ -142,7 +142,7 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
 
                             Entity enemyEntity = enemyEntities[enemyIndex];
 
-                            if (entityManager.Exists(enemyEntity) == false)
+                            if (!entityManager.Exists(enemyEntity))
                                 continue;
 
                             float3 enemyPosition = enemyPositions[enemyIndex];
@@ -162,10 +162,10 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
                                                                                      ref elementalStackLookup,
                                                                                      out procTriggered);
 
-                            if (applied == false || canSpawnElementalVfx == false)
+                            if (!applied || !canSpawnElementalVfx)
                                 continue;
 
-                            if (enemyRuntimeLookup.HasComponent(enemyEntity) == false)
+                            if (!enemyRuntimeLookup.HasComponent(enemyEntity))
                                 continue;
 
                             EnemyRuntimeState enemyRuntimeState = enemyRuntimeLookup[enemyEntity];

@@ -85,7 +85,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// <returns>Void.</returns>
     public void OnUpdate(ref SystemState state)
     {
-        if (Application.isPlaying == false)
+        if (!Application.isPlaying)
             return;
 
         if (ruleDebugQuery.IsEmptyIgnoreFilter)
@@ -114,7 +114,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
             ulong entityKey = ComposeEntityKey(entity);
             uint variableContextHash = ComputeVariableContextHash(scalableStats);
 
-            if (HasEntityVariableHashChanged(entityKey, variableContextHash) == false)
+            if (!HasEntityVariableHashChanged(entityKey, variableContextHash))
                 continue;
 
             FillVariableContext(scalableStats, variableContext);
@@ -140,7 +140,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
 
                 ulong ruleKey = ComposeRuleKey(entity, ruleIndex);
 
-                if (HasRuleValueChanged(ruleKey, evaluatedValue) == false)
+                if (!HasRuleValueChanged(ruleKey, evaluatedValue))
                     continue;
 
                 AppendRuleLine(batchedLogBuilder,
@@ -358,12 +358,12 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     {
         string targetDisplayName = debugRule.TargetDisplayName.ToString();
 
-        if (string.IsNullOrWhiteSpace(targetDisplayName) == false)
+        if (!string.IsNullOrWhiteSpace(targetDisplayName))
             return targetDisplayName;
 
         string statKey = debugRule.StatKey.ToString();
 
-        if (string.IsNullOrWhiteSpace(statKey) == false)
+        if (!string.IsNullOrWhiteSpace(statKey))
             return statKey;
 
         return "Scaled Stat";

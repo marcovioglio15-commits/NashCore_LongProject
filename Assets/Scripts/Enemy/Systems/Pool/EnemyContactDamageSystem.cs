@@ -55,7 +55,7 @@ public partial struct EnemyContactDamageSystem : ISystem
         if (playerEntity == Entity.Null)
             return;
 
-        if (entityManager.Exists(playerEntity) == false)
+        if (!entityManager.Exists(playerEntity))
             return;
 
         if (dashStateLookup.HasComponent(playerEntity))

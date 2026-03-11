@@ -862,7 +862,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     private void DrawWorldSpaceBarsGizmo(Vector3 center)
     {
-        if (drawWorldSpaceBarsGizmo == false)
+        if (!drawWorldSpaceBarsGizmo)
         {
             return;
         }

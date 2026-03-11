@@ -4366,6 +4366,12 @@ MonoBehaviour:
   chargeBarSmoothingSeconds: 0.05
   hideChargeBarsWhenPlayerMissing: 1
   hideChargeBarsWhenModuleMissing: 1
+  milestoneSelectionSection:
+    panelRoot: {fileID: 0}
+    headerText: {fileID: 0}
+    optionBindings: []
+    autoSelectFirstOfferWhenUiMissing: 1
+    lockButtonsAfterSelectionClick: 1
 --- !u!4 &750304365
 Transform:
   m_ObjectHideFlags: 0

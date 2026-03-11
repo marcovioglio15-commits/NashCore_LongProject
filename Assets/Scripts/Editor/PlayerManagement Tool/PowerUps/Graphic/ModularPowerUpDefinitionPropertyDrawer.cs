@@ -222,7 +222,7 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
             string foldoutStateKey = BuildBindingFoldoutStateKey(contextKey, moduleId, stage, bindingIndex);
             validStateKeys.Add(foldoutStateKey);
 
-            if (ModularPowerUpBindingDrawerUtility.IsMatchingBindingFilters(moduleId, displayName, moduleIdFilterValue, displayNameFilterValue) == false)
+            if (!ModularPowerUpBindingDrawerUtility.IsMatchingBindingFilters(moduleId, displayName, moduleIdFilterValue, displayNameFilterValue))
                 continue;
 
             VisualElement card = CreateBindingCard(powerUpProperty,
@@ -493,7 +493,7 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
             string moduleId = ModularPowerUpBindingDrawerUtility.ResolveBindingModuleId(bindingProperty);
             string displayName = ModularPowerUpBindingDrawerUtility.ResolveBindingDisplayName(moduleCatalogById, moduleId);
 
-            if (ModularPowerUpBindingDrawerUtility.IsMatchingBindingFilters(moduleId, displayName, moduleIdFilterValue, displayNameFilterValue) == false)
+            if (!ModularPowerUpBindingDrawerUtility.IsMatchingBindingFilters(moduleId, displayName, moduleIdFilterValue, displayNameFilterValue))
                 continue;
 
             PowerUpModuleStage stage = ModularPowerUpBindingDrawerUtility.ResolveDefaultStageForModule(moduleCatalogById, moduleId);
@@ -567,7 +567,7 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
 
         foreach (KeyValuePair<string, bool> entry in bindingFoldoutStateByKey)
         {
-            if (entry.Key.StartsWith(contextPrefix, StringComparison.Ordinal) == false)
+            if (!entry.Key.StartsWith(contextPrefix, StringComparison.Ordinal))
                 continue;
 
             if (validStateKeys.Contains(entry.Key))

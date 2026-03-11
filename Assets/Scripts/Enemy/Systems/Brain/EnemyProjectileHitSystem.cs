@@ -62,6 +62,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         NativeArray<EnemyRuntimeState> enemyRuntimeArray = new NativeArray<EnemyRuntimeState>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         int enemyWriteIndex = 0;
 
+        // Snapshot query data into contiguous arrays so Burst jobs can run over stable memory.
         foreach ((RefRO<EnemyData> enemyData,
                   RefRO<EnemyHealth> enemyHealth,
                   RefRO<LocalTransform> enemyTransform,
@@ -124,7 +125,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
             Entity shooterEntity = projectileOwner.ValueRO.ShooterEntity;
 
-            if (playerControllerLookup.HasComponent(shooterEntity) == false)
+            if (!playerControllerLookup.HasComponent(shooterEntity))
                 continue;
 
             projectileEntities[projectileWriteIndex] = projectileEntity;
@@ -215,6 +216,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup = SystemAPI.GetComponentLookup<EnemyHitVfxConfig>(true);
         NativeStream.Reader projectileHitReader = projectileHitStream.AsReader();
 
+        // Hits are processed per projectile, but health application is deferred and aggregated per enemy.
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
             int hitCount = projectileHitReader.BeginForEachIndex(projectileIndex);
@@ -296,7 +298,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
             projectileHitReader.EndForEachIndex();
 
-            if (hasValidHit == false)
+            if (!hasValidHit)
             {
                 continue;
             }
@@ -310,6 +312,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
                 if (shouldSplitOnHitEvent)
                 {
+                    // Split creation is centralized in ProjectileSplitUtility to keep hit/despawn behavior consistent.
                     ProjectileSplitUtility.TryEnqueueSplitRequests(in projectileData,
                                                                    in splitState,
                                                                    in projectileTransform,
@@ -328,6 +331,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
             if (shouldSplitOnHitEvent || shouldSplitOnDespawnEvent)
             {
+                // Same utility path for despawn-triggered splits to avoid duplicate split math in this system.
                 ProjectileSplitUtility.TryEnqueueSplitRequests(in projectileData,
                                                                in splitState,
                                                                in projectileTransform,
@@ -354,7 +358,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
             Entity enemyEntity = enemyEntities[enemyIndex];
 
-            if (entityManager.Exists(enemyEntity) == false)
+            if (!entityManager.Exists(enemyEntity))
                 continue;
 
             EnemyHealth enemyHealth = enemyHealthArray[enemyIndex];
@@ -363,7 +367,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
             if (enemyHealth.Current <= 0f)
             {
-                if (despawnLookup.HasComponent(enemyEntity) == false)
+                if (!despawnLookup.HasComponent(enemyEntity))
                 {
                     commandBuffer.AddComponent(enemyEntity, new EnemyDespawnRequest
                     {
@@ -400,6 +404,8 @@ public partial struct EnemyProjectileHitSystem : ISystem
     #endregion
 
     #region Helpers
+    // Legacy local split helpers are retained for parity with older call sites.
+    // Current runtime flow routes split request generation through ProjectileSplitUtility.
     private static void TryEnqueueSplitRequests(in Projectile projectileData,
                                                 in ProjectileSplitState splitState,
                                                 in LocalTransform projectileTransform,
@@ -412,7 +418,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
         Entity shooterEntity = projectileOwner.ShooterEntity;
 
-        if (shootRequestLookup.HasBuffer(shooterEntity) == false)
+        if (!shootRequestLookup.HasBuffer(shooterEntity))
             return;
 
         DynamicBuffer<ShootRequest> shootRequests = shootRequestLookup[shooterEntity];
@@ -615,7 +621,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                                        float currentScale,
                                                        in ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup)
     {
-        if (projectileBaseScaleLookup.HasComponent(projectileEntity) == false)
+        if (!projectileBaseScaleLookup.HasComponent(projectileEntity))
             return math.max(0.01f, currentScale);
 
         float baseScale = math.max(0.0001f, projectileBaseScaleLookup[projectileEntity].Value);
@@ -657,10 +663,10 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                                                  ref elementalStackLookup,
                                                                  out procTriggered);
 
-        if (applied == false)
+        if (!applied)
             return;
 
-        if (canEnqueueVfxRequests == false)
+        if (!canEnqueueVfxRequests)
             return;
 
         float3 vfxPosition = enemyPosition;
@@ -713,10 +719,10 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                               bool canEnqueueVfxRequests,
                                               ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests)
     {
-        if (canEnqueueVfxRequests == false)
+        if (!canEnqueueVfxRequests)
             return;
 
-        if (enemyHitVfxConfigLookup.HasComponent(enemyEntity) == false)
+        if (!enemyHitVfxConfigLookup.HasComponent(enemyEntity))
             return;
 
         EnemyHitVfxConfig hitVfxConfig = enemyHitVfxConfigLookup[enemyEntity];
@@ -746,7 +752,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         if (shooterEntity == Entity.Null || shooterEntity.Index < 0)
             return default;
 
-        if (elementalVfxConfigLookup.HasComponent(shooterEntity) == false)
+        if (!elementalVfxConfigLookup.HasComponent(shooterEntity))
             return default;
 
         PlayerElementalVfxConfig elementalVfxConfig = elementalVfxConfigLookup[shooterEntity];
@@ -809,7 +815,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                           ProjectileOwner projectileOwner,
                                           ref BufferLookup<ProjectilePoolElement> projectilePoolLookup)
     {
-        if (entityManager.Exists(projectileEntity) == false)
+        if (!entityManager.Exists(projectileEntity))
             return;
 
         ProjectilePoolUtility.SetProjectileParked(entityManager, projectileEntity);
@@ -817,7 +823,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
         Entity shooterEntity = projectileOwner.ShooterEntity;
 
-        if (projectilePoolLookup.HasBuffer(shooterEntity) == false)
+        if (!projectilePoolLookup.HasBuffer(shooterEntity))
             return;
 
         DynamicBuffer<ProjectilePoolElement> shooterPool = projectilePoolLookup[shooterEntity];
@@ -867,7 +873,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
                     NativeParallelMultiHashMapIterator<int> iterator;
                     int enemyIndex;
 
-                    if (CellMap.TryGetFirstValue(key, out enemyIndex, out iterator) == false)
+                    if (!CellMap.TryGetFirstValue(key, out enemyIndex, out iterator))
                         continue;
 
                     do

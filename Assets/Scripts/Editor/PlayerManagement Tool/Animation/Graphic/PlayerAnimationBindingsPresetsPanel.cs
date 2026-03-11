@@ -250,7 +250,7 @@ public sealed class PlayerAnimationBindingsPresetsPanel
             if (preset == null)
                 continue;
 
-            if (MatchesSearch(preset, searchText) == false)
+            if (!MatchesSearch(preset, searchText))
                 continue;
 
             filteredPresets.Add(preset);
@@ -272,7 +272,7 @@ public sealed class PlayerAnimationBindingsPresetsPanel
             return;
         }
 
-        if (filteredPresets.Contains(selectedPreset) == false)
+        if (!filteredPresets.Contains(selectedPreset))
         {
             SelectPreset(null);
             return;
@@ -670,7 +670,7 @@ public sealed class PlayerAnimationBindingsPresetsPanel
 
         bool deleted = PlayerAnimationBindingsPresetEditorUtility.DeletePresetAsset(preset);
 
-        if (deleted == false)
+        if (!deleted)
             return;
 
         if (selectedPreset == preset)

@@ -194,7 +194,7 @@ public sealed class InputAuthoring : MonoBehaviour
     #if UNITY_EDITOR
     private static void LogPlayerEntitiesPresence(bool logDiagnostics)
     {
-        if (logDiagnostics == false)
+        if (!logDiagnostics)
             return;
 
         World world = World.DefaultGameObjectInjectionWorld;
@@ -238,7 +238,7 @@ public sealed class InputAuthoring : MonoBehaviour
     private static void ApplyCursorPolicy()
     {
         bool allowMousePointerMode = PlayerInputRuntime.ShouldUseMousePointerLook();
-        bool lockCursor = allowMousePointerMode == false;
+        bool lockCursor = !allowMousePointerMode;
         SetCursorLock(lockCursor);
     }
     #endregion
