@@ -135,7 +135,7 @@ public sealed class PowerUpDropPoolDefinition
     }
 
     /// <summary>
-    /// Normalizes pool data, keeps child entries allocated, and removes duplicate tier references.
+    /// Normalizes pool data and keeps child entries allocated without removing duplicate tier references.
     /// </summary>
     /// <param name="fallbackPoolId">Fallback pool ID used when the current one is empty.</param>
 
@@ -160,21 +160,8 @@ public sealed class PowerUpDropPoolDefinition
             tierRolls[tierRollIndex] = tierRoll;
         }
 
-        HashSet<string> visitedTierIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (int tierRollIndex = tierRolls.Count - 1; tierRollIndex >= 0; tierRollIndex--)
-        {
-            PowerUpDropPoolTierDefinition tierRoll = tierRolls[tierRollIndex];
-            tierRoll.Validate(string.Empty);
-
-            if (string.IsNullOrWhiteSpace(tierRoll.TierId))
-                continue;
-
-            if (visitedTierIds.Add(tierRoll.TierId))
-                continue;
-
-            tierRolls.RemoveAt(tierRollIndex);
-        }
+        for (int tierRollIndex = 0; tierRollIndex < tierRolls.Count; tierRollIndex++)
+            tierRolls[tierRollIndex].Validate(string.Empty);
     }
 
     /// <summary>

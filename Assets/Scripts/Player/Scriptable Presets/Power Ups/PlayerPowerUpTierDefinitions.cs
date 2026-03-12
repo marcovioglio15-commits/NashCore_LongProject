@@ -157,7 +157,7 @@ public sealed class PowerUpTierLevelDefinition
     }
 
     /// <summary>
-    /// Sanitizes tier data, normalizes IDs and removes duplicate non-empty entry bindings.
+    /// Sanitizes tier data, normalizes IDs, and keeps duplicate non-empty entry bindings when explicitly authored.
     /// </summary>
     /// <param name="fallbackTierId">Fallback tier ID used when the current one is empty.</param>
 
@@ -182,23 +182,8 @@ public sealed class PowerUpTierLevelDefinition
             entries[entryIndex] = entry;
         }
 
-        HashSet<string> visitedEntryKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (int entryIndex = entries.Count - 1; entryIndex >= 0; entryIndex--)
-        {
-            PowerUpTierEntryDefinition entry = entries[entryIndex];
-            entry.Validate(string.Empty);
-
-            if (string.IsNullOrWhiteSpace(entry.PowerUpId))
-                continue;
-
-            string duplicateKey = string.Format("{0}|{1}", (int)entry.EntryKind, entry.PowerUpId);
-
-            if (visitedEntryKeys.Add(duplicateKey))
-                continue;
-
-            entries.RemoveAt(entryIndex);
-        }
+        for (int entryIndex = 0; entryIndex < entries.Count; entryIndex++)
+            entries[entryIndex].Validate(string.Empty);
     }
 
     /// <summary>

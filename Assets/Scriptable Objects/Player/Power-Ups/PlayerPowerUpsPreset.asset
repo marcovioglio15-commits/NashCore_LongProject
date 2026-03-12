@@ -39,7 +39,7 @@ MonoBehaviour:
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   primaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
   secondaryToolActionId: 348a94c1-2df4-48f8-82f6-83416ff0bd17
-  swapSlotsActionId: b6902cb9-cfab-41a0-8034-4abc7019cfd9
+  swapSlotsActionId: da9ea2b8-5858-4bd5-acf2-8f75db2e0d13
   dropPools:
   - poolId: Milestone
     tierRolls:
@@ -104,7 +104,7 @@ MonoBehaviour:
       selectionWeight: 5
     - entryKind: 0
       powerUpId: ActiveGigaBomb
-      selectionWeight: 45
+      selectionWeight: 40
     - entryKind: 0
       powerUpId: ActiveBasicDash
       selectionWeight: 5

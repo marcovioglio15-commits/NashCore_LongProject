@@ -110,21 +110,8 @@ public sealed class PlayerMilestonePowerUpUnlockDefinition
             legacyTierRolls[tierRollIndex] = tierRoll;
         }
 
-        HashSet<string> visitedTierIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (int tierRollIndex = legacyTierRolls.Count - 1; tierRollIndex >= 0; tierRollIndex--)
-        {
-            PlayerMilestoneTierRollDefinition tierRoll = legacyTierRolls[tierRollIndex];
-            tierRoll.Validate(string.Empty);
-
-            if (string.IsNullOrWhiteSpace(tierRoll.TierId))
-                continue;
-
-            if (visitedTierIds.Add(tierRoll.TierId))
-                continue;
-
-            legacyTierRolls.RemoveAt(tierRollIndex);
-        }
+        for (int tierRollIndex = 0; tierRollIndex < legacyTierRolls.Count; tierRollIndex++)
+            legacyTierRolls[tierRollIndex].Validate(string.Empty);
     }
 
     /// <summary>
