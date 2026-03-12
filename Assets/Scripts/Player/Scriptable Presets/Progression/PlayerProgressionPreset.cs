@@ -440,7 +440,7 @@ public sealed class PlayerProgressionPreset : ScriptableObject
 
         PlayerGamePhaseDefinition defaultPhase = new PlayerGamePhaseDefinition();
         defaultPhase.Configure("Phase0",
-                               1,
+                               0,
                                Mathf.Max(1f, legacyExperienceRequiredPerLevel),
                                0f);
         gamePhasesDefinition.Add(defaultPhase);
@@ -458,7 +458,7 @@ public sealed class PlayerProgressionPreset : ScriptableObject
                 gamePhasesDefinition[index] = gamePhase;
             }
 
-            int minimumStartLevel = index == 0 ? 1 : gamePhasesDefinition[index - 1].StartsAtLevel;
+            int minimumStartLevel = index == 0 ? 0 : gamePhasesDefinition[index - 1].StartsAtLevel;
             string fallbackPhaseID = string.Format("Phase{0}", index);
             gamePhase.Validate(fallbackPhaseID, minimumStartLevel, legacyExperienceRequiredPerLevel);
         }
@@ -470,8 +470,8 @@ public sealed class PlayerProgressionPreset : ScriptableObject
 
     private static int CompareGamePhasesByStartLevel(PlayerGamePhaseDefinition leftPhase, PlayerGamePhaseDefinition rightPhase)
     {
-        int leftLevel = leftPhase != null ? leftPhase.StartsAtLevel : 1;
-        int rightLevel = rightPhase != null ? rightPhase.StartsAtLevel : 1;
+        int leftLevel = leftPhase != null ? leftPhase.StartsAtLevel : 0;
+        int rightLevel = rightPhase != null ? rightPhase.StartsAtLevel : 0;
         return leftLevel.CompareTo(rightLevel);
     }
 
@@ -521,7 +521,7 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         for (int index = 0; index < gamePhasesDefinition.Count; index++)
         {
             PlayerGamePhaseDefinition gamePhase = gamePhasesDefinition[index];
-            int minimumStartLevel = index == 0 ? 1 : gamePhasesDefinition[index - 1].StartsAtLevel + 1;
+            int minimumStartLevel = index == 0 ? 0 : gamePhasesDefinition[index - 1].StartsAtLevel + 1;
             int resolvedStartLevel = gamePhase.StartsAtLevel;
 
             if (resolvedStartLevel < minimumStartLevel)

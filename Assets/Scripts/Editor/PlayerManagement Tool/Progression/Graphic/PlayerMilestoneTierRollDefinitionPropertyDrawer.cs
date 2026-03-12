@@ -43,16 +43,28 @@ public sealed class PlayerMilestoneTierRollDefinitionPropertyDrawer : PropertyDr
         }
         else
         {
-            string selectedTierId = ResolveSelectedTierId(tierIdOptions, tierIdProperty.stringValue);
+            string currentTierId = string.IsNullOrWhiteSpace(tierIdProperty.stringValue)
+                ? string.Empty
+                : tierIdProperty.stringValue.Trim();
+            List<string> popupOptions = new List<string>(tierIdOptions);
+            string selectedTierId = ResolveSelectedTierId(tierIdOptions, currentTierId);
 
-            if (!string.Equals(tierIdProperty.stringValue, selectedTierId, System.StringComparison.Ordinal))
+            if (string.IsNullOrWhiteSpace(currentTierId))
             {
                 tierIdProperty.serializedObject.Update();
                 tierIdProperty.stringValue = selectedTierId;
                 tierIdProperty.serializedObject.ApplyModifiedProperties();
             }
+            else if (!ContainsTierIdOption(tierIdOptions, currentTierId))
+            {
+                popupOptions.Insert(0, currentTierId);
+                selectedTierId = currentTierId;
 
-            PopupField<string> tierIdPopup = new PopupField<string>("Tier ID", tierIdOptions, selectedTierId);
+                HelpBox invalidTierWarningBox = new HelpBox("The current Tier ID is not available in the active Power-Ups preset. Choose a valid tier to replace this legacy or missing reference.", HelpBoxMessageType.Warning);
+                root.Add(invalidTierWarningBox);
+            }
+
+            PopupField<string> tierIdPopup = new PopupField<string>("Tier ID", popupOptions, selectedTierId);
             tierIdPopup.RegisterValueChangedCallback(evt =>
             {
                 tierIdProperty.serializedObject.Update();
@@ -92,6 +104,26 @@ public sealed class PlayerMilestoneTierRollDefinitionPropertyDrawer : PropertyDr
         }
 
         return options[0];
+    }
+
+    /// <summary>
+    /// Checks whether the current serialized tier ID still exists in the active dropdown options.
+    /// </summary>
+    /// <param name="options">Available dropdown options resolved from the scoped power-ups preset.</param>
+    /// <param name="currentTierId">Serialized tier ID currently stored by the milestone roll.</param>
+    /// <returns>True when the current tier ID is still selectable; otherwise false.</returns>
+    private static bool ContainsTierIdOption(List<string> options, string currentTierId)
+    {
+        if (options == null || options.Count <= 0 || string.IsNullOrWhiteSpace(currentTierId))
+            return false;
+
+        for (int optionIndex = 0; optionIndex < options.Count; optionIndex++)
+        {
+            if (string.Equals(options[optionIndex], currentTierId, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
     #endregion
 

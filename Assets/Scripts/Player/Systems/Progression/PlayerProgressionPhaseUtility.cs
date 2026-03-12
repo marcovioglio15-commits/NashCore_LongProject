@@ -30,10 +30,8 @@ public static class PlayerProgressionPhaseUtility
                                                           out bool isMilestoneRequirement,
                                                           out int milestoneLevel)
     {
-        if (levelValue < 1)
-        {
-            levelValue = 1;
-        }
+        if (levelValue < 0)
+            levelValue = 0;
 
         if (!progressionConfig.Config.IsCreated)
         {
@@ -133,10 +131,8 @@ public static class PlayerProgressionPhaseUtility
                                                            out bool isMilestoneRequirement,
                                                            out int milestoneLevel)
     {
-        if (levelValue < 1)
-        {
-            levelValue = 1;
-        }
+        if (levelValue < 0)
+            levelValue = 0;
 
         activeGamePhaseIndex = ResolveActiveGamePhaseIndex(ref gamePhases, levelValue);
         isMilestoneRequirement = false;
@@ -211,10 +207,8 @@ public static class PlayerProgressionPhaseUtility
 
     private static int ResolveActiveGamePhaseIndex(ref BlobArray<PlayerGamePhaseBlob> gamePhases, int levelValue)
     {
-        if (levelValue < 1)
-        {
-            levelValue = 1;
-        }
+        if (levelValue < 0)
+            levelValue = 0;
 
         if (gamePhases.Length == 0)
         {

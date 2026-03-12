@@ -227,31 +227,8 @@ internal static class PlayerPowerUpsPresetValidationUtility
 
             string fallbackTierId = string.Format("Tier{0}", tierIndex + 1);
             tierLevel.Validate(fallbackTierId);
-        }
-
-        for (int tierIndex = preset.TierLevelsMutable.Count - 1; tierIndex >= 0; tierIndex--)
-        {
-            PowerUpTierLevelDefinition tierLevel = preset.TierLevelsMutable[tierIndex];
-
-            if (tierLevel == null)
-            {
-                preset.TierLevelsMutable.RemoveAt(tierIndex);
-                continue;
-            }
-
+            tierLevel.AssignTierId(BuildUniqueTierId(visitedTierIds, tierLevel.TierId, tierIndex + 1));
             tierLevel.RemoveInvalidEntries(validActivePowerUpIds, validPassivePowerUpIds);
-            string tierId = tierLevel.TierId;
-
-            if (string.IsNullOrWhiteSpace(tierId))
-            {
-                preset.TierLevelsMutable.RemoveAt(tierIndex);
-                continue;
-            }
-
-            if (visitedTierIds.Add(tierId))
-                continue;
-
-            preset.TierLevelsMutable.RemoveAt(tierIndex);
         }
     }
 
@@ -260,84 +237,7 @@ internal static class PlayerPowerUpsPresetValidationUtility
         if (preset == null || preset.TierLevelsMutable.Count > 0)
             return;
 
-        List<string> legacyPoolIds = PlayerPowerUpsPresetDefaultsUtility.BuildDefaultDropPools(preset);
-
-        if (legacyPoolIds.Count <= 0)
-        {
-            preset.TierLevelsMutable.Add(new PowerUpTierLevelDefinition());
-            return;
-        }
-
-        for (int poolIndex = 0; poolIndex < legacyPoolIds.Count; poolIndex++)
-        {
-            string poolId = legacyPoolIds[poolIndex];
-
-            if (string.IsNullOrWhiteSpace(poolId))
-                continue;
-
-            PowerUpTierLevelDefinition tierLevel = new PowerUpTierLevelDefinition();
-            tierLevel.Configure(poolId, BuildTierEntriesFromLegacyPool(preset, poolId));
-            tierLevel.Validate(poolId);
-            preset.TierLevelsMutable.Add(tierLevel);
-        }
-
-        if (preset.TierLevelsMutable.Count <= 0)
-            preset.TierLevelsMutable.Add(new PowerUpTierLevelDefinition());
-    }
-
-    private static List<PowerUpTierEntryDefinition> BuildTierEntriesFromLegacyPool(PlayerPowerUpsPreset preset, string legacyPoolId)
-    {
-        List<PowerUpTierEntryDefinition> entries = new List<PowerUpTierEntryDefinition>();
-        AddTierEntriesFromLegacyPool(entries, preset.ActivePowerUpsMutable, PowerUpTierEntryKind.Active, legacyPoolId);
-        AddTierEntriesFromLegacyPool(entries, preset.PassivePowerUpsMutable, PowerUpTierEntryKind.Passive, legacyPoolId);
-        return entries;
-    }
-
-    private static void AddTierEntriesFromLegacyPool(List<PowerUpTierEntryDefinition> destinationEntries,
-                                                     List<ModularPowerUpDefinition> modularPowerUps,
-                                                     PowerUpTierEntryKind entryKind,
-                                                     string legacyPoolId)
-    {
-        if (destinationEntries == null || modularPowerUps == null || string.IsNullOrWhiteSpace(legacyPoolId))
-            return;
-
-        for (int powerUpIndex = 0; powerUpIndex < modularPowerUps.Count; powerUpIndex++)
-        {
-            ModularPowerUpDefinition modularPowerUp = modularPowerUps[powerUpIndex];
-
-            if (modularPowerUp == null)
-                continue;
-
-            PowerUpCommonData commonData = modularPowerUp.CommonData;
-
-            if (commonData == null || string.IsNullOrWhiteSpace(commonData.PowerUpId))
-                continue;
-
-            IReadOnlyList<string> legacyPools = commonData.DropPools;
-            bool isInLegacyPool = false;
-
-            if (legacyPools != null)
-            {
-                for (int poolIndex = 0; poolIndex < legacyPools.Count; poolIndex++)
-                {
-                    string poolId = legacyPools[poolIndex];
-
-                    if (!string.Equals(poolId, legacyPoolId, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    isInLegacyPool = true;
-                    break;
-                }
-            }
-
-            if (!isInLegacyPool)
-                continue;
-
-            PowerUpTierEntryDefinition entry = new PowerUpTierEntryDefinition();
-            entry.Configure(entryKind, commonData.PowerUpId, 1f);
-            entry.Validate(commonData.PowerUpId);
-            destinationEntries.Add(entry);
-        }
+        preset.TierLevelsMutable.Add(new PowerUpTierLevelDefinition());
     }
 
     private static HashSet<string> CollectModularPowerUpIds(List<ModularPowerUpDefinition> modularPowerUps)
@@ -363,6 +263,35 @@ internal static class PlayerPowerUpsPresetValidationUtility
         }
 
         return powerUpIds;
+    }
+
+    /// <summary>
+    /// Produces a unique tier ID while preserving the user-authored base name whenever possible.
+    /// </summary>
+    /// <param name="visitedTierIds">Already reserved tier IDs for the current preset validation pass.</param>
+    /// <param name="tierId">Requested tier ID coming from serialized data.</param>
+    /// <param name="fallbackTierIndex">1-based fallback index used when the serialized value is empty.</param>
+    /// <returns>Unique tier ID safe to persist on the validated tier.</returns>
+    private static string BuildUniqueTierId(HashSet<string> visitedTierIds, string tierId, int fallbackTierIndex)
+    {
+        string normalizedTierId = string.IsNullOrWhiteSpace(tierId)
+            ? string.Format("Tier{0}", fallbackTierIndex)
+            : tierId.Trim();
+
+        if (visitedTierIds.Add(normalizedTierId))
+            return normalizedTierId;
+
+        int suffix = 1;
+
+        while (true)
+        {
+            string candidateTierId = string.Format("{0}_{1}", normalizedTierId, suffix);
+
+            if (visitedTierIds.Add(candidateTierId))
+                return candidateTierId;
+
+            suffix++;
+        }
     }
 
     private static void ValidateElementalVfxAssignments(PlayerPowerUpsPreset preset)

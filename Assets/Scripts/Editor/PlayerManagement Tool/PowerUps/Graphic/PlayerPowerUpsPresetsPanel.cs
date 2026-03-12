@@ -459,6 +459,7 @@ public sealed class PlayerPowerUpsPresetsPanel
     private void SelectPreset(PlayerPowerUpsPreset preset)
     {
         selectedPreset = preset;
+        PlayerManagementSelectionContext.SetActivePowerUpsPreset(selectedPreset);
         sectionButtonsRoot = null;
         sectionContentRoot = null;
 

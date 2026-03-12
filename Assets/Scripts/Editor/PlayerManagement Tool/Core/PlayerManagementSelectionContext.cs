@@ -1,5 +1,3 @@
-using UnityEngine;
-
 /// <summary>
 /// Stores transient Player Management Tool selection context shared across editor panels.
 /// </summary>
@@ -7,6 +5,7 @@ public static class PlayerManagementSelectionContext
 {
     #region Fields
     private static PlayerMasterPreset activeMasterPreset;
+    private static PlayerPowerUpsPreset activePowerUpsPreset;
     #endregion
 
     #region Properties
@@ -18,6 +17,17 @@ public static class PlayerManagementSelectionContext
         get
         {
             return activeMasterPreset;
+        }
+    }
+
+    /// <summary>
+    /// Gets the currently selected power-ups preset in Player Management Tool.
+    /// </summary>
+    public static PlayerPowerUpsPreset ActivePowerUpsPreset
+    {
+        get
+        {
+            return activePowerUpsPreset;
         }
     }
     #endregion
@@ -33,6 +43,16 @@ public static class PlayerManagementSelectionContext
     public static void SetActiveMasterPreset(PlayerMasterPreset masterPreset)
     {
         activeMasterPreset = masterPreset;
+    }
+
+    /// <summary>
+    /// Updates the active power-ups preset context used by progression tier dropdown helpers.
+    /// </summary>
+    /// <param name="powerUpsPreset">Power-ups preset currently selected in the dedicated power-ups panel.</param>
+    /// <returns>Void.</returns>
+    public static void SetActivePowerUpsPreset(PlayerPowerUpsPreset powerUpsPreset)
+    {
+        activePowerUpsPreset = powerUpsPreset;
     }
     #endregion
 

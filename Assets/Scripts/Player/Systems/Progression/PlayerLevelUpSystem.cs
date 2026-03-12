@@ -85,7 +85,7 @@ public partial struct PlayerLevelUpSystem : ISystem
             }
 
             float currentExperience = mathMax(0f, playerExperience.ValueRO.Current);
-            int currentLevel = mathMax(1, playerLevel.ValueRO.Current);
+            int currentLevel = mathMax(0, playerLevel.ValueRO.Current);
             int activeGamePhaseIndex = playerLevel.ValueRO.ActiveGamePhaseIndex;
             float requiredExperienceForNextLevel = playerLevel.ValueRO.RequiredExperienceForNextLevel;
 

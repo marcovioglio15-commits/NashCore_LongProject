@@ -238,14 +238,14 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             Entity entity = entities[index];
             PlayerProgressionConfig progressionConfig = configs[index];
             float requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig,
-                                                                                                                    1,
+                                                                                                                    0,
                                                                                                                     out int activeGamePhaseIndex,
                                                                                                                     out bool _,
                                                                                                                     out int _);
 
             commandBuffer.AddComponent(entity, new PlayerLevel
             {
-                Current = 1,
+                Current = 0,
                 ActiveGamePhaseIndex = activeGamePhaseIndex,
                 RequiredExperienceForNextLevel = requiredExperienceForNextLevel
             });

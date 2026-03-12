@@ -16,7 +16,7 @@ public sealed class PlayerGamePhaseDefinition
     [SerializeField] private string phaseID = "Phase0";
 
     [Tooltip("First player level where this game phase becomes active.")]
-    [SerializeField] private int startsAtLevel = 1;
+    [SerializeField] private int startsAtLevel = 0;
 
     [Tooltip("Required level-up experience at the first level included in this game phase.")]
     [SerializeField] private float startingRequiredLevelUpExp = 100f;
@@ -89,7 +89,7 @@ public sealed class PlayerGamePhaseDefinition
                           float requiredExperienceGrouthValue)
     {
         phaseID = string.IsNullOrWhiteSpace(phaseIDValue) ? "Phase0" : phaseIDValue.Trim();
-        startsAtLevel = Mathf.Max(1, startsAtLevelValue);
+        startsAtLevel = Mathf.Max(0, startsAtLevelValue);
         startingRequiredLevelUpExp = Mathf.Max(1f, startingRequiredLevelUpExpValue);
         requiredExperienceGrouth = Mathf.Max(0f, requiredExperienceGrouthValue);
     }
@@ -117,10 +117,8 @@ public sealed class PlayerGamePhaseDefinition
             startsAtLevel = minimumStartLevel;
         }
 
-        if (startsAtLevel < 1)
-        {
-            startsAtLevel = 1;
-        }
+        if (startsAtLevel < 0)
+            startsAtLevel = 0;
 
         if (startingRequiredLevelUpExp < 1f)
         {
@@ -178,8 +176,8 @@ public sealed class PlayerGamePhaseDefinition
     #region Private Methods
     private static int CompareMilestonesByLevel(PlayerLevelUpMilestoneDefinition leftMilestone, PlayerLevelUpMilestoneDefinition rightMilestone)
     {
-        int leftLevel = leftMilestone != null ? leftMilestone.MilestoneLevel : 1;
-        int rightLevel = rightMilestone != null ? rightMilestone.MilestoneLevel : 1;
+        int leftLevel = leftMilestone != null ? leftMilestone.MilestoneLevel : 0;
+        int rightLevel = rightMilestone != null ? rightMilestone.MilestoneLevel : 0;
         return leftLevel.CompareTo(rightLevel);
     }
 
@@ -300,7 +298,7 @@ public sealed class PlayerLevelUpMilestoneDefinition
 
         if (milestoneLevel < 1)
         {
-            milestoneLevel = 1;
+            milestoneLevel = 0;
         }
 
         if (specialExpRequirement < 1f)

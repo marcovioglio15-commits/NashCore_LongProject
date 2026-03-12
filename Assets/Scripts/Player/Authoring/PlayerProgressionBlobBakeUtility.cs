@@ -57,7 +57,7 @@ internal static class PlayerProgressionBlobBakeUtility
         {
             PlayerGamePhaseDefinition gamePhase = gamePhases != null && phaseIndex < gamePhases.Count ? gamePhases[phaseIndex] : null;
             string phaseID = gamePhase != null ? gamePhase.PhaseID : string.Format("Phase{0}", phaseIndex);
-            int startsAtLevel = gamePhase != null ? math.max(1, gamePhase.StartsAtLevel) : 1;
+            int startsAtLevel = gamePhase != null ? math.max(0, gamePhase.StartsAtLevel) : 0;
             float startingRequiredLevelUpExp = gamePhase != null ? math.max(1f, gamePhase.StartingRequiredLevelUpExp) : 100f;
             float requiredExperienceGrouth = gamePhase != null ? math.max(0f, gamePhase.RequiredExperienceGrouth) : 0f;
 

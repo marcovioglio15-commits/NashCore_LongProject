@@ -44,46 +44,90 @@ MonoBehaviour:
     entries:
     - entryKind: 0
       powerUpId: ActiveShotgun
-      selectionWeight: 1
+      selectionWeight: 10
     - entryKind: 0
       powerUpId: ActiveChargeShot
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 0
       powerUpId: ActiveGigaBomb
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 0
       powerUpId: ActiveBasicDash
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 0
       powerUpId: ActivePortableHealthPack
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 0
       powerUpId: ActiveBulletTime
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 1
       powerUpId: PassiveElementalTrail
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 1
       powerUpId: PassiveEnemiesExplodeOnDeath
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 1
       powerUpId: PassiveOrbitalProjectiles
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 1
       powerUpId: PassiveBouncingProjectiles
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 1
       powerUpId: PassiveSplittingProjectiles
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 1
       powerUpId: PassiveBigShots
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 1
       powerUpId: PassiveShotgun
-      selectionWeight: 1
+      selectionWeight: 5
     - entryKind: 1
       powerUpId: Marco's Special
-      selectionWeight: 1
+      selectionWeight: 30
+  - tierId: Tier1
+    entries:
+    - entryKind: 0
+      powerUpId: ActiveShotgun
+      selectionWeight: 10
+    - entryKind: 0
+      powerUpId: ActiveChargeShot
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActiveGigaBomb
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActiveBasicDash
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActivePortableHealthPack
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActiveBulletTime
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveElementalTrail
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveEnemiesExplodeOnDeath
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveOrbitalProjectiles
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveBouncingProjectiles
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveSplittingProjectiles
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveBigShots
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveShotgun
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: Marco's Special
+      selectionWeight: 30
   dropPoolCatalog:
   - Milestone
   - Shop

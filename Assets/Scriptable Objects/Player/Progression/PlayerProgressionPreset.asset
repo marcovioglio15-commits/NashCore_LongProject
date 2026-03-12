@@ -28,7 +28,7 @@ MonoBehaviour:
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   gamePhasesDefinition:
   - phaseID: Phase0
-    startsAtLevel: 1
+    startsAtLevel: 0
     startingRequiredLevelUpExp: 10
     requiredExperienceGrouth: 10
     milestones:
@@ -36,7 +36,7 @@ MonoBehaviour:
       specialExpRequirement: 100
       powerUpUnlocks:
       - tierRolls:
-        - tierId: Boss
+        - tierId: Tier0
           selectionWeight: 0
       skipCompensationResources: []
       legacyPowerUpUnlockRollCount: 0

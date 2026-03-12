@@ -105,7 +105,7 @@ public sealed class PowerUpTierLevelDefinition
 
     #region Serialized Fields
     [Tooltip("Stable tier identifier used by progression milestones.")]
-    [SerializeField] private string tierId = "Tier0";
+    [SerializeField] private string tierId;
 
     [Tooltip("Percentage-based power-up entries available when this tier is rolled. The sum should be 100%.")]
     [SerializeField] private List<PowerUpTierEntryDefinition> entries = new List<PowerUpTierEntryDefinition>();
@@ -147,7 +147,17 @@ public sealed class PowerUpTierLevelDefinition
     }
 
     /// <summary>
-    /// Sanitizes tier data, normalizes IDs and removes duplicate entry bindings.
+    /// Assigns the normalized tier ID after external validation resolves duplicates.
+    /// </summary>
+    /// <param name="tierIdValue">Unique tier ID to persist on this definition.</param>
+    /// <returns>Void.</returns>
+    public void AssignTierId(string tierIdValue)
+    {
+        tierId = tierIdValue;
+    }
+
+    /// <summary>
+    /// Sanitizes tier data, normalizes IDs and removes duplicate non-empty entry bindings.
     /// </summary>
     /// <param name="fallbackTierId">Fallback tier ID used when the current one is empty.</param>
     /// <returns>Void.</returns>
@@ -180,10 +190,7 @@ public sealed class PowerUpTierLevelDefinition
             entry.Validate(string.Empty);
 
             if (string.IsNullOrWhiteSpace(entry.PowerUpId))
-            {
-                entries.RemoveAt(entryIndex);
                 continue;
-            }
 
             string duplicateKey = string.Format("{0}|{1}", (int)entry.EntryKind, entry.PowerUpId);
 
@@ -218,6 +225,9 @@ public sealed class PowerUpTierLevelDefinition
             ISet<string> validIds = entry.EntryKind == PowerUpTierEntryKind.Active
                 ? validActivePowerUpIds
                 : validPassivePowerUpIds;
+
+            if (string.IsNullOrWhiteSpace(entry.PowerUpId))
+                continue;
 
             if (validIds == null || validIds.Contains(entry.PowerUpId))
                 continue;
