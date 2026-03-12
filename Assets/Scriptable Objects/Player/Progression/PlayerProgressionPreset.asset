@@ -22,7 +22,7 @@ MonoBehaviour:
     defaultValue: 1e+10
   - statName: Shield
     statType: 0
-    defaultValue: 0
+    defaultValue: 99
   - statName: MovementSpeed
     statType: 0
     defaultValue: 2

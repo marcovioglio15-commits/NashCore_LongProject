@@ -1,20 +1,27 @@
-# Unity
-*.cginc              text
-*.cs                 text diff=csharp
-*.shader             text
+# Unity source
+*.cginc              text eol=lf
+*.compute            text eol=lf
+*.cs                 text eol=lf diff=csharp
+*.hlsl               text eol=lf
+*.shader             text eol=lf
+*.asmdef             text eol=lf
+*.asmref             text eol=lf
+*.rsp                text eol=lf
+*.json               text eol=lf
+*.txt                text eol=lf
 # Unity YAML
-*.mat                merge=unityyamlmerge eol=lf
-*.anim               merge=unityyamlmerge eol=lf
-*.unity              merge=unityyamlmerge eol=lf
-*.prefab             merge=unityyamlmerge eol=lf
-*.asset              eol=lf - text
-*.meta               merge=unityyamlmerge eol=lf
-*.controller         merge=unityyamlmerge eol=lf
+*.mat                text eol=lf merge=unityyamlmerge
+*.anim               text eol=lf merge=unityyamlmerge
+*.unity              text eol=lf merge=unityyamlmerge
+*.prefab             text eol=lf merge=unityyamlmerge
+*.asset              text eol=lf
+*.meta               text eol=lf merge=unityyamlmerge
+*.controller         text eol=lf merge=unityyamlmerge
 # "physic" for 3D but "physics" for 2D
-*.physicMaterial2D   merge=unityyamlmerge eol=lf
-*.physicMaterial     merge=unityyamlmerge eol=lf
-*.physicsMaterial2D  merge=unityyamlmerge eol=lf
-*.physicsMaterial    merge=unityyamlmerge eol=lf
+*.physicMaterial2D   text eol=lf merge=unityyamlmerge
+*.physicMaterial     text eol=lf merge=unityyamlmerge
+*.physicsMaterial2D  text eol=lf merge=unityyamlmerge
+*.physicsMaterial    text eol=lf merge=unityyamlmerge
 # Using Git LFS
 # Add diff=lfs merge=lfs to the binary files
 # Unity LFS
