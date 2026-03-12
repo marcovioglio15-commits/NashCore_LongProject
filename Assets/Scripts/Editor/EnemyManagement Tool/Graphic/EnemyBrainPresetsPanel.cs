@@ -45,6 +45,66 @@ public sealed class EnemyBrainPresetsPanel
             return root;
         }
     }
+
+    internal SerializedObject PresetSerializedObject
+    {
+        get
+        {
+            return presetSerializedObject;
+        }
+    }
+
+    internal VisualElement DetailsSectionContentRoot
+    {
+        get
+        {
+            return detailsSectionContentRoot;
+        }
+    }
+
+    internal VisualElement BrainSubSectionTabBar
+    {
+        get
+        {
+            return brainSubSectionTabBar;
+        }
+        set
+        {
+            brainSubSectionTabBar = value;
+        }
+    }
+
+    internal VisualElement BrainSubSectionContentHost
+    {
+        get
+        {
+            return brainSubSectionContentHost;
+        }
+        set
+        {
+            brainSubSectionContentHost = value;
+        }
+    }
+
+    internal Dictionary<BrainSubSectionType, BrainSubSectionTabEntry> BrainSubSectionTabs
+    {
+        get
+        {
+            return brainSubSectionTabs;
+        }
+    }
+
+    internal BrainSubSectionType ActiveBrainSubSection
+    {
+        get
+        {
+            return activeBrainSubSection;
+        }
+        set
+        {
+            activeBrainSubSection = value;
+        }
+    }
     #endregion
 
     #region Constructors
@@ -83,8 +143,6 @@ public sealed class EnemyBrainPresetsPanel
 
         SelectPreset(previouslySelectedPreset);
     }
-
-
     public void SelectPresetFromExternal(EnemyBrainPreset preset)
     {
         if (preset == null)
@@ -261,7 +319,7 @@ public sealed class EnemyBrainPresetsPanel
         SelectPreset(null);
     }
 
-    private void RefreshPresetList()
+    internal void RefreshPresetList()
     {
         filteredPresets.Clear();
 
@@ -338,15 +396,10 @@ public sealed class EnemyBrainPresetsPanel
         if (index >= 0)
             listView.SetSelection(index);
     }
-
-
-
     private void DuplicatePreset()
     {
         DuplicatePreset(selectedPreset);
     }
-
-
     private void DuplicatePreset(EnemyBrainPreset preset)
     {
         if (preset == null)
@@ -404,15 +457,10 @@ public sealed class EnemyBrainPresetsPanel
         if (index >= 0)
             listView.SetSelection(index);
     }
-
-
-
     private void DeletePreset()
     {
         DeletePreset(selectedPreset);
     }
-
-
     private void DeletePreset(EnemyBrainPreset preset)
     {
         if (preset == null)
@@ -461,8 +509,6 @@ public sealed class EnemyBrainPresetsPanel
 
         BuildActiveDetailsSection();
     }
-
-
     private VisualElement BuildDetailsSectionButtons()
     {
         VisualElement buttonsRoot = new VisualElement();
@@ -485,9 +531,6 @@ public sealed class EnemyBrainPresetsPanel
         sectionButton.style.marginBottom = 4f;
         parent.Add(sectionButton);
     }
-
-
-
     /// <summary>
     /// Sets active top-level details section and persists it for next reopen.
     /// Called by section tab buttons in the details pane.
@@ -517,482 +560,16 @@ public sealed class EnemyBrainPresetsPanel
         switch (activeSection)
         {
             case SectionType.Metadata:
-                BuildMetadataSection();
+                EnemyBrainPresetsPanelSectionsUtility.BuildMetadataSection(this);
                 return;
 
             case SectionType.Brain:
-                BuildBrainSection();
+                EnemyBrainPresetsPanelSectionsUtility.BuildBrainSection(this);
                 return;
         }
     }
 
-    private void BuildMetadataSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Preset Details");
-
-        if (sectionContainer == null)
-            return;
-
-        SerializedProperty idProperty = presetSerializedObject.FindProperty("presetId");
-        SerializedProperty nameProperty = presetSerializedObject.FindProperty("presetName");
-        SerializedProperty descriptionProperty = presetSerializedObject.FindProperty("description");
-        SerializedProperty versionProperty = presetSerializedObject.FindProperty("version");
-
-        TextField nameField = new TextField("Preset Name");
-        nameField.isDelayed = true;
-        nameField.BindProperty(nameProperty);
-        nameField.RegisterValueChangedCallback(evt =>
-        {
-            HandlePresetNameChanged(evt.newValue);
-        });
-        sectionContainer.Add(nameField);
-
-        TextField versionField = new TextField("Version");
-        versionField.isDelayed = true;
-        versionField.BindProperty(versionProperty);
-        versionField.RegisterValueChangedCallback(evt =>
-        {
-            EnemyManagementDraftSession.MarkDirty();
-            RefreshPresetList();
-        });
-        sectionContainer.Add(versionField);
-
-        TextField descriptionField = new TextField("Description");
-        descriptionField.multiline = true;
-        descriptionField.isDelayed = true;
-        descriptionField.style.height = 60f;
-        descriptionField.BindProperty(descriptionProperty);
-        descriptionField.RegisterValueChangedCallback(evt =>
-        {
-            EnemyManagementDraftSession.MarkDirty();
-            RefreshPresetList();
-        });
-        sectionContainer.Add(descriptionField);
-
-        VisualElement idRow = new VisualElement();
-        idRow.style.flexDirection = FlexDirection.Row;
-        idRow.style.alignItems = Align.Center;
-
-        TextField idField = new TextField("Preset ID");
-        idField.isReadOnly = true;
-        idField.SetEnabled(false);
-        idField.style.flexGrow = 1f;
-        idField.BindProperty(idProperty);
-        idRow.Add(idField);
-
-        Button regenerateButton = new Button();
-        regenerateButton.text = "Regenerate";
-        regenerateButton.clicked += RegeneratePresetId;
-        regenerateButton.style.marginLeft = 6f;
-        idRow.Add(regenerateButton);
-
-        sectionContainer.Add(idRow);
-    }
-
-
-    private void BuildBrainSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Brain");
-
-        if (sectionContainer == null)
-            return;
-
-        brainSubSectionTabs.Clear();
-
-        brainSubSectionTabBar = new VisualElement();
-        brainSubSectionTabBar.style.flexDirection = FlexDirection.Row;
-        brainSubSectionTabBar.style.flexWrap = Wrap.Wrap;
-        brainSubSectionTabBar.style.marginBottom = 6f;
-        brainSubSectionTabBar.style.paddingTop = 4f;
-        brainSubSectionTabBar.style.paddingBottom = 4f;
-        brainSubSectionTabBar.style.paddingLeft = 2f;
-
-        brainSubSectionContentHost = new VisualElement();
-        brainSubSectionContentHost.style.flexDirection = FlexDirection.Column;
-        brainSubSectionContentHost.style.flexGrow = 1f;
-
-        sectionContainer.Add(brainSubSectionTabBar);
-        sectionContainer.Add(brainSubSectionContentHost);
-
-        AddBrainSubSectionTab(BrainSubSectionType.Movement, "Movement", BuildMovementSubSection());
-        AddBrainSubSectionTab(BrainSubSectionType.Steering, "Steering", BuildSteeringSubSection());
-        AddBrainSubSectionTab(BrainSubSectionType.Damage, "Damage", BuildDamageSubSection());
-        AddBrainSubSectionTab(BrainSubSectionType.HealthStatistics, "Health Statistics", BuildHealthStatisticsSubSection());
-        AddBrainSubSectionTab(BrainSubSectionType.Visual, "Visual", BuildVisualSubSection());
-
-        if (!brainSubSectionTabs.ContainsKey(activeBrainSubSection))
-            activeBrainSubSection = BrainSubSectionType.Movement;
-
-        SetActiveBrainSubSection(activeBrainSubSection);
-    }
-
-
-    /// <summary>
-    /// Sets active Brain subsection tab and persists it for reopen.
-    /// Called by Brain subsection tab buttons.
-    /// Takes in the target subsection enum.
-    /// </summary>
-    /// <param name="subSectionType">Brain subsection to show.</param>
-    private void SetActiveBrainSubSection(BrainSubSectionType subSectionType)
-    {
-        // Persist subsection selection and refresh visible subsection content.
-        activeBrainSubSection = subSectionType;
-        ManagementToolStateUtility.SaveEnumValue(ActiveSubSectionStateKey, activeBrainSubSection);
-        ShowActiveBrainSubSection();
-    }
-
-    private void AddBrainSubSectionTab(BrainSubSectionType subSectionType, string tabLabel, VisualElement content)
-    {
-        if (brainSubSectionTabBar == null)
-            return;
-
-        if (content == null)
-            return;
-
-        VisualElement tabContainer = new VisualElement();
-        tabContainer.style.flexDirection = FlexDirection.Row;
-        tabContainer.style.alignItems = Align.Center;
-        tabContainer.style.marginRight = 6f;
-        tabContainer.style.marginBottom = 4f;
-
-        Button tabButton = new Button(() => SetActiveBrainSubSection(subSectionType));
-        tabButton.text = tabLabel;
-        tabButton.style.unityTextAlign = TextAnchor.MiddleLeft;
-        tabContainer.Add(tabButton);
-
-        brainSubSectionTabBar.Add(tabContainer);
-        brainSubSectionTabs[subSectionType] = new BrainSubSectionTabEntry
-        {
-            TabContainer = tabContainer,
-            TabButton = tabButton,
-            Content = content
-        };
-    }
-
-
-
-    private void ShowActiveBrainSubSection()
-    {
-        if (brainSubSectionContentHost == null)
-            return;
-
-        if (!brainSubSectionTabs.TryGetValue(activeBrainSubSection, out BrainSubSectionTabEntry tabEntry))
-            return;
-
-        if (tabEntry == null || tabEntry.Content == null)
-            return;
-
-        brainSubSectionContentHost.Clear();
-        brainSubSectionContentHost.Add(tabEntry.Content);
-        UpdateBrainSubSectionTabStyles();
-    }
-
-
-    private void UpdateBrainSubSectionTabStyles()
-    {
-        foreach (KeyValuePair<BrainSubSectionType, BrainSubSectionTabEntry> tabEntry in brainSubSectionTabs)
-        {
-            if (tabEntry.Value == null || tabEntry.Value.TabButton == null)
-                continue;
-
-            bool isActive = tabEntry.Key == activeBrainSubSection;
-            tabEntry.Value.TabButton.style.unityFontStyleAndWeight = isActive ? FontStyle.Bold : FontStyle.Normal;
-            tabEntry.Value.TabButton.style.backgroundColor = isActive ? new Color(0.18f, 0.18f, 0.18f, 0.6f) : Color.clear;
-        }
-    }
-
-
-    private VisualElement BuildMovementSubSection()
-    {
-        SerializedProperty movementProperty = presetSerializedObject.FindProperty("movement");
-        VisualElement container = CreateBrainSubSectionContainer("Movement");
-
-        if (container == null)
-            return null;
-
-        AddPropertyField(container,
-                         movementProperty,
-                         "moveSpeed",
-                         "Move Speed",
-                         "Meters per second used as baseline enemy movement speed toward the player.");
-        AddPropertyField(container,
-                         movementProperty,
-                         "maxSpeed",
-                         "Max Speed",
-                         "Hard cap applied to the enemy velocity magnitude.");
-        AddPropertyField(container,
-                         movementProperty,
-                         "acceleration",
-                         "Acceleration",
-                         "Meters per second squared used to accelerate toward desired velocity.");
-        AddPropertyField(container,
-                         movementProperty,
-                         "deceleration",
-                         "Deceleration",
-                         "Reserved deceleration value for future braking behaviors. Currently unused at runtime.");
-        AddPropertyField(container,
-                         movementProperty,
-                         "rotationSpeedDegreesPerSecond",
-                         "Rotation Speed (Deg/Sec)",
-                         "Self-rotation speed around Y in degrees per second. Positive rotates clockwise, negative counter-clockwise.");
-        AddPropertyField(container,
-                         movementProperty,
-                         "priorityTier",
-                         "Priority Tier",
-                         "General enemy priority tier used by steering and visual overlap rules. Higher values keep right-of-way over lower tiers.");
-        AddPropertyField(container,
-                         movementProperty,
-                         "steeringAggressiveness",
-                         "Steering Aggressiveness",
-                         "Scales steering and clearance reactivity. Higher values produce stronger side-step and avoidance corrections.");
-        return container;
-    }
-
-
-
-    private VisualElement BuildSteeringSubSection()
-    {
-        SerializedProperty steeringProperty = presetSerializedObject.FindProperty("steering");
-        VisualElement container = CreateBrainSubSectionContainer("Steering");
-
-        if (container == null)
-            return null;
-
-        AddPropertyField(container,
-                         steeringProperty,
-                         "separationRadius",
-                         "Separation Radius",
-                         "Radius used to search neighboring enemies for separation steering.");
-        AddPropertyField(container,
-                         steeringProperty,
-                         "separationWeight",
-                         "Separation Weight",
-                         "Weight applied to the separation vector before velocity clamping.");
-        AddPropertyField(container,
-                         steeringProperty,
-                         "bodyRadius",
-                         "Body Radius",
-                         "Physical body radius used for projectile hit checks and overlap handling.");
-        return container;
-    }
-
-
-    private VisualElement BuildDamageSubSection()
-    {
-        SerializedProperty damageProperty = presetSerializedObject.FindProperty("damage");
-        VisualElement container = CreateBrainSubSectionContainer("Damage");
-
-        if (container == null)
-            return null;
-
-        if (damageProperty == null)
-            return container;
-
-        SerializedProperty contactToggleProperty = damageProperty.FindPropertyRelative("contactDamageEnabled");
-        SerializedProperty areaToggleProperty = damageProperty.FindPropertyRelative("areaDamageEnabled");
-
-        if (contactToggleProperty != null)
-        {
-            Foldout contactFoldout = CreateToggleableDamageFoldout(contactToggleProperty, "Contact Damage");
-            AddPropertyField(contactFoldout,
-                             damageProperty,
-                             "contactRadius",
-                             "Contact Radius",
-                             "Distance from enemy center used to trigger contact damage ticks.");
-            AddPropertyField(contactFoldout,
-                             damageProperty,
-                             "contactAmountPerTick",
-                             "Amount Per Tick",
-                             "Flat damage amount subtracted from player health at each contact tick.");
-            AddPropertyField(contactFoldout,
-                             damageProperty,
-                             "contactTickInterval",
-                             "Tick Interval",
-                             "Interval in seconds between two contact damage ticks.");
-            container.Add(contactFoldout);
-        }
-
-        if (areaToggleProperty != null)
-        {
-            Foldout areaFoldout = CreateToggleableDamageFoldout(areaToggleProperty, "Area Damage");
-            AddPropertyField(areaFoldout,
-                             damageProperty,
-                             "areaRadius",
-                             "Area Radius",
-                             "Distance from enemy center used to trigger area damage ticks.");
-            AddPropertyField(areaFoldout,
-                             damageProperty,
-                             "areaAmountPerTickPercent",
-                             "Amount Per Tick",
-                             "Percent of player max health applied per area damage tick.");
-            AddPropertyField(areaFoldout,
-                             damageProperty,
-                             "areaTickInterval",
-                             "Tick Interval",
-                             "Interval in seconds between two area damage ticks.");
-            container.Add(areaFoldout);
-        }
-
-        return container;
-    }
-
-
-    private Foldout CreateToggleableDamageFoldout(SerializedProperty toggleProperty, string title)
-    {
-        Foldout foldout = new Foldout();
-        foldout.text = title;
-        foldout.BindProperty(toggleProperty);
-        foldout.value = toggleProperty.boolValue;
-        foldout.style.marginBottom = 4f;
-        foldout.RegisterValueChangedCallback(evt =>
-        {
-            EnemyManagementDraftSession.MarkDirty();
-        });
-        return foldout;
-    }
-
-
-
-    private VisualElement BuildHealthStatisticsSubSection()
-    {
-        SerializedProperty healthStatisticsProperty = presetSerializedObject.FindProperty("healthStatistics");
-        VisualElement container = CreateBrainSubSectionContainer("Health Statistics");
-
-        if (container == null)
-            return null;
-
-        AddPropertyField(container,
-                         healthStatisticsProperty,
-                         "maxHealth",
-                         "Max Health",
-                         "Maximum and initial health assigned to this enemy when spawned from pool.");
-        AddPropertyField(container,
-                         healthStatisticsProperty,
-                         "maxShield",
-                         "Max Shield",
-                         "Maximum shield reserve assigned to this enemy at spawn. Shield absorbs incoming damage before health.");
-        return container;
-    }
-
-    private VisualElement BuildVisualSubSection()
-    {
-        SerializedProperty visualProperty = presetSerializedObject.FindProperty("visual");
-        VisualElement container = CreateBrainSubSectionContainer("Visual");
-
-        if (container == null)
-            return null;
-
-        AddPropertyField(container,
-                         visualProperty,
-                         "visualMode",
-                         "Visual Mode",
-                         "Visual runtime path: managed companion Animator (few actors) or GPU-baked playback (crowd scale).");
-        AddPropertyField(container,
-                         visualProperty,
-                         "visualAnimationSpeed",
-                         "Visual Animation Speed",
-                         "Playback speed multiplier used by both companion and GPU-baked visual paths.");
-        AddPropertyField(container,
-                         visualProperty,
-                         "gpuAnimationLoopDuration",
-                         "GPU Animation Loop Duration",
-                         "Loop duration in seconds used by GPU-baked playback time wrapping.");
-        AddPropertyField(container,
-                         visualProperty,
-                         "enableDistanceCulling",
-                         "Enable Distance Culling",
-                         "Enable distance-based visual culling while gameplay simulation remains fully active.");
-        AddPropertyField(container,
-                         visualProperty,
-                         "maxVisibleDistance",
-                         "Max Visible Distance",
-                         "Maximum planar distance from player where visuals stay visible. Set to 0 to keep always visible.");
-        AddPropertyField(container,
-                         visualProperty,
-                         "visibleDistanceHysteresis",
-                         "Visible Distance Hysteresis",
-                         "Additional distance band used to avoid visual popping when crossing the culling boundary.");
-        AddPropertyField(container,
-                         visualProperty,
-                         "hitVfxPrefab",
-                         "Hit VFX Prefab",
-                         "Optional one-shot VFX prefab spawned every time this enemy receives a projectile hit.");
-        AddPropertyField(container,
-                         visualProperty,
-                         "hitVfxLifetimeSeconds",
-                         "Hit VFX Lifetime Seconds",
-                         "Lifetime in seconds assigned to each spawned hit VFX instance.");
-        AddPropertyField(container,
-                         visualProperty,
-                         "hitVfxScaleMultiplier",
-                         "Hit VFX Scale Multiplier",
-                         "Uniform scale multiplier applied to the spawned hit VFX instance.");
-        return container;
-    }
-
-
-    private VisualElement CreateDetailsSectionContainer(string sectionTitle)
-    {
-        if (detailsSectionContentRoot == null)
-            return null;
-
-        VisualElement container = new VisualElement();
-        container.style.marginTop = 8f;
-
-        Label header = new Label(sectionTitle);
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginBottom = 4f;
-        container.Add(header);
-        detailsSectionContentRoot.Add(container);
-        return container;
-    }
-
-
-
-    private VisualElement CreateBrainSubSectionContainer(string sectionTitle)
-    {
-        VisualElement container = new VisualElement();
-        container.style.marginTop = 4f;
-
-        Label header = new Label(sectionTitle + " Settings");
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginBottom = 4f;
-        container.Add(header);
-
-        return container;
-    }
-
-
-    private void AddPropertyField(VisualElement panel,
-                                  SerializedProperty parentProperty,
-                                  string relativePropertyName,
-                                  string label,
-                                  string tooltip)
-    {
-        if (panel == null)
-            return;
-
-        if (parentProperty == null)
-            return;
-
-        SerializedProperty property = parentProperty.FindPropertyRelative(relativePropertyName);
-
-        if (property == null)
-            return;
-
-        PropertyField propertyField = new PropertyField(property, label);
-        propertyField.BindProperty(property);
-        propertyField.tooltip = tooltip;
-        propertyField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
-        {
-            EnemyManagementDraftSession.MarkDirty();
-        });
-        panel.Add(propertyField);
-    }
-
-
-
-    private void RegeneratePresetId()
+    internal void RegeneratePresetId()
     {
         if (selectedPreset == null)
             return;
@@ -1009,10 +586,14 @@ public sealed class EnemyBrainPresetsPanel
         EnemyManagementDraftSession.MarkDirty();
     }
 
+    internal void SetActiveBrainSubSection(BrainSubSectionType subSectionType)
+    {
+        activeBrainSubSection = subSectionType;
+        ManagementToolStateUtility.SaveEnumValue(ActiveSubSectionStateKey, activeBrainSubSection);
+        ShowActiveBrainSubSection();
+    }
 
-
-
-    private void HandlePresetNameChanged(string newName)
+    internal void HandlePresetNameChanged(string newName)
     {
         RenamePreset(selectedPreset, newName);
     }
@@ -1068,6 +649,11 @@ public sealed class EnemyBrainPresetsPanel
 
         return presetName + " v. " + version;
     }
+
+    internal void ShowActiveBrainSubSection()
+    {
+        EnemyBrainPresetsPanelSectionsUtility.ShowActiveBrainSubSection(this);
+    }
     #endregion
 
     #endregion
@@ -1081,7 +667,7 @@ public sealed class EnemyBrainPresetsPanel
 
 
 
-    private enum BrainSubSectionType
+    internal enum BrainSubSectionType
     {
         Movement = 0,
         Steering = 1,
@@ -1091,7 +677,7 @@ public sealed class EnemyBrainPresetsPanel
     }
 
 
-    private sealed class BrainSubSectionTabEntry
+    internal sealed class BrainSubSectionTabEntry
     {
         public VisualElement TabContainer;
         public Button TabButton;

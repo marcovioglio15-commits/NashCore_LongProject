@@ -12,7 +12,7 @@ public enum PowerUpTierEntryKind
 }
 
 /// <summary>
-/// Defines one weighted power-up entry used inside a tier roll.
+/// Defines one percentage-based power-up entry used inside a tier roll.
 /// </summary>
 [Serializable]
 public sealed class PowerUpTierEntryDefinition
@@ -26,7 +26,7 @@ public sealed class PowerUpTierEntryDefinition
     [Tooltip("Power-up ID selected from the chosen category.")]
     [SerializeField] private string powerUpId;
 
-    [Tooltip("Relative weight used when this tier is rolled. Values <= 0 disable this entry.")]
+    [Tooltip("Selection percentage used when this tier is rolled. Values <= 0 disable this entry and the tier should total 100%.")]
     [SerializeField] private float selectionWeight = 1f;
     #endregion
 
@@ -66,7 +66,7 @@ public sealed class PowerUpTierEntryDefinition
     /// </summary>
     /// <param name="entryKindValue">Category that owns the referenced power-up ID.</param>
     /// <param name="powerUpIdValue">Selected modular power-up ID.</param>
-    /// <param name="selectionWeightValue">Relative roll weight inside the tier.</param>
+    /// <param name="selectionWeightValue">Selection percentage assigned to this tier entry.</param>
     /// <returns>Void.</returns>
     public void Configure(PowerUpTierEntryKind entryKindValue, string powerUpIdValue, float selectionWeightValue)
     {
@@ -96,7 +96,7 @@ public sealed class PowerUpTierEntryDefinition
 }
 
 /// <summary>
-/// Defines one named tier and the weighted modular power-up entries available in that tier.
+/// Defines one named tier and the percentage-based modular power-up entries available in that tier.
 /// </summary>
 [Serializable]
 public sealed class PowerUpTierLevelDefinition
@@ -107,7 +107,7 @@ public sealed class PowerUpTierLevelDefinition
     [Tooltip("Stable tier identifier used by progression milestones.")]
     [SerializeField] private string tierId = "Tier0";
 
-    [Tooltip("Weighted power-up entries available when this tier is rolled.")]
+    [Tooltip("Percentage-based power-up entries available when this tier is rolled. The sum should be 100%.")]
     [SerializeField] private List<PowerUpTierEntryDefinition> entries = new List<PowerUpTierEntryDefinition>();
     #endregion
 

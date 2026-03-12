@@ -38,10 +38,10 @@ public sealed class PlayerProgressionPresetsPanel
     private ToolbarSearchField searchField;
     private VisualElement detailsRoot;
     private VisualElement sectionButtonsRoot;
-    private VisualElement sectionContentRoot;
+    internal VisualElement sectionContentRoot;
 
-    private PlayerProgressionPreset selectedPreset;
-    private SerializedObject presetSerializedObject;
+    internal PlayerProgressionPreset selectedPreset;
+    internal SerializedObject presetSerializedObject;
     private SectionType activeSection = SectionType.Metadata;
     #endregion
 
@@ -280,7 +280,7 @@ public sealed class PlayerProgressionPresetsPanel
         SelectPreset(null);
     }
 
-    private void RefreshPresetList()
+    internal void RefreshPresetList()
     {
         filteredPresets.Clear();
 
@@ -510,353 +510,22 @@ public sealed class PlayerProgressionPresetsPanel
 
     private void BuildMetadataSection()
     {
-        Label header = new Label("Preset Details");
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginBottom = 4f;
-        sectionContentRoot.Add(header);
-
-        SerializedProperty idProperty = presetSerializedObject.FindProperty("presetId");
-        SerializedProperty nameProperty = presetSerializedObject.FindProperty("presetName");
-        SerializedProperty descriptionProperty = presetSerializedObject.FindProperty("description");
-        SerializedProperty versionProperty = presetSerializedObject.FindProperty("version");
-
-        TextField nameField = new TextField("Preset Name");
-        nameField.isDelayed = true;
-        nameField.BindProperty(nameProperty);
-        nameField.RegisterValueChangedCallback(evt =>
-        {
-            HandlePresetNameChanged(evt.newValue);
-        });
-        sectionContentRoot.Add(nameField);
-
-        TextField versionField = new TextField("Version");
-        versionField.isDelayed = true;
-        versionField.BindProperty(versionProperty);
-        versionField.RegisterValueChangedCallback(evt =>
-        {
-            RefreshPresetList();
-        });
-        sectionContentRoot.Add(versionField);
-
-        TextField descriptionField = new TextField("Description");
-        descriptionField.multiline = true;
-        descriptionField.isDelayed = true;
-        descriptionField.style.height = 60f;
-        descriptionField.BindProperty(descriptionProperty);
-        descriptionField.RegisterValueChangedCallback(evt =>
-        {
-            RefreshPresetList();
-        });
-        sectionContentRoot.Add(descriptionField);
-
-        VisualElement idRow = new VisualElement();
-        idRow.style.flexDirection = FlexDirection.Row;
-        idRow.style.alignItems = Align.Center;
-
-        TextField idField = new TextField("Preset ID");
-        idField.isReadOnly = true;
-        idField.SetEnabled(false);
-        idField.style.flexGrow = 1f;
-        idField.BindProperty(idProperty);
-        idRow.Add(idField);
-
-        Button regenerateButton = new Button();
-        regenerateButton.text = "Regenerate";
-        regenerateButton.clicked += RegeneratePresetId;
-        regenerateButton.style.marginLeft = 6f;
-        idRow.Add(regenerateButton);
-
-        sectionContentRoot.Add(idRow);
+        PlayerProgressionPresetsPanelSectionsUtility.BuildMetadataSection(this);
     }
 
     private void BuildScalableStatsSection()
     {
-        VisualElement scalableStatsContainer = CreateSectionContainer("Scalable Stats");
-        SerializedProperty scalableStatsProperty = presetSerializedObject.FindProperty("scalableStats");
-        SerializedProperty scalingRulesProperty = presetSerializedObject.FindProperty("scalingRules");
-
-        if (scalableStatsProperty == null || scalingRulesProperty == null)
-        {
-            Label missingLabel = new Label("Scalable stats data is missing on this preset.");
-            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-            scalableStatsContainer.Add(missingLabel);
-            return;
-        }
-
-        Label infoLabel = new Label("Manage custom variables used by formulas. Use [this] to reference current field value.");
-        infoLabel.style.marginBottom = 4f;
-        scalableStatsContainer.Add(infoLabel);
-
-        VisualElement warningsRoot = new VisualElement();
-        warningsRoot.style.marginBottom = 4f;
-        scalableStatsContainer.Add(warningsRoot);
-        RefreshScalableStatsWarnings(warningsRoot, scalableStatsProperty, scalingRulesProperty);
-
-        PropertyField scalableStatsField = new PropertyField(scalableStatsProperty, "Scalable Stats");
-        scalableStatsField.BindProperty(scalableStatsProperty);
-        scalableStatsField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
-        {
-            PlayerManagementDraftSession.MarkDirty();
-            RefreshScalableStatsWarnings(warningsRoot, scalableStatsProperty, scalingRulesProperty);
-        });
-        scalableStatsContainer.Add(scalableStatsField);
-
-        scalableStatsContainer.RegisterCallback<ChangeEvent<string>>(evt =>
-        {
-            RefreshScalableStatsWarnings(warningsRoot, scalableStatsProperty, scalingRulesProperty);
-        });
-
-        scalableStatsContainer.RegisterCallback<ChangeEvent<bool>>(evt =>
-        {
-            RefreshScalableStatsWarnings(warningsRoot, scalableStatsProperty, scalingRulesProperty);
-        });
+        PlayerProgressionPresetsPanelSectionsUtility.BuildScalableStatsSection(this);
     }
 
     private void BuildMilestonesSection()
     {
-        VisualElement milestonesContainer = CreateSectionContainer("Milestones");
-        SerializedProperty gamePhasesDefinitionProperty = presetSerializedObject.FindProperty("gamePhasesDefinition");
-        SerializedProperty experiencePickupRadiusProperty = presetSerializedObject.FindProperty("experiencePickupRadius");
-        SerializedProperty scalingRulesProperty = presetSerializedObject.FindProperty("scalingRules");
-
-        if (gamePhasesDefinitionProperty == null || experiencePickupRadiusProperty == null)
-        {
-            Label missingLabel = new Label("Milestones data is missing on this preset.");
-            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-            milestonesContainer.Add(missingLabel);
-            return;
-        }
-
-        Label infoLabel = new Label("Define game phases, linear growth, and milestone spikes used by runtime level-up.");
-        infoLabel.style.marginBottom = 4f;
-        milestonesContainer.Add(infoLabel);
-
-        SerializedProperty iterator = presetSerializedObject.GetIterator();
-        bool enterChildren = true;
-        bool hasVisibleMilestonesField = false;
-
-        while (iterator.NextVisible(enterChildren))
-        {
-            enterChildren = false;
-
-            if (iterator.depth != 0)
-                continue;
-
-            SerializedProperty rootProperty = iterator.Copy();
-
-            if (ShouldSkipMilestonesRootProperty(rootProperty))
-                continue;
-
-            hasVisibleMilestonesField = true;
-
-            if (string.Equals(rootProperty.name, "gamePhasesDefinition", StringComparison.Ordinal))
-            {
-                Foldout gamePhasesFoldout = new Foldout();
-                gamePhasesFoldout.text = "Game Phases Definition";
-                gamePhasesFoldout.value = true;
-                gamePhasesFoldout.style.marginBottom = 4f;
-                milestonesContainer.Add(gamePhasesFoldout);
-
-                VisualElement scalableGamePhasesField = PlayerScalingFieldElementFactory.CreateField(rootProperty,
-                                                                                                      scalingRulesProperty,
-                                                                                                      "Phases");
-                gamePhasesFoldout.Add(scalableGamePhasesField);
-                continue;
-            }
-
-            string labelOverride = rootProperty.displayName;
-
-            if (string.Equals(rootProperty.name, "experiencePickupRadius", StringComparison.Ordinal))
-                labelOverride = "Experience Pickup Radius";
-
-            VisualElement scalableField = PlayerScalingFieldElementFactory.CreateField(rootProperty,
-                                                                                        scalingRulesProperty,
-                                                                                        labelOverride);
-            milestonesContainer.Add(scalableField);
-        }
-
-        if (!hasVisibleMilestonesField)
-        {
-            Label noFieldsLabel = new Label("No milestone fields available on this preset.");
-            noFieldsLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-            milestonesContainer.Add(noFieldsLabel);
-        }
+        PlayerProgressionPresetsPanelSectionsUtility.BuildMilestonesSection(this, MilestonesExcludedRootPropertyNames);
     }
 
     private void BuildSchedulesSection()
     {
-        VisualElement schedulesContainer = CreateSectionContainer("Schedules");
-        SerializedProperty schedulesProperty = presetSerializedObject.FindProperty("schedules");
-        SerializedProperty equippedScheduleIdProperty = presetSerializedObject.FindProperty("equippedScheduleId");
-
-        if (schedulesProperty == null || equippedScheduleIdProperty == null)
-        {
-            Label missingLabel = new Label("Schedule data is missing on this preset.");
-            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-            schedulesContainer.Add(missingLabel);
-            return;
-        }
-
-        Label infoLabel = new Label("Define repeating level-up stat sequences and select the schedule equipped at runtime.");
-        infoLabel.style.marginBottom = 4f;
-        schedulesContainer.Add(infoLabel);
-
-        List<string> scheduleIdOptions = BuildScheduleIdOptions(schedulesProperty);
-        List<string> popupOptions = new List<string>();
-        popupOptions.Add("<None>");
-
-        for (int optionIndex = 0; optionIndex < scheduleIdOptions.Count; optionIndex++)
-            popupOptions.Add(scheduleIdOptions[optionIndex]);
-
-        string selectedLabel = ResolveSchedulePopupLabel(popupOptions, equippedScheduleIdProperty.stringValue);
-        PopupField<string> equippedSchedulePopup = new PopupField<string>("Equipped Schedule", popupOptions, selectedLabel);
-        equippedSchedulePopup.RegisterValueChangedCallback(evt =>
-        {
-            presetSerializedObject.Update();
-            equippedScheduleIdProperty.stringValue = string.Equals(evt.newValue, "<None>", StringComparison.Ordinal) ? string.Empty : evt.newValue;
-            presetSerializedObject.ApplyModifiedProperties();
-            PlayerManagementDraftSession.MarkDirty();
-        });
-        schedulesContainer.Add(equippedSchedulePopup);
-
-        if (scheduleIdOptions.Count <= 0)
-        {
-            HelpBox warningBox = new HelpBox("No schedules available. Create at least one schedule to enable runtime level-up sequencing.", HelpBoxMessageType.Warning);
-            warningBox.style.marginBottom = 4f;
-            schedulesContainer.Add(warningBox);
-        }
-
-        PropertyField schedulesField = new PropertyField(schedulesProperty, "Schedule Definitions");
-        schedulesField.BindProperty(schedulesProperty);
-        schedulesContainer.Add(schedulesField);
-    }
-
-    private static bool ShouldSkipMilestonesRootProperty(SerializedProperty property)
-    {
-        if (property == null)
-            return true;
-
-        if (string.Equals(property.name, "m_Script", StringComparison.Ordinal))
-            return true;
-
-        return MilestonesExcludedRootPropertyNames.Contains(property.name);
-    }
-
-    private static List<string> BuildScheduleIdOptions(SerializedProperty schedulesProperty)
-    {
-        List<string> options = new List<string>();
-
-        if (schedulesProperty == null)
-            return options;
-
-        HashSet<string> visitedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (int scheduleIndex = 0; scheduleIndex < schedulesProperty.arraySize; scheduleIndex++)
-        {
-            SerializedProperty scheduleProperty = schedulesProperty.GetArrayElementAtIndex(scheduleIndex);
-
-            if (scheduleProperty == null)
-                continue;
-
-            SerializedProperty scheduleIdProperty = scheduleProperty.FindPropertyRelative("scheduleId");
-
-            if (scheduleIdProperty == null || string.IsNullOrWhiteSpace(scheduleIdProperty.stringValue))
-                continue;
-
-            string scheduleId = scheduleIdProperty.stringValue.Trim();
-
-            if (!visitedIds.Add(scheduleId))
-                continue;
-
-            options.Add(scheduleId);
-        }
-
-        options.Sort(StringComparer.OrdinalIgnoreCase);
-        return options;
-    }
-
-    private static string ResolveSchedulePopupLabel(List<string> popupOptions, string equippedScheduleId)
-    {
-        if (popupOptions == null || popupOptions.Count <= 0)
-            return "<None>";
-
-        if (string.IsNullOrWhiteSpace(equippedScheduleId))
-            return "<None>";
-
-        for (int optionIndex = 0; optionIndex < popupOptions.Count; optionIndex++)
-        {
-            string option = popupOptions[optionIndex];
-
-            if (string.Equals(option, equippedScheduleId, StringComparison.OrdinalIgnoreCase))
-                return option;
-        }
-
-        return "<None>";
-    }
-
-    private void RefreshScalableStatsWarnings(VisualElement warningsRoot,
-                                              SerializedProperty scalableStatsProperty,
-                                              SerializedProperty scalingRulesProperty)
-    {
-        if (warningsRoot == null || scalableStatsProperty == null)
-            return;
-
-        warningsRoot.Clear();
-
-        for (int statIndex = 0; statIndex < scalableStatsProperty.arraySize; statIndex++)
-        {
-            SerializedProperty statElementProperty = scalableStatsProperty.GetArrayElementAtIndex(statIndex);
-            SerializedProperty statNameProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("statName") : null;
-            string statName = statNameProperty != null ? statNameProperty.stringValue : string.Empty;
-            string warningText = ValidateScalableStatEntry(statName, statIndex, scalableStatsProperty);
-
-            if (string.IsNullOrWhiteSpace(warningText))
-                continue;
-
-            HelpBox warningBox = new HelpBox(string.Format("Stat {0}: {1}", statIndex + 1, warningText), HelpBoxMessageType.Warning);
-            warningBox.style.marginBottom = 2f;
-            warningsRoot.Add(warningBox);
-        }
-
-        List<string> dependencyWarnings = PlayerScalingDependencyValidationUtility.BuildScalableStatsDependencyWarnings(scalableStatsProperty,
-                                                                                                                         scalingRulesProperty);
-
-        for (int warningIndex = 0; warningIndex < dependencyWarnings.Count; warningIndex++)
-        {
-            string dependencyWarning = dependencyWarnings[warningIndex];
-
-            if (string.IsNullOrWhiteSpace(dependencyWarning))
-                continue;
-
-            HelpBox warningBox = new HelpBox(dependencyWarning, HelpBoxMessageType.Warning);
-            warningBox.style.marginBottom = 2f;
-            warningsRoot.Add(warningBox);
-        }
-    }
-
-    private string ValidateScalableStatEntry(string statName, int statIndex, SerializedProperty scalableStatsProperty)
-    {
-        if (!PlayerScalableStatNameUtility.IsValid(statName))
-            return "Invalid name. Use letters/digits/underscore, start with letter or underscore, and avoid 'this'.";
-
-        for (int index = 0; index < scalableStatsProperty.arraySize; index++)
-        {
-            if (index == statIndex)
-                continue;
-
-            SerializedProperty otherStatElement = scalableStatsProperty.GetArrayElementAtIndex(index);
-            SerializedProperty otherStatNameProperty = otherStatElement != null ? otherStatElement.FindPropertyRelative("statName") : null;
-
-            if (otherStatNameProperty == null)
-                continue;
-
-            if (!string.Equals(otherStatNameProperty.stringValue, statName, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            return "Duplicate name.";
-        }
-
-        return string.Empty;
+        PlayerProgressionPresetsPanelSectionsUtility.BuildSchedulesSection(this);
     }
 
     private VisualElement BuildSectionButtons()
@@ -920,7 +589,7 @@ public sealed class PlayerProgressionPresetsPanel
         }
     }
 
-    private VisualElement CreateSectionContainer(string sectionTitle)
+    internal VisualElement CreateSectionContainer(string sectionTitle)
     {
         VisualElement container = new VisualElement();
         container.style.marginTop = 8f;
@@ -936,7 +605,7 @@ public sealed class PlayerProgressionPresetsPanel
         return container;
     }
 
-    private void RegeneratePresetId()
+    internal void RegeneratePresetId()
     {
         if (selectedPreset == null)
         {
@@ -956,12 +625,7 @@ public sealed class PlayerProgressionPresetsPanel
         presetSerializedObject.ApplyModifiedProperties();
     }
 
-    private void HandlePresetNameChanged(string newName)
-    {
-        RenamePreset(selectedPreset, newName);
-    }
-
-    private void RenamePreset(PlayerProgressionPreset preset, string newName)
+    internal void RenamePreset(PlayerProgressionPreset preset, string newName)
     {
         if (preset == null)
         {

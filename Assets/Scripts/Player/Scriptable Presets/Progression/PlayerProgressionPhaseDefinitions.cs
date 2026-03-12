@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Defines one progression game phase with linear growth and optional milestone overrides.
@@ -204,11 +205,15 @@ public sealed class PlayerGamePhaseDefinition
 }
 
 /// <summary>
-/// Defines one level milestone override used to create one-time experience spikes and optional power-up unlock rolls.
+/// Defines one level milestone override used to create one-time experience spikes, custom power-up offers, and optional skip compensations.
 /// </summary>
 [Serializable]
 public sealed class PlayerLevelUpMilestoneDefinition
 {
+    #region Constants
+    public const int MaxPowerUpUnlockCount = 6;
+    #endregion
+
     #region Fields
 
     #region Serialized Fields
@@ -218,11 +223,19 @@ public sealed class PlayerLevelUpMilestoneDefinition
     [Tooltip("Special required experience applied when this milestone level is active.")]
     [SerializeField] private float specialExpRequirement = 300f;
 
-    [Tooltip("Number of power-up extractions rolled when this milestone level is reached.")]
-    [SerializeField] private int powerUpUnlockRollCount = 1;
+    [Tooltip("Ordered milestone power-up extractions rolled when this milestone level is reached. Each element defines one custom offer roll.")]
+    [SerializeField] private List<PlayerMilestonePowerUpUnlockDefinition> powerUpUnlocks = new List<PlayerMilestonePowerUpUnlockDefinition>();
 
-    [Tooltip("Weighted tier candidates used to resolve milestone power-up extractions.")]
-    [SerializeField] private List<PlayerMilestoneTierRollDefinition> milestoneTierRolls = new List<PlayerMilestoneTierRollDefinition>();
+    [Tooltip("Resources granted when the player skips this milestone power-up selection.")]
+    [SerializeField] private List<PlayerMilestoneSkipCompensationDefinition> skipCompensationResources = new List<PlayerMilestoneSkipCompensationDefinition>();
+
+    [FormerlySerializedAs("powerUpUnlockRollCount")]
+    [HideInInspector]
+    [SerializeField] private int legacyPowerUpUnlockRollCount;
+
+    [FormerlySerializedAs("milestoneTierRolls")]
+    [HideInInspector]
+    [SerializeField] private List<PlayerMilestoneTierRollDefinition> legacyMilestoneTierRolls = new List<PlayerMilestoneTierRollDefinition>();
     #endregion
 
     #endregion
@@ -248,15 +261,23 @@ public sealed class PlayerLevelUpMilestoneDefinition
     {
         get
         {
-            return powerUpUnlockRollCount;
+            return powerUpUnlocks != null ? powerUpUnlocks.Count : 0;
         }
     }
 
-    public IReadOnlyList<PlayerMilestoneTierRollDefinition> MilestoneTierRolls
+    public IReadOnlyList<PlayerMilestonePowerUpUnlockDefinition> PowerUpUnlocks
     {
         get
         {
-            return milestoneTierRolls;
+            return powerUpUnlocks;
+        }
+    }
+
+    public IReadOnlyList<PlayerMilestoneSkipCompensationDefinition> SkipCompensationResources
+    {
+        get
+        {
+            return skipCompensationResources;
         }
     }
     #endregion
@@ -287,44 +308,90 @@ public sealed class PlayerLevelUpMilestoneDefinition
             specialExpRequirement = Mathf.Max(1f, fallbackSpecialRequirement);
         }
 
-        if (powerUpUnlockRollCount < 0)
+        TryMigrateLegacyPowerUpUnlocks();
+
+        if (powerUpUnlocks == null)
+            powerUpUnlocks = new List<PlayerMilestonePowerUpUnlockDefinition>();
+
+        if (skipCompensationResources == null)
+            skipCompensationResources = new List<PlayerMilestoneSkipCompensationDefinition>();
+
+        while (powerUpUnlocks.Count > MaxPowerUpUnlockCount)
+            powerUpUnlocks.RemoveAt(powerUpUnlocks.Count - 1);
+
+        for (int powerUpUnlockIndex = 0; powerUpUnlockIndex < powerUpUnlocks.Count; powerUpUnlockIndex++)
         {
-            powerUpUnlockRollCount = 0;
-        }
+            PlayerMilestonePowerUpUnlockDefinition powerUpUnlock = powerUpUnlocks[powerUpUnlockIndex];
 
-        if (milestoneTierRolls == null)
-        {
-            milestoneTierRolls = new List<PlayerMilestoneTierRollDefinition>();
-        }
-
-        for (int tierRollIndex = 0; tierRollIndex < milestoneTierRolls.Count; tierRollIndex++)
-        {
-            PlayerMilestoneTierRollDefinition tierRoll = milestoneTierRolls[tierRollIndex];
-
-            if (tierRoll != null)
-            {
-                continue;
-            }
-
-            tierRoll = new PlayerMilestoneTierRollDefinition();
-            milestoneTierRolls[tierRollIndex] = tierRoll;
-        }
-
-        HashSet<string> visitedTierIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
-
-        for (int tierRollIndex = milestoneTierRolls.Count - 1; tierRollIndex >= 0; tierRollIndex--)
-        {
-            PlayerMilestoneTierRollDefinition tierRoll = milestoneTierRolls[tierRollIndex];
-            tierRoll.Validate(string.Empty);
-
-            if (string.IsNullOrWhiteSpace(tierRoll.TierId))
+            if (powerUpUnlock != null)
                 continue;
 
-            if (visitedTierIds.Add(tierRoll.TierId))
+            powerUpUnlock = new PlayerMilestonePowerUpUnlockDefinition();
+            powerUpUnlocks[powerUpUnlockIndex] = powerUpUnlock;
+        }
+
+        for (int powerUpUnlockIndex = 0; powerUpUnlockIndex < powerUpUnlocks.Count; powerUpUnlockIndex++)
+            powerUpUnlocks[powerUpUnlockIndex].Validate();
+
+        for (int compensationIndex = 0; compensationIndex < skipCompensationResources.Count; compensationIndex++)
+        {
+            PlayerMilestoneSkipCompensationDefinition skipCompensation = skipCompensationResources[compensationIndex];
+
+            if (skipCompensation != null)
                 continue;
 
-            milestoneTierRolls.RemoveAt(tierRollIndex);
+            skipCompensation = new PlayerMilestoneSkipCompensationDefinition();
+            skipCompensationResources[compensationIndex] = skipCompensation;
         }
+
+        for (int compensationIndex = 0; compensationIndex < skipCompensationResources.Count; compensationIndex++)
+            skipCompensationResources[compensationIndex].Validate();
+    }
+    #endregion
+
+    #region Private Methods
+    /// <summary>
+    /// Migrates legacy milestone roll fields into the new per-unlock array structure the first time the asset is validated.
+    /// </summary>
+    /// <returns>Void.</returns>
+    private void TryMigrateLegacyPowerUpUnlocks()
+    {
+        if (powerUpUnlocks != null && powerUpUnlocks.Count > 0)
+        {
+            ClearLegacyPowerUpUnlockData();
+            return;
+        }
+
+        if (legacyPowerUpUnlockRollCount <= 0)
+            return;
+
+        if (powerUpUnlocks == null)
+            powerUpUnlocks = new List<PlayerMilestonePowerUpUnlockDefinition>();
+
+        int migratedUnlockCount = Mathf.Clamp(legacyPowerUpUnlockRollCount, 0, MaxPowerUpUnlockCount);
+
+        for (int powerUpUnlockIndex = 0; powerUpUnlockIndex < migratedUnlockCount; powerUpUnlockIndex++)
+        {
+            PlayerMilestonePowerUpUnlockDefinition powerUpUnlock = new PlayerMilestonePowerUpUnlockDefinition();
+            powerUpUnlock.Configure(PlayerMilestonePowerUpUnlockDefinition.CloneTierRolls(legacyMilestoneTierRolls));
+            powerUpUnlocks.Add(powerUpUnlock);
+        }
+
+        ClearLegacyPowerUpUnlockData();
+    }
+
+    /// <summary>
+    /// Clears legacy serialized milestone-roll fields once migration has completed.
+    /// </summary>
+    /// <returns>Void.</returns>
+    private void ClearLegacyPowerUpUnlockData()
+    {
+        legacyPowerUpUnlockRollCount = 0;
+
+        if (legacyMilestoneTierRolls == null)
+            legacyMilestoneTierRolls = new List<PlayerMilestoneTierRollDefinition>();
+        else
+            legacyMilestoneTierRolls.Clear();
     }
     #endregion
 

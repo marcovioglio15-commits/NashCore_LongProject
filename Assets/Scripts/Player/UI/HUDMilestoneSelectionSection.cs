@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using TMPro;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
 /// <summary>
-/// Handles HUD rendering and ECS command submission for milestone power-up selection.
+/// Handles HUD rendering and ECS command submission for milestone power-up selection and skip actions.
 /// </summary>
 [System.Serializable]
 public sealed class HUDMilestoneSelectionSection
@@ -17,10 +18,13 @@ public sealed class HUDMilestoneSelectionSection
     [SerializeField] private GameObject panelRoot;
 
     [Tooltip("Header text updated with milestone level and selection prompt.")]
-    [SerializeField] private Text headerText;
+    [SerializeField] private TMP_Text headerText;
 
     [Tooltip("Ordered option widgets mapped to rolled offers by index.")]
     [SerializeField] private List<MilestonePowerUpSelectionOptionBinding> optionBindings = new List<MilestonePowerUpSelectionOptionBinding>();
+
+    [Tooltip("Optional button that skips the current milestone selection without choosing a power-up.")]
+    [SerializeField] private Button skipButton;
 
     [Tooltip("Automatically queues the first offer when selection is active but no option buttons are configured.")]
     [SerializeField] private bool autoSelectFirstOfferWhenUiMissing = true;
@@ -31,6 +35,8 @@ public sealed class HUDMilestoneSelectionSection
 
     private readonly List<Button> registeredButtons = new List<Button>(4);
     private readonly List<UnityAction> registeredActions = new List<UnityAction>(4);
+    private Button registeredSkipButton;
+    private UnityAction registeredSkipAction;
     private EntityManager entityManager;
     private Entity playerEntity;
     private bool hasRuntimeContext;
@@ -107,7 +113,7 @@ public sealed class HUDMilestoneSelectionSection
             return;
         }
 
-        if (!HasSelectableButton() && autoSelectFirstOfferWhenUiMissing)
+        if (!HasOfferSelectionButton() && !HasSkipButton() && autoSelectFirstOfferWhenUiMissing)
         {
             TryQueueSelectionCommand(0);
             return;
@@ -122,22 +128,29 @@ public sealed class HUDMilestoneSelectionSection
     {
         UnregisterOptionButtons();
 
-        if (optionBindings == null || optionBindings.Count <= 0)
+        if (optionBindings != null && optionBindings.Count > 0)
+        {
+            for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
+            {
+                MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
+
+                if (optionBinding == null || optionBinding.SelectButton == null)
+                    continue;
+
+                int capturedOptionIndex = optionIndex;
+                UnityAction clickAction = () => HandleOptionButtonPressed(capturedOptionIndex);
+                optionBinding.SelectButton.onClick.AddListener(clickAction);
+                registeredButtons.Add(optionBinding.SelectButton);
+                registeredActions.Add(clickAction);
+            }
+        }
+
+        if (skipButton == null)
             return;
 
-        for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-        {
-            MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-            if (optionBinding == null || optionBinding.SelectButton == null)
-                continue;
-
-            int capturedOptionIndex = optionIndex;
-            UnityAction clickAction = () => HandleOptionButtonPressed(capturedOptionIndex);
-            optionBinding.SelectButton.onClick.AddListener(clickAction);
-            registeredButtons.Add(optionBinding.SelectButton);
-            registeredActions.Add(clickAction);
-        }
+        registeredSkipButton = skipButton;
+        registeredSkipAction = HandleSkipButtonPressed;
+        registeredSkipButton.onClick.AddListener(registeredSkipAction);
     }
 
     private void UnregisterOptionButtons()
@@ -157,6 +170,12 @@ public sealed class HUDMilestoneSelectionSection
 
         registeredButtons.Clear();
         registeredActions.Clear();
+
+        if (registeredSkipButton != null && registeredSkipAction != null)
+            registeredSkipButton.onClick.RemoveListener(registeredSkipAction);
+
+        registeredSkipButton = null;
+        registeredSkipAction = null;
     }
 
     private bool HasUiConfigured()
@@ -164,10 +183,17 @@ public sealed class HUDMilestoneSelectionSection
         if (panelRoot != null)
             return true;
 
+        if (skipButton != null)
+            return true;
+
         return optionBindings != null && optionBindings.Count > 0;
     }
 
-    private bool HasSelectableButton()
+    /// <summary>
+    /// Returns whether at least one configured option button can submit a power-up selection command.
+    /// </summary>
+    /// <returns>True when an offer-selection button exists; otherwise false.</returns>
+    private bool HasOfferSelectionButton()
     {
         if (optionBindings == null || optionBindings.Count <= 0)
             return false;
@@ -185,6 +211,16 @@ public sealed class HUDMilestoneSelectionSection
         return false;
     }
 
+    /// <summary>
+    /// Returns whether a skip button is configured for the milestone selection panel.
+    /// </summary>
+    /// <returns>True when the skip button reference is assigned; otherwise false.</returns>
+    private bool HasSkipButton()
+    {
+        return skipButton != null;
+    }
+
+
     private void ShowPanel(PlayerMilestonePowerUpSelectionState selectionState,
                            DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers)
     {
@@ -192,7 +228,9 @@ public sealed class HUDMilestoneSelectionSection
             panelRoot.SetActive(true);
 
         if (headerText != null)
-            headerText.text = string.Format("Milestone Lv {0} - Choose One Power-Up", selectionState.MilestoneLevel);
+            headerText.text = string.Format("Milestone Lv {0} - Choose 1 of {1} Power-Ups", selectionState.MilestoneLevel, selectionOffers.Length);
+
+        SetSkipButtonVisible(true);
 
         if (optionBindings == null || optionBindings.Count <= 0)
             return;
@@ -221,6 +259,8 @@ public sealed class HUDMilestoneSelectionSection
     {
         if (panelRoot != null && panelRoot.activeSelf)
             panelRoot.SetActive(false);
+
+        SetSkipButtonVisible(false);
 
         if (optionBindings == null || optionBindings.Count <= 0)
             return;
@@ -299,7 +339,10 @@ public sealed class HUDMilestoneSelectionSection
     private void SetOptionButtonsInteractable(bool interactable)
     {
         if (optionBindings == null || optionBindings.Count <= 0)
+        {
+            SetSkipButtonInteractable(interactable);
             return;
+        }
 
         for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
         {
@@ -310,6 +353,43 @@ public sealed class HUDMilestoneSelectionSection
 
             optionBinding.SelectButton.interactable = interactable;
         }
+
+        SetSkipButtonInteractable(interactable);
+    }
+
+    /// <summary>
+    /// Shows or hides the optional skip button depending on the milestone selection state.
+    /// </summary>
+    /// <param name="isVisible">True to show the skip button; false to hide it.</param>
+    /// <returns>Void.</returns>
+    private void SetSkipButtonVisible(bool isVisible)
+    {
+        if (skipButton == null)
+            return;
+
+        GameObject skipButtonObject = skipButton.gameObject;
+
+        if (skipButtonObject.activeSelf == isVisible)
+        {
+            skipButton.interactable = isVisible;
+            return;
+        }
+
+        skipButtonObject.SetActive(isVisible);
+        skipButton.interactable = isVisible;
+    }
+
+    /// <summary>
+    /// Enables or disables interaction on the optional skip button.
+    /// </summary>
+    /// <param name="interactable">True to allow clicks; false to block them.</param>
+    /// <returns>Void.</returns>
+    private void SetSkipButtonInteractable(bool interactable)
+    {
+        if (skipButton == null)
+            return;
+
+        skipButton.interactable = interactable;
     }
     #endregion
 
@@ -328,7 +408,50 @@ public sealed class HUDMilestoneSelectionSection
         SetOptionButtonsInteractable(false);
     }
 
+    /// <summary>
+    /// Handles the optional skip button click and submits a skip command to ECS.
+    /// </summary>
+    /// <returns>Void.</returns>
+    private void HandleSkipButtonPressed()
+    {
+        if (!hasRuntimeContext)
+            return;
+
+        if (!TryQueueSkipCommand())
+            return;
+
+        if (!lockButtonsAfterSelectionClick)
+            return;
+
+        SetOptionButtonsInteractable(false);
+    }
+
+    /// <summary>
+    /// Queues a power-up selection command for the specified offer index.
+    /// </summary>
+    /// <param name="offerIndex">Offer index selected by the player.</param>
+    /// <returns>True when the command is queued; otherwise false.</returns>
     private bool TryQueueSelectionCommand(int offerIndex)
+    {
+        return TryQueueCommand(PlayerMilestoneSelectionCommandType.SelectOffer, offerIndex);
+    }
+
+    /// <summary>
+    /// Queues a skip command for the currently active milestone selection.
+    /// </summary>
+    /// <returns>True when the command is queued; otherwise false.</returns>
+    private bool TryQueueSkipCommand()
+    {
+        return TryQueueCommand(PlayerMilestoneSelectionCommandType.Skip, -1);
+    }
+
+    /// <summary>
+    /// Queues one generic milestone-selection command after validating the current runtime state.
+    /// </summary>
+    /// <param name="commandType">Command kind requested by the HUD.</param>
+    /// <param name="offerIndex">Offer index used by selection commands, or -1 for skip.</param>
+    /// <returns>True when the command is queued; otherwise false.</returns>
+    private bool TryQueueCommand(PlayerMilestoneSelectionCommandType commandType, int offerIndex)
     {
         if (playerEntity == Entity.Null)
             return false;
@@ -341,13 +464,16 @@ public sealed class HUDMilestoneSelectionSection
         if (selectionState.IsSelectionActive == 0)
             return false;
 
-        if (!entityManager.HasBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity))
-            return false;
+        if (commandType == PlayerMilestoneSelectionCommandType.SelectOffer)
+        {
+            if (!entityManager.HasBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity))
+                return false;
 
-        DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> offersBuffer = entityManager.GetBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity);
+            DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> offersBuffer = entityManager.GetBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity);
 
-        if (offerIndex < 0 || offerIndex >= offersBuffer.Length)
-            return false;
+            if (offerIndex < 0 || offerIndex >= offersBuffer.Length)
+                return false;
+        }
 
         if (!entityManager.HasBuffer<PlayerMilestonePowerUpSelectionCommand>(playerEntity))
             return false;
@@ -356,6 +482,7 @@ public sealed class HUDMilestoneSelectionSection
         selectionCommandsBuffer.Clear();
         selectionCommandsBuffer.Add(new PlayerMilestonePowerUpSelectionCommand
         {
+            CommandType = commandType,
             OfferIndex = offerIndex
         });
         return true;

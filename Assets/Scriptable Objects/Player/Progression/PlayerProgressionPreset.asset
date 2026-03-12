@@ -34,13 +34,19 @@ MonoBehaviour:
     milestones:
     - milestoneLevel: 1
       specialExpRequirement: 100
-      powerUpUnlockRollCount: 1
-      milestoneTierRolls: []
+      powerUpUnlocks:
+      - tierRolls:
+        - tierId: Boss
+          selectionWeight: 0
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
   schedules:
   - scheduleId: Schedule1
     sequence: []
   equippedScheduleId: Schedule1
   legacyExperienceRequiredPerLevel: 100
   experiencePickupRadius: 5
+  milestoneTimeScaleResumeDurationSeconds: 0.2
   legacyBaseStats:
     health: 1e+10

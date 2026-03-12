@@ -1,8 +1,6 @@
-using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
-using System.Collections.Generic;
 
 /// <summary>
 /// Authoring component that defines ECS enemy movement, steering, damage and visual settings.
@@ -23,96 +21,73 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #endregion
 
     #region Fields
-
     #region Serialized Fields
     [Header("Preset")]
     [Tooltip("Enemy master preset that resolves sub-presets used by this enemy.")]
     [SerializeField] private EnemyMasterPreset masterPreset;
-
     [Tooltip(" direct brain preset fallback used when MasterPreset is missing or has no Brain preset assigned.")]
     [SerializeField] private EnemyBrainPreset brainPreset;
-
     [Tooltip(" direct advanced pattern preset fallback used when MasterPreset is missing or has no Advanced Pattern preset assigned.")]
     [SerializeField] private EnemyAdvancedPatternPreset advancedPatternPreset;
-
     [Tooltip(" fallback move speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float moveSpeed = 3f;
-
     [Tooltip(" fallback max speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxSpeed = 4f;
-
     [Tooltip(" fallback acceleration used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float acceleration = 8f;
-
     [Tooltip(" fallback deceleration used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float deceleration = 8f;
-
     [Tooltip(" fallback self-rotation speed in degrees per second used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float rotationSpeedDegreesPerSecond;
-
     [Tooltip(" fallback separation radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float separationRadius = 1.1f;
-
     [Tooltip(" fallback separation weight used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float separationWeight = 2f;
-
     [Tooltip(" fallback body radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float bodyRadius = 0.55f;
-
     [Tooltip(" fallback contact radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float contactRadius = 1.2f;
-
     [Tooltip(" fallback contact damage enable used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private bool contactDamageEnabled = true;
-
     [Tooltip(" fallback contact amount per tick used when MasterPreset and BrainPreset are missing.")]
     [FormerlySerializedAs("contactDamage")]
     [SerializeField]
     [HideInInspector] private float contactAmountPerTick = 5f;
-
     [Tooltip(" fallback contact tick interval used when MasterPreset and BrainPreset are missing.")]
     [FormerlySerializedAs("contactInterval")]
     [SerializeField]
     [HideInInspector] private float contactTickInterval = 0.75f;
-
     [Tooltip(" fallback area damage enable used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private bool areaDamageEnabled;
-
     [Tooltip(" fallback area radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float areaRadius = 2.25f;
-
     [Tooltip(" fallback area amount per tick percent used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float areaAmountPerTickPercent = 2f;
-
     [Tooltip(" fallback area tick interval used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float areaTickInterval = 1f;
-
     [Tooltip(" fallback max health used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxHealth = 30f;
-
     [Tooltip(" fallback max shield used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxShield;
-
     [Tooltip(" fallback visual mode used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private EnemyVisualMode visualMode = EnemyVisualMode.GpuBaked;
-
     [Tooltip(" fallback visual animation speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float visualAnimationSpeed = 1f;
@@ -210,7 +185,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            return ResolveAdvancedPatternPreset();
+            return EnemyAuthoringPresetResolverUtility.ResolveAdvancedPatternPreset(masterPreset, advancedPatternPreset);
         }
     }
 
@@ -218,7 +193,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
 
             if (movementSettings == null)
                 return moveSpeed;
@@ -231,7 +206,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
 
             if (movementSettings == null)
                 return maxSpeed;
@@ -244,7 +219,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
 
             if (movementSettings == null)
                 return acceleration;
@@ -257,7 +232,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
 
             if (movementSettings == null)
                 return deceleration;
@@ -270,7 +245,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
 
             if (movementSettings == null)
                 return rotationSpeedDegreesPerSecond;
@@ -283,7 +258,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainSteeringSettings steeringSettings = ResolveSteeringSettings();
+            EnemyBrainSteeringSettings steeringSettings = EnemyAuthoringPresetResolverUtility.ResolveSteeringSettings(masterPreset, brainPreset);
 
             if (steeringSettings == null)
                 return separationRadius;
@@ -296,7 +271,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainSteeringSettings steeringSettings = ResolveSteeringSettings();
+            EnemyBrainSteeringSettings steeringSettings = EnemyAuthoringPresetResolverUtility.ResolveSteeringSettings(masterPreset, brainPreset);
 
             if (steeringSettings == null)
                 return separationWeight;
@@ -309,7 +284,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainSteeringSettings steeringSettings = ResolveSteeringSettings();
+            EnemyBrainSteeringSettings steeringSettings = EnemyAuthoringPresetResolverUtility.ResolveSteeringSettings(masterPreset, brainPreset);
 
             if (steeringSettings == null)
                 return bodyRadius;
@@ -322,7 +297,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
 
             if (damageSettings == null)
                 return contactRadius;
@@ -335,7 +310,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
 
             if (damageSettings == null)
                 return contactDamageEnabled;
@@ -348,7 +323,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
 
             if (damageSettings == null)
                 return contactAmountPerTick;
@@ -361,7 +336,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
 
             if (damageSettings == null)
                 return contactTickInterval;
@@ -374,7 +349,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
 
             if (damageSettings == null)
                 return areaDamageEnabled;
@@ -387,7 +362,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
 
             if (damageSettings == null)
                 return areaRadius;
@@ -400,7 +375,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
 
             if (damageSettings == null)
                 return areaAmountPerTickPercent;
@@ -413,7 +388,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = ResolveDamageSettings();
+            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
 
             if (damageSettings == null)
                 return areaTickInterval;
@@ -426,7 +401,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainHealthStatisticsSettings healthSettings = ResolveHealthStatisticsSettings();
+            EnemyBrainHealthStatisticsSettings healthSettings = EnemyAuthoringPresetResolverUtility.ResolveHealthStatisticsSettings(masterPreset, brainPreset);
 
             if (healthSettings == null)
                 return maxHealth;
@@ -439,7 +414,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainHealthStatisticsSettings healthSettings = ResolveHealthStatisticsSettings();
+            EnemyBrainHealthStatisticsSettings healthSettings = EnemyAuthoringPresetResolverUtility.ResolveHealthStatisticsSettings(masterPreset, brainPreset);
 
             if (healthSettings == null)
                 return maxShield;
@@ -452,7 +427,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return visualMode;
@@ -465,7 +440,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return visualAnimationSpeed;
@@ -478,7 +453,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return gpuAnimationLoopDuration;
@@ -491,7 +466,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return enableDistanceCulling;
@@ -504,7 +479,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return maxVisibleDistance;
@@ -517,7 +492,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return visibleDistanceHysteresis;
@@ -530,12 +505,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
 
             if (movementSettings != null)
                 return math.clamp(movementSettings.PriorityTier, -128, 128);
 
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings != null)
                 return math.clamp(visualSettings.VisibilityPriorityTier, -128, 128);
@@ -548,7 +523,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = ResolveMovementSettings();
+            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
 
             if (movementSettings != null)
             {
@@ -579,7 +554,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return hitVfxPrefab;
@@ -592,7 +567,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return hitVfxLifetimeSeconds;
@@ -605,7 +580,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = ResolveVisualSettings();
+            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
 
             if (visualSettings == null)
                 return hitVfxScaleMultiplier;
@@ -644,7 +619,31 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #region Unity Methods
     private void OnValidate()
     {
-        ValidateFallbackValues();
+        EnemyAuthoringFallbackValidationUtility.ValidateFallbackValues(ref moveSpeed,
+                                                                      ref maxSpeed,
+                                                                      ref acceleration,
+                                                                      ref deceleration,
+                                                                      ref rotationSpeedDegreesPerSecond,
+                                                                      ref separationRadius,
+                                                                      ref separationWeight,
+                                                                      ref bodyRadius,
+                                                                      ref contactRadius,
+                                                                      ref contactAmountPerTick,
+                                                                      ref contactTickInterval,
+                                                                      ref areaRadius,
+                                                                      ref areaAmountPerTickPercent,
+                                                                      ref areaTickInterval,
+                                                                      ref maxHealth,
+                                                                      ref maxShield,
+                                                                      ref visualMode,
+                                                                      ref visualAnimationSpeed,
+                                                                      ref gpuAnimationLoopDuration,
+                                                                      ref maxVisibleDistance,
+                                                                      ref visibleDistanceHysteresis,
+                                                                      ref priorityTier,
+                                                                      ref steeringAggressiveness,
+                                                                      ref hitVfxLifetimeSeconds,
+                                                                      ref hitVfxScaleMultiplier);
 
         if (masterPreset != null)
             masterPreset.ValidateValues();
@@ -658,716 +657,33 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Vector3 center = transform.position;
-
-        if (drawContactRadiusGizmo && ContactDamageEnabled)
-            DrawWireRadius(center, math.max(0f, ContactRadius), ContactGizmoColor);
-
-        if (drawAreaRadiusGizmo && AreaDamageEnabled)
-            DrawWireRadius(center, math.max(0f, AreaRadius), AreaGizmoColor);
-
-        if (drawSeparationRadiusGizmo)
-            DrawWireRadius(center, math.max(0f, SeparationRadius), SeparationGizmoColor);
-
-        if (drawBodyRadiusGizmo)
-            DrawWireRadius(center, math.max(0f, BodyRadius), BodyGizmoColor);
-
-        if (drawAggressivenessRadiusGizmo)
-        {
-            float effectiveClearanceRadius = math.max(0f, SeparationRadius) * math.max(0f, SteeringAggressiveness);
-            DrawWireRadius(center, effectiveClearanceRadius, AggressivenessGizmoColor);
-        }
-
-        if (drawVisualDistanceGizmo && EnableDistanceCulling)
-            DrawWireRadius(center, math.max(0f, MaxVisibleDistance), VisualDistanceGizmoColor);
-
-        if (elementalVfxAnchor == null)
-        {
-            DrawWorldSpaceBarsGizmo(center);
-            return;
-        }
-
-        Gizmos.color = ElementalAnchorGizmoColor;
-        Vector3 anchorPosition = elementalVfxAnchor.position;
-        Gizmos.DrawLine(center, anchorPosition);
-        Gizmos.DrawWireSphere(anchorPosition, 0.14f);
-        DrawWorldSpaceBarsGizmo(center);
-    }
-    #endregion
-
-    #region Validation
-    private void ValidateFallbackValues()
-    {
-        if (moveSpeed < 0f)
-            moveSpeed = 0f;
-
-        if (maxSpeed < 0f)
-            maxSpeed = 0f;
-
-        if (acceleration < 0f)
-            acceleration = 0f;
-
-        if (deceleration < 0f)
-            deceleration = 0f;
-
-        if (float.IsNaN(rotationSpeedDegreesPerSecond) || float.IsInfinity(rotationSpeedDegreesPerSecond))
-            rotationSpeedDegreesPerSecond = 0f;
-
-        if (separationRadius < 0.1f)
-            separationRadius = 0.1f;
-
-        if (separationWeight < 0f)
-            separationWeight = 0f;
-
-        if (bodyRadius < 0.05f)
-            bodyRadius = 0.05f;
-
-        if (contactRadius < 0f)
-            contactRadius = 0f;
-
-        if (contactAmountPerTick < 0f)
-            contactAmountPerTick = 0f;
-
-        if (contactTickInterval < 0.01f)
-            contactTickInterval = 0.01f;
-
-        if (areaRadius < 0f)
-            areaRadius = 0f;
-
-        if (areaAmountPerTickPercent < 0f)
-            areaAmountPerTickPercent = 0f;
-
-        if (areaTickInterval < 0.01f)
-            areaTickInterval = 0.01f;
-
-        if (maxHealth < 1f)
-            maxHealth = 1f;
-
-        if (maxShield < 0f)
-            maxShield = 0f;
-
-        switch (visualMode)
-        {
-            case EnemyVisualMode.CompanionAnimator:
-            case EnemyVisualMode.GpuBaked:
-                break;
-
-            default:
-                visualMode = EnemyVisualMode.GpuBaked;
-                break;
-        }
-
-        if (visualAnimationSpeed < 0f)
-            visualAnimationSpeed = 0f;
-
-        if (gpuAnimationLoopDuration < 0.05f)
-            gpuAnimationLoopDuration = 0.05f;
-
-        if (maxVisibleDistance < 0f)
-            maxVisibleDistance = 0f;
-
-        if (visibleDistanceHysteresis < 0f)
-            visibleDistanceHysteresis = 0f;
-
-        priorityTier = math.clamp(priorityTier, -128, 128);
-
-        if (float.IsNaN(steeringAggressiveness) || float.IsInfinity(steeringAggressiveness))
-            steeringAggressiveness = 1f;
-        else
-            steeringAggressiveness = math.clamp(steeringAggressiveness, 0f, 2.5f);
-
-        if (float.IsNaN(hitVfxLifetimeSeconds) || float.IsInfinity(hitVfxLifetimeSeconds) || hitVfxLifetimeSeconds < 0.05f)
-            hitVfxLifetimeSeconds = 0.05f;
-
-        if (float.IsNaN(hitVfxScaleMultiplier) || float.IsInfinity(hitVfxScaleMultiplier) || hitVfxScaleMultiplier < 0.01f)
-            hitVfxScaleMultiplier = 0.01f;
-    }
-    #endregion
-
-    #region Helpers
-    private EnemyBrainPreset ResolveBrainPreset()
-    {
-        if (masterPreset != null && masterPreset.BrainPreset != null)
-            return masterPreset.BrainPreset;
-
-        return brainPreset;
-    }
-
-    private EnemyAdvancedPatternPreset ResolveAdvancedPatternPreset()
-    {
-        if (masterPreset != null && masterPreset.AdvancedPatternPreset != null)
-            return masterPreset.AdvancedPatternPreset;
-
-        return advancedPatternPreset;
-    }
-
-    private EnemyBrainMovementSettings ResolveMovementSettings()
-    {
-        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
-
-        if (resolvedBrainPreset == null)
-            return null;
-
-        return resolvedBrainPreset.Movement;
-    }
-
-    private EnemyBrainSteeringSettings ResolveSteeringSettings()
-    {
-        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
-
-        if (resolvedBrainPreset == null)
-            return null;
-
-        return resolvedBrainPreset.Steering;
-    }
-
-    private EnemyBrainDamageSettings ResolveDamageSettings()
-    {
-        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
-
-        if (resolvedBrainPreset == null)
-            return null;
-
-        return resolvedBrainPreset.Damage;
-    }
-
-    private EnemyBrainHealthStatisticsSettings ResolveHealthStatisticsSettings()
-    {
-        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
-
-        if (resolvedBrainPreset == null)
-            return null;
-
-        return resolvedBrainPreset.HealthStatistics;
-    }
-
-    private EnemyBrainVisualSettings ResolveVisualSettings()
-    {
-        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset();
-
-        if (resolvedBrainPreset == null)
-            return null;
-
-        return resolvedBrainPreset.Visual;
-    }
-
-    private static void DrawWireRadius(Vector3 center, float radius, Color color)
-    {
-        if (radius <= 0f)
-            return;
-
-        Gizmos.color = color;
-        Gizmos.DrawWireSphere(center, radius);
-    }
-
-    private void DrawWorldSpaceBarsGizmo(Vector3 center)
-    {
-        if (!drawWorldSpaceBarsGizmo)
-        {
-            return;
-        }
-
-        if (worldSpaceStatusBarsView == null)
-        {
-            return;
-        }
-
-        Transform barsTransform = worldSpaceStatusBarsView.transform;
-
-        if (barsTransform == null)
-        {
-            return;
-        }
-
-        Gizmos.color = WorldSpaceBarsGizmoColor;
-        Vector3 barsPosition = barsTransform.position;
-        Gizmos.DrawLine(center, barsPosition);
-        Gizmos.DrawWireCube(barsPosition, new Vector3(0.2f, 0.08f, 0.02f));
-    }
-    #endregion
-
-    #endregion
-}
-
-/// <summary>
-/// Bakes EnemyAuthoring data into ECS enemy components.
-/// </summary>
-public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
-{
-    #region Methods
-
-    #region Bake
-    public override void Bake(EnemyAuthoring authoring)
-    {
-        if (authoring == null)
-            return;
-
-        Entity entity = GetEntity(TransformUsageFlags.Dynamic);
-
-        AddComponent(entity, new EnemyData
-        {
-            MoveSpeed = math.max(0f, authoring.MoveSpeed),
-            MaxSpeed = math.max(0f, authoring.MaxSpeed),
-            Acceleration = math.max(0f, authoring.Acceleration),
-            Deceleration = math.max(0f, authoring.Deceleration),
-            RotationSpeedDegreesPerSecond = authoring.RotationSpeedDegreesPerSecond,
-            SeparationRadius = math.max(0.1f, authoring.SeparationRadius),
-            SeparationWeight = math.max(0f, authoring.SeparationWeight),
-            BodyRadius = math.max(0.05f, authoring.BodyRadius),
-            PriorityTier = math.clamp(authoring.PriorityTier, -128, 128),
-            SteeringAggressiveness = math.clamp(authoring.SteeringAggressiveness, 0f, 2.5f),
-            ContactDamageEnabled = authoring.ContactDamageEnabled ? (byte)1 : (byte)0,
-            ContactRadius = math.max(0f, authoring.ContactRadius),
-            ContactAmountPerTick = math.max(0f, authoring.ContactAmountPerTick),
-            ContactTickInterval = math.max(0.01f, authoring.ContactTickInterval),
-            AreaDamageEnabled = authoring.AreaDamageEnabled ? (byte)1 : (byte)0,
-            AreaRadius = math.max(0f, authoring.AreaRadius),
-            AreaAmountPerTickPercent = math.max(0f, authoring.AreaAmountPerTickPercent),
-            AreaTickInterval = math.max(0.01f, authoring.AreaTickInterval)
-        });
-
-        float bakedHealth = math.max(1f, authoring.MaxHealth);
-        float bakedShield = math.max(0f, authoring.MaxShield);
-
-        AddComponent(entity, new EnemyHealth
-        {
-            Current = bakedHealth,
-            Max = bakedHealth,
-            CurrentShield = bakedShield,
-            MaxShield = bakedShield
-        });
-
-        AddComponent(entity, new EnemyRuntimeState
-        {
-            Velocity = float3.zero,
-            ContactDamageCooldown = 0f,
-            AreaDamageCooldown = 0f,
-            SpawnVersion = 0u
-        });
-
-        EnemyCompiledPatternBakeResult compiledPattern = EnemyAdvancedPatternBakeUtility.Compile(authoring.AdvancedPatternPreset);
-
-        AddComponent(entity, compiledPattern.PatternConfig);
-        AddComponent(entity, new EnemyPatternRuntimeState
-        {
-            WanderTargetPosition = float3.zero,
-            WanderWaitTimer = 0f,
-            WanderRetryTimer = 0f,
-            LastWanderDirectionAngle = 0f,
-            WanderHasTarget = 0,
-            WanderInitialized = 0,
-            DvdDirection = float3.zero,
-            DvdInitialized = 0
-        });
-        AddComponent(entity, new EnemyShooterControlState
-        {
-            MovementLocked = 0
-        });
-
-        if (compiledPattern.HasCustomMovement)
-            AddComponent<EnemyCustomPatternMovementTag>(entity);
-
-        DynamicBuffer<EnemyShooterConfigElement> shooterConfigs = AddBuffer<EnemyShooterConfigElement>(entity);
-        DynamicBuffer<EnemyShooterRuntimeElement> shooterRuntime = AddBuffer<EnemyShooterRuntimeElement>(entity);
-
-        for (int shooterIndex = 0; shooterIndex < compiledPattern.ShooterConfigs.Count; shooterIndex++)
-        {
-            shooterConfigs.Add(compiledPattern.ShooterConfigs[shooterIndex]);
-            shooterRuntime.Add(new EnemyShooterRuntimeElement
-            {
-                NextBurstTimer = 0f,
-                NextShotInBurstTimer = 0f,
-                RemainingBurstShots = 0,
-                LockedAimDirection = float3.zero,
-                HasLockedAimDirection = 0
-            });
-        }
-
-        if (compiledPattern.ShooterConfigs.Count > 0)
-            TryBakeShooterRuntime(authoring, entity, compiledPattern);
-
-        TryBakeDropItemsRuntime(authoring, entity, compiledPattern);
-
-        EnemyVisualMode bakedVisualMode = ResolveBakedVisualMode(authoring, out Animator resolvedAnimatorComponent);
-
-        AddComponent(entity, new EnemyVisualConfig
-        {
-            Mode = bakedVisualMode,
-            AnimationSpeed = math.max(0f, authoring.VisualAnimationSpeed),
-            GpuLoopDuration = math.max(0.05f, authoring.GpuAnimationLoopDuration),
-            MaxVisibleDistance = math.max(0f, authoring.MaxVisibleDistance),
-            VisibleDistanceHysteresis = math.max(0f, authoring.VisibleDistanceHysteresis),
-            UseDistanceCulling = authoring.EnableDistanceCulling ? (byte)1 : (byte)0,
-            VisibilityPriorityTier = math.clamp(authoring.PriorityTier, -128, 128)
-        });
-
-        Entity hitVfxPrefabEntity = ResolveHitVfxPrefabEntity(authoring);
-        AddComponent(entity, new EnemyHitVfxConfig
-        {
-            PrefabEntity = hitVfxPrefabEntity,
-            LifetimeSeconds = math.max(0.05f, authoring.HitVfxLifetimeSeconds),
-            ScaleMultiplier = math.max(0.01f, authoring.HitVfxScaleMultiplier)
-        });
-
-        AddComponent(entity, new EnemyVisualRuntimeState
-        {
-            AnimationTime = 0f,
-            LastDistanceToPlayer = 0f,
-            IsVisible = 1,
-            CompanionInitialized = 0,
-            AppliedVisibilityPriorityTier = int.MinValue
-        });
-
-        switch (bakedVisualMode)
-        {
-            case EnemyVisualMode.CompanionAnimator:
-                AddComponentObject(entity, resolvedAnimatorComponent);
-                AddComponent<EnemyVisualCompanionAnimator>(entity);
-                break;
-
-            default:
-                AddComponent<EnemyVisualGpuBaked>(entity);
-                break;
-        }
-
-        EnemyWorldSpaceStatusBarsView resolvedStatusBarsView = ResolveWorldSpaceStatusBarsView(authoring);
-        Entity statusBarsViewEntity = RegisterStatusBarsViewEntity(resolvedStatusBarsView);
-        AddComponent(entity, new EnemyWorldSpaceStatusBarsLink
-        {
-            ViewEntity = statusBarsViewEntity
-        });
-        AddComponent(entity, new EnemyWorldSpaceStatusBarsRuntimeLink
-        {
-            ViewEntity = Entity.Null
-        });
-
-        AddComponent(entity, new EnemyOwnerSpawner
-        {
-            SpawnerEntity = Entity.Null
-        });
-
-        AddComponent(entity, new EnemyElementalRuntimeState
-        {
-            SlowPercent = 0f
-        });
-        AddBuffer<EnemyElementStackElement>(entity);
-
-        Entity anchorEntity = Entity.Null;
-
-        if (authoring.ElementalVfxAnchor != null)
-            anchorEntity = GetEntity(authoring.ElementalVfxAnchor, TransformUsageFlags.Dynamic);
-
-        AddComponent(entity, new EnemyElementalVfxAnchor
-        {
-            AnchorEntity = anchorEntity
-        });
-
-        AddComponent<EnemyActive>(entity);
-        SetComponentEnabled<EnemyActive>(entity, false);
-    }
-    #endregion
-
-    #region Helpers
-    private static EnemyVisualMode ResolveBakedVisualMode(EnemyAuthoring authoring, out Animator resolvedAnimatorComponent)
-    {
-        resolvedAnimatorComponent = null;
-
-        if (authoring == null)
-            return EnemyVisualMode.GpuBaked;
-
-        EnemyVisualMode requestedMode = authoring.VisualMode;
-
-        switch (requestedMode)
-        {
-            case EnemyVisualMode.CompanionAnimator:
-                resolvedAnimatorComponent = ResolveAnimatorComponent(authoring);
-
-                if (resolvedAnimatorComponent != null)
-                    return EnemyVisualMode.CompanionAnimator;
-
-#if UNITY_EDITOR
-                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] CompanionAnimator requested on '{0}', but no valid scene Animator was resolved. Falling back to GpuBaked mode.",
-                                               authoring.name),
-                                 authoring);
-#endif
-                return EnemyVisualMode.GpuBaked;
-
-            case EnemyVisualMode.GpuBaked:
-                return EnemyVisualMode.GpuBaked;
-
-            default:
-                return EnemyVisualMode.GpuBaked;
-        }
-    }
-
-    private static Animator ResolveAnimatorComponent(EnemyAuthoring authoring)
-    {
-        if (authoring == null)
-            return null;
-
-        Animator assignedAnimator = authoring.AnimatorComponent;
-
-        if (assignedAnimator != null &&
-            assignedAnimator.gameObject != null &&
-            assignedAnimator.gameObject.scene.IsValid())
-            return assignedAnimator;
-
-        Animator fallbackAnimator = authoring.GetComponentInChildren<Animator>(true);
-
-        if (fallbackAnimator != null &&
-            fallbackAnimator.gameObject != null &&
-            fallbackAnimator.gameObject.scene.IsValid())
-            return fallbackAnimator;
-
-        return null;
-    }
-
-    private static EnemyWorldSpaceStatusBarsView ResolveWorldSpaceStatusBarsView(EnemyAuthoring authoring)
-    {
-        if (authoring == null)
-        {
-            return null;
-        }
-
-        EnemyWorldSpaceStatusBarsView assignedStatusBarsView = authoring.WorldSpaceStatusBarsView;
-
-        if (assignedStatusBarsView != null &&
-            assignedStatusBarsView.gameObject != null)
-        {
-            return assignedStatusBarsView;
-        }
-
-        EnemyWorldSpaceStatusBarsView fallbackStatusBarsView = authoring.GetComponentInChildren<EnemyWorldSpaceStatusBarsView>(true);
-
-        if (fallbackStatusBarsView != null &&
-            fallbackStatusBarsView.gameObject != null)
-        {
-            return fallbackStatusBarsView;
-        }
-
-        return null;
-    }
-
-    private void TryBakeShooterRuntime(EnemyAuthoring authoring, Entity entity, EnemyCompiledPatternBakeResult compiledPattern)
-    {
-        if (authoring == null)
-            return;
-
-        if (compiledPattern == null)
-            return;
-
-        GameObject projectilePrefabObject = compiledPattern.ShooterProjectilePrefab;
-
-        if (IsInvalidShooterProjectilePrefab(authoring, projectilePrefabObject))
-        {
-#if UNITY_EDITOR
-            if (projectilePrefabObject == null)
-                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Shooter modules are active on '{0}', but Runtime Projectile prefab is not assigned in the resolved Shooter payload.", authoring.name), authoring);
-            else
-                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid Runtime Projectile prefab '{0}' on '{1}'. Assign a dedicated projectile prefab without authoring components.", projectilePrefabObject.name, authoring.name), authoring);
-#endif
-            return;
-        }
-
-        Entity projectilePrefabEntity = GetEntity(projectilePrefabObject, TransformUsageFlags.Dynamic);
-        AddComponent(entity, new ShooterProjectilePrefab
-        {
-            PrefabEntity = projectilePrefabEntity
-        });
-        AddComponent(entity, new ProjectilePoolState
-        {
-            InitialCapacity = math.max(0, compiledPattern.ShooterProjectilePoolInitialCapacity),
-            ExpandBatch = math.max(1, compiledPattern.ShooterProjectilePoolExpandBatch),
-            Initialized = 0
-        });
-        AddBuffer<ShootRequest>(entity);
-        AddBuffer<ProjectilePoolElement>(entity);
-    }
-
-    private static bool IsInvalidShooterProjectilePrefab(EnemyAuthoring authoring, GameObject projectilePrefabObject)
-    {
-        if (projectilePrefabObject == null)
-            return true;
-
-        if (authoring != null && projectilePrefabObject == authoring.gameObject)
-            return true;
-
-        if (projectilePrefabObject.scene.IsValid())
-            return true;
-
-        if (projectilePrefabObject.GetComponent<EnemyAuthoring>() != null)
-            return true;
-
-        if (projectilePrefabObject.GetComponent<PlayerAuthoring>() != null)
-            return true;
-
-        return false;
-    }
-
-    private void TryBakeDropItemsRuntime(EnemyAuthoring authoring, Entity entity, EnemyCompiledPatternBakeResult compiledPattern)
-    {
-        if (authoring == null)
-            return;
-
-        if (compiledPattern == null)
-            return;
-
-        EnemyDropItemsConfig dropItemsConfig = compiledPattern.DropItemsConfig;
-
-        if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
-            return;
-
-        if (dropItemsConfig.MaximumTotalExperienceDrop <= 0f)
-            return;
-
-        if (compiledPattern.ExperienceDropDefinitions == null || compiledPattern.ExperienceDropDefinitions.Count <= 0)
-            return;
-
-        List<EnemyExperienceDropDefinitionElement> stagedDefinitions = new List<EnemyExperienceDropDefinitionElement>(compiledPattern.ExperienceDropDefinitions.Count);
-        List<float> stagedAmounts = new List<float>(compiledPattern.ExperienceDropDefinitions.Count);
-
-        for (int definitionIndex = 0; definitionIndex < compiledPattern.ExperienceDropDefinitions.Count; definitionIndex++)
-        {
-            EnemyCompiledExperienceDropDefinition compiledDefinition = compiledPattern.ExperienceDropDefinitions[definitionIndex];
-            GameObject dropPrefab = compiledDefinition.Prefab;
-
-            if (dropPrefab == null)
-                continue;
-
-            if (IsInvalidExperienceDropPrefab(authoring, dropPrefab))
-            {
-#if UNITY_EDITOR
-                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid experience drop prefab '{0}' on '{1}'. Assign a prefab asset without EnemyAuthoring or PlayerAuthoring components.", dropPrefab.name, authoring.name), authoring);
-#endif
-                continue;
-            }
-
-            float experienceAmount = math.max(0f, compiledDefinition.ExperienceAmount);
-
-            if (experienceAmount <= 0f)
-                continue;
-
-            Entity dropPrefabEntity = GetEntity(dropPrefab, TransformUsageFlags.Dynamic);
-            stagedDefinitions.Add(new EnemyExperienceDropDefinitionElement
-            {
-                PrefabEntity = dropPrefabEntity,
-                ExperienceAmount = experienceAmount
-            });
-            stagedAmounts.Add(experienceAmount);
-        }
-
-        if (stagedDefinitions.Count <= 0)
-            return;
-
-        int estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsForPreview(stagedAmounts,
-                                                                                                     dropItemsConfig.MaximumTotalExperienceDrop,
-                                                                                                     dropItemsConfig.Distribution,
-                                                                                                     out float _,
-                                                                                                     out float _);
-        dropItemsConfig.EstimatedDropsPerDeath = math.max(1, estimatedDropsPerDeath);
-        dropItemsConfig.MinimumTotalExperienceDrop = math.max(0f, dropItemsConfig.MinimumTotalExperienceDrop);
-        dropItemsConfig.MaximumTotalExperienceDrop = math.max(dropItemsConfig.MinimumTotalExperienceDrop, dropItemsConfig.MaximumTotalExperienceDrop);
-        dropItemsConfig.DropRadius = math.max(0f, dropItemsConfig.DropRadius);
-        dropItemsConfig.AttractionSpeed = math.max(0f, dropItemsConfig.AttractionSpeed);
-        dropItemsConfig.CollectDistance = math.max(0.01f, dropItemsConfig.CollectDistance);
-        dropItemsConfig.CollectDistancePerPlayerSpeed = math.max(0f, dropItemsConfig.CollectDistancePerPlayerSpeed);
-        dropItemsConfig.SpawnAnimationMinDuration = math.max(0f, dropItemsConfig.SpawnAnimationMinDuration);
-        dropItemsConfig.SpawnAnimationMaxDuration = math.max(dropItemsConfig.SpawnAnimationMinDuration, dropItemsConfig.SpawnAnimationMaxDuration);
-
-        AddComponent(entity, dropItemsConfig);
-        DynamicBuffer<EnemyExperienceDropDefinitionElement> definitionsBuffer = AddBuffer<EnemyExperienceDropDefinitionElement>(entity);
-
-        for (int definitionIndex = 0; definitionIndex < stagedDefinitions.Count; definitionIndex++)
-            definitionsBuffer.Add(stagedDefinitions[definitionIndex]);
-    }
-
-    private static bool IsInvalidExperienceDropPrefab(EnemyAuthoring authoring, GameObject dropPrefabObject)
-    {
-        if (dropPrefabObject == null)
-            return true;
-
-        if (authoring != null && dropPrefabObject == authoring.gameObject)
-            return true;
-
-        if (dropPrefabObject.scene.IsValid())
-            return true;
-
-        if (dropPrefabObject.GetComponent<EnemyAuthoring>() != null)
-            return true;
-
-        if (dropPrefabObject.GetComponent<PlayerAuthoring>() != null)
-            return true;
-
-        return false;
-    }
-
-    /// <summary>
-    /// Resolves and validates the enemy hit-react VFX prefab, then converts it to an entity reference.
-    /// </summary>
-    /// <param name="authoring">Source authoring component that owns fallback and preset-derived visual settings.</param>
-    /// <returns>Converted prefab entity, or Entity.Null when no valid prefab is assigned.</returns>
-    private Entity ResolveHitVfxPrefabEntity(EnemyAuthoring authoring)
-    {
-        if (authoring == null)
-            return Entity.Null;
-
-        GameObject candidatePrefab = authoring.HitVfxPrefab;
-
-        if (candidatePrefab == null)
-            return Entity.Null;
-
-        if (IsInvalidHitVfxPrefab(authoring, candidatePrefab))
-        {
-#if UNITY_EDITOR
-            Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid enemy hit VFX prefab '{0}' on '{1}'. Assign a prefab asset without EnemyAuthoring or PlayerAuthoring components.", candidatePrefab.name, authoring.name), authoring);
-#endif
-            return Entity.Null;
-        }
-
-        return GetEntity(candidatePrefab, TransformUsageFlags.Dynamic);
-    }
-
-    /// <summary>
-    /// Validates that a candidate hit VFX prefab can be safely converted and instantiated at runtime.
-    /// </summary>
-    /// <param name="authoring">Owning enemy authoring component.</param>
-    /// <param name="hitVfxPrefabObject">Candidate prefab assigned to the hit VFX slot.</param>
-    /// <returns>True when the prefab is invalid and must be ignored.</returns>
-    private static bool IsInvalidHitVfxPrefab(EnemyAuthoring authoring, GameObject hitVfxPrefabObject)
-    {
-        if (hitVfxPrefabObject == null)
-            return true;
-
-        if (authoring != null && hitVfxPrefabObject == authoring.gameObject)
-            return true;
-
-        if (hitVfxPrefabObject.scene.IsValid())
-            return true;
-
-        if (hitVfxPrefabObject.GetComponent<EnemyAuthoring>() != null)
-            return true;
-
-        if (hitVfxPrefabObject.GetComponent<PlayerAuthoring>() != null)
-            return true;
-
-        return false;
-    }
-
-    private Entity RegisterStatusBarsViewEntity(EnemyWorldSpaceStatusBarsView statusBarsView)
-    {
-        if (statusBarsView == null)
-        {
-            return Entity.Null;
-        }
-
-        GameObject viewGameObject = statusBarsView.gameObject;
-
-        if (viewGameObject == null)
-        {
-            return Entity.Null;
-        }
-
-        return GetEntity(viewGameObject, TransformUsageFlags.Dynamic);
+        EnemyAuthoringGizmoUtility.DrawSelectedGizmos(transform.position,
+                                                      elementalVfxAnchor,
+                                                      worldSpaceStatusBarsView,
+                                                      drawContactRadiusGizmo,
+                                                      ContactDamageEnabled,
+                                                      ContactRadius,
+                                                      ContactGizmoColor,
+                                                      drawAreaRadiusGizmo,
+                                                      AreaDamageEnabled,
+                                                      AreaRadius,
+                                                      AreaGizmoColor,
+                                                      drawSeparationRadiusGizmo,
+                                                      SeparationRadius,
+                                                      SeparationGizmoColor,
+                                                      drawBodyRadiusGizmo,
+                                                      BodyRadius,
+                                                      BodyGizmoColor,
+                                                      drawAggressivenessRadiusGizmo,
+                                                      SteeringAggressiveness,
+                                                      AggressivenessGizmoColor,
+                                                      drawVisualDistanceGizmo,
+                                                      EnableDistanceCulling,
+                                                      MaxVisibleDistance,
+                                                      VisualDistanceGizmoColor,
+                                                      ElementalAnchorGizmoColor,
+                                                      drawWorldSpaceBarsGizmo,
+                                                      WorldSpaceBarsGizmoColor);
     }
     #endregion
 

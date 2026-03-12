@@ -106,6 +106,7 @@ public struct PlayerMilestonePowerUpSelectionState : IComponentData
 {
     public byte IsSelectionActive;
     public int MilestoneLevel;
+    public int GamePhaseIndex;
     public int OfferCount;
 }
 
@@ -122,11 +123,33 @@ public struct PlayerMilestonePowerUpSelectionOfferElement : IBufferElementData
 }
 
 /// <summary>
+/// Identifies which action the HUD requested for the active milestone selection.
+/// </summary>
+public enum PlayerMilestoneSelectionCommandType : byte
+{
+    SelectOffer = 0,
+    Skip = 1
+}
+
+/// <summary>
 /// One HUD-to-ECS command selecting a rolled power-up option.
 /// </summary>
 public struct PlayerMilestonePowerUpSelectionCommand : IBufferElementData
 {
+    public PlayerMilestoneSelectionCommandType CommandType;
     public int OfferIndex;
+}
+
+/// <summary>
+/// Holds transient state used to restore Time.timeScale smoothly after a milestone selection closes.
+/// </summary>
+public struct PlayerMilestoneTimeScaleResumeState : IComponentData
+{
+    public byte IsResuming;
+    public float StartTimeScale;
+    public float TargetTimeScale;
+    public float DurationSeconds;
+    public float ElapsedUnscaledSeconds;
 }
 
 /// <summary>

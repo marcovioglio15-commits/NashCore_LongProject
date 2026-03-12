@@ -40,7 +40,7 @@ MonoBehaviour:
   primaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
   secondaryToolActionId: 348a94c1-2df4-48f8-82f6-83416ff0bd17
   tierLevels:
-  - tierId: Milestone
+  - tierId: Tier0
     entries:
     - entryKind: 0
       powerUpId: ActiveShotgun

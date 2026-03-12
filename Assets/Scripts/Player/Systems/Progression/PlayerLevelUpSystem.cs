@@ -55,6 +55,7 @@ public partial struct PlayerLevelUpSystem : ISystem
         BufferLookup<PlayerPowerUpUnlockCatalogElement> unlockCatalogLookup = SystemAPI.GetBufferLookup<PlayerPowerUpUnlockCatalogElement>(false);
         BufferLookup<PlayerPowerUpTierDefinitionElement> tierDefinitionsLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierDefinitionElement>(true);
         BufferLookup<PlayerPowerUpTierEntryElement> tierEntriesLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierEntryElement>(true);
+        ComponentLookup<PlayerMilestoneTimeScaleResumeState> milestoneTimeScaleResumeStateLookup = SystemAPI.GetComponentLookup<PlayerMilestoneTimeScaleResumeState>(false);
 
         foreach ((RefRW<PlayerExperience> playerExperience,
                   RefRW<PlayerLevel> playerLevel,
@@ -197,8 +198,13 @@ public partial struct PlayerLevelUpSystem : ISystem
             if (hasMilestoneSelectionData)
                 milestoneSelectionStateLookup[entity] = milestoneSelectionState;
 
-            if (openedMilestoneSelection && Time.timeScale > 0f)
+            if (openedMilestoneSelection)
+            {
+                if (milestoneTimeScaleResumeStateLookup.HasComponent(entity))
+                    milestoneTimeScaleResumeStateLookup[entity] = PlayerMilestoneSelectionOutcomeUtility.CreateInactiveResumeState();
+
                 Time.timeScale = 0f;
+            }
 
             if (gainedLevelsCount <= 0)
                 continue;

@@ -81,7 +81,7 @@ public sealed class PowerUpTierEntryDefinitionPropertyDrawer : PropertyDrawer
             : null;
         VisualElement weightField = PlayerScalingFieldElementFactory.CreateField(selectionWeightProperty,
                                                                                  scalingRulesProperty,
-                                                                                 "Selection Weight");
+                                                                                 "Selection Percentage (%)");
         root.Add(weightField);
 
         return root;

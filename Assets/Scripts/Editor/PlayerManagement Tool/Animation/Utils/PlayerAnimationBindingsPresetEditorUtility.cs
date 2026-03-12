@@ -222,7 +222,7 @@ public static class PlayerAnimationBindingsPresetEditorUtility
         for (int slotIndex = 0; slotIndex < SupportedClipSlots.Length; slotIndex++)
         {
             PlayerAnimationClipSlot slot = SupportedClipSlots[slotIndex];
-            AnimationClip currentClip = targetPreset.GetClip(slot);
+            AnimationClip currentClip = PlayerAnimationBindingsPresetTransferUtility.GetClip(targetPreset, slot);
 
             if (!overwriteAssignedSlots && currentClip != null)
                 continue;
@@ -259,10 +259,10 @@ public static class PlayerAnimationBindingsPresetEditorUtility
             return;
 
         Undo.RecordObject(targetPreset, "Import Animation Binding Settings");
-        targetPreset.CopySettingsFrom(sourcePreset);
+        PlayerAnimationBindingsPresetTransferUtility.CopySettingsFrom(targetPreset, sourcePreset);
 
         if (includeClipSlots)
-            targetPreset.CopyClipSlotsFrom(sourcePreset);
+            PlayerAnimationBindingsPresetTransferUtility.CopyClipSlotsFrom(targetPreset, sourcePreset);
 
         EditorUtility.SetDirty(targetPreset);
         PlayerManagementDraftSession.MarkDirty();

@@ -97,6 +97,33 @@ public static class PlayerProgressionPhaseUtility
 
         return resolvedPhaseID;
     }
+
+    /// <summary>
+    /// Resolves one milestone index inside the specified game phase.
+    /// </summary>
+    /// <param name="progressionConfig">Runtime progression configuration component.</param>
+    /// <param name="gamePhaseIndex">Game phase index expected to contain the milestone.</param>
+    /// <param name="milestoneLevel">Milestone level to resolve.</param>
+    /// <param name="milestoneIndex">Resolved milestone index when found.</param>
+    /// <returns>True when the milestone exists in the specified phase; otherwise false.</returns>
+    public static bool TryResolveMilestoneIndex(PlayerProgressionConfig progressionConfig,
+                                                int gamePhaseIndex,
+                                                int milestoneLevel,
+                                                out int milestoneIndex)
+    {
+        milestoneIndex = -1;
+
+        if (!progressionConfig.Config.IsCreated)
+            return false;
+
+        ref BlobArray<PlayerGamePhaseBlob> gamePhases = ref progressionConfig.Config.Value.GamePhases;
+
+        if (gamePhaseIndex < 0 || gamePhaseIndex >= gamePhases.Length)
+            return false;
+
+        ref PlayerGamePhaseBlob gamePhase = ref gamePhases[gamePhaseIndex];
+        return TryResolveMilestoneIndex(ref gamePhase, milestoneLevel, out milestoneIndex);
+    }
     #endregion
 
     #region Private Methods
@@ -160,6 +187,26 @@ public static class PlayerProgressionPhaseUtility
         }
 
         return resolvedRequirement;
+    }
+
+    private static bool TryResolveMilestoneIndex(ref PlayerGamePhaseBlob gamePhase,
+                                                 int milestoneLevel,
+                                                 out int milestoneIndex)
+    {
+        milestoneIndex = -1;
+
+        for (int milestoneIndexValue = 0; milestoneIndexValue < gamePhase.Milestones.Length; milestoneIndexValue++)
+        {
+            ref PlayerLevelUpMilestoneBlob milestone = ref gamePhase.Milestones[milestoneIndexValue];
+
+            if (milestone.MilestoneLevel != milestoneLevel)
+                continue;
+
+            milestoneIndex = milestoneIndexValue;
+            return true;
+        }
+
+        return false;
     }
 
     private static int ResolveActiveGamePhaseIndex(ref BlobArray<PlayerGamePhaseBlob> gamePhases, int levelValue)

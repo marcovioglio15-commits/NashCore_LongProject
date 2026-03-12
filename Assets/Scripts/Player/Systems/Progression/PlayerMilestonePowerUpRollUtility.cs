@@ -78,22 +78,26 @@ public static class PlayerMilestonePowerUpRollUtility
         if (activeGamePhaseIndex < 0 || activeGamePhaseIndex >= progressionConfig.Config.Value.GamePhases.Length)
             return false;
 
-        ref PlayerGamePhaseBlob gamePhase = ref progressionConfig.Config.Value.GamePhases[activeGamePhaseIndex];
-
-        if (!TryResolveMilestoneIndex(ref gamePhase, milestoneLevel, out int milestoneIndex))
+        if (!PlayerProgressionPhaseUtility.TryResolveMilestoneIndex(progressionConfig,
+                                                                    activeGamePhaseIndex,
+                                                                    milestoneLevel,
+                                                                    out int milestoneIndex))
             return false;
 
+        ref PlayerGamePhaseBlob gamePhase = ref progressionConfig.Config.Value.GamePhases[activeGamePhaseIndex];
         ref PlayerLevelUpMilestoneBlob milestoneBlob = ref gamePhase.Milestones[milestoneIndex];
 
-        if (milestoneBlob.PowerUpUnlockRollCount <= 0 || milestoneBlob.TierRolls.Length <= 0)
+        if (milestoneBlob.PowerUpUnlocks.Length <= 0)
             return false;
 
         selectionOffers.Clear();
         HashSet<int> rolledCatalogIndices = new HashSet<int>();
 
-        for (int rollIndex = 0; rollIndex < milestoneBlob.PowerUpUnlockRollCount; rollIndex++)
+        for (int rollIndex = 0; rollIndex < milestoneBlob.PowerUpUnlocks.Length; rollIndex++)
         {
-            if (!TryRollMilestoneOffer(ref milestoneBlob,
+            ref PlayerMilestonePowerUpUnlockBlob powerUpUnlockBlob = ref milestoneBlob.PowerUpUnlocks[rollIndex];
+
+            if (!TryRollMilestoneOffer(ref powerUpUnlockBlob,
                                        unlockCatalog,
                                        tierDefinitions,
                                        tierEntries,
@@ -107,7 +111,7 @@ public static class PlayerMilestonePowerUpRollUtility
                                         "[PlayerLevelUpSystem] Milestone {0} roll {1}/{2} failed: no valid tier/power-up candidate.",
                                         milestoneLevel,
                                         rollIndex + 1,
-                                        milestoneBlob.PowerUpUnlockRollCount));
+                                        milestoneBlob.PowerUpUnlocks.Length));
                 continue;
             }
 
@@ -125,7 +129,7 @@ public static class PlayerMilestonePowerUpRollUtility
                                     "[PlayerLevelUpSystem] Milestone {0} roll {1}/{2}: Tier '{3}' (Weight {4:0.###}) -> Power-Up '{5}' ({6}) [Entry Weight {7:0.###}].",
                                     milestoneLevel,
                                     rollIndex + 1,
-                                    milestoneBlob.PowerUpUnlockRollCount,
+                                    milestoneBlob.PowerUpUnlocks.Length,
                                     selectedTierId,
                                     selectedTierWeight,
                                     unlockEntry.PowerUpId.ToString(),
@@ -140,6 +144,7 @@ public static class PlayerMilestonePowerUpRollUtility
 
         selectionState.IsSelectionActive = 1;
         selectionState.MilestoneLevel = milestoneLevel;
+        selectionState.GamePhaseIndex = activeGamePhaseIndex;
         selectionState.OfferCount = rolledOfferCount;
         return true;
     }
@@ -147,36 +152,9 @@ public static class PlayerMilestonePowerUpRollUtility
 
     #region Private Methods
     /// <summary>
-    /// Resolves one milestone index by level inside a game phase.
-    /// </summary>
-    /// <param name="gamePhase">Game-phase blob containing milestone entries.</param>
-    /// <param name="milestoneLevel">Target milestone level to resolve.</param>
-    /// <param name="milestoneIndex">Resolved milestone index when found.</param>
-    /// <returns>True when the milestone exists in the phase; otherwise false.</returns>
-    private static bool TryResolveMilestoneIndex(ref PlayerGamePhaseBlob gamePhase,
-                                                 int milestoneLevel,
-                                                 out int milestoneIndex)
-    {
-        milestoneIndex = -1;
-
-        for (int index = 0; index < gamePhase.Milestones.Length; index++)
-        {
-            ref PlayerLevelUpMilestoneBlob candidate = ref gamePhase.Milestones[index];
-
-            if (candidate.MilestoneLevel != milestoneLevel)
-                continue;
-
-            milestoneIndex = index;
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
     /// Rolls one unlock catalog entry from milestone tier candidates.
     /// </summary>
-    /// <param name="milestoneBlob">Milestone blob containing tier-roll settings.</param>
+    /// <param name="powerUpUnlockBlob">Milestone unlock blob containing tier-roll settings.</param>
     /// <param name="unlockCatalog">Unlock catalog buffer.</param>
     /// <param name="tierDefinitions">Tier definitions buffer.</param>
     /// <param name="tierEntries">Flattened tier-entry buffer.</param>
@@ -186,7 +164,7 @@ public static class PlayerMilestonePowerUpRollUtility
     /// <param name="selectedTierWeight">Weight of the selected milestone tier candidate.</param>
     /// <param name="selectedEntryWeight">Weight of the selected power-up entry inside the selected tier.</param>
     /// <returns>True when an entry is successfully rolled; otherwise false.</returns>
-    private static bool TryRollMilestoneOffer(ref PlayerLevelUpMilestoneBlob milestoneBlob,
+    private static bool TryRollMilestoneOffer(ref PlayerMilestonePowerUpUnlockBlob powerUpUnlockBlob,
                                               DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
                                               DynamicBuffer<PlayerPowerUpTierDefinitionElement> tierDefinitions,
                                               DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries,
@@ -204,9 +182,9 @@ public static class PlayerMilestonePowerUpRollUtility
         List<float> rollCandidateWeights = new List<float>();
 
         // Collect milestone tier rolls that currently have at least one available unlock candidate.
-        for (int tierRollIndex = 0; tierRollIndex < milestoneBlob.TierRolls.Length; tierRollIndex++)
+        for (int tierRollIndex = 0; tierRollIndex < powerUpUnlockBlob.TierRolls.Length; tierRollIndex++)
         {
-            ref PlayerMilestoneTierRollBlob tierRoll = ref milestoneBlob.TierRolls[tierRollIndex];
+            ref PlayerMilestoneTierRollBlob tierRoll = ref powerUpUnlockBlob.TierRolls[tierRollIndex];
             float tierRollWeight = mathMax(0f, tierRoll.SelectionWeight);
 
             if (tierRollWeight <= 0f)
@@ -230,7 +208,7 @@ public static class PlayerMilestonePowerUpRollUtility
             return false;
 
         int selectedTierRollIndex = rollCandidateIndices[selectedTierRollCandidate];
-        ref PlayerMilestoneTierRollBlob selectedTierRoll = ref milestoneBlob.TierRolls[selectedTierRollIndex];
+        ref PlayerMilestoneTierRollBlob selectedTierRoll = ref powerUpUnlockBlob.TierRolls[selectedTierRollIndex];
         selectedTierId = selectedTierRoll.TierId.ToString();
         selectedTierWeight = mathMax(0f, selectedTierRoll.SelectionWeight);
 

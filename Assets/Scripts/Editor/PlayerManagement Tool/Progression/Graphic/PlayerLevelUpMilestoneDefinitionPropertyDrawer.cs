@@ -22,16 +22,16 @@ public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDra
         VisualElement root = new VisualElement();
         SerializedProperty milestoneLevelProperty = property.FindPropertyRelative("milestoneLevel");
         SerializedProperty specialExpRequirementProperty = property.FindPropertyRelative("specialExpRequirement");
-        SerializedProperty powerUpUnlockRollCountProperty = property.FindPropertyRelative("powerUpUnlockRollCount");
-        SerializedProperty milestoneTierRollsProperty = property.FindPropertyRelative("milestoneTierRolls");
+        SerializedProperty powerUpUnlocksProperty = property.FindPropertyRelative("powerUpUnlocks");
+        SerializedProperty skipCompensationResourcesProperty = property.FindPropertyRelative("skipCompensationResources");
         SerializedProperty scalingRulesProperty = property.serializedObject != null
             ? property.serializedObject.FindProperty("scalingRules")
             : null;
 
         if (milestoneLevelProperty == null ||
             specialExpRequirementProperty == null ||
-            powerUpUnlockRollCountProperty == null ||
-            milestoneTierRollsProperty == null)
+            powerUpUnlocksProperty == null ||
+            skipCompensationResourcesProperty == null)
         {
             HelpBox missingHelpBox = new HelpBox("Milestone fields are missing.", HelpBoxMessageType.Warning);
             root.Add(missingHelpBox);
@@ -48,22 +48,24 @@ public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDra
                                                                                               "Special Exp Requirement");
         root.Add(specialRequirementField);
 
-        VisualElement unlockRollCountField = PlayerScalingFieldElementFactory.CreateField(powerUpUnlockRollCountProperty,
-                                                                                           scalingRulesProperty,
-                                                                                           "Power-Up Unlock Rolls");
-        root.Add(unlockRollCountField);
-
         List<string> tierIdOptions = PlayerProgressionTierOptionsUtility.BuildTierIdOptionsFromPowerUpsLibrary();
 
         if (tierIdOptions.Count <= 0)
         {
-            HelpBox warningBox = new HelpBox("No tier IDs found in Power-Ups presets. Milestone tier rolls cannot be configured yet.", HelpBoxMessageType.Warning);
+            HelpBox warningBox = new HelpBox("No tier IDs found in Power-Ups presets. Milestone power-up unlocks cannot be configured yet.", HelpBoxMessageType.Warning);
             root.Add(warningBox);
         }
 
-        PropertyField tierRollsField = new PropertyField(milestoneTierRollsProperty, "Tier Rolls");
-        tierRollsField.BindProperty(milestoneTierRollsProperty);
-        root.Add(tierRollsField);
+        PropertyField powerUpUnlocksField = new PropertyField(powerUpUnlocksProperty, "Power-Up Unlocks");
+        powerUpUnlocksField.BindProperty(powerUpUnlocksProperty);
+        root.Add(powerUpUnlocksField);
+
+        HelpBox unlocksInfoBox = new HelpBox("Each entry defines one custom offer roll. Milestones support up to 6 power-up unlock rolls.", HelpBoxMessageType.Info);
+        root.Add(unlocksInfoBox);
+
+        PropertyField skipCompensationsField = new PropertyField(skipCompensationResourcesProperty, "Skip Compensation Resources");
+        skipCompensationsField.BindProperty(skipCompensationResourcesProperty);
+        root.Add(skipCompensationsField);
         return root;
     }
     #endregion

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -215,7 +214,7 @@ public sealed class PlayerAnimationBindingsPresetsPanel
         }
 
         label.userData = preset;
-        label.text = GetPresetDisplayName(preset);
+        label.text = PlayerAnimationBindingsPanelUtility.GetPresetDisplayName(preset);
         label.tooltip = string.IsNullOrWhiteSpace(preset.Description) ? string.Empty : preset.Description;
     }
     #endregion
@@ -250,7 +249,7 @@ public sealed class PlayerAnimationBindingsPresetsPanel
             if (preset == null)
                 continue;
 
-            if (!MatchesSearch(preset, searchText))
+            if (!PlayerAnimationBindingsPanelUtility.MatchesSearch(preset, searchText))
                 continue;
 
             filteredPresets.Add(preset);
@@ -287,35 +286,6 @@ public sealed class PlayerAnimationBindingsPresetsPanel
         }
     }
 
-    private static bool MatchesSearch(PlayerAnimationBindingsPreset preset, string searchText)
-    {
-        if (string.IsNullOrWhiteSpace(searchText))
-            return true;
-
-        string search = searchText.Trim();
-
-        if (string.IsNullOrWhiteSpace(search))
-            return true;
-
-        if (ContainsIgnoreCase(preset.PresetName, search))
-            return true;
-
-        if (ContainsIgnoreCase(preset.Description, search))
-            return true;
-
-        if (ContainsIgnoreCase(preset.name, search))
-            return true;
-
-        return false;
-    }
-
-    private static bool ContainsIgnoreCase(string value, string search)
-    {
-        if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(search))
-            return false;
-
-        return value.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
-    }
     #endregion
 
     #region Selection
@@ -363,73 +333,73 @@ public sealed class PlayerAnimationBindingsPresetsPanel
 
     private void BuildMetadataSection()
     {
-        VisualElement section = CreateSection("Metadata");
-        section.Add(CreatePropertyField("presetName", "Preset Name"));
-        section.Add(CreatePropertyField("description", "Description"));
-        section.Add(CreatePropertyField("version", "Version"));
-        section.Add(CreateReadOnlyText("Preset Id", selectedPreset.PresetId));
+        VisualElement section = PlayerAnimationBindingsPanelUtility.CreateSection(detailsRoot, "Metadata");
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "presetName", "Preset Name"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "description", "Description"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "version", "Version"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreateReadOnlyText("Preset Id", selectedPreset.PresetId));
     }
 
     private void BuildAnimatorSetupSection()
     {
-        VisualElement section = CreateSection("Animator Setup");
-        section.Add(CreatePropertyField("animatorController", "Animator Controller"));
-        section.Add(CreatePropertyField("upperBodyAvatarMask", "Upper Body Mask"));
-        section.Add(CreatePropertyField("lowerBodyAvatarMask", "Lower Body Mask"));
-        section.Add(CreatePropertyField("disableRootMotion", "Disable Root Motion"));
-        section.Add(CreatePropertyField("useFloatDamping", "Use Float Damping"));
-        section.Add(CreatePropertyField("floatDampTime", "Float Damp Time"));
-        section.Add(CreatePropertyField("movingSpeedThreshold", "Moving Speed Threshold"));
+        VisualElement section = PlayerAnimationBindingsPanelUtility.CreateSection(detailsRoot, "Animator Setup");
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "animatorController", "Animator Controller"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "upperBodyAvatarMask", "Upper Body Mask"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "lowerBodyAvatarMask", "Lower Body Mask"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "disableRootMotion", "Disable Root Motion"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "useFloatDamping", "Use Float Damping"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "floatDampTime", "Float Damp Time"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "movingSpeedThreshold", "Moving Speed Threshold"));
     }
 
     private void BuildParametersSection()
     {
-        VisualElement section = CreateSection("Animator Parameters");
-        section.Add(CreatePropertyField("moveXParameter", "MoveX"));
-        section.Add(CreatePropertyField("moveYParameter", "MoveY"));
-        section.Add(CreatePropertyField("moveSpeedParameter", "MoveSpeed"));
-        section.Add(CreatePropertyField("aimXParameter", "AimX"));
-        section.Add(CreatePropertyField("aimYParameter", "AimY"));
-        section.Add(CreatePropertyField("isMovingParameter", "IsMoving"));
-        section.Add(CreatePropertyField("isShootingParameter", "IsShooting"));
-        section.Add(CreatePropertyField("isDashingParameter", "IsDashing"));
-        section.Add(CreatePropertyField("shotPulseParameter", "ShotPulse Trigger"));
+        VisualElement section = PlayerAnimationBindingsPanelUtility.CreateSection(detailsRoot, "Animator Parameters");
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "moveXParameter", "MoveX"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "moveYParameter", "MoveY"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "moveSpeedParameter", "MoveSpeed"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "aimXParameter", "AimX"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "aimYParameter", "AimY"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "isMovingParameter", "IsMoving"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "isShootingParameter", "IsShooting"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "isDashingParameter", "IsDashing"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "shotPulseParameter", "ShotPulse Trigger"));
     }
 
     private void BuildProceduralSection()
     {
-        VisualElement section = CreateSection("Procedural Animation");
-        section.Add(CreatePropertyField("proceduralRecoilEnabled", "Enable Recoil"));
-        section.Add(CreatePropertyField("proceduralRecoilKick", "Recoil Kick"));
-        section.Add(CreatePropertyField("proceduralRecoilRecoveryPerSecond", "Recoil Recovery / Sec"));
-        section.Add(CreatePropertyField("proceduralRecoilParameter", "Recoil Parameter"));
-        section.Add(CreatePropertyField("proceduralAimWeightEnabled", "Enable Aim Weight"));
-        section.Add(CreatePropertyField("proceduralAimWeightSmoothing", "Aim Weight Smoothing"));
-        section.Add(CreatePropertyField("proceduralAimWeightParameter", "Aim Weight Parameter"));
-        section.Add(CreatePropertyField("proceduralLeanEnabled", "Enable Lean"));
-        section.Add(CreatePropertyField("proceduralLeanSmoothing", "Lean Smoothing"));
-        section.Add(CreatePropertyField("proceduralLeanParameter", "Lean Parameter"));
+        VisualElement section = PlayerAnimationBindingsPanelUtility.CreateSection(detailsRoot, "Procedural Animation");
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralRecoilEnabled", "Enable Recoil"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralRecoilKick", "Recoil Kick"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralRecoilRecoveryPerSecond", "Recoil Recovery / Sec"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralRecoilParameter", "Recoil Parameter"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralAimWeightEnabled", "Enable Aim Weight"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralAimWeightSmoothing", "Aim Weight Smoothing"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralAimWeightParameter", "Aim Weight Parameter"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralLeanEnabled", "Enable Lean"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralLeanSmoothing", "Lean Smoothing"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "proceduralLeanParameter", "Lean Parameter"));
     }
 
     private void BuildClipSlotsSection()
     {
-        VisualElement section = CreateSection("Clip Slots");
-        section.Add(CreatePropertyField("idleClip", "Idle"));
-        section.Add(CreatePropertyField("moveForwardClip", "Move Forward"));
-        section.Add(CreatePropertyField("moveBackwardClip", "Move Backward"));
-        section.Add(CreatePropertyField("moveLeftClip", "Move Left"));
-        section.Add(CreatePropertyField("moveRightClip", "Move Right"));
-        section.Add(CreatePropertyField("aimForwardClip", "Aim Forward"));
-        section.Add(CreatePropertyField("aimBackwardClip", "Aim Backward"));
-        section.Add(CreatePropertyField("aimLeftClip", "Aim Left"));
-        section.Add(CreatePropertyField("aimRightClip", "Aim Right"));
-        section.Add(CreatePropertyField("shootClip", "Shoot"));
-        section.Add(CreatePropertyField("dashClip", "Dash"));
+        VisualElement section = PlayerAnimationBindingsPanelUtility.CreateSection(detailsRoot, "Clip Slots");
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "idleClip", "Idle"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "moveForwardClip", "Move Forward"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "moveBackwardClip", "Move Backward"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "moveLeftClip", "Move Left"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "moveRightClip", "Move Right"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "aimForwardClip", "Aim Forward"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "aimBackwardClip", "Aim Backward"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "aimLeftClip", "Aim Left"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "aimRightClip", "Aim Right"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "shootClip", "Shoot"));
+        section.Add(PlayerAnimationBindingsPanelUtility.CreatePropertyField(selectedPresetSerializedObject, "dashClip", "Dash"));
     }
 
     private void BuildImportSection()
     {
-        VisualElement section = CreateSection("Import / Remap");
+        VisualElement section = PlayerAnimationBindingsPanelUtility.CreateSection(detailsRoot, "Import / Remap");
 
         sourcePresetField = new ObjectField("Source Preset");
         sourcePresetField.objectType = typeof(PlayerAnimationBindingsPreset);
@@ -489,41 +459,6 @@ public sealed class PlayerAnimationBindingsPresetsPanel
         section.Add(importStatusLabel);
     }
 
-    private VisualElement CreateSection(string title)
-    {
-        VisualElement section = new VisualElement();
-        section.style.marginBottom = 10f;
-
-        Label titleLabel = new Label(title);
-        titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-        titleLabel.style.marginBottom = 4f;
-        section.Add(titleLabel);
-
-        detailsRoot.Add(section);
-        return section;
-    }
-
-    private VisualElement CreatePropertyField(string propertyName, string labelOverride)
-    {
-        SerializedProperty property = selectedPresetSerializedObject.FindProperty(propertyName);
-        SerializedProperty scalingRulesProperty = selectedPresetSerializedObject.FindProperty("scalingRules");
-        VisualElement field = PlayerScalingFieldElementFactory.CreateField(property, scalingRulesProperty, labelOverride);
-        return field;
-    }
-
-    private static VisualElement CreateReadOnlyText(string label, string value)
-    {
-        VisualElement row = new VisualElement();
-        row.style.flexDirection = FlexDirection.Row;
-
-        Label labelElement = new Label(label + ": ");
-        labelElement.style.unityFontStyleAndWeight = FontStyle.Bold;
-        row.Add(labelElement);
-
-        Label valueElement = new Label(string.IsNullOrWhiteSpace(value) ? "<empty>" : value);
-        row.Add(valueElement);
-        return row;
-    }
     #endregion
 
     #region Import Actions
@@ -688,48 +623,12 @@ public sealed class PlayerAnimationBindingsPresetsPanel
         PresetRenamePopup.Show(anchorRect,
                                "Rename Animation Preset",
                                preset.PresetName,
-                               newName => RenamePreset(preset, newName));
+                               newName =>
+                               {
+                                   PlayerAnimationBindingsPanelUtility.RenamePreset(preset, newName);
+                                   RefreshPresetList();
+                               });
     }
 
-    private void RenamePreset(PlayerAnimationBindingsPreset preset, string newName)
-    {
-        if (preset == null)
-            return;
-
-        string normalizedName = PlayerManagementDraftSession.NormalizeAssetName(newName);
-
-        if (string.IsNullOrWhiteSpace(normalizedName))
-            return;
-
-        SerializedObject serializedPreset = new SerializedObject(preset);
-        SerializedProperty presetNameProperty = serializedPreset.FindProperty("presetName");
-
-        serializedPreset.Update();
-
-        if (presetNameProperty != null)
-            presetNameProperty.stringValue = normalizedName;
-
-        serializedPreset.ApplyModifiedPropertiesWithoutUndo();
-        preset.name = normalizedName;
-        EditorUtility.SetDirty(preset);
-        PlayerManagementDraftSession.MarkDirty();
-        RefreshPresetList();
-    }
-    #endregion
-
-    #region Helpers
-    private static string GetPresetDisplayName(PlayerAnimationBindingsPreset preset)
-    {
-        if (preset == null)
-            return "<Missing Preset>";
-
-        string displayName = string.IsNullOrWhiteSpace(preset.PresetName) ? preset.name : preset.PresetName;
-        string version = preset.Version;
-
-        if (string.IsNullOrWhiteSpace(version))
-            return displayName;
-
-        return displayName + " v. " + version;
-    }
     #endregion
 }

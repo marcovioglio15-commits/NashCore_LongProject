@@ -40,6 +40,30 @@ public sealed class EnemyAdvancedPatternPresetsPanel
             return root;
         }
     }
+
+    internal SerializedObject PresetSerializedObject
+    {
+        get
+        {
+            return presetSerializedObject;
+        }
+    }
+
+    internal EnemyAdvancedPatternPreset SelectedPreset
+    {
+        get
+        {
+            return selectedPreset;
+        }
+    }
+
+    internal VisualElement DetailsSectionContentRoot
+    {
+        get
+        {
+            return detailsSectionContentRoot;
+        }
+    }
     #endregion
 
     #region Constructors
@@ -255,7 +279,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         SelectPreset(null);
     }
 
-    private void RefreshPresetList()
+    internal void RefreshPresetList()
     {
         filteredPresets.Clear();
 
@@ -490,7 +514,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         BuildActiveDetailsSection();
     }
 
-    private void BuildActiveDetailsSection()
+    internal void BuildActiveDetailsSection()
     {
         if (detailsSectionButtonsRoot != null)
             detailsSectionButtonsRoot.userData = this;
@@ -507,649 +531,24 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         switch (activeSection)
         {
             case SectionType.Metadata:
-                BuildMetadataSection();
+                EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildMetadataSection(this);
                 return;
 
             case SectionType.ModulesDefinition:
-                BuildModulesDefinitionSection();
+                EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildModulesDefinitionSection(this);
                 return;
 
             case SectionType.PatternAssemble:
-                BuildPatternAssembleSection();
+                EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildPatternAssembleSection(this);
                 return;
 
             case SectionType.PatternLoadout:
-                BuildPatternLoadoutSection();
+                EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildPatternLoadoutSection(this);
                 return;
         }
     }
 
-    private void BuildMetadataSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Preset Details");
-
-        if (sectionContainer == null)
-            return;
-
-        SerializedProperty idProperty = presetSerializedObject.FindProperty("presetId");
-        SerializedProperty nameProperty = presetSerializedObject.FindProperty("presetName");
-        SerializedProperty descriptionProperty = presetSerializedObject.FindProperty("description");
-        SerializedProperty versionProperty = presetSerializedObject.FindProperty("version");
-
-        AddTrackedPropertyField(sectionContainer, nameProperty, "Preset Name");
-        AddTrackedPropertyField(sectionContainer, versionProperty, "Version");
-
-        PropertyField descriptionField = new PropertyField(descriptionProperty, "Description");
-        descriptionField.BindProperty(descriptionProperty);
-        descriptionField.RegisterValueChangeCallback(evt =>
-        {
-            EnemyManagementDraftSession.MarkDirty();
-            RefreshPresetList();
-        });
-        sectionContainer.Add(descriptionField);
-
-        VisualElement idRow = new VisualElement();
-        idRow.style.flexDirection = FlexDirection.Row;
-        idRow.style.alignItems = Align.Center;
-
-        TextField idField = new TextField("Preset ID");
-        idField.isReadOnly = true;
-        idField.SetEnabled(false);
-        idField.style.flexGrow = 1f;
-        idField.BindProperty(idProperty);
-        idRow.Add(idField);
-
-        Button regenerateButton = new Button();
-        regenerateButton.text = "Regenerate";
-        regenerateButton.clicked += RegeneratePresetId;
-        regenerateButton.style.marginLeft = 6f;
-        idRow.Add(regenerateButton);
-
-        sectionContainer.Add(idRow);
-    }
-
-    private void BuildModulesDefinitionSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Modules Definition");
-
-        if (sectionContainer == null)
-            return;
-
-        Label infoLabel = new Label("Reusable module catalog used by Pattern Assemble entries.");
-        infoLabel.style.marginBottom = 4f;
-        sectionContainer.Add(infoLabel);
-
-        SerializedProperty property = presetSerializedObject.FindProperty("moduleDefinitions");
-        AddTrackedPropertyField(sectionContainer, property, "Modules");
-    }
-
-    private void BuildPatternAssembleSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Pattern Assemble");
-
-        if (sectionContainer == null)
-            return;
-
-        Label infoLabel = new Label("Assembled patterns built from module bindings.");
-        infoLabel.style.marginBottom = 4f;
-        sectionContainer.Add(infoLabel);
-
-        SerializedProperty property = presetSerializedObject.FindProperty("patterns");
-        AddTrackedPropertyField(sectionContainer, property, "Patterns");
-    }
-
-    private void BuildPatternLoadoutSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Pattern Loadout");
-
-        if (sectionContainer == null)
-        {
-            return;
-        }
-
-        Label loadoutHeader = new Label("Active Pattern IDs");
-        loadoutHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
-        loadoutHeader.style.marginTop = 2f;
-        loadoutHeader.style.marginBottom = 2f;
-        sectionContainer.Add(loadoutHeader);
-
-        SerializedProperty patternsProperty = presetSerializedObject.FindProperty("patterns");
-        SerializedProperty activePatternIdsProperty = presetSerializedObject.FindProperty("activePatternIds");
-
-        if (patternsProperty == null || activePatternIdsProperty == null)
-        {
-            HelpBox missingPropertiesBox = new HelpBox("Pattern assemble or loadout properties are missing on this preset.", HelpBoxMessageType.Warning);
-            sectionContainer.Add(missingPropertiesBox);
-            return;
-        }
-
-        List<PatternLoadoutOption> loadoutOptions = BuildPatternLoadoutOptions(patternsProperty);
-
-        if (loadoutOptions.Count <= 0)
-        {
-            HelpBox noOptionsBox = new HelpBox("No valid patterns found. Add patterns in Pattern Assemble first.", HelpBoxMessageType.Warning);
-            sectionContainer.Add(noOptionsBox);
-            return;
-        }
-
-        BuildPatternLoadoutArray(activePatternIdsProperty, loadoutOptions, sectionContainer);
-    }
-
-    private void BuildPatternLoadoutArray(SerializedProperty activePatternIdsProperty,
-                                          List<PatternLoadoutOption> loadoutOptions,
-                                          VisualElement sectionContainer)
-    {
-        if (activePatternIdsProperty == null)
-        {
-            return;
-        }
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
-        {
-            return;
-        }
-
-        bool normalized = NormalizePatternLoadoutArray(activePatternIdsProperty, loadoutOptions);
-
-        if (normalized)
-        {
-            presetSerializedObject.ApplyModifiedPropertiesWithoutUndo();
-            presetSerializedObject.Update();
-        }
-
-        List<string> optionLabels = new List<string>();
-
-        for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)
-        {
-            optionLabels.Add(loadoutOptions[optionIndex].DisplayLabel);
-        }
-
-        for (int index = 0; index < activePatternIdsProperty.arraySize; index++)
-        {
-            SerializedProperty patternIdProperty = activePatternIdsProperty.GetArrayElementAtIndex(index);
-
-            if (patternIdProperty == null)
-            {
-                continue;
-            }
-
-            string selectedPatternId = ResolveSelectedPatternId(patternIdProperty.stringValue, loadoutOptions);
-            int selectedOptionIndex = 0;
-
-            for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)
-            {
-                if (string.Equals(loadoutOptions[optionIndex].PatternId, selectedPatternId, StringComparison.OrdinalIgnoreCase))
-                {
-                    selectedOptionIndex = optionIndex;
-                    break;
-                }
-            }
-
-            VisualElement row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.alignItems = Align.Center;
-            row.style.marginBottom = 4f;
-
-            PopupField<string> selector = new PopupField<string>("Pattern " + (index + 1), optionLabels, selectedOptionIndex);
-            selector.tooltip = "Select one assembled pattern ID for active runtime loadout.";
-            selector.style.flexGrow = 1f;
-            int capturedIndex = index;
-            selector.RegisterValueChangedCallback(evt =>
-            {
-                int optionIndex = optionLabels.IndexOf(evt.newValue);
-
-                if (optionIndex < 0 || optionIndex >= loadoutOptions.Count)
-                {
-                    return;
-                }
-
-                string patternId = loadoutOptions[optionIndex].PatternId;
-                SetPatternLoadoutEntry(activePatternIdsProperty, capturedIndex, patternId, loadoutOptions);
-            });
-            row.Add(selector);
-
-            Button removeButton = new Button(() =>
-            {
-                RemovePatternLoadoutEntry(activePatternIdsProperty, capturedIndex, loadoutOptions);
-            });
-            removeButton.text = "Remove";
-            removeButton.tooltip = "Remove this pattern entry from active loadout.";
-            removeButton.style.marginLeft = 6f;
-            removeButton.SetEnabled(activePatternIdsProperty.arraySize > 1);
-            row.Add(removeButton);
-
-            sectionContainer.Add(row);
-        }
-
-        if (activePatternIdsProperty.arraySize <= 0)
-        {
-            HelpBox emptyLoadoutBox = new HelpBox("No active patterns in loadout. Add one entry.", HelpBoxMessageType.Info);
-            sectionContainer.Add(emptyLoadoutBox);
-        }
-
-        Button addButton = new Button(() =>
-        {
-            AddPatternLoadoutEntry(activePatternIdsProperty, loadoutOptions);
-        });
-        addButton.text = "Add Pattern";
-        addButton.tooltip = "Add one more active pattern entry to the loadout.";
-        addButton.style.marginTop = 2f;
-        addButton.SetEnabled(CanAddPatternLoadoutEntry(activePatternIdsProperty, loadoutOptions));
-        sectionContainer.Add(addButton);
-    }
-
-    private void AddPatternLoadoutEntry(SerializedProperty activePatternIdsProperty, List<PatternLoadoutOption> loadoutOptions)
-    {
-        if (activePatternIdsProperty == null)
-        {
-            return;
-        }
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
-        {
-            return;
-        }
-
-        string nextPatternId = ResolveNextPatternLoadoutId(activePatternIdsProperty, loadoutOptions);
-
-        if (string.IsNullOrWhiteSpace(nextPatternId))
-        {
-            return;
-        }
-
-        if (selectedPreset != null)
-        {
-            Undo.RecordObject(selectedPreset, "Add Enemy Pattern Loadout Entry");
-        }
-
-        presetSerializedObject.Update();
-        int insertIndex = activePatternIdsProperty.arraySize;
-        activePatternIdsProperty.InsertArrayElementAtIndex(insertIndex);
-        SerializedProperty insertedProperty = activePatternIdsProperty.GetArrayElementAtIndex(insertIndex);
-
-        if (insertedProperty != null)
-        {
-            insertedProperty.stringValue = nextPatternId;
-        }
-
-        NormalizePatternLoadoutArray(activePatternIdsProperty, loadoutOptions);
-        presetSerializedObject.ApplyModifiedProperties();
-        EnemyManagementDraftSession.MarkDirty();
-        RefreshPresetList();
-        BuildActiveDetailsSection();
-    }
-
-    private void RemovePatternLoadoutEntry(SerializedProperty activePatternIdsProperty,
-                                           int entryIndex,
-                                           List<PatternLoadoutOption> loadoutOptions)
-    {
-        if (activePatternIdsProperty == null)
-        {
-            return;
-        }
-
-        if (entryIndex < 0 || entryIndex >= activePatternIdsProperty.arraySize)
-        {
-            return;
-        }
-
-        if (selectedPreset != null)
-        {
-            Undo.RecordObject(selectedPreset, "Remove Enemy Pattern Loadout Entry");
-        }
-
-        presetSerializedObject.Update();
-        activePatternIdsProperty.DeleteArrayElementAtIndex(entryIndex);
-        NormalizePatternLoadoutArray(activePatternIdsProperty, loadoutOptions);
-        presetSerializedObject.ApplyModifiedProperties();
-        EnemyManagementDraftSession.MarkDirty();
-        RefreshPresetList();
-        BuildActiveDetailsSection();
-    }
-
-    private void SetPatternLoadoutEntry(SerializedProperty activePatternIdsProperty,
-                                        int entryIndex,
-                                        string patternId,
-                                        List<PatternLoadoutOption> loadoutOptions)
-    {
-        if (activePatternIdsProperty == null)
-        {
-            return;
-        }
-
-        if (entryIndex < 0 || entryIndex >= activePatternIdsProperty.arraySize)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(patternId))
-        {
-            return;
-        }
-
-        SerializedProperty entryProperty = activePatternIdsProperty.GetArrayElementAtIndex(entryIndex);
-
-        if (entryProperty == null)
-        {
-            return;
-        }
-
-        if (string.Equals(entryProperty.stringValue, patternId, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (selectedPreset != null)
-        {
-            Undo.RecordObject(selectedPreset, "Change Enemy Pattern Loadout Entry");
-        }
-
-        presetSerializedObject.Update();
-        entryProperty.stringValue = patternId;
-        NormalizePatternLoadoutArray(activePatternIdsProperty, loadoutOptions);
-        presetSerializedObject.ApplyModifiedProperties();
-        EnemyManagementDraftSession.MarkDirty();
-        RefreshPresetList();
-        BuildActiveDetailsSection();
-    }
-
-    private static List<PatternLoadoutOption> BuildPatternLoadoutOptions(SerializedProperty patternsProperty)
-    {
-        List<PatternLoadoutOption> options = new List<PatternLoadoutOption>();
-
-        if (patternsProperty == null)
-        {
-            return options;
-        }
-
-        for (int index = 0; index < patternsProperty.arraySize; index++)
-        {
-            SerializedProperty patternProperty = patternsProperty.GetArrayElementAtIndex(index);
-
-            if (patternProperty == null)
-            {
-                continue;
-            }
-
-            SerializedProperty patternIdProperty = patternProperty.FindPropertyRelative("patternId");
-            SerializedProperty displayNameProperty = patternProperty.FindPropertyRelative("displayName");
-
-            if (patternIdProperty == null)
-            {
-                continue;
-            }
-
-            string patternId = patternIdProperty.stringValue;
-
-            if (string.IsNullOrWhiteSpace(patternId))
-            {
-                continue;
-            }
-
-            if (ContainsPatternOption(options, patternId))
-            {
-                continue;
-            }
-
-            string displayName = string.Empty;
-
-            if (displayNameProperty != null)
-            {
-                displayName = displayNameProperty.stringValue;
-            }
-
-            if (string.IsNullOrWhiteSpace(displayName))
-            {
-                displayName = patternId;
-            }
-
-            options.Add(new PatternLoadoutOption
-            {
-                PatternId = patternId,
-                DisplayLabel = displayName + " (" + patternId + ")"
-            });
-        }
-
-        return options;
-    }
-
-    private static bool NormalizePatternLoadoutArray(SerializedProperty activePatternIdsProperty, List<PatternLoadoutOption> loadoutOptions)
-    {
-        if (activePatternIdsProperty == null)
-        {
-            return false;
-        }
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
-        {
-            return false;
-        }
-
-        HashSet<string> validIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)
-        {
-            validIds.Add(loadoutOptions[optionIndex].PatternId);
-        }
-
-        HashSet<string> visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        bool changed = false;
-
-        for (int index = 0; index < activePatternIdsProperty.arraySize; index++)
-        {
-            SerializedProperty entryProperty = activePatternIdsProperty.GetArrayElementAtIndex(index);
-
-            if (entryProperty == null)
-            {
-                activePatternIdsProperty.DeleteArrayElementAtIndex(index);
-                index--;
-                changed = true;
-                continue;
-            }
-
-            string patternId = entryProperty.stringValue;
-
-            if (string.IsNullOrWhiteSpace(patternId))
-            {
-                activePatternIdsProperty.DeleteArrayElementAtIndex(index);
-                index--;
-                changed = true;
-                continue;
-            }
-
-            if (!validIds.Contains(patternId))
-            {
-                activePatternIdsProperty.DeleteArrayElementAtIndex(index);
-                index--;
-                changed = true;
-                continue;
-            }
-
-            if (!visited.Add(patternId))
-            {
-                activePatternIdsProperty.DeleteArrayElementAtIndex(index);
-                index--;
-                changed = true;
-            }
-        }
-
-        if (activePatternIdsProperty.arraySize <= 0)
-        {
-            activePatternIdsProperty.InsertArrayElementAtIndex(0);
-            SerializedProperty firstEntry = activePatternIdsProperty.GetArrayElementAtIndex(0);
-
-            if (firstEntry != null)
-            {
-                firstEntry.stringValue = loadoutOptions[0].PatternId;
-            }
-
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    private static bool CanAddPatternLoadoutEntry(SerializedProperty activePatternIdsProperty, List<PatternLoadoutOption> loadoutOptions)
-    {
-        if (activePatternIdsProperty == null)
-        {
-            return false;
-        }
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
-        {
-            return false;
-        }
-
-        for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)
-        {
-            string patternId = loadoutOptions[optionIndex].PatternId;
-
-            if (!ContainsPatternLoadoutId(activePatternIdsProperty, patternId))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string ResolveNextPatternLoadoutId(SerializedProperty activePatternIdsProperty, List<PatternLoadoutOption> loadoutOptions)
-    {
-        if (activePatternIdsProperty == null)
-        {
-            return string.Empty;
-        }
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
-        {
-            return string.Empty;
-        }
-
-        for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)
-        {
-            string patternId = loadoutOptions[optionIndex].PatternId;
-
-            if (ContainsPatternLoadoutId(activePatternIdsProperty, patternId))
-            {
-                continue;
-            }
-
-            return patternId;
-        }
-
-        return string.Empty;
-    }
-
-    private static bool ContainsPatternLoadoutId(SerializedProperty activePatternIdsProperty, string patternId)
-    {
-        if (activePatternIdsProperty == null)
-        {
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(patternId))
-        {
-            return false;
-        }
-
-        for (int index = 0; index < activePatternIdsProperty.arraySize; index++)
-        {
-            SerializedProperty entryProperty = activePatternIdsProperty.GetArrayElementAtIndex(index);
-
-            if (entryProperty == null)
-            {
-                continue;
-            }
-
-            if (string.Equals(entryProperty.stringValue, patternId, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string ResolveSelectedPatternId(string selectedPatternId, List<PatternLoadoutOption> loadoutOptions)
-    {
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
-        {
-            return string.Empty;
-        }
-
-        if (!string.IsNullOrWhiteSpace(selectedPatternId))
-        {
-            for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)
-            {
-                if (string.Equals(loadoutOptions[optionIndex].PatternId, selectedPatternId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return loadoutOptions[optionIndex].PatternId;
-                }
-            }
-        }
-
-        return loadoutOptions[0].PatternId;
-    }
-
-    private static bool ContainsPatternOption(List<PatternLoadoutOption> options, string patternId)
-    {
-        if (options == null)
-        {
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(patternId))
-        {
-            return false;
-        }
-
-        for (int index = 0; index < options.Count; index++)
-        {
-            if (string.Equals(options[index].PatternId, patternId, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private VisualElement CreateDetailsSectionContainer(string sectionTitle)
-    {
-        if (detailsSectionContentRoot == null)
-            return null;
-
-        VisualElement container = new VisualElement();
-        container.style.marginTop = 8f;
-
-        Label header = new Label(sectionTitle);
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginBottom = 4f;
-        container.Add(header);
-        detailsSectionContentRoot.Add(container);
-        return container;
-    }
-
-    private void AddTrackedPropertyField(VisualElement parent, SerializedProperty property, string label)
-    {
-        if (parent == null)
-            return;
-
-        if (property == null)
-            return;
-
-        PropertyField field = new PropertyField(property, label);
-        field.BindProperty(property);
-        field.RegisterValueChangeCallback(evt =>
-        {
-            EnemyManagementDraftSession.MarkDirty();
-            RefreshPresetList();
-        });
-        parent.Add(field);
-    }
-
-    private void RegeneratePresetId()
+    internal void RegeneratePresetId()
     {
         if (selectedPreset == null)
             return;
@@ -1228,7 +627,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         PatternLoadout = 3
     }
 
-    private struct PatternLoadoutOption
+    internal struct PatternLoadoutOption
     {
         public string PatternId;
         public string DisplayLabel;

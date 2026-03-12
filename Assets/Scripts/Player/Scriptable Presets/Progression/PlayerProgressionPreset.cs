@@ -53,6 +53,9 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     [Tooltip("Radius around the player used to attract experience drops before collection.")]
     [SerializeField] private float experiencePickupRadius = 5f;
 
+    [Tooltip("Seconds used to restore Time.timeScale from 0 back to 1 after a milestone power-up selection closes.")]
+    [SerializeField] private float milestoneTimeScaleResumeDurationSeconds = 0.2f;
+
     [Tooltip("Legacy base stats storage kept for backward-compatible migration from old presets.")]
     [FormerlySerializedAs("baseStats")]
     [HideInInspector]
@@ -139,6 +142,14 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         get
         {
             return experiencePickupRadius;
+        }
+    }
+
+    public float MilestoneTimeScaleResumeDurationSeconds
+    {
+        get
+        {
+            return milestoneTimeScaleResumeDurationSeconds;
         }
     }
     #endregion
@@ -299,6 +310,11 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         if (experiencePickupRadius < 0f)
         {
             experiencePickupRadius = 0f;
+        }
+
+        if (milestoneTimeScaleResumeDurationSeconds < 0f)
+        {
+            milestoneTimeScaleResumeDurationSeconds = 0f;
         }
 
         if (gamePhasesDefinition == null)

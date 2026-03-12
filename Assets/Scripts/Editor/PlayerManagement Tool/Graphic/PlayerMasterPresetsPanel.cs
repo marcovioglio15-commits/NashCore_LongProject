@@ -1,52 +1,45 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Provides a UI panel for managing, creating, editing, and deleting player master presets, including sub-preset
-/// assignments and prefab activation.
+/// Provides the root orchestration for player master preset management and delegates UI logic to focused utilities.
 /// </summary>
 public sealed class PlayerMasterPresetsPanel
 {
     #region Constants
     private const float LeftPaneWidth = 280f;
-    private const string ProgressionPresetsFolder = "Assets/Scriptable Objects/Player/Progression";
-    private const string PowerUpsPresetsFolder = "Assets/Scriptable Objects/Player/Power-Ups";
-    private const string AnimationPresetsFolder = "Assets/Scriptable Objects/Player/Animation Bindings";
-    private const string ActivePanelStateKey = "NashCore.PlayerManagement.Master.ActivePanel";
-    private const string OpenPanelsStateKey = "NashCore.PlayerManagement.Master.OpenPanels";
-    private const string ActiveDetailsSectionStateKey = "NashCore.PlayerManagement.Master.ActiveDetailsSection";
-    private const string SelectedPrefabPathStateKey = "NashCore.PlayerManagement.Master.SelectedPrefabPath";
+    internal const string ProgressionPresetsFolder = "Assets/Scriptable Objects/Player/Progression";
+    internal const string PowerUpsPresetsFolder = "Assets/Scriptable Objects/Player/Power-Ups";
+    internal const string AnimationPresetsFolder = "Assets/Scriptable Objects/Player/Animation Bindings";
     #endregion
 
     #region Fields
-    private readonly VisualElement m_Root;
-    private readonly List<PlayerMasterPreset> m_FilteredPresets = new List<PlayerMasterPreset>();
-    private readonly PlayerMasterPresetLibrary m_Library;
-    private readonly Dictionary<PlayerManagementWindow.PanelType, SidePanelEntry> m_SidePanels = new Dictionary<PlayerManagementWindow.PanelType, SidePanelEntry>();
+    private readonly VisualElement root;
+    private readonly List<PlayerMasterPreset> filteredPresets = new List<PlayerMasterPreset>();
+    private readonly Dictionary<PlayerManagementWindow.PanelType, SidePanelEntry> sidePanels = new Dictionary<PlayerManagementWindow.PanelType, SidePanelEntry>();
 
-    private ListView m_ListView;
-    private ToolbarSearchField m_SearchField;
-    private VisualElement m_DetailsRoot;
-    private VisualElement m_DetailSectionButtonsRoot;
-    private VisualElement m_DetailSectionContentRoot;
-    private VisualElement m_MainContentRoot;
-    private VisualElement m_TabBar;
-    private VisualElement m_ContentHost;
-    private PlayerManagementWindow.PanelType m_ActivePanel;
-    private DetailsSectionType m_ActiveDetailsSection = DetailsSectionType.Metadata;
+    private PlayerMasterPresetLibrary library;
+    private ListView listView;
+    private ToolbarSearchField searchField;
+    private VisualElement detailsRoot;
+    private VisualElement detailSectionButtonsRoot;
+    private VisualElement detailSectionContentRoot;
+    private VisualElement mainContentRoot;
+    private VisualElement tabBar;
+    private VisualElement contentHost;
+    private PlayerManagementWindow.PanelType activePanel = PlayerManagementWindow.PanelType.PlayerMasterPresets;
+    private DetailsSectionType activeDetailsSection = DetailsSectionType.Metadata;
 
-    private PlayerMasterPreset m_SelectedPreset;
-    private SerializedObject m_PresetSerializedObject;
-
-    private ObjectField m_PlayerPrefabField;
-    private Label m_ActiveStatusLabel;
-    private GameObject m_SelectedPlayerPrefab;
-    private bool m_SuppressStateWrite;
+    private PlayerMasterPreset selectedPreset;
+    private SerializedObject presetSerializedObject;
+    private ObjectField playerPrefabField;
+    private Label activeStatusLabel;
+    private GameObject selectedPlayerPrefab;
+    private bool suppressStateWrite;
     #endregion
 
     #region Properties
@@ -54,38 +47,269 @@ public sealed class PlayerMasterPresetsPanel
     {
         get
         {
-            return m_Root;
+            return root;
+        }
+    }
+
+    internal PlayerMasterPresetLibrary Library
+    {
+        get
+        {
+            return library;
+        }
+        set
+        {
+            library = value;
+        }
+    }
+
+    internal List<PlayerMasterPreset> FilteredPresets
+    {
+        get
+        {
+            return filteredPresets;
+        }
+    }
+
+    internal Dictionary<PlayerManagementWindow.PanelType, SidePanelEntry> SidePanels
+    {
+        get
+        {
+            return sidePanels;
+        }
+    }
+
+    internal ListView PresetListView
+    {
+        get
+        {
+            return listView;
+        }
+        set
+        {
+            listView = value;
+        }
+    }
+
+    internal ToolbarSearchField PresetSearchField
+    {
+        get
+        {
+            return searchField;
+        }
+        set
+        {
+            searchField = value;
+        }
+    }
+
+    internal VisualElement DetailsRoot
+    {
+        get
+        {
+            return detailsRoot;
+        }
+        set
+        {
+            detailsRoot = value;
+        }
+    }
+
+    internal VisualElement DetailSectionButtonsRoot
+    {
+        get
+        {
+            return detailSectionButtonsRoot;
+        }
+        set
+        {
+            detailSectionButtonsRoot = value;
+        }
+    }
+
+    internal VisualElement DetailSectionContentRoot
+    {
+        get
+        {
+            return detailSectionContentRoot;
+        }
+        set
+        {
+            detailSectionContentRoot = value;
+        }
+    }
+
+    internal VisualElement MainContentRoot
+    {
+        get
+        {
+            return mainContentRoot;
+        }
+    }
+
+    internal VisualElement TabBar
+    {
+        get
+        {
+            return tabBar;
+        }
+        set
+        {
+            tabBar = value;
+        }
+    }
+
+    internal VisualElement ContentHost
+    {
+        get
+        {
+            return contentHost;
+        }
+        set
+        {
+            contentHost = value;
+        }
+    }
+
+    internal PlayerManagementWindow.PanelType ActivePanel
+    {
+        get
+        {
+            return activePanel;
+        }
+        set
+        {
+            activePanel = value;
+        }
+    }
+
+    internal DetailsSectionType ActiveDetailsSection
+    {
+        get
+        {
+            return activeDetailsSection;
+        }
+        set
+        {
+            activeDetailsSection = value;
+        }
+    }
+
+    internal PlayerMasterPreset SelectedPreset
+    {
+        get
+        {
+            return selectedPreset;
+        }
+        set
+        {
+            selectedPreset = value;
+        }
+    }
+
+    internal SerializedObject PresetSerializedObject
+    {
+        get
+        {
+            return presetSerializedObject;
+        }
+        set
+        {
+            presetSerializedObject = value;
+        }
+    }
+
+    internal ObjectField PlayerPrefabField
+    {
+        get
+        {
+            return playerPrefabField;
+        }
+        set
+        {
+            playerPrefabField = value;
+        }
+    }
+
+    internal Label ActiveStatusLabel
+    {
+        get
+        {
+            return activeStatusLabel;
+        }
+        set
+        {
+            activeStatusLabel = value;
+        }
+    }
+
+    internal GameObject SelectedPlayerPrefab
+    {
+        get
+        {
+            return selectedPlayerPrefab;
+        }
+        set
+        {
+            selectedPlayerPrefab = value;
+        }
+    }
+
+    internal bool SuppressStateWrite
+    {
+        get
+        {
+            return suppressStateWrite;
+        }
+        set
+        {
+            suppressStateWrite = value;
         }
     }
     #endregion
 
     #region Constructors
+    /// <summary>
+    /// Initializes the panel, restores persisted state and builds the initial player master preset UI.
+    /// </summary>
+    /// <param name="None">No parameters.</param>
+    /// <returns>Void.</returns>
     public PlayerMasterPresetsPanel()
     {
-        m_Root = new VisualElement();
-        m_Root.style.flexGrow = 1f;
-        m_Root.style.flexDirection = FlexDirection.Column;
+        root = new VisualElement();
+        root.style.flexGrow = 1f;
+        root.style.flexDirection = FlexDirection.Column;
 
-        m_Library = PlayerMasterPresetLibraryUtility.GetOrCreateLibrary();
-        RestorePersistedState();
+        library = PlayerMasterPresetLibraryUtility.GetOrCreateLibrary();
+        PlayerMasterPresetsPanelSidePanelUtility.RestorePersistedState(this);
 
         BuildUI();
         RefreshPresetList();
     }
+    #endregion
 
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Refreshes library-driven UI after external asset changes and restores valid selection when possible.
+    /// </summary>
+    /// <param name="None">No parameters.</param>
+    /// <returns>Void.</returns>
     public void RefreshFromSessionChange()
     {
-        PlayerMasterPreset previouslySelectedPreset = m_SelectedPreset;
+        PlayerMasterPreset previouslySelectedPreset = selectedPreset;
+        library = PlayerMasterPresetLibraryUtility.GetOrCreateLibrary();
         RefreshPresetList();
 
         if (previouslySelectedPreset != null)
         {
-            int presetIndex = m_FilteredPresets.IndexOf(previouslySelectedPreset);
+            int presetIndex = filteredPresets.IndexOf(previouslySelectedPreset);
 
             if (presetIndex >= 0)
             {
-                if (m_ListView != null)
-                    m_ListView.SetSelectionWithoutNotify(new int[] { presetIndex });
+                if (listView != null)
+                    listView.SetSelectionWithoutNotify(new int[] { presetIndex });
 
                 SelectPreset(previouslySelectedPreset);
             }
@@ -95,1454 +319,151 @@ public sealed class PlayerMasterPresetsPanel
     }
     #endregion
 
-    #region Methods
-
     #region UI Construction
     private void BuildUI()
     {
-        m_MainContentRoot = BuildMainContent();
+        mainContentRoot = BuildMainContent();
         BuildPanelsContainer();
     }
 
     private VisualElement BuildMainContent()
     {
-        VisualElement container = new VisualElement();
-        container.style.flexGrow = 1f;
-        container.style.flexShrink = 1f;
-
-        TwoPaneSplitView splitView = new TwoPaneSplitView(0, LeftPaneWidth, TwoPaneSplitViewOrientation.Horizontal);
-
-        VisualElement leftPane = BuildLeftPane();
-        VisualElement rightPane = BuildRightPane();
-
-        splitView.Add(leftPane);
-        splitView.Add(rightPane);
-        container.Add(splitView);
-
-        return container;
+        return PlayerMasterPresetsPanelPresetUtility.BuildMainContent(this, LeftPaneWidth);
     }
 
     private void BuildPanelsContainer()
     {
-        m_TabBar = new VisualElement();
-        m_TabBar.style.flexDirection = FlexDirection.Row;
-        m_TabBar.style.flexWrap = Wrap.Wrap;
-        m_TabBar.style.marginBottom = 4f;
-        m_TabBar.style.paddingLeft = 6f;
-        m_TabBar.style.paddingRight = 6f;
-        m_TabBar.style.paddingTop = 4f;
-        m_TabBar.style.paddingBottom = 4f;
-
-        m_ContentHost = new VisualElement();
-        m_ContentHost.style.flexGrow = 1f;
-
-        m_Root.Add(m_TabBar);
-        m_Root.Add(m_ContentHost);
-
-        m_SuppressStateWrite = true;
-        AddTab(PlayerManagementWindow.PanelType.PlayerMasterPresets, "Player Master Presets", m_MainContentRoot, null, null, null, null);
-        RestoreOpenSidePanels();
-
-        if (!m_SidePanels.ContainsKey(m_ActivePanel))
-            m_ActivePanel = PlayerManagementWindow.PanelType.PlayerMasterPresets;
-
-        SetActivePanel(m_ActivePanel);
-        m_SuppressStateWrite = false;
-        SaveOpenPanelsState();
-        ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, m_ActivePanel);
-    }
-
-    private VisualElement BuildLeftPane()
-    {
-        VisualElement leftPane = new VisualElement();
-        leftPane.style.flexGrow = 1f;
-        leftPane.style.paddingLeft = 6f;
-        leftPane.style.paddingRight = 6f;
-        leftPane.style.paddingTop = 6f;
-        leftPane.style.overflow = Overflow.Hidden;
-
-        Toolbar toolbar = new Toolbar();
-        toolbar.style.marginBottom = 4f;
-
-        Button createButton = new Button();
-        createButton.text = "Create";
-        createButton.clicked += CreatePreset;
-        toolbar.Add(createButton);
-
-        Button duplicateButton = new Button();
-        duplicateButton.text = "Duplicate";
-        duplicateButton.clicked += DuplicatePreset;
-        toolbar.Add(duplicateButton);
-
-        Button deleteButton = new Button();
-        deleteButton.text = "Delete";
-        deleteButton.clicked += DeletePreset;
-        toolbar.Add(deleteButton);
-
-        leftPane.Add(toolbar);
-
-        m_SearchField = new ToolbarSearchField();
-        m_SearchField.style.width = Length.Percent(100f);
-        m_SearchField.style.maxWidth = Length.Percent(100f);
-        m_SearchField.style.flexShrink = 1f;
-        m_SearchField.style.marginBottom = 4f;
-        m_SearchField.RegisterValueChangedCallback(evt =>
-        {
-            RefreshPresetList();
-        });
-        leftPane.Add(m_SearchField);
-
-        m_ListView = new ListView();
-        m_ListView.style.flexGrow = 1f;
-        m_ListView.itemsSource = m_FilteredPresets;
-        m_ListView.selectionType = SelectionType.Single;
-        m_ListView.makeItem = MakePresetItem;
-        m_ListView.bindItem = BindPresetItem;
-        m_ListView.selectionChanged += OnPresetSelectionChanged;
-        leftPane.Add(m_ListView);
-
-        return leftPane;
-    }
-
-    private VisualElement BuildRightPane()
-    {
-        VisualElement rightPane = new VisualElement();
-        rightPane.style.flexGrow = 1f;
-        rightPane.style.paddingLeft = 10f;
-        rightPane.style.paddingRight = 10f;
-        rightPane.style.paddingTop = 6f;
-
-        m_DetailsRoot = new ScrollView();
-        m_DetailsRoot.style.flexGrow = 1f;
-        rightPane.Add(m_DetailsRoot);
-
-        return rightPane;
+        PlayerMasterPresetsPanelSidePanelUtility.BuildPanelsContainer(this);
     }
     #endregion
 
     #region Preset List
-    private VisualElement MakePresetItem()
+    internal void RefreshPresetList()
     {
-        Label label = new Label();
-        label.style.unityTextAlign = TextAnchor.MiddleLeft;
-        label.style.marginLeft = 4f;
-        label.AddManipulator(new ContextualMenuManipulator(evt =>
-        {
-            PlayerMasterPreset preset = label.userData as PlayerMasterPreset;
-
-            if (preset == null)
-                return;
-
-            evt.menu.AppendAction("Duplicate", action => DuplicatePreset(preset), DropdownMenuAction.AlwaysEnabled);
-            evt.menu.AppendAction("Delete", action => DeletePreset(preset), DropdownMenuAction.AlwaysEnabled);
-            evt.menu.AppendAction("Rename", action => ShowRenamePopup(label, preset), DropdownMenuAction.AlwaysEnabled);
-        }));
-        return label;
-    }
-
-    private void BindPresetItem(VisualElement element, int index)
-    {
-        Label label = element as Label;
-
-        if (label == null)
-            return;
-
-        if (index < 0 || index >= m_FilteredPresets.Count)
-        {
-            label.text = string.Empty;
-            label.userData = null;
-            return;
-        }
-
-        PlayerMasterPreset preset = m_FilteredPresets[index];
-
-        if (preset == null)
-        {
-            label.text = "<Missing Preset>";
-            label.tooltip = string.Empty;
-            label.userData = null;
-            return;
-        }
-
-        label.userData = preset;
-        label.text = GetPresetDisplayName(preset);
-        label.tooltip = string.IsNullOrWhiteSpace(preset.Description) ? string.Empty : preset.Description;
-    }
-
-    private void OnPresetSelectionChanged(IEnumerable<object> selection)
-    {
-        foreach (object item in selection)
-        {
-            PlayerMasterPreset preset = item as PlayerMasterPreset;
-
-            if (preset != null)
-            {
-                SelectPreset(preset);
-                return;
-            }
-        }
-
-        SelectPreset(null);
-    }
-
-    private void RefreshPresetList()
-    {
-        m_FilteredPresets.Clear();
-
-        if (m_Library != null)
-        {
-            string searchText = m_SearchField != null ? m_SearchField.value : string.Empty;
-
-            for (int i = 0; i < m_Library.Presets.Count; i++)
-            {
-                PlayerMasterPreset preset = m_Library.Presets[i];
-
-                if (preset == null)
-                    continue;
-
-                if (PlayerManagementDraftSession.IsAssetStagedForDeletion(preset))
-                    continue;
-
-                if (IsMatchingSearch(preset, searchText))
-                    m_FilteredPresets.Add(preset);
-            }
-        }
-
-        if (m_ListView != null)
-            m_ListView.Rebuild();
-
-        if (m_FilteredPresets.Count == 0)
-        {
-            SelectPreset(null);
-            return;
-        }
-
-        if (m_SelectedPreset == null || !m_FilteredPresets.Contains(m_SelectedPreset))
-        {
-            SelectPreset(m_FilteredPresets[0]);
-
-            if (m_ListView != null)
-                m_ListView.SetSelectionWithoutNotify(new int[] { 0 });
-        }
-    }
-
-    private bool IsMatchingSearch(PlayerMasterPreset preset, string searchText)
-    {
-        if (string.IsNullOrWhiteSpace(searchText))
-            return true;
-
-        string presetName = preset.PresetName;
-
-        if (string.IsNullOrWhiteSpace(presetName))
-            return false;
-
-        return presetName.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0;
+        PlayerMasterPresetsPanelPresetUtility.RefreshPresetList(this);
     }
     #endregion
 
     #region Preset Actions
-    private void CreatePreset()
+    internal void DuplicatePreset(PlayerMasterPreset preset)
     {
-        PlayerMasterPreset newPreset = PlayerMasterPresetLibraryUtility.CreatePresetAsset("PlayerMasterPreset");
-
-        if (newPreset == null)
-            return;
-
-        Undo.RegisterCreatedObjectUndo(newPreset, "Create Master Preset Asset");
-        Undo.RecordObject(m_Library, "Add Master Preset");
-        m_Library.AddPreset(newPreset);
-        EditorUtility.SetDirty(m_Library);
-        PlayerManagementDraftSession.MarkDirty();
-
-        RefreshPresetList();
-        SelectPreset(newPreset);
-
-        int index = m_FilteredPresets.IndexOf(newPreset);
-        if (index >= 0)
-            m_ListView.SetSelection(index);
+        PlayerMasterPresetsPanelPresetUtility.DuplicatePreset(this, preset);
     }
 
-    private void DuplicatePreset()
+    internal void DeletePreset(PlayerMasterPreset preset)
     {
-        DuplicatePreset(m_SelectedPreset);
-    }
-
-    private void DuplicatePreset(PlayerMasterPreset preset)
-    {
-        if (preset == null)
-            return;
-
-        PlayerMasterPreset duplicatedPreset = ScriptableObject.CreateInstance<PlayerMasterPreset>();
-        EditorUtility.CopySerialized(preset, duplicatedPreset);
-
-        string originalPath = AssetDatabase.GetAssetPath(preset);
-
-        if (string.IsNullOrWhiteSpace(originalPath))
-            return;
-
-        string originalDirectory = Path.GetDirectoryName(originalPath);
-
-        if (string.IsNullOrWhiteSpace(originalDirectory))
-            return;
-
-        string sourceDisplayName = string.IsNullOrWhiteSpace(preset.PresetName) ? preset.name : preset.PresetName;
-        string duplicateBaseName = PlayerManagementDraftSession.NormalizeAssetName(sourceDisplayName + " Copy");
-
-        if (string.IsNullOrWhiteSpace(duplicateBaseName))
-            duplicateBaseName = "PlayerMasterPreset Copy";
-
-        string requestedPath = Path.Combine(originalDirectory, duplicateBaseName + ".asset").Replace('\\', '/');
-        string duplicatedPath = AssetDatabase.GenerateUniqueAssetPath(requestedPath);
-        string finalName = Path.GetFileNameWithoutExtension(duplicatedPath);
-
-        AssetDatabase.CreateAsset(duplicatedPreset, duplicatedPath);
-        Undo.RegisterCreatedObjectUndo(duplicatedPreset, "Duplicate Master Preset Asset");
-        duplicatedPreset.name = finalName;
-
-        SerializedObject duplicatedSerialized = new SerializedObject(duplicatedPreset);
-        SerializedProperty idProperty = duplicatedSerialized.FindProperty("m_PresetId");
-        SerializedProperty nameProperty = duplicatedSerialized.FindProperty("m_PresetName");
-        if (idProperty != null)
-            idProperty.stringValue = Guid.NewGuid().ToString("N");
-        if (nameProperty != null)
-            nameProperty.stringValue = finalName;
-        duplicatedSerialized.ApplyModifiedPropertiesWithoutUndo();
-
-        Undo.RecordObject(m_Library, "Duplicate Master Preset");
-        m_Library.AddPreset(duplicatedPreset);
-        EditorUtility.SetDirty(m_Library);
-        PlayerManagementDraftSession.MarkDirty();
-
-        RefreshPresetList();
-        SelectPreset(duplicatedPreset);
-
-        int index = m_FilteredPresets.IndexOf(duplicatedPreset);
-        if (index >= 0)
-            m_ListView.SetSelection(index);
-    }
-
-    private void DeletePreset()
-    {
-        DeletePreset(m_SelectedPreset);
-    }
-
-    private void DeletePreset(PlayerMasterPreset preset)
-    {
-        if (preset == null)
-            return;
-
-        bool confirmed = EditorUtility.DisplayDialog("Delete Master Preset", "Delete the selected master preset asset?", "Delete", "Cancel");
-
-        if (!confirmed)
-            return;
-
-        Undo.RecordObject(m_Library, "Delete Master Preset");
-        m_Library.RemovePreset(preset);
-        EditorUtility.SetDirty(m_Library);
-        PlayerManagementDraftSession.StageDeleteAsset(preset);
-
-        RefreshPresetList();
+        PlayerMasterPresetsPanelPresetUtility.DeletePreset(this, preset);
     }
     #endregion
 
     #region Preset Details
-    private void SelectPreset(PlayerMasterPreset preset)
+    internal void SelectPreset(PlayerMasterPreset preset)
     {
-        m_SelectedPreset = preset;
-        PlayerManagementSelectionContext.SetActiveMasterPreset(m_SelectedPreset);
-        m_DetailsRoot.Clear();
-        m_DetailSectionButtonsRoot = null;
-        m_DetailSectionContentRoot = null;
-
-        if (m_SelectedPreset == null)
-        {
-            Label label = new Label("Select or create a master preset to edit.");
-            label.style.unityFontStyleAndWeight = FontStyle.Italic;
-            m_DetailsRoot.Add(label);
-            RefreshActiveStatus();
-            return;
-        }
-
-        m_PresetSerializedObject = new SerializedObject(m_SelectedPreset);
-        m_DetailSectionButtonsRoot = BuildDetailsSectionButtons();
-        m_DetailSectionContentRoot = new VisualElement();
-        m_DetailSectionContentRoot.style.flexDirection = FlexDirection.Column;
-        m_DetailSectionContentRoot.style.flexGrow = 1f;
-        m_DetailsRoot.Add(m_DetailSectionButtonsRoot);
-        m_DetailsRoot.Add(m_DetailSectionContentRoot);
-
-        BuildActiveDetailsSection();
-        RefreshActiveStatus();
-        SyncOpenSidePanels();
+        PlayerMasterPresetsPanelSectionsUtility.SelectPreset(this, preset);
     }
 
-    private void BuildMetadataSection()
+    internal void RegeneratePresetId()
     {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Preset Details");
-
-        if (sectionContainer == null)
+        if (selectedPreset == null)
             return;
 
-        SerializedProperty idProperty = m_PresetSerializedObject.FindProperty("m_PresetId");
-        SerializedProperty nameProperty = m_PresetSerializedObject.FindProperty("m_PresetName");
-        SerializedProperty descriptionProperty = m_PresetSerializedObject.FindProperty("m_Description");
-        SerializedProperty versionProperty = m_PresetSerializedObject.FindProperty("m_Version");
-
-        TextField nameField = new TextField("Preset Name");
-        nameField.isDelayed = true;
-        nameField.BindProperty(nameProperty);
-        nameField.RegisterValueChangedCallback(evt =>
-        {
-            HandlePresetNameChanged(evt.newValue);
-        });
-        sectionContainer.Add(nameField);
-
-        TextField versionField = new TextField("Version");
-        versionField.isDelayed = true;
-        versionField.BindProperty(versionProperty);
-        versionField.RegisterValueChangedCallback(evt =>
-        {
-            PlayerManagementDraftSession.MarkDirty();
-            RefreshPresetList();
-        });
-        sectionContainer.Add(versionField);
-
-        TextField descriptionField = new TextField("Description");
-        descriptionField.multiline = true;
-        descriptionField.isDelayed = true;
-        descriptionField.style.height = 60f;
-        descriptionField.BindProperty(descriptionProperty);
-        descriptionField.RegisterValueChangedCallback(evt =>
-        {
-            PlayerManagementDraftSession.MarkDirty();
-            RefreshPresetList();
-        });
-        sectionContainer.Add(descriptionField);
-
-        VisualElement idRow = new VisualElement();
-        idRow.style.flexDirection = FlexDirection.Row;
-        idRow.style.alignItems = Align.Center;
-
-        TextField idField = new TextField("Preset ID");
-        idField.isReadOnly = true;
-        idField.SetEnabled(false);
-        idField.style.flexGrow = 1f;
-        idField.BindProperty(idProperty);
-        idRow.Add(idField);
-
-        Button regenerateButton = new Button();
-        regenerateButton.text = "Regenerate";
-        regenerateButton.clicked += RegeneratePresetId;
-        regenerateButton.style.marginLeft = 6f;
-        idRow.Add(regenerateButton);
-
-        sectionContainer.Add(idRow);
-    }
-
-    private void RegeneratePresetId()
-    {
-        if (m_SelectedPreset == null)
-            return;
-
-        SerializedProperty idProperty = m_PresetSerializedObject.FindProperty("m_PresetId");
+        SerializedProperty idProperty = presetSerializedObject.FindProperty("m_PresetId");
 
         if (idProperty == null)
             return;
 
-        Undo.RecordObject(m_SelectedPreset, "Regenerate Preset ID");
-        m_PresetSerializedObject.Update();
+        Undo.RecordObject(selectedPreset, "Regenerate Preset ID");
+        presetSerializedObject.Update();
         idProperty.stringValue = Guid.NewGuid().ToString("N");
-        m_PresetSerializedObject.ApplyModifiedProperties();
+        presetSerializedObject.ApplyModifiedProperties();
         PlayerManagementDraftSession.MarkDirty();
     }
 
-    private void HandlePresetNameChanged(string newName)
+    internal void HandlePresetNameChanged(string newName)
     {
-        RenamePreset(m_SelectedPreset, newName);
+        PlayerMasterPresetsPanelPresetUtility.RenamePreset(this, selectedPreset, newName);
     }
 
-    private void RenamePreset(PlayerMasterPreset preset, string newName)
+    internal void ShowRenamePopup(VisualElement anchor, PlayerMasterPreset preset)
     {
-        if (preset == null)
-            return;
-
-        string normalizedName = PlayerManagementDraftSession.NormalizeAssetName(newName);
-
-        if (string.IsNullOrWhiteSpace(normalizedName))
-            return;
-
-        SerializedObject presetSerialized = new SerializedObject(preset);
-        SerializedProperty presetNameProperty = presetSerialized.FindProperty("m_PresetName");
-
-        if (presetNameProperty != null)
-        {
-            presetSerialized.Update();
-            presetNameProperty.stringValue = normalizedName;
-            presetSerialized.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        preset.name = normalizedName;
-        EditorUtility.SetDirty(preset);
-        PlayerManagementDraftSession.MarkDirty();
-        RefreshPresetList();
+        PlayerMasterPresetsPanelPresetUtility.ShowRenamePopup(this, anchor, preset);
     }
 
-    private void ShowRenamePopup(VisualElement anchor, PlayerMasterPreset preset)
+    internal void BuildActiveDetailsSection()
     {
-        if (anchor == null || preset == null)
-            return;
-
-        Rect anchorRect = anchor.worldBound;
-        string title = "Rename Master Preset";
-        PresetRenamePopup.Show(anchorRect, title, preset.PresetName, newName => RenamePreset(preset, newName));
-    }
-
-    private void BuildSubPresetsSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Sub Presets");
-
-        if (sectionContainer == null)
-            return;
-
-        SerializedProperty controllerProperty = m_PresetSerializedObject.FindProperty("m_ControllerPreset");
-        SerializedProperty progressionProperty = m_PresetSerializedObject.FindProperty("m_ProgressionPreset");
-        SerializedProperty powerUpsProperty = m_PresetSerializedObject.FindProperty("m_PowerUpsPreset");
-        SerializedProperty animationProperty = m_PresetSerializedObject.FindProperty("m_AnimationBindingsPreset");
-
-        sectionContainer.Add(BuildSubPresetRow("Controller Preset", typeof(PlayerControllerPreset), controllerProperty, CreateControllerPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.PlayerControllerPresets), PlayerManagementWindow.PanelType.PlayerControllerPresets));
-        sectionContainer.Add(BuildSubPresetRow("Level-Up & Progression Preset", typeof(PlayerProgressionPreset), progressionProperty, CreateProgressionPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.LevelUpProgression), PlayerManagementWindow.PanelType.LevelUpProgression));
-        sectionContainer.Add(BuildSubPresetRow("Power-Ups Preset", typeof(PlayerPowerUpsPreset), powerUpsProperty, CreatePowerUpsPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.PowerUps), PlayerManagementWindow.PanelType.PowerUps));
-        sectionContainer.Add(BuildSubPresetRow("Animation Bindings Preset", typeof(PlayerAnimationBindingsPreset), animationProperty, CreateAnimationPreset, () => OpenSidePanel(PlayerManagementWindow.PanelType.AnimationBindings), PlayerManagementWindow.PanelType.AnimationBindings));
-    }
-
-    private VisualElement BuildSubPresetRow(string label, Type presetType, SerializedProperty presetProperty, Action createAction, Action openSectionAction, PlayerManagementWindow.PanelType panelType)
-    {
-        VisualElement container = new VisualElement();
-        container.style.marginBottom = 6f;
-
-        ObjectField presetField = new ObjectField(label);
-        presetField.objectType = presetType;
-        presetField.BindProperty(presetProperty);
-        presetField.RegisterValueChangedCallback(evt =>
-        {
-            PlayerManagementDraftSession.MarkDirty();
-
-            if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets ||
-                panelType == PlayerManagementWindow.PanelType.LevelUpProgression ||
-                panelType == PlayerManagementWindow.PanelType.PowerUps ||
-                panelType == PlayerManagementWindow.PanelType.AnimationBindings)
-                SyncOpenSidePanels();
-        });
-        container.Add(presetField);
-
-        VisualElement buttonsRow = new VisualElement();
-        buttonsRow.style.flexDirection = FlexDirection.Row;
-        buttonsRow.style.marginTop = 2f;
-
-        Button openButton = new Button();
-        openButton.text = "Open Section";
-        openButton.tooltip = "Open the corresponding section.";
-        openButton.clicked += openSectionAction;
-        buttonsRow.Add(openButton);
-
-        Button newButton = new Button();
-        newButton.text = "New";
-        newButton.tooltip = "Create and assign a new preset.";
-        newButton.style.marginLeft = 4f;
-        newButton.clicked += createAction;
-        buttonsRow.Add(newButton);
-
-        Button selectButton = new Button();
-        selectButton.text = "Select in Project";
-        selectButton.tooltip = "Select the assigned preset in the Project window.";
-        selectButton.style.marginLeft = 4f;
-        selectButton.clicked += () =>
-        {
-            if (presetProperty == null)
-                return;
-
-            UnityEngine.Object target = presetProperty.objectReferenceValue;
-
-            if (target == null)
-                return;
-
-            Selection.activeObject = target;
-            EditorGUIUtility.PingObject(target);
-        };
-        buttonsRow.Add(selectButton);
-
-        container.Add(buttonsRow);
-        return container;
-    }
-
-    /// <summary>
-    /// Builds the Active Preset section for assigning selected master preset to a player prefab.
-    /// Called by BuildActiveDetailsSection when ActivePreset tab is selected.
-    /// </summary>
-    private void BuildActivePresetSection()
-    {
-        // Create section container and exit if details root is unavailable.
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Active on Player Prefab");
-
-        if (sectionContainer == null)
-            return;
-
-        // Create prefab field and persist selection on user changes.
-        m_PlayerPrefabField = new ObjectField("Player Prefab");
-        m_PlayerPrefabField.objectType = typeof(GameObject);
-        m_PlayerPrefabField.RegisterValueChangedCallback(evt =>
-        {
-            m_SelectedPlayerPrefab = evt.newValue as GameObject;
-            SaveSelectedPrefabState();
-            RefreshActiveStatus();
-        });
-        // Reapply persisted prefab after section rebuilds.
-        m_PlayerPrefabField.SetValueWithoutNotify(m_SelectedPlayerPrefab);
-        sectionContainer.Add(m_PlayerPrefabField);
-
-        // Build action row with find/set buttons.
-        VisualElement buttonRow = new VisualElement();
-        buttonRow.style.flexDirection = FlexDirection.Row;
-        buttonRow.style.marginTop = 2f;
-
-        Button findButton = new Button();
-        findButton.text = "Find";
-        findButton.tooltip = "Search the project for a prefab with PlayerAuthoring.";
-        findButton.clicked += FindPlayerPrefab;
-        buttonRow.Add(findButton);
-
-        Button setActiveButton = new Button();
-        setActiveButton.text = "Set Active Preset";
-        setActiveButton.tooltip = "Assign this master preset to the selected player prefab.";
-        setActiveButton.style.marginLeft = 4f;
-        setActiveButton.clicked += AssignPresetToPrefab;
-        buttonRow.Add(setActiveButton);
-
-        sectionContainer.Add(buttonRow);
-
-        // Add status label for active assignment feedback.
-        m_ActiveStatusLabel = new Label();
-        m_ActiveStatusLabel.style.marginTop = 2f;
-        m_ActiveStatusLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-        sectionContainer.Add(m_ActiveStatusLabel);
-        RefreshActiveStatus();
-    }
-
-    private void BuildNavigationSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("Open Sections");
-
-        if (sectionContainer == null)
-            return;
-
-        VisualElement row = new VisualElement();
-        row.style.flexDirection = FlexDirection.Row;
-        row.style.flexWrap = Wrap.Wrap;
-
-        Button controllerButton = new Button();
-        controllerButton.text = "Open Controller";
-        controllerButton.clicked += () => OpenSidePanel(PlayerManagementWindow.PanelType.PlayerControllerPresets);
-        row.Add(controllerButton);
-
-        Button progressionButton = new Button();
-        progressionButton.text = "Open Progression";
-        progressionButton.style.marginLeft = 4f;
-        progressionButton.clicked += () => OpenSidePanel(PlayerManagementWindow.PanelType.LevelUpProgression);
-        row.Add(progressionButton);
-
-        Button powerUpsButton = new Button();
-        powerUpsButton.text = "Open Power-Ups";
-        powerUpsButton.style.marginLeft = 4f;
-        powerUpsButton.clicked += () => OpenSidePanel(PlayerManagementWindow.PanelType.PowerUps);
-        row.Add(powerUpsButton);
-
-        Button animationButton = new Button();
-        animationButton.text = "Open Animations";
-        animationButton.style.marginLeft = 4f;
-        animationButton.clicked += () => OpenSidePanel(PlayerManagementWindow.PanelType.AnimationBindings);
-        row.Add(animationButton);
-
-        sectionContainer.Add(row);
-    }
-
-    private void BuildLayersSection()
-    {
-        VisualElement sectionContainer = CreateDetailsSectionContainer("World Layers");
-
-        if (sectionContainer == null)
-            return;
-
-        SerializedProperty wallsLayerNameProperty = m_PresetSerializedObject.FindProperty("wallsLayerName");
-
-        if (wallsLayerNameProperty == null)
-            return;
-
-        string configuredLayerName = wallsLayerNameProperty.stringValue;
-        int configuredLayerIndex = LayerMask.NameToLayer(configuredLayerName);
-        int defaultLayerIndex = LayerMask.NameToLayer(WorldWallCollisionUtility.DefaultWallsLayerName);
-        int initialLayerIndex = configuredLayerIndex >= 0 ? configuredLayerIndex : defaultLayerIndex;
-
-        if (initialLayerIndex < 0)
-            initialLayerIndex = 0;
-
-        LayerField wallsLayerField = new LayerField("Walls Layer");
-        wallsLayerField.tooltip = "Layer considered as solid map walls for player, enemies, bombs and projectiles.";
-        wallsLayerField.SetValueWithoutNotify(initialLayerIndex);
-        wallsLayerField.RegisterValueChangedCallback(evt =>
-        {
-            string selectedLayerName = LayerMask.LayerToName(evt.newValue);
-
-            if (string.IsNullOrWhiteSpace(selectedLayerName))
-                return;
-
-            SerializedProperty updatedProperty = m_PresetSerializedObject.FindProperty("wallsLayerName");
-
-            if (updatedProperty == null)
-                return;
-
-            if (m_SelectedPreset != null)
-                Undo.RecordObject(m_SelectedPreset, "Change Walls Layer");
-
-            m_PresetSerializedObject.Update();
-            updatedProperty.stringValue = selectedLayerName;
-            m_PresetSerializedObject.ApplyModifiedProperties();
-            PlayerManagementDraftSession.MarkDirty();
-        });
-        sectionContainer.Add(wallsLayerField);
-
-        if (configuredLayerIndex < 0 && !string.IsNullOrWhiteSpace(configuredLayerName))
-        {
-            HelpBox warningBox = new HelpBox(string.Format("Layer '{0}' does not exist. Select an existing layer.", configuredLayerName), HelpBoxMessageType.Warning);
-            sectionContainer.Add(warningBox);
-        }
-    }
-
-    private VisualElement BuildDetailsSectionButtons()
-    {
-        VisualElement buttonsRoot = new VisualElement();
-        buttonsRoot.style.flexDirection = FlexDirection.Row;
-        buttonsRoot.style.flexWrap = Wrap.Wrap;
-        buttonsRoot.style.marginBottom = 6f;
-
-        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.Metadata, "Metadata");
-        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.SubPresets, "Sub Presets");
-        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.ActivePreset, "Active Preset");
-        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.Navigation, "Navigation");
-        AddDetailsSectionButton(buttonsRoot, DetailsSectionType.Layers, "Layers");
-        return buttonsRoot;
-    }
-
-    private void AddDetailsSectionButton(VisualElement parent, DetailsSectionType sectionType, string buttonLabel)
-    {
-        Button sectionButton = new Button(() => SetActiveDetailsSection(sectionType));
-        sectionButton.text = buttonLabel;
-        sectionButton.style.marginRight = 4f;
-        sectionButton.style.marginBottom = 4f;
-        parent.Add(sectionButton);
-    }
-
-    /// <summary>
-    /// Sets active details subsection and persists it for reopen state.
-    /// Called by details tab buttons.
-    /// Takes in the target details section enum.
-    /// </summary>
-    /// <param name="sectionType">Details subsection to activate.</param>
-    private void SetActiveDetailsSection(DetailsSectionType sectionType)
-    {
-        // Persist selected details subsection and rebuild content.
-        m_ActiveDetailsSection = sectionType;
-        ManagementToolStateUtility.SaveEnumValue(ActiveDetailsSectionStateKey, m_ActiveDetailsSection);
-        BuildActiveDetailsSection();
-    }
-
-    private void BuildActiveDetailsSection()
-    {
-        if (m_DetailSectionContentRoot == null)
-            return;
-
-        if (m_PresetSerializedObject == null)
-            return;
-
-        m_PresetSerializedObject.Update();
-        m_DetailSectionContentRoot.Clear();
-
-        switch (m_ActiveDetailsSection)
-        {
-            case DetailsSectionType.Metadata:
-                BuildMetadataSection();
-                return;
-            case DetailsSectionType.SubPresets:
-                BuildSubPresetsSection();
-                return;
-            case DetailsSectionType.ActivePreset:
-                BuildActivePresetSection();
-                return;
-            case DetailsSectionType.Navigation:
-                BuildNavigationSection();
-                return;
-            case DetailsSectionType.Layers:
-                BuildLayersSection();
-                return;
-        }
-    }
-
-    private VisualElement CreateDetailsSectionContainer(string sectionTitle)
-    {
-        if (m_DetailSectionContentRoot == null)
-            return null;
-
-        VisualElement container = new VisualElement();
-        container.style.marginTop = 8f;
-
-        Label header = new Label(sectionTitle);
-        header.style.unityFontStyleAndWeight = FontStyle.Bold;
-        header.style.marginBottom = 4f;
-        container.Add(header);
-        m_DetailSectionContentRoot.Add(container);
-        return container;
+        PlayerMasterPresetsPanelSectionsUtility.BuildActiveDetailsSection(this);
     }
     #endregion
 
     #region Sub Preset Creation
-    private void CreateControllerPreset()
+    internal void CreateControllerPreset()
     {
-        PlayerControllerPreset newPreset = PlayerControllerPresetLibraryUtility.CreatePresetAsset("PlayerControllerPreset");
-
-        if (newPreset == null)
-            return;
-
-        PlayerControllerPresetLibrary controllerLibrary = PlayerControllerPresetLibraryUtility.GetOrCreateLibrary();
-        Undo.RegisterCreatedObjectUndo(newPreset, "Create Controller Preset Asset");
-        Undo.RecordObject(controllerLibrary, "Add Controller Preset");
-        controllerLibrary.AddPreset(newPreset);
-        EditorUtility.SetDirty(controllerLibrary);
-        PlayerManagementDraftSession.MarkDirty();
-
-        AssignSubPreset("m_ControllerPreset", newPreset);
+        PlayerMasterPresetsPanelSectionsUtility.CreateControllerPreset(this);
     }
 
-    private void CreateProgressionPreset()
+    internal void CreateProgressionPreset()
     {
-        PlayerProgressionPreset newPreset = CreateSubPresetAsset<PlayerProgressionPreset>("PlayerProgressionPreset", ProgressionPresetsFolder);
-
-        if (newPreset != null)
-        {
-            PlayerProgressionPresetLibrary progressionLibrary = PlayerProgressionPresetLibraryUtility.GetOrCreateLibrary();
-            Undo.RegisterCreatedObjectUndo(newPreset, "Create Progression Preset Asset");
-            Undo.RecordObject(progressionLibrary, "Add Progression Preset");
-            progressionLibrary.AddPreset(newPreset);
-            EditorUtility.SetDirty(progressionLibrary);
-            PlayerManagementDraftSession.MarkDirty();
-        }
-
-        AssignSubPreset("m_ProgressionPreset", newPreset);
+        PlayerMasterPresetsPanelSectionsUtility.CreateProgressionPreset(this);
     }
 
-    private void CreatePowerUpsPreset()
+    internal void CreatePowerUpsPreset()
     {
-        PlayerPowerUpsPreset newPreset = CreateSubPresetAsset<PlayerPowerUpsPreset>("PlayerPowerUpsPreset", PowerUpsPresetsFolder);
-
-        if (newPreset != null)
-        {
-            PlayerPowerUpsPresetLibrary powerUpsLibrary = PlayerPowerUpsPresetLibraryUtility.GetOrCreateLibrary();
-            Undo.RegisterCreatedObjectUndo(newPreset, "Create Power Ups Preset Asset");
-            Undo.RecordObject(powerUpsLibrary, "Add Power Ups Preset");
-            powerUpsLibrary.AddPreset(newPreset);
-            EditorUtility.SetDirty(powerUpsLibrary);
-            PlayerManagementDraftSession.MarkDirty();
-        }
-
-        AssignSubPreset("m_PowerUpsPreset", newPreset);
+        PlayerMasterPresetsPanelSectionsUtility.CreatePowerUpsPreset(this);
     }
 
-    private void CreateAnimationPreset()
+    internal void CreateAnimationPreset()
     {
-        PlayerAnimationBindingsPreset newPreset = CreateSubPresetAsset<PlayerAnimationBindingsPreset>("PlayerAnimationBindingsPreset", AnimationPresetsFolder);
-        AssignSubPreset("m_AnimationBindingsPreset", newPreset);
+        PlayerMasterPresetsPanelSectionsUtility.CreateAnimationPreset(this);
     }
 
-    private T CreateSubPresetAsset<T>(string presetName, string folderPath) where T : ScriptableObject
+    internal void AssignSubPreset(string propertyName, UnityEngine.Object preset)
     {
-        EnsureFolder(folderPath);
-
-        string normalizedName = string.IsNullOrWhiteSpace(presetName) ? typeof(T).Name : PlayerManagementDraftSession.NormalizeAssetName(presetName);
-
-        if (string.IsNullOrWhiteSpace(normalizedName))
-            normalizedName = typeof(T).Name;
-
-        string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(folderPath, normalizedName + ".asset"));
-        string finalName = Path.GetFileNameWithoutExtension(assetPath);
-        T preset = ScriptableObject.CreateInstance<T>();
-        preset.name = finalName;
-        AssetDatabase.CreateAsset(preset, assetPath);
-        Undo.RegisterCreatedObjectUndo(preset, "Create Sub Preset Asset");
-
-        SerializedObject serializedPreset = new SerializedObject(preset);
-        SerializedProperty nameProperty = serializedPreset.FindProperty("m_PresetName");
-
-        if (nameProperty == null)
-            nameProperty = serializedPreset.FindProperty("presetName");
-
-        if (nameProperty != null)
-            nameProperty.stringValue = finalName;
-
-        serializedPreset.ApplyModifiedPropertiesWithoutUndo();
-        EditorUtility.SetDirty(preset);
-        PlayerManagementDraftSession.MarkDirty();
-
-        return preset;
-    }
-
-    private void AssignSubPreset(string propertyName, UnityEngine.Object preset)
-    {
-        if (m_SelectedPreset == null)
-            return;
-
-        SerializedProperty property = m_PresetSerializedObject.FindProperty(propertyName);
-
-        if (property == null)
-            return;
-
-        Undo.RecordObject(m_SelectedPreset, "Assign Sub Preset");
-        m_PresetSerializedObject.Update();
-        property.objectReferenceValue = preset;
-        m_PresetSerializedObject.ApplyModifiedProperties();
-        PlayerManagementDraftSession.MarkDirty();
-        SyncOpenSidePanels();
+        PlayerMasterPresetsPanelSectionsUtility.AssignSubPreset(this, propertyName, preset);
     }
     #endregion
 
     #region Prefab Activation
-    /// <summary>
-    /// Finds the first project prefab containing PlayerAuthoring and selects it.
-    /// Called by Active Preset "Find" button.
-    /// </summary>
-    private void FindPlayerPrefab()
+    internal void FindPlayerPrefab()
     {
-        // Resolve candidate prefab and show dialog when not found.
-        if (!ManagementToolPrefabUtility.TryFindFirstPrefabWithComponent<PlayerAuthoring>(out GameObject prefab))
-        {
-            EditorUtility.DisplayDialog("Find Player Prefab", "No prefab with PlayerAuthoring was found.", "OK");
-            return;
-        }
-
-        // Store and persist selected prefab, then reflect it in UI field.
-        m_SelectedPlayerPrefab = prefab;
-        SaveSelectedPrefabState();
-
-        if (m_PlayerPrefabField != null)
-            m_PlayerPrefabField.SetValueWithoutNotify(prefab);
-
-        // Refresh active assignment feedback.
-        RefreshActiveStatus();
+        PlayerMasterPresetsPanelPrefabActivationUtility.FindPlayerPrefab(this);
     }
 
-    private void AssignPresetToPrefab()
+    internal void AssignPresetToPrefab()
     {
-        if (m_SelectedPreset == null)
-        {
-            EditorUtility.DisplayDialog("Set Active Preset", "Select a master preset first.", "OK");
-            return;
-        }
-
-        if (m_SelectedPlayerPrefab == null)
-        {
-            EditorUtility.DisplayDialog("Set Active Preset", "Select a player prefab first.", "OK");
-            return;
-        }
-
-        PlayerAuthoring authoring = m_SelectedPlayerPrefab.GetComponent<PlayerAuthoring>();
-
-        if (authoring == null)
-        {
-            EditorUtility.DisplayDialog("Set Active Preset", "PlayerAuthoring component not found on the selected prefab.", "OK");
-            return;
-        }
-
-        SerializedObject serializedAuthoring = new SerializedObject(authoring);
-        SerializedProperty presetProperty = serializedAuthoring.FindProperty("masterPreset");
-
-        if (presetProperty == null)
-            return;
-
-        Undo.RecordObject(authoring, "Set Active Master Preset");
-        serializedAuthoring.Update();
-        presetProperty.objectReferenceValue = m_SelectedPreset;
-        serializedAuthoring.ApplyModifiedProperties();
-        EditorUtility.SetDirty(authoring);
-
-        if (PrefabUtility.IsPartOfPrefabInstance(authoring))
-            PrefabUtility.RecordPrefabInstancePropertyModifications(authoring);
-
-        PlayerManagementDraftSession.MarkDirty();
-        RefreshActiveStatus();
+        PlayerMasterPresetsPanelPrefabActivationUtility.AssignPresetToPrefab(this);
     }
 
-    private void RefreshActiveStatus()
+    internal void RefreshActiveStatus()
     {
-        if (m_ActiveStatusLabel == null)
-            return;
-
-        if (m_SelectedPreset == null)
-        {
-            m_ActiveStatusLabel.text = "No master preset selected.";
-            return;
-        }
-
-        if (m_SelectedPlayerPrefab == null)
-        {
-            m_ActiveStatusLabel.text = "No player prefab selected.";
-            return;
-        }
-
-        PlayerAuthoring authoring = m_SelectedPlayerPrefab.GetComponent<PlayerAuthoring>();
-
-        if (authoring == null)
-        {
-            m_ActiveStatusLabel.text = "PlayerAuthoring component not found on prefab.";
-            return;
-        }
-
-        bool isActive = authoring.MasterPreset == m_SelectedPreset;
-        m_ActiveStatusLabel.text = isActive ? "Active on selected prefab." : "Not active on selected prefab.";
+        PlayerMasterPresetsPanelPrefabActivationUtility.RefreshActiveStatus(this);
     }
     #endregion
 
     #region Helpers
-    private void OpenSidePanel(PlayerManagementWindow.PanelType panelType)
-    {
-        if (m_SidePanels.ContainsKey(panelType))
-        {
-            SidePanelEntry existingEntry = m_SidePanels[panelType];
-
-            if (existingEntry != null)
-                SetActivePanel(panelType);
-            SyncSidePanelSelection(panelType, existingEntry);
-            return;
-        }
-
-        PlayerControllerPresetsPanel controllerPanel;
-        PlayerProgressionPresetsPanel progressionPanel;
-        PlayerPowerUpsPresetsPanel powerUpsPanel;
-        PlayerAnimationBindingsPresetsPanel animationPanel;
-        VisualElement content = BuildSidePanelContent(panelType, out controllerPanel, out progressionPanel, out powerUpsPanel, out animationPanel);
-
-        if (content == null)
-            return;
-
-        AddTab(panelType, GetPanelTitle(panelType), content, controllerPanel, progressionPanel, powerUpsPanel, animationPanel);
-        SetActivePanel(panelType);
-        SyncSidePanelSelection(panelType, m_SidePanels[panelType]);
-    }
-
-    /// <summary>
-    /// Closes an opened side panel and persists updated open panels set.
-    /// Called by side tab close buttons.
-    /// Takes in the panel enum to close.
-    /// </summary>
-    /// <param name="panelType">Side panel to close.</param>
-    private void CloseSidePanel(PlayerManagementWindow.PanelType panelType)
-    {
-        // Keep root panel always open.
-        if (panelType == PlayerManagementWindow.PanelType.PlayerMasterPresets)
-            return;
-
-        // Resolve side panel entry and remove its tab UI.
-        if (!m_SidePanels.TryGetValue(panelType, out SidePanelEntry entry))
-            return;
-
-        if (entry != null && entry.TabContainer != null)
-            entry.TabContainer.RemoveFromHierarchy();
-
-        m_SidePanels.Remove(panelType);
-        SaveOpenPanelsState();
-
-        // Fallback to root panel if the active side panel was closed.
-        if (m_ActivePanel == panelType)
-            SetActivePanel(PlayerManagementWindow.PanelType.PlayerMasterPresets);
-    }
-
-    private string GetPanelTitle(PlayerManagementWindow.PanelType panelType)
-    {
-        if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets)
-            return "Player Controller Presets";
-
-        if (panelType == PlayerManagementWindow.PanelType.LevelUpProgression)
-            return "Level-Up & Progression";
-
-        if (panelType == PlayerManagementWindow.PanelType.PowerUps)
-            return "Power-Ups";
-
-        return "Animation Bindings";
-    }
-
-    private VisualElement BuildSidePanelContent(PlayerManagementWindow.PanelType panelType,
-                                                out PlayerControllerPresetsPanel controllerPanel,
-                                                out PlayerProgressionPresetsPanel progressionPanel,
-                                                out PlayerPowerUpsPresetsPanel powerUpsPanel,
-                                                out PlayerAnimationBindingsPresetsPanel animationPanel)
-    {
-        controllerPanel = null;
-        progressionPanel = null;
-        powerUpsPanel = null;
-        animationPanel = null;
-        VisualElement panelRoot = new VisualElement();
-        panelRoot.style.flexDirection = FlexDirection.Column;
-        panelRoot.style.flexGrow = 1f;
-
-        VisualElement headerRow = new VisualElement();
-        headerRow.style.flexDirection = FlexDirection.Row;
-        headerRow.style.justifyContent = Justify.SpaceBetween;
-        headerRow.style.alignItems = Align.Center;
-        headerRow.style.marginBottom = 4f;
-
-        Label title = new Label(GetPanelTitle(panelType));
-        title.style.unityFontStyleAndWeight = FontStyle.Bold;
-        headerRow.Add(title);
-
-        Button closeButton = new Button();
-        closeButton.text = "X";
-        closeButton.tooltip = "Close this section.";
-        closeButton.clicked += () => CloseSidePanel(panelType);
-        headerRow.Add(closeButton);
-
-        panelRoot.Add(headerRow);
-
-        if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets)
-        {
-            controllerPanel = new PlayerControllerPresetsPanel();
-            panelRoot.Add(controllerPanel.Root);
-            return panelRoot;
-        }
-
-        if (panelType == PlayerManagementWindow.PanelType.LevelUpProgression)
-        {
-            progressionPanel = new PlayerProgressionPresetsPanel();
-            panelRoot.Add(progressionPanel.Root);
-            return panelRoot;
-        }
-
-        if (panelType == PlayerManagementWindow.PanelType.PowerUps)
-        {
-            powerUpsPanel = new PlayerPowerUpsPresetsPanel();
-            panelRoot.Add(powerUpsPanel.Root);
-            return panelRoot;
-        }
-
-        if (panelType == PlayerManagementWindow.PanelType.AnimationBindings)
-        {
-            animationPanel = new PlayerAnimationBindingsPresetsPanel();
-            panelRoot.Add(animationPanel.Root);
-            return panelRoot;
-        }
-
-        VisualElement placeholder = new VisualElement();
-        placeholder.style.flexGrow = 1f;
-        placeholder.style.minHeight = 220f;
-        placeholder.style.justifyContent = Justify.Center;
-        placeholder.style.alignItems = Align.Center;
-        Label label = new Label("Section not implemented yet.");
-        label.style.unityFontStyleAndWeight = FontStyle.Italic;
-        placeholder.Add(label);
-        panelRoot.Add(placeholder);
-        return panelRoot;
-    }
-
-    /// <summary>
-    /// Adds a tab entry for a panel and persists open panels state.
-    /// Called for root tab creation and for each newly opened side panel.
-    /// Takes in panel enum, label, content root and optional panel controllers.
-    /// </summary>
-    /// <param name="panelType">Panel represented by this tab.</param>
-    /// <param name="label">Tab label.</param>
-    /// <param name="content">Content root shown when tab is active.</param>
-    /// <param name="controllerPanel">Optional controller presets panel instance.</param>
-    /// <param name="progressionPanel">Optional progression presets panel instance.</param>
-    /// <param name="powerUpsPanel">Optional power-ups presets panel instance.</param>
-    /// <param name="animationPanel">Optional animation bindings presets panel instance.</param>
-    private void AddTab(PlayerManagementWindow.PanelType panelType,
-                        string label,
-                        VisualElement content,
-                        PlayerControllerPresetsPanel controllerPanel,
-                        PlayerProgressionPresetsPanel progressionPanel,
-                        PlayerPowerUpsPresetsPanel powerUpsPanel,
-                        PlayerAnimationBindingsPresetsPanel animationPanel)
-    {
-        // Guard against initialization state where tab bar is not available yet.
-        if (m_TabBar == null)
-            return;
-
-        // Build tab container and wire click to panel activation.
-        VisualElement tabContainer = new VisualElement();
-        tabContainer.style.flexDirection = FlexDirection.Row;
-        tabContainer.style.alignItems = Align.Center;
-        tabContainer.style.marginRight = 6f;
-
-        Button tabButton = new Button();
-        tabButton.text = label;
-        tabButton.clicked += () => SetActivePanel(panelType);
-        tabButton.style.unityTextAlign = TextAnchor.MiddleLeft;
-        tabContainer.Add(tabButton);
-
-        // Register tab in lookup dictionary for selection syncing and refresh.
-        m_TabBar.Add(tabContainer);
-        m_SidePanels[panelType] = new SidePanelEntry
-        {
-            TabContainer = tabContainer,
-            TabButton = tabButton,
-            Content = content,
-            ControllerPanel = controllerPanel,
-            ProgressionPanel = progressionPanel,
-            PowerUpsPanel = powerUpsPanel,
-            AnimationPanel = animationPanel
-        };
-        SaveOpenPanelsState();
-    }
-
-    private void SyncSidePanelSelection(PlayerManagementWindow.PanelType panelType, SidePanelEntry entry)
-    {
-        if (entry == null)
-            return;
-
-        if (m_SelectedPreset == null)
-            return;
-
-        if (panelType == PlayerManagementWindow.PanelType.PlayerControllerPresets)
-        {
-            if (entry.ControllerPanel == null)
-                return;
-
-            PlayerControllerPreset controllerPreset = m_SelectedPreset.ControllerPreset;
-
-            if (controllerPreset == null)
-                return;
-
-            entry.ControllerPanel.SelectPresetFromExternal(controllerPreset);
-            return;
-        }
-
-        if (panelType == PlayerManagementWindow.PanelType.LevelUpProgression)
-        {
-            if (entry.ProgressionPanel == null)
-                return;
-
-            PlayerProgressionPreset progressionPreset = m_SelectedPreset.ProgressionPreset;
-
-            if (progressionPreset == null)
-                return;
-
-            entry.ProgressionPanel.SelectPresetFromExternal(progressionPreset);
-            return;
-        }
-
-        if (panelType == PlayerManagementWindow.PanelType.PowerUps)
-        {
-            if (entry.PowerUpsPanel == null)
-                return;
-
-            PlayerPowerUpsPreset powerUpsPreset = m_SelectedPreset.PowerUpsPreset;
-
-            if (powerUpsPreset == null)
-                return;
-
-            entry.PowerUpsPanel.SelectPresetFromExternal(powerUpsPreset);
-            return;
-        }
-
-        if (panelType == PlayerManagementWindow.PanelType.AnimationBindings)
-        {
-            if (entry.AnimationPanel == null)
-                return;
-
-            PlayerAnimationBindingsPreset animationPreset = m_SelectedPreset.AnimationBindingsPreset;
-
-            if (animationPreset == null)
-                return;
-
-            entry.AnimationPanel.SelectPresetFromExternal(animationPreset);
-        }
-    }
-
-    private void SyncOpenSidePanels()
-    {
-        foreach (KeyValuePair<PlayerManagementWindow.PanelType, SidePanelEntry> entry in m_SidePanels)
-            SyncSidePanelSelection(entry.Key, entry.Value);
-    }
-
     private void RefreshOpenSidePanels()
     {
-        foreach (KeyValuePair<PlayerManagementWindow.PanelType, SidePanelEntry> panelEntry in m_SidePanels)
-        {
-            SidePanelEntry entry = panelEntry.Value;
-
-            if (entry == null)
-                continue;
-
-            if (entry.ControllerPanel != null)
-                entry.ControllerPanel.RefreshFromSessionChange();
-
-            if (entry.ProgressionPanel != null)
-                entry.ProgressionPanel.RefreshFromSessionChange();
-
-            if (entry.PowerUpsPanel != null)
-                entry.PowerUpsPanel.RefreshFromSessionChange();
-
-            if (entry.AnimationPanel != null)
-                entry.AnimationPanel.RefreshFromSessionChange();
-        }
-
-        SyncOpenSidePanels();
+        PlayerMasterPresetsPanelSidePanelUtility.RefreshOpenSidePanels(this);
     }
 
-    /// <summary>
-    /// Activates requested panel tab, persists panel selection, and swaps visible content.
-    /// Called by tab button clicks and restore logic.
-    /// Takes in panel enum to display.
-    /// </summary>
-    /// <param name="panelType">Panel to activate.</param>
-    private void SetActivePanel(PlayerManagementWindow.PanelType panelType)
-    {
-        // Resolve panel entry and guard against missing content host.
-        if (!m_SidePanels.TryGetValue(panelType, out SidePanelEntry entry))
-            return;
-
-        if (m_ContentHost == null)
-            return;
-
-        // Persist selected panel except while startup restore is in progress.
-        m_ActivePanel = panelType;
-
-        if (!m_SuppressStateWrite)
-            ManagementToolStateUtility.SaveEnumValue(ActivePanelStateKey, m_ActivePanel);
-
-        // Swap visible panel root and refresh tab styles.
-        m_ContentHost.Clear();
-        m_ContentHost.Add(entry.Content);
-        UpdateTabStyles();
-    }
-
-    private void UpdateTabStyles()
-    {
-        foreach (KeyValuePair<PlayerManagementWindow.PanelType, SidePanelEntry> entry in m_SidePanels)
-        {
-            if (entry.Value == null || entry.Value.TabButton == null)
-                continue;
-
-            bool isActive = entry.Key == m_ActivePanel;
-            entry.Value.TabButton.style.unityFontStyleAndWeight = isActive ? FontStyle.Bold : FontStyle.Normal;
-            entry.Value.TabButton.style.backgroundColor = isActive ? new Color(0.18f, 0.18f, 0.18f, 0.6f) : Color.clear;
-        }
-    }
-
-    private string GetPresetDisplayName(PlayerMasterPreset preset)
+    internal string GetPresetDisplayName(PlayerMasterPreset preset)
     {
         if (preset == null)
             return "<Missing Preset>";
 
-        string name = string.IsNullOrWhiteSpace(preset.PresetName) ? preset.name : preset.PresetName;
+        string presetName = string.IsNullOrWhiteSpace(preset.PresetName) ? preset.name : preset.PresetName;
         string version = preset.Version;
 
         if (string.IsNullOrWhiteSpace(version))
-            return name;
+            return presetName;
 
-        return name + " v. " + version;
-    }
-
-    /// <summary>
-    /// Restores active panel, active details section, and selected prefab from EditorPrefs.
-    /// Called by constructor before building UI.
-    /// </summary>
-    private void RestorePersistedState()
-    {
-        // Restore previously active panel and details subsection.
-        m_ActivePanel = ManagementToolStateUtility.LoadEnumValue(ActivePanelStateKey,
-                                                                  PlayerManagementWindow.PanelType.PlayerMasterPresets);
-        m_ActiveDetailsSection = ManagementToolStateUtility.LoadEnumValue(ActiveDetailsSectionStateKey,
-                                                                           DetailsSectionType.Metadata);
-        // Restore selected player prefab reference.
-        m_SelectedPlayerPrefab = ManagementToolStateUtility.LoadGameObjectAsset(SelectedPrefabPathStateKey);
-    }
-
-    /// <summary>
-    /// Reopens side panels that were open in previous session.
-    /// Called while creating initial tab container.
-    /// </summary>
-    private void RestoreOpenSidePanels()
-    {
-        // Load persisted open panel list and reopen each side panel.
-        List<PlayerManagementWindow.PanelType> openPanels = ManagementToolStateUtility.LoadEnumList<PlayerManagementWindow.PanelType>(OpenPanelsStateKey);
-
-        for (int index = 0; index < openPanels.Count; index++)
-        {
-            PlayerManagementWindow.PanelType openPanel = openPanels[index];
-
-            if (openPanel == PlayerManagementWindow.PanelType.PlayerMasterPresets)
-                continue;
-
-            OpenSidePanel(openPanel);
-        }
-    }
-
-    /// <summary>
-    /// Persists currently open panel tabs to EditorPrefs.
-    /// Called whenever side panel set changes and after restore completion.
-    /// </summary>
-    private void SaveOpenPanelsState()
-    {
-        // Skip writes during startup restore pass.
-        if (m_SuppressStateWrite)
-            return;
-
-        // Build deterministic list containing root panel and all currently opened side panels.
-        List<PlayerManagementWindow.PanelType> openPanels = new List<PlayerManagementWindow.PanelType>();
-        openPanels.Add(PlayerManagementWindow.PanelType.PlayerMasterPresets);
-
-        if (m_SidePanels.ContainsKey(PlayerManagementWindow.PanelType.PlayerControllerPresets))
-            openPanels.Add(PlayerManagementWindow.PanelType.PlayerControllerPresets);
-
-        if (m_SidePanels.ContainsKey(PlayerManagementWindow.PanelType.LevelUpProgression))
-            openPanels.Add(PlayerManagementWindow.PanelType.LevelUpProgression);
-
-        if (m_SidePanels.ContainsKey(PlayerManagementWindow.PanelType.PowerUps))
-            openPanels.Add(PlayerManagementWindow.PanelType.PowerUps);
-
-        if (m_SidePanels.ContainsKey(PlayerManagementWindow.PanelType.AnimationBindings))
-            openPanels.Add(PlayerManagementWindow.PanelType.AnimationBindings);
-
-        ManagementToolStateUtility.SaveEnumList(OpenPanelsStateKey, openPanels);
-    }
-
-    /// <summary>
-    /// Persists currently selected player prefab asset path.
-    /// Called on prefab field changes and when "Find" selects a prefab.
-    /// </summary>
-    private void SaveSelectedPrefabState()
-    {
-        ManagementToolStateUtility.SaveAssetPath(SelectedPrefabPathStateKey, m_SelectedPlayerPrefab);
-    }
-
-    private void EnsureFolder(string folderPath)
-    {
-        if (string.IsNullOrWhiteSpace(folderPath))
-            return;
-
-        if (AssetDatabase.IsValidFolder(folderPath))
-            return;
-
-        string parentFolder = Path.GetDirectoryName(folderPath);
-        string folderName = Path.GetFileName(folderPath);
-
-        if (!string.IsNullOrWhiteSpace(parentFolder) && !AssetDatabase.IsValidFolder(parentFolder))
-            EnsureFolder(parentFolder);
-
-        AssetDatabase.CreateFolder(parentFolder, folderName);
+        return presetName + " v. " + version;
     }
     #endregion
 
     #endregion
 
     #region Nested Types
-    private enum DetailsSectionType
+    internal enum DetailsSectionType
     {
         Metadata = 0,
         SubPresets = 1,
@@ -1551,10 +472,7 @@ public sealed class PlayerMasterPresetsPanel
         Layers = 4
     }
 
-    /// <summary>
-    /// Represents an entry in the side panel, containing UI elements and a controller presets panel.
-    /// </summary>
-    private sealed class SidePanelEntry
+    internal sealed class SidePanelEntry
     {
         public VisualElement TabContainer;
         public Button TabButton;

@@ -270,52 +270,12 @@ public static class EnemyExperienceDropDistributionUtility
                                                         out float resolvedMinimumTotal,
                                                         out float resolvedMaximumTotal)
     {
-        resolvedMinimumTotal = 0f;
-        resolvedMaximumTotal = 0f;
-
-        if (definitionExperienceValues == null || definitionExperienceValues.Count <= 0)
-            return false;
-
-        float sanitizedMinimumTotal = math.max(0f, requestedMinimumTotal);
-        float sanitizedMaximumTotal = math.max(sanitizedMinimumTotal, requestedMaximumTotal);
-
-        if (sanitizedMaximumTotal <= PrecisionEpsilon)
-            return false;
-
-        int quantizationStepUnits = ResolvePreviewQuantizationStepUnits(definitionExperienceValues);
-
-        if (quantizationStepUnits <= 0)
-            return false;
-
-        int minimumUnits = ConvertMinimumTotalToUnits(sanitizedMinimumTotal, quantizationStepUnits);
-        int maximumUnits = ConvertMaximumTotalToUnits(sanitizedMaximumTotal, quantizationStepUnits);
-
-        if (maximumUnits < minimumUnits)
-            return false;
-
-        int compatibleMinimumUnits;
-
-        if (TryFindFirstCompatiblePreviewTotalUnits(definitionExperienceValues,
-                                                    minimumUnits,
-                                                    maximumUnits,
-                                                    quantizationStepUnits,
-                                                    distribution,
-                                                    out compatibleMinimumUnits) == false)
-            return false;
-
-        int compatibleMaximumUnits;
-
-        if (TryFindLastCompatiblePreviewTotalUnits(definitionExperienceValues,
-                                                   compatibleMinimumUnits,
-                                                   maximumUnits,
-                                                   quantizationStepUnits,
-                                                   distribution,
-                                                   out compatibleMaximumUnits) == false)
-            return false;
-
-        resolvedMinimumTotal = ConvertUnitsToTotal(compatibleMinimumUnits, quantizationStepUnits);
-        resolvedMaximumTotal = ConvertUnitsToTotal(compatibleMaximumUnits, quantizationStepUnits);
-        return true;
+        return EnemyExperienceDropDistributionCompatibilityUtility.TryResolveCompatiblePreviewRange(definitionExperienceValues,
+                                                                                                    requestedMinimumTotal,
+                                                                                                    requestedMaximumTotal,
+                                                                                                    distribution,
+                                                                                                    out resolvedMinimumTotal,
+                                                                                                    out resolvedMaximumTotal);
     }
 
     /// <summary>
@@ -335,48 +295,12 @@ public static class EnemyExperienceDropDistributionUtility
                                                        out float suggestedMinimumTotal,
                                                        out float suggestedMaximumTotal)
     {
-        suggestedMinimumTotal = 0f;
-        suggestedMaximumTotal = 0f;
-
-        if (definitionExperienceValues == null || definitionExperienceValues.Count <= 0)
-            return false;
-
-        float sanitizedMinimumTotal = math.max(0f, requestedMinimumTotal);
-        float sanitizedMaximumTotal = math.max(sanitizedMinimumTotal, requestedMaximumTotal);
-        float clampedDistribution = math.clamp(distribution, 0f, 1f);
-
-        if (TryResolveCompatiblePreviewRange(definitionExperienceValues,
-                                             sanitizedMinimumTotal,
-                                             sanitizedMaximumTotal,
-                                             clampedDistribution,
-                                             out suggestedMinimumTotal,
-                                             out suggestedMaximumTotal))
-            return true;
-
-        float minimumDefinitionValue;
-
-        if (TryResolvePreviewBounds(definitionExperienceValues, out minimumDefinitionValue, out float _) == false)
-            return false;
-
-        float expansionStep = math.max(0.01f, minimumDefinitionValue);
-
-        for (int expansionIndex = 0; expansionIndex < MaxSuggestedRangeExpansionIterations; expansionIndex++)
-        {
-            int expansionMultiplier = 1 << expansionIndex;
-            float expansionAmount = expansionStep * expansionMultiplier;
-            float expandedMinimumTotal = math.max(0f, sanitizedMinimumTotal - expansionAmount);
-            float expandedMaximumTotal = sanitizedMaximumTotal + expansionAmount;
-
-            if (TryResolveCompatiblePreviewRange(definitionExperienceValues,
-                                                 expandedMinimumTotal,
-                                                 expandedMaximumTotal,
-                                                 clampedDistribution,
-                                                 out suggestedMinimumTotal,
-                                                 out suggestedMaximumTotal))
-                return true;
-        }
-
-        return false;
+        return EnemyExperienceDropDistributionCompatibilityUtility.TryResolveSuggestedPreviewRange(definitionExperienceValues,
+                                                                                                   requestedMinimumTotal,
+                                                                                                   requestedMaximumTotal,
+                                                                                                   distribution,
+                                                                                                   out suggestedMinimumTotal,
+                                                                                                   out suggestedMaximumTotal);
     }
 
     /// <summary>
@@ -396,130 +320,31 @@ public static class EnemyExperienceDropDistributionUtility
                                                        uint randomSeed,
                                                        out float resolvedTotal)
     {
-        resolvedTotal = 0f;
-
-        if (definitions.Length <= 0)
-            return false;
-
-        float sanitizedMinimumTotal = math.max(0f, minimumTotal);
-        float sanitizedMaximumTotal = math.max(sanitizedMinimumTotal, maximumTotal);
-
-        if (sanitizedMaximumTotal <= PrecisionEpsilon)
-            return false;
-
-        int quantizationStepUnits = ResolveRuntimeQuantizationStepUnits(definitions);
-
-        if (quantizationStepUnits <= 0)
-            return false;
-
-        int minimumUnits = ConvertMinimumTotalToUnits(sanitizedMinimumTotal, quantizationStepUnits);
-        int maximumUnits = ConvertMaximumTotalToUnits(sanitizedMaximumTotal, quantizationStepUnits);
-
-        if (maximumUnits < minimumUnits)
-            return false;
-
-        uint sanitizedSeed = randomSeed;
-
-        if (sanitizedSeed == 0u)
-            sanitizedSeed = 1u;
-
-        Unity.Mathematics.Random random = new Unity.Mathematics.Random(sanitizedSeed);
-        int targetUnits = random.NextInt(minimumUnits, maximumUnits + 1);
-        int compatibleUnits;
-
-        if (TryFindNearestCompatibleRuntimeTotalUnits(definitions,
-                                                      minimumUnits,
-                                                      maximumUnits,
-                                                      targetUnits,
-                                                      quantizationStepUnits,
-                                                      distribution,
-                                                      out compatibleUnits) == false)
-            return false;
-
-        resolvedTotal = ConvertUnitsToTotal(compatibleUnits, quantizationStepUnits);
-        return true;
+        return EnemyExperienceDropDistributionCompatibilityUtility.TryResolveRandomCompatibleTotal(definitions,
+                                                                                                   minimumTotal,
+                                                                                                   maximumTotal,
+                                                                                                   distribution,
+                                                                                                   randomSeed,
+                                                                                                   out resolvedTotal);
     }
     #endregion
 
     #region Selection Helpers
-    private static bool TryResolveRuntimeBounds(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
-                                                out float minimumValue,
-                                                out float maximumValue)
+    internal static bool TryResolveRuntimeBounds(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                                 out float minimumValue,
+                                                 out float maximumValue)
     {
-        minimumValue = float.MaxValue;
-        maximumValue = 0f;
-        bool hasValidDefinition = false;
-
-        for (int index = 0; index < definitions.Length; index++)
-        {
-            EnemyExperienceDropDefinitionElement definition = definitions[index];
-            float amount = definition.ExperienceAmount;
-
-            if (definition.PrefabEntity == Entity.Null)
-                continue;
-
-            if (amount <= 0f)
-                continue;
-
-            hasValidDefinition = true;
-
-            if (amount < minimumValue)
-                minimumValue = amount;
-
-            if (amount > maximumValue)
-                maximumValue = amount;
-        }
-
-        if (hasValidDefinition == false)
-        {
-            minimumValue = 0f;
-            maximumValue = 0f;
-            return false;
-        }
-
-        return true;
+        return EnemyExperienceDropDistributionCompatibilityUtility.TryResolveRuntimeBounds(definitions,
+                                                                                           out minimumValue,
+                                                                                           out maximumValue);
     }
 
-    private static bool TryResolvePreviewBounds(IReadOnlyList<float> definitionExperienceValues,
-                                                out float minimumValue,
-                                                out float maximumValue)
-    {
-        minimumValue = float.MaxValue;
-        maximumValue = 0f;
-        bool hasValidDefinition = false;
-
-        for (int index = 0; index < definitionExperienceValues.Count; index++)
-        {
-            float amount = definitionExperienceValues[index];
-
-            if (amount <= 0f)
-                continue;
-
-            hasValidDefinition = true;
-
-            if (amount < minimumValue)
-                minimumValue = amount;
-
-            if (amount > maximumValue)
-                maximumValue = amount;
-        }
-
-        if (hasValidDefinition == false)
-        {
-            minimumValue = 0f;
-            maximumValue = 0f;
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool TryResolveNextPreviewDefinition(IReadOnlyList<float> definitionExperienceValues,
-                                                        float remainingExperience,
-                                                        float distribution,
-                                                        out int definitionIndex,
-                                                        out float definitionExperienceAmount,
-                                                        out bool fitsRemaining)
+    internal static bool TryResolveNextPreviewDefinition(IReadOnlyList<float> definitionExperienceValues,
+                                                         float remainingExperience,
+                                                         float distribution,
+                                                         out int definitionIndex,
+                                                         out float definitionExperienceAmount,
+                                                         out bool fitsRemaining)
     {
         definitionIndex = -1;
         definitionExperienceAmount = 0f;
@@ -531,8 +356,12 @@ public static class EnemyExperienceDropDistributionUtility
         float minimumValue;
         float maximumValue;
 
-        if (TryResolvePreviewBounds(definitionExperienceValues, out minimumValue, out maximumValue) == false)
+        if (!EnemyExperienceDropDistributionCompatibilityUtility.TryResolvePreviewBounds(definitionExperienceValues,
+                                                                                         out minimumValue,
+                                                                                         out maximumValue))
+        {
             return false;
+        }
 
         float clampedDistribution = math.clamp(distribution, 0f, 1f);
         float targetValue = math.lerp(minimumValue, maximumValue, clampedDistribution);
@@ -552,7 +381,7 @@ public static class EnemyExperienceDropDistributionUtility
 
             float score = ComputeSelectionScore(amount, minimumValue, maximumValue, targetValue, clampedDistribution);
 
-            if (IsBetterSelection(score, amount, bestScore, bestAmount, clampedDistribution) == false)
+            if (!IsBetterSelection(score, amount, bestScore, bestAmount, clampedDistribution))
                 continue;
 
             bestIndex = index;
@@ -584,8 +413,10 @@ public static class EnemyExperienceDropDistributionUtility
                 continue;
 
             if (math.abs(absoluteDifference - bestAbsoluteDifference) <= PrecisionEpsilon &&
-                IsBetterSelection(score, amount, bestScore, bestAmount, clampedDistribution) == false)
+                !IsBetterSelection(score, amount, bestScore, bestAmount, clampedDistribution))
+            {
                 continue;
+            }
 
             bestIndex = index;
             bestAmount = amount;
@@ -600,314 +431,6 @@ public static class EnemyExperienceDropDistributionUtility
         definitionExperienceAmount = bestAmount;
         fitsRemaining = bestAmount <= remainingExperience + PrecisionEpsilon;
         return true;
-    }
-
-    private static bool TryFindNearestCompatibleRuntimeTotalUnits(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
-                                                                  int minimumUnits,
-                                                                  int maximumUnits,
-                                                                  int targetUnits,
-                                                                  int quantizationStepUnits,
-                                                                  float distribution,
-                                                                  out int compatibleUnits)
-    {
-        compatibleUnits = -1;
-
-        if (minimumUnits > maximumUnits)
-            return false;
-
-        int clampedTargetUnits = math.clamp(targetUnits, minimumUnits, maximumUnits);
-        int totalSpan = maximumUnits - minimumUnits;
-        int maximumSearchSteps = math.min(totalSpan, MaxCompatibilitySearchSteps);
-        float clampedDistribution = math.clamp(distribution, 0f, 1f);
-        bool preferHigherTotals = clampedDistribution >= 0.5f;
-
-        for (int offset = 0; offset <= maximumSearchSteps; offset++)
-        {
-            int lowerCandidateUnits = clampedTargetUnits - offset;
-            int upperCandidateUnits = clampedTargetUnits + offset;
-
-            if (preferHigherTotals)
-            {
-                if (upperCandidateUnits <= maximumUnits)
-                {
-                    float upperCandidateTotal = ConvertUnitsToTotal(upperCandidateUnits, quantizationStepUnits);
-
-                    if (IsRuntimeTotalCompatible(definitions, upperCandidateTotal, distribution))
-                    {
-                        compatibleUnits = upperCandidateUnits;
-                        return true;
-                    }
-                }
-
-                if (offset > 0 && lowerCandidateUnits >= minimumUnits)
-                {
-                    float lowerCandidateTotal = ConvertUnitsToTotal(lowerCandidateUnits, quantizationStepUnits);
-
-                    if (IsRuntimeTotalCompatible(definitions, lowerCandidateTotal, distribution))
-                    {
-                        compatibleUnits = lowerCandidateUnits;
-                        return true;
-                    }
-                }
-
-                continue;
-            }
-
-            if (lowerCandidateUnits >= minimumUnits)
-            {
-                float lowerCandidateTotal = ConvertUnitsToTotal(lowerCandidateUnits, quantizationStepUnits);
-
-                if (IsRuntimeTotalCompatible(definitions, lowerCandidateTotal, distribution))
-                {
-                    compatibleUnits = lowerCandidateUnits;
-                    return true;
-                }
-            }
-
-            if (offset > 0 && upperCandidateUnits <= maximumUnits)
-            {
-                float upperCandidateTotal = ConvertUnitsToTotal(upperCandidateUnits, quantizationStepUnits);
-
-                if (IsRuntimeTotalCompatible(definitions, upperCandidateTotal, distribution))
-                {
-                    compatibleUnits = upperCandidateUnits;
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private static bool TryFindFirstCompatiblePreviewTotalUnits(IReadOnlyList<float> definitionExperienceValues,
-                                                                int minimumUnits,
-                                                                int maximumUnits,
-                                                                int quantizationStepUnits,
-                                                                float distribution,
-                                                                out int compatibleUnits)
-    {
-        compatibleUnits = -1;
-
-        if (minimumUnits > maximumUnits)
-            return false;
-
-        int totalSpan = maximumUnits - minimumUnits;
-        int maximumSearchSteps = math.min(totalSpan, MaxCompatibilitySearchSteps);
-
-        for (int offset = 0; offset <= maximumSearchSteps; offset++)
-        {
-            int candidateUnits = minimumUnits + offset;
-            float candidateTotal = ConvertUnitsToTotal(candidateUnits, quantizationStepUnits);
-
-            if (IsPreviewTotalCompatible(definitionExperienceValues, candidateTotal, distribution) == false)
-                continue;
-
-            compatibleUnits = candidateUnits;
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool TryFindLastCompatiblePreviewTotalUnits(IReadOnlyList<float> definitionExperienceValues,
-                                                               int minimumUnits,
-                                                               int maximumUnits,
-                                                               int quantizationStepUnits,
-                                                               float distribution,
-                                                               out int compatibleUnits)
-    {
-        compatibleUnits = -1;
-
-        if (minimumUnits > maximumUnits)
-            return false;
-
-        int totalSpan = maximumUnits - minimumUnits;
-        int maximumSearchSteps = math.min(totalSpan, MaxCompatibilitySearchSteps);
-
-        for (int offset = 0; offset <= maximumSearchSteps; offset++)
-        {
-            int candidateUnits = maximumUnits - offset;
-            float candidateTotal = ConvertUnitsToTotal(candidateUnits, quantizationStepUnits);
-
-            if (IsPreviewTotalCompatible(definitionExperienceValues, candidateTotal, distribution) == false)
-                continue;
-
-            compatibleUnits = candidateUnits;
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool IsRuntimeTotalCompatible(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
-                                                 float totalExperienceDrop,
-                                                 float distribution)
-    {
-        if (totalExperienceDrop <= PrecisionEpsilon)
-            return false;
-
-        float deliveredExperience;
-        float absoluteError;
-        int estimatedDropCount = EstimateDropsPerDeath(definitions,
-                                                       totalExperienceDrop,
-                                                       distribution,
-                                                       out deliveredExperience,
-                                                       out absoluteError);
-
-        if (estimatedDropCount <= 0)
-            return false;
-
-        return absoluteError <= CompatibilityTolerance;
-    }
-
-    private static bool IsPreviewTotalCompatible(IReadOnlyList<float> definitionExperienceValues,
-                                                 float totalExperienceDrop,
-                                                 float distribution)
-    {
-        if (totalExperienceDrop <= PrecisionEpsilon)
-            return false;
-
-        float deliveredExperience;
-        float absoluteError;
-        int estimatedDropCount = EstimateDropsForPreview(definitionExperienceValues,
-                                                         totalExperienceDrop,
-                                                         distribution,
-                                                         out deliveredExperience,
-                                                         out absoluteError);
-
-        if (estimatedDropCount <= 0)
-            return false;
-
-        return absoluteError <= CompatibilityTolerance;
-    }
-
-    private static int ResolveRuntimeQuantizationStepUnits(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions)
-    {
-        int quantizationStepUnits = 0;
-
-        for (int index = 0; index < definitions.Length; index++)
-        {
-            EnemyExperienceDropDefinitionElement definition = definitions[index];
-
-            if (definition.PrefabEntity == Entity.Null)
-                continue;
-
-            float amount = definition.ExperienceAmount;
-
-            if (amount <= PrecisionEpsilon)
-                continue;
-
-            int amountUnits = ConvertExperienceAmountToUnits(amount);
-
-            if (amountUnits <= 0)
-                continue;
-
-            if (quantizationStepUnits <= 0)
-            {
-                quantizationStepUnits = amountUnits;
-                continue;
-            }
-
-            quantizationStepUnits = ComputeGreatestCommonDivisor(quantizationStepUnits, amountUnits);
-
-            if (quantizationStepUnits <= 1)
-                return 1;
-        }
-
-        return quantizationStepUnits;
-    }
-
-    private static int ResolvePreviewQuantizationStepUnits(IReadOnlyList<float> definitionExperienceValues)
-    {
-        int quantizationStepUnits = 0;
-
-        if (definitionExperienceValues == null)
-            return quantizationStepUnits;
-
-        for (int index = 0; index < definitionExperienceValues.Count; index++)
-        {
-            float amount = definitionExperienceValues[index];
-
-            if (amount <= PrecisionEpsilon)
-                continue;
-
-            int amountUnits = ConvertExperienceAmountToUnits(amount);
-
-            if (amountUnits <= 0)
-                continue;
-
-            if (quantizationStepUnits <= 0)
-            {
-                quantizationStepUnits = amountUnits;
-                continue;
-            }
-
-            quantizationStepUnits = ComputeGreatestCommonDivisor(quantizationStepUnits, amountUnits);
-
-            if (quantizationStepUnits <= 1)
-                return 1;
-        }
-
-        return quantizationStepUnits;
-    }
-
-    private static int ConvertExperienceAmountToUnits(float amount)
-    {
-        float clampedAmount = math.max(0f, amount);
-        int amountUnits = (int)math.round(clampedAmount * CompatibilityQuantizationScale);
-        return math.max(1, amountUnits);
-    }
-
-    private static int ConvertMinimumTotalToUnits(float totalExperienceDrop, int quantizationStepUnits)
-    {
-        float clampedTotalExperienceDrop = math.max(0f, totalExperienceDrop);
-        int scaledTotalUnits = (int)math.ceil(clampedTotalExperienceDrop * CompatibilityQuantizationScale - PrecisionEpsilon);
-
-        if (scaledTotalUnits <= 0)
-            return 0;
-
-        return (scaledTotalUnits + quantizationStepUnits - 1) / quantizationStepUnits;
-    }
-
-    private static int ConvertMaximumTotalToUnits(float totalExperienceDrop, int quantizationStepUnits)
-    {
-        float clampedTotalExperienceDrop = math.max(0f, totalExperienceDrop);
-        int scaledTotalUnits = (int)math.floor(clampedTotalExperienceDrop * CompatibilityQuantizationScale + PrecisionEpsilon);
-
-        if (scaledTotalUnits < 0)
-            return -1;
-
-        return scaledTotalUnits / quantizationStepUnits;
-    }
-
-    private static float ConvertUnitsToTotal(int unitCount, int quantizationStepUnits)
-    {
-        if (unitCount <= 0 || quantizationStepUnits <= 0)
-            return 0f;
-
-        int scaledTotalUnits = unitCount * quantizationStepUnits;
-        return scaledTotalUnits / (float)CompatibilityQuantizationScale;
-    }
-
-    private static int ComputeGreatestCommonDivisor(int leftValue, int rightValue)
-    {
-        int left = math.abs(leftValue);
-        int right = math.abs(rightValue);
-
-        if (left == 0)
-            return right;
-
-        if (right == 0)
-            return left;
-
-        while (right != 0)
-        {
-            int remainder = left % right;
-            left = right;
-            right = remainder;
-        }
-
-        return math.max(1, left);
     }
 
     private static float ComputeSelectionScore(float value,

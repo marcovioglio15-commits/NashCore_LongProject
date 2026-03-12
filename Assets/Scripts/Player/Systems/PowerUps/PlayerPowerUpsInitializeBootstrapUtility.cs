@@ -370,10 +370,33 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
         {
             IsSelectionActive = 0,
             MilestoneLevel = 0,
+            GamePhaseIndex = -1,
             OfferCount = 0
         };
 
         AddComponentForEntities(ref commandBuffer, in missingMilestoneSelectionStateQuery, initialState);
+    }
+
+    /// <summary>
+    /// Adds PlayerMilestoneTimeScaleResumeState to entities missing it.
+    /// </summary>
+    /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
+    /// <param name="missingMilestoneTimeScaleResumeStateQuery">Query selecting entities without PlayerMilestoneTimeScaleResumeState.</param>
+    /// <returns>Void.</returns>
+    public static void AddMissingMilestoneTimeScaleResumeState(
+        ref EntityCommandBuffer commandBuffer,
+        in EntityQuery missingMilestoneTimeScaleResumeStateQuery)
+    {
+        PlayerMilestoneTimeScaleResumeState initialState = new PlayerMilestoneTimeScaleResumeState
+        {
+            IsResuming = 0,
+            StartTimeScale = 1f,
+            TargetTimeScale = 1f,
+            DurationSeconds = 0f,
+            ElapsedUnscaledSeconds = 0f
+        };
+
+        AddComponentForEntities(ref commandBuffer, in missingMilestoneTimeScaleResumeStateQuery, initialState);
     }
 
     /// <summary>

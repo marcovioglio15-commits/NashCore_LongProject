@@ -3,22 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-public enum PlayerAnimationClipSlot
-{
-    None = 0,
-    Idle = 1,
-    MoveForward = 2,
-    MoveBackward = 3,
-    MoveLeft = 4,
-    MoveRight = 5,
-    AimForward = 6,
-    AimBackward = 7,
-    AimLeft = 8,
-    AimRight = 9,
-    Shoot = 10,
-    Dash = 11
-}
-
 [CreateAssetMenu(fileName = "PlayerAnimationBindingsPreset", menuName = "Player/Animation Bindings Preset", order = 14)]
 public sealed class PlayerAnimationBindingsPreset : ScriptableObject
 {
@@ -614,99 +598,7 @@ public sealed class PlayerAnimationBindingsPreset : ScriptableObject
 
     #region Methods
 
-    #region Copying
-    public void CopySettingsFrom(PlayerAnimationBindingsPreset source)
-    {
-        if (source == null)
-            return;
-
-        if (source == this)
-            return;
-
-        animatorController = source.animatorController;
-        upperBodyAvatarMask = source.upperBodyAvatarMask;
-        lowerBodyAvatarMask = source.lowerBodyAvatarMask;
-        disableRootMotion = source.disableRootMotion;
-        useFloatDamping = source.useFloatDamping;
-        floatDampTime = source.floatDampTime;
-        movingSpeedThreshold = source.movingSpeedThreshold;
-
-        moveXParameter = source.moveXParameter;
-        moveYParameter = source.moveYParameter;
-        moveSpeedParameter = source.moveSpeedParameter;
-        aimXParameter = source.aimXParameter;
-        aimYParameter = source.aimYParameter;
-        isMovingParameter = source.isMovingParameter;
-        isShootingParameter = source.isShootingParameter;
-        isDashingParameter = source.isDashingParameter;
-        shotPulseParameter = source.shotPulseParameter;
-
-        proceduralRecoilEnabled = source.proceduralRecoilEnabled;
-        proceduralRecoilKick = source.proceduralRecoilKick;
-        proceduralRecoilRecoveryPerSecond = source.proceduralRecoilRecoveryPerSecond;
-        proceduralRecoilParameter = source.proceduralRecoilParameter;
-        proceduralAimWeightEnabled = source.proceduralAimWeightEnabled;
-        proceduralAimWeightSmoothing = source.proceduralAimWeightSmoothing;
-        proceduralAimWeightParameter = source.proceduralAimWeightParameter;
-        proceduralLeanEnabled = source.proceduralLeanEnabled;
-        proceduralLeanSmoothing = source.proceduralLeanSmoothing;
-        proceduralLeanParameter = source.proceduralLeanParameter;
-    }
-
-    public void CopyClipSlotsFrom(PlayerAnimationBindingsPreset source)
-    {
-        if (source == null)
-            return;
-
-        if (source == this)
-            return;
-
-        idleClip = source.idleClip;
-        moveForwardClip = source.moveForwardClip;
-        moveBackwardClip = source.moveBackwardClip;
-        moveLeftClip = source.moveLeftClip;
-        moveRightClip = source.moveRightClip;
-        aimForwardClip = source.aimForwardClip;
-        aimBackwardClip = source.aimBackwardClip;
-        aimLeftClip = source.aimLeftClip;
-        aimRightClip = source.aimRightClip;
-        shootClip = source.shootClip;
-        dashClip = source.dashClip;
-    }
-    #endregion
-
     #region Clip Slots
-    public AnimationClip GetClip(PlayerAnimationClipSlot slot)
-    {
-        switch (slot)
-        {
-            case PlayerAnimationClipSlot.Idle:
-                return idleClip;
-            case PlayerAnimationClipSlot.MoveForward:
-                return moveForwardClip;
-            case PlayerAnimationClipSlot.MoveBackward:
-                return moveBackwardClip;
-            case PlayerAnimationClipSlot.MoveLeft:
-                return moveLeftClip;
-            case PlayerAnimationClipSlot.MoveRight:
-                return moveRightClip;
-            case PlayerAnimationClipSlot.AimForward:
-                return aimForwardClip;
-            case PlayerAnimationClipSlot.AimBackward:
-                return aimBackwardClip;
-            case PlayerAnimationClipSlot.AimLeft:
-                return aimLeftClip;
-            case PlayerAnimationClipSlot.AimRight:
-                return aimRightClip;
-            case PlayerAnimationClipSlot.Shoot:
-                return shootClip;
-            case PlayerAnimationClipSlot.Dash:
-                return dashClip;
-            default:
-                return null;
-        }
-    }
-
     public void SetClip(PlayerAnimationClipSlot slot, AnimationClip clip)
     {
         switch (slot)
@@ -767,53 +659,19 @@ public sealed class PlayerAnimationBindingsPreset : ScriptableObject
         proceduralAimWeightSmoothing = Mathf.Max(0f, proceduralAimWeightSmoothing);
         proceduralLeanSmoothing = Mathf.Max(0f, proceduralLeanSmoothing);
 
-        moveXParameter = TrimParameter(moveXParameter, DefaultMoveXParameter);
-        moveYParameter = TrimParameter(moveYParameter, DefaultMoveYParameter);
-        moveSpeedParameter = TrimParameter(moveSpeedParameter, DefaultMoveSpeedParameter);
-        aimXParameter = TrimParameter(aimXParameter, DefaultAimXParameter);
-        aimYParameter = TrimParameter(aimYParameter, DefaultAimYParameter);
-        isMovingParameter = TrimParameter(isMovingParameter, DefaultIsMovingParameter);
-        isShootingParameter = TrimParameter(isShootingParameter, DefaultIsShootingParameter);
-        isDashingParameter = TrimParameter(isDashingParameter, DefaultIsDashingParameter);
-        shotPulseParameter = TrimParameter(shotPulseParameter, DefaultShotPulseParameter);
-        proceduralRecoilParameter = TrimParameter(proceduralRecoilParameter, DefaultProceduralRecoilParameter);
-        proceduralAimWeightParameter = TrimParameter(proceduralAimWeightParameter, DefaultProceduralAimWeightParameter);
-        proceduralLeanParameter = TrimParameter(proceduralLeanParameter, DefaultProceduralLeanParameter);
-        ValidateScalingRules();
-    }
-    #endregion
-
-    #region Helpers
-    private static string TrimParameter(string parameterName, string fallbackValue)
-    {
-        if (string.IsNullOrWhiteSpace(parameterName))
-            return fallbackValue;
-
-        return parameterName.Trim();
-    }
-
-    private void ValidateScalingRules()
-    {
-        for (int index = 0; index < scalingRules.Count; index++)
-        {
-            PlayerStatScalingRule scalingRule = scalingRules[index];
-
-            if (scalingRule != null)
-                continue;
-
-            scalingRule = new PlayerStatScalingRule();
-            scalingRule.Configure(string.Empty, false, string.Empty);
-            scalingRules[index] = scalingRule;
-        }
-
-        for (int index = scalingRules.Count - 1; index >= 0; index--)
-        {
-            PlayerStatScalingRule scalingRule = scalingRules[index];
-            scalingRule.Validate();
-
-            if (string.IsNullOrWhiteSpace(scalingRule.StatKey))
-                scalingRules.RemoveAt(index);
-        }
+        moveXParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(moveXParameter, DefaultMoveXParameter);
+        moveYParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(moveYParameter, DefaultMoveYParameter);
+        moveSpeedParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(moveSpeedParameter, DefaultMoveSpeedParameter);
+        aimXParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(aimXParameter, DefaultAimXParameter);
+        aimYParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(aimYParameter, DefaultAimYParameter);
+        isMovingParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(isMovingParameter, DefaultIsMovingParameter);
+        isShootingParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(isShootingParameter, DefaultIsShootingParameter);
+        isDashingParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(isDashingParameter, DefaultIsDashingParameter);
+        shotPulseParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(shotPulseParameter, DefaultShotPulseParameter);
+        proceduralRecoilParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(proceduralRecoilParameter, DefaultProceduralRecoilParameter);
+        proceduralAimWeightParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(proceduralAimWeightParameter, DefaultProceduralAimWeightParameter);
+        proceduralLeanParameter = PlayerAnimationBindingsPresetValidationUtility.TrimParameter(proceduralLeanParameter, DefaultProceduralLeanParameter);
+        PlayerAnimationBindingsPresetValidationUtility.ValidateScalingRules(scalingRules);
     }
     #endregion
 }

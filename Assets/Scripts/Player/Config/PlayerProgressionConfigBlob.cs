@@ -7,6 +7,7 @@ using Unity.Entities;
 public struct PlayerProgressionConfigBlob
 {
     public float ExperiencePickupRadius;
+    public float MilestoneTimeScaleResumeDurationSeconds;
     public BlobArray<PlayerGamePhaseBlob> GamePhases;
     public BlobArray<PlayerScalableStatBlob> ScalableStats;
     public BlobArray<PlayerLevelUpScheduleBlob> Schedules;
@@ -36,7 +37,17 @@ public struct PlayerLevelUpMilestoneBlob
 {
     public int MilestoneLevel;
     public float SpecialExpRequirement;
-    public int PowerUpUnlockRollCount;
+    public BlobArray<PlayerMilestonePowerUpUnlockBlob> PowerUpUnlocks;
+    public BlobArray<PlayerMilestoneSkipCompensationBlob> SkipCompensationResources;
+}
+#endregion
+
+#region Milestone Power-Up Unlocks
+/// <summary>
+/// Stores one milestone power-up extraction with its own tier-roll candidates.
+/// </summary>
+public struct PlayerMilestonePowerUpUnlockBlob
+{
     public BlobArray<PlayerMilestoneTierRollBlob> TierRolls;
 }
 #endregion
@@ -49,6 +60,18 @@ public struct PlayerMilestoneTierRollBlob
 {
     public BlobString TierId;
     public float SelectionWeight;
+}
+#endregion
+
+#region Milestone Skip Compensation
+/// <summary>
+/// Stores one resource compensation granted when the player skips a milestone selection.
+/// </summary>
+public struct PlayerMilestoneSkipCompensationBlob
+{
+    public byte ResourceType;
+    public byte ApplyMode;
+    public float Value;
 }
 #endregion
 
