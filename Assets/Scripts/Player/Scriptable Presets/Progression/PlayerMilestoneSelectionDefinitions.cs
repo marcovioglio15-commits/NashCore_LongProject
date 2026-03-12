@@ -32,7 +32,7 @@ public sealed class PlayerMilestonePowerUpUnlockDefinition
     #region Fields
 
     #region Serialized Fields
-    [Tooltip("Weighted tier candidates used to resolve this specific milestone power-up extraction.")]
+    [Tooltip("Percentage-based tier candidates used to resolve this specific milestone power-up extraction. The sum should be 100%.")]
     [SerializeField] private List<PlayerMilestoneTierRollDefinition> tierRolls = new List<PlayerMilestoneTierRollDefinition>();
     #endregion
 
@@ -116,7 +116,7 @@ public sealed class PlayerMilestonePowerUpUnlockDefinition
             PlayerMilestoneTierRollDefinition clonedTierRoll = new PlayerMilestoneTierRollDefinition();
 
             if (sourceTierRoll != null)
-                clonedTierRoll.Configure(sourceTierRoll.TierId, sourceTierRoll.SelectionWeight);
+                clonedTierRoll.Configure(sourceTierRoll.TierId, sourceTierRoll.SelectionPercentage);
 
             clonedTierRolls.Add(clonedTierRoll);
         }

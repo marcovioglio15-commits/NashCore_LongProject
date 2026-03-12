@@ -104,7 +104,7 @@ public static class PlayerMilestonePowerUpRollUtility
                                        rolledCatalogIndices,
                                        out int rolledCatalogIndex,
                                        out string selectedTierId,
-                                       out float selectedTierWeight,
+                                       out float selectedTierPercentage,
                                        out float selectedEntryWeight))
             {
                 Debug.Log(string.Format(CultureInfo.InvariantCulture,
@@ -126,12 +126,12 @@ public static class PlayerMilestonePowerUpRollUtility
                 UnlockKind = unlockEntry.UnlockKind
             });
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                                    "[PlayerLevelUpSystem] Milestone {0} roll {1}/{2}: Tier '{3}' (Weight {4:0.###}) -> Power-Up '{5}' ({6}) [Entry Weight {7:0.###}].",
+                                    "[PlayerLevelUpSystem] Milestone {0} roll {1}/{2}: Tier '{3}' ({4:0.###}%) -> Power-Up '{5}' ({6}) [Entry Weight {7:0.###}].",
                                     milestoneLevel,
                                     rollIndex + 1,
                                     milestoneBlob.PowerUpUnlocks.Length,
                                     selectedTierId,
-                                    selectedTierWeight,
+                                    selectedTierPercentage,
                                     unlockEntry.PowerUpId.ToString(),
                                     unlockEntry.UnlockKind,
                                     selectedEntryWeight));
@@ -161,7 +161,7 @@ public static class PlayerMilestonePowerUpRollUtility
     /// <param name="rolledCatalogIndices">Catalog indices already rolled in this milestone selection.</param>
     /// <param name="rolledCatalogIndex">Resolved rolled catalog index when successful.</param>
     /// <param name="selectedTierId">Tier ID selected for the current roll.</param>
-    /// <param name="selectedTierWeight">Weight of the selected milestone tier candidate.</param>
+    /// <param name="selectedTierPercentage">Percentage assigned to the selected milestone tier candidate.</param>
     /// <param name="selectedEntryWeight">Weight of the selected power-up entry inside the selected tier.</param>
     /// <returns>True when an entry is successfully rolled; otherwise false.</returns>
     private static bool TryRollMilestoneOffer(ref PlayerMilestonePowerUpUnlockBlob powerUpUnlockBlob,
@@ -171,23 +171,23 @@ public static class PlayerMilestonePowerUpRollUtility
                                               HashSet<int> rolledCatalogIndices,
                                               out int rolledCatalogIndex,
                                               out string selectedTierId,
-                                              out float selectedTierWeight,
+                                              out float selectedTierPercentage,
                                               out float selectedEntryWeight)
     {
         rolledCatalogIndex = -1;
         selectedTierId = string.Empty;
-        selectedTierWeight = 0f;
+        selectedTierPercentage = 0f;
         selectedEntryWeight = 0f;
         List<int> rollCandidateIndices = new List<int>();
-        List<float> rollCandidateWeights = new List<float>();
+        List<float> rollCandidatePercentages = new List<float>();
 
         // Collect milestone tier rolls that currently have at least one available unlock candidate.
         for (int tierRollIndex = 0; tierRollIndex < powerUpUnlockBlob.TierRolls.Length; tierRollIndex++)
         {
             ref PlayerMilestoneTierRollBlob tierRoll = ref powerUpUnlockBlob.TierRolls[tierRollIndex];
-            float tierRollWeight = mathMax(0f, tierRoll.SelectionWeight);
+            float tierRollPercentage = mathMax(0f, tierRoll.SelectionPercentage);
 
-            if (tierRollWeight <= 0f)
+            if (tierRollPercentage <= 0f)
                 continue;
 
             string tierId = tierRoll.TierId.ToString();
@@ -199,10 +199,10 @@ public static class PlayerMilestonePowerUpRollUtility
                 continue;
 
             rollCandidateIndices.Add(tierRollIndex);
-            rollCandidateWeights.Add(tierRollWeight);
+            rollCandidatePercentages.Add(tierRollPercentage);
         }
 
-        int selectedTierRollCandidate = RollWeightedIndex(rollCandidateWeights);
+        int selectedTierRollCandidate = RollWeightedIndex(rollCandidatePercentages);
 
         if (selectedTierRollCandidate < 0)
             return false;
@@ -210,7 +210,7 @@ public static class PlayerMilestonePowerUpRollUtility
         int selectedTierRollIndex = rollCandidateIndices[selectedTierRollCandidate];
         ref PlayerMilestoneTierRollBlob selectedTierRoll = ref powerUpUnlockBlob.TierRolls[selectedTierRollIndex];
         selectedTierId = selectedTierRoll.TierId.ToString();
-        selectedTierWeight = mathMax(0f, selectedTierRoll.SelectionWeight);
+        selectedTierPercentage = mathMax(0f, selectedTierRoll.SelectionPercentage);
 
         if (!TryResolveTierDefinition(tierDefinitions, selectedTierId, out PlayerPowerUpTierDefinitionElement selectedTierDefinition))
             return false;

@@ -21,9 +21,9 @@ public sealed class PlayerMilestoneTierRollDefinitionPropertyDrawer : PropertyDr
     {
         VisualElement root = new VisualElement();
         SerializedProperty tierIdProperty = property.FindPropertyRelative("tierId");
-        SerializedProperty selectionWeightProperty = property.FindPropertyRelative("selectionWeight");
+        SerializedProperty selectionPercentageProperty = property.FindPropertyRelative("selectionPercentage");
 
-        if (tierIdProperty == null || selectionWeightProperty == null)
+        if (tierIdProperty == null || selectionPercentageProperty == null)
         {
             HelpBox missingHelpBox = new HelpBox("Milestone tier roll fields are missing.", HelpBoxMessageType.Warning);
             root.Add(missingHelpBox);
@@ -77,10 +77,10 @@ public sealed class PlayerMilestoneTierRollDefinitionPropertyDrawer : PropertyDr
         SerializedProperty scalingRulesProperty = property.serializedObject != null
             ? property.serializedObject.FindProperty("scalingRules")
             : null;
-        VisualElement selectionWeightField = PlayerScalingFieldElementFactory.CreateField(selectionWeightProperty,
-                                                                                          scalingRulesProperty,
-                                                                                          "Selection Weight");
-        root.Add(selectionWeightField);
+        VisualElement selectionPercentageField = PlayerScalingFieldElementFactory.CreateField(selectionPercentageProperty,
+                                                                                              scalingRulesProperty,
+                                                                                              "Selection Percentage (%)");
+        root.Add(selectionPercentageField);
 
         return root;
     }

@@ -54,12 +54,12 @@ public struct PlayerMilestonePowerUpUnlockBlob
 
 #region Milestone Tier Rolls
 /// <summary>
-/// Stores one weighted tier candidate used by milestone-based power-up extraction rolls.
+/// Stores one percentage-based tier candidate used by milestone-based power-up extraction rolls.
 /// </summary>
 public struct PlayerMilestoneTierRollBlob
 {
     public BlobString TierId;
-    public float SelectionWeight;
+    public float SelectionPercentage;
 }
 #endregion
 

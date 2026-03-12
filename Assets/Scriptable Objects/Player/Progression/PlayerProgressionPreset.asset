@@ -37,7 +37,7 @@ MonoBehaviour:
       powerUpUnlocks:
       - tierRolls:
         - tierId: Tier0
-          selectionWeight: 0
+          selectionPercentage: 100
       skipCompensationResources: []
       legacyPowerUpUnlockRollCount: 0
       legacyMilestoneTierRolls: []

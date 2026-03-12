@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Selects how a schedule step modifies a scalable stat.
@@ -12,7 +13,7 @@ public enum PlayerLevelUpScheduleApplyMode
 }
 
 /// <summary>
-/// Defines one weighted tier roll candidate used by a progression milestone.
+/// Defines one percentage-based tier roll candidate used by a progression milestone.
 /// </summary>
 [Serializable]
 public sealed class PlayerMilestoneTierRollDefinition
@@ -23,8 +24,9 @@ public sealed class PlayerMilestoneTierRollDefinition
     [Tooltip("Tier ID selected from the Player Power-Ups preset tier catalog.")]
     [SerializeField] private string tierId;
 
-    [Tooltip("Relative probability weight used when rolling this tier at milestone level-up.")]
-    [SerializeField] private float selectionWeight = 1f;
+    [Tooltip("Selection percentage used when this milestone roll chooses among its available tiers. The total should be 100%.")]
+    [FormerlySerializedAs("selectionWeight")]
+    [SerializeField] private float selectionPercentage = 100f;
     #endregion
 
     #endregion
@@ -38,11 +40,11 @@ public sealed class PlayerMilestoneTierRollDefinition
         }
     }
 
-    public float SelectionWeight
+    public float SelectionPercentage
     {
         get
         {
-            return selectionWeight;
+            return selectionPercentage;
         }
     }
     #endregion
@@ -54,12 +56,12 @@ public sealed class PlayerMilestoneTierRollDefinition
     /// Assigns milestone tier-roll values after external editor selection.
     /// </summary>
     /// <param name="tierIdValue">Tier ID resolved from the power-ups preset.</param>
-    /// <param name="selectionWeightValue">Relative roll weight inside milestone tier candidates.</param>
+    /// <param name="selectionPercentageValue">Selection percentage assigned to this tier inside the milestone roll.</param>
     /// <returns>Void.</returns>
-    public void Configure(string tierIdValue, float selectionWeightValue)
+    public void Configure(string tierIdValue, float selectionPercentageValue)
     {
         tierId = tierIdValue;
-        selectionWeight = selectionWeightValue;
+        selectionPercentage = selectionPercentageValue;
     }
 
     /// <summary>
@@ -74,8 +76,8 @@ public sealed class PlayerMilestoneTierRollDefinition
         else
             tierId = tierId.Trim();
 
-        if (selectionWeight < 0f)
-            selectionWeight = 0f;
+        if (selectionPercentage < 0f)
+            selectionPercentage = 0f;
     }
     #endregion
 

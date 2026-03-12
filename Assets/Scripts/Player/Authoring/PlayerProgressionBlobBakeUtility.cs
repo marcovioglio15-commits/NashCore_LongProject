@@ -124,11 +124,11 @@ internal static class PlayerProgressionBlobBakeUtility
                 string tierId = tierRoll != null && !string.IsNullOrWhiteSpace(tierRoll.TierId)
                     ? tierRoll.TierId.Trim()
                     : string.Empty;
-                float selectionWeight = tierRoll != null ? math.max(0f, tierRoll.SelectionWeight) : 0f;
+                float selectionPercentage = tierRoll != null ? math.max(0f, tierRoll.SelectionPercentage) : 0f;
 
                 tierRollArray[tierRollIndex] = new PlayerMilestoneTierRollBlob
                 {
-                    SelectionWeight = selectionWeight
+                    SelectionPercentage = selectionPercentage
                 };
                 builder.AllocateString(ref tierRollArray[tierRollIndex].TierId, tierId);
             }
