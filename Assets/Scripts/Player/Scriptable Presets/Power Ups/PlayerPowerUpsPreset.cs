@@ -39,7 +39,13 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
     [Tooltip("Input Action ID used for the secondary active tool slot.")]
     [SerializeField] private string secondaryToolActionId;
 
-    [Header("Tiers")]
+    [Tooltip("Input Action ID used to swap the current primary and secondary active power-up slots at runtime.")]
+    [SerializeField] private string swapSlotsActionId;
+
+    [Header("Drop Pools & Tiers")]
+    [Tooltip("Named drop pools used by progression milestones to roll weighted tier candidates.")]
+    [SerializeField] private List<PowerUpDropPoolDefinition> dropPools = new List<PowerUpDropPoolDefinition>();
+
     [Tooltip("Tier catalog used by progression milestones to roll weighted modular power-ups.")]
     [SerializeField] private List<PowerUpTierLevelDefinition> tierLevels = new List<PowerUpTierLevelDefinition>();
 
@@ -169,6 +175,22 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         get
         {
             return secondaryToolActionId;
+        }
+    }
+
+    public string SwapSlotsActionId
+    {
+        get
+        {
+            return swapSlotsActionId;
+        }
+    }
+
+    public IReadOnlyList<PowerUpDropPoolDefinition> DropPools
+    {
+        get
+        {
+            return dropPools;
         }
     }
 
@@ -355,6 +377,30 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         set
         {
             secondaryToolActionId = value;
+        }
+    }
+
+    internal string SwapSlotsActionIdMutable
+    {
+        get
+        {
+            return swapSlotsActionId;
+        }
+        set
+        {
+            swapSlotsActionId = value;
+        }
+    }
+
+    internal List<PowerUpDropPoolDefinition> DropPoolsMutable
+    {
+        get
+        {
+            return dropPools;
+        }
+        set
+        {
+            dropPools = value;
         }
     }
 

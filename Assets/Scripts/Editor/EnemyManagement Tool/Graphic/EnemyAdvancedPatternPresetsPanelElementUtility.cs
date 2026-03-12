@@ -45,7 +45,7 @@ internal static class EnemyAdvancedPatternPresetsPanelElementUtility
     /// <param name="parent">Parent visual element that receives the field.</param>
     /// <param name="property">Serialized property to bind.</param>
     /// <param name="label">Field label shown in the inspector UI.</param>
-    /// <returns>Void.</returns>
+
     public static void AddTrackedPropertyField(EnemyAdvancedPatternPresetsPanel panel,
                                                VisualElement parent,
                                                SerializedProperty property,

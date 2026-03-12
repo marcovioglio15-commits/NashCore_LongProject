@@ -89,7 +89,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="panelRoot">Panel root that owns the milestone power-up cards.</param>
     /// <param name="optionViews">Destination list populated with resolved card views.</param>
     /// <param name="maxOptionCount">Maximum number of card views to collect.</param>
-    /// <returns>Void.</returns>
+
     public static void DiscoverOptionViews(GameObject panelRoot,
                                            List<MilestonePowerUpSelectionOptionView> optionViews,
                                            int maxOptionCount)
@@ -166,7 +166,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// Clears every discovered card view currently owned by the milestone selection panel.
     /// </summary>
     /// <param name="optionViews">Auto-discovered card views under the panel hierarchy.</param>
-    /// <returns>Void.</returns>
+
     public static void ResetOptionViews(IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews)
     {
         if (optionViews == null)
@@ -183,7 +183,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// Clears every legacy button binding currently owned by the milestone selection panel.
     /// </summary>
     /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
-    /// <returns>Void.</returns>
+
     public static void ResetOptionBindings(IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings)
     {
         if (optionBindings == null)
@@ -202,7 +202,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="optionViews">Auto-discovered card views under the panel hierarchy.</param>
     /// <param name="selectionOffers">Current buffer of rolled milestone offers.</param>
     /// <param name="activeOfferCount">Number of rolled offers currently shown to the player.</param>
-    /// <returns>Void.</returns>
+
     public static void RenderOptionViews(IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews,
                                          DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers,
                                          int activeOfferCount)
@@ -231,7 +231,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
     /// <param name="selectionOffers">Current buffer of rolled milestone offers.</param>
     /// <param name="activeOfferCount">Number of rolled offers currently shown to the player.</param>
-    /// <returns>Void.</returns>
+
     public static void RenderOptionBindings(IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings,
                                             DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers,
                                             int activeOfferCount)
@@ -260,7 +260,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="optionView">Card view receiving the offer data.</param>
     /// <param name="optionIndex">Display order index used for numbering.</param>
     /// <param name="offer">Rolled milestone offer bound to the card.</param>
-    /// <returns>Void.</returns>
+
     public static void SetOptionViewOffer(MilestonePowerUpSelectionOptionView optionView,
                                           int optionIndex,
                                           in PlayerMilestonePowerUpSelectionOfferElement offer)
@@ -288,7 +288,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// Clears one card view when the current milestone rolled fewer offers than available slots.
     /// </summary>
     /// <param name="optionView">Card view reset to an unused state.</param>
-    /// <returns>Void.</returns>
+
     public static void SetOptionViewUnused(MilestonePowerUpSelectionOptionView optionView)
     {
         if (optionView == null)
@@ -319,7 +319,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="optionBinding">Legacy button binding receiving the offer data.</param>
     /// <param name="optionIndex">Display order index used for numbering.</param>
     /// <param name="offer">Rolled milestone offer bound to the button.</param>
-    /// <returns>Void.</returns>
+
     public static void SetOptionBindingOffer(MilestonePowerUpSelectionOptionBinding optionBinding,
                                              int optionIndex,
                                              in PlayerMilestonePowerUpSelectionOfferElement offer)
@@ -349,7 +349,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// Clears one legacy button-based binding when no rolled offer exists for that slot.
     /// </summary>
     /// <param name="optionBinding">Legacy button binding reset to an unused state.</param>
-    /// <returns>Void.</returns>
+
     public static void SetOptionBindingUnused(MilestonePowerUpSelectionOptionBinding optionBinding)
     {
         if (optionBinding == null)
@@ -387,7 +387,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="optionViews">Resolved card views currently owned by the milestone panel.</param>
     /// <param name="selectedOfferIndex">Offer index currently selected by keyboard or gamepad navigation.</param>
     /// <param name="activeOfferCount">Number of rolled offers currently displayed.</param>
-    /// <returns>Void.</returns>
+
     public static void ApplyOptionViewSelection(IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews,
                                                 int selectedOfferIndex,
                                                 int activeOfferCount)
@@ -414,7 +414,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
     /// <param name="skipButton">Optional skip button configured for the panel.</param>
     /// <param name="interactable">True to allow input; false to block it.</param>
-    /// <returns>Void.</returns>
+
     public static void SetOptionInputsInteractable(IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews,
                                                    IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings,
                                                    Button skipButton,
@@ -456,7 +456,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
     /// <param name="selectedOfferIndex">Offer index currently selected by keyboard or gamepad navigation.</param>
     /// <param name="activeOfferCount">Number of rolled offers currently shown to the player.</param>
-    /// <returns>Void.</returns>
+
     public static void ApplySelectionVisuals(IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews,
                                              IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings,
                                              int selectedOfferIndex,
@@ -490,7 +490,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="skipButton">Optional skip button configured for the panel.</param>
     /// <param name="isVisible">True to show the skip button; false to hide it.</param>
     /// <param name="allowInteraction">True to keep the button interactable while visible; false to disable it.</param>
-    /// <returns>Void.</returns>
+
     public static void SetSkipButtonVisible(Button skipButton, bool isVisible, bool allowInteraction)
     {
         if (skipButton == null)
@@ -509,7 +509,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// </summary>
     /// <param name="skipButton">Optional skip button configured for the panel.</param>
     /// <param name="interactable">True to allow input; false to block it.</param>
-    /// <returns>Void.</returns>
+
     public static void SetSkipButtonInteractable(Button skipButton, bool interactable)
     {
         if (skipButton == null)
@@ -599,7 +599,7 @@ public static class HUDMilestoneSelectionOptionUtility
     /// </summary>
     /// <param name="textLabel">UI label updated by the helper.</param>
     /// <param name="value">New string assigned to the label.</param>
-    /// <returns>Void.</returns>
+
     private static void SetText(TMP_Text textLabel, string value)
     {
         if (textLabel == null)

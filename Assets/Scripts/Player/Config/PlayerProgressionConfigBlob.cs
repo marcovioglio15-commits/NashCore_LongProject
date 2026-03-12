@@ -48,6 +48,7 @@ public struct PlayerLevelUpMilestoneBlob
 /// </summary>
 public struct PlayerMilestonePowerUpUnlockBlob
 {
+    public BlobString DropPoolId;
     public BlobArray<PlayerMilestoneTierRollBlob> TierRolls;
 }
 #endregion

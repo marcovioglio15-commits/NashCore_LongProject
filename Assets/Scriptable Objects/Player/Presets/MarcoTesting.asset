@@ -22,8 +22,8 @@ MonoBehaviour:
     directionOffsetDegrees: 0
     movementReference: 1
     values:
-      baseSpeed: 2
-      maxSpeed: 10
+      baseSpeed: 0
+      maxSpeed: 0
       acceleration: 50
       deceleration: -1
       oppositeDirectionBrakeMultiplier: 2.25
@@ -118,25 +118,55 @@ MonoBehaviour:
     initialPoolCapacity: 512
     poolExpandBatch: 128
   healthStatistics:
-    maxHealth: 1e+10
+    maxHealth: 1
     maxShield: 0
     legacyHealthMigrated: 1
   scalingRules:
   - statKey: healthStatistics.maxHealth
-    addScaling: 0
-    formula: 
-    debugInConsole: 0
-    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+    addScaling: 1
+    formula: '[Health]'
+    debugInConsole: 1
+    debugColor: {r: 0.10173239, g: 1, b: 0.015686274, a: 1}
   - statKey: shootingSettings.values.shootSpeed
     addScaling: 0
     formula: '[this] + [FireRate]^2'
     debugInConsole: 0
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   - statKey: shootingSettings.values.rateOfFire
-    addScaling: 0
+    addScaling: 1
     formula: '[this] * [FireRate]'
-    debugInConsole: 0
-    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+    debugInConsole: 1
+    debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
+  - statKey: movementSettings.values.baseSpeed
+    addScaling: 1
+    formula: '[MovementSpeed]'
+    debugInConsole: 1
+    debugColor: {r: 0.015686274, g: 0.81909794, b: 1, a: 1}
+  - statKey: movementSettings.values.maxSpeed
+    addScaling: 1
+    formula: '[MovementSpeed] + 8'
+    debugInConsole: 1
+    debugColor: {r: 0.015686275, g: 0.8196079, b: 1, a: 1}
+  - statKey: healthStatistics.maxShield
+    addScaling: 1
+    formula: '[Shield]'
+    debugInConsole: 1
+    debugColor: {r: 0.61235636, g: 0.015686274, b: 1, a: 1}
+  - statKey: shootingSettings.values.damage
+    addScaling: 1
+    formula: '[this] * [Damage]'
+    debugInConsole: 1
+    debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.range
+    addScaling: 1
+    formula: '[this] * [ShotRange]'
+    debugInConsole: 1
+    debugColor: {r: 1, g: 0.12460787, b: 0.015686274, a: 1}
+  - statKey: shootingSettings.values.lifetime
+    addScaling: 1
+    formula: '[this] + [ShotRange]'
+    debugInConsole: 1
+    debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   moveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
   lookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
   shootActionId: a1c9633a-dc63-42a5-ae60-1a5d6f5f171b

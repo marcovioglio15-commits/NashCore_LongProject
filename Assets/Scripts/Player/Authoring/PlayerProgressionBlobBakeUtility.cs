@@ -16,8 +16,10 @@ internal static class PlayerProgressionBlobBakeUtility
     /// Creates the baked progression blob from the selected progression preset.
     /// </summary>
     /// <param name="preset">Source progression preset used during baking.</param>
+    /// <param name="powerUpsPreset">Scoped power-ups preset used to resolve milestone drop pools into tier rolls.</param>
     /// <returns>Persistent blob asset reference ready to assign to PlayerProgressionConfig.</returns>
-    public static BlobAssetReference<PlayerProgressionConfigBlob> BuildProgressionConfigBlob(PlayerProgressionPreset preset)
+    public static BlobAssetReference<PlayerProgressionConfigBlob> BuildProgressionConfigBlob(PlayerProgressionPreset preset,
+                                                                                             PlayerPowerUpsPreset powerUpsPreset)
     {
         BlobBuilder builder = new BlobBuilder(Allocator.Temp);
         ref PlayerProgressionConfigBlob root = ref builder.ConstructRoot<PlayerProgressionConfigBlob>();
@@ -26,7 +28,7 @@ internal static class PlayerProgressionBlobBakeUtility
         root.MilestoneTimeScaleResumeDurationSeconds = preset != null ? math.max(0f, preset.MilestoneTimeScaleResumeDurationSeconds) : 0f;
         root.EquippedScheduleIndex = -1;
 
-        BakeProgressionGamePhases(builder, ref root, preset);
+        BakeProgressionGamePhases(builder, ref root, preset, powerUpsPreset);
         BakeProgressionScalableStats(builder, ref root, preset);
         BakeProgressionSchedules(builder, ref root, preset);
 
@@ -43,10 +45,11 @@ internal static class PlayerProgressionBlobBakeUtility
     /// <param name="builder">Blob builder used to allocate nested arrays and strings.</param>
     /// <param name="root">Progression blob root being populated.</param>
     /// <param name="preset">Source progression preset.</param>
-    /// <returns>Void.</returns>
+
     private static void BakeProgressionGamePhases(BlobBuilder builder,
                                                   ref PlayerProgressionConfigBlob root,
-                                                  PlayerProgressionPreset preset)
+                                                  PlayerProgressionPreset preset,
+                                                  PlayerPowerUpsPreset powerUpsPreset)
     {
         IReadOnlyList<PlayerGamePhaseDefinition> gamePhases = preset != null ? preset.GamePhasesDefinition : null;
         int gamePhasesCount = gamePhases != null && gamePhases.Count > 0 ? gamePhases.Count : 1;
@@ -89,7 +92,7 @@ internal static class PlayerProgressionBlobBakeUtility
                     SpecialExpRequirement = specialExpRequirement
                 };
 
-                BakeMilestonePowerUpUnlocks(builder, ref milestoneArray[milestoneIndex], milestone);
+                BakeMilestonePowerUpUnlocks(builder, ref milestoneArray[milestoneIndex], milestone, powerUpsPreset);
                 BakeMilestoneSkipCompensations(builder, ref milestoneArray[milestoneIndex], milestone);
             }
         }
@@ -101,10 +104,11 @@ internal static class PlayerProgressionBlobBakeUtility
     /// <param name="builder">Blob builder used to allocate nested arrays and strings.</param>
     /// <param name="milestoneBlob">Destination milestone blob.</param>
     /// <param name="milestone">Source milestone definition.</param>
-    /// <returns>Void.</returns>
+
     private static void BakeMilestonePowerUpUnlocks(BlobBuilder builder,
                                                     ref PlayerLevelUpMilestoneBlob milestoneBlob,
-                                                    PlayerLevelUpMilestoneDefinition milestone)
+                                                    PlayerLevelUpMilestoneDefinition milestone,
+                                                    PlayerPowerUpsPreset powerUpsPreset)
     {
         IReadOnlyList<PlayerMilestonePowerUpUnlockDefinition> powerUpUnlocks = milestone != null ? milestone.PowerUpUnlocks : null;
         int powerUpUnlockCount = powerUpUnlocks != null ? math.min(PlayerLevelUpMilestoneDefinition.MaxPowerUpUnlockCount, powerUpUnlocks.Count) : 0;
@@ -113,14 +117,43 @@ internal static class PlayerProgressionBlobBakeUtility
         for (int powerUpUnlockIndex = 0; powerUpUnlockIndex < powerUpUnlockCount; powerUpUnlockIndex++)
         {
             PlayerMilestonePowerUpUnlockDefinition powerUpUnlock = powerUpUnlocks[powerUpUnlockIndex];
-            IReadOnlyList<PlayerMilestoneTierRollDefinition> tierRolls = powerUpUnlock != null ? powerUpUnlock.TierRolls : null;
-            int tierRollCount = tierRolls != null ? tierRolls.Count : 0;
+            string requestedDropPoolId = powerUpUnlock != null && !string.IsNullOrWhiteSpace(powerUpUnlock.DropPoolId)
+                ? powerUpUnlock.DropPoolId.Trim()
+                : string.Empty;
+            IReadOnlyList<PowerUpDropPoolTierDefinition> resolvedDropPoolTierRolls = ResolveDropPoolTierRolls(powerUpsPreset, requestedDropPoolId);
+            IReadOnlyList<PlayerMilestoneTierRollDefinition> legacyTierRolls = powerUpUnlock != null ? powerUpUnlock.LegacyTierRolls : null;
+            bool useResolvedDropPool = resolvedDropPoolTierRolls != null && resolvedDropPoolTierRolls.Count > 0;
+            int tierRollCount = useResolvedDropPool
+                ? resolvedDropPoolTierRolls.Count
+                : legacyTierRolls != null ? legacyTierRolls.Count : 0;
             BlobBuilderArray<PlayerMilestoneTierRollBlob> tierRollArray = builder.Allocate(ref powerUpUnlockArray[powerUpUnlockIndex].TierRolls, tierRollCount);
+            builder.AllocateString(ref powerUpUnlockArray[powerUpUnlockIndex].DropPoolId, requestedDropPoolId);
 
-            // Copy authoring tier candidates into the contiguous blob array.
+            if (useResolvedDropPool)
+            {
+                // Copy drop-pool tier candidates into the contiguous blob array used at runtime.
+                for (int tierRollIndex = 0; tierRollIndex < tierRollCount; tierRollIndex++)
+                {
+                    PowerUpDropPoolTierDefinition tierRoll = resolvedDropPoolTierRolls[tierRollIndex];
+                    string tierId = tierRoll != null && !string.IsNullOrWhiteSpace(tierRoll.TierId)
+                        ? tierRoll.TierId.Trim()
+                        : string.Empty;
+                    float selectionPercentage = tierRoll != null ? math.max(0f, tierRoll.SelectionPercentage) : 0f;
+
+                    tierRollArray[tierRollIndex] = new PlayerMilestoneTierRollBlob
+                    {
+                        SelectionPercentage = selectionPercentage
+                    };
+                    builder.AllocateString(ref tierRollArray[tierRollIndex].TierId, tierId);
+                }
+
+                continue;
+            }
+
+            // Preserve legacy inline tier-roll data when no valid drop pool is selected yet.
             for (int tierRollIndex = 0; tierRollIndex < tierRollCount; tierRollIndex++)
             {
-                PlayerMilestoneTierRollDefinition tierRoll = tierRolls[tierRollIndex];
+                PlayerMilestoneTierRollDefinition tierRoll = legacyTierRolls[tierRollIndex];
                 string tierId = tierRoll != null && !string.IsNullOrWhiteSpace(tierRoll.TierId)
                     ? tierRoll.TierId.Trim()
                     : string.Empty;
@@ -141,7 +174,7 @@ internal static class PlayerProgressionBlobBakeUtility
     /// <param name="builder">Blob builder used to allocate nested arrays.</param>
     /// <param name="milestoneBlob">Destination milestone blob.</param>
     /// <param name="milestone">Source milestone definition.</param>
-    /// <returns>Void.</returns>
+
     private static void BakeMilestoneSkipCompensations(BlobBuilder builder,
                                                        ref PlayerLevelUpMilestoneBlob milestoneBlob,
                                                        PlayerLevelUpMilestoneDefinition milestone)
@@ -176,7 +209,7 @@ internal static class PlayerProgressionBlobBakeUtility
     /// <param name="builder">Blob builder used to allocate nested arrays and strings.</param>
     /// <param name="root">Progression blob root being populated.</param>
     /// <param name="preset">Source progression preset.</param>
-    /// <returns>Void.</returns>
+
     private static void BakeProgressionScalableStats(BlobBuilder builder,
                                                      ref PlayerProgressionConfigBlob root,
                                                      PlayerProgressionPreset preset)
@@ -213,7 +246,7 @@ internal static class PlayerProgressionBlobBakeUtility
     /// <param name="builder">Blob builder used to allocate nested arrays and strings.</param>
     /// <param name="root">Progression blob root being populated.</param>
     /// <param name="preset">Source progression preset.</param>
-    /// <returns>Void.</returns>
+
     private static void BakeProgressionSchedules(BlobBuilder builder,
                                                  ref PlayerProgressionConfigBlob root,
                                                  PlayerProgressionPreset preset)
@@ -269,6 +302,28 @@ internal static class PlayerProgressionBlobBakeUtility
             return;
 
         root.EquippedScheduleIndex = 0;
+    }
+
+    private static IReadOnlyList<PowerUpDropPoolTierDefinition> ResolveDropPoolTierRolls(PlayerPowerUpsPreset powerUpsPreset,
+                                                                                          string dropPoolId)
+    {
+        if (powerUpsPreset == null || powerUpsPreset.DropPools == null || string.IsNullOrWhiteSpace(dropPoolId))
+            return null;
+
+        for (int dropPoolIndex = 0; dropPoolIndex < powerUpsPreset.DropPools.Count; dropPoolIndex++)
+        {
+            PowerUpDropPoolDefinition dropPool = powerUpsPreset.DropPools[dropPoolIndex];
+
+            if (dropPool == null || string.IsNullOrWhiteSpace(dropPool.PoolId))
+                continue;
+
+            if (!string.Equals(dropPool.PoolId, dropPoolId, System.StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            return dropPool.TierRolls;
+        }
+
+        return null;
     }
     #endregion
 

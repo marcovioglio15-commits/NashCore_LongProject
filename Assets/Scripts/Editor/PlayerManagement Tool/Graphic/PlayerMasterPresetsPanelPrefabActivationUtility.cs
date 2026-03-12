@@ -13,7 +13,7 @@ internal static class PlayerMasterPresetsPanelPrefabActivationUtility
     /// Finds the first project prefab containing PlayerAuthoring and stores it as the active target.
     /// </summary>
     /// <param name="panel">Owning panel that stores selected prefab state and UI references.</param>
-    /// <returns>Void.</returns>
+
     public static void FindPlayerPrefab(PlayerMasterPresetsPanel panel)
     {
         if (panel == null)
@@ -40,7 +40,7 @@ internal static class PlayerMasterPresetsPanelPrefabActivationUtility
     /// Assigns the selected player master preset to the currently selected player prefab.
     /// </summary>
     /// <param name="panel">Owning panel that stores selected preset and selected prefab state.</param>
-    /// <returns>Void.</returns>
+
     public static void AssignPresetToPrefab(PlayerMasterPresetsPanel panel)
     {
         if (panel == null)
@@ -89,7 +89,7 @@ internal static class PlayerMasterPresetsPanelPrefabActivationUtility
     /// Refreshes the textual status describing whether the selected prefab uses the selected master preset.
     /// </summary>
     /// <param name="panel">Owning panel that stores selected preset, selected prefab and label references.</param>
-    /// <returns>Void.</returns>
+
     public static void RefreshActiveStatus(PlayerMasterPresetsPanel panel)
     {
         if (panel == null || panel.ActiveStatusLabel == null)

@@ -20,7 +20,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
     /// Builds the metadata section for the selected enemy brain preset.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and callbacks.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildMetadataSection(EnemyBrainPresetsPanel panel)
     {
         if (panel == null)
@@ -95,7 +95,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
     /// Builds the brain section shell and all subsection tabs.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and callbacks.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildBrainSection(EnemyBrainPresetsPanel panel)
     {
         if (panel == null)
@@ -141,7 +141,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
     /// Shows the currently active brain subsection content and refreshes tab styles.
     /// </summary>
     /// <param name="panel">Owning panel that provides tab state and content host.</param>
-    /// <returns>Void.</returns>
+
     public static void ShowActiveBrainSubSection(EnemyBrainPresetsPanel panel)
     {
         if (panel == null)
@@ -221,7 +221,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
     /// <param name="relativePropertyName">Relative field name under the parent property.</param>
     /// <param name="label">Display label used by the property field.</param>
     /// <param name="tooltip">Tooltip text shown by the property field.</param>
-    /// <returns>Void.</returns>
+
     private static void AddPropertyField(EnemyBrainPresetsPanel panel,
                                          VisualElement target,
                                          SerializedProperty parentProperty,
@@ -280,7 +280,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
     /// <param name="subSectionType">Subsection enum key.</param>
     /// <param name="tabLabel">Button label shown in the tab bar.</param>
     /// <param name="content">Prepared content visual element for the subsection.</param>
-    /// <returns>Void.</returns>
+
     private static void AddBrainSubSectionTab(EnemyBrainPresetsPanel panel,
                                               EnemyBrainPresetsPanel.BrainSubSectionType subSectionType,
                                               string tabLabel,
@@ -319,7 +319,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
     /// Refreshes tab button styles so the active brain subsection is visually emphasized.
     /// </summary>
     /// <param name="panel">Owning panel that provides the current active tab state.</param>
-    /// <returns>Void.</returns>
+
     private static void UpdateBrainSubSectionTabStyles(EnemyBrainPresetsPanel panel)
     {
         if (panel == null)

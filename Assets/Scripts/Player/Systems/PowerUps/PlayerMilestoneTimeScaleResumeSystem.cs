@@ -16,7 +16,7 @@ public partial struct PlayerMilestoneTimeScaleResumeSystem : ISystem
     /// Registers the runtime components required to restore Time.timeScale after milestone selections.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerMilestonePowerUpSelectionState>();
@@ -27,7 +27,7 @@ public partial struct PlayerMilestoneTimeScaleResumeSystem : ISystem
     /// Advances the smooth Time.timeScale resume using unscaled time so the ramp progresses even from a full pause.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         float unscaledDeltaTime = math.max(0f, Time.unscaledDeltaTime);

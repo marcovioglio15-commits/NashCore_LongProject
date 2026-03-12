@@ -16,7 +16,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingStateQuery">Query selecting entities without PlayerPowerUpsState.</param>
     /// <param name="currentKillCount">Current global kill count used as initial observer value.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingStateQuery, uint currentKillCount)
     {
         NativeArray<Entity> entities = missingStateQuery.ToEntityArray(Allocator.Temp);
@@ -41,6 +41,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
                 IsShootingSuppressed = 0,
                 PreviousPrimaryPressed = 0,
                 PreviousSecondaryPressed = 0,
+                PreviousSwapSlotsPressed = 0,
                 LastObservedGlobalKillCount = currentKillCount,
                 LastValidMovementDirection = float3.zero
             });
@@ -56,7 +57,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPassiveToolsStateQuery">Query selecting entities without PlayerPassiveToolsState.</param>
     /// <param name="equippedPassiveToolsLookup">Read-only lookup of equipped passive tools.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPassiveToolsState(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingPassiveToolsStateQuery,
@@ -79,7 +80,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingDashQuery">Query selecting entities without PlayerDashState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingDashState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingDashQuery)
     {
         PlayerDashState initialState = new PlayerDashState
@@ -104,7 +105,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingBulletTimeStateQuery">Query selecting entities without PlayerBulletTimeState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingBulletTimeState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingBulletTimeStateQuery)
     {
         PlayerBulletTimeState initialState = new PlayerBulletTimeState
@@ -121,7 +122,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingHealOverTimeStateQuery">Query selecting entities without PlayerHealOverTimeState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingHealOverTimeState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingHealOverTimeStateQuery)
     {
         PlayerHealOverTimeState initialState = new PlayerHealOverTimeState
@@ -142,7 +143,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPassiveExplosionStateQuery">Query selecting entities without PlayerPassiveExplosionState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPassiveExplosionState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingPassiveExplosionStateQuery)
     {
         PlayerPassiveExplosionState initialState = new PlayerPassiveExplosionState
@@ -159,7 +160,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPassiveHealStateQuery">Query selecting entities without PlayerPassiveHealState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPassiveHealState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingPassiveHealStateQuery)
     {
         PlayerPassiveHealState initialState = new PlayerPassiveHealState
@@ -176,7 +177,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingElementalTrailStateQuery">Query selecting entities without PlayerElementalTrailState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingElementalTrailState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingElementalTrailStateQuery)
     {
         PlayerElementalTrailState initialState = new PlayerElementalTrailState
@@ -195,7 +196,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingElementalTrailAttachedVfxStateQuery">Query selecting entities without PlayerElementalTrailAttachedVfxState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingElementalTrailAttachedVfxState(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingElementalTrailAttachedVfxStateQuery)
@@ -214,7 +215,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingBombRequestBufferQuery">Query selecting entities without PlayerBombSpawnRequest buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingBombRequestBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingBombRequestBufferQuery)
     {
         AddBufferForEntities<PlayerBombSpawnRequest>(ref commandBuffer, in missingBombRequestBufferQuery);
@@ -225,7 +226,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingElementalTrailSegmentBufferQuery">Query selecting entities without PlayerElementalTrailSegmentElement buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingElementalTrailSegmentBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingElementalTrailSegmentBufferQuery)
     {
         AddBufferForEntities<PlayerElementalTrailSegmentElement>(ref commandBuffer, in missingElementalTrailSegmentBufferQuery);
@@ -236,7 +237,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingExplosionRequestBufferQuery">Query selecting entities without PlayerExplosionRequest buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingExplosionRequestBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingExplosionRequestBufferQuery)
     {
         AddBufferForEntities<PlayerExplosionRequest>(ref commandBuffer, in missingExplosionRequestBufferQuery);
@@ -247,7 +248,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpVfxRequestBufferQuery">Query selecting entities without PlayerPowerUpVfxSpawnRequest buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpVfxRequestBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingPowerUpVfxRequestBufferQuery)
     {
         AddBufferForEntities<PlayerPowerUpVfxSpawnRequest>(ref commandBuffer, in missingPowerUpVfxRequestBufferQuery);
@@ -258,7 +259,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpVfxPoolBufferQuery">Query selecting entities without PlayerPowerUpVfxPoolElement buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpVfxPoolBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingPowerUpVfxPoolBufferQuery)
     {
         AddBufferForEntities<PlayerPowerUpVfxPoolElement>(ref commandBuffer, in missingPowerUpVfxPoolBufferQuery);
@@ -269,7 +270,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpVfxCapConfigQuery">Query selecting entities without PlayerPowerUpVfxCapConfig.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpVfxCapConfig(ref EntityCommandBuffer commandBuffer, in EntityQuery missingPowerUpVfxCapConfigQuery)
     {
         PlayerPowerUpVfxCapConfig initialState = new PlayerPowerUpVfxCapConfig
@@ -289,7 +290,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpCheatBufferQuery">Query selecting entities without PlayerPowerUpCheatCommand buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpCheatBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingPowerUpCheatBufferQuery)
     {
         AddBufferForEntities<PlayerPowerUpCheatCommand>(ref commandBuffer, in missingPowerUpCheatBufferQuery);
@@ -300,7 +301,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpCheatPresetEntryBufferQuery">Query selecting entities without PlayerPowerUpCheatPresetEntry buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpCheatPresetEntryBuffers(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingPowerUpCheatPresetEntryBufferQuery)
@@ -313,7 +314,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpCheatPresetPassiveBufferQuery">Query selecting entities without PlayerPowerUpCheatPresetPassiveElement buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpCheatPresetPassiveBuffers(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingPowerUpCheatPresetPassiveBufferQuery)
@@ -326,7 +327,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpUnlockCatalogBufferQuery">Query selecting entities without PlayerPowerUpUnlockCatalogElement buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpUnlockCatalogBuffers(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingPowerUpUnlockCatalogBufferQuery)
@@ -339,7 +340,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpTierDefinitionBufferQuery">Query selecting entities without PlayerPowerUpTierDefinitionElement buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpTierDefinitionBuffers(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingPowerUpTierDefinitionBufferQuery)
@@ -352,7 +353,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingPowerUpTierEntryBufferQuery">Query selecting entities without PlayerPowerUpTierEntryElement buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingPowerUpTierEntryBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingPowerUpTierEntryBufferQuery)
     {
         AddBufferForEntities<PlayerPowerUpTierEntryElement>(ref commandBuffer, in missingPowerUpTierEntryBufferQuery);
@@ -363,7 +364,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingMilestoneSelectionStateQuery">Query selecting entities without PlayerMilestonePowerUpSelectionState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingMilestoneSelectionState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingMilestoneSelectionStateQuery)
     {
         PlayerMilestonePowerUpSelectionState initialState = new PlayerMilestonePowerUpSelectionState
@@ -382,7 +383,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingMilestoneTimeScaleResumeStateQuery">Query selecting entities without PlayerMilestoneTimeScaleResumeState.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingMilestoneTimeScaleResumeState(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingMilestoneTimeScaleResumeStateQuery)
@@ -404,7 +405,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingMilestoneSelectionOfferBufferQuery">Query selecting entities without PlayerMilestonePowerUpSelectionOfferElement buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingMilestoneSelectionOfferBuffers(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingMilestoneSelectionOfferBufferQuery)
@@ -417,7 +418,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="missingMilestoneSelectionCommandBufferQuery">Query selecting entities without PlayerMilestonePowerUpSelectionCommand buffer.</param>
-    /// <returns>Void.</returns>
+
     public static void AddMissingMilestoneSelectionCommandBuffers(
         ref EntityCommandBuffer commandBuffer,
         in EntityQuery missingMilestoneSelectionCommandBufferQuery)
@@ -434,7 +435,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="query">Query selecting entities that need the component.</param>
     /// <param name="component">Component value added to every entity in the query.</param>
-    /// <returns>Void.</returns>
+
     private static void AddComponentForEntities<TComponent>(ref EntityCommandBuffer commandBuffer, in EntityQuery query, TComponent component)
         where TComponent : unmanaged, IComponentData
     {
@@ -454,7 +455,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     /// <typeparam name="TBuffer">Buffer element type to add.</typeparam>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
     /// <param name="query">Query selecting entities that need the buffer.</param>
-    /// <returns>Void.</returns>
+
     private static void AddBufferForEntities<TBuffer>(ref EntityCommandBuffer commandBuffer, in EntityQuery query)
         where TBuffer : unmanaged, IBufferElementData
     {

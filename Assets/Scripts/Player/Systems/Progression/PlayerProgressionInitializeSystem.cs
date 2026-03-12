@@ -24,7 +24,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// Creates initialization queries for missing progression components.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerControllerConfig>();
@@ -64,7 +64,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// Adds missing progression runtime components only once for new player entities.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         bool hasMissingHealth = !missingHealthQuery.IsEmptyIgnoreFilter;
@@ -130,7 +130,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// Adds PlayerHealth components using controller health statistics config.
     /// </summary>
     /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
-    /// <returns>Void.</returns>
+
     private void AddMissingHealth(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingHealthQuery.ToEntityArray(Allocator.Temp);
@@ -164,7 +164,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// Adds PlayerShield components using controller shield statistics config.
     /// </summary>
     /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
-    /// <returns>Void.</returns>
+
     private void AddMissingShield(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingShieldQuery.ToEntityArray(Allocator.Temp);
@@ -198,7 +198,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// Adds PlayerExperience from scalable stat default value named "experience", with zero fallback.
     /// </summary>
     /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
-    /// <returns>Void.</returns>
+
     private void AddMissingExperience(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingExperienceQuery.ToEntityArray(Allocator.Temp);
@@ -227,7 +227,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// Adds PlayerLevel runtime data from progression milestones with safe defaults.
     /// </summary>
     /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
-    /// <returns>Void.</returns>
+
     private void AddMissingLevel(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingLevelQuery.ToEntityArray(Allocator.Temp);
@@ -259,7 +259,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// Adds PlayerExperienceCollection runtime data from progression milestones with safe defaults.
     /// </summary>
     /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
-    /// <returns>Void.</returns>
+
     private void AddMissingExperienceCollection(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingExperienceCollectionQuery.ToEntityArray(Allocator.Temp);
@@ -288,7 +288,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     /// Adds PlayerScalableStatElement buffer populated from progression scalable stat defaults.
     /// </summary>
     /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
-    /// <returns>Void.</returns>
+
     private void AddMissingScalableStatsBuffer(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingScalableStatsBufferQuery.ToEntityArray(Allocator.Temp);

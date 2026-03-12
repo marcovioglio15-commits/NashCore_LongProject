@@ -25,6 +25,7 @@ public struct PlayerPowerUpsState : IComponentData
     public byte IsShootingSuppressed;
     public byte PreviousPrimaryPressed;
     public byte PreviousSecondaryPressed;
+    public byte PreviousSwapSlotsPressed;
     public uint LastObservedGlobalKillCount;
     public float3 LastValidMovementDirection;
 }

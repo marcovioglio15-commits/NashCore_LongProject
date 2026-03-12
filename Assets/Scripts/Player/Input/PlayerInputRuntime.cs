@@ -20,6 +20,7 @@ public static class PlayerInputRuntime
     private static InputAction shootAction;
     private static InputAction powerUpPrimaryAction;
     private static InputAction powerUpSecondaryAction;
+    private static InputAction powerUpSwapSlotsAction;
     private static InputAction uiNavigateAction;
     private static InputAction uiSubmitAction;
     private static InputAction uiCancelAction;
@@ -33,6 +34,7 @@ public static class PlayerInputRuntime
     private static string shootActionId;
     private static string powerUpPrimaryActionId;
     private static string powerUpSecondaryActionId;
+    private static string powerUpSwapSlotsActionId;
     #endregion
 
     #region Properties
@@ -81,6 +83,14 @@ public static class PlayerInputRuntime
         get
         {
             return powerUpSecondaryAction;
+        }
+    }
+
+    public static InputAction PowerUpSwapSlotsAction
+    {
+        get
+        {
+            return powerUpSwapSlotsAction;
         }
     }
 
@@ -240,12 +250,23 @@ public static class PlayerInputRuntime
     #region Methods
 
     #region Lifecycle
+    /// <summary>
+    /// Initializes the shared runtime input asset instance and resolves all gameplay/UI actions used by player systems.
+    /// </summary>
+    /// <param name="sourceAsset">Source input action asset to clone for runtime usage.</param>
+    /// <param name="moveActionId">Configured move action identifier.</param>
+    /// <param name="lookActionId">Configured look action identifier.</param>
+    /// <param name="shootActionId">Configured shoot action identifier.</param>
+    /// <param name="powerUpPrimaryActionId">Configured primary active-slot action identifier.</param>
+    /// <param name="powerUpSecondaryActionId">Configured secondary active-slot action identifier.</param>
+    /// <param name="powerUpSwapSlotsActionId">Configured active-slot swap action identifier.</param>
     public static void Initialize(InputActionAsset sourceAsset,
                                   string moveActionId,
                                   string lookActionId,
                                   string shootActionId,
                                   string powerUpPrimaryActionId,
-                                  string powerUpSecondaryActionId)
+                                  string powerUpSecondaryActionId,
+                                  string powerUpSwapSlotsActionId)
     {
         if (sourceAsset == null)
         {
@@ -258,7 +279,8 @@ public static class PlayerInputRuntime
                                lookActionId,
                                shootActionId,
                                powerUpPrimaryActionId,
-                               powerUpSecondaryActionId))
+                               powerUpSecondaryActionId,
+                               powerUpSwapSlotsActionId))
             return;
 
         Shutdown();
@@ -280,12 +302,14 @@ public static class PlayerInputRuntime
         PlayerInputRuntime.shootActionId = shootActionId;
         PlayerInputRuntime.powerUpPrimaryActionId = powerUpPrimaryActionId;
         PlayerInputRuntime.powerUpSecondaryActionId = powerUpSecondaryActionId;
+        PlayerInputRuntime.powerUpSwapSlotsActionId = powerUpSwapSlotsActionId;
 
         moveAction = ResolveAction(instantiatedAsset, moveActionId, "Move");
         lookAction = ResolveAction(instantiatedAsset, lookActionId, "Look");
         shootAction = ResolveAction(instantiatedAsset, shootActionId, "Shoot");
         powerUpPrimaryAction = ResolveAction(instantiatedAsset, powerUpPrimaryActionId, "PowerUpPrimary");
         powerUpSecondaryAction = ResolveAction(instantiatedAsset, powerUpSecondaryActionId, "PowerUpSecondary");
+        powerUpSwapSlotsAction = ResolveAction(instantiatedAsset, powerUpSwapSlotsActionId, "PowerUpSwapSlots");
         uiNavigateAction = ResolveAction(instantiatedAsset, null, "UI/Navigate");
         uiSubmitAction = ResolveAction(instantiatedAsset, null, "UI/Submit");
         uiCancelAction = ResolveAction(instantiatedAsset, null, "UI/Cancel");
@@ -299,6 +323,9 @@ public static class PlayerInputRuntime
 #endif
     }
 
+    /// <summary>
+    /// Releases the cloned runtime input asset and clears all cached action references.
+    /// </summary>
     public static void Shutdown()
     {
         if (runtimeAsset != null)
@@ -314,6 +341,7 @@ public static class PlayerInputRuntime
         shootAction = null;
         powerUpPrimaryAction = null;
         powerUpSecondaryAction = null;
+        powerUpSwapSlotsAction = null;
         uiNavigateAction = null;
         uiSubmitAction = null;
         uiCancelAction = null;
@@ -327,6 +355,7 @@ public static class PlayerInputRuntime
         shootActionId = null;
         powerUpPrimaryActionId = null;
         powerUpSecondaryActionId = null;
+        powerUpSwapSlotsActionId = null;
     }
     #endregion
 
@@ -336,7 +365,8 @@ public static class PlayerInputRuntime
                                            string lookActionId,
                                            string shootActionId,
                                            string powerUpPrimaryActionId,
-                                           string powerUpSecondaryActionId)
+                                           string powerUpSecondaryActionId,
+                                           string powerUpSwapSlotsActionId)
     {
         if (runtimeAsset == null)
             return false;
@@ -357,6 +387,9 @@ public static class PlayerInputRuntime
             return false;
 
         if (string.Equals(PlayerInputRuntime.powerUpSecondaryActionId, powerUpSecondaryActionId) == false)
+            return false;
+
+        if (string.Equals(PlayerInputRuntime.powerUpSwapSlotsActionId, powerUpSwapSlotsActionId) == false)
             return false;
 
         return true;
@@ -441,13 +474,14 @@ public static class PlayerInputRuntime
         if (asset == null)
             return;
 
-        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | UINavigate: {6} | UISubmit: {7} | UICancel: {8} | CheatPresetDigit: {9} | CheatModifierControl: {10} | CheatModifierShift: {11} | MousePointerLook: {12}",
+        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | PowerUpSwapSlots: {6} | UINavigate: {7} | UISubmit: {8} | UICancel: {9} | CheatPresetDigit: {10} | CheatModifierControl: {11} | CheatModifierShift: {12} | MousePointerLook: {13}",
                                        asset.name,
                                        BuildActionStatus(moveAction),
                                        BuildActionStatus(lookAction),
                                        BuildActionStatus(shootAction),
                                        BuildActionStatus(powerUpPrimaryAction),
                                        BuildActionStatus(powerUpSecondaryAction),
+                                       BuildActionStatus(powerUpSwapSlotsAction),
                                        BuildActionStatus(uiNavigateAction),
                                        BuildActionStatus(uiSubmitAction),
                                        BuildActionStatus(uiCancelAction),

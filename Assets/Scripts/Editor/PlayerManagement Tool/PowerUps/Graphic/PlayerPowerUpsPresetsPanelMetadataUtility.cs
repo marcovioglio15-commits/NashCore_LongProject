@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Builds metadata and tier sections for the power-ups presets panel.
+/// Builds metadata and drop-pool tier sections for the power-ups presets panel.
 /// </summary>
 public static class PlayerPowerUpsPresetsPanelMetadataUtility
 {
@@ -71,39 +71,52 @@ public static class PlayerPowerUpsPresetsPanelMetadataUtility
         panel.sectionContentRoot.Add(idRow);
     }
 
-    public static void BuildTiersSection(PlayerPowerUpsPresetsPanel panel)
+    public static void BuildDropPoolsAndTiersSection(PlayerPowerUpsPresetsPanel panel)
     {
-        Label header = new Label("Tier Levels");
+        Label header = new Label("Drop Pools & Tiers");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
         panel.sectionContentRoot.Add(header);
 
+        SerializedProperty dropPoolsProperty = panel.presetSerializedObject.FindProperty("dropPools");
         SerializedProperty tierLevelsProperty = panel.presetSerializedObject.FindProperty("tierLevels");
 
-        if (tierLevelsProperty == null)
+        if (dropPoolsProperty == null || tierLevelsProperty == null)
         {
-            Label missingLabel = new Label("Tier levels property is missing.");
+            Label missingLabel = new Label("Drop-pool or tier properties are missing.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
             panel.sectionContentRoot.Add(missingLabel);
             return;
         }
 
-        Label infoLabel = new Label("Create percentage-based tiers and map modular Active/Passive power-ups using enum-style ID selectors.");
+        Label infoLabel = new Label("Define named drop pools first, then map each pool to weighted tier candidates and each tier to weighted Active/Passive power-up IDs.");
         infoLabel.style.marginBottom = 4f;
         panel.sectionContentRoot.Add(infoLabel);
+
+        PropertyField dropPoolsField = new PropertyField(dropPoolsProperty, "Drop Pools");
+        dropPoolsField.BindProperty(dropPoolsProperty);
+        panel.sectionContentRoot.Add(dropPoolsField);
 
         PropertyField tierLevelsField = new PropertyField(tierLevelsProperty, "Tier Levels");
         tierLevelsField.BindProperty(tierLevelsProperty);
         panel.sectionContentRoot.Add(tierLevelsField);
 
+        List<string> dropPoolIdOptions = PowerUpTierOptionsUtility.BuildDropPoolIdOptions(panel.presetSerializedObject);
         List<string> tierIdOptions = PowerUpTierOptionsUtility.BuildTierIdOptions(panel.presetSerializedObject);
 
-        if (tierIdOptions.Count > 0)
-            return;
+        if (dropPoolIdOptions.Count <= 0)
+        {
+            HelpBox warningBox = new HelpBox("No Drop Pool IDs configured. Milestone unlocks will show warnings until at least one drop pool is defined.", HelpBoxMessageType.Warning);
+            warningBox.style.marginTop = 4f;
+            panel.sectionContentRoot.Add(warningBox);
+        }
 
-        HelpBox warningBox = new HelpBox("No tier IDs configured. Milestone tier extraction will show warnings until at least one tier is defined.", HelpBoxMessageType.Warning);
-        warningBox.style.marginTop = 4f;
-        panel.sectionContentRoot.Add(warningBox);
+        if (tierIdOptions.Count <= 0)
+        {
+            HelpBox warningBox = new HelpBox("No Tier IDs configured. Drop pools and milestone extraction will show warnings until at least one tier is defined.", HelpBoxMessageType.Warning);
+            warningBox.style.marginTop = 4f;
+            panel.sectionContentRoot.Add(warningBox);
+        }
     }
     #endregion
 

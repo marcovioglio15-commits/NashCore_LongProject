@@ -64,6 +64,7 @@ public sealed class PlayerProgressionPresetsPanel
         library = PlayerProgressionPresetLibraryUtility.GetOrCreateLibrary();
         activeSection = ManagementToolStateUtility.LoadEnumValue(ActiveSectionStateKey, SectionType.Metadata);
 
+        RegisterReactiveCallbacks();
         BuildUI();
         RefreshPresetList();
     }
@@ -141,6 +142,21 @@ public sealed class PlayerProgressionPresetsPanel
         splitView.Add(rightPane);
 
         root.Add(splitView);
+    }
+
+    private void RegisterReactiveCallbacks()
+    {
+        root.RegisterCallback<AttachToPanelEvent>(evt =>
+        {
+            PlayerManagementSelectionContext.ContextChanged += RefreshMilestonesIfVisible;
+            PlayerManagementSelectionContext.PowerUpsPresetContentChanged += RefreshMilestonesIfVisible;
+        });
+
+        root.RegisterCallback<DetachFromPanelEvent>(evt =>
+        {
+            PlayerManagementSelectionContext.ContextChanged -= RefreshMilestonesIfVisible;
+            PlayerManagementSelectionContext.PowerUpsPresetContentChanged -= RefreshMilestonesIfVisible;
+        });
     }
 
     private VisualElement BuildLeftPane()
@@ -485,6 +501,7 @@ public sealed class PlayerProgressionPresetsPanel
     private void SelectPreset(PlayerProgressionPreset preset)
     {
         selectedPreset = preset;
+        PlayerManagementSelectionContext.SetActiveProgressionPreset(selectedPreset);
         detailsRoot.Clear();
         sectionButtonsRoot = null;
         sectionContentRoot = null;
@@ -587,6 +604,17 @@ public sealed class PlayerProgressionPresetsPanel
                 BuildScalableStatsSection();
                 return;
         }
+    }
+
+    private void RefreshMilestonesIfVisible()
+    {
+        if (selectedPreset == null)
+            return;
+
+        if (activeSection != SectionType.Milestones)
+            return;
+
+        BuildActiveSection();
     }
 
     internal VisualElement CreateSectionContainer(string sectionTitle)

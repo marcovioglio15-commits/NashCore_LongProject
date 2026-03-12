@@ -85,7 +85,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Registers UI listeners, resolves option-card views, and applies the initial hidden state.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Initialize()
     {
         RegisterOptionButtons();
@@ -97,7 +97,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Unregisters listeners and restores EventSystem navigation when the owning HUD is destroyed.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Dispose()
     {
         RestoreEventSystemNavigationIfNeeded();
@@ -109,7 +109,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Clears runtime references and hides the milestone panel when the player entity is unavailable.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void HandleMissingPlayer()
     {
         hasRuntimeContext = false;
@@ -122,7 +122,7 @@ public sealed class HUDMilestoneSelectionSection
     /// </summary>
     /// <param name="runtimeEntityManager">Entity manager used to read and write milestone selection data.</param>
     /// <param name="runtimePlayerEntity">Player entity currently driving the HUD.</param>
-    /// <returns>Void.</returns>
+
     public void Update(EntityManager runtimeEntityManager, Entity runtimePlayerEntity)
     {
         RefreshDiscoveredOptionViews();
@@ -155,7 +155,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Registers legacy button listeners and the optional skip button kept for compatibility with existing HUD layouts.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void RegisterOptionButtons()
     {
         UnregisterOptionButtons();
@@ -188,7 +188,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Removes all legacy button listeners registered by Initialize.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void UnregisterOptionButtons()
     {
         int registeredCount = Mathf.Min(registeredButtons.Count, registeredActions.Count);
@@ -217,7 +217,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Rebuilds the auto-discovered option-card list when the configured panel root changes.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void RefreshDiscoveredOptionViews()
     {
         if (!autoDiscoverOptionViewsFromPanelRoot)
@@ -253,7 +253,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Clears registered pointer callbacks from all discovered card views.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void UnregisterOptionViewCallbacks()
     {
         for (int optionIndex = 0; optionIndex < discoveredOptionViews.Count; optionIndex++)
@@ -270,7 +270,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Rebinds custom UI actions whenever the runtime input asset is recreated by InputAuthoring.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void RefreshInputActions()
     {
         InputAction runtimeNavigateAction = PlayerInputRuntime.UINavigateAction;
@@ -303,7 +303,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Unregisters custom UI input callbacks from the currently cached runtime actions.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void UnregisterInputActions()
     {
         if (navigateAction != null)
@@ -375,7 +375,7 @@ public sealed class HUDMilestoneSelectionSection
     /// </summary>
     /// <param name="selectionState">Current milestone selection state component.</param>
     /// <param name="selectionOffers">Current buffer of rolled milestone offers.</param>
-    /// <returns>Void.</returns>
+
     private void ShowPanel(PlayerMilestonePowerUpSelectionState selectionState,
                            DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers)
     {
@@ -399,7 +399,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Hides the milestone panel and resets its transient navigation and interaction state.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void HidePanel()
     {
         if (panelRoot != null && panelRoot.activeSelf)
@@ -420,7 +420,7 @@ public sealed class HUDMilestoneSelectionSection
     /// Applies one-time side effects that must run when the panel visibility changes.
     /// </summary>
     /// <param name="isVisible">True when the panel is now visible; false when it is now hidden.</param>
-    /// <returns>Void.</returns>
+
     private void ApplyPanelVisibleState(bool isVisible)
     {
         if (isPanelVisible == isVisible)
@@ -440,7 +440,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Disables default EventSystem navigation while the milestone panel uses custom input handling.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void SuppressEventSystemNavigationIfNeeded()
     {
         if (!suspendEventSystemNavigationWhileSelectionActive)
@@ -464,7 +464,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Restores the EventSystem navigation flag cached when the milestone panel became visible.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void RestoreEventSystemNavigationIfNeeded()
     {
         if (suppressedEventSystem == null)
@@ -480,7 +480,7 @@ public sealed class HUDMilestoneSelectionSection
     /// Handles one UI Navigate performed event and converts it into a custom card-selection step.
     /// </summary>
     /// <param name="context">Input callback context raised by the Navigate action.</param>
-    /// <returns>Void.</returns>
+
     private void HandleNavigatePerformed(InputAction.CallbackContext context)
     {
         if (!HUDMilestoneSelectionNavigationUtility.CanHandleSelectionInput(hasRuntimeContext, isPanelVisible, interactionLocked, activeOfferCount))
@@ -510,7 +510,7 @@ public sealed class HUDMilestoneSelectionSection
     /// Re-arms custom navigation when the Navigate action returns to its neutral value.
     /// </summary>
     /// <param name="context">Input callback context raised by the Navigate action.</param>
-    /// <returns>Void.</returns>
+
     private void HandleNavigateCanceled(InputAction.CallbackContext context)
     {
         navigationInputReleased = true;
@@ -520,7 +520,7 @@ public sealed class HUDMilestoneSelectionSection
     /// Resolves the current highlighted offer when the Submit action is pressed.
     /// </summary>
     /// <param name="context">Input callback context raised by the Submit action.</param>
-    /// <returns>Void.</returns>
+
     private void HandleSubmitPerformed(InputAction.CallbackContext context)
     {
         if (!HUDMilestoneSelectionNavigationUtility.CanHandleSelectionInput(hasRuntimeContext, isPanelVisible, interactionLocked, activeOfferCount))
@@ -533,7 +533,7 @@ public sealed class HUDMilestoneSelectionSection
     /// Maps the Cancel action to the milestone skip flow when the skip button is configured.
     /// </summary>
     /// <param name="context">Input callback context raised by the Cancel action.</param>
-    /// <returns>Void.</returns>
+
     private void HandleCancelPerformed(InputAction.CallbackContext context)
     {
         if (!HUDMilestoneSelectionNavigationUtility.CanHandleSelectionInput(hasRuntimeContext, isPanelVisible, interactionLocked, activeOfferCount))
@@ -551,7 +551,7 @@ public sealed class HUDMilestoneSelectionSection
     /// Resolves the clicked card to its offer index and queues the corresponding ECS selection command.
     /// </summary>
     /// <param name="optionView">Card view clicked by the player.</param>
-    /// <returns>Void.</returns>
+
     private void HandleOptionViewClicked(MilestonePowerUpSelectionOptionView optionView)
     {
         if (!HUDMilestoneSelectionNavigationUtility.TryGetOptionViewIndex(discoveredOptionViews, optionView, activeOfferCount, out int optionIndex))
@@ -564,7 +564,7 @@ public sealed class HUDMilestoneSelectionSection
     /// Syncs the current highlighted offer to the card under the mouse pointer.
     /// </summary>
     /// <param name="optionView">Card view currently hovered by the pointer.</param>
-    /// <returns>Void.</returns>
+
     private void HandleOptionViewHovered(MilestonePowerUpSelectionOptionView optionView)
     {
         if (!followPointerHoverSelection)
@@ -589,7 +589,7 @@ public sealed class HUDMilestoneSelectionSection
     /// Handles one offer selection request coming from cards, buttons, or the Submit action.
     /// </summary>
     /// <param name="optionIndex">Offer index requested by the current UI source.</param>
-    /// <returns>Void.</returns>
+
     private void HandleOptionSelected(int optionIndex)
     {
         if (!hasRuntimeContext)
@@ -609,7 +609,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Handles the optional skip button click and maps Cancel input to the same ECS command path.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void HandleSkipButtonPressed()
     {
         if (!hasRuntimeContext)
@@ -624,7 +624,7 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Applies the post-command interaction lock requested by the current HUD settings.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void ApplyCommandLockIfNeeded()
     {
         if (!lockButtonsAfterSelectionClick)

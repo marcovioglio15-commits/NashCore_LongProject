@@ -20,7 +20,7 @@ public partial struct ProjectileDespawnSystem : ISystem
     /// Configures component requirements for projectile despawn evaluation.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<Projectile>();
@@ -35,7 +35,7 @@ public partial struct ProjectileDespawnSystem : ISystem
     /// Evaluates active projectiles and returns expired ones to pool, including optional split spawn enqueue.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         BufferLookup<ProjectilePoolElement> poolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);

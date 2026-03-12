@@ -100,7 +100,7 @@ public sealed class PlayerScaledPresetScope : IDisposable
     /// <summary>
     /// Destroys all internally owned cloned presets.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Dispose()
     {
         if (instantiatedPresets == null)

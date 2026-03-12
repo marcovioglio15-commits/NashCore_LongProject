@@ -26,7 +26,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// Registers all runtime data required to resolve milestone selection commands.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerMilestonePowerUpSelectionCommand>();
@@ -49,7 +49,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// Processes queued HUD selection commands and resolves the active milestone outcome immediately.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         ComponentLookup<PlayerPassiveToolsState> passiveToolsStateLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(false);
@@ -253,7 +253,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// <param name="selectionOffers">Offer buffer cleared when the selection closes.</param>
     /// <param name="selectionState">Selection state reset to inactive defaults.</param>
     /// <param name="resumeState">Time.timeScale resume state configured in place.</param>
-    /// <returns>Void.</returns>
+
     private static void FinalizeSelection(PlayerProgressionConfig progressionConfig,
                                           DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers,
                                           ref PlayerMilestonePowerUpSelectionState selectionState,
@@ -370,7 +370,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// </summary>
     /// <param name="powerUpsState">Runtime active-slot state.</param>
     /// <param name="slotConfig">Newly applied active-slot config.</param>
-    /// <returns>Void.</returns>
+
     private static void ResetPrimaryActiveRuntimeState(ref PlayerPowerUpsState powerUpsState, in PlayerPowerUpSlotConfig slotConfig)
     {
         powerUpsState.PrimaryEnergy = math.max(0f, slotConfig.MaximumEnergy);
@@ -384,7 +384,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// </summary>
     /// <param name="powerUpsState">Runtime active-slot state.</param>
     /// <param name="slotConfig">Newly applied active-slot config.</param>
-    /// <returns>Void.</returns>
+
     private static void ResetSecondaryActiveRuntimeState(ref PlayerPowerUpsState powerUpsState, in PlayerPowerUpSlotConfig slotConfig)
     {
         powerUpsState.SecondaryEnergy = math.max(0f, slotConfig.MaximumEnergy);

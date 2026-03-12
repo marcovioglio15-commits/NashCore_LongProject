@@ -26,7 +26,7 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
     /// Configures required components for drop attraction and collection.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<EnemyExperienceDropActive>();
@@ -40,7 +40,7 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
     /// Updates drop attraction and converts collected drops into player experience.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;

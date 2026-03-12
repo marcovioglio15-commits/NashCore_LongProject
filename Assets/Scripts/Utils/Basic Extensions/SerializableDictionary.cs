@@ -23,7 +23,7 @@ public class SerializableDictionary<TKey, TValue>
     /// <summary>
     /// Initializes the runtime dictionary cache from serialized key/value lists.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public SerializableDictionary()
     {
         PopulateDictionaryIfEmpty();
@@ -44,7 +44,7 @@ public class SerializableDictionary<TKey, TValue>
     /// <summary>
     /// Clears serialized and runtime dictionary content.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Clear()
     {
         keys.Clear();
@@ -61,7 +61,7 @@ public class SerializableDictionary<TKey, TValue>
     /// <summary>
     /// Builds runtime dictionary content from serialized key/value lists when cache is empty.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void PopulateDictionaryIfEmpty()
     {
         if (dictionary != null && dictionary.Count > 0)

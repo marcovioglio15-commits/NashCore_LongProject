@@ -17,7 +17,7 @@ public static class PlayerProgressionScalingDrawerUtility
     /// <param name="container">UI container that receives generated fields.</param>
     /// <param name="parentProperty">Serialized parent property whose direct children are rendered.</param>
     /// <param name="scalingRulesProperty">Scaling rules list used to resolve Add Scale state.</param>
-    /// <returns>Void.</returns>
+
     public static void PopulateDirectChildFields(VisualElement container,
                                                  SerializedProperty parentProperty,
                                                  SerializedProperty scalingRulesProperty)

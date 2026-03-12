@@ -3,6 +3,9 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Copies the shared runtime input asset state into ECS input components for the locally controlled player entity.
+/// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 public partial struct PlayerInputBridgeSystem : ISystem
 {
@@ -13,12 +16,20 @@ public partial struct PlayerInputBridgeSystem : ISystem
     #endif
 
     #region Lifecycle
+    /// <summary>
+    /// Declares the ECS input component required by the bridge update.
+    /// </summary>
+    /// <param name="state">Current ECS system state used to register update requirements.</param>
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerInputState>();
     }
     
     #region Update
+    /// <summary>
+    /// Reads the current runtime input actions once and writes the resolved values to the first eligible player entity only.
+    /// </summary>
+    /// <param name="state">Current ECS system state.</param>
     public void OnUpdate(ref SystemState state)
     {
         InputAction moveAction = PlayerInputRuntime.MoveAction;
@@ -26,11 +37,13 @@ public partial struct PlayerInputBridgeSystem : ISystem
         InputAction shootAction = PlayerInputRuntime.ShootAction;
         InputAction powerUpPrimaryAction = PlayerInputRuntime.PowerUpPrimaryAction;
         InputAction powerUpSecondaryAction = PlayerInputRuntime.PowerUpSecondaryAction;
+        InputAction powerUpSwapSlotsAction = PlayerInputRuntime.PowerUpSwapSlotsAction;
         float2 move = float2.zero;
         float2 look = float2.zero;
         float shoot = 0f;
         float powerUpPrimary = 0f;
         float powerUpSecondary = 0f;
+        float swapPowerUpSlots = 0f;
         bool isInputReady = PlayerInputRuntime.IsReady;
         bool useMousePointerLook = PlayerInputRuntime.ShouldUseMousePointerLook();
 
@@ -42,7 +55,7 @@ public partial struct PlayerInputBridgeSystem : ISystem
                 move = new float2(moveValue.x, moveValue.y);
             }
 
-            if (lookAction != null && useMousePointerLook == false)
+            if (lookAction != null && !useMousePointerLook)
             {
                 Vector2 lookValue = Vector2.zero;
 
@@ -66,6 +79,11 @@ public partial struct PlayerInputBridgeSystem : ISystem
             {
                 powerUpSecondary = powerUpSecondaryAction.IsPressed() ? 1f : 0f;
             }
+
+            if (powerUpSwapSlotsAction != null)
+            {
+                swapPowerUpSlots = powerUpSwapSlotsAction.IsPressed() ? 1f : 0f;
+            }
         }
 
         bool assignedLocalInput = false;
@@ -74,13 +92,14 @@ public partial struct PlayerInputBridgeSystem : ISystem
         // Additional player entities are explicitly zeroed to prevent duplicated actions.
         foreach (RefRW<PlayerInputState> inputState in SystemAPI.Query<RefRW<PlayerInputState>>().WithAll<PlayerControllerConfig>())
         {
-            if (assignedLocalInput == false)
+            if (!assignedLocalInput)
             {
                 inputState.ValueRW.Move = move;
                 inputState.ValueRW.Look = look;
                 inputState.ValueRW.Shoot = shoot;
                 inputState.ValueRW.PowerUpPrimary = powerUpPrimary;
                 inputState.ValueRW.PowerUpSecondary = powerUpSecondary;
+                inputState.ValueRW.SwapPowerUpSlots = swapPowerUpSlots;
                 assignedLocalInput = true;
                 continue;
             }
@@ -90,13 +109,14 @@ public partial struct PlayerInputBridgeSystem : ISystem
             inputState.ValueRW.Shoot = 0f;
             inputState.ValueRW.PowerUpPrimary = 0f;
             inputState.ValueRW.PowerUpSecondary = 0f;
+            inputState.ValueRW.SwapPowerUpSlots = 0f;
         }
 
         #if UNITY_EDITOR
-        if (loggedInput == false && (math.lengthsq(move) > 0f || math.lengthsq(look) > 0f || shoot > 0f))
+        if (!loggedInput && (math.lengthsq(move) > 0f || math.lengthsq(look) > 0f || shoot > 0f || swapPowerUpSlots > 0f))
         {
             loggedInput = true;
-            Debug.Log(string.Format("[PlayerInputBridgeSystem] Input detected. Move: {0} | Look: {1} | Shoot: {2}", move, look, shoot));
+            Debug.Log(string.Format("[PlayerInputBridgeSystem] Input detected. Move: {0} | Look: {1} | Shoot: {2} | SwapSlots: {3}", move, look, shoot, swapPowerUpSlots));
         }
 
         #endif

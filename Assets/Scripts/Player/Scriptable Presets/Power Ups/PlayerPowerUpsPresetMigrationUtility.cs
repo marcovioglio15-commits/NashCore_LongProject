@@ -131,6 +131,23 @@ internal static class PlayerPowerUpsPresetMigrationUtility
         PlayerPowerUpsPresetLoadoutUtility.ClearPassiveToolIds(preset);
     }
 
+    public static void MigrateLegacyDropPoolCatalog(PlayerPowerUpsPreset preset)
+    {
+        if (preset == null)
+            return;
+
+        if (preset.DropPoolsMutable == null)
+            preset.DropPoolsMutable = new List<PowerUpDropPoolDefinition>();
+
+        if (preset.DropPoolsMutable.Count > 0)
+            return;
+
+        List<PowerUpDropPoolDefinition> migratedDropPools = PlayerPowerUpsPresetDefaultsUtility.BuildDefaultDropPoolDefinitions(preset);
+
+        for (int dropPoolIndex = 0; dropPoolIndex < migratedDropPools.Count; dropPoolIndex++)
+            preset.DropPoolsMutable.Add(migratedDropPools[dropPoolIndex]);
+    }
+
     private static void ApplyUnifiedBindings(List<ModularPowerUpDefinition> powerUps, List<PowerUpModuleDefinition> moduleDefinitions)
     {
         if (powerUps == null)

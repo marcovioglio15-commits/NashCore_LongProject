@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, and cheat preset bindings) are present in the asset, and if not, it creates them with default bindings. 
+/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, and cheat preset bindings) are present in the asset, and if not, it creates them with default bindings. 
 /// The utility also handles asset creation and folder management within the Unity Editor.
 /// </summary>
 public static class PlayerInputActionsAssetUtility
@@ -42,7 +42,7 @@ public static class PlayerInputActionsAssetUtility
     #region Private Methods
     /// <summary>
     /// This method checks the provided input action asset for the presence of required actions 
-    /// (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, CheatPresetDigit, CheatModifierControl, CheatModifierShift) within a "Player" action map. If any of the required actions are missing, 
+    /// (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, CheatPresetDigit, CheatModifierControl, CheatModifierShift) within a "Player" action map. If any of the required actions are missing, 
     /// it creates them with default configurations and bindings. If any changes are made to the asset, 
     /// it marks it as dirty and saves the changes to ensure they persist in the Unity Editor.
     /// </summary>
@@ -67,6 +67,7 @@ public static class PlayerInputActionsAssetUtility
         changed |= EnsureAction(map, "Shoot", InputActionType.Button, "Button", AddDefaultShootBindings);
         changed |= EnsureAction(map, "PowerUpPrimary", InputActionType.Button, "Button", AddDefaultPowerUpPrimaryBindings);
         changed |= EnsureAction(map, "PowerUpSecondary", InputActionType.Button, "Button", AddDefaultPowerUpSecondaryBindings);
+        changed |= EnsureAction(map, "PowerUpSwapSlots", InputActionType.Button, "Button", AddDefaultPowerUpSwapSlotsBindings);
         changed |= EnsureAction(map, "CheatPresetDigit", InputActionType.Button, "Button", AddDefaultCheatPresetDigitBindings);
         changed |= EnsureAction(map, "CheatModifierControl", InputActionType.Button, "Button", AddDefaultCheatModifierControlBindings);
         changed |= EnsureAction(map, "CheatModifierShift", InputActionType.Button, "Button", AddDefaultCheatModifierShiftBindings);
@@ -189,6 +190,19 @@ public static class PlayerInputActionsAssetUtility
     }
 
     /// <summary>
+    /// Adds default bindings for the active-slot swap action.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultPowerUpSwapSlotsBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Keyboard>/tab");
+        action.AddBinding("<Gamepad>/leftStickPress");
+    }
+
+    /// <summary>
     /// Adds default bindings for digit selection used by runtime power-up preset cheat swaps.
     /// </summary>
     /// <param name="action"></param>
@@ -250,7 +264,7 @@ public static class PlayerInputActionsAssetUtility
 
     /// <summary>
     /// This method creates a new input action asset with a "Player" action map containing 
-    /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, and cheat preset actions) and their default bindings.
+    /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, and cheat preset actions) and their default bindings.
     /// </summary>
     /// <returns> Returns the created InputActionAsset instance. </returns>
     private static InputActionAsset CreateDefaultAsset()
@@ -274,6 +288,9 @@ public static class PlayerInputActionsAssetUtility
 
         InputAction powerUpSecondary = map.AddAction("PowerUpSecondary", InputActionType.Button, null, null, null, null, "Button");
         AddDefaultPowerUpSecondaryBindings(powerUpSecondary);
+
+        InputAction powerUpSwapSlots = map.AddAction("PowerUpSwapSlots", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultPowerUpSwapSlotsBindings(powerUpSwapSlots);
 
         InputAction cheatPresetDigit = map.AddAction("CheatPresetDigit", InputActionType.Button, null, null, null, null, "Button");
         AddDefaultCheatPresetDigitBindings(cheatPresetDigit);

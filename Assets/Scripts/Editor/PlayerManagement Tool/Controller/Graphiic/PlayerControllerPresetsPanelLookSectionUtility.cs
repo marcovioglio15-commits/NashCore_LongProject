@@ -22,7 +22,7 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and helper utilities.</param>
     /// <param name="section">Pre-created section container that receives the look UI.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildLookSection(PlayerControllerPresetsPanel panel, VisualElement section)
     {
         if (panel == null || section == null)

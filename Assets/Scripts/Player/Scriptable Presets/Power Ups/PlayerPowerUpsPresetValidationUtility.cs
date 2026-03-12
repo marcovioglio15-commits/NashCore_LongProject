@@ -25,6 +25,9 @@ internal static class PlayerPowerUpsPresetValidationUtility
 
         if (string.IsNullOrWhiteSpace(preset.SecondaryToolActionIdMutable))
             preset.SecondaryToolActionIdMutable = "PowerUpSecondary";
+
+        if (string.IsNullOrWhiteSpace(preset.SwapSlotsActionIdMutable))
+            preset.SwapSlotsActionIdMutable = "PowerUpSwapSlots";
     }
 
     public static void ValidateCollections(PlayerPowerUpsPreset preset)
@@ -34,6 +37,9 @@ internal static class PlayerPowerUpsPresetValidationUtility
 
         if (preset.TierLevelsMutable == null)
             preset.TierLevelsMutable = new List<PowerUpTierLevelDefinition>();
+
+        if (preset.DropPoolsMutable == null)
+            preset.DropPoolsMutable = new List<PowerUpDropPoolDefinition>();
 
         if (preset.DropPoolCatalogMutable == null)
             preset.DropPoolCatalogMutable = new List<string>();
@@ -88,6 +94,7 @@ internal static class PlayerPowerUpsPresetValidationUtility
         ValidateModularPowerUps(preset.ActivePowerUpsMutable);
         ValidateModularPowerUps(preset.PassivePowerUpsMutable);
         ValidateTierLevels(preset);
+        ValidateDropPools(preset);
         ValidateElementalVfxAssignments(preset);
         PlayerPowerUpsPresetMigrationUtility.MigrateLoadoutIds(preset);
         PlayerPowerUpsPresetLoadoutUtility.ValidateActivePowerUpLoadout(preset);
@@ -232,12 +239,50 @@ internal static class PlayerPowerUpsPresetValidationUtility
         }
     }
 
+    private static void ValidateDropPools(PlayerPowerUpsPreset preset)
+    {
+        if (preset == null)
+            return;
+
+        PlayerPowerUpsPresetMigrationUtility.MigrateLegacyDropPoolCatalog(preset);
+        EnsureDefaultDropPoolsIfMissing(preset);
+        HashSet<string> validTierIds = CollectTierIds(preset.TierLevelsMutable);
+        HashSet<string> visitedPoolIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int dropPoolIndex = 0; dropPoolIndex < preset.DropPoolsMutable.Count; dropPoolIndex++)
+        {
+            PowerUpDropPoolDefinition dropPool = preset.DropPoolsMutable[dropPoolIndex];
+
+            if (dropPool == null)
+            {
+                dropPool = new PowerUpDropPoolDefinition();
+                preset.DropPoolsMutable[dropPoolIndex] = dropPool;
+            }
+
+            string fallbackPoolId = string.Format("Pool{0}", dropPoolIndex + 1);
+            dropPool.Validate(fallbackPoolId);
+            dropPool.AssignPoolId(BuildUniqueDropPoolId(visitedPoolIds, dropPool.PoolId, dropPoolIndex + 1));
+            dropPool.RemoveInvalidTierRolls(validTierIds);
+        }
+    }
+
     private static void EnsureDefaultTierLevelsIfMissing(PlayerPowerUpsPreset preset)
     {
         if (preset == null || preset.TierLevelsMutable.Count > 0)
             return;
 
         preset.TierLevelsMutable.Add(new PowerUpTierLevelDefinition());
+    }
+
+    private static void EnsureDefaultDropPoolsIfMissing(PlayerPowerUpsPreset preset)
+    {
+        if (preset == null || preset.DropPoolsMutable.Count > 0)
+            return;
+
+        List<PowerUpDropPoolDefinition> defaultDropPools = PlayerPowerUpsPresetDefaultsUtility.BuildDefaultDropPoolDefinitions(preset);
+
+        for (int dropPoolIndex = 0; dropPoolIndex < defaultDropPools.Count; dropPoolIndex++)
+            preset.DropPoolsMutable.Add(defaultDropPools[dropPoolIndex]);
     }
 
     private static HashSet<string> CollectModularPowerUpIds(List<ModularPowerUpDefinition> modularPowerUps)
@@ -265,6 +310,26 @@ internal static class PlayerPowerUpsPresetValidationUtility
         return powerUpIds;
     }
 
+    private static HashSet<string> CollectTierIds(List<PowerUpTierLevelDefinition> tierLevels)
+    {
+        HashSet<string> tierIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (tierLevels == null)
+            return tierIds;
+
+        for (int tierIndex = 0; tierIndex < tierLevels.Count; tierIndex++)
+        {
+            PowerUpTierLevelDefinition tierLevel = tierLevels[tierIndex];
+
+            if (tierLevel == null || string.IsNullOrWhiteSpace(tierLevel.TierId))
+                continue;
+
+            tierIds.Add(tierLevel.TierId.Trim());
+        }
+
+        return tierIds;
+    }
+
     /// <summary>
     /// Produces a unique tier ID while preserving the user-authored base name whenever possible.
     /// </summary>
@@ -289,6 +354,28 @@ internal static class PlayerPowerUpsPresetValidationUtility
 
             if (visitedTierIds.Add(candidateTierId))
                 return candidateTierId;
+
+            suffix++;
+        }
+    }
+
+    private static string BuildUniqueDropPoolId(HashSet<string> visitedPoolIds, string poolId, int fallbackPoolIndex)
+    {
+        string normalizedPoolId = string.IsNullOrWhiteSpace(poolId)
+            ? string.Format("Pool{0}", fallbackPoolIndex)
+            : poolId.Trim();
+
+        if (visitedPoolIds.Add(normalizedPoolId))
+            return normalizedPoolId;
+
+        int suffix = 1;
+
+        while (true)
+        {
+            string candidatePoolId = string.Format("{0}_{1}", normalizedPoolId, suffix);
+
+            if (visitedPoolIds.Add(candidatePoolId))
+                return candidatePoolId;
 
             suffix++;
         }

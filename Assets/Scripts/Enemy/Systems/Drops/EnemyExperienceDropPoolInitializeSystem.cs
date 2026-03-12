@@ -27,7 +27,7 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     /// Creates registry singleton dependencies required by drop pooling.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         registryQuery = new EntityQueryBuilder(Allocator.Temp)
@@ -53,7 +53,7 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     /// Initializes drop pools once by aggregating prefab demand from all enemy spawners.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         EnsureRegistrySingleton(ref state);
@@ -96,7 +96,7 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     /// Ensures that a singleton registry entity for experience drop pools exists.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     private void EnsureRegistrySingleton(ref SystemState state)
     {
         if (registryQuery.IsEmptyIgnoreFilter == false)
@@ -135,7 +135,7 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     /// <param name="entityManager">Entity manager used to read spawner and prefab data.</param>
     /// <param name="spawner">Spawner source configuration.</param>
     /// <param name="poolSettingsByPrefab">Accumulated pool build settings grouped by prefab entity.</param>
-    /// <returns>Void.</returns>
+
     private static void AggregateSpawnerPoolSettings(EntityManager entityManager,
                                                      EnemySpawner spawner,
                                                      Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab)
@@ -252,7 +252,7 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     /// <param name="entityManager">Entity manager used to mutate pool entities.</param>
     /// <param name="registryEntity">Registry singleton entity that stores the pool map buffer.</param>
     /// <param name="poolSettingsByPrefab">Resolved pool sizing settings grouped by prefab entity.</param>
-    /// <returns>Void.</returns>
+
     private static void ApplyPoolSettings(EntityManager entityManager,
                                           Entity registryEntity,
                                           Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab)

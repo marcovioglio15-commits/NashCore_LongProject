@@ -99,7 +99,7 @@ public sealed class PlayerScalableStatDefinition
     /// <param name="statNameValue">Formula variable name for this stat.</param>
     /// <param name="statTypeValue">Runtime data type of this stat.</param>
     /// <param name="defaultValueValue">Default raw stat value before scaling.</param>
-    /// <returns>Void.</returns>
+
     public void Configure(string statNameValue, PlayerScalableStatType statTypeValue, float defaultValueValue)
     {
         statName = statNameValue;
@@ -252,7 +252,7 @@ public sealed class PlayerStatScalingRule
     /// <param name="statKeyValue">Stable key of the target numeric stat.</param>
     /// <param name="addScalingValue">Whether formula scaling is enabled.</param>
     /// <param name="formulaValue">Formula text to evaluate when scaling is enabled.</param>
-    /// <returns>Void.</returns>
+
     public void Configure(string statKeyValue, bool addScalingValue, string formulaValue)
     {
         Configure(statKeyValue, addScalingValue, formulaValue, false, GetDefaultDebugColor());
@@ -265,7 +265,7 @@ public sealed class PlayerStatScalingRule
     /// <param name="addScalingValue">Whether formula scaling is enabled.</param>
     /// <param name="formulaValue">Formula text to evaluate when scaling is enabled.</param>
     /// <param name="debugInConsoleValue">Whether runtime editor-only logging is enabled for this rule.</param>
-    /// <returns>Void.</returns>
+
     public void Configure(string statKeyValue, bool addScalingValue, string formulaValue, bool debugInConsoleValue)
     {
         Configure(statKeyValue, addScalingValue, formulaValue, debugInConsoleValue, GetDefaultDebugColor());
@@ -279,7 +279,7 @@ public sealed class PlayerStatScalingRule
     /// <param name="formulaValue">Formula text to evaluate when scaling is enabled.</param>
     /// <param name="debugInConsoleValue">Whether runtime editor-only logging is enabled for this rule.</param>
     /// <param name="debugColorValue">Editor-only color applied to this rule debug log.</param>
-    /// <returns>Void.</returns>
+
     public void Configure(string statKeyValue,
                           bool addScalingValue,
                           string formulaValue,

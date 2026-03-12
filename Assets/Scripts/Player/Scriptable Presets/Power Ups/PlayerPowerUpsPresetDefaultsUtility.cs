@@ -87,7 +87,12 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
 
     public static List<string> BuildDefaultDropPools(PlayerPowerUpsPreset preset)
     {
-        List<string> defaultDropPools = BuildDropPoolCopy(preset != null ? preset.DropPoolCatalogMutable : null);
+        List<string> defaultDropPools = BuildDropPoolIdsCopy(preset != null ? preset.DropPoolsMutable : null);
+
+        if (defaultDropPools.Count > 0)
+            return defaultDropPools;
+
+        defaultDropPools = BuildDropPoolCopy(preset != null ? preset.DropPoolCatalogMutable : null);
 
         if (defaultDropPools.Count > 0)
             return defaultDropPools;
@@ -96,6 +101,33 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
         defaultDropPools.Add("Shop");
         defaultDropPools.Add("Boss");
         return defaultDropPools;
+    }
+
+    public static List<PowerUpDropPoolDefinition> BuildDefaultDropPoolDefinitions(PlayerPowerUpsPreset preset)
+    {
+        List<PowerUpDropPoolDefinition> definitions = new List<PowerUpDropPoolDefinition>();
+        string fallbackTierId = ResolveDefaultTierId(preset);
+        List<string> defaultPoolIds = BuildDefaultDropPools(preset);
+
+        for (int poolIndex = 0; poolIndex < defaultPoolIds.Count; poolIndex++)
+        {
+            string poolId = defaultPoolIds[poolIndex];
+            List<PowerUpDropPoolTierDefinition> tierRolls = new List<PowerUpDropPoolTierDefinition>();
+
+            if (!string.IsNullOrWhiteSpace(fallbackTierId))
+            {
+                PowerUpDropPoolTierDefinition tierRoll = new PowerUpDropPoolTierDefinition();
+                tierRoll.Configure(fallbackTierId, 100f);
+                tierRolls.Add(tierRoll);
+            }
+
+            PowerUpDropPoolDefinition dropPool = new PowerUpDropPoolDefinition();
+            dropPool.Configure(poolId, tierRolls);
+            dropPool.Validate(poolId);
+            definitions.Add(dropPool);
+        }
+
+        return definitions;
     }
 
     public static PowerUpModuleDefinition CreateModuleDefinition(string moduleId,
@@ -133,6 +165,44 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
         definitions.Add(CreateModuleDefinition(ModuleIdBouncingProjectiles, "Bouncing Projectiles", PowerUpModuleKind.BouncingProjectiles, PowerUpModuleStage.Hook, "Adds wall bounce behavior to projectiles."));
         definitions.Add(CreateModuleDefinition(ModuleIdProjectileSplit, "Projectile Split", PowerUpModuleKind.ProjectileSplit, PowerUpModuleStage.Hook, "Splits projectiles based on configured trigger mode."));
         return definitions;
+    }
+
+    private static List<string> BuildDropPoolIdsCopy(List<PowerUpDropPoolDefinition> sourceDropPools)
+    {
+        List<string> copy = new List<string>();
+
+        if (sourceDropPools == null)
+            return copy;
+
+        for (int poolIndex = 0; poolIndex < sourceDropPools.Count; poolIndex++)
+        {
+            PowerUpDropPoolDefinition dropPool = sourceDropPools[poolIndex];
+
+            if (dropPool == null || string.IsNullOrWhiteSpace(dropPool.PoolId))
+                continue;
+
+            copy.Add(dropPool.PoolId.Trim());
+        }
+
+        return copy;
+    }
+
+    private static string ResolveDefaultTierId(PlayerPowerUpsPreset preset)
+    {
+        if (preset == null || preset.TierLevelsMutable == null)
+            return "Tier1";
+
+        for (int tierIndex = 0; tierIndex < preset.TierLevelsMutable.Count; tierIndex++)
+        {
+            PowerUpTierLevelDefinition tierLevel = preset.TierLevelsMutable[tierIndex];
+
+            if (tierLevel == null || string.IsNullOrWhiteSpace(tierLevel.TierId))
+                continue;
+
+            return tierLevel.TierId.Trim();
+        }
+
+        return "Tier1";
     }
 
     private static List<ModularPowerUpDefinition> BuildDefaultActivePowerUps(List<string> defaultDropPools)

@@ -93,6 +93,49 @@ public static class PowerUpTierOptionsUtility
         options.Sort(StringComparer.OrdinalIgnoreCase);
         return options;
     }
+
+    /// <summary>
+    /// Builds selectable drop-pool IDs from the current power-ups preset.
+    /// </summary>
+    /// <param name="serializedObject">Power-ups preset serialized object.</param>
+    /// <returns>Ordered list of available drop-pool IDs.</returns>
+    public static List<string> BuildDropPoolIdOptions(SerializedObject serializedObject)
+    {
+        List<string> options = new List<string>();
+
+        if (serializedObject == null)
+            return options;
+
+        SerializedProperty dropPoolsProperty = serializedObject.FindProperty("dropPools");
+
+        if (dropPoolsProperty == null)
+            return options;
+
+        HashSet<string> visitedDropPoolIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int dropPoolIndex = 0; dropPoolIndex < dropPoolsProperty.arraySize; dropPoolIndex++)
+        {
+            SerializedProperty dropPoolProperty = dropPoolsProperty.GetArrayElementAtIndex(dropPoolIndex);
+
+            if (dropPoolProperty == null)
+                continue;
+
+            SerializedProperty poolIdProperty = dropPoolProperty.FindPropertyRelative("poolId");
+
+            if (poolIdProperty == null || string.IsNullOrWhiteSpace(poolIdProperty.stringValue))
+                continue;
+
+            string poolId = poolIdProperty.stringValue.Trim();
+
+            if (!visitedDropPoolIds.Add(poolId))
+                continue;
+
+            options.Add(poolId);
+        }
+
+        options.Sort(StringComparer.OrdinalIgnoreCase);
+        return options;
+    }
     #endregion
 
     #region Private Methods

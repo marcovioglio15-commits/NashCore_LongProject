@@ -66,6 +66,7 @@ public sealed class InputAuthoring : MonoBehaviour
         string shootActionId = string.Empty;
         string primaryPowerUpActionId = string.Empty;
         string secondaryPowerUpActionId = string.Empty;
+        string swapSlotsActionId = string.Empty;
         PlayerPowerUpsPreset powerUpsPreset = ResolvePowerUpsPreset();
 
         if (controllerPreset != null)
@@ -79,6 +80,7 @@ public sealed class InputAuthoring : MonoBehaviour
         {
             primaryPowerUpActionId = powerUpsPreset.PrimaryToolActionId;
             secondaryPowerUpActionId = powerUpsPreset.SecondaryToolActionId;
+            swapSlotsActionId = powerUpsPreset.SwapSlotsActionId;
         }
 
         PlayerInputRuntime.Initialize(inputActionsAsset,
@@ -86,7 +88,8 @@ public sealed class InputAuthoring : MonoBehaviour
                                       lookActionId,
                                       shootActionId,
                                       primaryPowerUpActionId,
-                                      secondaryPowerUpActionId);
+                                      secondaryPowerUpActionId,
+                                      swapSlotsActionId);
         ApplyCursorPolicy();
 
         #if UNITY_EDITOR

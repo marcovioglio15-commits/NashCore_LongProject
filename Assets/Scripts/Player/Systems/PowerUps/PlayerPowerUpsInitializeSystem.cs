@@ -42,7 +42,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     /// Builds bootstrap queries that detect missing power-up runtime data.
     /// </summary>
     /// <param name="state">System state used to register required singletons and queries.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerPowerUpsConfig>();
@@ -177,7 +177,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     /// Adds missing runtime state/buffers to every entity with PlayerPowerUpsConfig and disables the system once bootstrap completes.
     /// </summary>
     /// <param name="state">System state used to query and write ECS runtime data.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         PlayerPowerUpsMissingRuntimeFlags missingFlags = PlayerPowerUpsMissingRuntimeFlags.Create(

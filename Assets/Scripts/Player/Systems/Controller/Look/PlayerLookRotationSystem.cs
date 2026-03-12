@@ -25,7 +25,7 @@ public partial struct PlayerLookRotationSystem : ISystem
     /// Declares the component set required to run player look rotation updates.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerLookState>();
@@ -39,7 +39,7 @@ public partial struct PlayerLookRotationSystem : ISystem
     /// Updates player orientation from desired look direction using either snap or damped rotation modes.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
@@ -158,7 +158,7 @@ public partial struct PlayerLookRotationSystem : ISystem
     /// <param name="currentDirection">Direction to store as current look vector.</param>
     /// <param name="angularSpeed">Angular speed to store.</param>
     /// <param name="stateChanged">Flag raised when one field changed.</param>
-    /// <returns>Void.</returns>
+
     private static void SetLookState(ref PlayerLookState lookState,
                                      in float3 currentDirection,
                                      float angularSpeed,

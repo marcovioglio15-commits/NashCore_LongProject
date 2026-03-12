@@ -550,7 +550,7 @@ public static class PlayerScalingFieldElementFactory
     /// </summary>
     /// <param name="ruleStatKeyProperty">Serialized statKey property inside the rule element.</param>
     /// <param name="newStatKey">Current normalized stat key to store.</param>
-    /// <returns>Void.</returns>
+
     private static void TryRepairRuleStatKey(SerializedProperty ruleStatKeyProperty, string newStatKey)
     {
         if (ruleStatKeyProperty == null)

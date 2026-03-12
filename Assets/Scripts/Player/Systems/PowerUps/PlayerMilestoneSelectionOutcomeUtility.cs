@@ -19,7 +19,7 @@ public static class PlayerMilestoneSelectionOutcomeUtility
     /// </summary>
     /// <param name="selectionOffers">Offer buffer cleared when the selection closes.</param>
     /// <param name="selectionState">Selection state reset to its inactive defaults.</param>
-    /// <returns>Void.</returns>
+
     public static void ResetSelection(DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers,
                                       ref PlayerMilestonePowerUpSelectionState selectionState)
     {
@@ -38,7 +38,7 @@ public static class PlayerMilestoneSelectionOutcomeUtility
     /// </summary>
     /// <param name="progressionConfig">Runtime progression config containing the resume duration setting.</param>
     /// <param name="resumeState">Resume state updated in place.</param>
-    /// <returns>Void.</returns>
+
     public static void BeginTimeScaleResume(PlayerProgressionConfig progressionConfig,
                                             ref PlayerMilestoneTimeScaleResumeState resumeState)
     {

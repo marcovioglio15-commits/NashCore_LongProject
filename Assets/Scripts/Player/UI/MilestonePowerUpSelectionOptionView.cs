@@ -96,7 +96,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// <summary>
     /// Resolves missing child references the first time the prefab instance becomes active.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void Awake()
     {
         CacheReferences();
@@ -106,7 +106,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// Forwards left-click selection requests to the owning milestone HUD section.
     /// </summary>
     /// <param name="eventData">Pointer event raised by the current EventSystem.</param>
-    /// <returns>Void.</returns>
+
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!CanForwardPointerInput(eventData))
@@ -122,7 +122,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// Moves the current selection highlight to this card when hover-based sync is enabled.
     /// </summary>
     /// <param name="eventData">Pointer event raised by the current EventSystem.</param>
-    /// <returns>Void.</returns>
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (!CanForwardPointerInput(eventData))
@@ -138,7 +138,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// <summary>
     /// Refreshes auto-resolved references while editing the prefab or scene instance.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void OnValidate()
     {
         CacheReferences();
@@ -147,7 +147,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// <summary>
     /// Populates default child references when the component is first added from the Inspector.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void Reset()
     {
         CacheReferences();
@@ -161,7 +161,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// </summary>
     /// <param name="clickCallbackValue">Callback invoked when the card is clicked.</param>
     /// <param name="hoverCallbackValue">Callback invoked when the card is hovered.</param>
-    /// <returns>Void.</returns>
+
     public void RegisterCallbacks(Action<MilestonePowerUpSelectionOptionView> clickCallbackValue,
                                   Action<MilestonePowerUpSelectionOptionView> hoverCallbackValue)
     {
@@ -172,7 +172,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// <summary>
     /// Clears all registered interaction delegates when the HUD section is disposed or rebuilt.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void ClearCallbacks()
     {
         clickCallback = null;
@@ -183,7 +183,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// Enables or disables the selection highlight associated with this card.
     /// </summary>
     /// <param name="isSelected">True to show the highlight; false to hide it.</param>
-    /// <returns>Void.</returns>
+
     public void SetSelected(bool isSelected)
     {
         if (selectionHighlightGraphic == null)
@@ -199,7 +199,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// Updates the runtime interactable state used to filter pointer input after a command is queued.
     /// </summary>
     /// <param name="interactable">True to accept pointer input; false to ignore it.</param>
-    /// <returns>Void.</returns>
+
     public void SetInteractable(bool interactable)
     {
         isInteractable = interactable;
@@ -210,7 +210,7 @@ public sealed class MilestonePowerUpSelectionOptionView : MonoBehaviour, IPointe
     /// <summary>
     /// Resolves missing child references from the expected milestone card hierarchy.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void CacheReferences()
     {
         Transform rootTransform = transform;

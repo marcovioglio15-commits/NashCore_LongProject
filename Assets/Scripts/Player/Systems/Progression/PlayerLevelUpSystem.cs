@@ -35,7 +35,7 @@ public partial struct PlayerLevelUpSystem : ISystem
     /// Configures singleton requirements for level progression updates.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerExperience>();
@@ -47,7 +47,7 @@ public partial struct PlayerLevelUpSystem : ISystem
     /// Resolves one or more level-ups, applies schedule growth and opens milestone power-up selection when needed.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         ComponentLookup<PlayerMilestonePowerUpSelectionState> milestoneSelectionStateLookup = SystemAPI.GetComponentLookup<PlayerMilestonePowerUpSelectionState>(false);
@@ -154,6 +154,9 @@ public partial struct PlayerLevelUpSystem : ISystem
                     break;
                 }
 
+                // Keep runtime scalable stats aligned with the freshly applied schedule step
+                // before any milestone roll resolves tier or drop-pool probabilities.
+                SyncScalableStats(scalableStats, currentExperience, currentLevel);
                 DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog = unlockCatalogLookup[entity];
                 DynamicBuffer<PlayerPowerUpTierDefinitionElement> tierDefinitions = tierDefinitionsLookup[entity];
                 DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries = tierEntriesLookup[entity];
@@ -337,7 +340,7 @@ public partial struct PlayerLevelUpSystem : ISystem
     /// <param name="scalableStats">Runtime scalable stat buffer.</param>
     /// <param name="experienceValue">Current experience value to propagate.</param>
     /// <param name="levelValue">Current level value to propagate.</param>
-    /// <returns>Void.</returns>
+
     private static void SyncScalableStats(DynamicBuffer<PlayerScalableStatElement> scalableStats, float experienceValue, int levelValue)
     {
         if (!scalableStats.IsCreated)

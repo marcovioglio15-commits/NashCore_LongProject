@@ -22,7 +22,7 @@ public static class EnemyExperienceDropPoolUtility
     /// <param name="poolEntity">Pool entity receiving the instantiated drops.</param>
     /// <param name="prefabEntity">Drop prefab entity to instantiate.</param>
     /// <param name="count">Amount of instances to create.</param>
-    /// <returns>Void.</returns>
+
     public static void ExpandPool(EntityManager entityManager, Entity poolEntity, Entity prefabEntity, int count)
     {
         if (count <= 0)
@@ -71,7 +71,7 @@ public static class EnemyExperienceDropPoolUtility
     /// </summary>
     /// <param name="entityManager">EntityManager used for component checks and additions.</param>
     /// <param name="dropEntity">Drop entity to sanitize.</param>
-    /// <returns>Void.</returns>
+
     public static void EnsureDropComponents(EntityManager entityManager, Entity dropEntity)
     {
         if (dropEntity == Entity.Null)
@@ -146,7 +146,7 @@ public static class EnemyExperienceDropPoolUtility
     /// <param name="entityManager">EntityManager used for pool writes.</param>
     /// <param name="poolEntity">Target pool entity receiving the drop reference.</param>
     /// <param name="dropEntity">Drop entity to release.</param>
-    /// <returns>Void.</returns>
+
     public static void ReleaseDrop(EntityManager entityManager, Entity poolEntity, Entity dropEntity)
     {
         if (dropEntity == Entity.Null)
@@ -180,7 +180,7 @@ public static class EnemyExperienceDropPoolUtility
     /// </summary>
     /// <param name="entityManager">EntityManager used for transform writes.</param>
     /// <param name="dropEntity">Drop entity to park.</param>
-    /// <returns>Void.</returns>
+
     public static void ParkDrop(EntityManager entityManager, Entity dropEntity)
     {
         if (dropEntity == Entity.Null)

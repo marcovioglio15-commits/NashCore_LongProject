@@ -36,7 +36,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// Creates the query used to detect entities with scaling debug snapshots and scalable stat values.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         ruleDebugQuery = SystemAPI.QueryBuilder()
@@ -52,7 +52,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// Resets cached change-tracking maps when the system starts running.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnStartRunning(ref SystemState state)
     {
         if (lastLoggedRuleValues.IsCreated)
@@ -68,7 +68,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// Releases native allocations owned by this editor-only debug system.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnDestroy(ref SystemState state)
     {
         if (lastLoggedRuleValues.IsCreated)
@@ -82,7 +82,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// Emits colorized scaling-debug logs at a throttled cadence and only for rules whose evaluated value changed.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         if (!Application.isPlaying)
@@ -268,7 +268,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// Grows the rule-value cache capacity when the next insertion would overflow.
     /// </summary>
     /// <param name="requiredCapacity">Minimum capacity required by the next insertion.</param>
-    /// <returns>Void.</returns>
+
     private void EnsureRuleValueCapacity(int requiredCapacity)
     {
         if (lastLoggedRuleValues.Capacity >= requiredCapacity)
@@ -282,7 +282,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// Grows the entity-hash cache capacity when the next insertion would overflow.
     /// </summary>
     /// <param name="requiredCapacity">Minimum capacity required by the next insertion.</param>
-    /// <returns>Void.</returns>
+
     private void EnsureEntityHashCapacity(int requiredCapacity)
     {
         if (lastEntityVariableHashes.Capacity >= requiredCapacity)
@@ -301,7 +301,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// <param name="translatedFormula">Formula with resolved variable values.</param>
     /// <param name="evaluatedValue">Final evaluated numeric result.</param>
     /// <param name="debugColorHex">Color used by this debug line as HTML hex RGBA.</param>
-    /// <returns>Void.</returns>
+
     private static void AppendRuleLine(StringBuilder batchedLogBuilder,
                                        string targetDisplayName,
                                        string formulaText,
@@ -327,7 +327,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     /// </summary>
     /// <param name="scalableStats">Runtime scalable stat buffer.</param>
     /// <param name="variableContext">Mutable dictionary receiving variable values.</param>
-    /// <returns>Void.</returns>
+
     private static void FillVariableContext(DynamicBuffer<PlayerScalableStatElement> scalableStats,
                                             Dictionary<string, float> variableContext)
     {

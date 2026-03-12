@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Identifies which runtime resource is granted when a milestone power-up selection is skipped.
@@ -24,7 +25,7 @@ public enum PlayerMilestoneCompensationApplyMode
 }
 
 /// <summary>
-/// Defines one milestone power-up roll with its own tier-roll candidates.
+/// Defines one milestone power-up roll by referencing one drop pool from the scoped power-ups preset.
 /// </summary>
 [Serializable]
 public sealed class PlayerMilestonePowerUpUnlockDefinition
@@ -32,18 +33,39 @@ public sealed class PlayerMilestonePowerUpUnlockDefinition
     #region Fields
 
     #region Serialized Fields
-    [Tooltip("Percentage-based tier candidates used to resolve this specific milestone power-up extraction. The sum should be 100%.")]
-    [SerializeField] private List<PlayerMilestoneTierRollDefinition> tierRolls = new List<PlayerMilestoneTierRollDefinition>();
+    [Tooltip("Drop pool ID selected from the scoped Power-Ups preset and used to resolve this specific milestone power-up extraction.")]
+    [SerializeField] private string dropPoolId;
+
+    [Tooltip("Legacy tier-roll data preserved for backward-compatible migration from inline milestone tier definitions.")]
+    [FormerlySerializedAs("tierRolls")]
+    [HideInInspector]
+    [SerializeField] private List<PlayerMilestoneTierRollDefinition> legacyTierRolls = new List<PlayerMilestoneTierRollDefinition>();
     #endregion
 
     #endregion
 
     #region Properties
-    public IReadOnlyList<PlayerMilestoneTierRollDefinition> TierRolls
+    public string DropPoolId
     {
         get
         {
-            return tierRolls;
+            return dropPoolId;
+        }
+    }
+
+    public IReadOnlyList<PlayerMilestoneTierRollDefinition> LegacyTierRolls
+    {
+        get
+        {
+            return legacyTierRolls;
+        }
+    }
+
+    public bool HasLegacyTierRolls
+    {
+        get
+        {
+            return legacyTierRolls != null && legacyTierRolls.Count > 0;
         }
     }
     #endregion
@@ -52,40 +74,47 @@ public sealed class PlayerMilestonePowerUpUnlockDefinition
 
     #region Public Methods
     /// <summary>
-    /// Assigns the tier-roll collection after editor migration or cloning logic.
+    /// Assigns the selected drop pool and optional legacy tier-roll fallback after migration or duplication logic.
     /// </summary>
-    /// <param name="tierRollsValue">Tier-roll list used by this extraction definition.</param>
-    /// <returns>Void.</returns>
-    public void Configure(List<PlayerMilestoneTierRollDefinition> tierRollsValue)
+    /// <param name="dropPoolIdValue">Drop pool ID resolved by editor selection logic.</param>
+    /// <param name="legacyTierRollsValue">Optional legacy tier-roll list preserved for backward compatibility.</param>
+
+    public void Configure(string dropPoolIdValue, List<PlayerMilestoneTierRollDefinition> legacyTierRollsValue = null)
     {
-        tierRolls = tierRollsValue;
+        dropPoolId = dropPoolIdValue;
+        legacyTierRolls = legacyTierRollsValue;
     }
 
     /// <summary>
-    /// Sanitizes nested tier-roll entries while keeping placeholder rows available in the Inspector.
+    /// Sanitizes the selected pool ID and keeps legacy tier-roll data valid for backward-compatible baking fallback.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Validate()
     {
-        if (tierRolls == null)
-            tierRolls = new List<PlayerMilestoneTierRollDefinition>();
+        if (string.IsNullOrWhiteSpace(dropPoolId))
+            dropPoolId = string.Empty;
+        else
+            dropPoolId = dropPoolId.Trim();
 
-        for (int tierRollIndex = 0; tierRollIndex < tierRolls.Count; tierRollIndex++)
+        if (legacyTierRolls == null)
+            legacyTierRolls = new List<PlayerMilestoneTierRollDefinition>();
+
+        for (int tierRollIndex = 0; tierRollIndex < legacyTierRolls.Count; tierRollIndex++)
         {
-            PlayerMilestoneTierRollDefinition tierRoll = tierRolls[tierRollIndex];
+            PlayerMilestoneTierRollDefinition tierRoll = legacyTierRolls[tierRollIndex];
 
             if (tierRoll != null)
                 continue;
 
             tierRoll = new PlayerMilestoneTierRollDefinition();
-            tierRolls[tierRollIndex] = tierRoll;
+            legacyTierRolls[tierRollIndex] = tierRoll;
         }
 
         HashSet<string> visitedTierIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        for (int tierRollIndex = tierRolls.Count - 1; tierRollIndex >= 0; tierRollIndex--)
+        for (int tierRollIndex = legacyTierRolls.Count - 1; tierRollIndex >= 0; tierRollIndex--)
         {
-            PlayerMilestoneTierRollDefinition tierRoll = tierRolls[tierRollIndex];
+            PlayerMilestoneTierRollDefinition tierRoll = legacyTierRolls[tierRollIndex];
             tierRoll.Validate(string.Empty);
 
             if (string.IsNullOrWhiteSpace(tierRoll.TierId))
@@ -94,7 +123,7 @@ public sealed class PlayerMilestonePowerUpUnlockDefinition
             if (visitedTierIds.Add(tierRoll.TierId))
                 continue;
 
-            tierRolls.RemoveAt(tierRollIndex);
+            legacyTierRolls.RemoveAt(tierRollIndex);
         }
     }
 
@@ -184,7 +213,7 @@ public sealed class PlayerMilestoneSkipCompensationDefinition
     /// <param name="resourceTypeValue">Resource modified by this compensation entry.</param>
     /// <param name="applyModeValue">Value interpretation mode.</param>
     /// <param name="valueValue">Flat amount or percentage value.</param>
-    /// <returns>Void.</returns>
+
     public void Configure(PlayerMilestoneSkipCompensationResourceType resourceTypeValue,
                           PlayerMilestoneCompensationApplyMode applyModeValue,
                           float valueValue)
@@ -197,7 +226,7 @@ public sealed class PlayerMilestoneSkipCompensationDefinition
     /// <summary>
     /// Sanitizes the serialized compensation value to keep runtime application predictable.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Validate()
     {
         if (value < 0f)

@@ -4,7 +4,7 @@ using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Custom drawer for one level-up milestone definition with tier-roll selection support.
+/// Custom drawer for one level-up milestone definition with scoped drop-pool selection support.
 /// </summary>
 [CustomPropertyDrawer(typeof(PlayerLevelUpMilestoneDefinition))]
 public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDrawer
@@ -44,15 +44,15 @@ public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDra
         root.Add(milestoneLevelField);
 
         VisualElement specialRequirementField = PlayerScalingFieldElementFactory.CreateField(specialExpRequirementProperty,
-                                                                                              scalingRulesProperty,
-                                                                                              "Special Exp Requirement");
+                                                                                             scalingRulesProperty,
+                                                                                             "Special Exp Requirement");
         root.Add(specialRequirementField);
 
-        List<string> tierIdOptions = PlayerProgressionTierOptionsUtility.BuildTierIdOptionsFromPowerUpsLibrary();
+        List<string> dropPoolIdOptions = PlayerProgressionTierOptionsUtility.BuildDropPoolIdOptionsFromPowerUpsLibrary();
 
-        if (tierIdOptions.Count <= 0)
+        if (dropPoolIdOptions.Count <= 0)
         {
-            HelpBox warningBox = new HelpBox("No tier IDs found in Power-Ups presets. Milestone power-up unlocks cannot be configured yet.", HelpBoxMessageType.Warning);
+            HelpBox warningBox = new HelpBox("No Pool IDs found in the scoped Power-Ups preset. Milestone power-up unlocks cannot be configured yet.", HelpBoxMessageType.Warning);
             root.Add(warningBox);
         }
 

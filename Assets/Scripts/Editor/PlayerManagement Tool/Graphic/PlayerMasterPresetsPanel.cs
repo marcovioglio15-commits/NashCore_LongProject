@@ -273,7 +273,7 @@ public sealed class PlayerMasterPresetsPanel
     /// Initializes the panel, restores persisted state and builds the initial player master preset UI.
     /// </summary>
     /// <param name="None">No parameters.</param>
-    /// <returns>Void.</returns>
+
     public PlayerMasterPresetsPanel()
     {
         root = new VisualElement();
@@ -295,7 +295,7 @@ public sealed class PlayerMasterPresetsPanel
     /// Refreshes library-driven UI after external asset changes and restores valid selection when possible.
     /// </summary>
     /// <param name="None">No parameters.</param>
-    /// <returns>Void.</returns>
+
     public void RefreshFromSessionChange()
     {
         PlayerMasterPreset previouslySelectedPreset = selectedPreset;

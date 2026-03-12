@@ -83,7 +83,7 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// </summary>
     /// <param name="entityManager">EntityManager used to inspect shooter state and buffers.</param>
     /// <param name="expansionRequests">Mutable list that receives expansion requests.</param>
-    /// <returns>Void.</returns>
+
     private void CollectPoolExpansionRequests(ref SystemState state,
                                               EntityManager entityManager,
                                               ref NativeList<PoolExpansionRequest> expansionRequests)
@@ -130,7 +130,7 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// </summary>
     /// <param name="entityManager">EntityManager used for pool expansion operations.</param>
     /// <param name="expansionRequests">Queued expansion requests collected during query iteration.</param>
-    /// <returns>Void.</returns>
+
     private static void ExecutePoolExpansionRequests(EntityManager entityManager, in NativeList<PoolExpansionRequest> expansionRequests)
     {
         for (int requestIndex = 0; requestIndex < expansionRequests.Length; requestIndex++)
@@ -164,7 +164,7 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// </summary>
     /// <param name="entityManager">EntityManager used for component read/write operations.</param>
     /// <param name="passiveToolsLookup">Read-only lookup for passive tool runtime state.</param>
-    /// <returns>Void.</returns>
+
     private void ProcessShootRequests(ref SystemState state,
                                       EntityManager entityManager,
                                       in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup)

@@ -15,13 +15,14 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
     #region Section Builder
     public static void BuildLoadoutInputSection(PlayerPowerUpsPresetsPanel panel)
     {
-        Label header = new Label("Loadout & Input");
+        Label header = new Label("Loadout & Inputs");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
         panel.sectionContentRoot.Add(header);
 
         SerializedProperty primaryToolActionIdProperty = panel.presetSerializedObject.FindProperty("primaryToolActionId");
         SerializedProperty secondaryToolActionIdProperty = panel.presetSerializedObject.FindProperty("secondaryToolActionId");
+        SerializedProperty swapSlotsActionIdProperty = panel.presetSerializedObject.FindProperty("swapSlotsActionId");
         SerializedProperty primaryActivePowerUpIdProperty = panel.presetSerializedObject.FindProperty("primaryActivePowerUpId");
         SerializedProperty secondaryActivePowerUpIdProperty = panel.presetSerializedObject.FindProperty("secondaryActivePowerUpId");
         SerializedProperty equippedPassivePowerUpIdsProperty = panel.presetSerializedObject.FindProperty("equippedPassivePowerUpIds");
@@ -30,6 +31,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
 
         if (primaryToolActionIdProperty == null ||
             secondaryToolActionIdProperty == null ||
+            swapSlotsActionIdProperty == null ||
             primaryActivePowerUpIdProperty == null ||
             secondaryActivePowerUpIdProperty == null)
         {
@@ -57,6 +59,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
 
         EnsureDefaultActionId(panel, primaryToolActionIdProperty, "PowerUpPrimary");
         EnsureDefaultActionId(panel, secondaryToolActionIdProperty, "PowerUpSecondary");
+        EnsureDefaultActionId(panel, swapSlotsActionIdProperty, "PowerUpSwapSlots");
 
         Label bindingsHeader = new Label("Bindings");
         bindingsHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -66,6 +69,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
 
         panel.sectionContentRoot.Add(BuildBindingsFoldout(panel, "Primary Tool Input", primaryToolActionIdProperty));
         panel.sectionContentRoot.Add(BuildBindingsFoldout(panel, "Secondary Tool Input", secondaryToolActionIdProperty));
+        panel.sectionContentRoot.Add(BuildBindingsFoldout(panel, "Swap Active Slots Input", swapSlotsActionIdProperty));
 
         Label loadoutHeader = new Label("Loadout");
         loadoutHeader.style.unityFontStyleAndWeight = FontStyle.Bold;

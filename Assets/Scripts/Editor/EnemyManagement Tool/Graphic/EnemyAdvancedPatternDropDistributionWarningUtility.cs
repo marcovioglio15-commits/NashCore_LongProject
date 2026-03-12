@@ -19,7 +19,7 @@ internal static class EnemyAdvancedPatternDropDistributionWarningUtility
     /// <param name="maximumTotalExperienceDropProperty">Maximum total experience property.</param>
     /// <param name="distributionProperty">Distribution slider property.</param>
     /// <param name="warningBox">Warning UI element.</param>
-    /// <returns>Void.</returns>
+
     public static void RefreshDropItemsDistributionWarning(SerializedProperty dropDefinitionsProperty,
                                                            SerializedProperty minimumTotalExperienceDropProperty,
                                                            SerializedProperty maximumTotalExperienceDropProperty,

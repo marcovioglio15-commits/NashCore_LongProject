@@ -45,7 +45,7 @@ public sealed class EnemyExperienceDropDefinitionData
     /// <summary>
     /// Normalizes one experience drop-definition entry.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Validate()
     {
         if (experienceAmount < 0f)
@@ -131,7 +131,7 @@ public sealed class EnemyExperienceDropCollectionSettings
     /// <summary>
     /// Normalizes movement settings used by collected experience drops.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Validate()
     {
         if (moveSpeed < 0f)
@@ -242,7 +242,7 @@ public sealed class EnemyExperienceDropPayload
     /// <summary>
     /// Normalizes experience payload values and nested drop definitions.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Validate()
     {
         if (dropDefinitions == null)
@@ -322,7 +322,7 @@ public sealed class EnemyDropItemsModuleData
     /// <summary>
     /// Normalizes DropItems module selection and nested payload values.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Validate()
     {
         switch (dropPayloadKind)

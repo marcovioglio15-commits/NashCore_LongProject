@@ -415,7 +415,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         }
         if (progressionPreset != null)
         {
-            BlobAssetReference<PlayerProgressionConfigBlob> progressionBlob = PlayerProgressionBlobBakeUtility.BuildProgressionConfigBlob(progressionPreset);
+            BlobAssetReference<PlayerProgressionConfigBlob> progressionBlob = PlayerProgressionBlobBakeUtility.BuildProgressionConfigBlob(progressionPreset,
+                                                                                                                                        powerUpsPreset);
             AddBlobAsset(ref progressionBlob, out Unity.Entities.Hash128 _);
 
             PlayerProgressionConfig progressionConfig = new PlayerProgressionConfig
@@ -592,7 +593,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     /// </summary>
     /// <param name="entity">Target baked player entity receiving debug buffers.</param>
     /// <param name="scaledPresetScope">Scaled preset scope containing evaluated debug snapshots for [this] and final values.</param>
-    /// <returns>Void.</returns>
+
     private void TryAddScalingDebugBuffers(Entity entity,
                                            PlayerScaledPresetScope scaledPresetScope)
     {

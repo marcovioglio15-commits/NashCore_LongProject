@@ -52,7 +52,7 @@ public static class PlayerPassiveToolsAggregationUtility
     /// </summary>
     /// <param name="passiveToolsState">Aggregated passive state updated in place.</param>
     /// <param name="passiveToolConfig">Passive-tool payload being merged.</param>
-    /// <returns>Void.</returns>
+
     public static void AccumulatePassiveTool(ref PlayerPassiveToolsState passiveToolsState, in PlayerPassiveToolConfig passiveToolConfig)
     {
         if (passiveToolConfig.IsDefined == 0)

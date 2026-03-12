@@ -75,7 +75,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesInitializationUtility
             SetStringField(commonDataProperty.FindPropertyRelative("description"), string.Empty);
             SetIntField(commonDataProperty.FindPropertyRelative("dropTier"), 1);
             SetIntField(commonDataProperty.FindPropertyRelative("purchaseCost"), 0);
-            CopyDropPoolCatalogIntoPowerUp(panel, commonDataProperty.FindPropertyRelative("dropPools"));
+            CopyDefinedDropPoolIdsIntoPowerUp(panel, commonDataProperty.FindPropertyRelative("dropPools"));
         }
 
         if (moduleBindingsProperty != null)
@@ -119,7 +119,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesInitializationUtility
     #endregion
 
     #region Private Methods
-    private static void CopyDropPoolCatalogIntoPowerUp(PlayerPowerUpsPresetsPanel panel, SerializedProperty dropPoolsProperty)
+    private static void CopyDefinedDropPoolIdsIntoPowerUp(PlayerPowerUpsPresetsPanel panel, SerializedProperty dropPoolsProperty)
     {
         if (dropPoolsProperty == null)
             return;
@@ -129,21 +129,47 @@ public static class PlayerPowerUpsPresetsPanelEntriesInitializationUtility
         if (panel.presetSerializedObject == null)
             return;
 
-        SerializedProperty dropPoolCatalogProperty = panel.presetSerializedObject.FindProperty("dropPoolCatalog");
+        SerializedProperty dropPoolDefinitionsProperty = panel.presetSerializedObject.FindProperty("dropPools");
 
-        if (dropPoolCatalogProperty == null)
+        if (dropPoolDefinitionsProperty != null)
+        {
+            for (int poolIndex = 0; poolIndex < dropPoolDefinitionsProperty.arraySize; poolIndex++)
+            {
+                SerializedProperty poolProperty = dropPoolDefinitionsProperty.GetArrayElementAtIndex(poolIndex);
+
+                if (poolProperty == null)
+                    continue;
+
+                SerializedProperty poolIdProperty = poolProperty.FindPropertyRelative("poolId");
+                string poolId = poolIdProperty != null ? poolIdProperty.stringValue : string.Empty;
+
+                if (string.IsNullOrWhiteSpace(poolId))
+                    continue;
+
+                int insertIndex = dropPoolsProperty.arraySize;
+                dropPoolsProperty.arraySize = insertIndex + 1;
+                SerializedProperty insertedPoolProperty = dropPoolsProperty.GetArrayElementAtIndex(insertIndex);
+
+                if (insertedPoolProperty == null)
+                    continue;
+
+                insertedPoolProperty.stringValue = poolId;
+            }
+
+            if (dropPoolsProperty.arraySize > 0)
+                return;
+        }
+
+        SerializedProperty legacyDropPoolCatalogProperty = panel.presetSerializedObject.FindProperty("dropPoolCatalog");
+
+        if (legacyDropPoolCatalogProperty == null)
             return;
 
-        for (int poolIndex = 0; poolIndex < dropPoolCatalogProperty.arraySize; poolIndex++)
+        for (int poolIndex = 0; poolIndex < legacyDropPoolCatalogProperty.arraySize; poolIndex++)
         {
-            SerializedProperty poolProperty = dropPoolCatalogProperty.GetArrayElementAtIndex(poolIndex);
+            SerializedProperty poolProperty = legacyDropPoolCatalogProperty.GetArrayElementAtIndex(poolIndex);
 
-            if (poolProperty == null)
-                continue;
-
-            string poolId = poolProperty.stringValue;
-
-            if (string.IsNullOrWhiteSpace(poolId))
+            if (poolProperty == null || string.IsNullOrWhiteSpace(poolProperty.stringValue))
                 continue;
 
             int insertIndex = dropPoolsProperty.arraySize;
@@ -153,7 +179,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesInitializationUtility
             if (insertedPoolProperty == null)
                 continue;
 
-            insertedPoolProperty.stringValue = poolId;
+            insertedPoolProperty.stringValue = poolProperty.stringValue;
         }
     }
 

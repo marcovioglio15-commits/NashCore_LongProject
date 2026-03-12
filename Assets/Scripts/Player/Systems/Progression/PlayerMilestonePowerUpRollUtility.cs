@@ -103,15 +103,17 @@ public static class PlayerMilestonePowerUpRollUtility
                                        tierEntries,
                                        rolledCatalogIndices,
                                        out int rolledCatalogIndex,
+                                       out string selectedDropPoolId,
                                        out string selectedTierId,
                                        out float selectedTierPercentage,
                                        out float selectedEntryWeight))
             {
                 Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                                        "[PlayerLevelUpSystem] Milestone {0} roll {1}/{2} failed: no valid tier/power-up candidate.",
+                                        "[PlayerLevelUpSystem] Milestone {0} roll {1}/{2} failed: no valid drop-pool tier or power-up candidate for Pool '{3}'.",
                                         milestoneLevel,
                                         rollIndex + 1,
-                                        milestoneBlob.PowerUpUnlocks.Length));
+                                        milestoneBlob.PowerUpUnlocks.Length,
+                                        powerUpUnlockBlob.DropPoolId.ToString()));
                 continue;
             }
 
@@ -126,10 +128,11 @@ public static class PlayerMilestonePowerUpRollUtility
                 UnlockKind = unlockEntry.UnlockKind
             });
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                                    "[PlayerLevelUpSystem] Milestone {0} roll {1}/{2}: Tier '{3}' ({4:0.###}%) -> Power-Up '{5}' ({6}) [Entry Weight {7:0.###}].",
+                                    "[PlayerLevelUpSystem] Milestone {0} roll {1}/{2}: Pool '{3}' -> Tier '{4}' ({5:0.###}%) -> Power-Up '{6}' ({7}) [Entry Weight {8:0.###}].",
                                     milestoneLevel,
                                     rollIndex + 1,
                                     milestoneBlob.PowerUpUnlocks.Length,
+                                    selectedDropPoolId,
                                     selectedTierId,
                                     selectedTierPercentage,
                                     unlockEntry.PowerUpId.ToString(),
@@ -170,11 +173,13 @@ public static class PlayerMilestonePowerUpRollUtility
                                               DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries,
                                               HashSet<int> rolledCatalogIndices,
                                               out int rolledCatalogIndex,
+                                              out string selectedDropPoolId,
                                               out string selectedTierId,
                                               out float selectedTierPercentage,
                                               out float selectedEntryWeight)
     {
         rolledCatalogIndex = -1;
+        selectedDropPoolId = powerUpUnlockBlob.DropPoolId.ToString();
         selectedTierId = string.Empty;
         selectedTierPercentage = 0f;
         selectedEntryWeight = 0f;

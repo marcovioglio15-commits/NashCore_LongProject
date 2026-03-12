@@ -17,7 +17,28 @@ MonoBehaviour:
   description: 
   version: 1.0.0
   scalableStats:
+  - statName: Health
+    statType: 0
+    defaultValue: 1e+10
+  - statName: Shield
+    statType: 0
+    defaultValue: 0
+  - statName: MovementSpeed
+    statType: 0
+    defaultValue: 2
+  - statName: Damage
+    statType: 0
+    defaultValue: 1
   - statName: FireRate
+    statType: 0
+    defaultValue: 1
+  - statName: ShotRange
+    statType: 0
+    defaultValue: 1
+  - statName: GatheringRadius
+    statType: 0
+    defaultValue: 6
+  - statName: Luck
     statType: 0
     defaultValue: 6
   scalingRules:
@@ -26,6 +47,11 @@ MonoBehaviour:
     formula: '[this] * [FireRate]'
     debugInConsole: 0
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: experiencePickupRadius
+    addScaling: 1
+    formula: '[this] * [GatheringRadius]'
+    debugInConsole: 1
+    debugColor: {r: 0.066037714, g: 0.065317914, b: 0.057004254, a: 1}
   gamePhasesDefinition:
   - phaseID: Phase0
     startsAtLevel: 0
@@ -35,18 +61,36 @@ MonoBehaviour:
     - milestoneLevel: 1
       specialExpRequirement: 100
       powerUpUnlocks:
-      - tierRolls:
-        - tierId: Tier0
-          selectionPercentage: 100
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
       skipCompensationResources: []
       legacyPowerUpUnlockRollCount: 0
       legacyMilestoneTierRolls: []
   schedules:
   - scheduleId: Schedule1
-    sequence: []
+    sequence:
+    - statName: Luck
+      applyMode: 0
+      value: 1
+    - statName: FireRate
+      applyMode: 0
+      value: 1
+    - statName: GatheringRadius
+      applyMode: 0
+      value: 1
+    - statName: MovementSpeed
+      applyMode: 0
+      value: 1
+    - statName: ShotRange
+      applyMode: 0
+      value: 1
   equippedScheduleId: Schedule1
   legacyExperienceRequiredPerLevel: 100
   experiencePickupRadius: 5
-  milestoneTimeScaleResumeDurationSeconds: 0.2
+  milestoneTimeScaleResumeDurationSeconds: 3
   legacyBaseStats:
     health: 1e+10

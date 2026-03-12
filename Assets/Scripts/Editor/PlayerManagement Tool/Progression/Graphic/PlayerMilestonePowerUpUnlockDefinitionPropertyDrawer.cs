@@ -1,18 +1,15 @@
-using System.Globalization;
 using System.Collections.Generic;
 using UnityEditor;
-using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Draws one milestone power-up extraction entry with its custom tier-roll collection.
+/// Draws one milestone power-up extraction entry using one scoped drop-pool selector.
 /// </summary>
 [CustomPropertyDrawer(typeof(PlayerMilestonePowerUpUnlockDefinition))]
 public sealed class PlayerMilestonePowerUpUnlockDefinitionPropertyDrawer : PropertyDrawer
 {
     #region Constants
-    private const float PercentageWarningTolerance = 0.01f;
+    private const string EmptySelectionLabel = "<Select Pool ID>";
     #endregion
 
     #region Methods
@@ -26,81 +23,144 @@ public sealed class PlayerMilestonePowerUpUnlockDefinitionPropertyDrawer : Prope
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
         VisualElement root = new VisualElement();
-        SerializedProperty tierRollsProperty = property.FindPropertyRelative("tierRolls");
+        SerializedProperty dropPoolIdProperty = property.FindPropertyRelative("dropPoolId");
+        SerializedProperty legacyTierRollsProperty = property.FindPropertyRelative("legacyTierRolls");
 
-        if (tierRollsProperty == null)
+        if (dropPoolIdProperty == null)
         {
             HelpBox missingHelpBox = new HelpBox("Milestone power-up unlock fields are missing.", HelpBoxMessageType.Warning);
             root.Add(missingHelpBox);
             return root;
         }
 
-        List<string> tierIdOptions = PlayerProgressionTierOptionsUtility.BuildTierIdOptionsFromPowerUpsLibrary();
+        bool hasScopedPowerUpsPreset = PlayerProgressionTierOptionsUtility.TryResolveScopedPowerUpsPreset(out PlayerPowerUpsPreset _);
+        List<string> dropPoolIdOptions = PlayerProgressionTierOptionsUtility.BuildDropPoolIdOptionsFromPowerUpsLibrary();
 
-        if (tierIdOptions.Count <= 0)
+        if (!hasScopedPowerUpsPreset)
         {
-            HelpBox warningBox = new HelpBox("No Power-Up tier IDs found. Create tiers in a Power-Ups preset first.", HelpBoxMessageType.Warning);
+            HelpBox missingPresetWarningBox = new HelpBox("No scoped Power-Ups preset could be resolved from the active Master Preset or from a Master Preset that references this progression preset.", HelpBoxMessageType.Warning);
+            root.Add(missingPresetWarningBox);
+        }
+
+        if (dropPoolIdOptions.Count <= 0)
+        {
+            HelpBox warningBox = new HelpBox("No Pool IDs detected in the scoped Power-Ups preset. Configure Drop Pools & Tiers first.", HelpBoxMessageType.Warning);
             root.Add(warningBox);
+
+            TextField previewField = new TextField("Drop Pool ID");
+            previewField.value = string.IsNullOrWhiteSpace(dropPoolIdProperty.stringValue)
+                ? "<No pools available>"
+                : dropPoolIdProperty.stringValue;
+            previewField.SetEnabled(false);
+            root.Add(previewField);
         }
-
-        PropertyField tierRollsField = new PropertyField(tierRollsProperty, "Tier Rolls");
-        tierRollsField.BindProperty(tierRollsProperty);
-        root.Add(tierRollsField);
-
-        HelpBox percentageWarningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
-        root.Add(percentageWarningBox);
-
-        void RefreshPercentageWarning()
+        else
         {
-            float totalPercentage = CalculateTierRollPercentageSum(tierRollsProperty);
-
-            if (Mathf.Abs(totalPercentage - 100f) <= PercentageWarningTolerance)
-            {
-                percentageWarningBox.style.display = DisplayStyle.None;
-                return;
-            }
-
-            percentageWarningBox.text = string.Format(CultureInfo.InvariantCulture,
-                                                      "Tier roll percentages currently sum to {0:0.##}%. Set the total to 100% to match the intended milestone extraction odds.",
-                                                      totalPercentage);
-            percentageWarningBox.style.display = DisplayStyle.Flex;
+            BuildDropPoolPopup(root, dropPoolIdProperty, dropPoolIdOptions);
         }
 
-        root.RegisterCallback<SerializedPropertyChangeEvent>(_ => RefreshPercentageWarning());
-        RefreshPercentageWarning();
+        if (HasLegacyTierRolls(legacyTierRollsProperty))
+        {
+            HelpBox legacyWarningBox = new HelpBox("Legacy inline tier rolls are still serialized on this unlock. Runtime keeps them only as compatibility fallback until you assign a valid Drop Pool ID.", HelpBoxMessageType.Warning);
+            root.Add(legacyWarningBox);
+        }
+
+        if (string.IsNullOrWhiteSpace(dropPoolIdProperty.stringValue))
+        {
+            HelpBox missingSelectionBox = new HelpBox("This milestone unlock has no Drop Pool ID selected yet, so the scoped pool configuration will not drive its roll until you choose one.", HelpBoxMessageType.Warning);
+            root.Add(missingSelectionBox);
+        }
+
         return root;
     }
     #endregion
 
     #region Private Methods
-    /// <summary>
-    /// Sums all non-negative tier-roll percentages configured inside the serialized unlock definition.
-    /// </summary>
-    /// <param name="tierRollsProperty">Serialized tier-roll array belonging to one milestone unlock definition.</param>
-    /// <returns>Total configured percentage across all tier-roll entries.</returns>
-    private static float CalculateTierRollPercentageSum(SerializedProperty tierRollsProperty)
+    private static void BuildDropPoolPopup(VisualElement root,
+                                           SerializedProperty dropPoolIdProperty,
+                                           System.Collections.Generic.List<string> dropPoolIdOptions)
     {
-        if (tierRollsProperty == null || !tierRollsProperty.isArray)
-            return 0f;
+        string currentDropPoolId = string.IsNullOrWhiteSpace(dropPoolIdProperty.stringValue)
+            ? string.Empty
+            : dropPoolIdProperty.stringValue.Trim();
+        System.Collections.Generic.List<string> popupOptions = new System.Collections.Generic.List<string>();
+        string selectedOption = EmptySelectionLabel;
 
-        float totalPercentage = 0f;
-
-        for (int tierRollIndex = 0; tierRollIndex < tierRollsProperty.arraySize; tierRollIndex++)
+        if (string.IsNullOrWhiteSpace(currentDropPoolId))
         {
-            SerializedProperty tierRollProperty = tierRollsProperty.GetArrayElementAtIndex(tierRollIndex);
+            popupOptions.Add(EmptySelectionLabel);
 
-            if (tierRollProperty == null)
-                continue;
+            for (int optionIndex = 0; optionIndex < dropPoolIdOptions.Count; optionIndex++)
+                popupOptions.Add(dropPoolIdOptions[optionIndex]);
+        }
+        else if (ContainsDropPoolId(dropPoolIdOptions, currentDropPoolId))
+        {
+            for (int optionIndex = 0; optionIndex < dropPoolIdOptions.Count; optionIndex++)
+                popupOptions.Add(dropPoolIdOptions[optionIndex]);
 
-            SerializedProperty selectionPercentageProperty = tierRollProperty.FindPropertyRelative("selectionPercentage");
+            selectedOption = ResolveSelectedDropPoolId(dropPoolIdOptions, currentDropPoolId);
+        }
+        else
+        {
+            popupOptions.Add(currentDropPoolId);
 
-            if (selectionPercentageProperty == null)
-                continue;
+            for (int optionIndex = 0; optionIndex < dropPoolIdOptions.Count; optionIndex++)
+                popupOptions.Add(dropPoolIdOptions[optionIndex]);
 
-            totalPercentage += Mathf.Max(0f, selectionPercentageProperty.floatValue);
+            selectedOption = currentDropPoolId;
+            HelpBox invalidSelectionBox = new HelpBox("The current Drop Pool ID is not available in the scoped Power-Ups preset. Choose a valid pool to replace this missing or legacy reference.", HelpBoxMessageType.Warning);
+            root.Add(invalidSelectionBox);
         }
 
-        return totalPercentage;
+        PopupField<string> dropPoolPopup = new PopupField<string>("Drop Pool ID", popupOptions, selectedOption);
+        dropPoolPopup.tooltip = "Select the scoped drop pool used by this milestone offer roll.";
+        dropPoolPopup.RegisterValueChangedCallback(evt =>
+        {
+            string resolvedValue = string.Equals(evt.newValue, EmptySelectionLabel, System.StringComparison.Ordinal)
+                ? string.Empty
+                : evt.newValue;
+
+            dropPoolIdProperty.serializedObject.Update();
+            dropPoolIdProperty.stringValue = resolvedValue;
+            dropPoolIdProperty.serializedObject.ApplyModifiedProperties();
+        });
+        root.Add(dropPoolPopup);
+    }
+
+    private static bool HasLegacyTierRolls(SerializedProperty legacyTierRollsProperty)
+    {
+        if (legacyTierRollsProperty == null || !legacyTierRollsProperty.isArray)
+            return false;
+
+        return legacyTierRollsProperty.arraySize > 0;
+    }
+
+    private static string ResolveSelectedDropPoolId(System.Collections.Generic.List<string> options, string currentDropPoolId)
+    {
+        if (options == null || options.Count <= 0)
+            return string.Empty;
+
+        for (int optionIndex = 0; optionIndex < options.Count; optionIndex++)
+        {
+            if (string.Equals(options[optionIndex], currentDropPoolId, System.StringComparison.OrdinalIgnoreCase))
+                return options[optionIndex];
+        }
+
+        return options[0];
+    }
+
+    private static bool ContainsDropPoolId(System.Collections.Generic.List<string> options, string currentDropPoolId)
+    {
+        if (options == null || options.Count <= 0 || string.IsNullOrWhiteSpace(currentDropPoolId))
+            return false;
+
+        for (int optionIndex = 0; optionIndex < options.Count; optionIndex++)
+        {
+            if (string.Equals(options[optionIndex], currentDropPoolId, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
     #endregion
 

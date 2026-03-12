@@ -11,4 +11,5 @@ public struct PlayerInputState : IComponentData
     public float Shoot; // Shooting trigger value (0 = idle, 1 = pressed).
     public float PowerUpPrimary; // Primary active-tool trigger value.
     public float PowerUpSecondary; // Secondary active-tool trigger value.
+    public float SwapPowerUpSlots; // Active-slot swap trigger value.
 }

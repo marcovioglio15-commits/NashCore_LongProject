@@ -17,7 +17,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// Builds the metadata section for the selected advanced pattern preset.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and refresh callbacks.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildMetadataSection(EnemyAdvancedPatternPresetsPanel panel)
     {
         if (panel == null)
@@ -73,7 +73,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// Builds the reusable module definition section.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and refresh callbacks.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildModulesDefinitionSection(EnemyAdvancedPatternPresetsPanel panel)
     {
         if (panel == null)
@@ -96,7 +96,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// Builds the assembled pattern catalog section.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and refresh callbacks.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildPatternAssembleSection(EnemyAdvancedPatternPresetsPanel panel)
     {
         if (panel == null)
@@ -119,7 +119,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// Builds the pattern loadout section that exposes active assembled pattern IDs.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and refresh callbacks.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildPatternLoadoutSection(EnemyAdvancedPatternPresetsPanel panel)
     {
         if (panel == null)
@@ -172,7 +172,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
     /// <param name="sectionContainer">Section container that receives the generated rows.</param>
-    /// <returns>Void.</returns>
+
     private static void BuildPatternLoadoutArray(EnemyAdvancedPatternPresetsPanel panel,
                                                  SerializedProperty activePatternIdsProperty,
                                                  List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions,
@@ -281,7 +281,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// <param name="panel">Owning panel used for undo, refresh and rebuild callbacks.</param>
     /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Void.</returns>
+
     private static void AddPatternLoadoutEntry(EnemyAdvancedPatternPresetsPanel panel,
                                                SerializedProperty activePatternIdsProperty,
                                                List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
@@ -328,7 +328,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
     /// <param name="entryIndex">Index of the entry to remove.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Void.</returns>
+
     private static void RemovePatternLoadoutEntry(EnemyAdvancedPatternPresetsPanel panel,
                                                   SerializedProperty activePatternIdsProperty,
                                                   int entryIndex,
@@ -366,7 +366,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// <param name="entryIndex">Target entry index to replace.</param>
     /// <param name="patternId">Replacement pattern ID.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Void.</returns>
+
     private static void SetPatternLoadoutEntry(EnemyAdvancedPatternPresetsPanel panel,
                                                SerializedProperty activePatternIdsProperty,
                                                int entryIndex,

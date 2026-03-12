@@ -82,7 +82,7 @@ public sealed class PlayerGamePhaseDefinition
     /// <param name="startsAtLevelValue">Start level to assign.</param>
     /// <param name="startingRequiredLevelUpExpValue">Initial required level-up experience for this phase.</param>
     /// <param name="requiredExperienceGrouthValue">Linear required experience increase per level.</param>
-    /// <returns>Void.</returns>
+
     public void Configure(string phaseIDValue,
                           int startsAtLevelValue,
                           float startingRequiredLevelUpExpValue,
@@ -100,7 +100,7 @@ public sealed class PlayerGamePhaseDefinition
     /// <param name="fallbackPhaseID">Fallback phase ID used when the current ID is empty.</param>
     /// <param name="minimumStartLevel">Minimum allowed start level for this phase.</param>
     /// <param name="fallbackStartingRequiredLevelUpExp">Fallback required experience used when values are invalid.</param>
-    /// <returns>Void.</returns>
+
     public void Validate(string fallbackPhaseID, int minimumStartLevel, float fallbackStartingRequiredLevelUpExp)
     {
         if (string.IsNullOrWhiteSpace(phaseID))
@@ -141,7 +141,7 @@ public sealed class PlayerGamePhaseDefinition
     /// <summary>
     /// Validates milestone entries using this phase start level as minimum threshold.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void ValidateMilestonesAgainstStartLevel()
     {
         if (milestones == null)
@@ -288,7 +288,7 @@ public sealed class PlayerLevelUpMilestoneDefinition
     /// </summary>
     /// <param name="minimumMilestoneLevel">Minimum allowed level for the milestone.</param>
     /// <param name="fallbackSpecialRequirement">Fallback requirement used when current value is invalid.</param>
-    /// <returns>Void.</returns>
+
     public void Validate(int minimumMilestoneLevel, float fallbackSpecialRequirement)
     {
         if (milestoneLevel < minimumMilestoneLevel)
@@ -351,7 +351,7 @@ public sealed class PlayerLevelUpMilestoneDefinition
     /// <summary>
     /// Migrates legacy milestone roll fields into the new per-unlock array structure the first time the asset is validated.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void TryMigrateLegacyPowerUpUnlocks()
     {
         if (powerUpUnlocks != null && powerUpUnlocks.Count > 0)
@@ -371,7 +371,7 @@ public sealed class PlayerLevelUpMilestoneDefinition
         for (int powerUpUnlockIndex = 0; powerUpUnlockIndex < migratedUnlockCount; powerUpUnlockIndex++)
         {
             PlayerMilestonePowerUpUnlockDefinition powerUpUnlock = new PlayerMilestonePowerUpUnlockDefinition();
-            powerUpUnlock.Configure(PlayerMilestonePowerUpUnlockDefinition.CloneTierRolls(legacyMilestoneTierRolls));
+            powerUpUnlock.Configure(string.Empty, PlayerMilestonePowerUpUnlockDefinition.CloneTierRolls(legacyMilestoneTierRolls));
             powerUpUnlocks.Add(powerUpUnlock);
         }
 
@@ -381,7 +381,7 @@ public sealed class PlayerLevelUpMilestoneDefinition
     /// <summary>
     /// Clears legacy serialized milestone-roll fields once migration has completed.
     /// </summary>
-    /// <returns>Void.</returns>
+
     private void ClearLegacyPowerUpUnlockData()
     {
         legacyPowerUpUnlockRollCount = 0;

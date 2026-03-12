@@ -153,7 +153,7 @@ public static class ProjectilePoolUtility
     /// Sets one LocalTransform to projectile parked position without EntityManager access.
     /// </summary>
     /// <param name="localTransform">Projectile transform to park.</param>
-    /// <returns>Void.</returns>
+
     public static void SetProjectileParked(ref LocalTransform localTransform)
     {
         localTransform.Position = ParkedPosition;
@@ -168,7 +168,7 @@ public static class ProjectilePoolUtility
     /// <param name="projectileTransform">Current projectile transform that will be parked.</param>
     /// <param name="poolLookup">Lookup used to access shooter projectile pools.</param>
     /// <param name="projectileActiveLookup">Lookup used to disable the projectile active component.</param>
-    /// <returns>Void.</returns>
+
     public static void DespawnToPool(Entity projectileEntity,
                                      Entity shooterEntity,
                                      ref LocalTransform projectileTransform,

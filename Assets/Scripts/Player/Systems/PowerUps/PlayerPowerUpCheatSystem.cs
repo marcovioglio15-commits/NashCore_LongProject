@@ -193,6 +193,9 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
         powerUpsState.PrimaryIsCharging = 0;
         powerUpsState.SecondaryIsCharging = 0;
         powerUpsState.IsShootingSuppressed = 0;
+        powerUpsState.PreviousPrimaryPressed = 0;
+        powerUpsState.PreviousSecondaryPressed = 0;
+        powerUpsState.PreviousSwapSlotsPressed = 0;
     }
     #endregion
 

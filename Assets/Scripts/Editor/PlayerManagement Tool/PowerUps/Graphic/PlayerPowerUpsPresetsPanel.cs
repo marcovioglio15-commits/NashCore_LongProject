@@ -517,11 +517,11 @@ public sealed class PlayerPowerUpsPresetsPanel
         buttonsRoot.style.marginBottom = 6f;
 
         AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
-        AddSectionButton(buttonsRoot, SectionType.Tiers, "Tiers");
+        AddSectionButton(buttonsRoot, SectionType.Tiers, "Drop Pools & Tiers");
         AddSectionButton(buttonsRoot, SectionType.ModulesManagement, "Modules Management");
         AddSectionButton(buttonsRoot, SectionType.ActivePowerUps, "Active Power Ups");
         AddSectionButton(buttonsRoot, SectionType.PassivePowerUps, "Passive Power Ups");
-        AddSectionButton(buttonsRoot, SectionType.LoadoutInput, "Loadout & Input");
+        AddSectionButton(buttonsRoot, SectionType.LoadoutInput, "Loadout & Inputs");
 
         return buttonsRoot;
     }
@@ -555,7 +555,7 @@ public sealed class PlayerPowerUpsPresetsPanel
                 PlayerPowerUpsPresetsPanelMetadataUtility.BuildMetadataSection(this);
                 return;
             case SectionType.Tiers:
-                PlayerPowerUpsPresetsPanelMetadataUtility.BuildTiersSection(this);
+                PlayerPowerUpsPresetsPanelMetadataUtility.BuildDropPoolsAndTiersSection(this);
                 return;
             case SectionType.ModulesManagement:
                 PlayerPowerUpsPresetsPanelModulesUtility.BuildModulesManagementSection(this);
@@ -599,6 +599,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         PlayerManagementDraftSession.MarkDirty();
         RefreshPresetList();
+        PlayerManagementSelectionContext.NotifyPowerUpsPresetContentChanged();
     }
 
     private string GetPresetDisplayName(PlayerPowerUpsPreset preset)

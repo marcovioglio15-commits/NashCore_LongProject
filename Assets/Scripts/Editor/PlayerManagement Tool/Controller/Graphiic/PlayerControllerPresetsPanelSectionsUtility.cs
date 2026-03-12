@@ -20,7 +20,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="panel">Owning panel that stores selection and detail roots.</param>
     /// <param name="preset">Preset to select, or null to clear the detail view.</param>
-    /// <returns>Void.</returns>
+
     public static void SelectPreset(PlayerControllerPresetsPanel panel, PlayerControllerPreset preset)
     {
         if (panel == null)
@@ -53,7 +53,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Builds the metadata section for the selected preset.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and callbacks.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildMetadataSection(PlayerControllerPresetsPanel panel)
     {
         if (panel == null)
@@ -122,7 +122,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Builds the movement section for the selected preset.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and helper utilities.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildMovementSection(PlayerControllerPresetsPanel panel)
     {
         if (panel == null)
@@ -220,7 +220,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Builds the look section for the selected preset.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and helper utilities.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildLookSection(PlayerControllerPresetsPanel panel)
     {
         PlayerControllerPresetsPanelLookSectionUtility.BuildLookSection(panel, CreateSectionContainer(panel, "Look Settings"));
@@ -230,7 +230,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Builds the shooting section for the selected preset.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and helper utilities.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildShootingSection(PlayerControllerPresetsPanel panel)
     {
         if (panel == null)
@@ -315,7 +315,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Builds the camera section for the selected preset.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context and helper utilities.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildCameraSection(PlayerControllerPresetsPanel panel)
     {
         if (panel == null)
@@ -381,7 +381,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Builds the health statistics section for the selected preset.
     /// </summary>
     /// <param name="panel">Owning panel that provides serialized context.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildHealthStatisticsSection(PlayerControllerPresetsPanel panel)
     {
         if (panel == null)
@@ -423,7 +423,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="panel">Owning panel that stores section state.</param>
     /// <param name="sectionType">Section to activate.</param>
-    /// <returns>Void.</returns>
+
     public static void SetActiveSection(PlayerControllerPresetsPanel panel, PlayerControllerPresetsPanel.SectionType sectionType)
     {
         if (panel == null)
@@ -438,7 +438,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Rebuilds the currently active detail section.
     /// </summary>
     /// <param name="panel">Owning panel that stores the active section and serialized preset context.</param>
-    /// <returns>Void.</returns>
+
     public static void BuildActiveSection(PlayerControllerPresetsPanel panel)
     {
         if (panel == null || panel.SectionContentRoot == null)
@@ -499,7 +499,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// <param name="parent">Parent row that receives the button.</param>
     /// <param name="sectionType">Section represented by the button.</param>
     /// <param name="buttonLabel">Visible button label.</param>
-    /// <returns>Void.</returns>
+
     private static void AddSectionButton(PlayerControllerPresetsPanel panel,
                                          VisualElement parent,
                                          PlayerControllerPresetsPanel.SectionType sectionType,

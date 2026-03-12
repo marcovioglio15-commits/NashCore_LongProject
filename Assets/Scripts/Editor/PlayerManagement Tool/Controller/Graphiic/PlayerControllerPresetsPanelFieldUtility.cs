@@ -51,7 +51,7 @@ internal static class PlayerControllerPresetsPanelFieldUtility
     /// <param name="panel">Owning panel that stores selected preset and serialized state.</param>
     /// <param name="actionIdProperty">Serialized string property containing the action identifier.</param>
     /// <param name="actionName">Fallback action name to resolve inside the input asset.</param>
-    /// <returns>Void.</returns>
+
     public static void EnsureDefaultActionId(PlayerControllerPresetsPanel panel, SerializedProperty actionIdProperty, string actionName)
     {
         if (panel == null || actionIdProperty == null || panel.InputAsset == null)

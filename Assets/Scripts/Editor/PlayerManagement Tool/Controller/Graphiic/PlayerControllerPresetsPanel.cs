@@ -175,7 +175,7 @@ public sealed class PlayerControllerPresetsPanel
     /// Initializes the panel, loads preset and input assets, restores the last active section and builds the UI.
     /// </summary>
     /// <param name="None">No parameters.</param>
-    /// <returns>Void.</returns>
+
     public PlayerControllerPresetsPanel()
     {
         root = new VisualElement();
@@ -197,7 +197,7 @@ public sealed class PlayerControllerPresetsPanel
     /// Selects one preset from an external panel and aligns the internal list selection when the preset is available.
     /// </summary>
     /// <param name="preset">Preset to select from outside this panel.</param>
-    /// <returns>Void.</returns>
+
     public void SelectPresetFromExternal(PlayerControllerPreset preset)
     {
         if (preset == null)
@@ -229,7 +229,7 @@ public sealed class PlayerControllerPresetsPanel
     /// Refreshes the panel after external asset changes and restores the previous selection when still valid.
     /// </summary>
     /// <param name="None">No parameters.</param>
-    /// <returns>Void.</returns>
+
     public void RefreshFromSessionChange()
     {
         PlayerControllerPreset previouslySelectedPreset = selectedPreset;

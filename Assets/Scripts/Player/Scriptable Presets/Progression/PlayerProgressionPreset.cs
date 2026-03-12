@@ -572,7 +572,7 @@ public sealed class LegacyPlayerProgressionBaseStats
     /// <summary>
     /// Sanitizes legacy values to avoid invalid migration data.
     /// </summary>
-    /// <returns>Void.</returns>
+
     public void Validate()
     {
         if (health < 1f)

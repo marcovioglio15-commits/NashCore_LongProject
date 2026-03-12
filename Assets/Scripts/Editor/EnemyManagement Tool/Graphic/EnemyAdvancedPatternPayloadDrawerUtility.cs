@@ -389,7 +389,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// <param name="modeProperty">Serialized mode property.</param>
     /// <param name="basicFoldout">Basic foldout element.</param>
     /// <param name="dvdFoldout">DVD foldout element.</param>
-    /// <returns>Void.</returns>
+
     private static void UpdateWandererModeVisibility(SerializedProperty modeProperty, VisualElement basicFoldout, VisualElement dvdFoldout)
     {
         EnemyWandererMode mode = EnemyWandererMode.Basic;
@@ -409,7 +409,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// </summary>
     /// <param name="toggleProperty">Boolean serialized property.</param>
     /// <param name="container">Container to show or hide.</param>
-    /// <returns>Void.</returns>
+
     private static void UpdateToggleContainerVisibility(SerializedProperty toggleProperty, VisualElement container)
     {
         if (container == null)
@@ -429,7 +429,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// </summary>
     /// <param name="dropPayloadKindProperty">Drop payload kind property.</param>
     /// <param name="experienceFoldout">Experience settings foldout.</param>
-    /// <returns>Void.</returns>
+
     private static void UpdateDropPayloadVisibility(SerializedProperty dropPayloadKindProperty, VisualElement experienceFoldout)
     {
         EnemyDropItemsPayloadKind payloadKind = EnemyDropItemsPayloadKind.Experience;

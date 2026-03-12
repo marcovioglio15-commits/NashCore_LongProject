@@ -24,7 +24,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
     /// Configures required components for drop spawning.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<EnemyKilledEventElement>();
@@ -36,7 +36,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
     /// Processes killed events and spawns experience drops from configured pools.
     /// </summary>
     /// <param name="state">Current ECS system state.</param>
-    /// <returns>Void.</returns>
+
     public void OnUpdate(ref SystemState state)
     {
         if (SystemAPI.TryGetSingletonEntity<EnemyExperienceDropPoolRegistry>(out Entity registryEntity) == false)
