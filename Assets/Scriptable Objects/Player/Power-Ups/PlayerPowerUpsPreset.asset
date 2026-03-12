@@ -104,12 +104,9 @@ MonoBehaviour:
       selectionWeight: 5
     - entryKind: 0
       powerUpId: ActiveGigaBomb
-      selectionWeight: 5
+      selectionWeight: 45
     - entryKind: 0
       powerUpId: ActiveBasicDash
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActivePortableHealthPack
       selectionWeight: 5
     - entryKind: 0
       powerUpId: ActiveBulletTime
@@ -135,9 +132,6 @@ MonoBehaviour:
     - entryKind: 1
       powerUpId: PassiveShotgun
       selectionWeight: 5
-    - entryKind: 1
-      powerUpId: Marco's Special
-      selectionWeight: 30
   dropPoolCatalog:
   - Milestone
   - Shop

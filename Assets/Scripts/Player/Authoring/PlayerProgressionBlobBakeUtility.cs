@@ -15,11 +15,15 @@ internal static class PlayerProgressionBlobBakeUtility
     /// <summary>
     /// Creates the baked progression blob from the selected progression preset.
     /// </summary>
-    /// <param name="preset">Source progression preset used during baking.</param>
-    /// <param name="powerUpsPreset">Scoped power-ups preset used to resolve milestone drop pools into tier rolls.</param>
+    /// <param name="preset">Scaled progression preset used during baking.</param>
+    /// <param name="powerUpsPreset">Scaled scoped power-ups preset used to resolve milestone drop pools into tier rolls.</param>
+    /// <param name="sourcePreset">Unscaled source progression preset used to extract runtime scaling metadata.</param>
+    /// <param name="sourcePowerUpsPreset">Unscaled scoped power-ups preset used to extract runtime scaling metadata.</param>
     /// <returns>Persistent blob asset reference ready to assign to PlayerProgressionConfig.</returns>
     public static BlobAssetReference<PlayerProgressionConfigBlob> BuildProgressionConfigBlob(PlayerProgressionPreset preset,
-                                                                                             PlayerPowerUpsPreset powerUpsPreset)
+                                                                                             PlayerPowerUpsPreset powerUpsPreset,
+                                                                                             PlayerProgressionPreset sourcePreset,
+                                                                                             PlayerPowerUpsPreset sourcePowerUpsPreset)
     {
         BlobBuilder builder = new BlobBuilder(Allocator.Temp);
         ref PlayerProgressionConfigBlob root = ref builder.ConstructRoot<PlayerProgressionConfigBlob>();
@@ -28,7 +32,12 @@ internal static class PlayerProgressionBlobBakeUtility
         root.MilestoneTimeScaleResumeDurationSeconds = preset != null ? math.max(0f, preset.MilestoneTimeScaleResumeDurationSeconds) : 0f;
         root.EquippedScheduleIndex = -1;
 
-        BakeProgressionGamePhases(builder, ref root, preset, powerUpsPreset);
+        BakeProgressionGamePhases(builder,
+                                  ref root,
+                                  preset,
+                                  sourcePreset,
+                                  powerUpsPreset,
+                                  sourcePowerUpsPreset);
         BakeProgressionScalableStats(builder, ref root, preset);
         BakeProgressionSchedules(builder, ref root, preset);
 
@@ -49,7 +58,9 @@ internal static class PlayerProgressionBlobBakeUtility
     private static void BakeProgressionGamePhases(BlobBuilder builder,
                                                   ref PlayerProgressionConfigBlob root,
                                                   PlayerProgressionPreset preset,
-                                                  PlayerPowerUpsPreset powerUpsPreset)
+                                                  PlayerProgressionPreset sourcePreset,
+                                                  PlayerPowerUpsPreset powerUpsPreset,
+                                                  PlayerPowerUpsPreset sourcePowerUpsPreset)
     {
         IReadOnlyList<PlayerGamePhaseDefinition> gamePhases = preset != null ? preset.GamePhasesDefinition : null;
         int gamePhasesCount = gamePhases != null && gamePhases.Count > 0 ? gamePhases.Count : 1;
@@ -89,10 +100,19 @@ internal static class PlayerProgressionBlobBakeUtility
                 milestoneArray[milestoneIndex] = new PlayerLevelUpMilestoneBlob
                 {
                     MilestoneLevel = milestoneLevel,
-                    SpecialExpRequirement = specialExpRequirement
+                    SpecialExpRequirement = specialExpRequirement,
+                    IsRecurring = milestone != null && milestone.Recurring ? (byte)1 : (byte)0,
+                    RecurrenceIntervalLevels = milestone != null ? math.max(1, milestone.RecurrenceIntervalLevels) : 1
                 };
 
-                BakeMilestonePowerUpUnlocks(builder, ref milestoneArray[milestoneIndex], milestone, powerUpsPreset);
+                BakeMilestonePowerUpUnlocks(builder,
+                                            ref milestoneArray[milestoneIndex],
+                                            milestone,
+                                            phaseIndex,
+                                            milestoneIndex,
+                                            sourcePreset,
+                                            powerUpsPreset,
+                                            sourcePowerUpsPreset);
                 BakeMilestoneSkipCompensations(builder, ref milestoneArray[milestoneIndex], milestone);
             }
         }
@@ -108,7 +128,11 @@ internal static class PlayerProgressionBlobBakeUtility
     private static void BakeMilestonePowerUpUnlocks(BlobBuilder builder,
                                                     ref PlayerLevelUpMilestoneBlob milestoneBlob,
                                                     PlayerLevelUpMilestoneDefinition milestone,
-                                                    PlayerPowerUpsPreset powerUpsPreset)
+                                                    int phaseIndex,
+                                                    int milestoneIndex,
+                                                    PlayerProgressionPreset sourcePreset,
+                                                    PlayerPowerUpsPreset powerUpsPreset,
+                                                    PlayerPowerUpsPreset sourcePowerUpsPreset)
     {
         IReadOnlyList<PlayerMilestonePowerUpUnlockDefinition> powerUpUnlocks = milestone != null ? milestone.PowerUpUnlocks : null;
         int powerUpUnlockCount = powerUpUnlocks != null ? math.min(PlayerLevelUpMilestoneDefinition.MaxPowerUpUnlockCount, powerUpUnlocks.Count) : 0;
@@ -120,7 +144,9 @@ internal static class PlayerProgressionBlobBakeUtility
             string requestedDropPoolId = powerUpUnlock != null && !string.IsNullOrWhiteSpace(powerUpUnlock.DropPoolId)
                 ? powerUpUnlock.DropPoolId.Trim()
                 : string.Empty;
-            IReadOnlyList<PowerUpDropPoolTierDefinition> resolvedDropPoolTierRolls = ResolveDropPoolTierRolls(powerUpsPreset, requestedDropPoolId);
+            IReadOnlyList<PowerUpDropPoolTierDefinition> resolvedDropPoolTierRolls = ResolveDropPoolTierRolls(powerUpsPreset,
+                                                                                                               requestedDropPoolId,
+                                                                                                               out int resolvedDropPoolIndex);
             IReadOnlyList<PlayerMilestoneTierRollDefinition> legacyTierRolls = powerUpUnlock != null ? powerUpUnlock.LegacyTierRolls : null;
             bool useResolvedDropPool = resolvedDropPoolTierRolls != null && resolvedDropPoolTierRolls.Count > 0;
             int tierRollCount = useResolvedDropPool
@@ -139,12 +165,26 @@ internal static class PlayerProgressionBlobBakeUtility
                         ? tierRoll.TierId.Trim()
                         : string.Empty;
                     float selectionPercentage = tierRoll != null ? math.max(0f, tierRoll.SelectionPercentage) : 0f;
+                    float baseSelectionPercentage = selectionPercentage;
+                    string scalingFormula = string.Empty;
+
+                    if (PlayerRuntimeScalingBakeMetadataUtility.TryResolveDropPoolTierRollScalingData(sourcePowerUpsPreset,
+                                                                                                      resolvedDropPoolIndex,
+                                                                                                      tierRollIndex,
+                                                                                                      out float resolvedBaseSelectionPercentage,
+                                                                                                      out string resolvedScalingFormula))
+                    {
+                        baseSelectionPercentage = math.max(0f, resolvedBaseSelectionPercentage);
+                        scalingFormula = resolvedScalingFormula;
+                    }
 
                     tierRollArray[tierRollIndex] = new PlayerMilestoneTierRollBlob
                     {
-                        SelectionPercentage = selectionPercentage
+                        SelectionPercentage = selectionPercentage,
+                        BaseSelectionPercentage = baseSelectionPercentage
                     };
                     builder.AllocateString(ref tierRollArray[tierRollIndex].TierId, tierId);
+                    builder.AllocateString(ref tierRollArray[tierRollIndex].ScalingFormula, string.IsNullOrWhiteSpace(scalingFormula) ? string.Empty : scalingFormula);
                 }
 
                 continue;
@@ -158,12 +198,28 @@ internal static class PlayerProgressionBlobBakeUtility
                     ? tierRoll.TierId.Trim()
                     : string.Empty;
                 float selectionPercentage = tierRoll != null ? math.max(0f, tierRoll.SelectionPercentage) : 0f;
+                float baseSelectionPercentage = selectionPercentage;
+                string scalingFormula = string.Empty;
+
+                if (PlayerRuntimeScalingBakeMetadataUtility.TryResolveLegacyMilestoneTierRollScalingData(sourcePreset,
+                                                                                                         phaseIndex,
+                                                                                                         milestoneIndex,
+                                                                                                         powerUpUnlockIndex,
+                                                                                                         tierRollIndex,
+                                                                                                         out float resolvedBaseSelectionPercentage,
+                                                                                                         out string resolvedScalingFormula))
+                {
+                    baseSelectionPercentage = math.max(0f, resolvedBaseSelectionPercentage);
+                    scalingFormula = resolvedScalingFormula;
+                }
 
                 tierRollArray[tierRollIndex] = new PlayerMilestoneTierRollBlob
                 {
-                    SelectionPercentage = selectionPercentage
+                    SelectionPercentage = selectionPercentage,
+                    BaseSelectionPercentage = baseSelectionPercentage
                 };
                 builder.AllocateString(ref tierRollArray[tierRollIndex].TierId, tierId);
+                builder.AllocateString(ref tierRollArray[tierRollIndex].ScalingFormula, string.IsNullOrWhiteSpace(scalingFormula) ? string.Empty : scalingFormula);
             }
         }
     }
@@ -305,14 +361,17 @@ internal static class PlayerProgressionBlobBakeUtility
     }
 
     private static IReadOnlyList<PowerUpDropPoolTierDefinition> ResolveDropPoolTierRolls(PlayerPowerUpsPreset powerUpsPreset,
-                                                                                          string dropPoolId)
+                                                                                          string dropPoolId,
+                                                                                          out int dropPoolIndex)
     {
+        dropPoolIndex = -1;
+
         if (powerUpsPreset == null || powerUpsPreset.DropPools == null || string.IsNullOrWhiteSpace(dropPoolId))
             return null;
 
-        for (int dropPoolIndex = 0; dropPoolIndex < powerUpsPreset.DropPools.Count; dropPoolIndex++)
+        for (int dropPoolIndexValue = 0; dropPoolIndexValue < powerUpsPreset.DropPools.Count; dropPoolIndexValue++)
         {
-            PowerUpDropPoolDefinition dropPool = powerUpsPreset.DropPools[dropPoolIndex];
+            PowerUpDropPoolDefinition dropPool = powerUpsPreset.DropPools[dropPoolIndexValue];
 
             if (dropPool == null || string.IsNullOrWhiteSpace(dropPool.PoolId))
                 continue;
@@ -320,6 +379,7 @@ internal static class PlayerProgressionBlobBakeUtility
             if (!string.Equals(dropPool.PoolId, dropPoolId, System.StringComparison.OrdinalIgnoreCase))
                 continue;
 
+            dropPoolIndex = dropPoolIndexValue;
             return dropPool.TierRolls;
         }
 

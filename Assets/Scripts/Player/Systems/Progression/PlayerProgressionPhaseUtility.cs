@@ -164,7 +164,7 @@ public static class PlayerProgressionPhaseUtility
         {
             ref PlayerLevelUpMilestoneBlob milestone = ref milestones[milestoneIndex];
 
-            if (milestone.MilestoneLevel != levelValue)
+            if (!MatchesMilestoneLevel(ref milestone, levelValue))
             {
                 continue;
             }
@@ -178,7 +178,7 @@ public static class PlayerProgressionPhaseUtility
 
             resolvedRequirement = milestoneRequirement;
             isMilestoneRequirement = true;
-            milestoneLevel = milestone.MilestoneLevel;
+            milestoneLevel = levelValue;
             break;
         }
 
@@ -195,7 +195,7 @@ public static class PlayerProgressionPhaseUtility
         {
             ref PlayerLevelUpMilestoneBlob milestone = ref gamePhase.Milestones[milestoneIndexValue];
 
-            if (milestone.MilestoneLevel != milestoneLevel)
+            if (!MatchesMilestoneLevel(ref milestone, milestoneLevel))
                 continue;
 
             milestoneIndex = milestoneIndexValue;
@@ -228,6 +228,18 @@ public static class PlayerProgressionPhaseUtility
         }
 
         return 0;
+    }
+
+    private static bool MatchesMilestoneLevel(ref PlayerLevelUpMilestoneBlob milestone, int levelValue)
+    {
+        if (levelValue < milestone.MilestoneLevel)
+            return false;
+
+        if (milestone.IsRecurring == 0)
+            return levelValue == milestone.MilestoneLevel;
+
+        int recurrenceIntervalLevels = milestone.RecurrenceIntervalLevels > 0 ? milestone.RecurrenceIntervalLevels : 1;
+        return (levelValue - milestone.MilestoneLevel) % recurrenceIntervalLevels == 0;
     }
     #endregion
 

@@ -1,6 +1,5 @@
 using System.Globalization;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
@@ -174,9 +173,6 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             PlayerPassiveToolsState passiveToolsState = passiveToolsStateLookup[entity];
             PlayerPowerUpUnlockCatalogElement selectedCatalogEntry = unlockCatalogBuffer[selectedCatalogIndex];
             bool wasAlreadyUnlocked = selectedCatalogEntry.IsUnlocked != 0;
-            selectedCatalogEntry.IsUnlocked = 1;
-            unlockCatalogBuffer[selectedCatalogIndex] = selectedCatalogEntry;
-
             bool runtimeApplied = ApplySelectedUnlock(selectedOffer.UnlockKind,
                                                       in selectedCatalogEntry,
                                                       ref powerUpsConfigValue,
@@ -184,6 +180,13 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
                                                       equippedPassiveToolsBuffer,
                                                       ref passiveToolsState,
                                                       out string applyTarget);
+
+            if (runtimeApplied)
+            {
+                selectedCatalogEntry.IsUnlocked = 1;
+                unlockCatalogBuffer[selectedCatalogIndex] = selectedCatalogEntry;
+            }
+
             powerUpsConfigLookup[entity] = powerUpsConfigValue;
             powerUpsStateLookup[entity] = powerUpsStateValue;
             passiveToolsStateLookup[entity] = passiveToolsState;
@@ -323,74 +326,17 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             return false;
         }
 
-        int targetSlotIndex = ResolveActiveTargetSlot(in powerUpsConfig);
-
-        switch (targetSlotIndex)
+        if (!PlayerPowerUpLoadoutRuntimeUtility.TryEquipIntoOldestSlot(in activeSlotConfig,
+                                                                       ref powerUpsConfig,
+                                                                       ref powerUpsState,
+                                                                       out int targetSlotIndex))
         {
-            case 0:
-                powerUpsConfig.PrimarySlot = activeSlotConfig;
-                ResetPrimaryActiveRuntimeState(ref powerUpsState, in activeSlotConfig);
-                applyTarget = "Primary";
-                return true;
-            case 1:
-                powerUpsConfig.SecondarySlot = activeSlotConfig;
-                ResetSecondaryActiveRuntimeState(ref powerUpsState, in activeSlotConfig);
-                applyTarget = "Secondary";
-                return true;
-            default:
-                applyTarget = "NoReplaceableSlot";
-                return false;
+            applyTarget = "NoReplaceableSlot";
+            return false;
         }
-    }
 
-    /// <summary>
-    /// Resolves which active slot should receive a newly unlocked active power-up.
-    /// </summary>
-    /// <param name="powerUpsConfig">Current runtime active-slot config.</param>
-    /// <returns>0 for primary, 1 for secondary, or -1 when no slot can be replaced.</returns>
-    private static int ResolveActiveTargetSlot(in PlayerPowerUpsConfig powerUpsConfig)
-    {
-        if (powerUpsConfig.PrimarySlot.IsDefined == 0)
-            return 0;
-
-        if (powerUpsConfig.SecondarySlot.IsDefined == 0)
-            return 1;
-
-        if (powerUpsConfig.SecondarySlot.Unreplaceable == 0)
-            return 1;
-
-        if (powerUpsConfig.PrimarySlot.Unreplaceable == 0)
-            return 0;
-
-        return -1;
-    }
-
-    /// <summary>
-    /// Resets primary-slot runtime resource state after active-slot replacement.
-    /// </summary>
-    /// <param name="powerUpsState">Runtime active-slot state.</param>
-    /// <param name="slotConfig">Newly applied active-slot config.</param>
-
-    private static void ResetPrimaryActiveRuntimeState(ref PlayerPowerUpsState powerUpsState, in PlayerPowerUpSlotConfig slotConfig)
-    {
-        powerUpsState.PrimaryEnergy = math.max(0f, slotConfig.MaximumEnergy);
-        powerUpsState.PrimaryCooldownRemaining = 0f;
-        powerUpsState.PrimaryCharge = 0f;
-        powerUpsState.PrimaryIsCharging = 0;
-    }
-
-    /// <summary>
-    /// Resets secondary-slot runtime resource state after active-slot replacement.
-    /// </summary>
-    /// <param name="powerUpsState">Runtime active-slot state.</param>
-    /// <param name="slotConfig">Newly applied active-slot config.</param>
-
-    private static void ResetSecondaryActiveRuntimeState(ref PlayerPowerUpsState powerUpsState, in PlayerPowerUpSlotConfig slotConfig)
-    {
-        powerUpsState.SecondaryEnergy = math.max(0f, slotConfig.MaximumEnergy);
-        powerUpsState.SecondaryCooldownRemaining = 0f;
-        powerUpsState.SecondaryCharge = 0f;
-        powerUpsState.SecondaryIsCharging = 0;
+        applyTarget = targetSlotIndex == 0 ? "PrimaryOldestReplaced" : "SecondaryOldestReplaced";
+        return true;
     }
     #endregion
 

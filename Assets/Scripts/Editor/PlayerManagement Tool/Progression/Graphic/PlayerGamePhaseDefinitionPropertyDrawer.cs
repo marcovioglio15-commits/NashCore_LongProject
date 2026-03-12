@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 /// <summary>
@@ -26,6 +27,14 @@ public sealed class PlayerGamePhaseDefinitionPropertyDrawer : PropertyDrawer
         PlayerProgressionScalingDrawerUtility.PopulateDirectChildFields(root,
                                                                         property,
                                                                         scalingRulesProperty);
+        VisualElement warningsRoot = new VisualElement();
+        warningsRoot.style.marginTop = 4f;
+        root.Add(warningsRoot);
+        PlayerMilestoneOverlapWarningUtility.RefreshWarnings(warningsRoot, property);
+        root.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            PlayerMilestoneOverlapWarningUtility.RefreshWarnings(warningsRoot, property);
+        });
         return root;
     }
     #endregion

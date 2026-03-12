@@ -29,6 +29,7 @@ public static class PlayerMilestoneSelectionOutcomeUtility
             IsSelectionActive = 0,
             MilestoneLevel = 0,
             GamePhaseIndex = -1,
+            MilestoneIndex = -1,
             OfferCount = 0
         };
     }
@@ -89,10 +90,9 @@ public static class PlayerMilestoneSelectionOutcomeUtility
         if (!progressionConfig.Config.IsCreated)
             return 0;
 
-        if (!PlayerProgressionPhaseUtility.TryResolveMilestoneIndex(progressionConfig,
-                                                                    selectionState.GamePhaseIndex,
-                                                                    selectionState.MilestoneLevel,
-                                                                    out int milestoneIndex))
+        if (!TryResolveSelectedMilestoneIndex(progressionConfig,
+                                              in selectionState,
+                                              out int milestoneIndex))
             return 0;
 
         ref PlayerGamePhaseBlob gamePhase = ref progressionConfig.Config.Value.GamePhases[selectionState.GamePhaseIndex];
@@ -324,6 +324,37 @@ public static class PlayerMilestoneSelectionOutcomeUtility
             return positiveValue;
 
         return math.max(0f, currentValue) * positiveValue * 0.01f;
+    }
+
+    private static bool TryResolveSelectedMilestoneIndex(PlayerProgressionConfig progressionConfig,
+                                                         in PlayerMilestonePowerUpSelectionState selectionState,
+                                                         out int milestoneIndex)
+    {
+        milestoneIndex = -1;
+
+        if (!progressionConfig.Config.IsCreated)
+            return false;
+
+        ref BlobArray<PlayerGamePhaseBlob> gamePhases = ref progressionConfig.Config.Value.GamePhases;
+
+        if (selectionState.GamePhaseIndex < 0 || selectionState.GamePhaseIndex >= gamePhases.Length)
+            return false;
+
+        ref PlayerGamePhaseBlob gamePhase = ref gamePhases[selectionState.GamePhaseIndex];
+        milestoneIndex = selectionState.MilestoneIndex;
+
+        if (milestoneIndex < 0 || milestoneIndex >= gamePhase.Milestones.Length)
+        {
+            if (!PlayerProgressionPhaseUtility.TryResolveMilestoneIndex(progressionConfig,
+                                                                        selectionState.GamePhaseIndex,
+                                                                        selectionState.MilestoneLevel,
+                                                                        out milestoneIndex))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
     #endregion
 

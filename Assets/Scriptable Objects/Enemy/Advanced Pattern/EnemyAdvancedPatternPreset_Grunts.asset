@@ -472,7 +472,7 @@ MonoBehaviour:
           - dropPrefab: {fileID: 6858454939034102764, guid: b4ca66a6a67765143825d976eb834132, type: 3}
             experienceAmount: 9
           complessiveExperienceDropMinimum: 3
-          complessiveExperienceDropMaximum: 33
+          complessiveExperienceDropMaximum: 12
           dropsDistribution: 1
           dropRadius: 1.2
           collectionMovement:

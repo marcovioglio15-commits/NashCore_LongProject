@@ -167,35 +167,6 @@ public sealed class PlayerGamePhaseDefinition
             PlayerLevelUpMilestoneDefinition milestone = milestones[milestoneIndex];
             milestone.Validate(startsAtLevel, startingRequiredLevelUpExp);
         }
-
-        milestones.Sort(CompareMilestonesByLevel);
-        EnsureUniqueMilestoneLevels();
-    }
-    #endregion
-
-    #region Private Methods
-    private static int CompareMilestonesByLevel(PlayerLevelUpMilestoneDefinition leftMilestone, PlayerLevelUpMilestoneDefinition rightMilestone)
-    {
-        int leftLevel = leftMilestone != null ? leftMilestone.MilestoneLevel : 0;
-        int rightLevel = rightMilestone != null ? rightMilestone.MilestoneLevel : 0;
-        return leftLevel.CompareTo(rightLevel);
-    }
-
-    private void EnsureUniqueMilestoneLevels()
-    {
-        HashSet<int> visitedLevels = new HashSet<int>();
-
-        for (int milestoneIndex = milestones.Count - 1; milestoneIndex >= 0; milestoneIndex--)
-        {
-            PlayerLevelUpMilestoneDefinition milestone = milestones[milestoneIndex];
-
-            if (visitedLevels.Add(milestone.MilestoneLevel))
-            {
-                continue;
-            }
-
-            milestones.RemoveAt(milestoneIndex);
-        }
     }
     #endregion
 
@@ -220,6 +191,12 @@ public sealed class PlayerLevelUpMilestoneDefinition
 
     [Tooltip("Special required experience applied when this milestone level is active.")]
     [SerializeField] private float specialExpRequirement = 300f;
+
+    [Tooltip("When enabled, this milestone keeps triggering again after the configured recurrence interval.")]
+    [SerializeField] private bool recurring;
+
+    [Tooltip("Number of levels between recurring activations when Recurring is enabled.")]
+    [SerializeField] private int recurrenceIntervalLevels = 1;
 
     [Tooltip("Ordered milestone power-up extractions rolled when this milestone level is reached. Each element defines one custom offer roll.")]
     [SerializeField] private List<PlayerMilestonePowerUpUnlockDefinition> powerUpUnlocks = new List<PlayerMilestonePowerUpUnlockDefinition>();
@@ -252,6 +229,22 @@ public sealed class PlayerLevelUpMilestoneDefinition
         get
         {
             return specialExpRequirement;
+        }
+    }
+
+    public bool Recurring
+    {
+        get
+        {
+            return recurring;
+        }
+    }
+
+    public int RecurrenceIntervalLevels
+    {
+        get
+        {
+            return recurrenceIntervalLevels;
         }
     }
 
@@ -306,6 +299,11 @@ public sealed class PlayerLevelUpMilestoneDefinition
             specialExpRequirement = Mathf.Max(1f, fallbackSpecialRequirement);
         }
 
+        if (recurrenceIntervalLevels < 1)
+        {
+            recurrenceIntervalLevels = 1;
+        }
+
         TryMigrateLegacyPowerUpUnlocks();
 
         if (powerUpUnlocks == null)
@@ -344,6 +342,27 @@ public sealed class PlayerLevelUpMilestoneDefinition
 
         for (int compensationIndex = 0; compensationIndex < skipCompensationResources.Count; compensationIndex++)
             skipCompensationResources[compensationIndex].Validate();
+    }
+
+    /// <summary>
+    /// Checks whether this milestone applies to the provided player level.
+    /// </summary>
+    /// <param name="levelValue">Player level being resolved at runtime.</param>
+    /// <returns>True when the milestone should trigger for the level; otherwise false.</returns>
+    public bool MatchesLevel(int levelValue)
+    {
+        if (levelValue < milestoneLevel)
+        {
+            return false;
+        }
+
+        if (!recurring)
+        {
+            return levelValue == milestoneLevel;
+        }
+
+        int resolvedInterval = recurrenceIntervalLevels < 1 ? 1 : recurrenceIntervalLevels;
+        return (levelValue - milestoneLevel) % resolvedInterval == 0;
     }
     #endregion
 

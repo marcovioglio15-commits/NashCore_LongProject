@@ -22,6 +22,8 @@ public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDra
         VisualElement root = new VisualElement();
         SerializedProperty milestoneLevelProperty = property.FindPropertyRelative("milestoneLevel");
         SerializedProperty specialExpRequirementProperty = property.FindPropertyRelative("specialExpRequirement");
+        SerializedProperty recurringProperty = property.FindPropertyRelative("recurring");
+        SerializedProperty recurrenceIntervalLevelsProperty = property.FindPropertyRelative("recurrenceIntervalLevels");
         SerializedProperty powerUpUnlocksProperty = property.FindPropertyRelative("powerUpUnlocks");
         SerializedProperty skipCompensationResourcesProperty = property.FindPropertyRelative("skipCompensationResources");
         SerializedProperty scalingRulesProperty = property.serializedObject != null
@@ -30,6 +32,8 @@ public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDra
 
         if (milestoneLevelProperty == null ||
             specialExpRequirementProperty == null ||
+            recurringProperty == null ||
+            recurrenceIntervalLevelsProperty == null ||
             powerUpUnlocksProperty == null ||
             skipCompensationResourcesProperty == null)
         {
@@ -47,6 +51,28 @@ public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDra
                                                                                              scalingRulesProperty,
                                                                                              "Special Exp Requirement");
         root.Add(specialRequirementField);
+
+        PropertyField recurringField = new PropertyField(recurringProperty, "Recurring");
+        recurringField.BindProperty(recurringProperty);
+        recurringField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            PlayerManagementDraftSession.MarkDirty();
+        });
+        root.Add(recurringField);
+
+        PropertyField recurrenceIntervalField = new PropertyField(recurrenceIntervalLevelsProperty, "Repeat Every X Levels");
+        recurrenceIntervalField.BindProperty(recurrenceIntervalLevelsProperty);
+        recurrenceIntervalField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            PlayerManagementDraftSession.MarkDirty();
+        });
+        root.Add(recurrenceIntervalField);
+        RefreshRecurrenceFieldVisibility();
+
+        recurringField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            RefreshRecurrenceFieldVisibility();
+        });
 
         List<string> dropPoolIdOptions = PlayerProgressionTierOptionsUtility.BuildDropPoolIdOptionsFromPowerUpsLibrary();
 
@@ -67,6 +93,11 @@ public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDra
         skipCompensationsField.BindProperty(skipCompensationResourcesProperty);
         root.Add(skipCompensationsField);
         return root;
+
+        void RefreshRecurrenceFieldVisibility()
+        {
+            recurrenceIntervalField.style.display = recurringProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+        }
     }
     #endregion
 

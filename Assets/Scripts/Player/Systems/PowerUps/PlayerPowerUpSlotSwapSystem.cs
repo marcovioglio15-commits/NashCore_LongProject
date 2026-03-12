@@ -79,9 +79,7 @@ public partial struct PlayerPowerUpSlotSwapSystem : ISystem
                                       ref PlayerPowerUpsState powerUpsState,
                                       in PlayerInputState inputState)
     {
-        SwapValues(ref powerUpsConfig.PrimarySlot, ref powerUpsConfig.SecondarySlot);
-        SwapValues(ref powerUpsState.PrimaryEnergy, ref powerUpsState.SecondaryEnergy);
-        SwapValues(ref powerUpsState.PrimaryCooldownRemaining, ref powerUpsState.SecondaryCooldownRemaining);
+        PlayerPowerUpLoadoutRuntimeUtility.SwapActiveSlotRuntimeData(ref powerUpsConfig, ref powerUpsState);
         powerUpsState.PrimaryCharge = 0f;
         powerUpsState.SecondaryCharge = 0f;
         powerUpsState.PrimaryIsCharging = 0;
@@ -89,19 +87,6 @@ public partial struct PlayerPowerUpSlotSwapSystem : ISystem
         powerUpsState.IsShootingSuppressed = 0;
         powerUpsState.PreviousPrimaryPressed = inputState.PowerUpPrimary > InputPressThreshold ? (byte)1 : (byte)0;
         powerUpsState.PreviousSecondaryPressed = inputState.PowerUpSecondary > InputPressThreshold ? (byte)1 : (byte)0;
-    }
-
-    /// <summary>
-    /// Swaps two values in place without allocating temporary containers.
-    /// </summary>
-    /// <typeparam name="T">Value type being swapped.</typeparam>
-    /// <param name="leftValue">First value to exchange.</param>
-    /// <param name="rightValue">Second value to exchange.</param>
-    private static void SwapValues<T>(ref T leftValue, ref T rightValue)
-    {
-        T temporaryValue = leftValue;
-        leftValue = rightValue;
-        rightValue = temporaryValue;
     }
     #endregion
 

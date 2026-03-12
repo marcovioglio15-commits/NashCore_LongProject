@@ -25,26 +25,8 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
         for (int index = 0; index < entities.Length; index++)
         {
             PlayerPowerUpsConfig config = configs[index];
-            float primaryMaximumEnergy = math.max(0f, config.PrimarySlot.MaximumEnergy);
-            float secondaryMaximumEnergy = math.max(0f, config.SecondarySlot.MaximumEnergy);
-
-            commandBuffer.AddComponent(entities[index], new PlayerPowerUpsState
-            {
-                PrimaryEnergy = primaryMaximumEnergy,
-                SecondaryEnergy = secondaryMaximumEnergy,
-                PrimaryCooldownRemaining = 0f,
-                SecondaryCooldownRemaining = 0f,
-                PrimaryCharge = 0f,
-                SecondaryCharge = 0f,
-                PrimaryIsCharging = 0,
-                SecondaryIsCharging = 0,
-                IsShootingSuppressed = 0,
-                PreviousPrimaryPressed = 0,
-                PreviousSecondaryPressed = 0,
-                PreviousSwapSlotsPressed = 0,
-                LastObservedGlobalKillCount = currentKillCount,
-                LastValidMovementDirection = float3.zero
-            });
+            PlayerPowerUpsState initialState = PlayerPowerUpLoadoutRuntimeUtility.CreateInitialState(in config, currentKillCount);
+            commandBuffer.AddComponent(entities[index], initialState);
         }
 
         entities.Dispose();
@@ -360,6 +342,19 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     }
 
     /// <summary>
+    /// Adds PlayerPowerUpTierEntryScalingElement buffers to entities missing them.
+    /// </summary>
+    /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
+    /// <param name="missingPowerUpTierEntryScalingBufferQuery">Query selecting entities without PlayerPowerUpTierEntryScalingElement buffer.</param>
+
+    public static void AddMissingPowerUpTierEntryScalingBuffers(
+        ref EntityCommandBuffer commandBuffer,
+        in EntityQuery missingPowerUpTierEntryScalingBufferQuery)
+    {
+        AddBufferForEntities<PlayerPowerUpTierEntryScalingElement>(ref commandBuffer, in missingPowerUpTierEntryScalingBufferQuery);
+    }
+
+    /// <summary>
     /// Adds PlayerMilestonePowerUpSelectionState to entities missing it.
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
@@ -372,6 +367,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
             IsSelectionActive = 0,
             MilestoneLevel = 0,
             GamePhaseIndex = -1,
+            MilestoneIndex = -1,
             OfferCount = 0
         };
 

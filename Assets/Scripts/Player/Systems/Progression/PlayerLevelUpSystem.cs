@@ -55,6 +55,8 @@ public partial struct PlayerLevelUpSystem : ISystem
         BufferLookup<PlayerPowerUpUnlockCatalogElement> unlockCatalogLookup = SystemAPI.GetBufferLookup<PlayerPowerUpUnlockCatalogElement>(false);
         BufferLookup<PlayerPowerUpTierDefinitionElement> tierDefinitionsLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierDefinitionElement>(true);
         BufferLookup<PlayerPowerUpTierEntryElement> tierEntriesLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierEntryElement>(true);
+        BufferLookup<PlayerPowerUpTierEntryScalingElement> tierEntryScalingLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierEntryScalingElement>(true);
+        BufferLookup<EquippedPassiveToolElement> equippedPassiveToolsLookup = SystemAPI.GetBufferLookup<EquippedPassiveToolElement>(true);
         ComponentLookup<PlayerMilestoneTimeScaleResumeState> milestoneTimeScaleResumeStateLookup = SystemAPI.GetComponentLookup<PlayerMilestoneTimeScaleResumeState>(false);
 
         foreach ((RefRW<PlayerExperience> playerExperience,
@@ -160,14 +162,23 @@ public partial struct PlayerLevelUpSystem : ISystem
                 DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog = unlockCatalogLookup[entity];
                 DynamicBuffer<PlayerPowerUpTierDefinitionElement> tierDefinitions = tierDefinitionsLookup[entity];
                 DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries = tierEntriesLookup[entity];
+                DynamicBuffer<PlayerPowerUpTierEntryScalingElement> tierEntryScaling = tierEntryScalingLookup.HasBuffer(entity)
+                    ? tierEntryScalingLookup[entity]
+                    : default;
+                DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools = equippedPassiveToolsLookup.HasBuffer(entity)
+                    ? equippedPassiveToolsLookup[entity]
+                    : default;
                 DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers = milestoneSelectionOffersLookup[entity];
 
                 if (!PlayerMilestonePowerUpRollUtility.TryOpenMilestoneSelection(progressionConfig.ValueRO,
                                                                                  activeGamePhaseIndex,
                                                                                  milestoneLevel,
+                                                                                 scalableStats,
                                                                                  unlockCatalog,
                                                                                  tierDefinitions,
                                                                                  tierEntries,
+                                                                                 tierEntryScaling,
+                                                                                 equippedPassiveTools,
                                                                                  selectionOffers,
                                                                                  ref milestoneSelectionState,
                                                                                  out milestoneOfferCount))

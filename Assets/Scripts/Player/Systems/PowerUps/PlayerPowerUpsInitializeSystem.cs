@@ -29,6 +29,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingPowerUpUnlockCatalogBufferQuery;
     private EntityQuery missingPowerUpTierDefinitionBufferQuery;
     private EntityQuery missingPowerUpTierEntryBufferQuery;
+    private EntityQuery missingPowerUpTierEntryScalingBufferQuery;
     private EntityQuery missingMilestoneSelectionStateQuery;
     private EntityQuery missingMilestoneTimeScaleResumeStateQuery;
     private EntityQuery missingMilestoneSelectionOfferBufferQuery;
@@ -152,6 +153,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithNone<PlayerPowerUpTierEntryElement>()
             .Build();
 
+        missingPowerUpTierEntryScalingBufferQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPowerUpTierEntryScalingElement>()
+            .Build();
+
         missingMilestoneSelectionStateQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerMilestonePowerUpSelectionState>()
@@ -202,6 +208,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingPowerUpUnlockCatalogBufferQuery,
             in missingPowerUpTierDefinitionBufferQuery,
             in missingPowerUpTierEntryBufferQuery,
+            in missingPowerUpTierEntryScalingBufferQuery,
             in missingMilestoneSelectionStateQuery,
             in missingMilestoneTimeScaleResumeStateQuery,
             in missingMilestoneSelectionOfferBufferQuery,
@@ -328,6 +335,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             PlayerPowerUpsInitializeBootstrapUtility.AddMissingPowerUpTierEntryBuffers(ref commandBuffer, in missingPowerUpTierEntryBufferQuery);
         }
 
+        if (missingFlags.HasMissingPowerUpTierEntryScalingBuffer)
+        {
+            PlayerPowerUpsInitializeBootstrapUtility.AddMissingPowerUpTierEntryScalingBuffers(ref commandBuffer,
+                                                                                              in missingPowerUpTierEntryScalingBufferQuery);
+        }
+
         if (missingFlags.HasMissingMilestoneSelectionState)
         {
             PlayerPowerUpsInitializeBootstrapUtility.AddMissingMilestoneSelectionState(ref commandBuffer, in missingMilestoneSelectionStateQuery);
@@ -373,6 +386,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingPowerUpUnlockCatalogBufferQuery,
             in missingPowerUpTierDefinitionBufferQuery,
             in missingPowerUpTierEntryBufferQuery,
+            in missingPowerUpTierEntryScalingBufferQuery,
             in missingMilestoneSelectionStateQuery,
             in missingMilestoneTimeScaleResumeStateQuery,
             in missingMilestoneSelectionOfferBufferQuery,

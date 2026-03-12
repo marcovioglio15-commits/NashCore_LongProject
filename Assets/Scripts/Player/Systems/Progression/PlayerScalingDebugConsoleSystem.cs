@@ -117,23 +117,25 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
             if (!HasEntityVariableHashChanged(entityKey, variableContextHash))
                 continue;
 
-            FillVariableContext(scalableStats, variableContext);
+            PlayerScalingRuntimeFormulaUtility.FillVariableContext(scalableStats, variableContext);
 
             for (int ruleIndex = 0; ruleIndex < debugRules.Length; ruleIndex++)
             {
                 PlayerScalingDebugRuleElement debugRule = debugRules[ruleIndex];
                 string targetDisplayName = ResolveTargetDisplayName(debugRule);
                 string formulaText = debugRule.Formula.ToString();
-                string translatedFormula = TranslateFormula(formulaText, variableContext, debugRule.ThisValue);
+                string translatedFormula = PlayerScalingRuntimeFormulaUtility.TranslateFormula(formulaText,
+                                                                                               variableContext,
+                                                                                               debugRule.ThisValue);
                 float evaluatedValue = debugRule.FinalValue;
                 Color debugColor = ResolveDebugColor(debugRule);
                 string debugColorHex = ColorUtility.ToHtmlStringRGBA(debugColor);
 
-                if (PlayerStatFormulaEngine.TryEvaluate(formulaText,
-                                                        debugRule.ThisValue,
-                                                        variableContext,
-                                                        out float runtimeEvaluatedValue,
-                                                        out string _))
+                if (PlayerScalingRuntimeFormulaUtility.TryEvaluateFormula(formulaText,
+                                                                          debugRule.ThisValue,
+                                                                          variableContext,
+                                                                          out float runtimeEvaluatedValue,
+                                                                          out string _))
                 {
                     evaluatedValue = runtimeEvaluatedValue;
                 }
@@ -318,35 +320,8 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
         batchedLogBuilder.Append(" = ");
         batchedLogBuilder.Append(translatedFormula);
         batchedLogBuilder.Append(" = ");
-        batchedLogBuilder.Append(FormatNumber(evaluatedValue));
+        batchedLogBuilder.Append(PlayerScalingRuntimeFormulaUtility.FormatNumber(evaluatedValue));
         batchedLogBuilder.AppendLine("</color>");
-    }
-
-    /// <summary>
-    /// Fills a case-insensitive variable dictionary from runtime scalable stat buffer values.
-    /// </summary>
-    /// <param name="scalableStats">Runtime scalable stat buffer.</param>
-    /// <param name="variableContext">Mutable dictionary receiving variable values.</param>
-
-    private static void FillVariableContext(DynamicBuffer<PlayerScalableStatElement> scalableStats,
-                                            Dictionary<string, float> variableContext)
-    {
-        variableContext.Clear();
-
-        for (int statIndex = 0; statIndex < scalableStats.Length; statIndex++)
-        {
-            PlayerScalableStatElement scalableStat = scalableStats[statIndex];
-
-            if (scalableStat.Name.Length == 0)
-                continue;
-
-            string variableName = scalableStat.Name.ToString();
-
-            if (string.IsNullOrWhiteSpace(variableName))
-                continue;
-
-            variableContext[variableName] = scalableStat.Value;
-        }
     }
 
     /// <summary>
@@ -369,87 +344,6 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
         return "Scaled Stat";
     }
 
-    /// <summary>
-    /// Builds a readable mathematical translation by replacing [variables] with resolved numeric values.
-    /// </summary>
-    /// <param name="formula">Raw scaling formula text.</param>
-    /// <param name="variableContext">Runtime variable dictionary for scalable stats.</param>
-    /// <param name="thisValue">Input value mapped to [this].</param>
-    /// <returns>Resolved formula expression ready for console output.</returns>
-    private static string TranslateFormula(string formula,
-                                           IReadOnlyDictionary<string, float> variableContext,
-                                           float thisValue)
-    {
-        if (string.IsNullOrWhiteSpace(formula))
-            return string.Empty;
-
-        StringBuilder translatedFormulaBuilder = new StringBuilder(formula.Length + 32);
-        int parseIndex = 0;
-
-        while (parseIndex < formula.Length)
-        {
-            int openBracketIndex = formula.IndexOf('[', parseIndex);
-
-            if (openBracketIndex < 0)
-            {
-                translatedFormulaBuilder.Append(formula.Substring(parseIndex));
-                break;
-            }
-
-            if (openBracketIndex > parseIndex)
-                translatedFormulaBuilder.Append(formula.Substring(parseIndex, openBracketIndex - parseIndex));
-
-            int closeBracketIndex = formula.IndexOf(']', openBracketIndex + 1);
-
-            if (closeBracketIndex < 0)
-            {
-                translatedFormulaBuilder.Append(formula.Substring(openBracketIndex));
-                break;
-            }
-
-            string variableToken = formula.Substring(openBracketIndex + 1, closeBracketIndex - openBracketIndex - 1).Trim();
-
-            if (string.Equals(variableToken, PlayerScalableStatNameUtility.ReservedThisName, StringComparison.OrdinalIgnoreCase))
-            {
-                translatedFormulaBuilder.Append(FormatNumber(thisValue));
-                parseIndex = closeBracketIndex + 1;
-                continue;
-            }
-
-            if (TryResolveVariableValue(variableContext, variableToken, out float resolvedValue))
-            {
-                translatedFormulaBuilder.Append(FormatNumber(resolvedValue));
-                parseIndex = closeBracketIndex + 1;
-                continue;
-            }
-
-            translatedFormulaBuilder.Append('[');
-            translatedFormulaBuilder.Append(variableToken);
-            translatedFormulaBuilder.Append(']');
-            parseIndex = closeBracketIndex + 1;
-        }
-
-        return translatedFormulaBuilder.ToString();
-    }
-
-    /// <summary>
-    /// Resolves one variable value from runtime scalable stat dictionary using case-insensitive keys.
-    /// </summary>
-    /// <param name="variableContext">Runtime variable dictionary.</param>
-    /// <param name="variableName">Variable name to resolve.</param>
-    /// <param name="resolvedValue">Resolved value when found.</param>
-    /// <returns>True when the variable exists in the buffer, otherwise false.</returns>
-    private static bool TryResolveVariableValue(IReadOnlyDictionary<string, float> variableContext,
-                                                string variableName,
-                                                out float resolvedValue)
-    {
-        resolvedValue = 0f;
-
-        if (variableContext == null || string.IsNullOrWhiteSpace(variableName))
-            return false;
-
-        return variableContext.TryGetValue(variableName, out resolvedValue);
-    }
 
     /// <summary>
     /// Resolves the per-rule debug color with safe clamping and fallback to default yellow for invalid/legacy data.
@@ -469,20 +363,6 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
         return new Color(red, green, blue, alpha);
     }
 
-    /// <summary>
-    /// Formats numeric values for compact formula-output readability.
-    /// </summary>
-    /// <param name="value">Numeric value to format.</param>
-    /// <returns>Formatted numeric text using invariant culture.</returns>
-    private static string FormatNumber(float value)
-    {
-        float roundedInteger = Mathf.Round(value);
-
-        if (Mathf.Abs(value - roundedInteger) <= 0.0001f)
-            return ((int)roundedInteger).ToString(CultureInfo.InvariantCulture);
-
-        return value.ToString("0.###", CultureInfo.InvariantCulture);
-    }
     #endregion
 
     #endregion

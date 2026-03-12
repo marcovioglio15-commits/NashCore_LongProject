@@ -26,6 +26,9 @@ public struct PlayerPowerUpsState : IComponentData
     public byte PreviousPrimaryPressed;
     public byte PreviousSecondaryPressed;
     public byte PreviousSwapSlotsPressed;
+    public int PrimaryEquipOrder;
+    public int SecondaryEquipOrder;
+    public int NextEquipOrder;
     public uint LastObservedGlobalKillCount;
     public float3 LastValidMovementDirection;
 }
@@ -101,6 +104,16 @@ public struct PlayerPowerUpTierEntryElement : IBufferElementData
 }
 
 /// <summary>
+/// Optional runtime scaling metadata for one flattened tier-entry weight.
+/// </summary>
+public struct PlayerPowerUpTierEntryScalingElement : IBufferElementData
+{
+    public int TierEntryIndex;
+    public float BaseSelectionWeight;
+    public FixedString512Bytes ScalingFormula;
+}
+
+/// <summary>
 /// Runtime milestone-selection state used to pause gameplay and expose power-up choices to HUD.
 /// </summary>
 public struct PlayerMilestonePowerUpSelectionState : IComponentData
@@ -108,6 +121,7 @@ public struct PlayerMilestonePowerUpSelectionState : IComponentData
     public byte IsSelectionActive;
     public int MilestoneLevel;
     public int GamePhaseIndex;
+    public int MilestoneIndex;
     public int OfferCount;
 }
 

@@ -37,6 +37,8 @@ public struct PlayerLevelUpMilestoneBlob
 {
     public int MilestoneLevel;
     public float SpecialExpRequirement;
+    public byte IsRecurring;
+    public int RecurrenceIntervalLevels;
     public BlobArray<PlayerMilestonePowerUpUnlockBlob> PowerUpUnlocks;
     public BlobArray<PlayerMilestoneSkipCompensationBlob> SkipCompensationResources;
 }
@@ -61,6 +63,8 @@ public struct PlayerMilestoneTierRollBlob
 {
     public BlobString TierId;
     public float SelectionPercentage;
+    public float BaseSelectionPercentage;
+    public BlobString ScalingFormula;
 }
 #endregion
 

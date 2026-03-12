@@ -52,23 +52,28 @@ public static class PlayerPowerUpCatalogBakeUtility
     /// <summary>
     /// Populates unlock catalog and tier buffers used by milestone power-up rolls.
     /// /params authoring: Owning player authoring component.
-    /// /params preset: Source power-ups preset.
+    /// /params preset: Scaled source power-ups preset.
+    /// /params sourcePreset: Unscaled source power-ups preset used to extract runtime scaling metadata.
     /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
     /// /params powerUpUnlockCatalogBuffer: Destination unlock catalog buffer.
     /// /params powerUpTierDefinitionsBuffer: Destination tier definition buffer.
     /// /params powerUpTierEntriesBuffer: Destination flattened tier entry buffer.
+    /// /params powerUpTierEntryScalingBuffer: Destination optional tier-entry scaling metadata buffer.
     /// /returns void.
     /// </summary>
     public static void PopulatePowerUpUnlockTierBuffers(PlayerAuthoring authoring,
                                                         PlayerPowerUpsPreset preset,
+                                                        PlayerPowerUpsPreset sourcePreset,
                                                         Func<GameObject, Entity> resolveDynamicPrefabEntity,
                                                         DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
                                                         DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer,
-                                                        DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer)
+                                                        DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer,
+                                                        DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer)
     {
         powerUpUnlockCatalogBuffer.Clear();
         powerUpTierDefinitionsBuffer.Clear();
         powerUpTierEntriesBuffer.Clear();
+        powerUpTierEntryScalingBuffer.Clear();
 
         if (preset == null)
             return;
@@ -93,11 +98,16 @@ public static class PlayerPowerUpCatalogBakeUtility
                                 unlockCatalogIndexByKey);
         MarkInitialLoadoutUnlocks(preset, activePowerUps, powerUpUnlockCatalogBuffer, unlockCatalogIndexByKey);
         BuildTierBuffers(preset,
+                         sourcePreset,
                          powerUpUnlockCatalogBuffer,
                          powerUpTierDefinitionsBuffer,
                          powerUpTierEntriesBuffer,
+                         powerUpTierEntryScalingBuffer,
                          unlockCatalogIndexByKey);
-        EnsureFallbackTierIfMissing(powerUpUnlockCatalogBuffer, powerUpTierDefinitionsBuffer, powerUpTierEntriesBuffer);
+        EnsureFallbackTierIfMissing(powerUpUnlockCatalogBuffer,
+                                    powerUpTierDefinitionsBuffer,
+                                    powerUpTierEntriesBuffer,
+                                    powerUpTierEntryScalingBuffer);
     }
 
     /// <summary>
@@ -285,9 +295,11 @@ public static class PlayerPowerUpCatalogBakeUtility
     }
 
     private static void BuildTierBuffers(PlayerPowerUpsPreset preset,
+                                         PlayerPowerUpsPreset sourcePreset,
                                          DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
                                          DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer,
                                          DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer,
+                                         DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer,
                                          Dictionary<string, int> unlockCatalogIndexByKey)
     {
         IReadOnlyList<PowerUpTierLevelDefinition> tierLevels = preset.TierLevels;
@@ -333,6 +345,11 @@ public static class PlayerPowerUpCatalogBakeUtility
                         CatalogIndex = catalogIndex,
                         SelectionWeight = math.max(0f, tierEntry.SelectionWeight)
                     });
+                    TryAddTierEntryScalingMetadata(sourcePreset,
+                                                   tierIndex,
+                                                   entryIndex,
+                                                   powerUpTierEntriesBuffer.Length - 1,
+                                                   powerUpTierEntryScalingBuffer);
                 }
             }
 
@@ -347,7 +364,8 @@ public static class PlayerPowerUpCatalogBakeUtility
 
     private static void EnsureFallbackTierIfMissing(DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
                                                     DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer,
-                                                    DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer)
+                                                    DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer,
+                                                    DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer)
     {
         if (powerUpTierDefinitionsBuffer.Length > 0)
             return;
@@ -371,6 +389,34 @@ public static class PlayerPowerUpCatalogBakeUtility
             TierId = new FixedString64Bytes("Default"),
             EntryStartIndex = startIndex,
             EntryCount = powerUpTierEntriesBuffer.Length - startIndex
+        });
+    }
+
+    private static void TryAddTierEntryScalingMetadata(PlayerPowerUpsPreset sourcePreset,
+                                                       int tierIndex,
+                                                       int entryIndex,
+                                                       int tierEntryIndex,
+                                                       DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer)
+    {
+        if (!PlayerRuntimeScalingBakeMetadataUtility.TryResolveTierEntryScalingData(sourcePreset,
+                                                                                    tierIndex,
+                                                                                    entryIndex,
+                                                                                    out float baseSelectionWeight,
+                                                                                    out string scalingFormula))
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(scalingFormula))
+        {
+            return;
+        }
+
+        powerUpTierEntryScalingBuffer.Add(new PlayerPowerUpTierEntryScalingElement
+        {
+            TierEntryIndex = tierEntryIndex,
+            BaseSelectionWeight = math.max(0f, baseSelectionWeight),
+            ScalingFormula = new FixedString512Bytes(scalingFormula)
         });
     }
 

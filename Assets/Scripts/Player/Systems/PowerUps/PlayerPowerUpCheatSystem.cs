@@ -138,7 +138,7 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
 
         powerUpsConfig = cheatPresetEntry.PowerUpsConfig;
         ReplaceEquippedPassivesFromSnapshot(cheatPresetEntry, cheatPresetPassives, equippedPassiveTools);
-        ResetRuntimeStateAfterPresetSwap(ref powerUpsState, in powerUpsConfig);
+        PlayerPowerUpLoadoutRuntimeUtility.ResetRuntimeState(ref powerUpsState, in powerUpsConfig);
         return true;
     }
 
@@ -173,29 +173,6 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
                 Tool = passiveToolConfig
             });
         }
-    }
-
-    /// <summary>
-    /// Resets transient runtime power-up state after a full preset swap.
-    /// </summary>
-    /// <param name="powerUpsState">Runtime state to reset.</param>
-    /// <param name="powerUpsConfig">Runtime config used to initialize slot energy.</param>
-    private static void ResetRuntimeStateAfterPresetSwap(ref PlayerPowerUpsState powerUpsState, in PlayerPowerUpsConfig powerUpsConfig)
-    {
-        float primaryMaximumEnergy = math.max(0f, powerUpsConfig.PrimarySlot.MaximumEnergy);
-        float secondaryMaximumEnergy = math.max(0f, powerUpsConfig.SecondarySlot.MaximumEnergy);
-        powerUpsState.PrimaryEnergy = primaryMaximumEnergy;
-        powerUpsState.SecondaryEnergy = secondaryMaximumEnergy;
-        powerUpsState.PrimaryCooldownRemaining = 0f;
-        powerUpsState.SecondaryCooldownRemaining = 0f;
-        powerUpsState.PrimaryCharge = 0f;
-        powerUpsState.SecondaryCharge = 0f;
-        powerUpsState.PrimaryIsCharging = 0;
-        powerUpsState.SecondaryIsCharging = 0;
-        powerUpsState.IsShootingSuppressed = 0;
-        powerUpsState.PreviousPrimaryPressed = 0;
-        powerUpsState.PreviousSecondaryPressed = 0;
-        powerUpsState.PreviousSwapSlotsPressed = 0;
     }
     #endregion
 

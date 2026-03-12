@@ -27,6 +27,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     public readonly bool HasMissingPowerUpUnlockCatalogBuffer;
     public readonly bool HasMissingPowerUpTierDefinitionBuffer;
     public readonly bool HasMissingPowerUpTierEntryBuffer;
+    public readonly bool HasMissingPowerUpTierEntryScalingBuffer;
     public readonly bool HasMissingMilestoneSelectionState;
     public readonly bool HasMissingMilestoneTimeScaleResumeState;
     public readonly bool HasMissingMilestoneSelectionOfferBuffer;
@@ -59,6 +60,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
                    HasMissingPowerUpUnlockCatalogBuffer ||
                    HasMissingPowerUpTierDefinitionBuffer ||
                    HasMissingPowerUpTierEntryBuffer ||
+                   HasMissingPowerUpTierEntryScalingBuffer ||
                    HasMissingMilestoneSelectionState ||
                    HasMissingMilestoneTimeScaleResumeState ||
                    HasMissingMilestoneSelectionOfferBuffer ||
@@ -94,6 +96,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     /// <param name="hasMissingPowerUpUnlockCatalogBuffer">True when PlayerPowerUpUnlockCatalogElement buffer is missing.</param>
     /// <param name="hasMissingPowerUpTierDefinitionBuffer">True when PlayerPowerUpTierDefinitionElement buffer is missing.</param>
     /// <param name="hasMissingPowerUpTierEntryBuffer">True when PlayerPowerUpTierEntryElement buffer is missing.</param>
+    /// <param name="hasMissingPowerUpTierEntryScalingBuffer">True when PlayerPowerUpTierEntryScalingElement buffer is missing.</param>
     /// <param name="hasMissingMilestoneSelectionState">True when PlayerMilestonePowerUpSelectionState is missing.</param>
     /// <param name="hasMissingMilestoneTimeScaleResumeState">True when PlayerMilestoneTimeScaleResumeState is missing.</param>
     /// <param name="hasMissingMilestoneSelectionOfferBuffer">True when PlayerMilestonePowerUpSelectionOfferElement buffer is missing.</param>
@@ -121,6 +124,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         bool hasMissingPowerUpUnlockCatalogBuffer,
         bool hasMissingPowerUpTierDefinitionBuffer,
         bool hasMissingPowerUpTierEntryBuffer,
+        bool hasMissingPowerUpTierEntryScalingBuffer,
         bool hasMissingMilestoneSelectionState,
         bool hasMissingMilestoneTimeScaleResumeState,
         bool hasMissingMilestoneSelectionOfferBuffer,
@@ -147,6 +151,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         HasMissingPowerUpUnlockCatalogBuffer = hasMissingPowerUpUnlockCatalogBuffer;
         HasMissingPowerUpTierDefinitionBuffer = hasMissingPowerUpTierDefinitionBuffer;
         HasMissingPowerUpTierEntryBuffer = hasMissingPowerUpTierEntryBuffer;
+        HasMissingPowerUpTierEntryScalingBuffer = hasMissingPowerUpTierEntryScalingBuffer;
         HasMissingMilestoneSelectionState = hasMissingMilestoneSelectionState;
         HasMissingMilestoneTimeScaleResumeState = hasMissingMilestoneTimeScaleResumeState;
         HasMissingMilestoneSelectionOfferBuffer = hasMissingMilestoneSelectionOfferBuffer;
@@ -179,6 +184,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     /// <param name="missingPowerUpUnlockCatalogBufferQuery">Query for entities missing PlayerPowerUpUnlockCatalogElement buffer.</param>
     /// <param name="missingPowerUpTierDefinitionBufferQuery">Query for entities missing PlayerPowerUpTierDefinitionElement buffer.</param>
     /// <param name="missingPowerUpTierEntryBufferQuery">Query for entities missing PlayerPowerUpTierEntryElement buffer.</param>
+    /// <param name="missingPowerUpTierEntryScalingBufferQuery">Query for entities missing PlayerPowerUpTierEntryScalingElement buffer.</param>
     /// <param name="missingMilestoneSelectionStateQuery">Query for entities missing PlayerMilestonePowerUpSelectionState.</param>
     /// <param name="missingMilestoneTimeScaleResumeStateQuery">Query for entities missing PlayerMilestoneTimeScaleResumeState.</param>
     /// <param name="missingMilestoneSelectionOfferBufferQuery">Query for entities missing PlayerMilestonePowerUpSelectionOfferElement buffer.</param>
@@ -206,6 +212,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         in EntityQuery missingPowerUpUnlockCatalogBufferQuery,
         in EntityQuery missingPowerUpTierDefinitionBufferQuery,
         in EntityQuery missingPowerUpTierEntryBufferQuery,
+        in EntityQuery missingPowerUpTierEntryScalingBufferQuery,
         in EntityQuery missingMilestoneSelectionStateQuery,
         in EntityQuery missingMilestoneTimeScaleResumeStateQuery,
         in EntityQuery missingMilestoneSelectionOfferBufferQuery,
@@ -233,6 +240,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
             !missingPowerUpUnlockCatalogBufferQuery.IsEmptyIgnoreFilter,
             !missingPowerUpTierDefinitionBufferQuery.IsEmptyIgnoreFilter,
             !missingPowerUpTierEntryBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpTierEntryScalingBufferQuery.IsEmptyIgnoreFilter,
             !missingMilestoneSelectionStateQuery.IsEmptyIgnoreFilter,
             !missingMilestoneTimeScaleResumeStateQuery.IsEmptyIgnoreFilter,
             !missingMilestoneSelectionOfferBufferQuery.IsEmptyIgnoreFilter,

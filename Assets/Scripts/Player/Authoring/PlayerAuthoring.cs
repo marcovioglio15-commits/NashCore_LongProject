@@ -340,6 +340,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
         PlayerPowerUpsPreset powerUpsPreset = authoring.GetPowerUpsPreset();
+        PlayerProgressionPreset sourceProgressionPreset = progressionPreset;
+        PlayerPowerUpsPreset sourcePowerUpsPreset = powerUpsPreset;
         PlayerAnimationBindingsPreset animationBindingsPreset = authoring.MasterPreset != null ? authoring.MasterPreset.AnimationBindingsPreset : null;
 
 #if UNITY_EDITOR
@@ -416,7 +418,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (progressionPreset != null)
         {
             BlobAssetReference<PlayerProgressionConfigBlob> progressionBlob = PlayerProgressionBlobBakeUtility.BuildProgressionConfigBlob(progressionPreset,
-                                                                                                                                        powerUpsPreset);
+                                                                                                                                        powerUpsPreset,
+                                                                                                                                        sourceProgressionPreset,
+                                                                                                                                        sourcePowerUpsPreset);
             AddBlobAsset(ref progressionBlob, out Unity.Entities.Hash128 _);
 
             PlayerProgressionConfig progressionConfig = new PlayerProgressionConfig
@@ -464,12 +468,15 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer = AddBuffer<PlayerPowerUpUnlockCatalogElement>(entity);
             DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer = AddBuffer<PlayerPowerUpTierDefinitionElement>(entity);
             DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer = AddBuffer<PlayerPowerUpTierEntryElement>(entity);
+            DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer = AddBuffer<PlayerPowerUpTierEntryScalingElement>(entity);
             PlayerPowerUpCatalogBakeUtility.PopulatePowerUpUnlockTierBuffers(authoring,
                                                                              powerUpsPreset,
+                                                                             sourcePowerUpsPreset,
                                                                              ResolveDynamicPrefabEntity,
                                                                              powerUpUnlockCatalogBuffer,
                                                                              powerUpTierDefinitionsBuffer,
-                                                                             powerUpTierEntriesBuffer);
+                                                                             powerUpTierEntriesBuffer,
+                                                                             powerUpTierEntryScalingBuffer);
             DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntriesBuffer = AddBuffer<PlayerPowerUpCheatPresetEntry>(entity);
             DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassivesBuffer = AddBuffer<PlayerPowerUpCheatPresetPassiveElement>(entity);
             PlayerPowerUpCatalogBakeUtility.PopulatePowerUpCheatPresetBuffers(authoring,
