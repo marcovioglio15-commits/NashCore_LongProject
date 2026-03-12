@@ -56,7 +56,7 @@ MonoBehaviour:
   - phaseID: Phase0
     startsAtLevel: 0
     startingRequiredLevelUpExp: 10
-    requiredExperienceGrouth: 500
+    requiredExperienceGrouth: 250
     milestones:
     - milestoneLevel: 1
       specialExpRequirement: 100

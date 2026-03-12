@@ -1,9 +1,10 @@
 using Unity.Entities;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Manages player HUD widgets and updates health/active-power-up bars from ECS runtime data.
+/// Manages player HUD widgets and updates health, shield, level, experience, and active-power-up bars from ECS runtime data.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class HUDManager : MonoBehaviour
@@ -30,6 +31,22 @@ public sealed class HUDManager : MonoBehaviour
 
     [Tooltip("Hide shield bar image when no player entity with PlayerShield is available.")]
     [SerializeField] private bool hideShieldBarWhenPlayerMissing = true;
+
+    [Header("Level & Experience")]
+    [Tooltip("UI Text used to display the current player level.")]
+    [SerializeField] private TMP_Text playerLevelText;
+
+    [Tooltip("Hide player level text when no player entity with PlayerLevel is available.")]
+    [SerializeField] private bool hideLevelTextWhenPlayerMissing = true;
+
+    [Tooltip("UI Image used as fillable experience bar toward the next player level.")]
+    [SerializeField] private Image playerExperienceFillImage;
+
+    [Tooltip("Seconds used to smooth visual experience fill transitions. Set 0 for immediate updates.")]
+    [SerializeField] private float experienceBarSmoothingSeconds = 0.08f;
+
+    [Tooltip("Hide experience bar image when no player entity with progression runtime data is available.")]
+    [SerializeField] private bool hideExperienceBarWhenPlayerMissing = true;
 
     [Header("Power Ups - Energy")]
     [Tooltip("Primary slot energy fill image. Displayed only when the primary slot has an energy module.")]
@@ -73,8 +90,11 @@ public sealed class HUDManager : MonoBehaviour
     private EntityQuery playerQuery;
     private bool playerQueryInitialized;
     private Entity cachedPlayerEntity;
+    private bool shieldCanvasWarningIssued;
+    private int displayedPlayerLevel = -1;
     private float displayedHealthNormalized = 1f;
     private float displayedShieldNormalized;
+    private float displayedExperienceNormalized;
     private float displayedPrimaryEnergyNormalized = 1f;
     private float displayedSecondaryEnergyNormalized = 1f;
     private float displayedPrimaryChargeNormalized;
@@ -87,6 +107,7 @@ public sealed class HUDManager : MonoBehaviour
     private void Awake()
     {
         ClampSettings();
+        ValidateShieldOverlayBinding();
         milestoneSelectionSection.Initialize();
         TryInitializeEcsBindings();
         ApplyInitialVisualState();
@@ -113,6 +134,7 @@ public sealed class HUDManager : MonoBehaviour
 
         UpdateHealthBar(playerEntity);
         UpdateShieldBar(playerEntity);
+        UpdateLevelAndExperience(playerEntity);
         UpdatePowerUpBars(playerEntity);
         milestoneSelectionSection.Update(entityManager, playerEntity);
     }
@@ -224,7 +246,7 @@ public sealed class HUDManager : MonoBehaviour
 
     private void UpdateShieldBar(Entity playerEntity)
     {
-        if (playerShieldFillImage == null)
+        if (!TryResolveShieldFillImage(out Image shieldFillImage))
             return;
 
         if (!entityManager.HasComponent<PlayerShield>(playerEntity))
@@ -242,7 +264,74 @@ public sealed class HUDManager : MonoBehaviour
         displayedShieldNormalized = SmoothNormalized(displayedShieldNormalized,
                                                      targetNormalizedValue,
                                                      shieldBarSmoothingSeconds);
-        ApplyFill(playerShieldFillImage, displayedShieldNormalized);
+        ApplyFill(shieldFillImage, displayedShieldNormalized);
+    }
+
+    /// <summary>
+    /// Updates the player level text and experience progress bar from ECS progression data.
+    /// </summary>
+    /// <param name="playerEntity">Player entity currently driving the HUD.</param>
+    private void UpdateLevelAndExperience(Entity playerEntity)
+    {
+        bool hasPlayerLevel = entityManager.HasComponent<PlayerLevel>(playerEntity);
+        bool hasPlayerExperience = entityManager.HasComponent<PlayerExperience>(playerEntity);
+
+        if (!hasPlayerLevel)
+            HandleMissingLevelText();
+
+        if (!hasPlayerLevel || !hasPlayerExperience)
+        {
+            HandleMissingExperienceBar();
+            return;
+        }
+
+        PlayerLevel playerLevel = entityManager.GetComponentData<PlayerLevel>(playerEntity);
+        PlayerExperience playerExperience = entityManager.GetComponentData<PlayerExperience>(playerEntity);
+        UpdateLevelText(in playerLevel);
+        UpdateExperienceBar(in playerExperience, in playerLevel);
+    }
+
+    /// <summary>
+    /// Updates the player level text label using the current runtime level.
+    /// </summary>
+    /// <param name="playerLevel">Current player level state.</param>
+    private void UpdateLevelText(in PlayerLevel playerLevel)
+    {
+        if (playerLevelText == null)
+            return;
+
+        int currentPlayerLevel = Mathf.Max(0, playerLevel.Current);
+
+        if (!playerLevelText.enabled)
+            playerLevelText.enabled = true;
+
+        if (displayedPlayerLevel == currentPlayerLevel)
+            return;
+
+        displayedPlayerLevel = currentPlayerLevel;
+        playerLevelText.text = string.Format("Lv {0}", currentPlayerLevel);
+    }
+
+    /// <summary>
+    /// Updates the experience progress bar using the current experience value and next-level threshold.
+    /// </summary>
+    /// <param name="playerExperience">Current runtime experience state.</param>
+    /// <param name="playerLevel">Current player level state used to resolve the next threshold.</param>
+    private void UpdateExperienceBar(in PlayerExperience playerExperience, in PlayerLevel playerLevel)
+    {
+        if (playerExperienceFillImage == null)
+            return;
+
+        float targetNormalizedValue = 0f;
+        float requiredExperienceForNextLevel = Mathf.Max(0f, playerLevel.RequiredExperienceForNextLevel);
+
+        if (requiredExperienceForNextLevel > 0f)
+            targetNormalizedValue = Mathf.Clamp01(playerExperience.Current / requiredExperienceForNextLevel);
+
+        displayedExperienceNormalized = SmoothNormalized(displayedExperienceNormalized,
+                                                         targetNormalizedValue,
+                                                         experienceBarSmoothingSeconds);
+        ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
     }
 
     private void UpdatePowerUpBars(Entity playerEntity)
@@ -373,6 +462,9 @@ public sealed class HUDManager : MonoBehaviour
 
         if (shieldBarSmoothingSeconds < 0f)
             shieldBarSmoothingSeconds = 0f;
+
+        if (experienceBarSmoothingSeconds < 0f)
+            experienceBarSmoothingSeconds = 0f;
     }
 
     private void ApplyInitialVisualState()
@@ -380,8 +472,11 @@ public sealed class HUDManager : MonoBehaviour
         if (playerHealthFillImage != null)
             ApplyFill(playerHealthFillImage, displayedHealthNormalized);
 
-        if (playerShieldFillImage != null)
-            ApplyFill(playerShieldFillImage, displayedShieldNormalized);
+        if (TryResolveShieldFillImage(out Image shieldFillImage))
+            ApplyFill(shieldFillImage, displayedShieldNormalized);
+
+        if (playerExperienceFillImage != null)
+            ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
 
         if (primaryEnergyFillImage != null)
             ApplyFill(primaryEnergyFillImage, displayedPrimaryEnergyNormalized);
@@ -395,6 +490,7 @@ public sealed class HUDManager : MonoBehaviour
         if (secondaryChargeFillImage != null)
             ApplyFill(secondaryChargeFillImage, displayedSecondaryChargeNormalized);
 
+        HandleMissingLevelText();
         milestoneSelectionSection.HandleMissingPlayer();
     }
 
@@ -402,6 +498,8 @@ public sealed class HUDManager : MonoBehaviour
     {
         HandleMissingHealthBar();
         HandleMissingShieldBar();
+        HandleMissingLevelText();
+        HandleMissingExperienceBar();
         HandleMissingPowerUpBars();
         milestoneSelectionSection.HandleMissingPlayer();
     }
@@ -422,16 +520,53 @@ public sealed class HUDManager : MonoBehaviour
 
     private void HandleMissingShieldBar()
     {
-        if (playerShieldFillImage == null)
+        if (!TryResolveShieldFillImage(out Image shieldFillImage))
             return;
 
         if (hideShieldBarWhenPlayerMissing)
         {
-            playerShieldFillImage.enabled = false;
+            shieldFillImage.enabled = false;
             return;
         }
 
-        ApplyFill(playerShieldFillImage, displayedShieldNormalized);
+        ApplyFill(shieldFillImage, displayedShieldNormalized);
+    }
+
+    /// <summary>
+    /// Applies the missing-player state to the player level label.
+    /// </summary>
+    private void HandleMissingLevelText()
+    {
+        if (playerLevelText == null)
+            return;
+
+        if (hideLevelTextWhenPlayerMissing)
+        {
+            playerLevelText.enabled = false;
+            displayedPlayerLevel = -1;
+            return;
+        }
+
+        playerLevelText.enabled = true;
+        playerLevelText.text = string.Empty;
+        displayedPlayerLevel = -1;
+    }
+
+    /// <summary>
+    /// Applies the missing-player state to the experience progress bar.
+    /// </summary>
+    private void HandleMissingExperienceBar()
+    {
+        if (playerExperienceFillImage == null)
+            return;
+
+        if (hideExperienceBarWhenPlayerMissing)
+        {
+            playerExperienceFillImage.enabled = false;
+            return;
+        }
+
+        ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
     }
 
     private void HandleMissingPowerUpBars()
@@ -522,6 +657,48 @@ public sealed class HUDManager : MonoBehaviour
             return true;
 
         return secondaryChargeFillImage != null;
+    }
+
+    /// <summary>
+    /// Returns the configured shield fill image only when it belongs to a screen-space HUD canvas.
+    /// </summary>
+    /// <param name="shieldFillImage">Resolved shield image safe to update from HUDManager.</param>
+    /// <returns>True when the shield image is available and not bound to a world-space canvas; otherwise false.</returns>
+    private bool TryResolveShieldFillImage(out Image shieldFillImage)
+    {
+        shieldFillImage = playerShieldFillImage;
+
+        if (shieldFillImage == null)
+            return false;
+
+        Canvas owningCanvas = shieldFillImage.canvas;
+
+        if (owningCanvas == null || owningCanvas.renderMode != RenderMode.WorldSpace)
+            return true;
+
+        ValidateShieldOverlayBinding();
+        return false;
+    }
+
+    /// <summary>
+    /// Warns once when the configured shield image is still assigned to a world-space canvas.
+    /// </summary>
+    private void ValidateShieldOverlayBinding()
+    {
+        if (playerShieldFillImage == null)
+            return;
+
+        Canvas owningCanvas = playerShieldFillImage.canvas;
+
+        if (owningCanvas == null || owningCanvas.renderMode != RenderMode.WorldSpace)
+            return;
+
+        if (shieldCanvasWarningIssued)
+            return;
+
+        shieldCanvasWarningIssued = true;
+        Debug.LogWarning("[HUDManager] Player Shield Fill Image is bound to a World Space canvas. Assign a Screen Space Overlay HUD image instead so the shield is managed by HUDManager as screen UI.",
+                         playerShieldFillImage);
     }
 
     private static float SmoothNormalized(float displayedValue, float targetValue, float smoothingSeconds)

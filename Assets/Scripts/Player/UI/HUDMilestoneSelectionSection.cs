@@ -26,9 +26,6 @@ public sealed class HUDMilestoneSelectionSection
     [Tooltip("Header text updated with the milestone level and current offer count.")]
     [SerializeField] private TMP_Text headerText;
 
-    [Tooltip("Legacy button-based option widgets kept for backward compatibility with older HUD layouts.")]
-    [SerializeField] private List<MilestonePowerUpSelectionOptionBinding> optionBindings = new List<MilestonePowerUpSelectionOptionBinding>();
-
     [Tooltip("Optional skip button that closes the milestone selection without taking an unlock.")]
     [SerializeField] private Button skipButton;
 
@@ -53,12 +50,10 @@ public sealed class HUDMilestoneSelectionSection
     [Tooltip("Automatically queues the first rolled offer when no selection UI and no skip button are configured.")]
     [SerializeField] private bool autoSelectFirstOfferWhenUiMissing = true;
 
-    [Tooltip("Blocks further card, button, and skip interactions immediately after a command is queued.")]
+    [Tooltip("Blocks further card and skip interactions immediately after a command is queued.")]
     [SerializeField] private bool lockButtonsAfterSelectionClick = true;
     #endregion
 
-    private readonly List<Button> registeredButtons = new List<Button>(MaxSelectableOffers);
-    private readonly List<UnityAction> registeredActions = new List<UnityAction>(MaxSelectableOffers);
     private readonly List<MilestonePowerUpSelectionOptionView> discoveredOptionViews = new List<MilestonePowerUpSelectionOptionView>(MaxSelectableOffers);
     private Button registeredSkipButton;
     private UnityAction registeredSkipAction;
@@ -88,8 +83,8 @@ public sealed class HUDMilestoneSelectionSection
 
     public void Initialize()
     {
-        RegisterOptionButtons();
         RefreshDiscoveredOptionViews();
+        RegisterSkipButton();
         RefreshInputActions();
         HidePanel();
     }
@@ -103,7 +98,7 @@ public sealed class HUDMilestoneSelectionSection
         RestoreEventSystemNavigationIfNeeded();
         UnregisterInputActions();
         UnregisterOptionViewCallbacks();
-        UnregisterOptionButtons();
+        UnregisterSkipButton();
     }
 
     /// <summary>
@@ -126,9 +121,10 @@ public sealed class HUDMilestoneSelectionSection
     public void Update(EntityManager runtimeEntityManager, Entity runtimePlayerEntity)
     {
         RefreshDiscoveredOptionViews();
+        RegisterSkipButton();
         RefreshInputActions();
 
-        if (!HUDMilestoneSelectionOptionUtility.HasUiConfigured(panelRoot, skipButton, discoveredOptionViews, optionBindings))
+        if (!HUDMilestoneSelectionOptionUtility.HasUiConfigured(panelRoot, skipButton, discoveredOptionViews))
             return;
 
         entityManager = runtimeEntityManager;
@@ -153,29 +149,15 @@ public sealed class HUDMilestoneSelectionSection
 
     #region Setup
     /// <summary>
-    /// Registers legacy button listeners and the optional skip button kept for compatibility with existing HUD layouts.
+    /// Registers the optional skip button used by the milestone selection panel.
     /// </summary>
 
-    private void RegisterOptionButtons()
+    private void RegisterSkipButton()
     {
-        UnregisterOptionButtons();
+        if (ReferenceEquals(registeredSkipButton, skipButton))
+            return;
 
-        if (optionBindings != null && optionBindings.Count > 0)
-        {
-            for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-            {
-                MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-                if (optionBinding == null || optionBinding.SelectButton == null)
-                    continue;
-
-                int capturedOptionIndex = optionIndex;
-                UnityAction clickAction = () => HandleOptionSelected(capturedOptionIndex);
-                optionBinding.SelectButton.onClick.AddListener(clickAction);
-                registeredButtons.Add(optionBinding.SelectButton);
-                registeredActions.Add(clickAction);
-            }
-        }
+        UnregisterSkipButton();
 
         if (skipButton == null)
             return;
@@ -186,27 +168,11 @@ public sealed class HUDMilestoneSelectionSection
     }
 
     /// <summary>
-    /// Removes all legacy button listeners registered by Initialize.
+    /// Removes the skip button listener registered by Initialize.
     /// </summary>
 
-    private void UnregisterOptionButtons()
+    private void UnregisterSkipButton()
     {
-        int registeredCount = Mathf.Min(registeredButtons.Count, registeredActions.Count);
-
-        for (int registeredIndex = 0; registeredIndex < registeredCount; registeredIndex++)
-        {
-            Button registeredButton = registeredButtons[registeredIndex];
-            UnityAction registeredAction = registeredActions[registeredIndex];
-
-            if (registeredButton == null || registeredAction == null)
-                continue;
-
-            registeredButton.onClick.RemoveListener(registeredAction);
-        }
-
-        registeredButtons.Clear();
-        registeredActions.Clear();
-
         if (registeredSkipButton != null && registeredSkipAction != null)
             registeredSkipButton.onClick.RemoveListener(registeredSkipAction);
 
@@ -361,13 +327,10 @@ public sealed class HUDMilestoneSelectionSection
     /// <summary>
     /// Returns whether the current milestone panel exposes at least one control that can select a rolled offer.
     /// </summary>
-    /// <returns>True when cards or legacy buttons can select an offer; otherwise false.</returns>
+    /// <returns>True when card views can select an offer; otherwise false.</returns>
     private bool HasOfferSelectionUi()
     {
-        if (HUDMilestoneSelectionOptionUtility.HasDiscoveredOptionView(discoveredOptionViews))
-            return true;
-
-        return HUDMilestoneSelectionOptionUtility.HasOfferSelectionButton(optionBindings);
+        return HUDMilestoneSelectionOptionUtility.HasDiscoveredOptionView(discoveredOptionViews);
     }
 
     /// <summary>
@@ -391,9 +354,8 @@ public sealed class HUDMilestoneSelectionSection
         ApplyPanelVisibleState(true);
         HUDMilestoneSelectionOptionUtility.SetSkipButtonVisible(skipButton, true, !interactionLocked);
         HUDMilestoneSelectionOptionUtility.RenderOptionViews(discoveredOptionViews, selectionOffers, activeOfferCount);
-        HUDMilestoneSelectionOptionUtility.RenderOptionBindings(optionBindings, selectionOffers, activeOfferCount);
-        HUDMilestoneSelectionOptionUtility.SetOptionInputsInteractable(discoveredOptionViews, optionBindings, skipButton, !interactionLocked);
-        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, optionBindings, selectedOfferIndex, activeOfferCount);
+        HUDMilestoneSelectionOptionUtility.SetOptionInputsInteractable(discoveredOptionViews, skipButton, !interactionLocked);
+        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, selectedOfferIndex, activeOfferCount);
     }
 
     /// <summary>
@@ -408,7 +370,6 @@ public sealed class HUDMilestoneSelectionSection
         ApplyPanelVisibleState(false);
         HUDMilestoneSelectionOptionUtility.SetSkipButtonVisible(skipButton, false, false);
         HUDMilestoneSelectionOptionUtility.ResetOptionViews(discoveredOptionViews);
-        HUDMilestoneSelectionOptionUtility.ResetOptionBindings(optionBindings);
         interactionLocked = false;
         activeOfferCount = 0;
         selectedOfferIndex = -1;
@@ -503,7 +464,7 @@ public sealed class HUDMilestoneSelectionSection
         selectedOfferIndex = nextOptionIndex;
         navigationInputReleased = false;
         nextAllowedNavigateUnscaledTime = Time.unscaledTime + navigationRepeatCooldownSeconds;
-        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, optionBindings, selectedOfferIndex, activeOfferCount);
+        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, selectedOfferIndex, activeOfferCount);
     }
 
     /// <summary>
@@ -580,13 +541,13 @@ public sealed class HUDMilestoneSelectionSection
             return;
 
         selectedOfferIndex = optionIndex;
-        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, optionBindings, selectedOfferIndex, activeOfferCount);
+        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, selectedOfferIndex, activeOfferCount);
     }
     #endregion
 
     #region Commands
     /// <summary>
-    /// Handles one offer selection request coming from cards, buttons, or the Submit action.
+    /// Handles one offer selection request coming from cards or the Submit action.
     /// </summary>
     /// <param name="optionIndex">Offer index requested by the current UI source.</param>
 
@@ -631,7 +592,7 @@ public sealed class HUDMilestoneSelectionSection
             return;
 
         interactionLocked = true;
-        HUDMilestoneSelectionOptionUtility.SetOptionInputsInteractable(discoveredOptionViews, optionBindings, skipButton, false);
+        HUDMilestoneSelectionOptionUtility.SetOptionInputsInteractable(discoveredOptionViews, skipButton, false);
     }
 
     /// <summary>

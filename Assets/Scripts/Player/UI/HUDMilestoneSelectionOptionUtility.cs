@@ -22,12 +22,10 @@ public static class HUDMilestoneSelectionOptionUtility
     /// <param name="panelRoot">Panel root potentially shown while the selection is active.</param>
     /// <param name="skipButton">Optional skip button configured for the panel.</param>
     /// <param name="optionViews">Auto-discovered card views under the panel hierarchy.</param>
-    /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
     /// <returns>True when any valid UI control exists; otherwise false.</returns>
     public static bool HasUiConfigured(GameObject panelRoot,
                                        Button skipButton,
-                                       IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews,
-                                       IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings)
+                                       IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews)
     {
         if (panelRoot != null)
             return true;
@@ -35,10 +33,7 @@ public static class HUDMilestoneSelectionOptionUtility
         if (skipButton != null)
             return true;
 
-        if (HasDiscoveredOptionView(optionViews))
-            return true;
-
-        return HasOfferSelectionButton(optionBindings);
+        return HasDiscoveredOptionView(optionViews);
     }
 
     /// <summary>
@@ -55,29 +50,6 @@ public static class HUDMilestoneSelectionOptionUtility
         {
             if (optionViews[optionIndex] != null)
                 return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Returns whether the current panel exposes at least one legacy button binding.
-    /// </summary>
-    /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
-    /// <returns>True when at least one valid legacy button exists; otherwise false.</returns>
-    public static bool HasOfferSelectionButton(IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings)
-    {
-        if (optionBindings == null || optionBindings.Count <= 0)
-            return false;
-
-        for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-        {
-            MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-            if (optionBinding == null || optionBinding.SelectButton == null)
-                continue;
-
-            return true;
         }
 
         return false;
@@ -179,24 +151,6 @@ public static class HUDMilestoneSelectionOptionUtility
         }
     }
 
-    /// <summary>
-    /// Clears every legacy button binding currently owned by the milestone selection panel.
-    /// </summary>
-    /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
-
-    public static void ResetOptionBindings(IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings)
-    {
-        if (optionBindings == null)
-            return;
-
-        for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-        {
-            MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-            SetOptionBindingUnused(optionBinding);
-        }
-    }
-
-    /// <summary>
     /// Applies current ECS offer data to every discovered card view.
     /// </summary>
     /// <param name="optionViews">Auto-discovered card views under the panel hierarchy.</param>
@@ -225,36 +179,6 @@ public static class HUDMilestoneSelectionOptionUtility
         }
     }
 
-    /// <summary>
-    /// Applies current ECS offer data to every legacy button binding.
-    /// </summary>
-    /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
-    /// <param name="selectionOffers">Current buffer of rolled milestone offers.</param>
-    /// <param name="activeOfferCount">Number of rolled offers currently shown to the player.</param>
-
-    public static void RenderOptionBindings(IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings,
-                                            DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers,
-                                            int activeOfferCount)
-    {
-        if (optionBindings == null)
-            return;
-
-        for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-        {
-            MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-            if (optionIndex >= activeOfferCount)
-            {
-                SetOptionBindingUnused(optionBinding);
-                continue;
-            }
-
-            PlayerMilestonePowerUpSelectionOfferElement offer = selectionOffers[optionIndex];
-            SetOptionBindingOffer(optionBinding, optionIndex, in offer);
-        }
-    }
-
-    /// <summary>
     /// Applies one rolled milestone offer to a card view resolved from the panel prefab.
     /// </summary>
     /// <param name="optionView">Card view receiving the offer data.</param>
@@ -313,75 +237,6 @@ public static class HUDMilestoneSelectionOptionUtility
         SetText(optionView.TypeText, string.Empty);
     }
 
-    /// <summary>
-    /// Applies one rolled milestone offer to a legacy button-based binding kept for backward compatibility.
-    /// </summary>
-    /// <param name="optionBinding">Legacy button binding receiving the offer data.</param>
-    /// <param name="optionIndex">Display order index used for numbering.</param>
-    /// <param name="offer">Rolled milestone offer bound to the button.</param>
-
-    public static void SetOptionBindingOffer(MilestonePowerUpSelectionOptionBinding optionBinding,
-                                             int optionIndex,
-                                             in PlayerMilestonePowerUpSelectionOfferElement offer)
-    {
-        if (optionBinding == null)
-            return;
-
-        if (optionBinding.SelectButton != null)
-        {
-            if (!optionBinding.SelectButton.gameObject.activeSelf)
-                optionBinding.SelectButton.gameObject.SetActive(true);
-
-            optionBinding.SelectButton.interactable = true;
-        }
-
-        if (optionBinding.NameText != null)
-            optionBinding.NameText.text = BuildDisplayName(optionIndex, in offer);
-
-        if (optionBinding.DescriptionText != null)
-            optionBinding.DescriptionText.text = BuildDescription(in offer);
-
-        if (optionBinding.TypeText != null)
-            optionBinding.TypeText.text = ResolveUnlockKindLabel(offer.UnlockKind);
-    }
-
-    /// <summary>
-    /// Clears one legacy button-based binding when no rolled offer exists for that slot.
-    /// </summary>
-    /// <param name="optionBinding">Legacy button binding reset to an unused state.</param>
-
-    public static void SetOptionBindingUnused(MilestonePowerUpSelectionOptionBinding optionBinding)
-    {
-        if (optionBinding == null)
-            return;
-
-        if (optionBinding.SelectButton != null)
-        {
-            if (optionBinding.HideWhenUnused)
-            {
-                if (optionBinding.SelectButton.gameObject.activeSelf)
-                    optionBinding.SelectButton.gameObject.SetActive(false);
-            }
-            else
-            {
-                if (!optionBinding.SelectButton.gameObject.activeSelf)
-                    optionBinding.SelectButton.gameObject.SetActive(true);
-
-                optionBinding.SelectButton.interactable = false;
-            }
-        }
-
-        if (optionBinding.NameText != null)
-            optionBinding.NameText.text = string.Empty;
-
-        if (optionBinding.DescriptionText != null)
-            optionBinding.DescriptionText.text = string.Empty;
-
-        if (optionBinding.TypeText != null)
-            optionBinding.TypeText.text = string.Empty;
-    }
-
-    /// <summary>
     /// Updates the selected highlight state for all discovered card views.
     /// </summary>
     /// <param name="optionViews">Resolved card views currently owned by the milestone panel.</param>
@@ -408,15 +263,13 @@ public static class HUDMilestoneSelectionOptionUtility
     }
 
     /// <summary>
-    /// Updates card, button, and skip-button interactability after a selection command is queued.
+    /// Updates card and skip-button interactability after a selection command is queued.
     /// </summary>
     /// <param name="optionViews">Auto-discovered card views under the panel hierarchy.</param>
-    /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
     /// <param name="skipButton">Optional skip button configured for the panel.</param>
     /// <param name="interactable">True to allow input; false to block it.</param>
 
     public static void SetOptionInputsInteractable(IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews,
-                                                   IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings,
                                                    Button skipButton,
                                                    bool interactable)
     {
@@ -433,55 +286,21 @@ public static class HUDMilestoneSelectionOptionUtility
             }
         }
 
-        if (optionBindings != null)
-        {
-            for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-            {
-                MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-                if (optionBinding == null || optionBinding.SelectButton == null)
-                    continue;
-
-                optionBinding.SelectButton.interactable = interactable;
-            }
-        }
-
         SetSkipButtonInteractable(skipButton, interactable);
     }
 
     /// <summary>
-    /// Synchronizes card highlights and legacy button focus with the current selected offer index.
+    /// Synchronizes card highlights with the current selected offer index.
     /// </summary>
     /// <param name="optionViews">Auto-discovered card views under the panel hierarchy.</param>
-    /// <param name="optionBindings">Legacy button bindings configured for backward compatibility.</param>
     /// <param name="selectedOfferIndex">Offer index currently selected by keyboard or gamepad navigation.</param>
     /// <param name="activeOfferCount">Number of rolled offers currently shown to the player.</param>
 
     public static void ApplySelectionVisuals(IReadOnlyList<MilestonePowerUpSelectionOptionView> optionViews,
-                                             IReadOnlyList<MilestonePowerUpSelectionOptionBinding> optionBindings,
                                              int selectedOfferIndex,
                                              int activeOfferCount)
     {
         ApplyOptionViewSelection(optionViews, selectedOfferIndex, activeOfferCount);
-
-        if (optionBindings == null)
-            return;
-
-        if (selectedOfferIndex < 0 || selectedOfferIndex >= optionBindings.Count)
-            return;
-
-        MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[selectedOfferIndex];
-
-        if (optionBinding == null || optionBinding.SelectButton == null)
-            return;
-
-        if (!optionBinding.SelectButton.gameObject.activeInHierarchy)
-            return;
-
-        if (!optionBinding.SelectButton.interactable)
-            return;
-
-        optionBinding.SelectButton.Select();
     }
 
     /// <summary>

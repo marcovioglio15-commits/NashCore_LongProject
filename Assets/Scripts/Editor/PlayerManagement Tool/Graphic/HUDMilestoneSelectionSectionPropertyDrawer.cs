@@ -23,7 +23,6 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
         SerializedProperty headerTextProperty = property.FindPropertyRelative("headerText");
         SerializedProperty skipButtonProperty = property.FindPropertyRelative("skipButton");
         SerializedProperty autoDiscoverOptionViewsProperty = property.FindPropertyRelative("autoDiscoverOptionViewsFromPanelRoot");
-        SerializedProperty optionBindingsProperty = property.FindPropertyRelative("optionBindings");
         SerializedProperty navigationInputDeadzoneProperty = property.FindPropertyRelative("navigationInputDeadzone");
         SerializedProperty navigationRepeatCooldownSecondsProperty = property.FindPropertyRelative("navigationRepeatCooldownSeconds");
         SerializedProperty wrapNavigationProperty = property.FindPropertyRelative("wrapNavigation");
@@ -36,7 +35,6 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
                                         headerTextProperty,
                                         skipButtonProperty,
                                         autoDiscoverOptionViewsProperty,
-                                        optionBindingsProperty,
                                         navigationInputDeadzoneProperty,
                                         navigationRepeatCooldownSecondsProperty,
                                         wrapNavigationProperty,
@@ -50,7 +48,7 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
             return root;
         }
 
-        HelpBox bindingInfoBox = new HelpBox("Scene binding for the card-based milestone menu: assign Panel Root to the PowerUpsPanel instance, Header Text to LevelUpTitle, and Skip Button to SkipButton. Option cards are auto-discovered under PowerUpList from the existing PowerUp prefab.", HelpBoxMessageType.Info);
+        HelpBox bindingInfoBox = new HelpBox("Scene binding for the card-based milestone menu: assign Panel Root to the PowerUpsPanel instance, Header Text to LevelUpTitle, and Skip Button to SkipButton. Offer cards are auto-discovered under PowerUpList from the existing PowerUp prefab.", HelpBoxMessageType.Info);
         root.Add(bindingInfoBox);
 
         PropertyField panelRootField = CreateBoundField(panelRootProperty, "Panel Root");
@@ -66,6 +64,9 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
         PropertyField autoDiscoverOptionViewsField = CreateBoundField(autoDiscoverOptionViewsProperty, "Auto Discover Option Views");
         root.Add(autoDiscoverOptionViewsField);
 
+        HelpBox autoDiscoveryWarningBox = new HelpBox("Auto Discover Option Views should stay enabled for the current milestone menu. Disable it only if you intentionally want the fallback auto-pick flow with no offer cards.", HelpBoxMessageType.Warning);
+        root.Add(autoDiscoveryWarningBox);
+
         Foldout navigationFoldout = new Foldout
         {
             text = "Navigation Settings",
@@ -80,20 +81,6 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
         navigationFoldout.Add(CreateBoundField(autoSelectFallbackProperty, "Auto Select Fallback"));
         root.Add(navigationFoldout);
 
-        Foldout legacyBindingsFoldout = new Foldout
-        {
-            text = "Legacy Button Bindings",
-            value = false
-        };
-
-        HelpBox legacyBindingsInfoBox = new HelpBox("Leave this empty when using the default card-based PowerUpsPanel. Populate it only for older HUD layouts that still rely on explicit Button widgets per offer.", HelpBoxMessageType.None);
-        legacyBindingsFoldout.Add(legacyBindingsInfoBox);
-
-        PropertyField optionBindingsField = new PropertyField(optionBindingsProperty, "Option Bindings");
-        optionBindingsField.BindProperty(optionBindingsProperty);
-        legacyBindingsFoldout.Add(optionBindingsField);
-        root.Add(legacyBindingsFoldout);
-
         void RefreshWarnings()
         {
             bool hasPanelRoot = panelRootProperty.objectReferenceValue != null;
@@ -103,10 +90,9 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
             requiredReferencesWarningBox.style.display = hasPanelRoot && hasHeaderText && hasSkipButton
                 ? DisplayStyle.None
                 : DisplayStyle.Flex;
-            legacyBindingsFoldout.style.display = autoDiscoverOptionViews ? DisplayStyle.Flex : DisplayStyle.Flex;
-            legacyBindingsInfoBox.text = autoDiscoverOptionViews
-                ? "Card auto-discovery is enabled. You can ignore Option Bindings unless you want a legacy fallback layout."
-                : "Card auto-discovery is disabled. Populate Option Bindings with explicit Buttons if your HUD does not use the default PowerUp cards.";
+            autoDiscoveryWarningBox.style.display = autoDiscoverOptionViews
+                ? DisplayStyle.None
+                : DisplayStyle.Flex;
         }
 
         panelRootField.RegisterCallback<SerializedPropertyChangeEvent>(_ => RefreshWarnings());
@@ -126,7 +112,6 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
     /// <param name="headerTextProperty">Serialized header text property.</param>
     /// <param name="skipButtonProperty">Serialized skip button property.</param>
     /// <param name="autoDiscoverOptionViewsProperty">Serialized auto-discovery toggle property.</param>
-    /// <param name="optionBindingsProperty">Serialized legacy bindings list property.</param>
     /// <param name="navigationInputDeadzoneProperty">Serialized navigation deadzone property.</param>
     /// <param name="navigationRepeatCooldownSecondsProperty">Serialized navigation repeat cooldown property.</param>
     /// <param name="wrapNavigationProperty">Serialized wrap navigation property.</param>
@@ -139,7 +124,6 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
                                                    SerializedProperty headerTextProperty,
                                                    SerializedProperty skipButtonProperty,
                                                    SerializedProperty autoDiscoverOptionViewsProperty,
-                                                   SerializedProperty optionBindingsProperty,
                                                    SerializedProperty navigationInputDeadzoneProperty,
                                                    SerializedProperty navigationRepeatCooldownSecondsProperty,
                                                    SerializedProperty wrapNavigationProperty,
@@ -151,7 +135,7 @@ public sealed class HUDMilestoneSelectionSectionPropertyDrawer : PropertyDrawer
         if (panelRootProperty == null || headerTextProperty == null || skipButtonProperty == null)
             return false;
 
-        if (autoDiscoverOptionViewsProperty == null || optionBindingsProperty == null)
+        if (autoDiscoverOptionViewsProperty == null)
             return false;
 
         if (navigationInputDeadzoneProperty == null || navigationRepeatCooldownSecondsProperty == null)

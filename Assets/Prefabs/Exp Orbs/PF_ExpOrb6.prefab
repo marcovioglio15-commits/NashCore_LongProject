@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 347747346632071832}
   m_Layer: 10
-  m_Name: ExpOrb9
+  m_Name: PF_ExpOrb6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -121,4 +121,4 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7462492209844708724}
-  m_Mesh: {fileID: 4359559927023042297, guid: 30e09c1260aa6524c9beb4952dd065f0, type: 3}
+  m_Mesh: {fileID: 1800222395852963442, guid: dbfa067b0dc7d4648b2d8fb1690e0e82, type: 3}

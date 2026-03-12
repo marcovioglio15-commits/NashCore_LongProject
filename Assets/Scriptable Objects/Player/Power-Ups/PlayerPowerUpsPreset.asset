@@ -1226,7 +1226,7 @@ MonoBehaviour:
       projectileTuning:
         sizeMultiplier: 3
         damageMultiplier: 3
-        speedMultiplier: 0.3
+        speedMultiplier: 0.9
         rangeMultiplier: 1
         lifetimeMultiplier: 1
         penetrationMode: 0

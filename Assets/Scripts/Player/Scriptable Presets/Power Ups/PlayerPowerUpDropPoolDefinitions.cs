@@ -138,7 +138,6 @@ public sealed class PowerUpDropPoolDefinition
     /// Normalizes pool data and keeps child entries allocated without removing duplicate tier references.
     /// </summary>
     /// <param name="fallbackPoolId">Fallback pool ID used when the current one is empty.</param>
-
     public void Validate(string fallbackPoolId)
     {
         if (string.IsNullOrWhiteSpace(poolId))
