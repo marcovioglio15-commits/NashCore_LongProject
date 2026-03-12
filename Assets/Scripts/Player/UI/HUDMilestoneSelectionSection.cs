@@ -2,70 +2,112 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
-/// Handles HUD rendering and ECS command submission for milestone power-up selection and skip actions.
+/// Handles milestone power-up card rendering, custom UI navigation, pointer selection, and ECS command submission.
 /// </summary>
 [System.Serializable]
 public sealed class HUDMilestoneSelectionSection
 {
     #region Fields
 
+    #region Constants
+    private const int MaxSelectableOffers = 6;
+    #endregion
+
     #region Serialized Fields
-    [Tooltip("Root panel shown when milestone power-up offers are available.")]
+    [Tooltip("Root panel shown while a milestone power-up selection is active.")]
     [SerializeField] private GameObject panelRoot;
 
-    [Tooltip("Header text updated with milestone level and selection prompt.")]
+    [Tooltip("Header text updated with the milestone level and current offer count.")]
     [SerializeField] private TMP_Text headerText;
 
-    [Tooltip("Ordered option widgets mapped to rolled offers by index.")]
+    [Tooltip("Legacy button-based option widgets kept for backward compatibility with older HUD layouts.")]
     [SerializeField] private List<MilestonePowerUpSelectionOptionBinding> optionBindings = new List<MilestonePowerUpSelectionOptionBinding>();
 
-    [Tooltip("Optional button that skips the current milestone selection without choosing a power-up.")]
+    [Tooltip("Optional skip button that closes the milestone selection without taking an unlock.")]
     [SerializeField] private Button skipButton;
 
-    [Tooltip("Automatically queues the first offer when selection is active but no option buttons are configured.")]
+    [Tooltip("Automatically discovers card views under PowerUpsPanel/PowerUpList and uses them for image-style selection.")]
+    [SerializeField] private bool autoDiscoverOptionViewsFromPanelRoot = true;
+
+    [Tooltip("Minimum Navigate axis magnitude required before a custom card-navigation step is accepted.")]
+    [SerializeField] private float navigationInputDeadzone = 0.5f;
+
+    [Tooltip("Minimum unscaled time required between two accepted custom navigation steps.")]
+    [SerializeField] private float navigationRepeatCooldownSeconds = 0.15f;
+
+    [Tooltip("Loops the current selection from last card to first card and vice versa.")]
+    [SerializeField] private bool wrapNavigation = true;
+
+    [Tooltip("Moves the current keyboard or gamepad selection to the card under the mouse pointer.")]
+    [SerializeField] private bool followPointerHoverSelection = true;
+
+    [Tooltip("Disables default EventSystem navigation while the milestone panel is open to avoid duplicate Submit/Navigate processing.")]
+    [SerializeField] private bool suspendEventSystemNavigationWhileSelectionActive = true;
+
+    [Tooltip("Automatically queues the first rolled offer when no selection UI and no skip button are configured.")]
     [SerializeField] private bool autoSelectFirstOfferWhenUiMissing = true;
 
-    [Tooltip("Disables all option buttons immediately after one click to avoid duplicate commands.")]
+    [Tooltip("Blocks further card, button, and skip interactions immediately after a command is queued.")]
     [SerializeField] private bool lockButtonsAfterSelectionClick = true;
     #endregion
 
-    private readonly List<Button> registeredButtons = new List<Button>(4);
-    private readonly List<UnityAction> registeredActions = new List<UnityAction>(4);
+    private readonly List<Button> registeredButtons = new List<Button>(MaxSelectableOffers);
+    private readonly List<UnityAction> registeredActions = new List<UnityAction>(MaxSelectableOffers);
+    private readonly List<MilestonePowerUpSelectionOptionView> discoveredOptionViews = new List<MilestonePowerUpSelectionOptionView>(MaxSelectableOffers);
     private Button registeredSkipButton;
     private UnityAction registeredSkipAction;
+    private GameObject discoveredPanelRoot;
+    private InputAction navigateAction;
+    private InputAction submitAction;
+    private InputAction cancelAction;
     private EntityManager entityManager;
     private Entity playerEntity;
+    private EventSystem suppressedEventSystem;
+    private bool cachedSendNavigationEvents;
     private bool hasRuntimeContext;
+    private bool isPanelVisible;
+    private bool interactionLocked;
+    private bool navigationInputReleased = true;
+    private int activeOfferCount;
+    private int selectedOfferIndex = -1;
+    private float nextAllowedNavigateUnscaledTime;
     #endregion
 
     #region Methods
 
     #region Public Methods
     /// <summary>
-    /// Registers option button listeners and applies hidden initial state.
+    /// Registers UI listeners, resolves option-card views, and applies the initial hidden state.
     /// </summary>
     /// <returns>Void.</returns>
     public void Initialize()
     {
         RegisterOptionButtons();
+        RefreshDiscoveredOptionViews();
+        RefreshInputActions();
         HidePanel();
     }
 
     /// <summary>
-    /// Unregisters option button listeners.
+    /// Unregisters listeners and restores EventSystem navigation when the owning HUD is destroyed.
     /// </summary>
     /// <returns>Void.</returns>
     public void Dispose()
     {
+        RestoreEventSystemNavigationIfNeeded();
+        UnregisterInputActions();
+        UnregisterOptionViewCallbacks();
         UnregisterOptionButtons();
     }
 
     /// <summary>
-    /// Hides the milestone panel and clears runtime context when no player is available.
+    /// Clears runtime references and hides the milestone panel when the player entity is unavailable.
     /// </summary>
     /// <returns>Void.</returns>
     public void HandleMissingPlayer()
@@ -76,44 +118,30 @@ public sealed class HUDMilestoneSelectionSection
     }
 
     /// <summary>
-    /// Refreshes panel visibility/content and submits auto-pick commands when required.
+    /// Refreshes milestone HUD visibility, option content, and fallback auto-pick behavior from ECS state.
     /// </summary>
-    /// <param name="runtimeEntityManager">Active entity manager used for ECS reads/writes.</param>
-    /// <param name="runtimePlayerEntity">Resolved player entity.</param>
+    /// <param name="runtimeEntityManager">Entity manager used to read and write milestone selection data.</param>
+    /// <param name="runtimePlayerEntity">Player entity currently driving the HUD.</param>
     /// <returns>Void.</returns>
     public void Update(EntityManager runtimeEntityManager, Entity runtimePlayerEntity)
     {
-        if (!HasUiConfigured())
+        RefreshDiscoveredOptionViews();
+        RefreshInputActions();
+
+        if (!HUDMilestoneSelectionOptionUtility.HasUiConfigured(panelRoot, skipButton, discoveredOptionViews, optionBindings))
             return;
 
         entityManager = runtimeEntityManager;
         playerEntity = runtimePlayerEntity;
         hasRuntimeContext = true;
 
-        if (!entityManager.HasComponent<PlayerMilestonePowerUpSelectionState>(playerEntity) ||
-            !entityManager.HasBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity))
+        if (!TryGetActiveSelectionOffers(out PlayerMilestonePowerUpSelectionState selectionState, out DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers))
         {
             HidePanel();
             return;
         }
 
-        PlayerMilestonePowerUpSelectionState selectionState = entityManager.GetComponentData<PlayerMilestonePowerUpSelectionState>(playerEntity);
-
-        if (selectionState.IsSelectionActive == 0)
-        {
-            HidePanel();
-            return;
-        }
-
-        DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers = entityManager.GetBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity);
-
-        if (selectionOffers.Length <= 0)
-        {
-            HidePanel();
-            return;
-        }
-
-        if (!HasOfferSelectionButton() && !HasSkipButton() && autoSelectFirstOfferWhenUiMissing)
+        if (!HasOfferSelectionUi() && skipButton == null && autoSelectFirstOfferWhenUiMissing)
         {
             TryQueueSelectionCommand(0);
             return;
@@ -123,7 +151,11 @@ public sealed class HUDMilestoneSelectionSection
     }
     #endregion
 
-    #region UI
+    #region Setup
+    /// <summary>
+    /// Registers legacy button listeners and the optional skip button kept for compatibility with existing HUD layouts.
+    /// </summary>
+    /// <returns>Void.</returns>
     private void RegisterOptionButtons()
     {
         UnregisterOptionButtons();
@@ -138,7 +170,7 @@ public sealed class HUDMilestoneSelectionSection
                     continue;
 
                 int capturedOptionIndex = optionIndex;
-                UnityAction clickAction = () => HandleOptionButtonPressed(capturedOptionIndex);
+                UnityAction clickAction = () => HandleOptionSelected(capturedOptionIndex);
                 optionBinding.SelectButton.onClick.AddListener(clickAction);
                 registeredButtons.Add(optionBinding.SelectButton);
                 registeredActions.Add(clickAction);
@@ -153,6 +185,10 @@ public sealed class HUDMilestoneSelectionSection
         registeredSkipButton.onClick.AddListener(registeredSkipAction);
     }
 
+    /// <summary>
+    /// Removes all legacy button listeners registered by Initialize.
+    /// </summary>
+    /// <returns>Void.</returns>
     private void UnregisterOptionButtons()
     {
         int registeredCount = Mathf.Min(registeredButtons.Count, registeredActions.Count);
@@ -178,238 +214,400 @@ public sealed class HUDMilestoneSelectionSection
         registeredSkipAction = null;
     }
 
-    private bool HasUiConfigured()
-    {
-        if (panelRoot != null)
-            return true;
-
-        if (skipButton != null)
-            return true;
-
-        return optionBindings != null && optionBindings.Count > 0;
-    }
-
     /// <summary>
-    /// Returns whether at least one configured option button can submit a power-up selection command.
+    /// Rebuilds the auto-discovered option-card list when the configured panel root changes.
     /// </summary>
-    /// <returns>True when an offer-selection button exists; otherwise false.</returns>
-    private bool HasOfferSelectionButton()
+    /// <returns>Void.</returns>
+    private void RefreshDiscoveredOptionViews()
     {
-        if (optionBindings == null || optionBindings.Count <= 0)
-            return false;
+        if (!autoDiscoverOptionViewsFromPanelRoot)
+            return;
 
-        for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
+        if (panelRoot == null)
         {
-            MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-            if (optionBinding == null || optionBinding.SelectButton == null)
-                continue;
-
-            return true;
+            discoveredPanelRoot = null;
+            UnregisterOptionViewCallbacks();
+            discoveredOptionViews.Clear();
+            return;
         }
 
-        return false;
+        if (ReferenceEquals(discoveredPanelRoot, panelRoot) && discoveredOptionViews.Count > 0)
+            return;
+
+        UnregisterOptionViewCallbacks();
+        HUDMilestoneSelectionOptionUtility.DiscoverOptionViews(panelRoot, discoveredOptionViews, MaxSelectableOffers);
+
+        for (int optionIndex = 0; optionIndex < discoveredOptionViews.Count; optionIndex++)
+        {
+            MilestonePowerUpSelectionOptionView optionView = discoveredOptionViews[optionIndex];
+
+            if (optionView == null)
+                continue;
+
+            optionView.RegisterCallbacks(HandleOptionViewClicked, HandleOptionViewHovered);
+        }
+
+        discoveredPanelRoot = panelRoot;
     }
 
     /// <summary>
-    /// Returns whether a skip button is configured for the milestone selection panel.
+    /// Clears registered pointer callbacks from all discovered card views.
     /// </summary>
-    /// <returns>True when the skip button reference is assigned; otherwise false.</returns>
-    private bool HasSkipButton()
+    /// <returns>Void.</returns>
+    private void UnregisterOptionViewCallbacks()
     {
-        return skipButton != null;
+        for (int optionIndex = 0; optionIndex < discoveredOptionViews.Count; optionIndex++)
+        {
+            MilestonePowerUpSelectionOptionView optionView = discoveredOptionViews[optionIndex];
+
+            if (optionView == null)
+                continue;
+
+            optionView.ClearCallbacks();
+        }
     }
 
+    /// <summary>
+    /// Rebinds custom UI actions whenever the runtime input asset is recreated by InputAuthoring.
+    /// </summary>
+    /// <returns>Void.</returns>
+    private void RefreshInputActions()
+    {
+        InputAction runtimeNavigateAction = PlayerInputRuntime.UINavigateAction;
+        InputAction runtimeSubmitAction = PlayerInputRuntime.UISubmitAction;
+        InputAction runtimeCancelAction = PlayerInputRuntime.UICancelAction;
 
+        if (ReferenceEquals(navigateAction, runtimeNavigateAction) &&
+            ReferenceEquals(submitAction, runtimeSubmitAction) &&
+            ReferenceEquals(cancelAction, runtimeCancelAction))
+            return;
+
+        UnregisterInputActions();
+        navigateAction = runtimeNavigateAction;
+        submitAction = runtimeSubmitAction;
+        cancelAction = runtimeCancelAction;
+
+        if (navigateAction != null)
+        {
+            navigateAction.performed += HandleNavigatePerformed;
+            navigateAction.canceled += HandleNavigateCanceled;
+        }
+
+        if (submitAction != null)
+            submitAction.performed += HandleSubmitPerformed;
+
+        if (cancelAction != null)
+            cancelAction.performed += HandleCancelPerformed;
+    }
+
+    /// <summary>
+    /// Unregisters custom UI input callbacks from the currently cached runtime actions.
+    /// </summary>
+    /// <returns>Void.</returns>
+    private void UnregisterInputActions()
+    {
+        if (navigateAction != null)
+        {
+            navigateAction.performed -= HandleNavigatePerformed;
+            navigateAction.canceled -= HandleNavigateCanceled;
+        }
+
+        if (submitAction != null)
+            submitAction.performed -= HandleSubmitPerformed;
+
+        if (cancelAction != null)
+            cancelAction.performed -= HandleCancelPerformed;
+
+        navigateAction = null;
+        submitAction = null;
+        cancelAction = null;
+    }
+    #endregion
+
+    #region ECS
+    /// <summary>
+    /// Resolves the active milestone selection state and offer buffer from the current player entity.
+    /// </summary>
+    /// <param name="selectionState">Resolved milestone selection state when active.</param>
+    /// <param name="selectionOffers">Resolved milestone offer buffer when active.</param>
+    /// <returns>True when the player currently owns an active milestone selection; otherwise false.</returns>
+    private bool TryGetActiveSelectionOffers(out PlayerMilestonePowerUpSelectionState selectionState,
+                                             out DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers)
+    {
+        selectionState = default;
+        selectionOffers = default;
+
+        if (!entityManager.HasComponent<PlayerMilestonePowerUpSelectionState>(playerEntity))
+            return false;
+
+        if (!entityManager.HasBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity))
+            return false;
+
+        selectionState = entityManager.GetComponentData<PlayerMilestonePowerUpSelectionState>(playerEntity);
+
+        if (selectionState.IsSelectionActive == 0)
+            return false;
+
+        selectionOffers = entityManager.GetBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity);
+
+        if (selectionOffers.Length <= 0)
+            return false;
+
+        return true;
+    }
+    #endregion
+
+    #region UI
+    /// <summary>
+    /// Returns whether the current milestone panel exposes at least one control that can select a rolled offer.
+    /// </summary>
+    /// <returns>True when cards or legacy buttons can select an offer; otherwise false.</returns>
+    private bool HasOfferSelectionUi()
+    {
+        if (HUDMilestoneSelectionOptionUtility.HasDiscoveredOptionView(discoveredOptionViews))
+            return true;
+
+        return HUDMilestoneSelectionOptionUtility.HasOfferSelectionButton(optionBindings);
+    }
+
+    /// <summary>
+    /// Populates the milestone panel with current ECS offer data and keeps the selected card index valid.
+    /// </summary>
+    /// <param name="selectionState">Current milestone selection state component.</param>
+    /// <param name="selectionOffers">Current buffer of rolled milestone offers.</param>
+    /// <returns>Void.</returns>
     private void ShowPanel(PlayerMilestonePowerUpSelectionState selectionState,
                            DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers)
     {
+        activeOfferCount = Mathf.Min(selectionOffers.Length, MaxSelectableOffers);
+        selectedOfferIndex = HUDMilestoneSelectionNavigationUtility.NormalizeSelectedOfferIndex(selectedOfferIndex, activeOfferCount);
+
         if (panelRoot != null && !panelRoot.activeSelf)
             panelRoot.SetActive(true);
 
         if (headerText != null)
-            headerText.text = string.Format("Milestone Lv {0} - Choose 1 of {1} Power-Ups", selectionState.MilestoneLevel, selectionOffers.Length);
+            headerText.text = HUDMilestoneSelectionOptionUtility.BuildHeaderText(selectionState.MilestoneLevel, activeOfferCount);
 
-        SetSkipButtonVisible(true);
-
-        if (optionBindings == null || optionBindings.Count <= 0)
-            return;
-
-        for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-        {
-            MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-            if (optionBinding == null)
-                continue;
-
-            bool hasOffer = optionIndex < selectionOffers.Length;
-
-            if (!hasOffer)
-            {
-                SetOptionUnused(optionBinding);
-                continue;
-            }
-
-            PlayerMilestonePowerUpSelectionOfferElement offer = selectionOffers[optionIndex];
-            SetOptionOffer(optionBinding, optionIndex, in offer);
-        }
+        ApplyPanelVisibleState(true);
+        HUDMilestoneSelectionOptionUtility.SetSkipButtonVisible(skipButton, true, !interactionLocked);
+        HUDMilestoneSelectionOptionUtility.RenderOptionViews(discoveredOptionViews, selectionOffers, activeOfferCount);
+        HUDMilestoneSelectionOptionUtility.RenderOptionBindings(optionBindings, selectionOffers, activeOfferCount);
+        HUDMilestoneSelectionOptionUtility.SetOptionInputsInteractable(discoveredOptionViews, optionBindings, skipButton, !interactionLocked);
+        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, optionBindings, selectedOfferIndex, activeOfferCount);
     }
 
+    /// <summary>
+    /// Hides the milestone panel and resets its transient navigation and interaction state.
+    /// </summary>
+    /// <returns>Void.</returns>
     private void HidePanel()
     {
         if (panelRoot != null && panelRoot.activeSelf)
             panelRoot.SetActive(false);
 
-        SetSkipButtonVisible(false);
-
-        if (optionBindings == null || optionBindings.Count <= 0)
-            return;
-
-        for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-        {
-            MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-            if (optionBinding == null)
-                continue;
-
-            SetOptionUnused(optionBinding);
-        }
-    }
-
-    private static void SetOptionOffer(MilestonePowerUpSelectionOptionBinding optionBinding,
-                                       int optionIndex,
-                                       in PlayerMilestonePowerUpSelectionOfferElement offer)
-    {
-        if (optionBinding.SelectButton != null)
-        {
-            if (!optionBinding.SelectButton.gameObject.activeSelf)
-                optionBinding.SelectButton.gameObject.SetActive(true);
-
-            optionBinding.SelectButton.interactable = true;
-        }
-
-        if (optionBinding.NameText != null)
-        {
-            string displayName = string.IsNullOrWhiteSpace(offer.DisplayName.ToString())
-                ? offer.PowerUpId.ToString()
-                : offer.DisplayName.ToString();
-            optionBinding.NameText.text = string.Format("{0}. {1}", optionIndex + 1, displayName);
-        }
-
-        if (optionBinding.DescriptionText != null)
-        {
-            string description = offer.Description.ToString();
-            optionBinding.DescriptionText.text = string.IsNullOrWhiteSpace(description)
-                ? "No description available."
-                : description;
-        }
-
-        if (optionBinding.TypeText != null)
-            optionBinding.TypeText.text = offer.UnlockKind == PlayerPowerUpUnlockKind.Active ? "Active" : "Passive";
-    }
-
-    private static void SetOptionUnused(MilestonePowerUpSelectionOptionBinding optionBinding)
-    {
-        if (optionBinding.SelectButton != null)
-        {
-            if (optionBinding.HideWhenUnused)
-            {
-                if (optionBinding.SelectButton.gameObject.activeSelf)
-                    optionBinding.SelectButton.gameObject.SetActive(false);
-            }
-            else
-            {
-                if (!optionBinding.SelectButton.gameObject.activeSelf)
-                    optionBinding.SelectButton.gameObject.SetActive(true);
-
-                optionBinding.SelectButton.interactable = false;
-            }
-        }
-
-        if (optionBinding.NameText != null)
-            optionBinding.NameText.text = string.Empty;
-
-        if (optionBinding.DescriptionText != null)
-            optionBinding.DescriptionText.text = string.Empty;
-
-        if (optionBinding.TypeText != null)
-            optionBinding.TypeText.text = string.Empty;
-    }
-
-    private void SetOptionButtonsInteractable(bool interactable)
-    {
-        if (optionBindings == null || optionBindings.Count <= 0)
-        {
-            SetSkipButtonInteractable(interactable);
-            return;
-        }
-
-        for (int optionIndex = 0; optionIndex < optionBindings.Count; optionIndex++)
-        {
-            MilestonePowerUpSelectionOptionBinding optionBinding = optionBindings[optionIndex];
-
-            if (optionBinding == null || optionBinding.SelectButton == null)
-                continue;
-
-            optionBinding.SelectButton.interactable = interactable;
-        }
-
-        SetSkipButtonInteractable(interactable);
+        ApplyPanelVisibleState(false);
+        HUDMilestoneSelectionOptionUtility.SetSkipButtonVisible(skipButton, false, false);
+        HUDMilestoneSelectionOptionUtility.ResetOptionViews(discoveredOptionViews);
+        HUDMilestoneSelectionOptionUtility.ResetOptionBindings(optionBindings);
+        interactionLocked = false;
+        activeOfferCount = 0;
+        selectedOfferIndex = -1;
+        navigationInputReleased = true;
+        nextAllowedNavigateUnscaledTime = 0f;
     }
 
     /// <summary>
-    /// Shows or hides the optional skip button depending on the milestone selection state.
+    /// Applies one-time side effects that must run when the panel visibility changes.
     /// </summary>
-    /// <param name="isVisible">True to show the skip button; false to hide it.</param>
+    /// <param name="isVisible">True when the panel is now visible; false when it is now hidden.</param>
     /// <returns>Void.</returns>
-    private void SetSkipButtonVisible(bool isVisible)
+    private void ApplyPanelVisibleState(bool isVisible)
     {
-        if (skipButton == null)
+        if (isPanelVisible == isVisible)
             return;
 
-        GameObject skipButtonObject = skipButton.gameObject;
+        isPanelVisible = isVisible;
 
-        if (skipButtonObject.activeSelf == isVisible)
+        if (isVisible)
         {
-            skipButton.interactable = isVisible;
+            SuppressEventSystemNavigationIfNeeded();
             return;
         }
 
-        skipButtonObject.SetActive(isVisible);
-        skipButton.interactable = isVisible;
+        RestoreEventSystemNavigationIfNeeded();
     }
 
     /// <summary>
-    /// Enables or disables interaction on the optional skip button.
+    /// Disables default EventSystem navigation while the milestone panel uses custom input handling.
     /// </summary>
-    /// <param name="interactable">True to allow clicks; false to block them.</param>
     /// <returns>Void.</returns>
-    private void SetSkipButtonInteractable(bool interactable)
+    private void SuppressEventSystemNavigationIfNeeded()
     {
+        if (!suspendEventSystemNavigationWhileSelectionActive)
+            return;
+
+        EventSystem currentEventSystem = EventSystem.current;
+
+        if (currentEventSystem == null)
+            return;
+
+        if (ReferenceEquals(suppressedEventSystem, currentEventSystem))
+            return;
+
+        RestoreEventSystemNavigationIfNeeded();
+        suppressedEventSystem = currentEventSystem;
+        cachedSendNavigationEvents = currentEventSystem.sendNavigationEvents;
+        currentEventSystem.sendNavigationEvents = false;
+        currentEventSystem.SetSelectedGameObject(null);
+    }
+
+    /// <summary>
+    /// Restores the EventSystem navigation flag cached when the milestone panel became visible.
+    /// </summary>
+    /// <returns>Void.</returns>
+    private void RestoreEventSystemNavigationIfNeeded()
+    {
+        if (suppressedEventSystem == null)
+            return;
+
+        suppressedEventSystem.sendNavigationEvents = cachedSendNavigationEvents;
+        suppressedEventSystem = null;
+    }
+    #endregion
+
+    #region Input
+    /// <summary>
+    /// Handles one UI Navigate performed event and converts it into a custom card-selection step.
+    /// </summary>
+    /// <param name="context">Input callback context raised by the Navigate action.</param>
+    /// <returns>Void.</returns>
+    private void HandleNavigatePerformed(InputAction.CallbackContext context)
+    {
+        if (!HUDMilestoneSelectionNavigationUtility.CanHandleSelectionInput(hasRuntimeContext, isPanelVisible, interactionLocked, activeOfferCount))
+            return;
+
+        if (!navigationInputReleased && Time.unscaledTime < nextAllowedNavigateUnscaledTime)
+            return;
+
+        Vector2 navigateValue = context.ReadValue<Vector2>();
+        int navigationStep = HUDMilestoneSelectionNavigationUtility.ResolveNavigationStep(navigateValue, navigationInputDeadzone);
+
+        if (navigationStep == 0)
+            return;
+
+        int nextOptionIndex = HUDMilestoneSelectionNavigationUtility.MoveSelection(selectedOfferIndex, activeOfferCount, navigationStep, wrapNavigation);
+
+        if (nextOptionIndex == selectedOfferIndex)
+            return;
+
+        selectedOfferIndex = nextOptionIndex;
+        navigationInputReleased = false;
+        nextAllowedNavigateUnscaledTime = Time.unscaledTime + navigationRepeatCooldownSeconds;
+        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, optionBindings, selectedOfferIndex, activeOfferCount);
+    }
+
+    /// <summary>
+    /// Re-arms custom navigation when the Navigate action returns to its neutral value.
+    /// </summary>
+    /// <param name="context">Input callback context raised by the Navigate action.</param>
+    /// <returns>Void.</returns>
+    private void HandleNavigateCanceled(InputAction.CallbackContext context)
+    {
+        navigationInputReleased = true;
+    }
+
+    /// <summary>
+    /// Resolves the current highlighted offer when the Submit action is pressed.
+    /// </summary>
+    /// <param name="context">Input callback context raised by the Submit action.</param>
+    /// <returns>Void.</returns>
+    private void HandleSubmitPerformed(InputAction.CallbackContext context)
+    {
+        if (!HUDMilestoneSelectionNavigationUtility.CanHandleSelectionInput(hasRuntimeContext, isPanelVisible, interactionLocked, activeOfferCount))
+            return;
+
+        HandleOptionSelected(selectedOfferIndex);
+    }
+
+    /// <summary>
+    /// Maps the Cancel action to the milestone skip flow when the skip button is configured.
+    /// </summary>
+    /// <param name="context">Input callback context raised by the Cancel action.</param>
+    /// <returns>Void.</returns>
+    private void HandleCancelPerformed(InputAction.CallbackContext context)
+    {
+        if (!HUDMilestoneSelectionNavigationUtility.CanHandleSelectionInput(hasRuntimeContext, isPanelVisible, interactionLocked, activeOfferCount))
+            return;
+
         if (skipButton == null)
             return;
 
-        skipButton.interactable = interactable;
+        HandleSkipButtonPressed();
+    }
+    #endregion
+
+    #region Pointer
+    /// <summary>
+    /// Resolves the clicked card to its offer index and queues the corresponding ECS selection command.
+    /// </summary>
+    /// <param name="optionView">Card view clicked by the player.</param>
+    /// <returns>Void.</returns>
+    private void HandleOptionViewClicked(MilestonePowerUpSelectionOptionView optionView)
+    {
+        if (!HUDMilestoneSelectionNavigationUtility.TryGetOptionViewIndex(discoveredOptionViews, optionView, activeOfferCount, out int optionIndex))
+            return;
+
+        HandleOptionSelected(optionIndex);
+    }
+
+    /// <summary>
+    /// Syncs the current highlighted offer to the card under the mouse pointer.
+    /// </summary>
+    /// <param name="optionView">Card view currently hovered by the pointer.</param>
+    /// <returns>Void.</returns>
+    private void HandleOptionViewHovered(MilestonePowerUpSelectionOptionView optionView)
+    {
+        if (!followPointerHoverSelection)
+            return;
+
+        if (!HUDMilestoneSelectionNavigationUtility.CanHandleSelectionInput(hasRuntimeContext, isPanelVisible, interactionLocked, activeOfferCount))
+            return;
+
+        if (!HUDMilestoneSelectionNavigationUtility.TryGetOptionViewIndex(discoveredOptionViews, optionView, activeOfferCount, out int optionIndex))
+            return;
+
+        if (optionIndex == selectedOfferIndex)
+            return;
+
+        selectedOfferIndex = optionIndex;
+        HUDMilestoneSelectionOptionUtility.ApplySelectionVisuals(discoveredOptionViews, optionBindings, selectedOfferIndex, activeOfferCount);
     }
     #endregion
 
     #region Commands
-    private void HandleOptionButtonPressed(int optionIndex)
+    /// <summary>
+    /// Handles one offer selection request coming from cards, buttons, or the Submit action.
+    /// </summary>
+    /// <param name="optionIndex">Offer index requested by the current UI source.</param>
+    /// <returns>Void.</returns>
+    private void HandleOptionSelected(int optionIndex)
     {
         if (!hasRuntimeContext)
             return;
 
+        if (optionIndex < 0 || optionIndex >= activeOfferCount)
+            return;
+
+        selectedOfferIndex = optionIndex;
+
         if (!TryQueueSelectionCommand(optionIndex))
             return;
 
-        if (!lockButtonsAfterSelectionClick)
-            return;
-
-        SetOptionButtonsInteractable(false);
+        ApplyCommandLockIfNeeded();
     }
 
     /// <summary>
-    /// Handles the optional skip button click and submits a skip command to ECS.
+    /// Handles the optional skip button click and maps Cancel input to the same ECS command path.
     /// </summary>
     /// <returns>Void.</returns>
     private void HandleSkipButtonPressed()
@@ -420,10 +618,20 @@ public sealed class HUDMilestoneSelectionSection
         if (!TryQueueSkipCommand())
             return;
 
+        ApplyCommandLockIfNeeded();
+    }
+
+    /// <summary>
+    /// Applies the post-command interaction lock requested by the current HUD settings.
+    /// </summary>
+    /// <returns>Void.</returns>
+    private void ApplyCommandLockIfNeeded()
+    {
         if (!lockButtonsAfterSelectionClick)
             return;
 
-        SetOptionButtonsInteractable(false);
+        interactionLocked = true;
+        HUDMilestoneSelectionOptionUtility.SetOptionInputsInteractable(discoveredOptionViews, optionBindings, skipButton, false);
     }
 
     /// <summary>
@@ -433,7 +641,10 @@ public sealed class HUDMilestoneSelectionSection
     /// <returns>True when the command is queued; otherwise false.</returns>
     private bool TryQueueSelectionCommand(int offerIndex)
     {
-        return TryQueueCommand(PlayerMilestoneSelectionCommandType.SelectOffer, offerIndex);
+        return HUDMilestoneSelectionCommandUtility.TryQueueCommand(entityManager,
+                                                                   playerEntity,
+                                                                   PlayerMilestoneSelectionCommandType.SelectOffer,
+                                                                   offerIndex);
     }
 
     /// <summary>
@@ -442,50 +653,10 @@ public sealed class HUDMilestoneSelectionSection
     /// <returns>True when the command is queued; otherwise false.</returns>
     private bool TryQueueSkipCommand()
     {
-        return TryQueueCommand(PlayerMilestoneSelectionCommandType.Skip, -1);
-    }
-
-    /// <summary>
-    /// Queues one generic milestone-selection command after validating the current runtime state.
-    /// </summary>
-    /// <param name="commandType">Command kind requested by the HUD.</param>
-    /// <param name="offerIndex">Offer index used by selection commands, or -1 for skip.</param>
-    /// <returns>True when the command is queued; otherwise false.</returns>
-    private bool TryQueueCommand(PlayerMilestoneSelectionCommandType commandType, int offerIndex)
-    {
-        if (playerEntity == Entity.Null)
-            return false;
-
-        if (!entityManager.HasComponent<PlayerMilestonePowerUpSelectionState>(playerEntity))
-            return false;
-
-        PlayerMilestonePowerUpSelectionState selectionState = entityManager.GetComponentData<PlayerMilestonePowerUpSelectionState>(playerEntity);
-
-        if (selectionState.IsSelectionActive == 0)
-            return false;
-
-        if (commandType == PlayerMilestoneSelectionCommandType.SelectOffer)
-        {
-            if (!entityManager.HasBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity))
-                return false;
-
-            DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> offersBuffer = entityManager.GetBuffer<PlayerMilestonePowerUpSelectionOfferElement>(playerEntity);
-
-            if (offerIndex < 0 || offerIndex >= offersBuffer.Length)
-                return false;
-        }
-
-        if (!entityManager.HasBuffer<PlayerMilestonePowerUpSelectionCommand>(playerEntity))
-            return false;
-
-        DynamicBuffer<PlayerMilestonePowerUpSelectionCommand> selectionCommandsBuffer = entityManager.GetBuffer<PlayerMilestonePowerUpSelectionCommand>(playerEntity);
-        selectionCommandsBuffer.Clear();
-        selectionCommandsBuffer.Add(new PlayerMilestonePowerUpSelectionCommand
-        {
-            CommandType = commandType,
-            OfferIndex = offerIndex
-        });
-        return true;
+        return HUDMilestoneSelectionCommandUtility.TryQueueCommand(entityManager,
+                                                                   playerEntity,
+                                                                   PlayerMilestoneSelectionCommandType.Skip,
+                                                                   -1);
     }
     #endregion
 

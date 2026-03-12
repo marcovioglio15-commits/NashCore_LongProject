@@ -4404,13 +4404,14 @@ MonoBehaviour:
   milestoneSelectionSection:
     panelRoot: {fileID: 1835769325}
     headerText: {fileID: 1835769324}
-    optionBindings:
-    - selectButton: {fileID: 0}
-      nameText: {fileID: 0}
-      descriptionText: {fileID: 0}
-      typeText: {fileID: 0}
-      hideWhenUnused: 0
+    optionBindings: []
     skipButton: {fileID: 1835769323}
+    autoDiscoverOptionViewsFromPanelRoot: 1
+    navigationInputDeadzone: 0.5
+    navigationRepeatCooldownSeconds: 0.15
+    wrapNavigation: 1
+    followPointerHoverSelection: 1
+    suspendEventSystemNavigationWhileSelectionActive: 1
     autoSelectFirstOfferWhenUiMissing: 1
     lockButtonsAfterSelectionClick: 1
 --- !u!4 &750304365

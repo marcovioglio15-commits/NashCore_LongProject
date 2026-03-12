@@ -20,6 +20,9 @@ public static class PlayerInputRuntime
     private static InputAction shootAction;
     private static InputAction powerUpPrimaryAction;
     private static InputAction powerUpSecondaryAction;
+    private static InputAction uiNavigateAction;
+    private static InputAction uiSubmitAction;
+    private static InputAction uiCancelAction;
     private static InputAction cheatPresetDigitAction;
     private static InputAction cheatModifierControlAction;
     private static InputAction cheatModifierShiftAction;
@@ -78,6 +81,30 @@ public static class PlayerInputRuntime
         get
         {
             return powerUpSecondaryAction;
+        }
+    }
+
+    public static InputAction UINavigateAction
+    {
+        get
+        {
+            return uiNavigateAction;
+        }
+    }
+
+    public static InputAction UISubmitAction
+    {
+        get
+        {
+            return uiSubmitAction;
+        }
+    }
+
+    public static InputAction UICancelAction
+    {
+        get
+        {
+            return uiCancelAction;
         }
     }
 
@@ -259,6 +286,9 @@ public static class PlayerInputRuntime
         shootAction = ResolveAction(instantiatedAsset, shootActionId, "Shoot");
         powerUpPrimaryAction = ResolveAction(instantiatedAsset, powerUpPrimaryActionId, "PowerUpPrimary");
         powerUpSecondaryAction = ResolveAction(instantiatedAsset, powerUpSecondaryActionId, "PowerUpSecondary");
+        uiNavigateAction = ResolveAction(instantiatedAsset, null, "UI/Navigate");
+        uiSubmitAction = ResolveAction(instantiatedAsset, null, "UI/Submit");
+        uiCancelAction = ResolveAction(instantiatedAsset, null, "UI/Cancel");
         cheatPresetDigitAction = ResolveAction(instantiatedAsset, null, "CheatPresetDigit");
         cheatModifierControlAction = ResolveAction(instantiatedAsset, null, "CheatModifierControl");
         cheatModifierShiftAction = ResolveAction(instantiatedAsset, null, "CheatModifierShift");
@@ -284,6 +314,9 @@ public static class PlayerInputRuntime
         shootAction = null;
         powerUpPrimaryAction = null;
         powerUpSecondaryAction = null;
+        uiNavigateAction = null;
+        uiSubmitAction = null;
+        uiCancelAction = null;
         cheatPresetDigitAction = null;
         cheatModifierControlAction = null;
         cheatModifierShiftAction = null;
@@ -408,13 +441,16 @@ public static class PlayerInputRuntime
         if (asset == null)
             return;
 
-        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | CheatPresetDigit: {6} | CheatModifierControl: {7} | CheatModifierShift: {8} | MousePointerLook: {9}",
+        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | UINavigate: {6} | UISubmit: {7} | UICancel: {8} | CheatPresetDigit: {9} | CheatModifierControl: {10} | CheatModifierShift: {11} | MousePointerLook: {12}",
                                        asset.name,
                                        BuildActionStatus(moveAction),
                                        BuildActionStatus(lookAction),
                                        BuildActionStatus(shootAction),
                                        BuildActionStatus(powerUpPrimaryAction),
                                        BuildActionStatus(powerUpSecondaryAction),
+                                       BuildActionStatus(uiNavigateAction),
+                                       BuildActionStatus(uiSubmitAction),
+                                       BuildActionStatus(uiCancelAction),
                                        BuildActionStatus(cheatPresetDigitAction),
                                        BuildActionStatus(cheatModifierControlAction),
                                        BuildActionStatus(cheatModifierShiftAction),
