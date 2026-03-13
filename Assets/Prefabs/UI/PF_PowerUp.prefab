@@ -92,10 +92,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 27
+  m_fontSize: 64.25
   m_fontSizeBase: 27
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
@@ -229,10 +229,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 32
+  m_fontSize: 60
   m_fontSizeBase: 32
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
@@ -324,11 +324,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857c4d8f1f1b44f0b790af512922f41d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nameText: {fileID: 0}
-  descriptionText: {fileID: 0}
+  nameText: {fileID: 6322721753487207099}
+  descriptionText: {fileID: 3803672750872392398}
   typeText: {fileID: 0}
-  iconImage: {fileID: 0}
-  selectionHighlightGraphic: {fileID: 0}
+  iconImage: {fileID: 3597810525065759651}
+  selectionHighlightGraphic: {fileID: 7397065826663995262}
   hideWhenUnused: 1
   selectOnPointerEnter: 1
 --- !u!1 &6428991003830016687
