@@ -201,6 +201,7 @@ public static class HUDMilestoneSelectionOptionUtility
         optionView.SetSelected(false);
         SetText(optionView.NameText, BuildDisplayName(optionIndex, in offer));
         SetText(optionView.TypeText, ResolveUnlockKindLabel(offer.UnlockKind));
+        SetIcon(optionView.IconImage, offer.PowerUpId.ToString());
 
         string description = optionView.TypeText != null
             ? BuildDescription(in offer)
@@ -235,6 +236,7 @@ public static class HUDMilestoneSelectionOptionUtility
         SetText(optionView.NameText, string.Empty);
         SetText(optionView.DescriptionText, string.Empty);
         SetText(optionView.TypeText, string.Empty);
+        SetIcon(optionView.IconImage, string.Empty);
     }
 
     /// Updates the selected highlight state for all discovered card views.
@@ -425,6 +427,30 @@ public static class HUDMilestoneSelectionOptionUtility
             return;
 
         textLabel.text = value;
+    }
+
+    /// <summary>
+    /// Assigns one runtime icon to an optional UI image while tolerating missing presentation data.
+    /// </summary>
+    /// <param name="iconImage">UI image updated by the helper.</param>
+    /// <param name="powerUpId">Stable power-up identifier used to resolve the cached sprite.</param>
+    private static void SetIcon(Image iconImage, string powerUpId)
+    {
+        if (iconImage == null)
+            return;
+
+        if (!PlayerPowerUpPresentationRuntime.TryResolveIcon(powerUpId, out Sprite icon))
+        {
+            iconImage.sprite = null;
+            iconImage.enabled = false;
+            return;
+        }
+
+        if (iconImage.sprite != icon)
+            iconImage.sprite = icon;
+
+        if (!iconImage.enabled)
+            iconImage.enabled = true;
     }
     #endregion
 

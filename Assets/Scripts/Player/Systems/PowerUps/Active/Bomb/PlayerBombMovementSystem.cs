@@ -35,6 +35,7 @@ public partial struct PlayerBombMovementSystem : ISystem
             wallsLayerMask = worldLayersConfig.WallsLayerMask;
 
         bool wallsEnabled = wallsLayerMask != 0;
+        state.EntityManager.CompleteDependencyBeforeRW<LocalTransform>();
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(false);
 
         foreach ((RefRW<BombFuseState> fuseState,

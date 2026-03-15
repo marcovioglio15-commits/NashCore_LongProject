@@ -41,7 +41,7 @@ public static class ProfilerCaptureReportUtility
     #endregion
 
     #region Menu
-    [MenuItem("Tools/Profiling/Export Capture Metadata Report")]
+    //[MenuItem("Tools/Profiling/Export Capture Metadata Report")]
     public static void ExportCaptureMetadataReport()
     {
         string projectRootPath = Directory.GetCurrentDirectory();

@@ -55,6 +55,13 @@ public sealed class HUDManager : MonoBehaviour
     [Tooltip("Secondary slot energy fill image. Displayed only when the secondary slot has an energy module.")]
     [SerializeField] private Image secondaryEnergyFillImage;
 
+    [Header("Power Ups - Icons")]
+    [Tooltip("Primary slot icon image. Shows the sprite assigned to the currently equipped primary active power up.")]
+    [SerializeField] private Image primaryPowerUpIconImage;
+
+    [Tooltip("Secondary slot icon image. Shows the sprite assigned to the currently equipped secondary active power up.")]
+    [SerializeField] private Image secondaryPowerUpIconImage;
+
     [Tooltip("Seconds used to smooth energy fill transitions. Set 0 for immediate updates.")]
     [SerializeField] private float energyBarSmoothingSeconds = 0.08f;
 
@@ -83,6 +90,10 @@ public sealed class HUDManager : MonoBehaviour
     [Header("Milestone Power-Up Selection")]
     [Tooltip("Serialized HUD section that renders milestone choices and sends ECS selection commands.")]
     [SerializeField] private HUDMilestoneSelectionSection milestoneSelectionSection = new HUDMilestoneSelectionSection();
+
+    [Header("Dropped Power-Up Containers")]
+    [Tooltip("Serialized HUD section that handles dropped active power-up prompts and overlay swaps.")]
+    [SerializeField] private HUDPowerUpContainerInteractionSection powerUpContainerInteractionSection = new HUDPowerUpContainerInteractionSection();
     #endregion
 
     private World defaultWorld;
@@ -95,10 +106,7 @@ public sealed class HUDManager : MonoBehaviour
     private float displayedHealthNormalized = 1f;
     private float displayedShieldNormalized;
     private float displayedExperienceNormalized;
-    private float displayedPrimaryEnergyNormalized = 1f;
-    private float displayedSecondaryEnergyNormalized = 1f;
-    private float displayedPrimaryChargeNormalized;
-    private float displayedSecondaryChargeNormalized;
+    private HUDPowerUpOverlaySection powerUpOverlaySection;
     #endregion
 
     #region Methods
@@ -108,7 +116,20 @@ public sealed class HUDManager : MonoBehaviour
     {
         ClampSettings();
         ValidateShieldOverlayBinding();
+        powerUpOverlaySection = new HUDPowerUpOverlaySection(primaryPowerUpIconImage,
+                                                             secondaryPowerUpIconImage,
+                                                             primaryEnergyFillImage,
+                                                             secondaryEnergyFillImage,
+                                                             primaryChargeFillImage,
+                                                             secondaryChargeFillImage,
+                                                             energyBarSmoothingSeconds,
+                                                             hideEnergyBarsWhenPlayerMissing,
+                                                             hideEnergyBarsWhenModuleMissing,
+                                                             chargeBarSmoothingSeconds,
+                                                             hideChargeBarsWhenPlayerMissing,
+                                                             hideChargeBarsWhenModuleMissing);
         milestoneSelectionSection.Initialize();
+        powerUpContainerInteractionSection.Initialize();
         TryInitializeEcsBindings();
         ApplyInitialVisualState();
     }
@@ -116,6 +137,7 @@ public sealed class HUDManager : MonoBehaviour
     private void OnDestroy()
     {
         milestoneSelectionSection.Dispose();
+        powerUpContainerInteractionSection.Dispose();
     }
 
     private void Update()
@@ -135,8 +157,9 @@ public sealed class HUDManager : MonoBehaviour
         UpdateHealthBar(playerEntity);
         UpdateShieldBar(playerEntity);
         UpdateLevelAndExperience(playerEntity);
-        UpdatePowerUpBars(playerEntity);
+        powerUpOverlaySection.Update(entityManager, playerEntity);
         milestoneSelectionSection.Update(entityManager, playerEntity);
+        powerUpContainerInteractionSection.Update(entityManager, playerEntity);
     }
     #endregion
 
@@ -334,118 +357,6 @@ public sealed class HUDManager : MonoBehaviour
         ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
     }
 
-    private void UpdatePowerUpBars(Entity playerEntity)
-    {
-        if (!HasAnyPowerUpBars())
-            return;
-
-        if (!entityManager.HasComponent<PlayerPowerUpsConfig>(playerEntity) ||
-            !entityManager.HasComponent<PlayerPowerUpsState>(playerEntity))
-        {
-            HandleMissingPowerUpBars();
-            return;
-        }
-
-        PlayerPowerUpsConfig powerUpsConfig = entityManager.GetComponentData<PlayerPowerUpsConfig>(playerEntity);
-        PlayerPowerUpsState powerUpsState = entityManager.GetComponentData<PlayerPowerUpsState>(playerEntity);
-
-        UpdateEnergyBar(primaryEnergyFillImage,
-                        in powerUpsConfig.PrimarySlot,
-                        powerUpsState.PrimaryEnergy,
-                        ref displayedPrimaryEnergyNormalized);
-        UpdateEnergyBar(secondaryEnergyFillImage,
-                        in powerUpsConfig.SecondarySlot,
-                        powerUpsState.SecondaryEnergy,
-                        ref displayedSecondaryEnergyNormalized);
-        UpdateChargeBar(primaryChargeFillImage,
-                        in powerUpsConfig.PrimarySlot,
-                        powerUpsState.PrimaryEnergy,
-                        powerUpsState.PrimaryCharge,
-                        ref displayedPrimaryChargeNormalized);
-        UpdateChargeBar(secondaryChargeFillImage,
-                        in powerUpsConfig.SecondarySlot,
-                        powerUpsState.SecondaryEnergy,
-                        powerUpsState.SecondaryCharge,
-                        ref displayedSecondaryChargeNormalized);
-    }
-
-    private void UpdateEnergyBar(Image fillImage,
-                                 in PlayerPowerUpSlotConfig slotConfig,
-                                 float currentEnergy,
-                                 ref float displayedNormalized)
-    {
-        if (fillImage == null)
-            return;
-
-        if (!HasEnergyModule(in slotConfig))
-        {
-            displayedNormalized = 0f;
-
-            if (hideEnergyBarsWhenModuleMissing)
-            {
-                fillImage.enabled = false;
-                return;
-            }
-
-            ApplyFill(fillImage, 0f);
-            return;
-        }
-
-        float maximumEnergy = Mathf.Max(0f, slotConfig.MaximumEnergy);
-        float targetNormalized = 0f;
-
-        if (maximumEnergy > 0f)
-            targetNormalized = Mathf.Clamp01(currentEnergy / maximumEnergy);
-
-        displayedNormalized = SmoothNormalized(displayedNormalized,
-                                               targetNormalized,
-                                               energyBarSmoothingSeconds);
-        ApplyFill(fillImage, displayedNormalized);
-    }
-
-    private void UpdateChargeBar(Image fillImage,
-                                 in PlayerPowerUpSlotConfig slotConfig,
-                                 float currentEnergy,
-                                 float currentCharge,
-                                 ref float displayedNormalized)
-    {
-        if (fillImage == null)
-            return;
-
-        if (!HasChargeModule(in slotConfig))
-        {
-            displayedNormalized = 0f;
-
-            if (hideChargeBarsWhenModuleMissing)
-            {
-                fillImage.enabled = false;
-                return;
-            }
-
-            ApplyFill(fillImage, 0f);
-            return;
-        }
-
-        if (!CanDisplayChargeProgress(in slotConfig, currentEnergy))
-        {
-            displayedNormalized = SmoothNormalized(displayedNormalized,
-                                                   0f,
-                                                   chargeBarSmoothingSeconds);
-            ApplyFill(fillImage, displayedNormalized);
-            return;
-        }
-
-        float maximumCharge = Mathf.Max(slotConfig.ChargeShot.RequiredCharge, slotConfig.ChargeShot.MaximumCharge);
-        float targetNormalized = 0f;
-
-        if (maximumCharge > 0f)
-            targetNormalized = Mathf.Clamp01(currentCharge / maximumCharge);
-
-        displayedNormalized = SmoothNormalized(displayedNormalized,
-                                               targetNormalized,
-                                               chargeBarSmoothingSeconds);
-        ApplyFill(fillImage, displayedNormalized);
-    }
     #endregion
 
     #region Helpers
@@ -477,21 +388,11 @@ public sealed class HUDManager : MonoBehaviour
 
         if (playerExperienceFillImage != null)
             ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
-
-        if (primaryEnergyFillImage != null)
-            ApplyFill(primaryEnergyFillImage, displayedPrimaryEnergyNormalized);
-
-        if (secondaryEnergyFillImage != null)
-            ApplyFill(secondaryEnergyFillImage, displayedSecondaryEnergyNormalized);
-
-        if (primaryChargeFillImage != null)
-            ApplyFill(primaryChargeFillImage, displayedPrimaryChargeNormalized);
-
-        if (secondaryChargeFillImage != null)
-            ApplyFill(secondaryChargeFillImage, displayedSecondaryChargeNormalized);
+        powerUpOverlaySection.ApplyInitialVisualState();
 
         HandleMissingLevelText();
         milestoneSelectionSection.HandleMissingPlayer();
+        powerUpContainerInteractionSection.HandleMissingPlayer();
     }
 
     private void HandleMissingPlayer()
@@ -500,8 +401,9 @@ public sealed class HUDManager : MonoBehaviour
         HandleMissingShieldBar();
         HandleMissingLevelText();
         HandleMissingExperienceBar();
-        HandleMissingPowerUpBars();
+        powerUpOverlaySection.HandleMissingPlayer();
         milestoneSelectionSection.HandleMissingPlayer();
+        powerUpContainerInteractionSection.HandleMissingPlayer();
     }
 
     private void HandleMissingHealthBar()
@@ -567,96 +469,6 @@ public sealed class HUDManager : MonoBehaviour
         }
 
         ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
-    }
-
-    private void HandleMissingPowerUpBars()
-    {
-        HandleMissingImage(primaryEnergyFillImage, hideEnergyBarsWhenPlayerMissing, displayedPrimaryEnergyNormalized);
-        HandleMissingImage(secondaryEnergyFillImage, hideEnergyBarsWhenPlayerMissing, displayedSecondaryEnergyNormalized);
-        HandleMissingImage(primaryChargeFillImage, hideChargeBarsWhenPlayerMissing, displayedPrimaryChargeNormalized);
-        HandleMissingImage(secondaryChargeFillImage, hideChargeBarsWhenPlayerMissing, displayedSecondaryChargeNormalized);
-    }
-
-    private static void HandleMissingImage(Image fillImage, bool hideWhenMissing, float displayedValue)
-    {
-        if (fillImage == null)
-            return;
-
-        if (hideWhenMissing)
-        {
-            fillImage.enabled = false;
-            return;
-        }
-
-        fillImage.enabled = true;
-        fillImage.fillAmount = Mathf.Clamp01(displayedValue);
-    }
-
-    private static bool HasEnergyModule(in PlayerPowerUpSlotConfig slotConfig)
-    {
-        if (slotConfig.IsDefined == 0)
-            return false;
-
-        return slotConfig.MaximumEnergy > 0.0001f;
-    }
-
-    private static bool HasChargeModule(in PlayerPowerUpSlotConfig slotConfig)
-    {
-        if (slotConfig.IsDefined == 0)
-            return false;
-
-        if (slotConfig.ToolKind != ActiveToolKind.ChargeShot)
-            return false;
-
-        if (slotConfig.ChargeShot.RequiredCharge <= 0f)
-            return false;
-
-        if (slotConfig.ChargeShot.MaximumCharge <= 0f)
-            return false;
-
-        return slotConfig.ChargeShot.ChargeRatePerSecond > 0f;
-    }
-
-    private static bool CanDisplayChargeProgress(in PlayerPowerUpSlotConfig slotConfig, float currentEnergy)
-    {
-        if (slotConfig.ActivationResource != PowerUpResourceType.Energy)
-            return true;
-
-        float maximumEnergy = Mathf.Max(0f, slotConfig.MaximumEnergy);
-
-        if (maximumEnergy <= 0f)
-            return false;
-
-        float minimumActivationEnergyPercent = Mathf.Clamp(slotConfig.MinimumActivationEnergyPercent, 0f, 100f);
-
-        if (minimumActivationEnergyPercent > 0f)
-        {
-            float minimumEnergyRequired = maximumEnergy * (minimumActivationEnergyPercent * 0.01f);
-
-            if (currentEnergy + 0.0001f < minimumEnergyRequired)
-                return false;
-        }
-
-        float activationCost = Mathf.Max(0f, slotConfig.ActivationCost);
-
-        if (activationCost > 0f && currentEnergy + 0.0001f < activationCost)
-            return false;
-
-        return true;
-    }
-
-    private bool HasAnyPowerUpBars()
-    {
-        if (primaryEnergyFillImage != null)
-            return true;
-
-        if (secondaryEnergyFillImage != null)
-            return true;
-
-        if (primaryChargeFillImage != null)
-            return true;
-
-        return secondaryChargeFillImage != null;
     }
 
     /// <summary>

@@ -15,6 +15,7 @@ public sealed class PowerUpCommonDataPropertyDrawer : PropertyDrawer
         SerializedProperty powerUpIdProperty = property.FindPropertyRelative("powerUpId");
         SerializedProperty displayNameProperty = property.FindPropertyRelative("displayName");
         SerializedProperty descriptionProperty = property.FindPropertyRelative("description");
+        SerializedProperty iconProperty = property.FindPropertyRelative("icon");
         SerializedProperty dropPoolsProperty = property.FindPropertyRelative("dropPools");
         SerializedProperty dropTierProperty = property.FindPropertyRelative("dropTier");
         SerializedProperty purchaseCostProperty = property.FindPropertyRelative("purchaseCost");
@@ -25,6 +26,7 @@ public sealed class PowerUpCommonDataPropertyDrawer : PropertyDrawer
         if (powerUpIdProperty == null ||
             displayNameProperty == null ||
             descriptionProperty == null ||
+            iconProperty == null ||
             dropPoolsProperty == null ||
             dropTierProperty == null ||
             purchaseCostProperty == null)
@@ -38,6 +40,7 @@ public sealed class PowerUpCommonDataPropertyDrawer : PropertyDrawer
         AddField(root, powerUpIdProperty, scalingRulesProperty, "Power Up ID");
         AddField(root, displayNameProperty, scalingRulesProperty, "Display Name");
         AddField(root, descriptionProperty, scalingRulesProperty, "Description");
+        AddField(root, iconProperty, scalingRulesProperty, "Icon");
         AddField(root, dropPoolsProperty, scalingRulesProperty, "Drop Pools");
         AddField(root, dropTierProperty, scalingRulesProperty, "Drop Tier");
         AddField(root, purchaseCostProperty, scalingRulesProperty, "Purchase Cost");

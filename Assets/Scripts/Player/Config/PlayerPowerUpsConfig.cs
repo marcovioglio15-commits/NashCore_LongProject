@@ -27,6 +27,7 @@ public enum PowerUpActivationInputMode
 public struct PlayerPowerUpSlotConfig
 {
     public byte IsDefined;
+    public FixedString64Bytes PowerUpId;
     public ActiveToolKind ToolKind;
     public PowerUpResourceType ActivationResource;
     public PowerUpResourceType MaintenanceResource;

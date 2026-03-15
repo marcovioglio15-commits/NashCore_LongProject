@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -529,6 +530,7 @@ public static class PlayerPowerUpActiveBakeUtility
         return new PlayerPowerUpSlotConfig
         {
             IsDefined = 1,
+            PowerUpId = ResolveLegacyPowerUpId(activeTool),
             ToolKind = toolKind,
             ActivationResource = activeTool.ActivationResource,
             MaintenanceResource = activeTool.MaintenanceResource,
@@ -578,6 +580,19 @@ public static class PlayerPowerUpActiveBakeUtility
                 EnemySlowPercent = bulletTimeData != null ? math.clamp(bulletTimeData.EnemySlowPercent, 0f, 100f) : 0f
             }
         };
+    }
+
+    /// <summary>
+    /// Resolves the stable identifier stored by one legacy active tool definition.
+    /// /params activeTool: Legacy active tool definition being compiled.
+    /// /returns Stable power-up identifier or an empty fixed string when unavailable.
+    /// </summary>
+    private static FixedString64Bytes ResolveLegacyPowerUpId(ActiveToolDefinition activeTool)
+    {
+        if (activeTool == null || activeTool.CommonData == null || string.IsNullOrWhiteSpace(activeTool.CommonData.PowerUpId))
+            return default;
+
+        return new FixedString64Bytes(activeTool.CommonData.PowerUpId.Trim());
     }
     #endregion
 

@@ -429,6 +429,15 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             };
 
             AddComponent(entity, progressionConfig);
+            AddComponent(entity, PlayerPowerUpContainerBakeUtility.BuildInteractionConfig(progressionPreset,
+                                                                                         ResolveDynamicPrefabEntity));
+            AddComponent(entity, new PlayerPowerUpContainerProximityState
+            {
+                NearestContainerEntity = Entity.Null,
+                NearestDistanceSquared = 0f,
+                HasContainerInRange = 0
+            });
+            AddBuffer<PlayerPowerUpContainerSwapCommand>(entity);
         }
 
         if (powerUpsPreset != null)

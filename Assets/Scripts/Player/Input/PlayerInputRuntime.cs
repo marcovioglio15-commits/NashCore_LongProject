@@ -21,6 +21,9 @@ public static class PlayerInputRuntime
     private static InputAction powerUpPrimaryAction;
     private static InputAction powerUpSecondaryAction;
     private static InputAction powerUpSwapSlotsAction;
+    private static InputAction powerUpContainerInteractAction;
+    private static InputAction powerUpContainerReplacePrimaryAction;
+    private static InputAction powerUpContainerReplaceSecondaryAction;
     private static InputAction uiNavigateAction;
     private static InputAction uiSubmitAction;
     private static InputAction uiCancelAction;
@@ -35,6 +38,9 @@ public static class PlayerInputRuntime
     private static string powerUpPrimaryActionId;
     private static string powerUpSecondaryActionId;
     private static string powerUpSwapSlotsActionId;
+    private static string powerUpContainerInteractActionId;
+    private static string powerUpContainerReplacePrimaryActionId;
+    private static string powerUpContainerReplaceSecondaryActionId;
     #endregion
 
     #region Properties
@@ -91,6 +97,30 @@ public static class PlayerInputRuntime
         get
         {
             return powerUpSwapSlotsAction;
+        }
+    }
+
+    public static InputAction PowerUpContainerInteractAction
+    {
+        get
+        {
+            return powerUpContainerInteractAction;
+        }
+    }
+
+    public static InputAction PowerUpContainerReplacePrimaryAction
+    {
+        get
+        {
+            return powerUpContainerReplacePrimaryAction;
+        }
+    }
+
+    public static InputAction PowerUpContainerReplaceSecondaryAction
+    {
+        get
+        {
+            return powerUpContainerReplaceSecondaryAction;
         }
     }
 
@@ -245,6 +275,20 @@ public static class PlayerInputRuntime
 
         return true;
     }
+
+    /// <summary>
+    /// Resolves one binding display string that matches the currently active input device family whenever possible.
+    /// </summary>
+    /// <param name="action">Input action whose binding label must be displayed.</param>
+    /// <param name="fallback">Fallback string used when no matching binding can be resolved.</param>
+    /// <returns>Context-aware binding label for prompts and HUD text.</returns>
+    public static string ResolveBindingDisplayString(InputAction action, string fallback)
+    {
+        if (action == null)
+            return fallback;
+
+        return PlayerInputBindingDisplayRuntime.ResolveBindingDisplayString(action, fallback);
+    }
     #endregion
 
     #region Methods
@@ -260,13 +304,19 @@ public static class PlayerInputRuntime
     /// <param name="powerUpPrimaryActionId">Configured primary active-slot action identifier.</param>
     /// <param name="powerUpSecondaryActionId">Configured secondary active-slot action identifier.</param>
     /// <param name="powerUpSwapSlotsActionId">Configured active-slot swap action identifier.</param>
+    /// <param name="powerUpContainerInteractActionId">Configured overlay interaction action identifier for dropped containers.</param>
+    /// <param name="powerUpContainerReplacePrimaryActionId">Configured direct-replace action identifier for the primary slot.</param>
+    /// <param name="powerUpContainerReplaceSecondaryActionId">Configured direct-replace action identifier for the secondary slot.</param>
     public static void Initialize(InputActionAsset sourceAsset,
                                   string moveActionId,
                                   string lookActionId,
                                   string shootActionId,
                                   string powerUpPrimaryActionId,
                                   string powerUpSecondaryActionId,
-                                  string powerUpSwapSlotsActionId)
+                                  string powerUpSwapSlotsActionId,
+                                  string powerUpContainerInteractActionId,
+                                  string powerUpContainerReplacePrimaryActionId,
+                                  string powerUpContainerReplaceSecondaryActionId)
     {
         if (sourceAsset == null)
         {
@@ -280,7 +330,10 @@ public static class PlayerInputRuntime
                                shootActionId,
                                powerUpPrimaryActionId,
                                powerUpSecondaryActionId,
-                               powerUpSwapSlotsActionId))
+                               powerUpSwapSlotsActionId,
+                               powerUpContainerInteractActionId,
+                               powerUpContainerReplacePrimaryActionId,
+                               powerUpContainerReplaceSecondaryActionId))
             return;
 
         Shutdown();
@@ -303,6 +356,9 @@ public static class PlayerInputRuntime
         PlayerInputRuntime.powerUpPrimaryActionId = powerUpPrimaryActionId;
         PlayerInputRuntime.powerUpSecondaryActionId = powerUpSecondaryActionId;
         PlayerInputRuntime.powerUpSwapSlotsActionId = powerUpSwapSlotsActionId;
+        PlayerInputRuntime.powerUpContainerInteractActionId = powerUpContainerInteractActionId;
+        PlayerInputRuntime.powerUpContainerReplacePrimaryActionId = powerUpContainerReplacePrimaryActionId;
+        PlayerInputRuntime.powerUpContainerReplaceSecondaryActionId = powerUpContainerReplaceSecondaryActionId;
 
         moveAction = ResolveAction(instantiatedAsset, moveActionId, "Move");
         lookAction = ResolveAction(instantiatedAsset, lookActionId, "Look");
@@ -310,6 +366,9 @@ public static class PlayerInputRuntime
         powerUpPrimaryAction = ResolveAction(instantiatedAsset, powerUpPrimaryActionId, "PowerUpPrimary");
         powerUpSecondaryAction = ResolveAction(instantiatedAsset, powerUpSecondaryActionId, "PowerUpSecondary");
         powerUpSwapSlotsAction = ResolveAction(instantiatedAsset, powerUpSwapSlotsActionId, "PowerUpSwapSlots");
+        powerUpContainerInteractAction = ResolveAction(instantiatedAsset, powerUpContainerInteractActionId, "PowerUpContainerInteract");
+        powerUpContainerReplacePrimaryAction = ResolveAction(instantiatedAsset, powerUpContainerReplacePrimaryActionId, "PowerUpContainerReplacePrimary");
+        powerUpContainerReplaceSecondaryAction = ResolveAction(instantiatedAsset, powerUpContainerReplaceSecondaryActionId, "PowerUpContainerReplaceSecondary");
         uiNavigateAction = ResolveAction(instantiatedAsset, null, "UI/Navigate");
         uiSubmitAction = ResolveAction(instantiatedAsset, null, "UI/Submit");
         uiCancelAction = ResolveAction(instantiatedAsset, null, "UI/Cancel");
@@ -317,6 +376,7 @@ public static class PlayerInputRuntime
         cheatModifierControlAction = ResolveAction(instantiatedAsset, null, "CheatModifierControl");
         cheatModifierShiftAction = ResolveAction(instantiatedAsset, null, "CheatModifierShift");
         lookActionUsesMousePointer = ResolveLookActionUsesMousePointer(lookAction);
+        PlayerInputBindingDisplayRuntime.Initialize();
 
 #if UNITY_EDITOR
         LogInitializationStatus(instantiatedAsset);
@@ -328,6 +388,8 @@ public static class PlayerInputRuntime
     /// </summary>
     public static void Shutdown()
     {
+        PlayerInputBindingDisplayRuntime.Shutdown();
+
         if (runtimeAsset != null)
         {
             runtimeAsset.Disable();
@@ -342,6 +404,9 @@ public static class PlayerInputRuntime
         powerUpPrimaryAction = null;
         powerUpSecondaryAction = null;
         powerUpSwapSlotsAction = null;
+        powerUpContainerInteractAction = null;
+        powerUpContainerReplacePrimaryAction = null;
+        powerUpContainerReplaceSecondaryAction = null;
         uiNavigateAction = null;
         uiSubmitAction = null;
         uiCancelAction = null;
@@ -356,6 +421,9 @@ public static class PlayerInputRuntime
         powerUpPrimaryActionId = null;
         powerUpSecondaryActionId = null;
         powerUpSwapSlotsActionId = null;
+        powerUpContainerInteractActionId = null;
+        powerUpContainerReplacePrimaryActionId = null;
+        powerUpContainerReplaceSecondaryActionId = null;
     }
     #endregion
 
@@ -366,7 +434,10 @@ public static class PlayerInputRuntime
                                            string shootActionId,
                                            string powerUpPrimaryActionId,
                                            string powerUpSecondaryActionId,
-                                           string powerUpSwapSlotsActionId)
+                                           string powerUpSwapSlotsActionId,
+                                           string powerUpContainerInteractActionId,
+                                           string powerUpContainerReplacePrimaryActionId,
+                                           string powerUpContainerReplaceSecondaryActionId)
     {
         if (runtimeAsset == null)
             return false;
@@ -390,6 +461,15 @@ public static class PlayerInputRuntime
             return false;
 
         if (string.Equals(PlayerInputRuntime.powerUpSwapSlotsActionId, powerUpSwapSlotsActionId) == false)
+            return false;
+
+        if (string.Equals(PlayerInputRuntime.powerUpContainerInteractActionId, powerUpContainerInteractActionId) == false)
+            return false;
+
+        if (string.Equals(PlayerInputRuntime.powerUpContainerReplacePrimaryActionId, powerUpContainerReplacePrimaryActionId) == false)
+            return false;
+
+        if (string.Equals(PlayerInputRuntime.powerUpContainerReplaceSecondaryActionId, powerUpContainerReplaceSecondaryActionId) == false)
             return false;
 
         return true;
@@ -474,7 +554,7 @@ public static class PlayerInputRuntime
         if (asset == null)
             return;
 
-        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | PowerUpSwapSlots: {6} | UINavigate: {7} | UISubmit: {8} | UICancel: {9} | CheatPresetDigit: {10} | CheatModifierControl: {11} | CheatModifierShift: {12} | MousePointerLook: {13}",
+        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | PowerUpSwapSlots: {6} | PowerUpContainerInteract: {7} | PowerUpContainerReplacePrimary: {8} | PowerUpContainerReplaceSecondary: {9} | UINavigate: {10} | UISubmit: {11} | UICancel: {12} | CheatPresetDigit: {13} | CheatModifierControl: {14} | CheatModifierShift: {15} | MousePointerLook: {16}",
                                        asset.name,
                                        BuildActionStatus(moveAction),
                                        BuildActionStatus(lookAction),
@@ -482,6 +562,9 @@ public static class PlayerInputRuntime
                                        BuildActionStatus(powerUpPrimaryAction),
                                        BuildActionStatus(powerUpSecondaryAction),
                                        BuildActionStatus(powerUpSwapSlotsAction),
+                                       BuildActionStatus(powerUpContainerInteractAction),
+                                       BuildActionStatus(powerUpContainerReplacePrimaryAction),
+                                       BuildActionStatus(powerUpContainerReplaceSecondaryAction),
                                        BuildActionStatus(uiNavigateAction),
                                        BuildActionStatus(uiSubmitAction),
                                        BuildActionStatus(uiCancelAction),

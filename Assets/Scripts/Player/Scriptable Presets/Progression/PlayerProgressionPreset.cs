@@ -56,6 +56,9 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     [Tooltip("Seconds used to restore Time.timeScale from 0 back to 1 after a milestone power-up selection closes.")]
     [SerializeField] private float milestoneTimeScaleResumeDurationSeconds = 0.2f;
 
+    [Tooltip("Settings used to drop replaced active power ups as interactable world containers.")]
+    [SerializeField] private PlayerPowerUpContainerInteractionSettings powerUpContainerSettings = new PlayerPowerUpContainerInteractionSettings();
+
     [Tooltip("Legacy base stats storage kept for backward-compatible migration from old presets.")]
     [FormerlySerializedAs("baseStats")]
     [HideInInspector]
@@ -150,6 +153,14 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         get
         {
             return milestoneTimeScaleResumeDurationSeconds;
+        }
+    }
+
+    public PlayerPowerUpContainerInteractionSettings PowerUpContainerSettings
+    {
+        get
+        {
+            return powerUpContainerSettings;
         }
     }
     #endregion
@@ -316,6 +327,11 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         {
             milestoneTimeScaleResumeDurationSeconds = 0f;
         }
+
+        if (powerUpContainerSettings == null)
+            powerUpContainerSettings = new PlayerPowerUpContainerInteractionSettings();
+
+        powerUpContainerSettings.Validate();
 
         if (gamePhasesDefinition == null)
         {

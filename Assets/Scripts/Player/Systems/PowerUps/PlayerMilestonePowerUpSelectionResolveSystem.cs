@@ -1,5 +1,8 @@
 using System.Globalization;
+using Unity.Collections;
 using Unity.Entities;
+using Unity.Physics;
+using Unity.Transforms;
 using UnityEngine;
 
 /// <summary>
@@ -42,6 +45,8 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
         state.RequireForUpdate<PlayerPowerUpsState>();
         state.RequireForUpdate<EquippedPassiveToolElement>();
         state.RequireForUpdate<PlayerPassiveToolsState>();
+        state.RequireForUpdate<LocalTransform>();
+        state.RequireForUpdate<PhysicsWorldSingleton>();
     }
 
     /// <summary>
@@ -51,6 +56,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
+        PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
         ComponentLookup<PlayerPassiveToolsState> passiveToolsStateLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(false);
         ComponentLookup<PlayerMilestoneTimeScaleResumeState> milestoneTimeScaleResumeStateLookup = SystemAPI.GetComponentLookup<PlayerMilestoneTimeScaleResumeState>(false);
         ComponentLookup<PlayerProgressionConfig> progressionConfigLookup = SystemAPI.GetComponentLookup<PlayerProgressionConfig>(true);
@@ -60,7 +66,10 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
         ComponentLookup<PlayerShield> playerShieldLookup = SystemAPI.GetComponentLookup<PlayerShield>(false);
         ComponentLookup<PlayerPowerUpsConfig> powerUpsConfigLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsConfig>(false);
         ComponentLookup<PlayerPowerUpsState> powerUpsStateLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsState>(false);
+        ComponentLookup<LocalTransform> localTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
+        ComponentLookup<PlayerPowerUpContainerInteractionConfig> powerUpContainerConfigLookup = SystemAPI.GetComponentLookup<PlayerPowerUpContainerInteractionConfig>(true);
         BufferLookup<EquippedPassiveToolElement> equippedPassiveToolsLookup = SystemAPI.GetBufferLookup<EquippedPassiveToolElement>(false);
+        EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
         foreach ((DynamicBuffer<PlayerMilestonePowerUpSelectionCommand> selectionCommands,
                   DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers,
@@ -175,10 +184,15 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             bool wasAlreadyUnlocked = selectedCatalogEntry.IsUnlocked != 0;
             bool runtimeApplied = ApplySelectedUnlock(selectedOffer.UnlockKind,
                                                       in selectedCatalogEntry,
+                                                      in physicsWorldSingleton,
                                                       ref powerUpsConfigValue,
                                                       ref powerUpsStateValue,
                                                       equippedPassiveToolsBuffer,
                                                       ref passiveToolsState,
+                                                      entity,
+                                                      in localTransformLookup,
+                                                      in powerUpContainerConfigLookup,
+                                                      ref commandBuffer,
                                                       out string applyTarget);
 
             if (runtimeApplied)
@@ -206,6 +220,9 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
                                     runtimeApplied ? "Yes" : "No",
                                     applyTarget));
         }
+
+        commandBuffer.Playback(state.EntityManager);
+        commandBuffer.Dispose();
     }
     #endregion
 
@@ -279,18 +296,28 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// <returns>True when runtime state changed; otherwise false.</returns>
     private static bool ApplySelectedUnlock(PlayerPowerUpUnlockKind unlockKind,
                                             in PlayerPowerUpUnlockCatalogElement selectedCatalogEntry,
+                                            in PhysicsWorldSingleton physicsWorldSingleton,
                                             ref PlayerPowerUpsConfig powerUpsConfig,
                                             ref PlayerPowerUpsState powerUpsState,
                                             DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools,
                                             ref PlayerPassiveToolsState passiveToolsState,
+                                            Entity playerEntity,
+                                            in ComponentLookup<LocalTransform> localTransformLookup,
+                                            in ComponentLookup<PlayerPowerUpContainerInteractionConfig> powerUpContainerConfigLookup,
+                                            ref EntityCommandBuffer commandBuffer,
                                             out string applyTarget)
     {
         switch (unlockKind)
         {
             case PlayerPowerUpUnlockKind.Active:
                 return TryEquipActiveUnlock(in selectedCatalogEntry.ActiveSlotConfig,
+                                            in physicsWorldSingleton,
                                             ref powerUpsConfig,
                                             ref powerUpsState,
+                                            playerEntity,
+                                            in localTransformLookup,
+                                            in powerUpContainerConfigLookup,
+                                            ref commandBuffer,
                                             out applyTarget);
             case PlayerPowerUpUnlockKind.Passive:
                 return TryEquipPassiveUnlock(in selectedCatalogEntry.PassiveToolConfig,
@@ -311,11 +338,20 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// <param name="activeSlotConfig">Unlocked active-slot config payload.</param>
     /// <param name="powerUpsConfig">Runtime active-slot config to mutate.</param>
     /// <param name="powerUpsState">Runtime active-slot state to reset.</param>
+    /// <param name="playerEntity">Player entity receiving the new active unlock.</param>
+    /// <param name="localTransformLookup">Read-only player transform lookup used to position dropped containers.</param>
+    /// <param name="powerUpContainerConfigLookup">Read-only lookup of player-side dropped-container settings.</param>
+    /// <param name="commandBuffer">ECB used to spawn dropped containers when one active is replaced.</param>
     /// <param name="applyTarget">Debug label of the slot where the unlock was applied.</param>
     /// <returns>True when the active slot was applied; otherwise false.</returns>
     private static bool TryEquipActiveUnlock(in PlayerPowerUpSlotConfig activeSlotConfig,
+                                             in PhysicsWorldSingleton physicsWorldSingleton,
                                              ref PlayerPowerUpsConfig powerUpsConfig,
                                              ref PlayerPowerUpsState powerUpsState,
+                                             Entity playerEntity,
+                                             in ComponentLookup<LocalTransform> localTransformLookup,
+                                             in ComponentLookup<PlayerPowerUpContainerInteractionConfig> powerUpContainerConfigLookup,
+                                             ref EntityCommandBuffer commandBuffer,
                                              out string applyTarget)
     {
         applyTarget = "ActiveSlot";
@@ -326,17 +362,49 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             return false;
         }
 
+        PlayerPowerUpContainerStoredStateMode storedStateMode = PlayerPowerUpContainerStoredStateMode.PreserveEnergyAndCooldown;
+
+        if (powerUpContainerConfigLookup.HasComponent(playerEntity))
+            storedStateMode = powerUpContainerConfigLookup[playerEntity].StoredStateMode;
+
         if (!PlayerPowerUpLoadoutRuntimeUtility.TryEquipIntoOldestSlot(in activeSlotConfig,
+                                                                       storedStateMode,
                                                                        ref powerUpsConfig,
                                                                        ref powerUpsState,
-                                                                       out int targetSlotIndex))
+                                                                       out int targetSlotIndex,
+                                                                       out PlayerStoredActivePowerUpData replacedPowerUp))
         {
             applyTarget = "NoReplaceableSlot";
             return false;
         }
 
-        applyTarget = targetSlotIndex == 0 ? "PrimaryOldestReplaced" : "SecondaryOldestReplaced";
-        return true;
+        bool spawnedDroppedContainer = false;
+
+        if (replacedPowerUp.SlotConfig.IsDefined != 0 &&
+            powerUpContainerConfigLookup.HasComponent(playerEntity) &&
+            localTransformLookup.HasComponent(playerEntity))
+        {
+            PlayerPowerUpContainerInteractionConfig interactionConfig = powerUpContainerConfigLookup[playerEntity];
+            LocalTransform playerTransform = localTransformLookup[playerEntity];
+            spawnedDroppedContainer = PlayerPowerUpContainerSpawnUtility.TrySpawnDroppedContainer(in physicsWorldSingleton,
+                                                                                                  in playerTransform,
+                                                                                                  in interactionConfig,
+                                                                                                  in replacedPowerUp,
+                                                                                                  ref commandBuffer);
+        }
+
+        switch (targetSlotIndex)
+        {
+            case 0:
+                applyTarget = spawnedDroppedContainer ? "PrimaryOldestReplacedAndDropped" : "PrimaryOldestReplaced";
+                return true;
+            case 1:
+                applyTarget = spawnedDroppedContainer ? "SecondaryOldestReplacedAndDropped" : "SecondaryOldestReplaced";
+                return true;
+            default:
+                applyTarget = "UnknownTargetSlot";
+                return false;
+        }
     }
     #endregion
 

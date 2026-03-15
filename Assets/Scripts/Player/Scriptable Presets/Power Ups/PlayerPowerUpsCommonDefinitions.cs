@@ -18,6 +18,10 @@ public sealed class PowerUpCommonData
     [Tooltip("Description shown in tooltips and codex entries(WIP).")]
     [SerializeField] private string description;
 
+    [Header("Presentation")]
+    [Tooltip("Optional sprite icon shown in milestone offers, prompts, and dropped power-up containers.")]
+    [SerializeField] private Sprite icon;
+
     [Header("Drop")]
     [Tooltip("Drop pools where this power up can appear(WIP).")]
     [SerializeField] private List<string> dropPools = new List<string>();
@@ -56,6 +60,14 @@ public sealed class PowerUpCommonData
         }
     }
 
+    public Sprite Icon
+    {
+        get
+        {
+            return icon;
+        }
+    }
+
     public IReadOnlyList<string> DropPools
     {
         get
@@ -87,6 +99,7 @@ public sealed class PowerUpCommonData
     public void Configure(string powerUpIdValue,
                           string displayNameValue,
                           string descriptionValue,
+                          Sprite iconValue,
                           List<string> dropPoolsValue,
                           int dropTierValue,
                           int purchaseCostValue)
@@ -94,6 +107,7 @@ public sealed class PowerUpCommonData
         powerUpId = powerUpIdValue;
         displayName = displayNameValue;
         description = descriptionValue;
+        icon = iconValue;
         dropPools = dropPoolsValue;
         dropTier = dropTierValue;
         purchaseCost = purchaseCostValue;

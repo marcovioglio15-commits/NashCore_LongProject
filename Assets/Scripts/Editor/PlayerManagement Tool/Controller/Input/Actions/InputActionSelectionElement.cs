@@ -186,9 +186,12 @@ public sealed class InputActionSelectionElement : VisualElement
                 m_ControlTypeFilter = "Button";
                 break;
             case SelectionMode.PowerUps:
+            case SelectionMode.PowerUpContainers:
                 m_ActionTypeFilter = ActionTypeFilter.Button;
                 m_ControlTypeFilter = "Button";
-                defaultActionNameFilter = "PowerUp";
+                defaultActionNameFilter = m_Mode == SelectionMode.PowerUps
+                    ? "PowerUp"
+                    : "Container";
                 break;
             default:
                 m_ActionTypeFilter = ActionTypeFilter.Any;
@@ -607,7 +610,8 @@ public sealed class InputActionSelectionElement : VisualElement
         Look = 1,
         Shooting = 2,
         PowerUps = 3,
-        Generic = 4
+        Generic = 4,
+        PowerUpContainers = 5
     }
 
     private enum ActionTypeFilter

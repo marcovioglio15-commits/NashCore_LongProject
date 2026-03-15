@@ -1,4 +1,5 @@
 using Unity.Entities;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,3 +11,6 @@ using UnityEngine.UI;
 [assembly: RegisterUnityEngineComponentType(typeof(CanvasScaler))]
 [assembly: RegisterUnityEngineComponentType(typeof(Image))]
 [assembly: RegisterUnityEngineComponentType(typeof(CanvasRenderer))]
+[assembly: RegisterUnityEngineComponentType(typeof(CanvasGroup))]
+[assembly: RegisterUnityEngineComponentType(typeof(TextMeshProUGUI))]
+[assembly: RegisterUnityEngineComponentType(typeof(PlayerDroppedPowerUpContainerView))]

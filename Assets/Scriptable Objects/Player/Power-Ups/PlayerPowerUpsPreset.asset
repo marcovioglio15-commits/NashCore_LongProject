@@ -39,7 +39,7 @@ MonoBehaviour:
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   primaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
   secondaryToolActionId: 348a94c1-2df4-48f8-82f6-83416ff0bd17
-  swapSlotsActionId: da9ea2b8-5858-4bd5-acf2-8f75db2e0d13
+  swapSlotsActionId: df2a1e84-80c0-4602-a9b3-056d2c296f4c
   dropPools:
   - poolId: Milestone
     tierRolls:
@@ -2860,6 +2860,7 @@ MonoBehaviour:
       powerUpId: ActiveShotgun
       displayName: Shotgun
       description: Fires a cone spread of projectiles.
+      icon: {fileID: 21300000, guid: a7690da87adf5cf41a658e2a35bcfe59, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -3472,6 +3473,7 @@ MonoBehaviour:
       powerUpId: ActiveChargeShot
       displayName: Charge Shot
       description: Builds and releases a charged empowered shot.
+      icon: {fileID: 21300000, guid: bd1a9df158626b746933d61fd6845978, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -4234,6 +4236,7 @@ MonoBehaviour:
       powerUpId: ActiveGigaBomb
       displayName: Giga Bomb
       description: Deploys a high-damage area bomb.
+      icon: {fileID: 21300000, guid: 59397376f02040a489e6bbe91154ba70, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -4696,6 +4699,7 @@ MonoBehaviour:
       powerUpId: ActiveBasicDash
       displayName: Basic Dash
       description: Quick reposition dash with optional i-frames.
+      icon: {fileID: 21300000, guid: d85ac5183a685094f8e9b517d3ac719c, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -5158,6 +5162,7 @@ MonoBehaviour:
       powerUpId: ActivePortableHealthPack
       displayName: Portable Health Pack
       description: Instant heal with an energy cost.
+      icon: {fileID: 21300000, guid: 0a1ad6fe770c83245bbca4b35e85af23, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -5620,6 +5625,7 @@ MonoBehaviour:
       powerUpId: ActiveBulletTime
       displayName: Bullet Time
       description: Slows enemies for a tactical time window.
+      icon: {fileID: 21300000, guid: 6590c898a53490d4e9d34c8f9b70bcec, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -6083,6 +6089,7 @@ MonoBehaviour:
       powerUpId: PassiveElementalTrail
       displayName: Elemental Trail
       description: Leaves an elemental trail that applies area stacks.
+      icon: {fileID: 21300000, guid: 59397376f02040a489e6bbe91154ba70, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -6395,6 +6402,7 @@ MonoBehaviour:
       powerUpId: PassiveEnemiesExplodeOnDeath
       displayName: Enemies Explode On Death
       description: Killed enemies explode and damage nearby targets.
+      icon: {fileID: 21300000, guid: bd1a9df158626b746933d61fd6845978, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -6557,6 +6565,7 @@ MonoBehaviour:
       powerUpId: PassiveOrbitalProjectiles
       displayName: Orbital Projectiles
       description: Projectiles switch to an orbital movement pattern.
+      icon: {fileID: 21300000, guid: a7690da87adf5cf41a658e2a35bcfe59, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -6719,6 +6728,7 @@ MonoBehaviour:
       powerUpId: PassiveBouncingProjectiles
       displayName: Bouncing Projectiles
       description: Projectiles bounce on walls.
+      icon: {fileID: 21300000, guid: a7690da87adf5cf41a658e2a35bcfe59, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -6881,6 +6891,7 @@ MonoBehaviour:
       powerUpId: PassiveSplittingProjectiles
       displayName: Splitting Projectiles
       description: Projectiles split when they expire.
+      icon: {fileID: 21300000, guid: 6eed8978203147046a1a99d7aad979d8, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -7043,6 +7054,7 @@ MonoBehaviour:
       powerUpId: PassiveBigShots
       displayName: Big Shots
       description: 'THAT''S RIGHT!! NOW''S YOUR CHANCE TO BE A [[BIG SHOT]]'
+      icon: {fileID: 21300000, guid: 74030686af064b24290d328e5beec01c, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -7203,6 +7215,7 @@ MonoBehaviour:
       powerUpId: PassiveShotgun
       displayName: PassiveShotgun
       description: 
+      icon: {fileID: 0}
       dropPools:
       - Milestone
       - Shop
@@ -7363,6 +7376,7 @@ MonoBehaviour:
       powerUpId: Marco's Special
       displayName: Marco's Special
       description: Marco's Special
+      icon: {fileID: 21300000, guid: 283ddc3a73b4fc649a727c325fc6787e, type: 3}
       dropPools:
       - Milestone
       - Shop
@@ -7825,6 +7839,7 @@ MonoBehaviour:
       powerUpId: BIG SHOT
       displayName: 
       description: 
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -7919,6 +7934,7 @@ MonoBehaviour:
       powerUpId: Tiny Shots
       displayName: 
       description: 
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8013,6 +8029,7 @@ MonoBehaviour:
       powerUpId: Perfect Circle
       displayName: Perfect Circle
       description: Perfect Circle
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8107,6 +8124,7 @@ MonoBehaviour:
       powerUpId: Bouncing Projectiles
       displayName: Bouncing Projectiles
       description: Bouncing Projectiles
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8201,6 +8219,7 @@ MonoBehaviour:
       powerUpId: Splitting Projectiles
       displayName: Splitting Projectiles
       description: Splitting Projectiles
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8295,6 +8314,7 @@ MonoBehaviour:
       powerUpId: Fire Projectiles
       displayName: Fire Projectiles
       description: Fire Projectiles
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8389,6 +8409,7 @@ MonoBehaviour:
       powerUpId: Enemy Explosion
       displayName: Enemy Explosion
       description: Enemy Explosion
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8483,6 +8504,7 @@ MonoBehaviour:
       powerUpId: Elemental Trail
       displayName: Elemental Trail
       description: Elemental Trail
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8607,6 +8629,7 @@ MonoBehaviour:
       powerUpId: Dash
       displayName: Dash
       description: Dash
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8652,6 +8675,7 @@ MonoBehaviour:
       powerUpId: Bomb
       displayName: Bomb
       description: Bomb
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0
@@ -8697,6 +8721,7 @@ MonoBehaviour:
       powerUpId: Bullet Time
       displayName: Bullet Time
       description: Bullet Time
+      icon: {fileID: 0}
       dropPools: []
       dropTier: 1
       purchaseCost: 0

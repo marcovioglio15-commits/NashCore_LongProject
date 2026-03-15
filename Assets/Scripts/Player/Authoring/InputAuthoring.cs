@@ -31,6 +31,9 @@ public sealed class InputAuthoring : MonoBehaviour
     [Tooltip("Optional controller preset override used when neither a PlayerAuthoring source nor a master preset is available.")]
     [SerializeField] private PlayerControllerPreset controllerPresetOverride;
 
+    [Tooltip("Optional progression preset override used when neither a PlayerAuthoring source nor a master preset is available.")]
+    [SerializeField] private PlayerProgressionPreset progressionPresetOverride;
+
     [Tooltip("Optional power ups preset override used when no source/master preset provides power-up input bindings.")]
     [SerializeField] private PlayerPowerUpsPreset powerUpsPresetOverride;
 
@@ -67,6 +70,10 @@ public sealed class InputAuthoring : MonoBehaviour
         string primaryPowerUpActionId = string.Empty;
         string secondaryPowerUpActionId = string.Empty;
         string swapSlotsActionId = string.Empty;
+        string containerInteractActionId = string.Empty;
+        string containerReplacePrimaryActionId = string.Empty;
+        string containerReplaceSecondaryActionId = string.Empty;
+        PlayerProgressionPreset progressionPreset = ResolveProgressionPreset();
         PlayerPowerUpsPreset powerUpsPreset = ResolvePowerUpsPreset();
 
         if (controllerPreset != null)
@@ -81,6 +88,18 @@ public sealed class InputAuthoring : MonoBehaviour
             primaryPowerUpActionId = powerUpsPreset.PrimaryToolActionId;
             secondaryPowerUpActionId = powerUpsPreset.SecondaryToolActionId;
             swapSlotsActionId = powerUpsPreset.SwapSlotsActionId;
+            PlayerPowerUpPresentationRuntime.Initialize(powerUpsPreset);
+        }
+        else
+        {
+            PlayerPowerUpPresentationRuntime.Shutdown();
+        }
+
+        if (progressionPreset != null && progressionPreset.PowerUpContainerSettings != null)
+        {
+            containerInteractActionId = progressionPreset.PowerUpContainerSettings.InteractActionId;
+            containerReplacePrimaryActionId = progressionPreset.PowerUpContainerSettings.ReplacePrimaryActionId;
+            containerReplaceSecondaryActionId = progressionPreset.PowerUpContainerSettings.ReplaceSecondaryActionId;
         }
 
         PlayerInputRuntime.Initialize(inputActionsAsset,
@@ -89,7 +108,10 @@ public sealed class InputAuthoring : MonoBehaviour
                                       shootActionId,
                                       primaryPowerUpActionId,
                                       secondaryPowerUpActionId,
-                                      swapSlotsActionId);
+                                      swapSlotsActionId,
+                                      containerInteractActionId,
+                                      containerReplacePrimaryActionId,
+                                      containerReplaceSecondaryActionId);
         ApplyCursorPolicy();
 
         #if UNITY_EDITOR
@@ -100,6 +122,7 @@ public sealed class InputAuthoring : MonoBehaviour
     private void OnDisable()
     {
         PlayerInputRuntime.Shutdown();
+        PlayerPowerUpPresentationRuntime.Shutdown();
         SetCursorLock(isLocked : false);
     }
 
@@ -190,6 +213,48 @@ public sealed class InputAuthoring : MonoBehaviour
 
         if (powerUpsPresetOverride != null)
             return powerUpsPresetOverride;
+
+        return null;
+    }
+
+    private PlayerProgressionPreset ResolveProgressionPreset()
+    {
+        PlayerAuthoring authoringSource = playerAuthoringSource;
+
+        if (authoringSource != null)
+        {
+            PlayerProgressionPreset presetFromSource = authoringSource.GetProgressionPreset();
+
+            if (presetFromSource != null)
+                return presetFromSource;
+        }
+
+        PlayerAuthoring authoring = playerAuthoring;
+
+        if (authoring == null)
+            authoring = GetComponent<PlayerAuthoring>();
+
+        if (authoring != null)
+        {
+            playerAuthoring = authoring;
+            PlayerProgressionPreset presetFromAuthoring = authoring.GetProgressionPreset();
+
+            if (presetFromAuthoring != null)
+                return presetFromAuthoring;
+        }
+
+        PlayerMasterPreset masterPreset = masterPresetOverride;
+
+        if (masterPreset != null)
+        {
+            PlayerProgressionPreset presetFromMaster = masterPreset.ProgressionPreset;
+
+            if (presetFromMaster != null)
+                return presetFromMaster;
+        }
+
+        if (progressionPresetOverride != null)
+            return progressionPresetOverride;
 
         return null;
     }

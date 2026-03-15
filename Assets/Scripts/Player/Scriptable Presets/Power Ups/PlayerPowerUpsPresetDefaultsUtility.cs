@@ -417,6 +417,7 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
         commonData.Configure(powerUpId,
                              displayName,
                              descriptionValue,
+                             null,
                              BuildDropPoolCopy(dropPools),
                              dropTier,
                              purchaseCost);

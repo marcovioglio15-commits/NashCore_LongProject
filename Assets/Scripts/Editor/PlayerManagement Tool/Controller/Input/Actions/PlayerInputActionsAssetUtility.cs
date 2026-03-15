@@ -1,10 +1,11 @@
 using System;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, and cheat preset bindings) are present in the asset, and if not, it creates them with default bindings. 
+/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, and cheat preset bindings) are present in the asset, and if not, it creates them with default bindings. 
 /// The utility also handles asset creation and folder management within the Unity Editor.
 /// </summary>
 public static class PlayerInputActionsAssetUtility
@@ -33,7 +34,7 @@ public static class PlayerInputActionsAssetUtility
         InputActionAsset createdAsset = CreateDefaultAsset();
         EnsureFolder(DefaultInputFolder);
         AssetDatabase.CreateAsset(createdAsset, DefaultInputAssetPath);
-        AssetDatabase.SaveAssets();
+        PersistAssetChanges(createdAsset);
 
         return createdAsset;
     }
@@ -42,7 +43,7 @@ public static class PlayerInputActionsAssetUtility
     #region Private Methods
     /// <summary>
     /// This method checks the provided input action asset for the presence of required actions 
-    /// (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, CheatPresetDigit, CheatModifierControl, CheatModifierShift) within a "Player" action map. If any of the required actions are missing, 
+    /// (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, CheatPresetDigit, CheatModifierControl, CheatModifierShift) within a "Player" action map. If any of the required actions are missing, 
     /// it creates them with default configurations and bindings. If any changes are made to the asset, 
     /// it marks it as dirty and saves the changes to ensure they persist in the Unity Editor.
     /// </summary>
@@ -68,15 +69,15 @@ public static class PlayerInputActionsAssetUtility
         changed |= EnsureAction(map, "PowerUpPrimary", InputActionType.Button, "Button", AddDefaultPowerUpPrimaryBindings);
         changed |= EnsureAction(map, "PowerUpSecondary", InputActionType.Button, "Button", AddDefaultPowerUpSecondaryBindings);
         changed |= EnsureAction(map, "PowerUpSwapSlots", InputActionType.Button, "Button", AddDefaultPowerUpSwapSlotsBindings);
+        changed |= EnsureAction(map, "PowerUpContainerInteract", InputActionType.Button, "Button", AddDefaultPowerUpContainerInteractBindings);
+        changed |= EnsureAction(map, "PowerUpContainerReplacePrimary", InputActionType.Button, "Button", AddDefaultPowerUpContainerReplacePrimaryBindings);
+        changed |= EnsureAction(map, "PowerUpContainerReplaceSecondary", InputActionType.Button, "Button", AddDefaultPowerUpContainerReplaceSecondaryBindings);
         changed |= EnsureAction(map, "CheatPresetDigit", InputActionType.Button, "Button", AddDefaultCheatPresetDigitBindings);
         changed |= EnsureAction(map, "CheatModifierControl", InputActionType.Button, "Button", AddDefaultCheatModifierControlBindings);
         changed |= EnsureAction(map, "CheatModifierShift", InputActionType.Button, "Button", AddDefaultCheatModifierShiftBindings);
 
         if (changed)
-        {
-            EditorUtility.SetDirty(asset);
-            AssetDatabase.SaveAssets();
-        }
+            PersistAssetChanges(asset);
     }
 
     /// <summary>
@@ -198,8 +199,47 @@ public static class PlayerInputActionsAssetUtility
         if (action == null)
             return;
 
-        action.AddBinding("<Keyboard>/tab");
-        action.AddBinding("<Gamepad>/leftStickPress");
+        action.AddBinding("<Keyboard>/tab").WithGroup("Keyboard&Mouse");
+        action.AddBinding("<Gamepad>/leftStickPress").WithGroup("Gamepad");
+    }
+
+    /// <summary>
+    /// Adds default bindings for the dropped power-up container overlay interaction.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultPowerUpContainerInteractBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Keyboard>/f").WithGroup("Keyboard&Mouse");
+        action.AddBinding("<Gamepad>/buttonSouth").WithGroup("Gamepad");
+    }
+
+    /// <summary>
+    /// Adds default bindings for direct replacement of the primary active slot from a dropped power-up container.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultPowerUpContainerReplacePrimaryBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Keyboard>/1").WithGroup("Keyboard&Mouse");
+        action.AddBinding("<Gamepad>/dpad/left").WithGroup("Gamepad");
+    }
+
+    /// <summary>
+    /// Adds default bindings for direct replacement of the secondary active slot from a dropped power-up container.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultPowerUpContainerReplaceSecondaryBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Keyboard>/2").WithGroup("Keyboard&Mouse");
+        action.AddBinding("<Gamepad>/dpad/right").WithGroup("Gamepad");
     }
 
     /// <summary>
@@ -264,7 +304,7 @@ public static class PlayerInputActionsAssetUtility
 
     /// <summary>
     /// This method creates a new input action asset with a "Player" action map containing 
-    /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, and cheat preset actions) and their default bindings.
+    /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, and cheat preset actions) and their default bindings.
     /// </summary>
     /// <returns> Returns the created InputActionAsset instance. </returns>
     private static InputActionAsset CreateDefaultAsset()
@@ -291,6 +331,15 @@ public static class PlayerInputActionsAssetUtility
 
         InputAction powerUpSwapSlots = map.AddAction("PowerUpSwapSlots", InputActionType.Button, null, null, null, null, "Button");
         AddDefaultPowerUpSwapSlotsBindings(powerUpSwapSlots);
+
+        InputAction powerUpContainerInteract = map.AddAction("PowerUpContainerInteract", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultPowerUpContainerInteractBindings(powerUpContainerInteract);
+
+        InputAction powerUpContainerReplacePrimary = map.AddAction("PowerUpContainerReplacePrimary", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultPowerUpContainerReplacePrimaryBindings(powerUpContainerReplacePrimary);
+
+        InputAction powerUpContainerReplaceSecondary = map.AddAction("PowerUpContainerReplaceSecondary", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultPowerUpContainerReplaceSecondaryBindings(powerUpContainerReplaceSecondary);
 
         InputAction cheatPresetDigit = map.AddAction("CheatPresetDigit", InputActionType.Button, null, null, null, null, "Button");
         AddDefaultCheatPresetDigitBindings(cheatPresetDigit);
@@ -328,6 +377,30 @@ public static class PlayerInputActionsAssetUtility
             EnsureFolder(parentFolder);
 
         AssetDatabase.CreateFolder(parentFolder, folderName);
+    }
+
+    /// <summary>
+    /// Persists InputActionAsset changes to disk, including JSON-backed .inputactions assets.
+    /// </summary>
+    /// <param name="asset"></param>
+    private static void PersistAssetChanges(InputActionAsset asset)
+    {
+        if (asset == null)
+            return;
+
+        string assetPath = AssetDatabase.GetAssetPath(asset);
+
+        if (!string.IsNullOrWhiteSpace(assetPath) &&
+            assetPath.EndsWith(".inputactions", StringComparison.OrdinalIgnoreCase))
+        {
+            File.WriteAllText(assetPath, asset.ToJson());
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.SaveAssets();
+            return;
+        }
+
+        EditorUtility.SetDirty(asset);
+        AssetDatabase.SaveAssets();
     }
     #endregion
 }

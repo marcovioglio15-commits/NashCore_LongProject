@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -247,6 +248,7 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
         return new PlayerPowerUpSlotConfig
         {
             IsDefined = 1,
+            PowerUpId = ResolvePowerUpId(powerUp),
             ToolKind = resolvedToolKind,
             ActivationResource = activationResource,
             MaintenanceResource = maintenanceResource,
@@ -337,6 +339,19 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                 StackPolicy = healthPackStackPolicy
             }
         };
+    }
+
+    /// <summary>
+    /// Resolves the stable power-up identifier embedded in one modular active definition.
+    /// /params powerUp: Modular active power-up definition being compiled.
+    /// /returns Stable power-up identifier or an empty fixed string when unavailable.
+    /// </summary>
+    private static FixedString64Bytes ResolvePowerUpId(ModularPowerUpDefinition powerUp)
+    {
+        if (powerUp == null || powerUp.CommonData == null || string.IsNullOrWhiteSpace(powerUp.CommonData.PowerUpId))
+            return default;
+
+        return new FixedString64Bytes(powerUp.CommonData.PowerUpId.Trim());
     }
     #endregion
 
