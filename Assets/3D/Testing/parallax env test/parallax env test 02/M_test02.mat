@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_test02
-  m_Shader: {fileID: 4800000, guid: 58c4f4976ddd4f18afde353091541bd1, type: 3}
+  m_Shader: {fileID: 4800000, guid: 130cf600495b4c3ca97931ef41f76ba9, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -93,7 +93,8 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BlurBlend: 0
-    - _BlurRadius: 3.16
+    - _BlurRadius: 1.73
+    - _BlurStrength: 0.639
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
@@ -102,6 +103,13 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
+    - _DistanceBlendEnd: 30
+    - _DistanceBlendStart: 8
+    - _DistanceBlurBoost: 0.391
+    - _DistanceBlurScale: 1.51
+    - _DistanceContrast: 1.018
+    - _DistanceSaturation: 0.72
+    - _DistanceTintStrength: 0.2
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
@@ -130,6 +138,7 @@ Material:
     - _AmbientColor: {r: 0.5698112, g: 0.14084013, b: 0.14084013, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _DistanceTintColor: {r: 0.82, g: 0.9, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
