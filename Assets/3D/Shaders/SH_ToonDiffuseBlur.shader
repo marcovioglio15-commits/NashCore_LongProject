@@ -1,11 +1,8 @@
-// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
 Shader "Cel Shader/Toon Diffuse Blur"
 {
     Properties
     {
-        // Added 16/03/2026: Headers and tooltips make the copied shader easier to study in the inspector
-        // without relying on external notes while tuning blur-heavy background materials.
+        // Added 16/03/2026
         [Header(Main Maps)]
         
         [MainTexture]
@@ -38,7 +35,6 @@ Shader "Cel Shader/Toon Diffuse Blur"
         _ShadowRangeMax("Shadow Range Max", Range(-2,2)) = -0.4
 
         // Added 16/03/2026: These controls introduce a texture-space blur instead of a full-screen post-process
-        // so distant cards, props and parallax layers can detach from gameplay-critical foreground elements.
         [Header(Texture Blur)]
         
         _BlurRadius("Blur Radius", Range(0,4)) = 1
@@ -140,8 +136,7 @@ Shader "Cel Shader/Toon Diffuse Blur"
             float _DistanceSaturation; // Added 16/03/2026
             float _DistanceContrast; // Added 16/03/2026
 
-            // Added 16/03/2026: These helper blocks are intentionally duplicated in both blur shaders
-            // because keeping all blur math local to the file is easier to study than jumping through includes.
+            // Added 16/03/2026
             struct BlurAccumulator
             {
                 float3 colorSum;
@@ -294,8 +289,7 @@ Shader "Cel Shader/Toon Diffuse Blur"
                 return float4(finalColor, stylizedSample.a);
             }
 
-            // Added 16/03/2026: Normal decoding is isolated so the fragment path stays compact and
-            // the same tangent-space reconstruction can stay visibly near the blur logic in this file.
+            // Added 16/03/2026: Normal decoding is isolated so the fragment path stays compact 
             float3 ResolveToonNormal(float2 uv)
             {
                 float4 normalSample = tex2D(_NormalMap, uv);

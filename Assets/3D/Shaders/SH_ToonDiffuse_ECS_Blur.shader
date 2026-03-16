@@ -2,8 +2,7 @@ Shader "Cel Shader/Toon Diffuse ECS Blur"
 {
     Properties
     {
-        // Added 16/03/2026: Headers and tooltips expose the copied shader as a teaching asset
-        // so the new blur and separation controls are self-documenting inside the material inspector.
+        // Added 16/03/2026
         [Header(Main Maps)]
         [MainTexture]
         _MainTex("Texture", 2D) = "white" {}
