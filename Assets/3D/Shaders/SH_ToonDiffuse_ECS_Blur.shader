@@ -36,10 +36,16 @@ Shader "Cel Shader/Toon Diffuse ECS Blur"
         // the same shader while using different material presets without extra runtime branching.
         [Header(Texture Blur)]
         
-        _BlurRadius("Blur Radius", Range(0,4)) = 1
+        _BlurRadius("Blur Radius", Range(0,16)) = 1
 
         
         _BlurStrength("Blur Strength", Range(0,1)) = 0.35
+
+        
+        _BlurAtlasColumns("Blur Atlas Columns", Range(1,16)) = 1
+
+        
+        _BlurAtlasRows("Blur Atlas Rows", Range(1,16)) = 1
 
         // Added 16/03/2026: Distance separation makes the ECS version visually match the classic shader
         // while still working with DOTS deformation buffers and SRP batcher constraints.
@@ -118,6 +124,8 @@ Shader "Cel Shader/Toon Diffuse ECS Blur"
                 float _ShadowRangeMax;
                 float _BlurRadius; // Added 16/03/2026
                 float _BlurStrength; // Added 16/03/2026
+                float _BlurAtlasColumns; // Added 17/03/2026
+                float _BlurAtlasRows; // Added 17/03/2026
                 float _DistanceBlendStart; // Added 16/03/2026
                 float _DistanceBlendEnd; // Added 16/03/2026
                 float _DistanceBlurBoost; // Added 16/03/2026
@@ -160,9 +168,66 @@ Shader "Cel Shader/Toon Diffuse ECS Blur"
                 return normalize(normalTS);
             }
 
-            void AccumulateBlurSample(float2 uv, float kernelWeight, inout BlurAccumulator accumulator) // Added 16/03/2026
+            float2 GetBlurAtlasCellSize() // Added 17/03/2026
             {
-                float4 sampleColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
+                float2 atlasGrid = max(round(float2(_BlurAtlasColumns, _BlurAtlasRows)), 1.0.xx);
+                return 1.0 / atlasGrid;
+            }
+
+            void GetBlurUvClampBounds(
+                float2 uv,
+                float2 texelSize,
+                out float2 clampMin,
+                out float2 clampMax) // Added 17/03/2026
+            {
+                float2 atlasGrid = max(round(float2(_BlurAtlasColumns, _BlurAtlasRows)), 1.0.xx);
+                float2 atlasCellSize = 1.0 / atlasGrid;
+                float2 atlasCellIndex = min(floor(saturate(uv) / atlasCellSize), atlasGrid - 1.0.xx);
+                float2 atlasCellMin = atlasCellIndex * atlasCellSize;
+                float2 atlasCellMax = min(atlasCellMin + atlasCellSize, 1.0.xx);
+                float2 halfTexel = texelSize * 0.5;
+
+                clampMin = atlasCellMin + halfTexel;
+                clampMax = max(clampMin, atlasCellMax - halfTexel);
+            }
+
+            float4 SampleMainTextureForBlur(
+                float2 uv,
+                float2 texelSize,
+                float2 clampMin,
+                float2 clampMax) // Added 17/03/2026
+            {
+                float2 safeTexelSize = max(texelSize, float2(0.0001, 0.0001));
+                float2 textureSize = 1.0 / safeTexelSize;
+                float2 texelSpace = uv * textureSize - 0.5;
+                float2 texelFloor = floor(texelSpace);
+                float2 texelFraction = saturate(texelSpace - texelFloor);
+
+                float2 uv00 = clamp((texelFloor + 0.5) * safeTexelSize, clampMin, clampMax);
+                float2 uv10 = clamp(uv00 + float2(safeTexelSize.x, 0.0), clampMin, clampMax);
+                float2 uv01 = clamp(uv00 + float2(0.0, safeTexelSize.y), clampMin, clampMax);
+                float2 uv11 = clamp(uv00 + safeTexelSize, clampMin, clampMax);
+
+                float4 sample00 = SAMPLE_TEXTURE2D_LOD(_MainTex, sampler_MainTex, uv00, 0);
+                float4 sample10 = SAMPLE_TEXTURE2D_LOD(_MainTex, sampler_MainTex, uv10, 0);
+                float4 sample01 = SAMPLE_TEXTURE2D_LOD(_MainTex, sampler_MainTex, uv01, 0);
+                float4 sample11 = SAMPLE_TEXTURE2D_LOD(_MainTex, sampler_MainTex, uv11, 0);
+
+                return lerp(
+                    lerp(sample00, sample10, texelFraction.x),
+                    lerp(sample01, sample11, texelFraction.x),
+                    texelFraction.y);
+            }
+
+            void AccumulateBlurSample(
+                float2 uv,
+                float2 texelSize,
+                float2 clampMin,
+                float2 clampMax,
+                float kernelWeight,
+                inout BlurAccumulator accumulator) // Added 16/03/2026
+            {
+                float4 sampleColor = SampleMainTextureForBlur(uv, texelSize, clampMin, clampMax);
                 float colorWeight = kernelWeight * max(sampleColor.a, 0.0001);
                 accumulator.colorSum += sampleColor.rgb * colorWeight;
                 accumulator.alphaSum += sampleColor.a * kernelWeight;
@@ -170,20 +235,79 @@ Shader "Cel Shader/Toon Diffuse ECS Blur"
                 accumulator.kernelWeightSum += kernelWeight;
             }
 
+            float GetBlurRingWeight(float normalizedDistance) // Added 17/03/2026
+            {
+                float falloff = exp2(-1.5 * normalizedDistance * normalizedDistance);
+                return max(falloff * 1.7, 0.15);
+            }
+
+            void AccumulateBlurRing(
+                float2 uv,
+                float2 texelSize,
+                float2 clampMin,
+                float2 clampMax,
+                float ringRadius,
+                float kernelWeight,
+                inout BlurAccumulator accumulator) // Added 17/03/2026
+            {
+                float2 axisOffsetX = float2(texelSize.x * ringRadius, 0.0);
+                float2 axisOffsetY = float2(0.0, texelSize.y * ringRadius);
+                float2 diagonalOffset = texelSize * (ringRadius * 0.70710678);
+
+                AccumulateBlurSample(uv + axisOffsetX, texelSize, clampMin, clampMax, kernelWeight, accumulator);
+                AccumulateBlurSample(uv - axisOffsetX, texelSize, clampMin, clampMax, kernelWeight, accumulator);
+                AccumulateBlurSample(uv + axisOffsetY, texelSize, clampMin, clampMax, kernelWeight, accumulator);
+                AccumulateBlurSample(uv - axisOffsetY, texelSize, clampMin, clampMax, kernelWeight, accumulator);
+                AccumulateBlurSample(uv + diagonalOffset, texelSize, clampMin, clampMax, kernelWeight, accumulator);
+                AccumulateBlurSample(uv - diagonalOffset, texelSize, clampMin, clampMax, kernelWeight, accumulator);
+                AccumulateBlurSample(uv + float2(diagonalOffset.x, -diagonalOffset.y), texelSize, clampMin, clampMax, kernelWeight, accumulator);
+                AccumulateBlurSample(uv + float2(-diagonalOffset.x, diagonalOffset.y), texelSize, clampMin, clampMax, kernelWeight, accumulator);
+            }
+
             float4 SampleBlurredMainTexture(float2 uv, float2 texelSize, float blurRadius) // Added 16/03/2026
             {
-                float2 offset = texelSize * blurRadius;
-                BlurAccumulator accumulator = (BlurAccumulator)0;
+                float clampedBlurRadius = min(max(blurRadius, 0.0), 16.0);
 
-                AccumulateBlurSample(uv, 4.0, accumulator);
-                AccumulateBlurSample(uv + float2(offset.x, 0.0), 2.0, accumulator);
-                AccumulateBlurSample(uv - float2(offset.x, 0.0), 2.0, accumulator);
-                AccumulateBlurSample(uv + float2(0.0, offset.y), 2.0, accumulator);
-                AccumulateBlurSample(uv - float2(0.0, offset.y), 2.0, accumulator);
-                AccumulateBlurSample(uv + offset, 1.0, accumulator);
-                AccumulateBlurSample(uv - offset, 1.0, accumulator);
-                AccumulateBlurSample(uv + float2(offset.x, -offset.y), 1.0, accumulator);
-                AccumulateBlurSample(uv + float2(-offset.x, offset.y), 1.0, accumulator);
+                if (clampedBlurRadius <= 0.0001)
+                {
+                    return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
+                }
+
+                float ringCount = min(6.0, max(1.0, ceil(clampedBlurRadius)));
+                float ringStep = clampedBlurRadius / ringCount;
+                BlurAccumulator accumulator = (BlurAccumulator)0;
+                float2 clampMin;
+                float2 clampMax;
+
+                GetBlurUvClampBounds(uv, texelSize, clampMin, clampMax);
+
+                AccumulateBlurSample(uv, texelSize, clampMin, clampMax, 4.0, accumulator);
+                AccumulateBlurRing(uv, texelSize, clampMin, clampMax, ringStep, GetBlurRingWeight(1.0 / ringCount), accumulator);
+
+                if (ringCount > 1.5)
+                {
+                    AccumulateBlurRing(uv, texelSize, clampMin, clampMax, ringStep * 2.0, GetBlurRingWeight(2.0 / ringCount), accumulator);
+                }
+
+                if (ringCount > 2.5)
+                {
+                    AccumulateBlurRing(uv, texelSize, clampMin, clampMax, ringStep * 3.0, GetBlurRingWeight(3.0 / ringCount), accumulator);
+                }
+
+                if (ringCount > 3.5)
+                {
+                    AccumulateBlurRing(uv, texelSize, clampMin, clampMax, ringStep * 4.0, GetBlurRingWeight(4.0 / ringCount), accumulator);
+                }
+
+                if (ringCount > 4.5)
+                {
+                    AccumulateBlurRing(uv, texelSize, clampMin, clampMax, ringStep * 5.0, GetBlurRingWeight(5.0 / ringCount), accumulator);
+                }
+
+                if (ringCount > 5.5)
+                {
+                    AccumulateBlurRing(uv, texelSize, clampMin, clampMax, ringStep * 6.0, GetBlurRingWeight(6.0 / ringCount), accumulator);
+                }
 
                 return float4(
                     accumulator.colorSum / max(accumulator.colorWeightSum, 0.0001),

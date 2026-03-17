@@ -92,9 +92,11 @@ Material:
     - _AmbientColorIntensity: 1.77
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
+    - _BlurAtlasColumns: 2
+    - _BlurAtlasRows: 2
     - _BlurBlend: 0
-    - _BlurRadius: 1.73
-    - _BlurStrength: 0.639
+    - _BlurRadius: 5.16
+    - _BlurStrength: 0.7
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
