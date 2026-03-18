@@ -100,23 +100,12 @@ public static class PlayerPassiveToolsAggregationUtility
         if (passiveToolConfig.HasPerfectCircle != 0)
         {
             passiveToolsState.HasPerfectCircle = 1;
-
-            if (passiveToolsState.PerfectCircle.OrbitRadiusMax <= 0f)
-            {
-                passiveToolsState.PerfectCircle = passiveToolConfig.PerfectCircle;
-            }
-            else
-            {
-                passiveToolsState.PerfectCircle.RadialEntrySpeed = math.max(passiveToolsState.PerfectCircle.RadialEntrySpeed, passiveToolConfig.PerfectCircle.RadialEntrySpeed);
-                passiveToolsState.PerfectCircle.OrbitalSpeed = math.max(passiveToolsState.PerfectCircle.OrbitalSpeed, passiveToolConfig.PerfectCircle.OrbitalSpeed);
-                passiveToolsState.PerfectCircle.OrbitRadiusMin = math.max(passiveToolsState.PerfectCircle.OrbitRadiusMin, passiveToolConfig.PerfectCircle.OrbitRadiusMin);
-                passiveToolsState.PerfectCircle.OrbitRadiusMax = math.max(passiveToolsState.PerfectCircle.OrbitRadiusMax, passiveToolConfig.PerfectCircle.OrbitRadiusMax);
-                passiveToolsState.PerfectCircle.OrbitPulseFrequency = math.max(passiveToolsState.PerfectCircle.OrbitPulseFrequency, passiveToolConfig.PerfectCircle.OrbitPulseFrequency);
-                passiveToolsState.PerfectCircle.OrbitEntryRatio = math.max(passiveToolsState.PerfectCircle.OrbitEntryRatio, passiveToolConfig.PerfectCircle.OrbitEntryRatio);
-                passiveToolsState.PerfectCircle.OrbitBlendDuration = math.max(passiveToolsState.PerfectCircle.OrbitBlendDuration, passiveToolConfig.PerfectCircle.OrbitBlendDuration);
-                passiveToolsState.PerfectCircle.HeightOffset = math.max(passiveToolsState.PerfectCircle.HeightOffset, passiveToolConfig.PerfectCircle.HeightOffset);
-                passiveToolsState.PerfectCircle.GoldenAngleDegrees = math.max(passiveToolsState.PerfectCircle.GoldenAngleDegrees, passiveToolConfig.PerfectCircle.GoldenAngleDegrees);
-            }
+            bool hasPerfectCircleConfig = passiveToolsState.PerfectCircle.PathMode == ProjectileOrbitPathMode.GoldenSpiral ||
+                                          passiveToolsState.PerfectCircle.OrbitRadiusMax > 0f ||
+                                          passiveToolsState.PerfectCircle.SpiralMaximumRadius > 0f;
+            PlayerPowerUpPassiveConfigBuildUtility.AccumulatePerfectCirclePassiveConfig(ref passiveToolsState.PerfectCircle,
+                                                                                        in passiveToolConfig.PerfectCircle,
+                                                                                        ref hasPerfectCircleConfig);
         }
 
         if (passiveToolConfig.HasBouncingProjectiles != 0)

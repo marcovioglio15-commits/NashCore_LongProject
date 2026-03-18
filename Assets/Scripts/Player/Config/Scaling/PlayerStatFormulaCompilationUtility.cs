@@ -5,7 +5,6 @@ using System.Globalization;
 /// <summary>
 /// Provides the parser and compiler steps that transform raw player stat formulas into executable RPN programs.
 /// /params none.
-/// /returns void.
 /// </summary>
 internal static class PlayerStatFormulaCompilationUtility
 {

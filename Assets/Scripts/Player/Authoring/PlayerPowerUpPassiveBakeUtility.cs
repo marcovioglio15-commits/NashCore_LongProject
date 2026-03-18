@@ -261,23 +261,9 @@ public static class PlayerPowerUpPassiveBakeUtility
                     break;
                 case PowerUpModuleKind.OrbitalProjectiles:
                     PerfectCirclePassiveConfig candidateOrbitConfig = PlayerPowerUpPassiveConfigBuildUtility.BuildPerfectCirclePassiveConfig(payload.ProjectileOrbitOverride);
-
-                    if (!hasOrbit)
-                    {
-                        hasOrbit = true;
-                        orbitConfig = candidateOrbitConfig;
-                        break;
-                    }
-
-                    orbitConfig.RadialEntrySpeed = math.max(orbitConfig.RadialEntrySpeed, candidateOrbitConfig.RadialEntrySpeed);
-                    orbitConfig.OrbitalSpeed = math.max(orbitConfig.OrbitalSpeed, candidateOrbitConfig.OrbitalSpeed);
-                    orbitConfig.OrbitRadiusMin = math.max(orbitConfig.OrbitRadiusMin, candidateOrbitConfig.OrbitRadiusMin);
-                    orbitConfig.OrbitRadiusMax = math.max(orbitConfig.OrbitRadiusMax, candidateOrbitConfig.OrbitRadiusMax);
-                    orbitConfig.OrbitPulseFrequency = math.max(orbitConfig.OrbitPulseFrequency, candidateOrbitConfig.OrbitPulseFrequency);
-                    orbitConfig.OrbitEntryRatio = math.max(orbitConfig.OrbitEntryRatio, candidateOrbitConfig.OrbitEntryRatio);
-                    orbitConfig.OrbitBlendDuration = math.max(orbitConfig.OrbitBlendDuration, candidateOrbitConfig.OrbitBlendDuration);
-                    orbitConfig.HeightOffset = math.max(orbitConfig.HeightOffset, candidateOrbitConfig.HeightOffset);
-                    orbitConfig.GoldenAngleDegrees = math.max(orbitConfig.GoldenAngleDegrees, candidateOrbitConfig.GoldenAngleDegrees);
+                    PlayerPowerUpPassiveConfigBuildUtility.AccumulatePerfectCirclePassiveConfig(ref orbitConfig,
+                                                                                                in candidateOrbitConfig,
+                                                                                                ref hasOrbit);
                     break;
                 case PowerUpModuleKind.BouncingProjectiles:
                     BouncingProjectilesPassiveConfig candidateBounceConfig = PlayerPowerUpPassiveConfigBuildUtility.BuildBouncingProjectilesPassiveConfig(payload.ProjectileBounceOnWalls);

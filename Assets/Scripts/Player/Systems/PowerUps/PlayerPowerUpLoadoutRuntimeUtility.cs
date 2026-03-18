@@ -38,8 +38,12 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
         powerUpsState.SecondaryCooldownRemaining = 0f;
         powerUpsState.PrimaryCharge = 0f;
         powerUpsState.SecondaryCharge = 0f;
+        powerUpsState.PrimaryMaintenanceTickTimer = 0f;
+        powerUpsState.SecondaryMaintenanceTickTimer = 0f;
         powerUpsState.PrimaryIsCharging = 0;
         powerUpsState.SecondaryIsCharging = 0;
+        powerUpsState.PrimaryIsActive = 0;
+        powerUpsState.SecondaryIsActive = 0;
         powerUpsState.IsShootingSuppressed = 0;
         powerUpsState.PreviousPrimaryPressed = 0;
         powerUpsState.PreviousSecondaryPressed = 0;
@@ -163,6 +167,10 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
         SwapValues(ref powerUpsConfig.PrimarySlot, ref powerUpsConfig.SecondarySlot);
         SwapValues(ref powerUpsState.PrimaryEnergy, ref powerUpsState.SecondaryEnergy);
         SwapValues(ref powerUpsState.PrimaryCooldownRemaining, ref powerUpsState.SecondaryCooldownRemaining);
+        SwapValues(ref powerUpsState.PrimaryCharge, ref powerUpsState.SecondaryCharge);
+        SwapValues(ref powerUpsState.PrimaryMaintenanceTickTimer, ref powerUpsState.SecondaryMaintenanceTickTimer);
+        SwapValues(ref powerUpsState.PrimaryIsCharging, ref powerUpsState.SecondaryIsCharging);
+        SwapValues(ref powerUpsState.PrimaryIsActive, ref powerUpsState.SecondaryIsActive);
         SwapValues(ref powerUpsState.PrimaryEquipOrder, ref powerUpsState.SecondaryEquipOrder);
     }
     #endregion
@@ -281,7 +289,9 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
                 powerUpsState.PrimaryEnergy = math.clamp(storedPowerUp.StoredEnergy, 0f, math.max(0f, storedPowerUp.SlotConfig.MaximumEnergy));
                 powerUpsState.PrimaryCooldownRemaining = math.clamp(storedPowerUp.StoredCooldownRemaining, 0f, math.max(0f, storedPowerUp.SlotConfig.CooldownSeconds));
                 powerUpsState.PrimaryCharge = 0f;
+                powerUpsState.PrimaryMaintenanceTickTimer = 0f;
                 powerUpsState.PrimaryIsCharging = 0;
+                powerUpsState.PrimaryIsActive = 0;
                 powerUpsState.PrimaryEquipOrder = ConsumeNextEquipOrder(ref powerUpsState);
                 return;
             case 1:
@@ -289,7 +299,9 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
                 powerUpsState.SecondaryEnergy = math.clamp(storedPowerUp.StoredEnergy, 0f, math.max(0f, storedPowerUp.SlotConfig.MaximumEnergy));
                 powerUpsState.SecondaryCooldownRemaining = math.clamp(storedPowerUp.StoredCooldownRemaining, 0f, math.max(0f, storedPowerUp.SlotConfig.CooldownSeconds));
                 powerUpsState.SecondaryCharge = 0f;
+                powerUpsState.SecondaryMaintenanceTickTimer = 0f;
                 powerUpsState.SecondaryIsCharging = 0;
+                powerUpsState.SecondaryIsActive = 0;
                 powerUpsState.SecondaryEquipOrder = ConsumeNextEquipOrder(ref powerUpsState);
                 return;
         }
@@ -305,7 +317,9 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
         powerUpsState.PrimaryEnergy = math.max(0f, slotConfig.MaximumEnergy);
         powerUpsState.PrimaryCooldownRemaining = 0f;
         powerUpsState.PrimaryCharge = 0f;
+        powerUpsState.PrimaryMaintenanceTickTimer = 0f;
         powerUpsState.PrimaryIsCharging = 0;
+        powerUpsState.PrimaryIsActive = 0;
     }
 
     /// <summary>
@@ -318,7 +332,9 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
         powerUpsState.SecondaryEnergy = math.max(0f, slotConfig.MaximumEnergy);
         powerUpsState.SecondaryCooldownRemaining = 0f;
         powerUpsState.SecondaryCharge = 0f;
+        powerUpsState.SecondaryMaintenanceTickTimer = 0f;
         powerUpsState.SecondaryIsCharging = 0;
+        powerUpsState.SecondaryIsActive = 0;
     }
 
     /// <summary>

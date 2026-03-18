@@ -96,7 +96,7 @@ Material:
     - _BlurAtlasRows: 2
     - _BlurBlend: 0
     - _BlurRadius: 5.16
-    - _BlurStrength: 0.7
+    - _BlurStrength: 0.437
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0

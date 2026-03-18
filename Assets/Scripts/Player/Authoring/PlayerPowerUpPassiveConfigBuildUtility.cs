@@ -134,6 +134,7 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
     {
         return new PerfectCirclePassiveConfig
         {
+            PathMode = perfectCircleData != null ? perfectCircleData.PathMode : ProjectileOrbitPathMode.Circle,
             RadialEntrySpeed = perfectCircleData != null ? math.max(0f, perfectCircleData.RadialEntrySpeed) : 0f,
             OrbitalSpeed = perfectCircleData != null ? math.max(0f, perfectCircleData.OrbitalSpeed) : 0f,
             OrbitRadiusMin = perfectCircleData != null ? math.max(0f, perfectCircleData.OrbitRadiusMin) : 0f,
@@ -142,8 +143,54 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
             OrbitEntryRatio = perfectCircleData != null ? math.clamp(perfectCircleData.OrbitEntryRatio, 0f, 1f) : 0f,
             OrbitBlendDuration = perfectCircleData != null ? math.max(0f, perfectCircleData.OrbitBlendDuration) : 0f,
             HeightOffset = perfectCircleData != null ? perfectCircleData.HeightOffset : 0f,
-            GoldenAngleDegrees = perfectCircleData != null ? math.max(0f, perfectCircleData.GoldenAngleDegrees) : 137.5f
+            GoldenAngleDegrees = perfectCircleData != null ? math.max(0f, perfectCircleData.GoldenAngleDegrees) : 137.5f,
+            SpiralStartRadius = perfectCircleData != null ? math.max(0f, perfectCircleData.SpiralStartRadius) : 0f,
+            SpiralMaximumRadius = perfectCircleData != null ? math.max(0f, perfectCircleData.SpiralMaximumRadius) : 0f,
+            SpiralAngularSpeedDegreesPerSecond = perfectCircleData != null ? math.max(0f, perfectCircleData.SpiralAngularSpeedDegreesPerSecond) : 0f,
+            SpiralGrowthMultiplier = perfectCircleData != null ? math.max(0f, perfectCircleData.SpiralGrowthMultiplier) : 1f,
+            SpiralTurnsBeforeDespawn = perfectCircleData != null ? math.max(0.1f, perfectCircleData.SpiralTurnsBeforeDespawn) : 1f,
+            SpiralClockwise = perfectCircleData != null && perfectCircleData.SpiralClockwise ? (byte)1 : (byte)0
         };
+    }
+
+    public static void AccumulatePerfectCirclePassiveConfig(ref PerfectCirclePassiveConfig targetConfig,
+                                                            in PerfectCirclePassiveConfig candidateConfig,
+                                                            ref bool hasTargetConfig)
+    {
+        if (!hasTargetConfig)
+        {
+            hasTargetConfig = true;
+            targetConfig = candidateConfig;
+            return;
+        }
+
+        if (candidateConfig.PathMode == ProjectileOrbitPathMode.GoldenSpiral)
+            targetConfig.PathMode = ProjectileOrbitPathMode.GoldenSpiral;
+
+        targetConfig.RadialEntrySpeed = math.max(targetConfig.RadialEntrySpeed, candidateConfig.RadialEntrySpeed);
+        targetConfig.HeightOffset = math.max(targetConfig.HeightOffset, candidateConfig.HeightOffset);
+        targetConfig.GoldenAngleDegrees = math.max(targetConfig.GoldenAngleDegrees, candidateConfig.GoldenAngleDegrees);
+
+        switch (targetConfig.PathMode)
+        {
+            case ProjectileOrbitPathMode.GoldenSpiral:
+                targetConfig.SpiralStartRadius = math.max(targetConfig.SpiralStartRadius, candidateConfig.SpiralStartRadius);
+                targetConfig.SpiralMaximumRadius = math.max(targetConfig.SpiralMaximumRadius, candidateConfig.SpiralMaximumRadius);
+                targetConfig.SpiralAngularSpeedDegreesPerSecond = math.max(targetConfig.SpiralAngularSpeedDegreesPerSecond,
+                                                                           candidateConfig.SpiralAngularSpeedDegreesPerSecond);
+                targetConfig.SpiralGrowthMultiplier = math.max(targetConfig.SpiralGrowthMultiplier, candidateConfig.SpiralGrowthMultiplier);
+                targetConfig.SpiralTurnsBeforeDespawn = math.max(targetConfig.SpiralTurnsBeforeDespawn, candidateConfig.SpiralTurnsBeforeDespawn);
+                targetConfig.SpiralClockwise = targetConfig.SpiralClockwise != 0 || candidateConfig.SpiralClockwise != 0 ? (byte)1 : (byte)0;
+                return;
+            default:
+                targetConfig.OrbitalSpeed = math.max(targetConfig.OrbitalSpeed, candidateConfig.OrbitalSpeed);
+                targetConfig.OrbitRadiusMin = math.max(targetConfig.OrbitRadiusMin, candidateConfig.OrbitRadiusMin);
+                targetConfig.OrbitRadiusMax = math.max(targetConfig.OrbitRadiusMax, candidateConfig.OrbitRadiusMax);
+                targetConfig.OrbitPulseFrequency = math.max(targetConfig.OrbitPulseFrequency, candidateConfig.OrbitPulseFrequency);
+                targetConfig.OrbitEntryRatio = math.max(targetConfig.OrbitEntryRatio, candidateConfig.OrbitEntryRatio);
+                targetConfig.OrbitBlendDuration = math.max(targetConfig.OrbitBlendDuration, candidateConfig.OrbitBlendDuration);
+                return;
+        }
     }
 
     public static BouncingProjectilesPassiveConfig BuildBouncingProjectilesPassiveConfig(BouncingProjectilesPassiveToolData bouncingProjectilesData)

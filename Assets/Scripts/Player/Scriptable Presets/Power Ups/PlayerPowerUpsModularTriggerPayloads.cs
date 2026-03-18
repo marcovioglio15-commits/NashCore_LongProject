@@ -16,6 +16,18 @@ public sealed class PowerUpHoldChargeModuleData
 
     [Tooltip("Charge gained per second while the trigger is held.")]
     [SerializeField] private float chargeRatePerSecond = 125f;
+
+    [Tooltip("When enabled, stored charge decays over time after the trigger is released instead of resetting immediately.")]
+    [SerializeField] private bool decayAfterRelease;
+
+    [Tooltip("Percentage of Maximum Charge lost per second after release while Decay After Release is enabled.")]
+    [SerializeField] private float decayAfterReleasePercentPerSecond = 25f;
+
+    [Tooltip("When enabled, charge can build over time even while the trigger is not pressed.")]
+    [SerializeField] private bool passiveChargeGainWhileReleased;
+
+    [Tooltip("Percentage of Maximum Charge gained per second while the trigger is not pressed when Passive Charge Gain While Released is enabled.")]
+    [SerializeField] private float passiveChargeGainPercentPerSecond = 10f;
     #endregion
 
     #endregion
@@ -44,6 +56,38 @@ public sealed class PowerUpHoldChargeModuleData
             return chargeRatePerSecond;
         }
     }
+
+    public bool DecayAfterRelease
+    {
+        get
+        {
+            return decayAfterRelease;
+        }
+    }
+
+    public float DecayAfterReleasePercentPerSecond
+    {
+        get
+        {
+            return decayAfterReleasePercentPerSecond;
+        }
+    }
+
+    public bool PassiveChargeGainWhileReleased
+    {
+        get
+        {
+            return passiveChargeGainWhileReleased;
+        }
+    }
+
+    public float PassiveChargeGainPercentPerSecond
+    {
+        get
+        {
+            return passiveChargeGainPercentPerSecond;
+        }
+    }
     #endregion
 
     #region Methods
@@ -51,9 +95,30 @@ public sealed class PowerUpHoldChargeModuleData
     #region Setup
     public void Configure(float requiredChargeValue, float maximumChargeValue, float chargeRatePerSecondValue)
     {
+        Configure(requiredChargeValue,
+                  maximumChargeValue,
+                  chargeRatePerSecondValue,
+                  false,
+                  25f,
+                  false,
+                  10f);
+    }
+
+    public void Configure(float requiredChargeValue,
+                          float maximumChargeValue,
+                          float chargeRatePerSecondValue,
+                          bool decayAfterReleaseValue,
+                          float decayAfterReleasePercentPerSecondValue,
+                          bool passiveChargeGainWhileReleasedValue,
+                          float passiveChargeGainPercentPerSecondValue)
+    {
         requiredCharge = requiredChargeValue;
         maximumCharge = maximumChargeValue;
         chargeRatePerSecond = chargeRatePerSecondValue;
+        decayAfterRelease = decayAfterReleaseValue;
+        decayAfterReleasePercentPerSecond = decayAfterReleasePercentPerSecondValue;
+        passiveChargeGainWhileReleased = passiveChargeGainWhileReleasedValue;
+        passiveChargeGainPercentPerSecond = passiveChargeGainPercentPerSecondValue;
     }
     #endregion
 
@@ -68,6 +133,12 @@ public sealed class PowerUpHoldChargeModuleData
 
         if (chargeRatePerSecond < 0f)
             chargeRatePerSecond = 0f;
+
+        if (decayAfterReleasePercentPerSecond < 0f)
+            decayAfterReleasePercentPerSecond = 0f;
+
+        if (passiveChargeGainPercentPerSecond < 0f)
+            passiveChargeGainPercentPerSecond = 0f;
     }
     #endregion
 
@@ -129,6 +200,12 @@ public sealed class PowerUpResourceGateModuleData
     [Tooltip("Maintenance cost consumed per second when toggled on.")]
     [SerializeField] private float maintenanceCostPerSecond;
 
+    [Tooltip("When enabled, this gate turns the power-up into a press-to-toggle active that keeps passive-compatible effects enabled while runtime maintenance is paid.")]
+    [SerializeField] private bool isToggleable;
+
+    [Tooltip("How many maintenance ticks are applied every second while the toggleable power-up remains active after the startup interval.")]
+    [SerializeField] private float maintenanceTicksPerSecond = 4f;
+
     [Tooltip("Minimum energy percentage required to activate. 0 disables this gate.")]
     [SerializeField] private float minimumActivationEnergyPercent;
 
@@ -140,6 +217,9 @@ public sealed class PowerUpResourceGateModuleData
 
     [Tooltip("Cooldown in seconds applied after a successful activation.")]
     [SerializeField] private float cooldownSeconds = 1f;
+
+    [Tooltip("When enabled, the toggleable power-up can recharge energy during the startup interval defined by Cooldown Seconds.")]
+    [SerializeField] private bool allowRechargeDuringToggleStartupLock;
     #endregion
 
     #endregion
@@ -185,6 +265,22 @@ public sealed class PowerUpResourceGateModuleData
         }
     }
 
+    public bool IsToggleable
+    {
+        get
+        {
+            return isToggleable;
+        }
+    }
+
+    public float MaintenanceTicksPerSecond
+    {
+        get
+        {
+            return maintenanceTicksPerSecond;
+        }
+    }
+
     public float MinimumActivationEnergyPercent
     {
         get
@@ -216,6 +312,14 @@ public sealed class PowerUpResourceGateModuleData
             return cooldownSeconds;
         }
     }
+
+    public bool AllowRechargeDuringToggleStartupLock
+    {
+        get
+        {
+            return allowRechargeDuringToggleStartupLock;
+        }
+    }
     #endregion
 
     #region Methods
@@ -238,7 +342,10 @@ public sealed class PowerUpResourceGateModuleData
                   minimumActivationEnergyPercentValue,
                   chargeTypeValue,
                   chargePerTriggerValue,
-                  0f);
+                  0f,
+                  false,
+                  4f,
+                  false);
     }
 
     public void Configure(PowerUpResourceType activationResourceValue,
@@ -251,15 +358,45 @@ public sealed class PowerUpResourceGateModuleData
                           float chargePerTriggerValue,
                           float cooldownSecondsValue)
     {
+        Configure(activationResourceValue,
+                  maintenanceResourceValue,
+                  maximumEnergyValue,
+                  activationCostValue,
+                  maintenanceCostPerSecondValue,
+                  minimumActivationEnergyPercentValue,
+                  chargeTypeValue,
+                  chargePerTriggerValue,
+                  cooldownSecondsValue,
+                  false,
+                  4f,
+                  false);
+    }
+
+    public void Configure(PowerUpResourceType activationResourceValue,
+                          PowerUpResourceType maintenanceResourceValue,
+                          float maximumEnergyValue,
+                          float activationCostValue,
+                          float maintenanceCostPerSecondValue,
+                          float minimumActivationEnergyPercentValue,
+                          PowerUpChargeType chargeTypeValue,
+                          float chargePerTriggerValue,
+                          float cooldownSecondsValue,
+                          bool isToggleableValue,
+                          float maintenanceTicksPerSecondValue,
+                          bool allowRechargeDuringToggleStartupLockValue)
+    {
         activationResource = activationResourceValue;
         maintenanceResource = maintenanceResourceValue;
         maximumEnergy = maximumEnergyValue;
         activationCost = activationCostValue;
         maintenanceCostPerSecond = maintenanceCostPerSecondValue;
+        isToggleable = isToggleableValue;
+        maintenanceTicksPerSecond = maintenanceTicksPerSecondValue;
         minimumActivationEnergyPercent = minimumActivationEnergyPercentValue;
         chargeType = chargeTypeValue;
         chargePerTrigger = chargePerTriggerValue;
         cooldownSeconds = cooldownSecondsValue;
+        allowRechargeDuringToggleStartupLock = allowRechargeDuringToggleStartupLockValue;
     }
     #endregion
 
@@ -275,6 +412,9 @@ public sealed class PowerUpResourceGateModuleData
         if (maintenanceCostPerSecond < 0f)
             maintenanceCostPerSecond = 0f;
 
+        if (maintenanceTicksPerSecond < 0f)
+            maintenanceTicksPerSecond = 0f;
+
         if (minimumActivationEnergyPercent < 0f)
             minimumActivationEnergyPercent = 0f;
 
@@ -289,6 +429,9 @@ public sealed class PowerUpResourceGateModuleData
 
         if (cooldownSeconds < 0f)
             cooldownSeconds = 0f;
+
+        if (isToggleable && maintenanceTicksPerSecond < 0.01f)
+            maintenanceTicksPerSecond = 0.01f;
     }
     #endregion
 

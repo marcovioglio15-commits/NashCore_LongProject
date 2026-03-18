@@ -381,6 +381,9 @@ public sealed class PerfectCirclePassiveToolData
 
     #region Serialized Fields
     [Header("Perfect Circle")]
+    [Tooltip("Path pattern followed after the projectile completes the radial entry phase.")]
+    [SerializeField] private ProjectileOrbitPathMode pathMode = ProjectileOrbitPathMode.Circle;
+
     [Tooltip("Entry speed while projectiles move away from the player before full orbit.")]
     [SerializeField] private float radialEntrySpeed = 12f;
 
@@ -407,6 +410,25 @@ public sealed class PerfectCirclePassiveToolData
 
     [Tooltip("Golden-angle step in degrees used to distribute orbit angles for consecutive spawns.")]
     [SerializeField] private float goldenAngleDegrees = 137.5f;
+
+    [Header("Golden Spiral")]
+    [Tooltip("Radius reached before the projectile transitions from radial entry into the golden spiral path.")]
+    [SerializeField] private float spiralStartRadius = 2.5f;
+
+    [Tooltip("Maximum radius allowed while the projectile follows the golden spiral path.")]
+    [SerializeField] private float spiralMaximumRadius = 8f;
+
+    [Tooltip("Angular speed in degrees per second while following the golden spiral path.")]
+    [SerializeField] private float spiralAngularSpeedDegreesPerSecond = 240f;
+
+    [Tooltip("Multiplier applied to the golden-spiral growth factor. 1 preserves the canonical golden spiral growth.")]
+    [SerializeField] private float spiralGrowthMultiplier = 1f;
+
+    [Tooltip("Number of spiral turns completed before the projectile despawns.")]
+    [SerializeField] private float spiralTurnsBeforeDespawn = 1.25f;
+
+    [Tooltip("When enabled, the golden spiral rotates clockwise instead of counter-clockwise.")]
+    [SerializeField] private bool spiralClockwise;
     #endregion
 
     #endregion
@@ -417,6 +439,14 @@ public sealed class PerfectCirclePassiveToolData
         get
         {
             return radialEntrySpeed;
+        }
+    }
+
+    public ProjectileOrbitPathMode PathMode
+    {
+        get
+        {
+            return pathMode;
         }
     }
 
@@ -483,6 +513,54 @@ public sealed class PerfectCirclePassiveToolData
             return goldenAngleDegrees;
         }
     }
+
+    public float SpiralStartRadius
+    {
+        get
+        {
+            return spiralStartRadius;
+        }
+    }
+
+    public float SpiralMaximumRadius
+    {
+        get
+        {
+            return spiralMaximumRadius;
+        }
+    }
+
+    public float SpiralAngularSpeedDegreesPerSecond
+    {
+        get
+        {
+            return spiralAngularSpeedDegreesPerSecond;
+        }
+    }
+
+    public float SpiralGrowthMultiplier
+    {
+        get
+        {
+            return spiralGrowthMultiplier;
+        }
+    }
+
+    public float SpiralTurnsBeforeDespawn
+    {
+        get
+        {
+            return spiralTurnsBeforeDespawn;
+        }
+    }
+
+    public bool SpiralClockwise
+    {
+        get
+        {
+            return spiralClockwise;
+        }
+    }
     #endregion
 
     #region Methods
@@ -515,6 +593,21 @@ public sealed class PerfectCirclePassiveToolData
 
         if (goldenAngleDegrees < 0f)
             goldenAngleDegrees = Mathf.Abs(goldenAngleDegrees);
+
+        if (spiralStartRadius < 0f)
+            spiralStartRadius = 0f;
+
+        if (spiralMaximumRadius < spiralStartRadius)
+            spiralMaximumRadius = spiralStartRadius;
+
+        if (spiralAngularSpeedDegreesPerSecond < 0f)
+            spiralAngularSpeedDegreesPerSecond = 0f;
+
+        if (spiralGrowthMultiplier < 0f)
+            spiralGrowthMultiplier = 0f;
+
+        if (spiralTurnsBeforeDespawn < 0.1f)
+            spiralTurnsBeforeDespawn = 0.1f;
     }
     #endregion
 

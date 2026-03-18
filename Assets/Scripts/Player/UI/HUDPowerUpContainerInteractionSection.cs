@@ -325,6 +325,7 @@ public sealed class HUDPowerUpContainerInteractionSection
         }
 
         UpdateOverlayContent(overlayContainerEntity);
+        HUDPowerUpContainerInteractionSelectionUtility.EnsureOverlaySelection(replacePrimaryButton, replaceSecondaryButton);
 
         if (milestoneSelectionActive)
             return;
@@ -367,6 +368,8 @@ public sealed class HUDPowerUpContainerInteractionSection
 
         if (replaceSecondaryButton != null)
             replaceSecondaryButton.interactable = true;
+
+        HUDPowerUpContainerInteractionSelectionUtility.SelectFirstOverlayButton(replacePrimaryButton, replaceSecondaryButton);
     }
 
     /// <summary>
@@ -429,6 +432,7 @@ public sealed class HUDPowerUpContainerInteractionSection
         overlayOpen = false;
         overlayContainerEntity = Entity.Null;
         overlayContainerView = null;
+        HUDPowerUpContainerInteractionSelectionUtility.ClearOverlaySelection(replacePrimaryButton, replaceSecondaryButton);
 
         if (overlayPanelRoot != null && overlayPanelRoot.activeSelf)
             overlayPanelRoot.SetActive(false);
@@ -454,6 +458,7 @@ public sealed class HUDPowerUpContainerInteractionSection
     {
         overlayOpen = false;
         overlayContainerEntity = Entity.Null;
+        HUDPowerUpContainerInteractionSelectionUtility.ClearOverlaySelection(replacePrimaryButton, replaceSecondaryButton);
 
         if (overlayContainerView != null)
             overlayContainerView.HidePrompts();
@@ -552,19 +557,12 @@ public sealed class HUDPowerUpContainerInteractionSection
         }
 
         PlayerPowerUpContainerInteractionConfig interactionConfig = entityManager.GetComponentData<PlayerPowerUpContainerInteractionConfig>(currentPlayerEntity);
-        resumeDurationSeconds = Mathf.Max(0f, interactionConfig.OverlayPanelTimeScaleResumeDurationSeconds);
-
-        if (resumeDurationSeconds <= 0f)
-        {
-            Time.timeScale = 1f;
-            StopTimeScaleResume();
-            return;
-        }
-
-        resumeStartTimeScale = Mathf.Clamp01(Time.timeScale);
-        resumeTargetTimeScale = 1f;
-        resumeElapsedSeconds = 0f;
-        isTimeScaleResuming = true;
+        HUDPowerUpContainerTimeScaleUtility.BeginResume(ref isTimeScaleResuming,
+                                                        ref resumeStartTimeScale,
+                                                        ref resumeTargetTimeScale,
+                                                        ref resumeDurationSeconds,
+                                                        ref resumeElapsedSeconds,
+                                                        interactionConfig.OverlayPanelTimeScaleResumeDurationSeconds);
     }
 
     /// <summary>
@@ -574,28 +572,12 @@ public sealed class HUDPowerUpContainerInteractionSection
     /// </summary>
     private void UpdateTimeScaleResume(bool milestoneSelectionActive)
     {
-        if (!isTimeScaleResuming)
-            return;
-
-        if (milestoneSelectionActive)
-            return;
-
-        if (resumeDurationSeconds <= 0f)
-        {
-            Time.timeScale = resumeTargetTimeScale;
-            StopTimeScaleResume();
-            return;
-        }
-
-        resumeElapsedSeconds += Time.unscaledDeltaTime;
-        float normalizedProgress = Mathf.Clamp01(resumeElapsedSeconds / resumeDurationSeconds);
-        Time.timeScale = Mathf.Lerp(resumeStartTimeScale, resumeTargetTimeScale, normalizedProgress);
-
-        if (normalizedProgress < 1f)
-            return;
-
-        Time.timeScale = resumeTargetTimeScale;
-        StopTimeScaleResume();
+        HUDPowerUpContainerTimeScaleUtility.UpdateResume(ref isTimeScaleResuming,
+                                                         ref resumeStartTimeScale,
+                                                         ref resumeTargetTimeScale,
+                                                         ref resumeDurationSeconds,
+                                                         ref resumeElapsedSeconds,
+                                                         milestoneSelectionActive);
     }
 
     /// <summary>
@@ -605,11 +587,11 @@ public sealed class HUDPowerUpContainerInteractionSection
     /// </summary>
     private void StopTimeScaleResume()
     {
-        isTimeScaleResuming = false;
-        resumeStartTimeScale = 0f;
-        resumeTargetTimeScale = 1f;
-        resumeDurationSeconds = 0f;
-        resumeElapsedSeconds = 0f;
+        HUDPowerUpContainerTimeScaleUtility.StopResume(ref isTimeScaleResuming,
+                                                       ref resumeStartTimeScale,
+                                                       ref resumeTargetTimeScale,
+                                                       ref resumeDurationSeconds,
+                                                       ref resumeElapsedSeconds);
     }
 
     /// <summary>
@@ -680,19 +662,6 @@ public sealed class HUDPowerUpContainerInteractionSection
         return PlayerDroppedPowerUpContainerViewRuntimeUtility.TryResolveRuntimeView(entityManager,
                                                                                      containerEntity,
                                                                                      out containerView);
-    }
-
-    /// <summary>
-    /// Hides the world-space prompt on one dropped container when its companion view is available.
-    /// /params containerEntity: Dropped container whose prompt must be hidden.
-    /// /returns void.
-    /// </summary>
-    private void HidePromptForEntity(Entity containerEntity)
-    {
-        if (!TryResolveContainerView(containerEntity, out PlayerDroppedPowerUpContainerView containerView))
-            return;
-
-        containerView.HidePrompts();
     }
 
     /// <summary>

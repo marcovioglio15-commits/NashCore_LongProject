@@ -28,7 +28,8 @@ public enum ActiveToolKind
     Custom = 3,
     Shotgun = 4,
     ChargeShot = 5,
-    PortableHealthPack = 6
+    PortableHealthPack = 6,
+    PassiveToggle = 7
 }
 
 public enum PowerUpResourceType
@@ -59,6 +60,12 @@ public enum PassiveToolKind
     Explosion = 5,
     ElementalTrail = 6,
     Custom = 7
+}
+
+public enum ProjectileOrbitPathMode
+{
+    Circle = 0,
+    GoldenSpiral = 1
 }
 
 public enum ElementType

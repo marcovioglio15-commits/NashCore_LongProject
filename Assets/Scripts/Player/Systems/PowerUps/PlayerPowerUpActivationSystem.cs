@@ -111,8 +111,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             float secondaryCooldownRemaining = powerUpsState.ValueRO.SecondaryCooldownRemaining;
             float primaryCharge = powerUpsState.ValueRO.PrimaryCharge;
             float secondaryCharge = powerUpsState.ValueRO.SecondaryCharge;
+            float primaryMaintenanceTickTimer = powerUpsState.ValueRO.PrimaryMaintenanceTickTimer;
+            float secondaryMaintenanceTickTimer = powerUpsState.ValueRO.SecondaryMaintenanceTickTimer;
             byte primaryIsCharging = powerUpsState.ValueRO.PrimaryIsCharging;
             byte secondaryIsCharging = powerUpsState.ValueRO.SecondaryIsCharging;
+            byte primaryIsActive = powerUpsState.ValueRO.PrimaryIsActive;
+            byte secondaryIsActive = powerUpsState.ValueRO.SecondaryIsActive;
             byte isShootingSuppressed = 0;
             bool healthChanged = false;
             PlayerHealth updatedHealth = default;
@@ -136,8 +140,13 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 ref primaryCooldownRemaining,
                                                                 ref primaryCharge,
                                                                 ref primaryIsCharging,
+                                                                ref primaryIsActive,
+                                                                ref primaryMaintenanceTickTimer,
                                                                 ref secondaryCharge,
+                                                                ref secondaryCooldownRemaining,
                                                                 ref secondaryIsCharging,
+                                                                ref secondaryIsActive,
+                                                                ref secondaryMaintenanceTickTimer,
                                                                 ref isShootingSuppressed,
                                                                 ref dashState.ValueRW,
                                                                 ref bulletTimeState,
@@ -169,8 +178,13 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 ref secondaryCooldownRemaining,
                                                                 ref secondaryCharge,
                                                                 ref secondaryIsCharging,
+                                                                ref secondaryIsActive,
+                                                                ref secondaryMaintenanceTickTimer,
                                                                 ref primaryCharge,
+                                                                ref primaryCooldownRemaining,
                                                                 ref primaryIsCharging,
+                                                                ref primaryIsActive,
+                                                                ref primaryMaintenanceTickTimer,
                                                                 ref isShootingSuppressed,
                                                                 ref dashState.ValueRW,
                                                                 ref bulletTimeState,
@@ -197,8 +211,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             powerUpsState.ValueRW.SecondaryCooldownRemaining = secondaryCooldownRemaining;
             powerUpsState.ValueRW.PrimaryCharge = primaryCharge;
             powerUpsState.ValueRW.SecondaryCharge = secondaryCharge;
+            powerUpsState.ValueRW.PrimaryMaintenanceTickTimer = primaryMaintenanceTickTimer;
+            powerUpsState.ValueRW.SecondaryMaintenanceTickTimer = secondaryMaintenanceTickTimer;
             powerUpsState.ValueRW.PrimaryIsCharging = primaryIsCharging;
             powerUpsState.ValueRW.SecondaryIsCharging = secondaryIsCharging;
+            powerUpsState.ValueRW.PrimaryIsActive = primaryIsActive;
+            powerUpsState.ValueRW.SecondaryIsActive = secondaryIsActive;
             powerUpsState.ValueRW.IsShootingSuppressed = isShootingSuppressed;
             bulletTimeLookup[entity] = bulletTimeState;
             healOverTimeLookup[entity] = healOverTimeState;

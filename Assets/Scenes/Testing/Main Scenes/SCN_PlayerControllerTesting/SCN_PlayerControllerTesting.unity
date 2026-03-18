@@ -2346,12 +2346,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 4
     m_WrapAround: 0
-    m_SelectOnUp: {fileID: 0}
-    m_SelectOnDown: {fileID: 0}
-    m_SelectOnLeft: {fileID: 0}
-    m_SelectOnRight: {fileID: 0}
+    m_SelectOnUp: {fileID: 775790016}
+    m_SelectOnDown: {fileID: 775790016}
+    m_SelectOnLeft: {fileID: 775790016}
+    m_SelectOnRight: {fileID: 775790016}
   m_Transition: 1
   m_Colors:
     m_NormalColor: {r: 0.15, g: 0.39, b: 0.56, a: 0.98}
@@ -4283,9 +4283,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
---- !u!114 &695505115 stripped
+--- !u!114 &695505114 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7791413094481165521, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+  m_CorrespondingSourceObject: {fileID: 6983523507071208040, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
   m_PrefabInstance: {fileID: 695505112}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
@@ -4294,9 +4294,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
---- !u!114 &695505114 stripped
+--- !u!114 &695505115 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6983523507071208040, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
+  m_CorrespondingSourceObject: {fileID: 7791413094481165521, guid: e6c8c02f6c61ba043a718b4d32ae790f, type: 3}
   m_PrefabInstance: {fileID: 695505112}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
@@ -4867,12 +4867,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 4
     m_WrapAround: 0
-    m_SelectOnUp: {fileID: 0}
-    m_SelectOnDown: {fileID: 0}
-    m_SelectOnLeft: {fileID: 0}
-    m_SelectOnRight: {fileID: 0}
+    m_SelectOnUp: {fileID: 416234868}
+    m_SelectOnDown: {fileID: 416234868}
+    m_SelectOnLeft: {fileID: 416234868}
+    m_SelectOnRight: {fileID: 416234868}
   m_Transition: 1
   m_Colors:
     m_NormalColor: {r: 0.15, g: 0.39, b: 0.56, a: 0.98}

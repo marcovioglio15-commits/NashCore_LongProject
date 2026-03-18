@@ -35,10 +35,12 @@ public struct PlayerPowerUpSlotConfig
     public float MaximumEnergy;
     public float ActivationCost;
     public float MaintenanceCostPerSecond;
+    public float MaintenanceTicksPerSecond;
     public float ChargePerTrigger;
     public float CooldownSeconds;
     public PowerUpActivationInputMode ActivationInputMode;
     public byte Toggleable;
+    public byte AllowRechargeDuringToggleStartupLock;
     public float MinimumActivationEnergyPercent;
     public byte Unreplaceable;
     public byte SuppressBaseShootingWhileActive;
@@ -51,6 +53,7 @@ public struct PlayerPowerUpSlotConfig
     public ShotgunPowerUpConfig Shotgun;
     public ChargeShotPowerUpConfig ChargeShot;
     public PortableHealthPackPowerUpConfig PortableHealthPack;
+    public PlayerPassiveToolConfig TogglePassiveTool;
 }
 
 /// <summary>
@@ -124,6 +127,10 @@ public struct ChargeShotPowerUpConfig
     public float RequiredCharge;
     public float MaximumCharge;
     public float ChargeRatePerSecond;
+    public byte DecayAfterRelease;
+    public float DecayAfterReleasePercentPerSecond;
+    public byte PassiveChargeGainWhileReleased;
+    public float PassiveChargeGainPercentPerSecond;
     public byte SuppressBaseShootingWhileCharging;
     public float SizeMultiplier;
     public float DamageMultiplier;
@@ -279,6 +286,7 @@ public struct ElementalProjectilesPassiveConfig
 /// </summary>
 public struct PerfectCirclePassiveConfig
 {
+    public ProjectileOrbitPathMode PathMode;
     public float RadialEntrySpeed;
     public float OrbitalSpeed;
     public float OrbitRadiusMin;
@@ -288,6 +296,12 @@ public struct PerfectCirclePassiveConfig
     public float OrbitBlendDuration;
     public float HeightOffset;
     public float GoldenAngleDegrees;
+    public float SpiralStartRadius;
+    public float SpiralMaximumRadius;
+    public float SpiralAngularSpeedDegreesPerSecond;
+    public float SpiralGrowthMultiplier;
+    public float SpiralTurnsBeforeDespawn;
+    public byte SpiralClockwise;
 }
 
 /// <summary>

@@ -26,7 +26,6 @@ public partial struct ProjectileDespawnSystem : ISystem
         state.RequireForUpdate<Projectile>();
         state.RequireForUpdate<ProjectileRuntimeState>();
         state.RequireForUpdate<ProjectileOwner>();
-        state.RequireForUpdate<ProjectilePerfectCircleState>();
         state.RequireForUpdate<LocalTransform>();
         state.RequireForUpdate<ProjectileActive>();
     }
@@ -47,26 +46,16 @@ public partial struct ProjectileDespawnSystem : ISystem
 
         foreach ((RefRO<Projectile> projectile,
                   RefRO<ProjectileRuntimeState> runtimeState,
-                  RefRO<ProjectilePerfectCircleState> perfectCircleState,
                   RefRW<LocalTransform> projectileTransform,
                   RefRO<ProjectileOwner> owner,
-                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileRuntimeState>, RefRO<ProjectilePerfectCircleState>, RefRW<LocalTransform>, RefRO<ProjectileOwner>>()
+                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>, RefRO<ProjectileRuntimeState>, RefRW<LocalTransform>, RefRO<ProjectileOwner>>()
                                                       .WithAll<ProjectileActive>()
                                                       .WithEntityAccess())
         {
             bool reachedRange = projectile.ValueRO.MaxRange > 0f && runtimeState.ValueRO.TraveledDistance >= projectile.ValueRO.MaxRange;
             bool reachedLifetime = projectile.ValueRO.MaxLifetime > 0f && runtimeState.ValueRO.ElapsedLifetime >= projectile.ValueRO.MaxLifetime;
-            bool isPerfectCircleProjectile = perfectCircleState.ValueRO.Enabled != 0;
-            bool completedOrbit = isPerfectCircleProjectile &&
-                                  perfectCircleState.ValueRO.HasEnteredOrbit != 0 &&
-                                  perfectCircleState.ValueRO.CompletedFullOrbit != 0;
 
-            if (isPerfectCircleProjectile)
-            {
-                if (completedOrbit == false)
-                    continue;
-            }
-            else if (reachedRange == false && reachedLifetime == false)
+            if (reachedRange == false && reachedLifetime == false)
                 continue;
 
             if (projectileSplitStateLookup.HasComponent(projectileEntity))

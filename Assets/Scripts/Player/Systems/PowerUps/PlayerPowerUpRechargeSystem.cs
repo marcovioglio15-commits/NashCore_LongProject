@@ -40,11 +40,23 @@ public partial struct PlayerPowerUpRechargeSystem : ISystem
             float secondaryEnergy = powerUpsState.ValueRO.SecondaryEnergy;
             float primaryCooldownRemaining = powerUpsState.ValueRO.PrimaryCooldownRemaining;
             float secondaryCooldownRemaining = powerUpsState.ValueRO.SecondaryCooldownRemaining;
+            byte primaryIsActive = powerUpsState.ValueRO.PrimaryIsActive;
+            byte secondaryIsActive = powerUpsState.ValueRO.SecondaryIsActive;
 
             TickCooldown(ref primaryCooldownRemaining, deltaTime);
             TickCooldown(ref secondaryCooldownRemaining, deltaTime);
-            RechargeSlot(ref primaryEnergy, in powerUpsConfig.ValueRO.PrimarySlot, primaryCooldownRemaining, deltaTime, killDelta);
-            RechargeSlot(ref secondaryEnergy, in powerUpsConfig.ValueRO.SecondarySlot, secondaryCooldownRemaining, deltaTime, killDelta);
+            RechargeSlot(ref primaryEnergy,
+                         in powerUpsConfig.ValueRO.PrimarySlot,
+                         primaryCooldownRemaining,
+                         primaryIsActive,
+                         deltaTime,
+                         killDelta);
+            RechargeSlot(ref secondaryEnergy,
+                         in powerUpsConfig.ValueRO.SecondarySlot,
+                         secondaryCooldownRemaining,
+                         secondaryIsActive,
+                         deltaTime,
+                         killDelta);
 
             powerUpsState.ValueRW.PrimaryEnergy = primaryEnergy;
             powerUpsState.ValueRW.SecondaryEnergy = secondaryEnergy;
@@ -73,13 +85,17 @@ public partial struct PlayerPowerUpRechargeSystem : ISystem
     private static void RechargeSlot(ref float currentEnergy,
                                      in PlayerPowerUpSlotConfig slotConfig,
                                      float cooldownRemaining,
+                                     byte isActive,
                                      float deltaTime,
                                      uint killDelta)
     {
         if (slotConfig.IsDefined == 0)
             return;
 
-        if (cooldownRemaining > 0f)
+        bool isTogglePassiveSlot = slotConfig.ToolKind == ActiveToolKind.PassiveToggle && slotConfig.Toggleable != 0;
+        bool isToggleActive = isTogglePassiveSlot && isActive != 0;
+
+        if (cooldownRemaining > 0f && (!isToggleActive || slotConfig.AllowRechargeDuringToggleStartupLock == 0))
             return;
 
         float maximumEnergy = math.max(0f, slotConfig.MaximumEnergy);

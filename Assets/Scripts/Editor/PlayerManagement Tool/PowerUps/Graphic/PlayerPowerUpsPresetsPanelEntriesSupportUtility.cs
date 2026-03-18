@@ -351,6 +351,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         HashSet<PowerUpModuleKind> moduleKinds = new HashSet<PowerUpModuleKind>();
         List<string> unresolvedModuleIds = new List<string>();
         List<string> unsupportedModuleKinds = new List<string>();
+        bool hasToggleableGate = false;
 
         for (int bindingIndex = 0; bindingIndex < moduleBindingsProperty.arraySize; bindingIndex++)
         {
@@ -380,6 +381,12 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
 
             moduleKinds.Add(moduleEntry.ModuleKind);
 
+            if (moduleEntry.ModuleKind == PowerUpModuleKind.GateResource &&
+                ResolveBindingResourceGateToggleable(bindingProperty, powerUpProperty.serializedObject, normalizedModuleId))
+            {
+                hasToggleableGate = true;
+            }
+
             if (IsModuleKindSupportedInSection(moduleEntry.ModuleKind, isActiveSection))
                 continue;
 
@@ -397,7 +404,9 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
             warningLines.Add(unsupportedPrefix + string.Join(", ", unsupportedModuleKinds));
         }
 
-        string contextWarning = isActiveSection ? BuildActiveCoverageWarning(moduleKinds) : BuildPassiveCoverageWarning(moduleKinds);
+        string contextWarning = isActiveSection
+            ? BuildActiveCoverageWarning(moduleKinds, hasToggleableGate)
+            : BuildPassiveCoverageWarning(moduleKinds);
 
         if (!string.IsNullOrWhiteSpace(contextWarning))
             warningLines.Add(contextWarning);
@@ -414,6 +423,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         {
             switch (moduleKind)
             {
+                case PowerUpModuleKind.TriggerEvent:
                 case PowerUpModuleKind.TriggerPress:
                 case PowerUpModuleKind.TriggerRelease:
                 case PowerUpModuleKind.TriggerHoldCharge:
@@ -421,8 +431,13 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
                 case PowerUpModuleKind.StateSuppressShooting:
                 case PowerUpModuleKind.ProjectilesPatternCone:
                 case PowerUpModuleKind.ProjectilesTuning:
+                case PowerUpModuleKind.SpawnTrailSegment:
+                case PowerUpModuleKind.AreaTickApplyElement:
                 case PowerUpModuleKind.SpawnObject:
                 case PowerUpModuleKind.DeathExplosion:
+                case PowerUpModuleKind.OrbitalProjectiles:
+                case PowerUpModuleKind.BouncingProjectiles:
+                case PowerUpModuleKind.ProjectileSplit:
                 case PowerUpModuleKind.Dash:
                 case PowerUpModuleKind.TimeDilationEnemies:
                 case PowerUpModuleKind.Heal:
@@ -451,10 +466,13 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         }
     }
 
-    private static string BuildActiveCoverageWarning(HashSet<PowerUpModuleKind> moduleKinds)
+    private static string BuildActiveCoverageWarning(HashSet<PowerUpModuleKind> moduleKinds, bool hasToggleableGate)
     {
         if (moduleKinds == null || moduleKinds.Count <= 0)
             return string.Empty;
+
+        if (hasToggleableGate)
+            return BuildToggleableActiveCoverageWarning(moduleKinds);
 
         List<string> warningLines = new List<string>();
         bool hasHoldCharge = moduleKinds.Contains(PowerUpModuleKind.TriggerHoldCharge);
@@ -467,6 +485,11 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
         bool hasTriggerPress = moduleKinds.Contains(PowerUpModuleKind.TriggerPress);
         bool hasTriggerRelease = moduleKinds.Contains(PowerUpModuleKind.TriggerRelease);
+        bool hasTrail = moduleKinds.Contains(PowerUpModuleKind.SpawnTrailSegment) || moduleKinds.Contains(PowerUpModuleKind.AreaTickApplyElement);
+        bool hasOrbit = moduleKinds.Contains(PowerUpModuleKind.OrbitalProjectiles);
+        bool hasBounce = moduleKinds.Contains(PowerUpModuleKind.BouncingProjectiles);
+        bool hasSplit = moduleKinds.Contains(PowerUpModuleKind.ProjectileSplit);
+        bool hasIgnoredPassiveOnlyModules = hasTrail || hasOrbit || hasBounce || hasSplit || hasTriggerEvent;
         int executeKindCount = 0;
 
         if (hasHoldCharge)
@@ -502,10 +525,126 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         if (hasTriggerPress && hasTriggerRelease)
             warningLines.Add("TriggerPress and TriggerRelease are both bound. Runtime uses OnPress activation.");
 
+        if (hasIgnoredPassiveOnlyModules)
+            warningLines.Add("Passive-compatible modules are ignored in Active runtime unless GateResource Is Toggleable is enabled.");
+
         if (warningLines.Count <= 0)
             return string.Empty;
 
         return string.Join("\n", warningLines);
+    }
+
+    private static string BuildToggleableActiveCoverageWarning(HashSet<PowerUpModuleKind> moduleKinds)
+    {
+        if (moduleKinds == null || moduleKinds.Count <= 0)
+            return string.Empty;
+
+        List<string> warningLines = new List<string>();
+        bool hasTrail = moduleKinds.Contains(PowerUpModuleKind.SpawnTrailSegment) || moduleKinds.Contains(PowerUpModuleKind.AreaTickApplyElement);
+        bool hasExplosion = moduleKinds.Contains(PowerUpModuleKind.DeathExplosion);
+        bool hasOrbit = moduleKinds.Contains(PowerUpModuleKind.OrbitalProjectiles);
+        bool hasBounce = moduleKinds.Contains(PowerUpModuleKind.BouncingProjectiles);
+        bool hasSplit = moduleKinds.Contains(PowerUpModuleKind.ProjectileSplit);
+        bool hasShotgun = moduleKinds.Contains(PowerUpModuleKind.ProjectilesPatternCone) || moduleKinds.Contains(PowerUpModuleKind.ProjectilesTuning);
+        bool hasHeal = moduleKinds.Contains(PowerUpModuleKind.Heal);
+        bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
+        bool hasTriggerRelease = moduleKinds.Contains(PowerUpModuleKind.TriggerRelease);
+        bool hasPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal;
+        List<string> ignoredActiveModules = new List<string>();
+
+        if (!hasPassiveRuntimeConsumer)
+            warningLines.Add("GateResource Is Toggleable requires at least one passive-compatible runtime module. This active power up compiles as undefined.");
+
+        if (moduleKinds.Contains(PowerUpModuleKind.TriggerHoldCharge))
+            ignoredActiveModules.Add(PowerUpModuleEnumDescriptions.FormatModuleKindOption(PowerUpModuleKind.TriggerHoldCharge));
+
+        if (moduleKinds.Contains(PowerUpModuleKind.SpawnObject))
+            ignoredActiveModules.Add(PowerUpModuleEnumDescriptions.FormatModuleKindOption(PowerUpModuleKind.SpawnObject));
+
+        if (moduleKinds.Contains(PowerUpModuleKind.Dash))
+            ignoredActiveModules.Add(PowerUpModuleEnumDescriptions.FormatModuleKindOption(PowerUpModuleKind.Dash));
+
+        if (moduleKinds.Contains(PowerUpModuleKind.TimeDilationEnemies))
+            ignoredActiveModules.Add(PowerUpModuleEnumDescriptions.FormatModuleKindOption(PowerUpModuleKind.TimeDilationEnemies));
+
+        if (ignoredActiveModules.Count > 0)
+            warningLines.Add("Ignored while GateResource Is Toggleable is enabled: " + string.Join(", ", ignoredActiveModules));
+
+        if (hasTriggerRelease)
+            warningLines.Add("TriggerRelease is ignored while GateResource Is Toggleable is enabled. Toggle activation always uses button press.");
+
+        if (hasTriggerEvent && !hasExplosion && !hasSplit && !hasHeal)
+            warningLines.Add("TriggerEvent has no toggleable-passive consumer without DeathExplosion, ProjectileSplit, or Heal.");
+
+        if (warningLines.Count <= 0)
+            return string.Empty;
+
+        return string.Join("\n", warningLines);
+    }
+
+    private static bool ResolveBindingResourceGateToggleable(SerializedProperty bindingProperty,
+                                                             SerializedObject serializedObject,
+                                                             string moduleId)
+    {
+        if (bindingProperty == null || serializedObject == null || string.IsNullOrWhiteSpace(moduleId))
+            return false;
+
+        SerializedProperty payloadProperty = ResolveEffectiveBindingPayloadProperty(bindingProperty,
+                                                                                    serializedObject,
+                                                                                    moduleId);
+
+        if (payloadProperty == null)
+            return false;
+
+        SerializedProperty resourceGateProperty = payloadProperty.FindPropertyRelative("resourceGate");
+        SerializedProperty isToggleableProperty = resourceGateProperty != null
+            ? resourceGateProperty.FindPropertyRelative("isToggleable")
+            : null;
+
+        return isToggleableProperty != null && isToggleableProperty.boolValue;
+    }
+
+    private static SerializedProperty ResolveEffectiveBindingPayloadProperty(SerializedProperty bindingProperty,
+                                                                             SerializedObject serializedObject,
+                                                                             string moduleId)
+    {
+        if (bindingProperty == null)
+            return null;
+
+        SerializedProperty useOverridePayloadProperty = bindingProperty.FindPropertyRelative("useOverridePayload");
+
+        if (useOverridePayloadProperty != null && useOverridePayloadProperty.boolValue)
+            return bindingProperty.FindPropertyRelative("overridePayload");
+
+        return ResolveModuleDefinitionPayloadProperty(serializedObject, moduleId);
+    }
+
+    private static SerializedProperty ResolveModuleDefinitionPayloadProperty(SerializedObject serializedObject, string moduleId)
+    {
+        if (serializedObject == null || string.IsNullOrWhiteSpace(moduleId))
+            return null;
+
+        SerializedProperty moduleDefinitionsProperty = serializedObject.FindProperty("moduleDefinitions");
+
+        if (moduleDefinitionsProperty == null)
+            return null;
+
+        for (int moduleIndex = 0; moduleIndex < moduleDefinitionsProperty.arraySize; moduleIndex++)
+        {
+            SerializedProperty moduleDefinitionProperty = moduleDefinitionsProperty.GetArrayElementAtIndex(moduleIndex);
+
+            if (moduleDefinitionProperty == null)
+                continue;
+
+            SerializedProperty moduleIdProperty = moduleDefinitionProperty.FindPropertyRelative("moduleId");
+
+            if (moduleIdProperty == null || !string.Equals(moduleIdProperty.stringValue, moduleId, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            return moduleDefinitionProperty.FindPropertyRelative("data");
+        }
+
+        return null;
     }
 
     private static string BuildPassiveCoverageWarning(HashSet<PowerUpModuleKind> moduleKinds)

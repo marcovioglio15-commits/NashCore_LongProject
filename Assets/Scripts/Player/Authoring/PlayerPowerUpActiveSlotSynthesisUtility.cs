@@ -17,6 +17,9 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                                               ref PowerUpResourceType activationResource,
                                               ref PowerUpResourceType maintenanceResource,
                                               ref PowerUpChargeType chargeType,
+                                              ref bool isToggleable,
+                                              ref float maintenanceTicksPerSecond,
+                                              ref bool allowRechargeDuringToggleStartupLock,
                                               ref float maximumEnergy,
                                               ref float activationCost,
                                               ref float maintenanceCostPerSecond,
@@ -34,6 +37,9 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
             activationResource = resourceGateData.ActivationResource;
             maintenanceResource = resourceGateData.MaintenanceResource;
             chargeType = resourceGateData.ChargeType;
+            isToggleable = resourceGateData.IsToggleable;
+            maintenanceTicksPerSecond = resourceGateData.IsToggleable ? math.max(0.01f, resourceGateData.MaintenanceTicksPerSecond) : 0f;
+            allowRechargeDuringToggleStartupLock = resourceGateData.AllowRechargeDuringToggleStartupLock;
         }
         else
         {
@@ -42,6 +48,13 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
 
             if (maintenanceResource == PowerUpResourceType.None && resourceGateData.MaintenanceResource != PowerUpResourceType.None)
                 maintenanceResource = resourceGateData.MaintenanceResource;
+
+            isToggleable = isToggleable || resourceGateData.IsToggleable;
+
+            if (resourceGateData.IsToggleable)
+                maintenanceTicksPerSecond = math.max(maintenanceTicksPerSecond, math.max(0.01f, resourceGateData.MaintenanceTicksPerSecond));
+
+            allowRechargeDuringToggleStartupLock = allowRechargeDuringToggleStartupLock || resourceGateData.AllowRechargeDuringToggleStartupLock;
         }
 
         maximumEnergy = math.max(maximumEnergy, math.max(0f, resourceGateData.MaximumEnergy));
@@ -170,11 +183,14 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                                                                  PowerUpResourceType activationResource,
                                                                  PowerUpResourceType maintenanceResource,
                                                                  PowerUpChargeType chargeType,
+                                                                 bool isToggleable,
                                                                  float maximumEnergy,
                                                                  float activationCost,
                                                                  float maintenanceCostPerSecond,
+                                                                 float maintenanceTicksPerSecond,
                                                                  float chargePerTrigger,
                                                                  float cooldownSeconds,
+                                                                 bool allowRechargeDuringToggleStartupLock,
                                                                  float minimumActivationEnergyPercent,
                                                                  bool suppressBaseShootingWhileActive,
                                                                  bool interruptOtherSlotOnEnter,
@@ -209,6 +225,10 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                                                                  float holdChargeRequired,
                                                                  float holdChargeMaximum,
                                                                  float holdChargeRatePerSecond,
+                                                                 bool decayAfterRelease,
+                                                                 float decayAfterReleasePercentPerSecond,
+                                                                 bool passiveChargeGainWhileReleased,
+                                                                 float passiveChargeGainPercentPerSecond,
                                                                  bool suppressBaseShootingWhileCharging,
                                                                  int shotgunProjectileCount,
                                                                  float shotgunConeAngleDegrees,
@@ -227,6 +247,7 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                                                                  float healthPackDurationSeconds,
                                                                  float healthPackTickIntervalSeconds,
                                                                  PowerUpHealStackPolicy healthPackStackPolicy,
+                                                                 in PlayerPassiveToolConfig togglePassiveTool,
                                                                  ActiveToolKind resolvedToolKind)
     {
         float shotgunSizeMultiplier = math.max(0.01f, projectileSizeMultiplier);
@@ -240,10 +261,10 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
         float chargeShotRequired = math.max(0f, holdChargeRequired);
         float chargeShotMaximum = math.max(chargeShotRequired, holdChargeMaximum);
         float chargeShotRate = math.max(0f, holdChargeRatePerSecond);
-        PowerUpActivationInputMode activationInputMode = PowerUpActivationInputMode.OnPress;
-
-        if (hasTriggerRelease && !hasTriggerPress && !hasHoldCharge)
-            activationInputMode = PowerUpActivationInputMode.OnRelease;
+        PowerUpActivationInputMode activationInputMode = ResolveActivationInputMode(hasTriggerPress,
+                                                                                    hasTriggerRelease,
+                                                                                    hasHoldCharge,
+                                                                                    resolvedToolKind);
 
         return new PlayerPowerUpSlotConfig
         {
@@ -256,10 +277,12 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
             MaximumEnergy = maximumEnergy,
             ActivationCost = activationCost,
             MaintenanceCostPerSecond = maintenanceCostPerSecond,
+            MaintenanceTicksPerSecond = isToggleable ? math.max(0.01f, maintenanceTicksPerSecond) : 0f,
             ChargePerTrigger = chargePerTrigger,
             CooldownSeconds = cooldownSeconds,
             ActivationInputMode = activationInputMode,
-            Toggleable = 0,
+            Toggleable = isToggleable ? (byte)1 : (byte)0,
+            AllowRechargeDuringToggleStartupLock = allowRechargeDuringToggleStartupLock ? (byte)1 : (byte)0,
             MinimumActivationEnergyPercent = math.clamp(minimumActivationEnergyPercent, 0f, 100f),
             Unreplaceable = powerUp.Unreplaceable ? (byte)1 : (byte)0,
             SuppressBaseShootingWhileActive = suppressBaseShootingWhileActive ? (byte)1 : (byte)0,
@@ -318,6 +341,10 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                 RequiredCharge = chargeShotRequired,
                 MaximumCharge = chargeShotMaximum,
                 ChargeRatePerSecond = chargeShotRate,
+                DecayAfterRelease = decayAfterRelease ? (byte)1 : (byte)0,
+                DecayAfterReleasePercentPerSecond = math.max(0f, decayAfterReleasePercentPerSecond),
+                PassiveChargeGainWhileReleased = passiveChargeGainWhileReleased ? (byte)1 : (byte)0,
+                PassiveChargeGainPercentPerSecond = math.max(0f, passiveChargeGainPercentPerSecond),
                 SuppressBaseShootingWhileCharging = suppressBaseShootingWhileCharging ? (byte)1 : (byte)0,
                 SizeMultiplier = shotgunSizeMultiplier,
                 DamageMultiplier = shotgunDamageMultiplier,
@@ -337,7 +364,8 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                 DurationSeconds = hasHealthPackOverTime ? math.max(0f, healthPackDurationSeconds) : 0f,
                 TickIntervalSeconds = math.max(0.01f, healthPackTickIntervalSeconds),
                 StackPolicy = healthPackStackPolicy
-            }
+            },
+            TogglePassiveTool = togglePassiveTool
         };
     }
 
@@ -352,6 +380,20 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
             return default;
 
         return new FixedString64Bytes(powerUp.CommonData.PowerUpId.Trim());
+    }
+
+    private static PowerUpActivationInputMode ResolveActivationInputMode(bool hasTriggerPress,
+                                                                         bool hasTriggerRelease,
+                                                                         bool hasHoldCharge,
+                                                                         ActiveToolKind resolvedToolKind)
+    {
+        if (resolvedToolKind == ActiveToolKind.PassiveToggle)
+            return PowerUpActivationInputMode.OnPress;
+
+        if (hasTriggerRelease && !hasTriggerPress && !hasHoldCharge)
+            return PowerUpActivationInputMode.OnRelease;
+
+        return PowerUpActivationInputMode.OnPress;
     }
     #endregion
 

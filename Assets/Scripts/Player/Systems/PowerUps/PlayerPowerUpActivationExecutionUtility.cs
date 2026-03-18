@@ -68,6 +68,8 @@ public static class PlayerPowerUpActivationExecutionUtility
                 return;
             case ActiveToolKind.PortableHealthPack:
                 return;
+            case ActiveToolKind.PassiveToggle:
+                return;
         }
     }
 

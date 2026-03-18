@@ -30,6 +30,12 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
 
         switch (moduleKind)
         {
+            case PowerUpModuleKind.TriggerHoldCharge:
+                BuildHoldChargePayloadUi(payloadContainer, payloadProperty);
+                return;
+            case PowerUpModuleKind.GateResource:
+                BuildResourceGatePayloadUi(payloadContainer, payloadProperty);
+                return;
             case PowerUpModuleKind.ProjectileSplit:
                 PowerUpModuleDefinitionVisualizationUtility.BuildProjectileSplitPayloadUi(payloadContainer, payloadProperty);
                 return;
@@ -47,6 +53,9 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                 return;
             case PowerUpModuleKind.ProjectilesPatternCone:
                 PowerUpModuleDefinitionVisualizationUtility.BuildProjectilePatternConePayloadUi(payloadContainer, payloadProperty);
+                return;
+            case PowerUpModuleKind.OrbitalProjectiles:
+                BuildOrbitalProjectilesPayloadUi(payloadContainer, payloadProperty);
                 return;
         }
 
@@ -118,6 +127,125 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
     #endregion
 
     #region Specialized Payloads
+    private static void BuildHoldChargePayloadUi(VisualElement payloadContainer, SerializedProperty holdChargePayloadProperty)
+    {
+        if (payloadContainer == null || holdChargePayloadProperty == null)
+            return;
+
+        SerializedProperty requiredChargeProperty = holdChargePayloadProperty.FindPropertyRelative("requiredCharge");
+        SerializedProperty maximumChargeProperty = holdChargePayloadProperty.FindPropertyRelative("maximumCharge");
+        SerializedProperty chargeRatePerSecondProperty = holdChargePayloadProperty.FindPropertyRelative("chargeRatePerSecond");
+        SerializedProperty decayAfterReleaseProperty = holdChargePayloadProperty.FindPropertyRelative("decayAfterRelease");
+        SerializedProperty decayAfterReleasePercentPerSecondProperty = holdChargePayloadProperty.FindPropertyRelative("decayAfterReleasePercentPerSecond");
+        SerializedProperty passiveChargeGainWhileReleasedProperty = holdChargePayloadProperty.FindPropertyRelative("passiveChargeGainWhileReleased");
+        SerializedProperty passiveChargeGainPercentPerSecondProperty = holdChargePayloadProperty.FindPropertyRelative("passiveChargeGainPercentPerSecond");
+
+        if (requiredChargeProperty == null ||
+            maximumChargeProperty == null ||
+            chargeRatePerSecondProperty == null ||
+            decayAfterReleaseProperty == null ||
+            decayAfterReleasePercentPerSecondProperty == null ||
+            passiveChargeGainWhileReleasedProperty == null ||
+            passiveChargeGainPercentPerSecondProperty == null)
+        {
+            HelpBox errorBox = new HelpBox("Hold charge payload fields are missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(errorBox);
+            return;
+        }
+
+        AddField(payloadContainer, requiredChargeProperty, "Required Charge");
+        AddField(payloadContainer, maximumChargeProperty, "Maximum Charge");
+        AddField(payloadContainer, chargeRatePerSecondProperty, "Charge Rate Per Second");
+        AddField(payloadContainer, decayAfterReleaseProperty, "Decay After Release");
+
+        VisualElement decayContainer = new VisualElement();
+        decayContainer.style.marginLeft = 12f;
+        payloadContainer.Add(decayContainer);
+        AddField(decayContainer, decayAfterReleasePercentPerSecondProperty, "Decay Percent Per Second");
+
+        AddField(payloadContainer, passiveChargeGainWhileReleasedProperty, "Passive Gain While Released");
+
+        VisualElement passiveGainContainer = new VisualElement();
+        passiveGainContainer.style.marginLeft = 12f;
+        payloadContainer.Add(passiveGainContainer);
+        AddField(passiveGainContainer, passiveChargeGainPercentPerSecondProperty, "Passive Gain Percent Per Second");
+
+        UpdateBooleanContainerVisibility(decayAfterReleaseProperty, decayContainer);
+        UpdateBooleanContainerVisibility(passiveChargeGainWhileReleasedProperty, passiveGainContainer);
+
+        payloadContainer.TrackPropertyValue(decayAfterReleaseProperty, changedProperty =>
+        {
+            UpdateBooleanContainerVisibility(changedProperty, decayContainer);
+        });
+        payloadContainer.TrackPropertyValue(passiveChargeGainWhileReleasedProperty, changedProperty =>
+        {
+            UpdateBooleanContainerVisibility(changedProperty, passiveGainContainer);
+        });
+    }
+
+    private static void BuildResourceGatePayloadUi(VisualElement payloadContainer, SerializedProperty resourceGatePayloadProperty)
+    {
+        if (payloadContainer == null || resourceGatePayloadProperty == null)
+            return;
+
+        SerializedProperty activationResourceProperty = resourceGatePayloadProperty.FindPropertyRelative("activationResource");
+        SerializedProperty maintenanceResourceProperty = resourceGatePayloadProperty.FindPropertyRelative("maintenanceResource");
+        SerializedProperty maximumEnergyProperty = resourceGatePayloadProperty.FindPropertyRelative("maximumEnergy");
+        SerializedProperty activationCostProperty = resourceGatePayloadProperty.FindPropertyRelative("activationCost");
+        SerializedProperty maintenanceCostPerSecondProperty = resourceGatePayloadProperty.FindPropertyRelative("maintenanceCostPerSecond");
+        SerializedProperty isToggleableProperty = resourceGatePayloadProperty.FindPropertyRelative("isToggleable");
+        SerializedProperty maintenanceTicksPerSecondProperty = resourceGatePayloadProperty.FindPropertyRelative("maintenanceTicksPerSecond");
+        SerializedProperty minimumActivationEnergyPercentProperty = resourceGatePayloadProperty.FindPropertyRelative("minimumActivationEnergyPercent");
+        SerializedProperty chargeTypeProperty = resourceGatePayloadProperty.FindPropertyRelative("chargeType");
+        SerializedProperty chargePerTriggerProperty = resourceGatePayloadProperty.FindPropertyRelative("chargePerTrigger");
+        SerializedProperty cooldownSecondsProperty = resourceGatePayloadProperty.FindPropertyRelative("cooldownSeconds");
+        SerializedProperty allowRechargeDuringToggleStartupLockProperty = resourceGatePayloadProperty.FindPropertyRelative("allowRechargeDuringToggleStartupLock");
+
+        if (activationResourceProperty == null ||
+            maintenanceResourceProperty == null ||
+            maximumEnergyProperty == null ||
+            activationCostProperty == null ||
+            maintenanceCostPerSecondProperty == null ||
+            isToggleableProperty == null ||
+            maintenanceTicksPerSecondProperty == null ||
+            minimumActivationEnergyPercentProperty == null ||
+            chargeTypeProperty == null ||
+            chargePerTriggerProperty == null ||
+            cooldownSecondsProperty == null ||
+            allowRechargeDuringToggleStartupLockProperty == null)
+        {
+            HelpBox errorBox = new HelpBox("Resource gate payload fields are missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(errorBox);
+            return;
+        }
+
+        AddField(payloadContainer, activationResourceProperty, "Activation Resource");
+        AddField(payloadContainer, maintenanceResourceProperty, "Maintenance Resource");
+        AddField(payloadContainer, maximumEnergyProperty, "Maximum Energy");
+        AddField(payloadContainer, activationCostProperty, "Activation Cost");
+        AddField(payloadContainer, maintenanceCostPerSecondProperty, "Maintenance Cost Per Second");
+        AddField(payloadContainer, minimumActivationEnergyPercentProperty, "Minimum Energy Activation Percent");
+        AddField(payloadContainer, chargeTypeProperty, "Charge Type");
+        AddField(payloadContainer, chargePerTriggerProperty, "Charge Per Trigger");
+        AddField(payloadContainer, cooldownSecondsProperty, "Cooldown Seconds");
+        AddField(payloadContainer, isToggleableProperty, "Is Toggleable");
+
+        VisualElement toggleableContainer = new VisualElement();
+        toggleableContainer.style.marginLeft = 12f;
+        payloadContainer.Add(toggleableContainer);
+
+        HelpBox toggleableHelpBox = new HelpBox("When toggleable is enabled, Cooldown Seconds becomes the startup lock interval: maintenance is not paid and the power-up cannot be disabled during that time.", HelpBoxMessageType.Info);
+        toggleableContainer.Add(toggleableHelpBox);
+        AddField(toggleableContainer, maintenanceTicksPerSecondProperty, "Maintenance Ticks Per Second");
+        AddField(toggleableContainer, allowRechargeDuringToggleStartupLockProperty, "Allow Recharge During Startup Lock");
+
+        UpdateBooleanContainerVisibility(isToggleableProperty, toggleableContainer);
+        payloadContainer.TrackPropertyValue(isToggleableProperty, changedProperty =>
+        {
+            UpdateBooleanContainerVisibility(changedProperty, toggleableContainer);
+        });
+    }
+
     private static void BuildSpawnObjectPayloadUi(VisualElement payloadContainer, SerializedProperty spawnPayloadProperty)
     {
         if (payloadContainer == null || spawnPayloadProperty == null)
@@ -335,9 +463,99 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             UpdateElementalPayloadOptionsVisibility(changedProperty, elementalPayloadContainer);
         });
     }
+
+    private static void BuildOrbitalProjectilesPayloadUi(VisualElement payloadContainer, SerializedProperty orbitalPayloadProperty)
+    {
+        if (payloadContainer == null || orbitalPayloadProperty == null)
+            return;
+
+        SerializedProperty pathModeProperty = orbitalPayloadProperty.FindPropertyRelative("pathMode");
+        SerializedProperty radialEntrySpeedProperty = orbitalPayloadProperty.FindPropertyRelative("radialEntrySpeed");
+        SerializedProperty heightOffsetProperty = orbitalPayloadProperty.FindPropertyRelative("heightOffset");
+        SerializedProperty goldenAngleDegreesProperty = orbitalPayloadProperty.FindPropertyRelative("goldenAngleDegrees");
+        SerializedProperty orbitalSpeedProperty = orbitalPayloadProperty.FindPropertyRelative("orbitalSpeed");
+        SerializedProperty orbitRadiusMinProperty = orbitalPayloadProperty.FindPropertyRelative("orbitRadiusMin");
+        SerializedProperty orbitRadiusMaxProperty = orbitalPayloadProperty.FindPropertyRelative("orbitRadiusMax");
+        SerializedProperty orbitPulseFrequencyProperty = orbitalPayloadProperty.FindPropertyRelative("orbitPulseFrequency");
+        SerializedProperty orbitEntryRatioProperty = orbitalPayloadProperty.FindPropertyRelative("orbitEntryRatio");
+        SerializedProperty orbitBlendDurationProperty = orbitalPayloadProperty.FindPropertyRelative("orbitBlendDuration");
+        SerializedProperty spiralStartRadiusProperty = orbitalPayloadProperty.FindPropertyRelative("spiralStartRadius");
+        SerializedProperty spiralMaximumRadiusProperty = orbitalPayloadProperty.FindPropertyRelative("spiralMaximumRadius");
+        SerializedProperty spiralAngularSpeedDegreesPerSecondProperty = orbitalPayloadProperty.FindPropertyRelative("spiralAngularSpeedDegreesPerSecond");
+        SerializedProperty spiralGrowthMultiplierProperty = orbitalPayloadProperty.FindPropertyRelative("spiralGrowthMultiplier");
+        SerializedProperty spiralTurnsBeforeDespawnProperty = orbitalPayloadProperty.FindPropertyRelative("spiralTurnsBeforeDespawn");
+        SerializedProperty spiralClockwiseProperty = orbitalPayloadProperty.FindPropertyRelative("spiralClockwise");
+
+        if (pathModeProperty == null ||
+            radialEntrySpeedProperty == null ||
+            heightOffsetProperty == null ||
+            goldenAngleDegreesProperty == null ||
+            orbitalSpeedProperty == null ||
+            orbitRadiusMinProperty == null ||
+            orbitRadiusMaxProperty == null ||
+            orbitPulseFrequencyProperty == null ||
+            orbitEntryRatioProperty == null ||
+            orbitBlendDurationProperty == null ||
+            spiralStartRadiusProperty == null ||
+            spiralMaximumRadiusProperty == null ||
+            spiralAngularSpeedDegreesPerSecondProperty == null ||
+            spiralGrowthMultiplierProperty == null ||
+            spiralTurnsBeforeDespawnProperty == null ||
+            spiralClockwiseProperty == null)
+        {
+            HelpBox errorBox = new HelpBox("Orbital projectiles payload fields are missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(errorBox);
+            return;
+        }
+
+        AddField(payloadContainer, pathModeProperty, "Path Mode");
+        AddField(payloadContainer, radialEntrySpeedProperty, "Radial Entry Speed");
+        AddField(payloadContainer, heightOffsetProperty, "Height Offset");
+        AddField(payloadContainer, goldenAngleDegreesProperty, "Golden Angle Degrees");
+
+        VisualElement circleContainer = new VisualElement();
+        circleContainer.style.marginLeft = 12f;
+        payloadContainer.Add(circleContainer);
+        AddField(circleContainer, orbitalSpeedProperty, "Orbital Speed");
+        AddField(circleContainer, orbitRadiusMinProperty, "Orbit Radius Min");
+        AddField(circleContainer, orbitRadiusMaxProperty, "Orbit Radius Max");
+        AddField(circleContainer, orbitPulseFrequencyProperty, "Orbit Pulse Frequency");
+        AddField(circleContainer, orbitEntryRatioProperty, "Orbit Entry Ratio");
+        AddField(circleContainer, orbitBlendDurationProperty, "Orbit Blend Duration");
+
+        VisualElement spiralContainer = new VisualElement();
+        spiralContainer.style.marginLeft = 12f;
+        payloadContainer.Add(spiralContainer);
+        AddField(spiralContainer, spiralStartRadiusProperty, "Spiral Start Radius");
+        AddField(spiralContainer, spiralMaximumRadiusProperty, "Spiral Maximum Radius");
+        AddField(spiralContainer, spiralAngularSpeedDegreesPerSecondProperty, "Spiral Angular Speed Degrees Per Second");
+        AddField(spiralContainer, spiralGrowthMultiplierProperty, "Spiral Growth Multiplier");
+        AddField(spiralContainer, spiralTurnsBeforeDespawnProperty, "Spiral Turns Before Despawn");
+        AddField(spiralContainer, spiralClockwiseProperty, "Spiral Clockwise");
+
+        UpdateOrbitPathModeContainers(pathModeProperty, circleContainer, spiralContainer);
+        payloadContainer.TrackPropertyValue(pathModeProperty, changedProperty =>
+        {
+            UpdateOrbitPathModeContainers(changedProperty, circleContainer, spiralContainer);
+        });
+    }
     #endregion
 
     #region Visibility
+    private static void UpdateBooleanContainerVisibility(SerializedProperty toggleProperty, VisualElement container)
+    {
+        if (container == null)
+            return;
+
+        if (toggleProperty == null)
+        {
+            container.style.display = DisplayStyle.None;
+            return;
+        }
+
+        container.style.display = toggleProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
     private static void UpdateDamageContainerVisibility(SerializedProperty enableDamagePayloadProperty, VisualElement damageContainer)
     {
         if (damageContainer == null)
@@ -408,6 +626,22 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         }
 
         elementalPayloadContainer.style.display = applyElementalOnHitProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    private static void UpdateOrbitPathModeContainers(SerializedProperty pathModeProperty,
+                                                      VisualElement circleContainer,
+                                                      VisualElement spiralContainer)
+    {
+        ProjectileOrbitPathMode pathMode = ProjectileOrbitPathMode.Circle;
+
+        if (pathModeProperty != null)
+            pathMode = (ProjectileOrbitPathMode)pathModeProperty.enumValueIndex;
+
+        if (circleContainer != null)
+            circleContainer.style.display = pathMode == ProjectileOrbitPathMode.Circle ? DisplayStyle.Flex : DisplayStyle.None;
+
+        if (spiralContainer != null)
+            spiralContainer.style.display = pathMode == ProjectileOrbitPathMode.GoldenSpiral ? DisplayStyle.Flex : DisplayStyle.None;
     }
     #endregion
 

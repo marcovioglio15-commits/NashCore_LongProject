@@ -125,7 +125,7 @@ public partial struct ProjectileSimulationSystem : ISystem
 
             Entity shooterEntity = owner.ShooterEntity;
 
-            if (PassiveToolsLookup.HasComponent(shooterEntity) == false)
+            if (!PassiveToolsLookup.HasComponent(shooterEntity))
                 return false;
 
             PlayerPassiveToolsState passiveToolsState = PassiveToolsLookup[shooterEntity];
@@ -133,13 +133,13 @@ public partial struct ProjectileSimulationSystem : ISystem
             if (passiveToolsState.HasPerfectCircle == 0)
                 return false;
 
-            if (PlayerWorldTransformLookup.HasComponent(shooterEntity) == false)
+            if (!PlayerWorldTransformLookup.HasComponent(shooterEntity))
                 return false;
 
             PerfectCirclePassiveConfig perfectCircleConfig = passiveToolsState.PerfectCircle;
             float3 shooterPosition = PlayerWorldTransformLookup[shooterEntity].Position;
-            float3 currentPosition = projectileTransform.Position;
             float3 entryDirection = perfectCircleState.RadialDirection;
+            float3 perfectCircleInheritedVelocity = ResolveFullInheritedVelocity(owner);
             entryDirection.y = 0f;
 
             if (math.lengthsq(entryDirection) <= 1e-6f)
@@ -150,32 +150,22 @@ public partial struct ProjectileSimulationSystem : ISystem
                 perfectCircleState.RadialDirection = entryDirection;
             }
 
-            // Calculate the minimum and maximum radius,
-            // pulse frequency and phase for dynamic radius changes,
-            // entry threshold for transitioning from radial entry to orbiting,
-            // and radial speed for the entry phase.
-            float minimumRadius = math.max(0f, perfectCircleConfig.OrbitRadiusMin);
-            float maximumRadius = math.max(minimumRadius, perfectCircleConfig.OrbitRadiusMax);
-            float pulseFrequency = math.max(0f, perfectCircleConfig.OrbitPulseFrequency);
-            float pulsePhase = GlobalTime * pulseFrequency * (math.PI * 2f);
-            float pulse = pulseFrequency > 0f ? math.sin(pulsePhase) * 0.5f + 0.5f : 1f;
-            float targetRadius = math.lerp(minimumRadius, maximumRadius, pulse);
-            float entryThreshold = math.max(0.05f, targetRadius * math.clamp(perfectCircleConfig.OrbitEntryRatio, 0f, 1f));
+            float entryThreshold = ResolveOrbitEntryThreshold(in perfectCircleConfig);
             float radialSpeed = math.max(0f, perfectCircleConfig.RadialEntrySpeed);
-            float3 perfectCircleInheritedVelocity = ResolveFullInheritedVelocity(owner);
 
             // If the projectile has not yet entered orbit, move it in a straight line along the entry direction.
             if (perfectCircleState.HasEnteredOrbit == 0)
             {
                 float entryStepDistance = radialSpeed * DeltaTime;
-                runtimeState.TraveledDistance += entryStepDistance;
-                runtimeState.ElapsedLifetime += DeltaTime;
+                perfectCircleState.CurrentRadius += entryStepDistance;
                 perfectCircleState.EntryOrigin += perfectCircleInheritedVelocity * DeltaTime;
-                float traveledEntryDistance = runtimeState.TraveledDistance;
+                float traveledEntryDistance = perfectCircleState.CurrentRadius;
                 float3 entryPosition = perfectCircleState.EntryOrigin + entryDirection * traveledEntryDistance;
                 entryPosition.y = perfectCircleState.EntryOrigin.y + perfectCircleConfig.HeightOffset;
-                projectileTransform.Position = entryPosition;
-                projectile.Velocity = entryDirection * radialSpeed + perfectCircleInheritedVelocity;
+                ApplyResolvedStep(ref projectileTransform,
+                                  ref runtimeState,
+                                  ref projectile,
+                                  entryPosition);
                 perfectCircleState.RadialDirection = entryDirection;
 
                 // If the projectile has not yet reached the entry threshold distance, continue moving it along the entry direction.
@@ -195,19 +185,70 @@ public partial struct ProjectileSimulationSystem : ISystem
                 perfectCircleState.OrbitAngle = math.atan2(orbitEntryDirection.z, orbitEntryDirection.x);
                 perfectCircleState.AccumulatedOrbitRadians = 0f;
                 perfectCircleState.CompletedFullOrbit = 0;
-                currentPosition = entryPosition;
             }
 
-            // Once in orbit, calculate the new orbit radius based on the target radius and any dynamic pulsing,
-            // then update the orbit angle based on the orbital speed and delta time.
-            float orbitRadius = targetRadius;
-            perfectCircleState.CurrentRadius = orbitRadius;
-            float angularSpeed = orbitRadius > 0.001f ? math.max(0f, perfectCircleConfig.OrbitalSpeed) / orbitRadius : 0f;
+            perfectCircleState.RadialDirection = entryDirection;
+
+            switch (perfectCircleConfig.PathMode)
+            {
+                case ProjectileOrbitPathMode.GoldenSpiral:
+                    SimulateGoldenSpiralOrbit(ref projectileTransform,
+                                              ref runtimeState,
+                                              ref projectile,
+                                              ref perfectCircleState,
+                                              in perfectCircleConfig,
+                                              shooterPosition);
+                    return true;
+                default:
+                    SimulateCircularOrbit(ref projectileTransform,
+                                          ref runtimeState,
+                                          ref projectile,
+                                          ref perfectCircleState,
+                                          in perfectCircleConfig,
+                                          shooterPosition,
+                                          GlobalTime);
+                    return true;
+            }
+        }
+
+        private float ResolveOrbitEntryThreshold(in PerfectCirclePassiveConfig perfectCircleConfig)
+        {
+            switch (perfectCircleConfig.PathMode)
+            {
+                case ProjectileOrbitPathMode.GoldenSpiral:
+                    return math.max(0.05f, perfectCircleConfig.SpiralStartRadius);
+                default:
+                    float minimumRadius = math.max(0f, perfectCircleConfig.OrbitRadiusMin);
+                    float maximumRadius = math.max(minimumRadius, perfectCircleConfig.OrbitRadiusMax);
+                    float pulseFrequency = math.max(0f, perfectCircleConfig.OrbitPulseFrequency);
+                    float pulsePhase = GlobalTime * pulseFrequency * (math.PI * 2f);
+                    float pulse = pulseFrequency > 0f ? math.sin(pulsePhase) * 0.5f + 0.5f : 1f;
+                    float targetRadius = math.lerp(minimumRadius, maximumRadius, pulse);
+                    return math.max(0.05f, targetRadius * math.clamp(perfectCircleConfig.OrbitEntryRatio, 0f, 1f));
+            }
+        }
+
+        private void SimulateCircularOrbit(ref LocalTransform projectileTransform,
+                                           ref ProjectileRuntimeState runtimeState,
+                                           ref Projectile projectile,
+                                           ref ProjectilePerfectCircleState perfectCircleState,
+                                           in PerfectCirclePassiveConfig perfectCircleConfig,
+                                           float3 shooterPosition,
+                                           float globalTime)
+        {
+            float minimumRadius = math.max(0f, perfectCircleConfig.OrbitRadiusMin);
+            float maximumRadius = math.max(minimumRadius, perfectCircleConfig.OrbitRadiusMax);
+            float pulseFrequency = math.max(0f, perfectCircleConfig.OrbitPulseFrequency);
+            float pulsePhase = globalTime * pulseFrequency * (math.PI * 2f);
+            float pulse = pulseFrequency > 0f ? math.sin(pulsePhase) * 0.5f + 0.5f : 1f;
+            float orbitRadius = math.lerp(minimumRadius, maximumRadius, pulse);
+            float orbitSpeed = math.max(0f, perfectCircleConfig.OrbitalSpeed);
+            float angularSpeed = orbitRadius > 0.001f ? orbitSpeed / orbitRadius : 0f;
             float angularStep = angularSpeed * DeltaTime;
+
+            perfectCircleState.CurrentRadius = orbitRadius;
             perfectCircleState.OrbitAngle += angularStep;
 
-            // If the projectile has not yet completed a full orbit,
-            // accumulate the orbit angle to track how much of the orbit has been completed.
             if (perfectCircleState.CompletedFullOrbit == 0)
             {
                 perfectCircleState.AccumulatedOrbitRadians += math.abs(angularStep);
@@ -216,23 +257,95 @@ public partial struct ProjectileSimulationSystem : ISystem
                     perfectCircleState.CompletedFullOrbit = 1;
             }
 
-            // Calculate the new position on the orbit based on the current orbit angle and radius,
-            // then update the projectile's position and velocity to maintain the orbit around the shooter.
             float cos = math.cos(perfectCircleState.OrbitAngle);
             float sin = math.sin(perfectCircleState.OrbitAngle);
             float3 orbitOffset = new float3(cos * orbitRadius, 0f, sin * orbitRadius);
             float3 orbitPosition = shooterPosition + orbitOffset;
             orbitPosition.y = shooterPosition.y + perfectCircleConfig.HeightOffset;
-            float3 orbitDisplacement = orbitPosition - currentPosition;
-            projectileTransform.Position = orbitPosition;
-            runtimeState.TraveledDistance += math.length(orbitDisplacement);
-            runtimeState.ElapsedLifetime += DeltaTime;
-            float3 tangent = math.normalizesafe(new float3(-orbitOffset.z, 0f, orbitOffset.x), new float3(1f, 0f, 0f));
-            float3 orbitalVelocity = tangent * math.max(0f, perfectCircleConfig.OrbitalSpeed) + perfectCircleInheritedVelocity;
+            ApplyResolvedStep(ref projectileTransform,
+                              ref runtimeState,
+                              ref projectile,
+                              orbitPosition);
+        }
 
-            projectile.Velocity = orbitalVelocity;
-            perfectCircleState.RadialDirection = entryDirection;
-            return true;
+        private void SimulateGoldenSpiralOrbit(ref LocalTransform projectileTransform,
+                                               ref ProjectileRuntimeState runtimeState,
+                                               ref Projectile projectile,
+                                               ref ProjectilePerfectCircleState perfectCircleState,
+                                               in PerfectCirclePassiveConfig perfectCircleConfig,
+                                               float3 shooterPosition)
+        {
+            const float GoldenRatio = 1.61803398875f;
+            float spiralStartRadius = math.max(0.05f, perfectCircleConfig.SpiralStartRadius);
+            float spiralMaximumRadius = math.max(spiralStartRadius, perfectCircleConfig.SpiralMaximumRadius);
+            float spiralTurnsBeforeDespawn = math.max(0.1f, perfectCircleConfig.SpiralTurnsBeforeDespawn);
+            float angularSpeedRadiansPerSecond = math.radians(math.max(0f, perfectCircleConfig.SpiralAngularSpeedDegreesPerSecond));
+            float directionSign = perfectCircleConfig.SpiralClockwise != 0 ? -1f : 1f;
+            float angularStep = angularSpeedRadiansPerSecond * DeltaTime * directionSign;
+            float growthMultiplier = math.max(0f, perfectCircleConfig.SpiralGrowthMultiplier);
+            float growthExponent = growthMultiplier > 0f ? math.log(GoldenRatio) * (2f / math.PI) * growthMultiplier : 0f;
+
+            perfectCircleState.OrbitAngle += angularStep;
+            perfectCircleState.AccumulatedOrbitRadians += math.abs(angularStep);
+
+            float orbitRadius = growthExponent > 0f
+                ? spiralStartRadius * math.exp(growthExponent * perfectCircleState.AccumulatedOrbitRadians)
+                : spiralStartRadius;
+
+            if (orbitRadius > spiralMaximumRadius)
+                orbitRadius = spiralMaximumRadius;
+
+            perfectCircleState.CurrentRadius = orbitRadius;
+
+            if (perfectCircleState.CompletedFullOrbit == 0)
+            {
+                float despawnAngleThreshold = spiralTurnsBeforeDespawn * (math.PI * 2f);
+
+                if (perfectCircleState.AccumulatedOrbitRadians >= despawnAngleThreshold ||
+                    orbitRadius + 0.001f >= spiralMaximumRadius)
+                {
+                    perfectCircleState.CompletedFullOrbit = 1;
+                }
+            }
+
+            float cos = math.cos(perfectCircleState.OrbitAngle);
+            float sin = math.sin(perfectCircleState.OrbitAngle);
+            float3 orbitOffset = new float3(cos * orbitRadius, 0f, sin * orbitRadius);
+            float3 orbitPosition = shooterPosition + orbitOffset;
+            orbitPosition.y = shooterPosition.y + perfectCircleConfig.HeightOffset;
+            ApplyResolvedStep(ref projectileTransform,
+                              ref runtimeState,
+                              ref projectile,
+                              orbitPosition);
+        }
+        #endregion
+
+        #region Step Resolution
+        /// <summary>
+        /// Applies a resolved projectile position using the exact frame displacement as the authoritative source for
+        /// distance, lifetime and velocity updates. This keeps collision reconstruction aligned with non-linear paths.
+        /// </summary>
+        /// <param name="projectileTransform">Projectile transform to update.</param>
+        /// <param name="runtimeState">Projectile runtime state that tracks range and lifetime.</param>
+        /// <param name="projectile">Projectile data that stores the authoritative frame velocity.</param>
+        /// <param name="targetPosition">Final position reached by the projectile in the current frame.</param>
+        private void ApplyResolvedStep(ref LocalTransform projectileTransform,
+                                       ref ProjectileRuntimeState runtimeState,
+                                       ref Projectile projectile,
+                                       float3 targetPosition)
+        {
+            float3 displacement = targetPosition - projectileTransform.Position;
+            projectileTransform.Position = targetPosition;
+            runtimeState.TraveledDistance += math.length(displacement);
+            runtimeState.ElapsedLifetime += DeltaTime;
+
+            if (DeltaTime > 1e-6f)
+            {
+                projectile.Velocity = displacement / DeltaTime;
+                return;
+            }
+
+            projectile.Velocity = float3.zero;
         }
         #endregion
 

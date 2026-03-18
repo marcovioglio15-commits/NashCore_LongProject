@@ -20,8 +20,12 @@ public struct PlayerPowerUpsState : IComponentData
     public float SecondaryCooldownRemaining;
     public float PrimaryCharge;
     public float SecondaryCharge;
+    public float PrimaryMaintenanceTickTimer;
+    public float SecondaryMaintenanceTickTimer;
     public byte PrimaryIsCharging;
     public byte SecondaryIsCharging;
+    public byte PrimaryIsActive;
+    public byte SecondaryIsActive;
     public byte IsShootingSuppressed;
     public byte PreviousPrimaryPressed;
     public byte PreviousSecondaryPressed;

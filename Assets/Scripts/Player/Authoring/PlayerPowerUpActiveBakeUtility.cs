@@ -127,12 +127,15 @@ public static class PlayerPowerUpActiveBakeUtility
         PowerUpResourceType activationResource = PowerUpResourceType.None;
         PowerUpResourceType maintenanceResource = PowerUpResourceType.None;
         PowerUpChargeType chargeType = PowerUpChargeType.Time;
+        bool isToggleable = false;
         float maximumEnergy = 0f;
         float activationCost = 0f;
         float maintenanceCostPerSecond = 0f;
+        float maintenanceTicksPerSecond = 0f;
         float chargePerTrigger = 0f;
         float cooldownSeconds = 0f;
         bool hasCooldownSeconds = false;
+        bool allowRechargeDuringToggleStartupLock = false;
         float minimumActivationEnergyPercent = 0f;
         bool suppressBaseShootingWhileActive = false;
         bool interruptOtherSlotOnEnter = false;
@@ -142,6 +145,10 @@ public static class PlayerPowerUpActiveBakeUtility
         float holdChargeRequired = 0f;
         float holdChargeMaximum = 0f;
         float holdChargeRatePerSecond = 0f;
+        bool decayAfterRelease = false;
+        float decayAfterReleasePercentPerSecond = 0f;
+        bool passiveChargeGainWhileReleased = false;
+        float passiveChargeGainPercentPerSecond = 0f;
         bool hasBomb = false;
         GameObject bombPrefab = null;
         float3 bombSpawnOffset = float3.zero;
@@ -224,6 +231,9 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                                     ref activationResource,
                                                                                     ref maintenanceResource,
                                                                                     ref chargeType,
+                                                                                    ref isToggleable,
+                                                                                    ref maintenanceTicksPerSecond,
+                                                                                    ref allowRechargeDuringToggleStartupLock,
                                                                                     ref maximumEnergy,
                                                                                     ref activationCost,
                                                                                     ref maintenanceCostPerSecond,
@@ -242,6 +252,12 @@ public static class PlayerPowerUpActiveBakeUtility
                     holdChargeRequired = math.max(holdChargeRequired, math.max(0f, holdChargeData.RequiredCharge));
                     holdChargeMaximum = math.max(math.max(holdChargeMaximum, holdChargeRequired), math.max(0f, holdChargeData.MaximumCharge));
                     holdChargeRatePerSecond += math.max(0f, holdChargeData.ChargeRatePerSecond);
+                    decayAfterRelease = decayAfterRelease || holdChargeData.DecayAfterRelease;
+                    decayAfterReleasePercentPerSecond = math.max(decayAfterReleasePercentPerSecond,
+                                                                 math.max(0f, holdChargeData.DecayAfterReleasePercentPerSecond));
+                    passiveChargeGainWhileReleased = passiveChargeGainWhileReleased || holdChargeData.PassiveChargeGainWhileReleased;
+                    passiveChargeGainPercentPerSecond = math.max(passiveChargeGainPercentPerSecond,
+                                                                 math.max(0f, holdChargeData.PassiveChargeGainPercentPerSecond));
                     break;
                 case PowerUpModuleKind.TriggerPress:
                     hasTriggerPress = true;
@@ -370,12 +386,30 @@ public static class PlayerPowerUpActiveBakeUtility
             }
         }
 
-        ActiveToolKind resolvedToolKind = PlayerPowerUpActiveSlotSynthesisUtility.ResolveModularToolKind(hasHoldCharge,
-                                                                                                          hasShotgun,
-                                                                                                          hasBomb,
-                                                                                                          hasDash,
-                                                                                                          hasBulletTime,
-                                                                                                          hasHealthPack);
+        PlayerPassiveToolConfig togglePassiveTool = default;
+        ActiveToolKind resolvedToolKind = ActiveToolKind.Custom;
+
+        if (isToggleable)
+        {
+            togglePassiveTool = PlayerPowerUpPassiveBakeUtility.BuildPassiveToolConfigFromModularPowerUp(authoring,
+                                                                                                         preset,
+                                                                                                         powerUp,
+                                                                                                         resolveDynamicPrefabEntity);
+
+            if (togglePassiveTool.IsDefined == 0)
+                return default;
+
+            resolvedToolKind = ActiveToolKind.PassiveToggle;
+        }
+        else
+        {
+            resolvedToolKind = PlayerPowerUpActiveSlotSynthesisUtility.ResolveModularToolKind(hasHoldCharge,
+                                                                                              hasShotgun,
+                                                                                              hasBomb,
+                                                                                              hasDash,
+                                                                                              hasBulletTime,
+                                                                                              hasHealthPack);
+        }
 
         if (resolvedToolKind == ActiveToolKind.Custom)
             return default;
@@ -425,11 +459,14 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                               activationResource,
                                                                               maintenanceResource,
                                                                               chargeType,
+                                                                              isToggleable,
                                                                               maximumEnergy,
                                                                               activationCost,
                                                                               maintenanceCostPerSecond,
+                                                                              maintenanceTicksPerSecond,
                                                                               chargePerTrigger,
                                                                               cooldownSeconds,
+                                                                              allowRechargeDuringToggleStartupLock,
                                                                               minimumActivationEnergyPercent,
                                                                               suppressBaseShootingWhileActive,
                                                                               interruptOtherSlotOnEnter,
@@ -464,6 +501,10 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                               holdChargeRequired,
                                                                               holdChargeMaximum,
                                                                               holdChargeRatePerSecond,
+                                                                              decayAfterRelease,
+                                                                              decayAfterReleasePercentPerSecond,
+                                                                              passiveChargeGainWhileReleased,
+                                                                              passiveChargeGainPercentPerSecond,
                                                                               suppressBaseShootingWhileCharging,
                                                                               shotgunProjectileCount,
                                                                               shotgunConeAngleDegrees,
@@ -482,6 +523,7 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                               healthPackDurationSeconds,
                                                                               healthPackTickIntervalSeconds,
                                                                               healthPackStackPolicy,
+                                                                              in togglePassiveTool,
                                                                               resolvedToolKind);
     }
 
@@ -538,9 +580,11 @@ public static class PlayerPowerUpActiveBakeUtility
             MaximumEnergy = math.max(0f, activeTool.MaximumEnergy),
             ActivationCost = math.max(0f, activeTool.ActivationCost),
             MaintenanceCostPerSecond = math.max(0f, activeTool.MaintenanceCostPerSecond),
+            MaintenanceTicksPerSecond = 0f,
             ChargePerTrigger = math.max(0f, activeTool.ChargePerTrigger),
             ActivationInputMode = PowerUpActivationInputMode.OnPress,
             Toggleable = activeTool.Toggleable ? (byte)1 : (byte)0,
+            AllowRechargeDuringToggleStartupLock = 0,
             MinimumActivationEnergyPercent = math.clamp(activeTool.MinimumActivationEnergyPercent, 0f, 100f),
             Unreplaceable = activeTool.Unreplaceable ? (byte)1 : (byte)0,
             SuppressBaseShootingWhileActive = 0,
@@ -578,7 +622,10 @@ public static class PlayerPowerUpActiveBakeUtility
             {
                 Duration = bulletTimeData != null ? math.max(0.05f, bulletTimeData.Duration) : 0.05f,
                 EnemySlowPercent = bulletTimeData != null ? math.clamp(bulletTimeData.EnemySlowPercent, 0f, 100f) : 0f
-            }
+            },
+            ChargeShot = default,
+            PortableHealthPack = default,
+            TogglePassiveTool = default
         };
     }
 

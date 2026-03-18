@@ -27,8 +27,13 @@ public static class PlayerPowerUpActivationSlotUtility
                                         ref float cooldownRemaining,
                                         ref float charge,
                                         ref byte isCharging,
+                                        ref byte isActive,
+                                        ref float maintenanceTickTimer,
                                         ref float otherSlotCharge,
+                                        ref float otherSlotCooldownRemaining,
                                         ref byte otherSlotIsCharging,
+                                        ref byte otherSlotIsActive,
+                                        ref float otherSlotMaintenanceTickTimer,
                                         ref byte isShootingSuppressed,
                                         ref PlayerDashState dashState,
                                         ref PlayerBulletTimeState bulletTimeState,
@@ -48,37 +53,70 @@ public static class PlayerPowerUpActivationSlotUtility
 
         if (slotConfig.ToolKind == ActiveToolKind.ChargeShot)
         {
-            ProcessChargeShotSlot(in slotConfig,
-                                  isPressed,
-                                  pressedThisFrame,
-                                  releasedThisFrame,
-                                  deltaTime,
-                                  in localTransform,
-                                  in lookState,
-                                  in movementState,
-                                  in controllerConfig,
-                                  in passiveToolsState,
-                                  ref slotEnergy,
-                                  ref cooldownRemaining,
-                                  ref charge,
-                                  ref isCharging,
-                                  otherSlotConfig.IsDefined != 0,
-                                  ref otherSlotCharge,
-                                  ref otherSlotIsCharging,
-                                  ref isShootingSuppressed,
-                                  shootRequests,
-                                  playerEntity,
-                                  ref healthLookup,
-                                  ref updatedHealth,
-                                  ref healthChanged,
-                                  ref shieldLookup,
-                                  ref updatedShield,
-                                  ref shieldChanged,
-                                  ref dashState,
-                                  ref bulletTimeState);
+            PlayerPowerUpChargeAndToggleActivationUtility.ProcessChargeShotSlot(in slotConfig,
+                                                                                isPressed,
+                                                                                pressedThisFrame,
+                                                                                releasedThisFrame,
+                                                                                deltaTime,
+                                                                                in localTransform,
+                                                                                in lookState,
+                                                                                in controllerConfig,
+                                                                                in passiveToolsState,
+                                                                                ref slotEnergy,
+                                                                                ref cooldownRemaining,
+                                                                                ref charge,
+                                                                                ref isCharging,
+                                                                                ref isActive,
+                                                                                ref maintenanceTickTimer,
+                                                                                otherSlotConfig.IsDefined != 0,
+                                                                                ref otherSlotCharge,
+                                                                                ref otherSlotCooldownRemaining,
+                                                                                ref otherSlotIsCharging,
+                                                                                ref otherSlotIsActive,
+                                                                                ref otherSlotMaintenanceTickTimer,
+                                                                                ref isShootingSuppressed,
+                                                                                shootRequests,
+                                                                                playerEntity,
+                                                                                ref healthLookup,
+                                                                                ref updatedHealth,
+                                                                                ref healthChanged,
+                                                                                ref shieldLookup,
+                                                                                ref updatedShield,
+                                                                                ref shieldChanged,
+                                                                                ref dashState,
+                                                                                ref bulletTimeState);
             return;
         }
 
+        if (slotConfig.ToolKind == ActiveToolKind.PassiveToggle && slotConfig.Toggleable != 0)
+        {
+            PlayerPowerUpChargeAndToggleActivationUtility.ProcessPassiveToggleSlot(in slotConfig,
+                                                                                   pressedThisFrame,
+                                                                                   ref slotEnergy,
+                                                                                   ref cooldownRemaining,
+                                                                                   ref isActive,
+                                                                                   ref maintenanceTickTimer,
+                                                                                   otherSlotConfig.IsDefined != 0,
+                                                                                   ref otherSlotCharge,
+                                                                                   ref otherSlotCooldownRemaining,
+                                                                                   ref otherSlotIsCharging,
+                                                                                   ref otherSlotIsActive,
+                                                                                   ref otherSlotMaintenanceTickTimer,
+                                                                                   ref isShootingSuppressed,
+                                                                                   playerEntity,
+                                                                                   ref healthLookup,
+                                                                                   ref updatedHealth,
+                                                                                   ref healthChanged,
+                                                                                   ref shieldLookup,
+                                                                                   ref updatedShield,
+                                                                                   ref shieldChanged,
+                                                                                   ref dashState,
+                                                                                   ref bulletTimeState);
+            return;
+        }
+
+        isActive = 0;
+        maintenanceTickTimer = 0f;
         bool activationTriggered;
 
         switch (slotConfig.ActivationInputMode)
@@ -112,33 +150,36 @@ public static class PlayerPowerUpActivationSlotUtility
                             ref healthChanged))
             return;
 
-        if (!CanPayActivationCost(in slotConfig,
-                                  slotEnergy,
-                                  playerEntity,
-                                  ref healthLookup,
-                                  ref updatedHealth,
-                                  ref healthChanged,
-                                  ref shieldLookup,
-                                  ref updatedShield,
-                                  ref shieldChanged))
+        if (!PlayerPowerUpResourceCostUtility.CanPayActivationCost(in slotConfig,
+                                                                   slotEnergy,
+                                                                   playerEntity,
+                                                                   ref healthLookup,
+                                                                   ref updatedHealth,
+                                                                   ref healthChanged,
+                                                                   ref shieldLookup,
+                                                                   ref updatedShield,
+                                                                   ref shieldChanged))
             return;
 
-        ConsumeActivationCost(in slotConfig,
-                              ref slotEnergy,
-                              playerEntity,
-                              ref healthLookup,
-                              ref updatedHealth,
-                              ref healthChanged,
-                              ref shieldLookup,
-                              ref updatedShield,
-                              ref shieldChanged);
+        PlayerPowerUpResourceCostUtility.ConsumeActivationCost(in slotConfig,
+                                                               ref slotEnergy,
+                                                               playerEntity,
+                                                               ref healthLookup,
+                                                               ref updatedHealth,
+                                                               ref healthChanged,
+                                                               ref shieldLookup,
+                                                               ref updatedShield,
+                                                               ref shieldChanged);
 
         if (slotConfig.InterruptOtherSlotOnEnter != 0 && otherSlotConfig.IsDefined != 0)
-            InterruptOtherSlot(in slotConfig,
-                               ref otherSlotCharge,
-                               ref otherSlotIsCharging,
-                               ref dashState,
-                               ref bulletTimeState);
+            PlayerPowerUpChargeAndToggleActivationUtility.InterruptOtherSlot(in slotConfig,
+                                                                             ref otherSlotCharge,
+                                                                             ref otherSlotCooldownRemaining,
+                                                                             ref otherSlotIsCharging,
+                                                                             ref otherSlotIsActive,
+                                                                             ref otherSlotMaintenanceTickTimer,
+                                                                             ref dashState,
+                                                                             ref bulletTimeState);
 
         if (slotConfig.ToolKind == ActiveToolKind.PortableHealthPack)
             ExecutePortableHealthPack(in slotConfig, playerEntity, ref healthLookup, ref updatedHealth, ref healthChanged, ref healOverTimeState);
@@ -163,151 +204,6 @@ public static class PlayerPowerUpActivationSlotUtility
         cooldownRemaining = math.max(0f, slotConfig.CooldownSeconds);
     }
 
-    private static void ProcessChargeShotSlot(in PlayerPowerUpSlotConfig slotConfig,
-                                              bool isPressed,
-                                              bool pressedThisFrame,
-                                              bool releasedThisFrame,
-                                              float deltaTime,
-                                              in LocalTransform localTransform,
-                                              in PlayerLookState lookState,
-                                              in PlayerMovementState movementState,
-                                              in PlayerControllerConfig controllerConfig,
-                                              in PlayerPassiveToolsState passiveToolsState,
-                                              ref float slotEnergy,
-                                              ref float cooldownRemaining,
-                                              ref float charge,
-                                              ref byte isCharging,
-                                              bool hasOtherSlotDefinition,
-                                              ref float otherSlotCharge,
-                                              ref byte otherSlotIsCharging,
-                                              ref byte isShootingSuppressed,
-                                              DynamicBuffer<ShootRequest> shootRequests,
-                                              Entity playerEntity,
-                                              ref ComponentLookup<PlayerHealth> healthLookup,
-                                              ref PlayerHealth updatedHealth,
-                                              ref bool healthChanged,
-                                              ref ComponentLookup<PlayerShield> shieldLookup,
-                                              ref PlayerShield updatedShield,
-                                              ref bool shieldChanged,
-                                              ref PlayerDashState dashState,
-                                              ref PlayerBulletTimeState bulletTimeState)
-    {
-        if (cooldownRemaining > 0f)
-        {
-            isCharging = 0;
-            charge = 0f;
-            return;
-        }
-
-        float requiredCharge = math.max(0f, slotConfig.ChargeShot.RequiredCharge);
-        float maximumCharge = math.max(requiredCharge, slotConfig.ChargeShot.MaximumCharge);
-        float chargeRate = math.max(0f, slotConfig.ChargeShot.ChargeRatePerSecond);
-
-        if (requiredCharge <= 0f)
-            return;
-
-        if (chargeRate <= 0f)
-            return;
-
-        if (pressedThisFrame)
-        {
-            if (!CanPayActivationCost(in slotConfig,
-                                      slotEnergy,
-                                      playerEntity,
-                                      ref healthLookup,
-                                      ref updatedHealth,
-                                      ref healthChanged,
-                                      ref shieldLookup,
-                                      ref updatedShield,
-                                      ref shieldChanged))
-            {
-                isCharging = 0;
-                charge = 0f;
-                return;
-            }
-
-            isCharging = 1;
-            charge = 0f;
-        }
-
-        if (isCharging != 0 && isPressed)
-        {
-            if (!CanPayActivationCost(in slotConfig,
-                                      slotEnergy,
-                                      playerEntity,
-                                      ref healthLookup,
-                                      ref updatedHealth,
-                                      ref healthChanged,
-                                      ref shieldLookup,
-                                      ref updatedShield,
-                                      ref shieldChanged))
-            {
-                isCharging = 0;
-                charge = 0f;
-                return;
-            }
-
-            charge += chargeRate * math.max(0f, deltaTime);
-
-            if (charge > maximumCharge)
-                charge = maximumCharge;
-
-            if (slotConfig.ChargeShot.SuppressBaseShootingWhileCharging != 0)
-                isShootingSuppressed = 1;
-
-            if (slotConfig.SuppressBaseShootingWhileActive != 0)
-                isShootingSuppressed = 1;
-        }
-
-        if (!releasedThisFrame)
-            return;
-
-        if (isCharging == 0)
-            return;
-
-        bool hasEnoughCharge = charge + PlayerPowerUpActivationUtilityConstants.EnergyEpsilon >= requiredCharge;
-
-        if (hasEnoughCharge &&
-            CanPayActivationCost(in slotConfig,
-                                 slotEnergy,
-                                 playerEntity,
-                                 ref healthLookup,
-                                 ref updatedHealth,
-                                 ref healthChanged,
-                                 ref shieldLookup,
-                                 ref updatedShield,
-                                 ref shieldChanged))
-        {
-            ConsumeActivationCost(in slotConfig,
-                                  ref slotEnergy,
-                                  playerEntity,
-                                  ref healthLookup,
-                                  ref updatedHealth,
-                                  ref healthChanged,
-                                  ref shieldLookup,
-                                  ref updatedShield,
-                                  ref shieldChanged);
-
-            if (slotConfig.InterruptOtherSlotOnEnter != 0 && hasOtherSlotDefinition)
-                InterruptOtherSlot(in slotConfig,
-                                   ref otherSlotCharge,
-                                   ref otherSlotIsCharging,
-                                   ref dashState,
-                                   ref bulletTimeState);
-
-            PlayerPowerUpActivationExecutionUtility.ExecuteChargeShot(in slotConfig,
-                                                                      in localTransform,
-                                                                      in lookState,
-                                                                      in controllerConfig,
-                                                                      in passiveToolsState,
-                                                                      shootRequests);
-
-            cooldownRemaining = math.max(0f, slotConfig.CooldownSeconds);
-        }
-
-        isCharging = 0;
-        charge = 0f;
-    }
     #endregion
 
     #region Checks
@@ -393,158 +289,21 @@ public static class PlayerPowerUpActivationSlotUtility
                 if (slotConfig.ChargeShot.RequiredCharge <= 0f)
                     return false;
 
-                if (slotConfig.ChargeShot.ChargeRatePerSecond <= 0f)
+                if (slotConfig.ChargeShot.ChargeRatePerSecond <= 0f &&
+                    slotConfig.ChargeShot.PassiveChargeGainWhileReleased == 0)
                     return false;
 
                 if (controllerConfig.Config.Value.Shooting.Values.ShootSpeed <= 0f)
                     return false;
 
                 return true;
+            case ActiveToolKind.PassiveToggle:
+                return slotConfig.Toggleable != 0 && slotConfig.TogglePassiveTool.IsDefined != 0;
             default:
                 return false;
         }
     }
 
-    private static bool CanPayActivationCost(in PlayerPowerUpSlotConfig slotConfig,
-                                             float slotEnergy,
-                                             Entity playerEntity,
-                                             ref ComponentLookup<PlayerHealth> healthLookup,
-                                             ref PlayerHealth updatedHealth,
-                                             ref bool healthChanged,
-                                             ref ComponentLookup<PlayerShield> shieldLookup,
-                                             ref PlayerShield updatedShield,
-                                             ref bool shieldChanged)
-    {
-        float maximumEnergy = math.max(0f, slotConfig.MaximumEnergy);
-        float activationCost = math.max(0f, slotConfig.ActivationCost);
-        float minimumActivationEnergyPercent = math.clamp(slotConfig.MinimumActivationEnergyPercent, 0f, 100f);
-
-        switch (slotConfig.ActivationResource)
-        {
-            case PowerUpResourceType.None:
-                return true;
-            case PowerUpResourceType.Energy:
-                if (maximumEnergy <= 0f)
-                    return false;
-
-                if (minimumActivationEnergyPercent > 0f)
-                {
-                    float minimumEnergyRequired = maximumEnergy * (minimumActivationEnergyPercent * 0.01f);
-
-                    if (slotEnergy + PlayerPowerUpActivationUtilityConstants.EnergyEpsilon < minimumEnergyRequired)
-                        return false;
-                }
-
-                if (activationCost <= 0f)
-                    return true;
-
-                if (slotEnergy + PlayerPowerUpActivationUtilityConstants.EnergyEpsilon < activationCost)
-                    return false;
-
-                return true;
-            case PowerUpResourceType.Health:
-                if (!healthChanged)
-                {
-                    if (!healthLookup.HasComponent(playerEntity))
-                        return false;
-
-                    updatedHealth = healthLookup[playerEntity];
-                    healthChanged = true;
-                }
-
-                if (activationCost <= 0f)
-                    return true;
-
-                if (updatedHealth.Current <= activationCost)
-                    return false;
-
-                return true;
-            case PowerUpResourceType.Shield:
-                if (!shieldChanged)
-                {
-                    if (!shieldLookup.HasComponent(playerEntity))
-                        return false;
-
-                    updatedShield = shieldLookup[playerEntity];
-                    shieldChanged = true;
-                }
-
-                if (activationCost <= 0f)
-                    return true;
-
-                if (updatedShield.Current + PlayerPowerUpActivationUtilityConstants.EnergyEpsilon < activationCost)
-                    return false;
-
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private static void ConsumeActivationCost(in PlayerPowerUpSlotConfig slotConfig,
-                                              ref float slotEnergy,
-                                              Entity playerEntity,
-                                              ref ComponentLookup<PlayerHealth> healthLookup,
-                                              ref PlayerHealth updatedHealth,
-                                              ref bool healthChanged,
-                                              ref ComponentLookup<PlayerShield> shieldLookup,
-                                              ref PlayerShield updatedShield,
-                                              ref bool shieldChanged)
-    {
-        float activationCost = math.max(0f, slotConfig.ActivationCost);
-
-        switch (slotConfig.ActivationResource)
-        {
-            case PowerUpResourceType.Energy:
-                if (activationCost <= 0f)
-                    return;
-
-                slotEnergy -= activationCost;
-
-                if (slotEnergy < 0f)
-                    slotEnergy = 0f;
-
-                return;
-            case PowerUpResourceType.Health:
-                if (!healthChanged)
-                {
-                    if (!healthLookup.HasComponent(playerEntity))
-                        return;
-
-                    updatedHealth = healthLookup[playerEntity];
-                    healthChanged = true;
-                }
-
-                if (activationCost <= 0f)
-                    return;
-
-                updatedHealth.Current -= activationCost;
-
-                if (updatedHealth.Current < 0f)
-                    updatedHealth.Current = 0f;
-
-                return;
-            case PowerUpResourceType.Shield:
-                if (!shieldChanged)
-                {
-                    if (!shieldLookup.HasComponent(playerEntity))
-                        return;
-
-                    updatedShield = shieldLookup[playerEntity];
-                    shieldChanged = true;
-                }
-
-                if (activationCost <= 0f)
-                    return;
-
-                updatedShield.Current -= activationCost;
-
-                if (updatedShield.Current < 0f)
-                    updatedShield.Current = 0f;
-
-                return;
-        }
-    }
     #endregion
 
     #region Side Effects
@@ -635,31 +394,6 @@ public static class PlayerPowerUpActivationSlotUtility
         healOverTimeState.TickTimer = 0f;
     }
 
-    private static void InterruptOtherSlot(in PlayerPowerUpSlotConfig slotConfig,
-                                           ref float otherSlotCharge,
-                                           ref byte otherSlotIsCharging,
-                                           ref PlayerDashState dashState,
-                                           ref PlayerBulletTimeState bulletTimeState)
-    {
-        otherSlotCharge = 0f;
-        otherSlotIsCharging = 0;
-
-        if (slotConfig.InterruptOtherSlotChargingOnly != 0)
-            return;
-
-        dashState.IsDashing = 0;
-        dashState.Phase = 0;
-        dashState.PhaseRemaining = 0f;
-        dashState.HoldDuration = 0f;
-        dashState.RemainingInvulnerability = 0f;
-        dashState.Direction = float3.zero;
-        dashState.EntryVelocity = float3.zero;
-        dashState.Speed = 0f;
-        dashState.TransitionInDuration = 0f;
-        dashState.TransitionOutDuration = 0f;
-        bulletTimeState.RemainingDuration = 0f;
-        bulletTimeState.SlowPercent = 0f;
-    }
     #endregion
 
     #endregion
