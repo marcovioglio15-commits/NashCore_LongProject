@@ -298,11 +298,7 @@ public sealed class LookSettings
     #region Validation
     public void Validate()
     {
-        if (m_DiscreteDirectionCount < 1)
-            m_DiscreteDirectionCount = 1;
-
-        if (m_DirectionsMode == LookDirectionsMode.DiscreteCount)
-            m_DirectionOffsetDegrees = SnapOffsetToStep(m_DirectionOffsetDegrees, m_DiscreteDirectionCount);
+        int resolvedDiscreteDirectionCount = m_DiscreteDirectionCount < 1 ? 1 : m_DiscreteDirectionCount;
 
         if (m_DiscreteDirectionMaxSpeedMultipliers == null)
             m_DiscreteDirectionMaxSpeedMultipliers = new List<float>();
@@ -310,8 +306,8 @@ public sealed class LookSettings
         if (m_DiscreteDirectionAccelerationMultipliers == null)
             m_DiscreteDirectionAccelerationMultipliers = new List<float>();
 
-        EnsureDiscreteMultipliers(m_DiscreteDirectionMaxSpeedMultipliers, m_DiscreteDirectionCount);
-        EnsureDiscreteMultipliers(m_DiscreteDirectionAccelerationMultipliers, m_DiscreteDirectionCount);
+        EnsureDiscreteMultipliers(m_DiscreteDirectionMaxSpeedMultipliers, resolvedDiscreteDirectionCount);
+        EnsureDiscreteMultipliers(m_DiscreteDirectionAccelerationMultipliers, resolvedDiscreteDirectionCount);
 
         ClampDiscreteMultipliers(m_DiscreteDirectionMaxSpeedMultipliers);
         ClampDiscreteMultipliers(m_DiscreteDirectionAccelerationMultipliers);
@@ -337,15 +333,6 @@ public sealed class LookSettings
             m_Values = new LookValues();
 
         m_Values.Validate();
-    }
-
-    private float SnapOffsetToStep(float offset, int count)
-    {
-        int clampedCount = Mathf.Max(1, count);
-        float step = 360f / clampedCount;
-        float normalized = Mathf.Repeat(offset, 360f);
-        float snapped = Mathf.Round(normalized / step) * step;
-        return Mathf.Repeat(snapped, 360f);
     }
 
     private void EnsureDiscreteMultipliers(List<float> multipliers, int targetCount)

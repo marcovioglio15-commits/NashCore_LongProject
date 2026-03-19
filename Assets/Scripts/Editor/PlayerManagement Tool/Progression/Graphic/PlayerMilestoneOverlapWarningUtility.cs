@@ -52,7 +52,7 @@ public static class PlayerMilestoneOverlapWarningUtility
         if (phaseProperty == null)
             return;
 
-        List<string> overlapMessages = BuildOverlapMessages(phaseProperty);
+        List<string> overlapMessages = BuildWarningMessages(phaseProperty);
 
         if (overlapMessages.Count <= 0)
             return;
@@ -68,7 +68,7 @@ public static class PlayerMilestoneOverlapWarningUtility
 
         int hiddenWarningCount = overlapMessages.Count - MaxVisibleWarnings;
         HelpBox summaryBox = new HelpBox(string.Format(CultureInfo.InvariantCulture,
-                                                       "Additional overlap warnings hidden: {0}. Runtime always uses the first valid milestone in list order.",
+                                                       "Additional progression warnings hidden: {0}. Runtime always uses the first valid milestone in list order.",
                                                        hiddenWarningCount),
                                          HelpBoxMessageType.Warning);
         warningsRoot.Add(summaryBox);
@@ -76,6 +76,118 @@ public static class PlayerMilestoneOverlapWarningUtility
     #endregion
 
     #region Private Methods
+    private static List<string> BuildWarningMessages(SerializedProperty phaseProperty)
+    {
+        List<string> warningMessages = new List<string>();
+        warningMessages.AddRange(BuildPhaseConfigurationMessages(phaseProperty));
+        warningMessages.AddRange(BuildOverlapMessages(phaseProperty));
+        return warningMessages;
+    }
+
+    private static List<string> BuildPhaseConfigurationMessages(SerializedProperty phaseProperty)
+    {
+        List<string> warningMessages = new List<string>();
+
+        if (phaseProperty == null)
+            return warningMessages;
+
+        SerializedProperty phaseIdProperty = phaseProperty.FindPropertyRelative("phaseID");
+        SerializedProperty startsAtLevelProperty = phaseProperty.FindPropertyRelative("startsAtLevel");
+        SerializedProperty milestonesProperty = phaseProperty.FindPropertyRelative("milestones");
+        int phaseIndex = ExtractArrayIndex(phaseProperty.propertyPath);
+        int phaseStartLevel = ReadIntProperty(startsAtLevelProperty, 0);
+        int phaseEndExclusive = ResolvePhaseEndExclusive(phaseProperty);
+        string phaseId = ReadStringProperty(phaseIdProperty);
+        List<int> duplicatePhaseIdIndices = FindDuplicatePhaseIdIndices(phaseProperty, phaseIndex, phaseId);
+        List<int> duplicatePhaseStartIndices = FindDuplicatePhaseStartIndices(phaseProperty, phaseIndex, phaseStartLevel);
+
+        if (string.IsNullOrWhiteSpace(phaseId))
+        {
+            warningMessages.Add(string.Format(CultureInfo.InvariantCulture,
+                                             "Phase ID is empty. Runtime falls back to 'Phase{0}' and scaling keys become harder to track.",
+                                             phaseIndex >= 0 ? phaseIndex : 0));
+        }
+
+        if (duplicatePhaseIdIndices.Count > 0)
+        {
+            warningMessages.Add(string.Format(CultureInfo.InvariantCulture,
+                                             "Phase ID '{0}' is duplicated by phase(s) {1}. Keep Phase IDs unique to avoid ambiguous tool warnings and scaling-key resolution.",
+                                             phaseId,
+                                             FormatPhaseIndexList(duplicatePhaseIdIndices)));
+        }
+
+        if (duplicatePhaseStartIndices.Count > 0)
+        {
+            warningMessages.Add(string.Format(CultureInfo.InvariantCulture,
+                                             "Starts At Level {0} is also used by phase(s) {1}. Runtime uses the last matching list entry for that level.",
+                                             phaseStartLevel,
+                                             FormatPhaseIndexList(duplicatePhaseStartIndices)));
+        }
+
+        if (milestonesProperty == null || !milestonesProperty.isArray)
+            return warningMessages;
+
+        for (int milestoneIndex = 0; milestoneIndex < milestonesProperty.arraySize; milestoneIndex++)
+        {
+            SerializedProperty milestoneProperty = milestonesProperty.GetArrayElementAtIndex(milestoneIndex);
+
+            if (milestoneProperty == null)
+                continue;
+
+            SerializedProperty milestoneLevelProperty = milestoneProperty.FindPropertyRelative("milestoneLevel");
+            SerializedProperty recurringProperty = milestoneProperty.FindPropertyRelative("recurring");
+            SerializedProperty recurrenceIntervalProperty = milestoneProperty.FindPropertyRelative("recurrenceIntervalLevels");
+            SerializedProperty specialExpRequirementProperty = milestoneProperty.FindPropertyRelative("specialExpRequirement");
+            SerializedProperty powerUpUnlocksProperty = milestoneProperty.FindPropertyRelative("powerUpUnlocks");
+            int milestoneLevel = ReadIntProperty(milestoneLevelProperty, 0);
+            bool recurring = ReadBoolProperty(recurringProperty);
+            int recurrenceIntervalLevels = ReadIntProperty(recurrenceIntervalProperty, 1);
+            float specialExpRequirement = ReadFloatProperty(specialExpRequirementProperty, 0f);
+
+            if (!TryResolveFirstReachableActivationLevel(milestoneLevel,
+                                                         recurring,
+                                                         recurrenceIntervalLevels,
+                                                         phaseStartLevel,
+                                                         phaseEndExclusive,
+                                                         out int _))
+            {
+                warningMessages.Add(BuildInactiveMilestoneWarning(milestoneIndex,
+                                                                  milestoneLevel,
+                                                                  recurring,
+                                                                  recurrenceIntervalLevels,
+                                                                  phaseStartLevel,
+                                                                  phaseEndExclusive));
+            }
+
+            if (specialExpRequirement < 1f)
+            {
+                warningMessages.Add(string.Format(CultureInfo.InvariantCulture,
+                                                 "Milestone #{0} has Special Exp Requirement below 1. Runtime clamps it to 1.",
+                                                 milestoneIndex + 1));
+            }
+
+            if (recurring && recurrenceIntervalLevels < 1)
+            {
+                warningMessages.Add(string.Format(CultureInfo.InvariantCulture,
+                                                 "Milestone #{0} has Repeat Every X Levels below 1. Runtime treats it as 1.",
+                                                 milestoneIndex + 1));
+            }
+
+            if (powerUpUnlocksProperty != null &&
+                powerUpUnlocksProperty.isArray &&
+                powerUpUnlocksProperty.arraySize > PlayerLevelUpMilestoneDefinition.MaxPowerUpUnlockCount)
+            {
+                warningMessages.Add(string.Format(CultureInfo.InvariantCulture,
+                                                 "Milestone #{0} defines {1} power-up unlock rolls, but runtime consumes only the first {2}.",
+                                                 milestoneIndex + 1,
+                                                 powerUpUnlocksProperty.arraySize,
+                                                 PlayerLevelUpMilestoneDefinition.MaxPowerUpUnlockCount));
+            }
+        }
+
+        return warningMessages;
+    }
+
     private static List<string> BuildOverlapMessages(SerializedProperty phaseProperty)
     {
         List<string> overlapMessages = new List<string>();
@@ -148,22 +260,45 @@ public static class PlayerMilestoneOverlapWarningUtility
             return int.MaxValue;
 
         int phaseIndex = ExtractArrayIndex(phaseProperty.propertyPath);
+        int currentPhaseStartLevel = ReadIntProperty(phaseProperty.FindPropertyRelative("startsAtLevel"), 0);
+        int resolvedPhaseEndExclusive = int.MaxValue;
 
         if (phaseIndex < 0)
             return int.MaxValue;
 
-        int nextPhaseIndex = phaseIndex + 1;
+        for (int otherPhaseIndex = phaseIndex + 1; otherPhaseIndex < allPhasesProperty.arraySize; otherPhaseIndex++)
+        {
+            SerializedProperty laterPhaseProperty = allPhasesProperty.GetArrayElementAtIndex(otherPhaseIndex);
+            int laterPhaseStartLevel = ReadIntProperty(laterPhaseProperty != null ? laterPhaseProperty.FindPropertyRelative("startsAtLevel") : null, int.MaxValue);
 
-        if (nextPhaseIndex >= allPhasesProperty.arraySize)
-            return int.MaxValue;
+            if (laterPhaseStartLevel != currentPhaseStartLevel)
+                continue;
 
-        SerializedProperty nextPhaseProperty = allPhasesProperty.GetArrayElementAtIndex(nextPhaseIndex);
+            return currentPhaseStartLevel;
+        }
 
-        if (nextPhaseProperty == null)
-            return int.MaxValue;
+        for (int otherPhaseIndex = 0; otherPhaseIndex < allPhasesProperty.arraySize; otherPhaseIndex++)
+        {
+            if (otherPhaseIndex == phaseIndex)
+                continue;
 
-        SerializedProperty nextPhaseStartProperty = nextPhaseProperty.FindPropertyRelative("startsAtLevel");
-        return ReadIntProperty(nextPhaseStartProperty, int.MaxValue);
+            SerializedProperty otherPhaseProperty = allPhasesProperty.GetArrayElementAtIndex(otherPhaseIndex);
+
+            if (otherPhaseProperty == null)
+                continue;
+
+            int otherPhaseStartLevel = ReadIntProperty(otherPhaseProperty.FindPropertyRelative("startsAtLevel"), int.MaxValue);
+
+            if (otherPhaseStartLevel <= currentPhaseStartLevel)
+                continue;
+
+            if (otherPhaseStartLevel >= resolvedPhaseEndExclusive)
+                continue;
+
+            resolvedPhaseEndExclusive = otherPhaseStartLevel;
+        }
+
+        return resolvedPhaseEndExclusive;
     }
 
     private static int ExtractArrayIndex(string propertyPath)
@@ -191,9 +326,166 @@ public static class PlayerMilestoneOverlapWarningUtility
         return property != null ? property.intValue : fallbackValue;
     }
 
+    private static float ReadFloatProperty(SerializedProperty property, float fallbackValue)
+    {
+        return property != null ? property.floatValue : fallbackValue;
+    }
+
     private static bool ReadBoolProperty(SerializedProperty property)
     {
         return property != null && property.boolValue;
+    }
+
+    private static string ReadStringProperty(SerializedProperty property)
+    {
+        if (property == null)
+            return string.Empty;
+
+        return string.IsNullOrWhiteSpace(property.stringValue) ? string.Empty : property.stringValue.Trim();
+    }
+
+    private static List<int> FindDuplicatePhaseIdIndices(SerializedProperty phaseProperty, int phaseIndex, string phaseId)
+    {
+        List<int> duplicateIndices = new List<int>();
+
+        if (phaseProperty == null || phaseProperty.serializedObject == null)
+            return duplicateIndices;
+
+        if (string.IsNullOrWhiteSpace(phaseId))
+            return duplicateIndices;
+
+        SerializedProperty allPhasesProperty = phaseProperty.serializedObject.FindProperty("gamePhasesDefinition");
+
+        if (allPhasesProperty == null || !allPhasesProperty.isArray)
+            return duplicateIndices;
+
+        for (int otherPhaseIndex = 0; otherPhaseIndex < allPhasesProperty.arraySize; otherPhaseIndex++)
+        {
+            if (otherPhaseIndex == phaseIndex)
+                continue;
+
+            SerializedProperty otherPhaseProperty = allPhasesProperty.GetArrayElementAtIndex(otherPhaseIndex);
+            string otherPhaseId = ReadStringProperty(otherPhaseProperty != null ? otherPhaseProperty.FindPropertyRelative("phaseID") : null);
+
+            if (!string.Equals(otherPhaseId, phaseId, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            duplicateIndices.Add(otherPhaseIndex);
+        }
+
+        return duplicateIndices;
+    }
+
+    private static List<int> FindDuplicatePhaseStartIndices(SerializedProperty phaseProperty, int phaseIndex, int phaseStartLevel)
+    {
+        List<int> duplicateIndices = new List<int>();
+
+        if (phaseProperty == null || phaseProperty.serializedObject == null)
+            return duplicateIndices;
+
+        SerializedProperty allPhasesProperty = phaseProperty.serializedObject.FindProperty("gamePhasesDefinition");
+
+        if (allPhasesProperty == null || !allPhasesProperty.isArray)
+            return duplicateIndices;
+
+        for (int otherPhaseIndex = 0; otherPhaseIndex < allPhasesProperty.arraySize; otherPhaseIndex++)
+        {
+            if (otherPhaseIndex == phaseIndex)
+                continue;
+
+            SerializedProperty otherPhaseProperty = allPhasesProperty.GetArrayElementAtIndex(otherPhaseIndex);
+            int otherPhaseStartLevel = ReadIntProperty(otherPhaseProperty != null ? otherPhaseProperty.FindPropertyRelative("startsAtLevel") : null, int.MinValue);
+
+            if (otherPhaseStartLevel != phaseStartLevel)
+                continue;
+
+            duplicateIndices.Add(otherPhaseIndex);
+        }
+
+        return duplicateIndices;
+    }
+
+    private static string FormatPhaseIndexList(List<int> phaseIndices)
+    {
+        if (phaseIndices == null || phaseIndices.Count <= 0)
+            return string.Empty;
+
+        List<string> formattedIndices = new List<string>(phaseIndices.Count);
+
+        for (int index = 0; index < phaseIndices.Count; index++)
+        {
+            formattedIndices.Add(string.Format(CultureInfo.InvariantCulture, "#{0}", phaseIndices[index] + 1));
+        }
+
+        return string.Join(", ", formattedIndices);
+    }
+
+    private static string BuildInactiveMilestoneWarning(int milestoneIndex,
+                                                        int milestoneLevel,
+                                                        bool recurring,
+                                                        int recurrenceIntervalLevels,
+                                                        int phaseStartLevel,
+                                                        int phaseEndExclusive)
+    {
+        string phaseRangeLabel = phaseEndExclusive == int.MaxValue
+            ? string.Format(CultureInfo.InvariantCulture, "[{0}, +inf)", phaseStartLevel)
+            : string.Format(CultureInfo.InvariantCulture, "[{0}, {1})", phaseStartLevel, phaseEndExclusive);
+
+        if (!recurring)
+        {
+            return string.Format(CultureInfo.InvariantCulture,
+                                 "Milestone #{0} at level {1} never triggers inside this phase. Effective phase range is {2}.",
+                                 milestoneIndex + 1,
+                                 milestoneLevel,
+                                 phaseRangeLabel);
+        }
+
+        int resolvedInterval = recurrenceIntervalLevels > 0 ? recurrenceIntervalLevels : 1;
+        return string.Format(CultureInfo.InvariantCulture,
+                             "Recurring milestone #{0} starts at level {1} and repeats every {2} level(s), but none of its activations fall inside phase range {3}.",
+                             milestoneIndex + 1,
+                             milestoneLevel,
+                             resolvedInterval,
+                             phaseRangeLabel);
+    }
+
+    private static bool TryResolveFirstReachableActivationLevel(int milestoneLevel,
+                                                                bool recurring,
+                                                                int recurrenceIntervalLevels,
+                                                                int phaseStartLevel,
+                                                                int phaseEndExclusive,
+                                                                out int reachableActivationLevel)
+    {
+        reachableActivationLevel = 0;
+
+        if (!recurring)
+        {
+            if (!IsWithinPhase(milestoneLevel, phaseStartLevel, phaseEndExclusive))
+                return false;
+
+            reachableActivationLevel = milestoneLevel;
+            return true;
+        }
+
+        int resolvedInterval = recurrenceIntervalLevels > 0 ? recurrenceIntervalLevels : 1;
+        long activationLevel = milestoneLevel;
+
+        if (activationLevel < phaseStartLevel)
+        {
+            long deltaLevels = phaseStartLevel - activationLevel;
+            activationLevel += CeilingDivide(deltaLevels, resolvedInterval) * resolvedInterval;
+        }
+
+        if (activationLevel > int.MaxValue)
+            return false;
+
+        int resolvedActivationLevel = (int)activationLevel;
+
+        if (!IsWithinPhase(resolvedActivationLevel, phaseStartLevel, phaseEndExclusive))
+            return false;
+
+        reachableActivationLevel = resolvedActivationLevel;
+        return true;
     }
 
     private static bool TryFindFirstOverlapLevel(in MilestonePattern leftPattern,

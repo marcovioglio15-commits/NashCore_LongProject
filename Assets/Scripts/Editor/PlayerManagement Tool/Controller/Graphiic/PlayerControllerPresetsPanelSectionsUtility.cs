@@ -154,6 +154,12 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
 
         VisualElement countFieldElement = PlayerScalingFieldElementFactory.CreateField(countProperty, scalingRulesProperty, "Direction Count");
         discreteContainer.Add(countFieldElement);
+        VisualElement offsetFieldElement = PlayerScalingFieldElementFactory.CreateField(offsetProperty, scalingRulesProperty, "Direction Offset");
+        discreteContainer.Add(offsetFieldElement);
+
+        VisualElement discreteWarningsRoot = new VisualElement();
+        discreteWarningsRoot.style.marginTop = 4f;
+        discreteContainer.Add(discreteWarningsRoot);
 
         PieChartElement pieChart = new PieChartElement();
         Slider movementZoomSlider = PlayerControllerPresetsPanelFieldUtility.CreatePieZoomSlider(pieChart);
@@ -195,10 +201,13 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
             MovementDirectionsMode mode = (MovementDirectionsMode)modeProperty.enumValueIndex;
             bool isDiscrete = mode == MovementDirectionsMode.DiscreteCount;
             discreteContainer.style.display = isDiscrete ? DisplayStyle.Flex : DisplayStyle.None;
+            PlayerControllerDirectionWarningUtility.RefreshOffsetWarnings(discreteWarningsRoot,
+                                                                         isDiscrete,
+                                                                         countProperty.intValue,
+                                                                         offsetProperty.floatValue);
 
             if (isDiscrete)
             {
-                PlayerControllerPresetsPanelVisualizationUtility.SnapOffsetToStep(panel, offsetProperty, countProperty.intValue);
                 PlayerControllerPresetsPanelVisualizationUtility.UpdateDiscretePieChart(pieChart, countProperty.intValue, offsetProperty.floatValue);
             }
         };
@@ -213,7 +222,33 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
             updateView();
         });
 
+        countFieldElement.RegisterCallback<ChangeEvent<int>>(evt =>
+        {
+            ScheduleViewRefresh();
+        });
+
+        offsetFieldElement.RegisterCallback<ChangeEvent<float>>(evt =>
+        {
+            ScheduleViewRefresh();
+        });
+
+        offsetFieldElement.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            updateView();
+        });
+
         updateView();
+
+        void ScheduleViewRefresh()
+        {
+            section.schedule.Execute(() =>
+            {
+                if (panel.PresetSerializedObject != null)
+                    panel.PresetSerializedObject.Update();
+
+                updateView();
+            }).ExecuteLater(0);
+        }
     }
 
     /// <summary>

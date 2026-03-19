@@ -106,7 +106,7 @@ MonoBehaviour:
       legacyPowerUpUnlockRollCount: 0
       legacyMilestoneTierRolls: []
   - phaseID: Phase2
-    startsAtLevel: 4
+    startsAtLevel: 21
     startingRequiredLevelUpExp: 25
     requiredExperienceGrouth: 10
     milestones:

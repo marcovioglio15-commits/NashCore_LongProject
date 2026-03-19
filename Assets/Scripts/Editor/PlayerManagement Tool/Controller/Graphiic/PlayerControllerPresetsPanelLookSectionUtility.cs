@@ -69,6 +69,12 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
 
         VisualElement countFieldElement = PlayerScalingFieldElementFactory.CreateField(countProperty, scalingRulesProperty, "Direction Count");
         discreteContainer.Add(countFieldElement);
+        VisualElement offsetFieldElement = PlayerScalingFieldElementFactory.CreateField(offsetProperty, scalingRulesProperty, "Direction Offset");
+        discreteContainer.Add(offsetFieldElement);
+
+        VisualElement discreteWarningsRoot = new VisualElement();
+        discreteWarningsRoot.style.marginTop = 4f;
+        discreteContainer.Add(discreteWarningsRoot);
 
         VisualElement conesContainer = new VisualElement();
         conesContainer.style.marginLeft = 8f;
@@ -133,6 +139,10 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
             bool followMovement = directionsMode == LookDirectionsMode.FollowMovementDirection;
 
             discreteContainer.style.display = isDiscrete && !followMovement ? DisplayStyle.Flex : DisplayStyle.None;
+            PlayerControllerDirectionWarningUtility.RefreshOffsetWarnings(discreteWarningsRoot,
+                                                                         isDiscrete && !followMovement,
+                                                                         countProperty.intValue,
+                                                                         offsetProperty.floatValue);
             conesContainer.style.display = isCones && !followMovement ? DisplayStyle.Flex : DisplayStyle.None;
             pieChart.style.display = directionsMode == LookDirectionsMode.AllDirections || followMovement ? DisplayStyle.None : DisplayStyle.Flex;
             lookZoomSlider.style.display = directionsMode == LookDirectionsMode.AllDirections || followMovement ? DisplayStyle.None : DisplayStyle.Flex;
@@ -141,9 +151,6 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
             samplingField.style.display = isDiscrete && !followMovement ? DisplayStyle.Flex : DisplayStyle.None;
             bindingsFoldout.style.display = followMovement ? DisplayStyle.None : DisplayStyle.Flex;
             valuesFoldout.style.display = followMovement ? DisplayStyle.None : DisplayStyle.Flex;
-
-            if (isDiscrete && !followMovement)
-                PlayerControllerPresetsPanelVisualizationUtility.SnapOffsetToStep(panel, offsetProperty, countProperty.intValue);
 
             PlayerControllerPresetsPanelVisualizationUtility.UpdateLookPieChart(pieChart,
                                                                                 directionsMode,
@@ -188,6 +195,21 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
             updateView();
         });
 
+        countFieldElement.RegisterCallback<ChangeEvent<int>>(evt =>
+        {
+            ScheduleViewRefresh();
+        });
+
+        offsetFieldElement.RegisterCallback<ChangeEvent<float>>(evt =>
+        {
+            ScheduleViewRefresh();
+        });
+
+        offsetFieldElement.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            updateView();
+        });
+
         rotationModeField.RegisterValueChangedCallback(evt =>
         {
             updateView();
@@ -217,6 +239,17 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
         }
 
         updateView();
+
+        void ScheduleViewRefresh()
+        {
+            section.schedule.Execute(() =>
+            {
+                if (panel.PresetSerializedObject != null)
+                    panel.PresetSerializedObject.Update();
+
+                updateView();
+            }).ExecuteLater(0);
+        }
     }
     #endregion
 

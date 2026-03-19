@@ -16,13 +16,13 @@ public static class PlayerProgressionPhaseUtility
 
     #region Public Methods
     /// <summary>
-    /// Resolves required experience for a specific player level using the baked progression config.
+    /// Resolves required experience for the next level-up attempt using the current player level.
     /// </summary>
     /// <param name="progressionConfig">Runtime progression configuration component.</param>
-    /// <param name="levelValue">Player level used to resolve current phase and requirement.</param>
+    /// <param name="levelValue">Current player level used to resolve the next level-up requirement.</param>
     /// <param name="activeGamePhaseIndex">Resolved index of the active game phase.</param>
-    /// <param name="isMilestoneRequirement">True when the requirement came from a milestone override.</param>
-    /// <param name="milestoneLevel">Milestone level that produced the override, or 0 when not used.</param>
+    /// <param name="isMilestoneRequirement">True when the next level-up reaches a milestone with a custom requirement.</param>
+    /// <param name="milestoneLevel">Target milestone level reached by the next level-up, or 0 when not used.</param>
     /// <returns>Required experience for the next level-up attempt.</returns>
     public static float ResolveRequiredExperienceForLevel(PlayerProgressionConfig progressionConfig,
                                                           int levelValue,
@@ -144,6 +144,7 @@ public static class PlayerProgressionPhaseUtility
         }
 
         ref PlayerGamePhaseBlob activeGamePhase = ref gamePhases[activeGamePhaseIndex];
+        int targetLevel = levelValue + 1;
         int relativePhaseLevel = levelValue - activeGamePhase.StartsAtLevel;
 
         if (relativePhaseLevel < 0)
@@ -164,7 +165,7 @@ public static class PlayerProgressionPhaseUtility
         {
             ref PlayerLevelUpMilestoneBlob milestone = ref milestones[milestoneIndex];
 
-            if (!MatchesMilestoneLevel(ref milestone, levelValue))
+            if (!MatchesMilestoneLevel(ref milestone, targetLevel))
             {
                 continue;
             }
@@ -178,7 +179,7 @@ public static class PlayerProgressionPhaseUtility
 
             resolvedRequirement = milestoneRequirement;
             isMilestoneRequirement = true;
-            milestoneLevel = levelValue;
+            milestoneLevel = targetLevel;
             break;
         }
 
@@ -215,7 +216,10 @@ public static class PlayerProgressionPhaseUtility
             return 0;
         }
 
-        for (int phaseIndex = gamePhases.Length - 1; phaseIndex >= 0; phaseIndex--)
+        int resolvedPhaseIndex = 0;
+        int resolvedStartLevel = int.MinValue;
+
+        for (int phaseIndex = 0; phaseIndex < gamePhases.Length; phaseIndex++)
         {
             ref PlayerGamePhaseBlob gamePhase = ref gamePhases[phaseIndex];
 
@@ -224,10 +228,21 @@ public static class PlayerProgressionPhaseUtility
                 continue;
             }
 
-            return phaseIndex;
+            if (gamePhase.StartsAtLevel < resolvedStartLevel)
+            {
+                continue;
+            }
+
+            if (gamePhase.StartsAtLevel == resolvedStartLevel && phaseIndex < resolvedPhaseIndex)
+            {
+                continue;
+            }
+
+            resolvedPhaseIndex = phaseIndex;
+            resolvedStartLevel = gamePhase.StartsAtLevel;
         }
 
-        return 0;
+        return resolvedStartLevel == int.MinValue ? 0 : resolvedPhaseIndex;
     }
 
     private static bool MatchesMilestoneLevel(ref PlayerLevelUpMilestoneBlob milestone, int levelValue)

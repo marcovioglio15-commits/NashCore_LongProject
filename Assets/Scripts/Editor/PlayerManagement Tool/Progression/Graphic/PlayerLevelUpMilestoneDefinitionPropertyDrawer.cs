@@ -49,8 +49,11 @@ public sealed class PlayerLevelUpMilestoneDefinitionPropertyDrawer : PropertyDra
 
         VisualElement specialRequirementField = PlayerScalingFieldElementFactory.CreateField(specialExpRequirementProperty,
                                                                                              scalingRulesProperty,
-                                                                                             "Special Exp Requirement");
+                                                                                             "EXP Required To Reach This Milestone");
         root.Add(specialRequirementField);
+
+        HelpBox requirementInfoBox = new HelpBox("This requirement is consumed on the previous level-up step that reaches the milestone level.", HelpBoxMessageType.Info);
+        root.Add(requirementInfoBox);
 
         PropertyField recurringField = new PropertyField(recurringProperty, "Recurring");
         recurringField.BindProperty(recurringProperty);

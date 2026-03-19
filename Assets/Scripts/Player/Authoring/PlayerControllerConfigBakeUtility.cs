@@ -189,10 +189,11 @@ public static class PlayerControllerConfigBakeUtility
     /// </summary>
     private static void FillMovementConfig(ref PlayerControllerConfigBlob root, MovementSettings movementSettings)
     {
+        int resolvedDiscreteDirectionCount = Mathf.Max(1, movementSettings.DiscreteDirectionCount);
         MovementConfig movementConfig = new MovementConfig
         {
             DirectionsMode = movementSettings.DirectionsMode,
-            DiscreteDirectionCount = movementSettings.DiscreteDirectionCount,
+            DiscreteDirectionCount = resolvedDiscreteDirectionCount,
             DirectionOffsetDegrees = movementSettings.DirectionOffsetDegrees,
             MovementReference = movementSettings.MovementReference,
             Values = new MovementValuesBlob
@@ -220,9 +221,10 @@ public static class PlayerControllerConfigBakeUtility
     private static void FillLookConfig(ref PlayerControllerConfigBlob root, LookSettings lookSettings, ref BlobBuilder builder)
     {
         ref LookConfig lookConfig = ref root.Look;
+        int resolvedDiscreteDirectionCount = Mathf.Max(1, lookSettings.DiscreteDirectionCount);
 
         lookConfig.DirectionsMode = lookSettings.DirectionsMode;
-        lookConfig.DiscreteDirectionCount = lookSettings.DiscreteDirectionCount;
+        lookConfig.DiscreteDirectionCount = resolvedDiscreteDirectionCount;
         lookConfig.DirectionOffsetDegrees = lookSettings.DirectionOffsetDegrees;
         lookConfig.RotationMode = lookSettings.RotationMode;
         lookConfig.RotationSpeed = lookSettings.RotationSpeed;

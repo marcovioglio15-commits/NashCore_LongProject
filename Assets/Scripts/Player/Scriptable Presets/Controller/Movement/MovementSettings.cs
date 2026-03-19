@@ -78,25 +78,10 @@ public sealed class MovementSettings
     #region Validation
     public void Validate()
     {
-        if (discreteDirectionCount < 1)
-            discreteDirectionCount = 1;
-
-        if (directionsMode == MovementDirectionsMode.DiscreteCount)
-            directionOffsetDegrees = SnapOffsetToStep(directionOffsetDegrees, discreteDirectionCount);
-
         if (values == null)
             values = new MovementValues();
 
         values.Validate();
-    }
-
-    private float SnapOffsetToStep(float offset, int count)
-    {
-        int clampedCount = Mathf.Max(1, count);
-        float step = 360f / clampedCount;
-        float normalized = Mathf.Repeat(offset, 360f);
-        float snapped = Mathf.Round(normalized / step) * step;
-        return Mathf.Repeat(snapped, 360f);
     }
 
     #endregion

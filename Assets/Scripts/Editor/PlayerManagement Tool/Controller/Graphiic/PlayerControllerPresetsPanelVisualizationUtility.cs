@@ -148,37 +148,6 @@ internal static class PlayerControllerPresetsPanelVisualizationUtility
     }
 
     /// <summary>
-    /// Snaps one direction offset property to the nearest valid discrete step and applies the serialized change.
-    /// </summary>
-    /// <param name="panel">Owning panel used for undo and serialized object updates.</param>
-    /// <param name="offsetProperty">Serialized float offset property.</param>
-    /// <param name="count">Discrete direction count.</param>
-
-    public static void SnapOffsetToStep(PlayerControllerPresetsPanel panel, SerializedProperty offsetProperty, int count)
-    {
-        if (panel == null || offsetProperty == null)
-            return;
-
-        int clampedCount = Mathf.Max(1, count);
-        float step = 360f / clampedCount;
-        float normalized = Mathf.Repeat(offsetProperty.floatValue, 360f);
-        float snapped = Mathf.Round(normalized / step) * step;
-        snapped = Mathf.Repeat(snapped, 360f);
-
-        if (Mathf.Abs(snapped - offsetProperty.floatValue) < 0.001f)
-            return;
-
-        if (panel.SelectedPreset != null)
-        {
-            Undo.RecordObject(panel.SelectedPreset, "Snap Direction Offset");
-            panel.PresetSerializedObject.Update();
-        }
-
-        offsetProperty.floatValue = snapped;
-        panel.PresetSerializedObject.ApplyModifiedProperties();
-    }
-
-    /// <summary>
     /// Updates one movement pie chart with alternating discrete slices, labels and direction markers.
     /// </summary>
     /// <param name="pieChart">Pie chart to rebuild.</param>

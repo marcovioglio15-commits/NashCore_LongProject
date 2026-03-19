@@ -31,7 +31,7 @@ public struct PlayerGamePhaseBlob
 
 #region Milestones
 /// <summary>
-/// Stores one milestone override for the required experience of a specific player level.
+/// Stores one milestone override for the experience required to reach a specific player level.
 /// </summary>
 public struct PlayerLevelUpMilestoneBlob
 {

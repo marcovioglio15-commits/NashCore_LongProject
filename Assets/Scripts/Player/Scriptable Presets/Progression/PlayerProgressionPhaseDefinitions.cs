@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 /// <summary>
-/// Defines one progression game phase with linear growth and optional milestone overrides.
+/// Defines one progression game phase with linear growth and milestone overrides used while that phase is active.
 /// </summary>
 [Serializable]
 public sealed class PlayerGamePhaseDefinition
@@ -24,7 +24,7 @@ public sealed class PlayerGamePhaseDefinition
     [Tooltip("Linear increase added to required level-up experience for each additional level in this game phase.")]
     [SerializeField] private float requiredExperienceGrouth = 0f;
 
-    [Tooltip("Optional special requirements applied when the current player level matches a milestone.")]
+    [Tooltip("Optional milestone overrides used to require a custom amount of experience before reaching specific milestone levels.")]
     [SerializeField] private List<PlayerLevelUpMilestoneDefinition> milestones = new List<PlayerLevelUpMilestoneDefinition>();
     #endregion
 
@@ -75,6 +75,32 @@ public sealed class PlayerGamePhaseDefinition
     #region Methods
 
     #region Public Methods
+    /// <summary>
+    /// Ensures nested authoring collections exist without changing designer-authored scalar values or Phase IDs.
+    /// /params none
+    /// /returns void
+    /// </summary>
+    public void EnsureAuthoringCollections()
+    {
+        if (milestones == null)
+        {
+            milestones = new List<PlayerLevelUpMilestoneDefinition>();
+        }
+
+        for (int milestoneIndex = 0; milestoneIndex < milestones.Count; milestoneIndex++)
+        {
+            PlayerLevelUpMilestoneDefinition milestone = milestones[milestoneIndex];
+
+            if (milestone == null)
+            {
+                milestone = new PlayerLevelUpMilestoneDefinition();
+                milestones[milestoneIndex] = milestone;
+            }
+
+            milestone.EnsureAuthoringCollections();
+        }
+    }
+
     /// <summary>
     /// Assigns game phase values after external normalization logic.
     /// </summary>
@@ -174,7 +200,7 @@ public sealed class PlayerGamePhaseDefinition
 }
 
 /// <summary>
-/// Defines one level milestone override used to create one-time experience spikes, custom power-up offers, and optional skip compensations.
+/// Defines one level milestone override used to reach a target level with a custom experience requirement and optional power-up offers.
 /// </summary>
 [Serializable]
 public sealed class PlayerLevelUpMilestoneDefinition
@@ -186,10 +212,10 @@ public sealed class PlayerLevelUpMilestoneDefinition
     #region Fields
 
     #region Serialized Fields
-    [Tooltip("Player level that activates this special requirement for the next level-up.")]
+    [Tooltip("Player level reached when this milestone triggers.")]
     [SerializeField] private int milestoneLevel = 5;
 
-    [Tooltip("Special required experience applied when this milestone level is active.")]
+    [Tooltip("Required experience to advance from the previous level into this milestone level.")]
     [SerializeField] private float specialExpRequirement = 300f;
 
     [Tooltip("When enabled, this milestone keeps triggering again after the configured recurrence interval.")]
@@ -276,6 +302,50 @@ public sealed class PlayerLevelUpMilestoneDefinition
     #region Methods
 
     #region Public Methods
+    /// <summary>
+    /// Ensures nested authoring collections exist without changing designer-authored milestone thresholds or requirements.
+    /// /params none
+    /// /returns void
+    /// </summary>
+    public void EnsureAuthoringCollections()
+    {
+        TryMigrateLegacyPowerUpUnlocks();
+
+        if (powerUpUnlocks == null)
+        {
+            powerUpUnlocks = new List<PlayerMilestonePowerUpUnlockDefinition>();
+        }
+
+        if (skipCompensationResources == null)
+        {
+            skipCompensationResources = new List<PlayerMilestoneSkipCompensationDefinition>();
+        }
+
+        for (int powerUpUnlockIndex = 0; powerUpUnlockIndex < powerUpUnlocks.Count; powerUpUnlockIndex++)
+        {
+            PlayerMilestonePowerUpUnlockDefinition powerUpUnlock = powerUpUnlocks[powerUpUnlockIndex];
+
+            if (powerUpUnlock == null)
+            {
+                powerUpUnlock = new PlayerMilestonePowerUpUnlockDefinition();
+                powerUpUnlocks[powerUpUnlockIndex] = powerUpUnlock;
+            }
+
+            powerUpUnlock.Validate();
+        }
+
+        for (int compensationIndex = 0; compensationIndex < skipCompensationResources.Count; compensationIndex++)
+        {
+            PlayerMilestoneSkipCompensationDefinition skipCompensation = skipCompensationResources[compensationIndex];
+
+            if (skipCompensation == null)
+            {
+                skipCompensation = new PlayerMilestoneSkipCompensationDefinition();
+                skipCompensationResources[compensationIndex] = skipCompensation;
+            }
+        }
+    }
+
     /// <summary>
     /// Validates this milestone against minimum level and required experience constraints.
     /// </summary>

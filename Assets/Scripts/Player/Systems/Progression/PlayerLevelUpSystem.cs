@@ -88,15 +88,11 @@ public partial struct PlayerLevelUpSystem : ISystem
 
             float currentExperience = mathMax(0f, playerExperience.ValueRO.Current);
             int currentLevel = mathMax(0, playerLevel.ValueRO.Current);
-            int activeGamePhaseIndex = playerLevel.ValueRO.ActiveGamePhaseIndex;
-            float requiredExperienceForNextLevel = playerLevel.ValueRO.RequiredExperienceForNextLevel;
-
-            if (requiredExperienceForNextLevel < 1f)
-                requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
+            float requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
                                                                                                                    currentLevel,
-                                                                                                                   out activeGamePhaseIndex,
-                                                                                                                   out bool _,
-                                                                                                                   out int _);
+                                                                                                                   out int activeGamePhaseIndex,
+                                                                                                                   out bool nextLevelIsMilestone,
+                                                                                                                   out int nextMilestoneLevel);
 
             int startingGamePhaseIndex = activeGamePhaseIndex;
             bool reachedMilestone = false;
@@ -107,6 +103,10 @@ public partial struct PlayerLevelUpSystem : ISystem
 
             while (currentExperience >= requiredExperienceForNextLevel)
             {
+                int consumedRequirementPhaseIndex = activeGamePhaseIndex;
+                bool consumedRequirementWasMilestone = nextLevelIsMilestone;
+                int consumedMilestoneLevel = nextMilestoneLevel;
+
                 // Consume current threshold and advance one level.
                 currentExperience -= requiredExperienceForNextLevel;
                 currentLevel += 1;
@@ -134,10 +134,10 @@ public partial struct PlayerLevelUpSystem : ISystem
                 requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
                                                                                                                    currentLevel,
                                                                                                                    out activeGamePhaseIndex,
-                                                                                                                   out bool isMilestoneRequirement,
-                                                                                                                   out int milestoneLevel);
+                                                                                                                   out nextLevelIsMilestone,
+                                                                                                                   out nextMilestoneLevel);
 
-                if (!isMilestoneRequirement)
+                if (!consumedRequirementWasMilestone)
                 {
                     if (gainedLevelsCount < MaxLevelUpsPerFrame)
                         continue;
@@ -146,7 +146,7 @@ public partial struct PlayerLevelUpSystem : ISystem
                 }
 
                 reachedMilestone = true;
-                lastReachedMilestoneLevel = milestoneLevel;
+                lastReachedMilestoneLevel = consumedMilestoneLevel;
 
                 if (!hasMilestoneSelectionData)
                 {
@@ -171,8 +171,8 @@ public partial struct PlayerLevelUpSystem : ISystem
                 DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers = milestoneSelectionOffersLookup[entity];
 
                 if (!PlayerMilestonePowerUpRollUtility.TryOpenMilestoneSelection(progressionConfig.ValueRO,
-                                                                                 activeGamePhaseIndex,
-                                                                                 milestoneLevel,
+                                                                                 consumedRequirementPhaseIndex,
+                                                                                 consumedMilestoneLevel,
                                                                                  scalableStats,
                                                                                  unlockCatalog,
                                                                                  tierDefinitions,
@@ -192,7 +192,7 @@ public partial struct PlayerLevelUpSystem : ISystem
                 openedMilestoneSelection = true;
                 Debug.Log(string.Format(CultureInfo.InvariantCulture,
                                         "[PlayerLevelUpSystem] Milestone level {0} opened power-up selection with {1} rolled offer(s).",
-                                        milestoneLevel,
+                                        consumedMilestoneLevel,
                                         milestoneOfferCount));
                 break;
             }
