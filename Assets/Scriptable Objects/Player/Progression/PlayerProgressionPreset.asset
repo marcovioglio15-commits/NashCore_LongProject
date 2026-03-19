@@ -238,24 +238,24 @@ MonoBehaviour:
       legacyPowerUpUnlockRollCount: 0
       legacyMilestoneTierRolls: []
   schedules:
-  - scheduleId: Schedule1
+  - scheduleId: ScheduleRookie
     sequence:
-    - statName: Luck
+    - statName: Health
       applyMode: 0
-      value: 1
+      value: 3
     - statName: FireRate
-      applyMode: 0
-      value: 1
-    - statName: GatheringRadius
       applyMode: 0
       value: 1
     - statName: MovementSpeed
       applyMode: 0
-      value: 1
-    - statName: ShotRange
+      value: 0.5
+    - statName: Damage
+      applyMode: 0
+      value: 0.2
+    - statName: Luck
       applyMode: 0
       value: 1
-  equippedScheduleId: Schedule1
+  equippedScheduleId: ScheduleRookie
   legacyExperienceRequiredPerLevel: 100
   experiencePickupRadius: 1
   milestoneTimeScaleResumeDurationSeconds: 3
