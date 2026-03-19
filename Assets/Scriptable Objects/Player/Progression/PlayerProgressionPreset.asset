@@ -55,11 +55,16 @@ MonoBehaviour:
   gamePhasesDefinition:
   - phaseID: Phase0
     startsAtLevel: 0
-    startingRequiredLevelUpExp: 10
-    requiredExperienceGrouth: 250
+    startingRequiredLevelUpExp: 15
+    requiredExperienceGrouth: 0
+    milestones: []
+  - phaseID: Phase1
+    startsAtLevel: 3
+    startingRequiredLevelUpExp: 25
+    requiredExperienceGrouth: 10
     milestones:
-    - milestoneLevel: 1
-      specialExpRequirement: 100
+    - milestoneLevel: 5
+      specialExpRequirement: 98
       recurring: 0
       recurrenceIntervalLevels: 1
       powerUpUnlocks:
@@ -72,9 +77,56 @@ MonoBehaviour:
       skipCompensationResources: []
       legacyPowerUpUnlockRollCount: 0
       legacyMilestoneTierRolls: []
-    - milestoneLevel: 5
-      specialExpRequirement: 100
-      recurring: 1
+    - milestoneLevel: 10
+      specialExpRequirement: 210
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+    - milestoneLevel: 20
+      specialExpRequirement: 462
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+  - phaseID: Phase2
+    startsAtLevel: 4
+    startingRequiredLevelUpExp: 25
+    requiredExperienceGrouth: 10
+    milestones:
+    - milestoneLevel: 30
+      specialExpRequirement: 600
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+    - milestoneLevel: 40
+      specialExpRequirement: 870
+      recurring: 0
       recurrenceIntervalLevels: 5
       powerUpUnlocks:
       - dropPoolId: Milestone
