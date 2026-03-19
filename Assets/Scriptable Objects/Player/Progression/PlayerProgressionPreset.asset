@@ -257,6 +257,7 @@ MonoBehaviour:
       value: 1
   equippedScheduleId: ScheduleRookie
   legacyExperienceRequiredPerLevel: 100
+  levelCap: 100
   experiencePickupRadius: 1
   milestoneTimeScaleResumeDurationSeconds: 3
   powerUpContainerSettings:

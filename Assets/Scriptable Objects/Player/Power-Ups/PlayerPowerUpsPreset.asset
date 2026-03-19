@@ -8529,8 +8529,8 @@ MonoBehaviour:
           stacksPerTick: 0
           applyIntervalSeconds: 0.01
     unreplaceable: 0
-  primaryActivePowerUpId: 
-  secondaryActivePowerUpId: 
+  primaryActivePowerUpId: ActiveChargeShot
+  secondaryActivePowerUpId: ActiveGigaBomb
   equippedPassivePowerUpIds: []
   passiveTools:
   - commonData:
