@@ -107,8 +107,8 @@ MonoBehaviour:
       legacyMilestoneTierRolls: []
   - phaseID: Phase2
     startsAtLevel: 21
-    startingRequiredLevelUpExp: 25
-    requiredExperienceGrouth: 10
+    startingRequiredLevelUpExp: 165
+    requiredExperienceGrouth: 15
     milestones:
     - milestoneLevel: 30
       specialExpRequirement: 600
@@ -126,6 +126,105 @@ MonoBehaviour:
       legacyMilestoneTierRolls: []
     - milestoneLevel: 40
       specialExpRequirement: 870
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+  - phaseID: Phase3
+    startsAtLevel: 41
+    startingRequiredLevelUpExp: 435
+    requiredExperienceGrouth: 20
+    milestones:
+    - milestoneLevel: 50
+      specialExpRequirement: 1169
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+    - milestoneLevel: 60
+      specialExpRequirement: 1511
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+  - phaseID: Phase4
+    startsAtLevel: 61
+    startingRequiredLevelUpExp: 820
+    requiredExperienceGrouth: 25
+    milestones:
+    - milestoneLevel: 70
+      specialExpRequirement: 1836
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+    - milestoneLevel: 80
+      specialExpRequirement: 2241
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+  - phaseID: Phase5
+    startsAtLevel: 81
+    startingRequiredLevelUpExp: 1275
+    requiredExperienceGrouth: 30
+    milestones:
+    - milestoneLevel: 90
+      specialExpRequirement: 2576
+      recurring: 0
+      recurrenceIntervalLevels: 5
+      powerUpUnlocks:
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      - dropPoolId: Milestone
+        legacyTierRolls: []
+      skipCompensationResources: []
+      legacyPowerUpUnlockRollCount: 0
+      legacyMilestoneTierRolls: []
+    - milestoneLevel: 100
+      specialExpRequirement: 3035
       recurring: 0
       recurrenceIntervalLevels: 5
       powerUpUnlocks:
@@ -158,7 +257,7 @@ MonoBehaviour:
       value: 1
   equippedScheduleId: Schedule1
   legacyExperienceRequiredPerLevel: 100
-  experiencePickupRadius: 5
+  experiencePickupRadius: 3
   milestoneTimeScaleResumeDurationSeconds: 3
   powerUpContainerSettings:
     containerPrefab: {fileID: 7549901088543619621, guid: 518a26c8b52a63e42a92768c649a250c, type: 3}
