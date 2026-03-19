@@ -53,7 +53,5 @@ MonoBehaviour:
   maxAliveCount: 1800
   spawnRadius: 12
   spawnHeightOffset: 0
-  despawnDistance: 85
+  despawnDistance: 25
   randomSeed: 0
-  drawSpawnRadiusGizmo: 1
-  drawDespawnRadiusGizmo: 1

@@ -6,8 +6,11 @@ using Unity.Entities;
 /// </summary>
 public struct PlayerProgressionConfigBlob
 {
+    public int LevelCap;
     public float ExperiencePickupRadius;
+    public float BaseExperiencePickupRadius;
     public float MilestoneTimeScaleResumeDurationSeconds;
+    public BlobString ExperiencePickupRadiusScalingFormula;
     public BlobArray<PlayerGamePhaseBlob> GamePhases;
     public BlobArray<PlayerScalableStatBlob> ScalableStats;
     public BlobArray<PlayerLevelUpScheduleBlob> Schedules;

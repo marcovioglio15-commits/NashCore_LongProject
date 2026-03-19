@@ -27,10 +27,26 @@ internal static class PlayerProgressionBlobBakeUtility
     {
         BlobBuilder builder = new BlobBuilder(Allocator.Temp);
         ref PlayerProgressionConfigBlob root = ref builder.ConstructRoot<PlayerProgressionConfigBlob>();
+        int levelCap = preset != null ? math.max(1, preset.LevelCap) : 100;
+        float experiencePickupRadius = preset != null ? math.max(0f, preset.ExperiencePickupRadius) : 0f;
+        float baseExperiencePickupRadius = sourcePreset != null ? math.max(0f, sourcePreset.ExperiencePickupRadius) : experiencePickupRadius;
+        string experiencePickupRadiusScalingFormula = string.Empty;
 
-        root.ExperiencePickupRadius = preset != null ? math.max(0f, preset.ExperiencePickupRadius) : 0f;
+        if (PlayerRuntimeScalingBakeMetadataUtility.TryResolveExperiencePickupRadiusScalingData(sourcePreset,
+                                                                                                out float resolvedBaseExperiencePickupRadius,
+                                                                                                out string resolvedExperiencePickupRadiusScalingFormula))
+        {
+            baseExperiencePickupRadius = math.max(0f, resolvedBaseExperiencePickupRadius);
+            experiencePickupRadiusScalingFormula = resolvedExperiencePickupRadiusScalingFormula;
+        }
+
+        root.LevelCap = levelCap;
+        root.ExperiencePickupRadius = experiencePickupRadius;
+        root.BaseExperiencePickupRadius = baseExperiencePickupRadius;
         root.MilestoneTimeScaleResumeDurationSeconds = preset != null ? math.max(0f, preset.MilestoneTimeScaleResumeDurationSeconds) : 0f;
         root.EquippedScheduleIndex = -1;
+        builder.AllocateString(ref root.ExperiencePickupRadiusScalingFormula,
+                               string.IsNullOrWhiteSpace(experiencePickupRadiusScalingFormula) ? string.Empty : experiencePickupRadiusScalingFormula);
 
         BakeProgressionGamePhases(builder,
                                   ref root,

@@ -8,11 +8,6 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class EnemySpawnerAuthoring : MonoBehaviour
 {
-    #region Constants
-    private static readonly Color SpawnRadiusGizmoColor = new Color(0.2f, 0.85f, 0.35f, 0.9f);
-    private static readonly Color DespawnRadiusGizmoColor = new Color(1f, 0.65f, 0.2f, 0.9f);
-    #endregion
-
     #region Fields
 
     #region Serialized Fields
@@ -55,12 +50,6 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     [Tooltip("Deterministic random seed for this spawner. Set to 0 for auto-generated seed.")]
     [SerializeField] private uint randomSeed;
 
-    [Header("Debug Gizmos")]
-    [Tooltip("Draw the spawn radius gizmo when the spawner is selected.")]
-    [SerializeField] private bool drawSpawnRadiusGizmo = true;
-
-    [Tooltip("Draw the despawn radius gizmo when the spawner is selected.")]
-    [SerializeField] private bool drawDespawnRadiusGizmo = true;
     #endregion
 
     #endregion
@@ -185,32 +174,6 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
             despawnDistance = 0f;
     }
 
-    private void OnDrawGizmosSelected()
-    {
-        Vector3 center = transform.position;
-
-        if (drawSpawnRadiusGizmo)
-        {
-            float radius = math.max(0f, spawnRadius);
-
-            if (radius > 0f)
-            {
-                Gizmos.color = SpawnRadiusGizmoColor;
-                Gizmos.DrawWireSphere(center, radius);
-            }
-        }
-
-        if (drawDespawnRadiusGizmo)
-        {
-            float radius = math.max(0f, despawnDistance);
-
-            if (radius > 0f)
-            {
-                Gizmos.color = DespawnRadiusGizmoColor;
-                Gizmos.DrawWireSphere(center, radius);
-            }
-        }
-    }
     #endregion
 
     #endregion

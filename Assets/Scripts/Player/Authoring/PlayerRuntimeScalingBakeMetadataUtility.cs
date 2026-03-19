@@ -175,6 +175,28 @@ internal static class PlayerRuntimeScalingBakeMetadataUtility
         return false;
 #endif
     }
+
+    /// <summary>
+    /// Resolves raw experience pickup radius scaling metadata from the source progression preset.
+    /// </summary>
+    /// <param name="sourcePreset">Unscaled source progression preset.</param>
+    /// <param name="baseValue">Raw numeric value stored on the source preset.</param>
+    /// <param name="formula">Enabled Add Scaling formula when present.</param>
+    /// <returns>True when metadata was resolved from the source preset; otherwise false.</returns>
+    public static bool TryResolveExperiencePickupRadiusScalingData(PlayerProgressionPreset sourcePreset,
+                                                                   out float baseValue,
+                                                                   out string formula)
+    {
+        baseValue = 0f;
+        formula = string.Empty;
+
+        if (sourcePreset == null)
+            return false;
+
+        baseValue = sourcePreset.ExperiencePickupRadius;
+        formula = ResolveFormula(sourcePreset, "experiencePickupRadius");
+        return true;
+    }
     #endregion
 
     #region Private Methods

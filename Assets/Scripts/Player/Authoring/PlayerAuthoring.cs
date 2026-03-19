@@ -6,8 +6,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 /// <summary>
-/// Authoring component for configuring player settings and visualizing player-related gizmos in 
-/// the Unity editor.
+/// Authoring component for configuring player presets, runtime visual bridge settings and hybrid bake safety.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class PlayerAuthoring : MonoBehaviour
@@ -24,11 +23,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
     [Tooltip("Optional power-up preset library used by runtime cheat shortcuts. Ctrl+Number applies the preset at the matching index.")]
     [SerializeField] private PlayerPowerUpsPresetLibrary powerUpsCheatPresetLibrary;
 
-    [Header("Gizmos")]
-    [Tooltip("Optional radius for gizmo previews in the editor.")]
-    [FormerlySerializedAs("m_GizmoRadius")]
-    [SerializeField] private float gizmoRadius = 2f;
-
     [Header("Shooting")]
     [Tooltip("Optional muzzle transform used as shooting reference for spawn orientation and offset.")]
     [SerializeField] private Transform weaponReference;
@@ -36,12 +30,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
     [Header("Animation")]
     [Tooltip("Optional Animator used for ECS-driven visual animation sync.")]
     [SerializeField] private Animator animatorComponent;
-
-    [Tooltip("When enabled, draws local animation debug axes used by ECS->Animator parameter projection.")]
-    [SerializeField] private bool drawAnimationDebugGizmos = true;
-
-    [Tooltip("Length in meters for animation debug axes in Scene view.")]
-    [SerializeField] private float animationDebugAxisLength = 0.75f;
 
     [Header("Runtime Visual Bridge")]
     [Tooltip("Optional prefab asset instantiated at runtime when no valid Animator companion exists. Use a visual-only prefab with Animator and full rig hierarchy.")]
@@ -55,9 +43,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
 
     [Tooltip("Local-space position offset applied to runtime visual bridge relative to ECS player transform.")]
     [SerializeField] private Vector3 runtimeVisualBridgeOffset = Vector3.zero;
-
-    [Tooltip("Draws runtime visual bridge offset gizmo from player origin to target visual anchor.")]
-    [SerializeField] private bool drawRuntimeVisualBridgeGizmo = true;
 
     [Header("Hybrid Bake Safety")]
     [Tooltip("When enabled, bakes the attached Elemental Trail prefab reference into ECS. Disable to isolate SubScene object-reference streaming issues.")]
@@ -108,14 +93,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
         }
     }
 
-    public float GizmoRadius
-    {
-        get
-        {
-            return gizmoRadius;
-        }
-    }
-
     public Transform WeaponReference
     {
         get
@@ -129,22 +106,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return animatorComponent;
-        }
-    }
-
-    public bool DrawAnimationDebugGizmos
-    {
-        get
-        {
-            return drawAnimationDebugGizmos;
-        }
-    }
-
-    public float AnimationDebugAxisLength
-    {
-        get
-        {
-            return animationDebugAxisLength;
         }
     }
 
@@ -177,14 +138,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return runtimeVisualBridgeOffset;
-        }
-    }
-
-    public bool DrawRuntimeVisualBridgeGizmo
-    {
-        get
-        {
-            return drawRuntimeVisualBridgeGizmo;
         }
     }
 
@@ -300,19 +253,6 @@ public sealed class PlayerAuthoring : MonoBehaviour
         return masterPreset.PowerUpsPreset;
     }
     #endregion
-
-    #region Gizmos
-    /// <summary>
-    /// Draws player gizmos in the editor through the shared utility.
-    /// /params none.
-    /// /returns void.
-    /// </summary>
-    private void OnDrawGizmosSelected()
-    {
-        PlayerAuthoringGizmoUtility.DrawSelectedGizmos(this);
-    }
-    #endregion
-
     #endregion
 }
 

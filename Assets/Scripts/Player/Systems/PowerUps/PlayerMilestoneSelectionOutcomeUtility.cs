@@ -104,7 +104,8 @@ public static class PlayerMilestoneSelectionOutcomeUtility
         {
             ref PlayerMilestoneSkipCompensationBlob compensation = ref milestoneBlob.SkipCompensationResources[compensationIndex];
 
-            if (!TryApplySkipCompensation(in compensation,
+            if (!TryApplySkipCompensation(progressionConfig,
+                                          in compensation,
                                           ref playerHealth,
                                           ref playerShield,
                                           ref playerExperience,
@@ -140,6 +141,7 @@ public static class PlayerMilestoneSelectionOutcomeUtility
     /// <summary>
     /// Applies one baked skip-compensation entry to the corresponding runtime resource.
     /// </summary>
+    /// <param name="progressionConfig">Runtime progression config used to clamp experience by level cap.</param>
     /// <param name="compensation">Baked compensation entry.</param>
     /// <param name="playerHealth">Mutable player health state.</param>
     /// <param name="playerShield">Mutable player shield state.</param>
@@ -148,7 +150,8 @@ public static class PlayerMilestoneSelectionOutcomeUtility
     /// <param name="powerUpsConfig">Current active-slot configs.</param>
     /// <param name="powerUpsState">Mutable active-slot runtime state.</param>
     /// <returns>True when runtime state changed; otherwise false.</returns>
-    private static bool TryApplySkipCompensation(in PlayerMilestoneSkipCompensationBlob compensation,
+    private static bool TryApplySkipCompensation(PlayerProgressionConfig progressionConfig,
+                                                 in PlayerMilestoneSkipCompensationBlob compensation,
                                                  ref PlayerHealth playerHealth,
                                                  ref PlayerShield playerShield,
                                                  ref PlayerExperience playerExperience,
@@ -178,7 +181,11 @@ public static class PlayerMilestoneSelectionOutcomeUtility
                                                   in powerUpsConfig.SecondarySlot,
                                                   ref powerUpsState.SecondaryEnergy);
             case PlayerMilestoneSkipCompensationResourceType.Experience:
-                return TryApplyExperienceCompensation(applyMode, compensation.Value, ref playerExperience, in playerLevel);
+                return TryApplyExperienceCompensation(progressionConfig,
+                                                     applyMode,
+                                                     compensation.Value,
+                                                     ref playerExperience,
+                                                     in playerLevel);
             default:
                 return false;
         }
@@ -285,16 +292,25 @@ public static class PlayerMilestoneSelectionOutcomeUtility
     /// <summary>
     /// Applies one experience compensation entry.
     /// </summary>
+    /// <param name="progressionConfig">Runtime progression config used to respect the current level cap.</param>
     /// <param name="applyMode">Value interpretation mode.</param>
     /// <param name="rawValue">Flat amount or percentage value.</param>
     /// <param name="playerExperience">Mutable player experience state.</param>
     /// <param name="playerLevel">Current player level state used to resolve the next required experience.</param>
     /// <returns>True when experience changed; otherwise false.</returns>
-    private static bool TryApplyExperienceCompensation(PlayerMilestoneCompensationApplyMode applyMode,
+    private static bool TryApplyExperienceCompensation(PlayerProgressionConfig progressionConfig,
+                                                       PlayerMilestoneCompensationApplyMode applyMode,
                                                        float rawValue,
                                                        ref PlayerExperience playerExperience,
                                                        in PlayerLevel playerLevel)
     {
+        float remainingExperienceCapacity = PlayerProgressionPhaseUtility.ResolveRemainingExperienceUntilLevelCap(progressionConfig,
+                                                                                                                   playerLevel.Current,
+                                                                                                                   playerExperience.Current);
+
+        if (remainingExperienceCapacity <= 0f)
+            return false;
+
         float currentExperience = math.max(0f, playerExperience.Current);
         float deltaValue = applyMode == PlayerMilestoneCompensationApplyMode.Percent
             ? math.max(0f, rawValue) * 0.01f * math.max(0f, playerLevel.RequiredExperienceForNextLevel)
@@ -302,6 +318,9 @@ public static class PlayerMilestoneSelectionOutcomeUtility
 
         if (deltaValue <= 0f)
             return false;
+
+        if (deltaValue > remainingExperienceCapacity)
+            deltaValue = remainingExperienceCapacity;
 
         playerExperience.Current = currentExperience + deltaValue;
         return true;

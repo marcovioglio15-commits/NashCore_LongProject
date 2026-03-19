@@ -50,6 +50,9 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     [HideInInspector]
     [SerializeField] private float legacyExperienceRequiredPerLevel = 100f;
 
+    [Tooltip("Maximum player level allowed by this progression preset. Experience gains stop once the cap is reached.")]
+    [SerializeField] private int levelCap = 100;
+
     [Tooltip("Radius around the player used to attract experience drops before collection.")]
     [SerializeField] private float experiencePickupRadius = 5f;
 
@@ -145,6 +148,14 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         get
         {
             return experiencePickupRadius;
+        }
+    }
+
+    public int LevelCap
+    {
+        get
+        {
+            return levelCap;
         }
     }
 
@@ -316,6 +327,11 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         if (legacyExperienceRequiredPerLevel < 1f)
         {
             legacyExperienceRequiredPerLevel = 1f;
+        }
+
+        if (levelCap < 1)
+        {
+            levelCap = 1;
         }
 
         if (experiencePickupRadius < 0f)

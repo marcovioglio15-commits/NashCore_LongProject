@@ -8,6 +8,7 @@ using Unity.Entities;
 public static class PlayerProgressionPhaseUtility
 {
     #region Constants
+    private const int DefaultLevelCap = 100;
     private const float DefaultRequiredExperience = 100f;
     private const string DefaultPhaseID = "Phase0";
     #endregion
@@ -47,6 +48,92 @@ public static class PlayerProgressionPhaseUtility
                                                  out activeGamePhaseIndex,
                                                  out isMilestoneRequirement,
                                                  out milestoneLevel);
+    }
+
+    /// <summary>
+    /// Resolves the configured runtime level cap using a safe fallback when progression data is missing.
+    /// /params progressionConfig Runtime progression configuration component.
+    /// /returns Maximum reachable player level for this configuration.
+    /// </summary>
+    public static int ResolveLevelCap(PlayerProgressionConfig progressionConfig)
+    {
+        if (!progressionConfig.Config.IsCreated)
+        {
+            return DefaultLevelCap;
+        }
+
+        int levelCap = progressionConfig.Config.Value.LevelCap;
+        return levelCap < 1 ? DefaultLevelCap : levelCap;
+    }
+
+    /// <summary>
+    /// Checks whether the specified player level has already reached or exceeded the configured level cap.
+    /// /params progressionConfig Runtime progression configuration component.
+    /// /params levelValue Current player level to evaluate.
+    /// /returns True when the level is capped and should stop receiving more experience.
+    /// </summary>
+    public static bool HasReachedLevelCap(PlayerProgressionConfig progressionConfig, int levelValue)
+    {
+        if (levelValue < 0)
+        {
+            levelValue = 0;
+        }
+
+        return levelValue >= ResolveLevelCap(progressionConfig);
+    }
+
+    /// <summary>
+    /// Resolves how much additional experience the player can still receive before reaching the configured level cap.
+    /// /params progressionConfig Runtime progression configuration component.
+    /// /params levelValue Current player level.
+    /// /params currentExperience Current stored progress toward the next level-up.
+    /// /returns Remaining experience capacity until the level cap is reached.
+    /// </summary>
+    public static float ResolveRemainingExperienceUntilLevelCap(PlayerProgressionConfig progressionConfig,
+                                                                int levelValue,
+                                                                float currentExperience)
+    {
+        if (levelValue < 0)
+        {
+            levelValue = 0;
+        }
+
+        if (currentExperience < 0f)
+        {
+            currentExperience = 0f;
+        }
+
+        int levelCap = ResolveLevelCap(progressionConfig);
+
+        if (levelValue >= levelCap)
+        {
+            return 0f;
+        }
+
+        float remainingExperience = 0f;
+        int simulatedLevel = levelValue;
+        float bufferedExperience = currentExperience;
+
+        // Sum the missing thresholds from the current level up to the cap.
+        while (simulatedLevel < levelCap)
+        {
+            float requiredExperienceForNextLevel = ResolveRequiredExperienceForLevel(progressionConfig,
+                                                                                     simulatedLevel,
+                                                                                     out int _,
+                                                                                     out bool _,
+                                                                                     out int _);
+            float remainingRequirement = requiredExperienceForNextLevel - bufferedExperience;
+
+            if (remainingRequirement > 0f)
+            {
+                remainingExperience += remainingRequirement;
+            }
+
+            bufferedExperience = 0f;
+            simulatedLevel += 1;
+        }
+
+        return remainingExperience;
     }
 
     /// <summary>

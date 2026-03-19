@@ -31,7 +31,7 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
     {
         state.RequireForUpdate<EnemyExperienceDropActive>();
         playerQuery = new EntityQueryBuilder(Allocator.Temp)
-                          .WithAll<LocalTransform, PlayerMovementState, PlayerExperienceCollection, PlayerControllerConfig, PlayerExperience>()
+                          .WithAll<LocalTransform, PlayerMovementState, PlayerExperienceCollection, PlayerExperience, PlayerLevel, PlayerProgressionConfig>()
                           .Build(ref state);
         state.RequireForUpdate(playerQuery);
     }
@@ -50,6 +50,12 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
         planarVelocity.y = 0f;
         float playerSpeed = math.max(0f, math.length(planarVelocity));
         float pickupRadius = math.max(0f, entityManager.GetComponentData<PlayerExperienceCollection>(playerEntity).PickupRadius);
+        PlayerProgressionConfig progressionConfig = entityManager.GetComponentData<PlayerProgressionConfig>(playerEntity);
+        PlayerLevel playerLevel = entityManager.GetComponentData<PlayerLevel>(playerEntity);
+        PlayerExperience playerExperience = entityManager.GetComponentData<PlayerExperience>(playerEntity);
+        float remainingExperienceCapacity = PlayerProgressionPhaseUtility.ResolveRemainingExperienceUntilLevelCap(progressionConfig,
+                                                                                                                   playerLevel.Current,
+                                                                                                                   playerExperience.Current);
 
         float deltaTime = SystemAPI.Time.DeltaTime;
 
@@ -95,9 +101,22 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
             float collectDistance = baseCollectDistance + (playerSpeed * collectDistancePerPlayerSpeed);
             float collectDistanceSquared = collectDistance * collectDistance;
 
+            if (remainingExperienceCapacity <= PrecisionEpsilon)
+            {
+                if (currentDropData.IsAttracting != 0)
+                {
+                    currentDropData.IsAttracting = 0;
+                    dropData.ValueRW = currentDropData;
+                }
+
+                continue;
+            }
+
             if (distanceSquared <= collectDistanceSquared)
             {
-                grantedExperience += math.max(0f, currentDropData.ExperienceAmount);
+                float collectedExperience = math.max(0f, currentDropData.ExperienceAmount);
+                grantedExperience += collectedExperience;
+                remainingExperienceCapacity -= collectedExperience;
                 LocalTransform parkedTransform = dropTransform.ValueRO;
                 parkedTransform.Position = DropParkingPosition;
                 dropTransform.ValueRW = parkedTransform;
@@ -166,7 +185,6 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
         if (grantedExperience <= PrecisionEpsilon)
             return;
 
-        PlayerExperience playerExperience = entityManager.GetComponentData<PlayerExperience>(playerEntity);
         playerExperience.Current += grantedExperience;
         entityManager.SetComponentData(playerEntity, playerExperience);
     }

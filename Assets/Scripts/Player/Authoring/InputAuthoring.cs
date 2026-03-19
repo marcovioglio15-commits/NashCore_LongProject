@@ -306,7 +306,7 @@ public sealed class InputAuthoring : MonoBehaviour
     private static void ApplyCursorPolicy()
     {
         bool allowMousePointerMode = PlayerInputRuntime.ShouldUseMousePointerLook();
-        bool lockCursor = !allowMousePointerMode;
+        bool lockCursor = !allowMousePointerMode && !RuntimeGizmoDebugState.PanelVisible;
         SetCursorLock(lockCursor);
     }
     #endregion

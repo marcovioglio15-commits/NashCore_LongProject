@@ -179,17 +179,6 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
     {
         CacheReferences();
     }
-
-    /// <summary>
-    /// Draws a simple debug gizmo matching the dropped sphere size.
-    /// /params none.
-    /// /returns void.
-    /// </summary>
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = new Color(0.16f, 0.75f, 0.92f, 0.85f);
-        Gizmos.DrawWireSphere(transform.position, transform.lossyScale.x * 0.5f);
-    }
 #endif
     #endregion
 

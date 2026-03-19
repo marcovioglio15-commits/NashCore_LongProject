@@ -9,17 +9,6 @@ using UnityEngine.Serialization;
 [DisallowMultipleComponent]
 public sealed class EnemyAuthoring : MonoBehaviour
 {
-    #region Constants
-    private static readonly Color ContactGizmoColor = new Color(1f, 0.25f, 0.25f, 0.9f);
-    private static readonly Color AreaGizmoColor = new Color(1f, 0.55f, 0.15f, 0.9f);
-    private static readonly Color SeparationGizmoColor = new Color(0.2f, 0.6f, 1f, 0.9f);
-    private static readonly Color BodyGizmoColor = new Color(1f, 0.9f, 0.2f, 0.9f);
-    private static readonly Color AggressivenessGizmoColor = new Color(0.32f, 0.9f, 1f, 0.8f);
-    private static readonly Color VisualDistanceGizmoColor = new Color(0.15f, 1f, 0.75f, 0.9f);
-    private static readonly Color ElementalAnchorGizmoColor = new Color(1f, 0.4f, 0.8f, 0.9f);
-    private static readonly Color WorldSpaceBarsGizmoColor = new Color(0.25f, 0.95f, 0.45f, 0.9f);
-    #endregion
-
     #region Fields
     #region Serialized Fields
     [Header("Preset")]
@@ -139,27 +128,6 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Tooltip("Optional world-space status bars view used to display fillable health and shield images above this enemy.")]
     [SerializeField] private EnemyWorldSpaceStatusBarsView worldSpaceStatusBarsView;
 
-    [Header("Debug Gizmos")]
-    [Tooltip("Draw the contact radius preview when the authoring object is selected.")]
-    [SerializeField] private bool drawContactRadiusGizmo = true;
-
-    [Tooltip("Draw the area damage radius preview when the authoring object is selected.")]
-    [SerializeField] private bool drawAreaRadiusGizmo = true;
-
-    [Tooltip("Draw the separation radius preview when the authoring object is selected.")]
-    [SerializeField] private bool drawSeparationRadiusGizmo;
-
-    [Tooltip("Draw the body radius preview used for projectile hit checks.")]
-    [SerializeField] private bool drawBodyRadiusGizmo;
-
-    [Tooltip("Draw the effective steering clearance radius preview scaled by Steering Aggressiveness.")]
-    [SerializeField] private bool drawAggressivenessRadiusGizmo;
-
-    [Tooltip("Draw the visual distance culling radius preview when enabled.")]
-    [SerializeField] private bool drawVisualDistanceGizmo = true;
-
-    [Tooltip("Draw a link gizmo from enemy pivot to world-space health and shield bars view.")]
-    [SerializeField] private bool drawWorldSpaceBarsGizmo = true;
     #endregion
 
     #endregion
@@ -655,36 +623,6 @@ public sealed class EnemyAuthoring : MonoBehaviour
             advancedPatternPreset.ValidateValues();
     }
 
-    private void OnDrawGizmosSelected()
-    {
-        EnemyAuthoringGizmoUtility.DrawSelectedGizmos(transform.position,
-                                                      elementalVfxAnchor,
-                                                      worldSpaceStatusBarsView,
-                                                      drawContactRadiusGizmo,
-                                                      ContactDamageEnabled,
-                                                      ContactRadius,
-                                                      ContactGizmoColor,
-                                                      drawAreaRadiusGizmo,
-                                                      AreaDamageEnabled,
-                                                      AreaRadius,
-                                                      AreaGizmoColor,
-                                                      drawSeparationRadiusGizmo,
-                                                      SeparationRadius,
-                                                      SeparationGizmoColor,
-                                                      drawBodyRadiusGizmo,
-                                                      BodyRadius,
-                                                      BodyGizmoColor,
-                                                      drawAggressivenessRadiusGizmo,
-                                                      SteeringAggressiveness,
-                                                      AggressivenessGizmoColor,
-                                                      drawVisualDistanceGizmo,
-                                                      EnableDistanceCulling,
-                                                      MaxVisibleDistance,
-                                                      VisualDistanceGizmoColor,
-                                                      ElementalAnchorGizmoColor,
-                                                      drawWorldSpaceBarsGizmo,
-                                                      WorldSpaceBarsGizmoColor);
-    }
     #endregion
 
     #endregion

@@ -40,6 +40,7 @@ public partial struct PlayerLevelUpSystem : ISystem
     {
         state.RequireForUpdate<PlayerExperience>();
         state.RequireForUpdate<PlayerLevel>();
+        state.RequireForUpdate<PlayerExperienceCollection>();
         state.RequireForUpdate<PlayerProgressionConfig>();
     }
 
@@ -61,11 +62,13 @@ public partial struct PlayerLevelUpSystem : ISystem
 
         foreach ((RefRW<PlayerExperience> playerExperience,
                   RefRW<PlayerLevel> playerLevel,
+                  RefRW<PlayerExperienceCollection> playerExperienceCollection,
                   RefRO<PlayerProgressionConfig> progressionConfig,
                   DynamicBuffer<PlayerScalableStatElement> scalableStats,
                   Entity entity)
                  in SystemAPI.Query<RefRW<PlayerExperience>,
                                     RefRW<PlayerLevel>,
+                                    RefRW<PlayerExperienceCollection>,
                                     RefRO<PlayerProgressionConfig>,
                                     DynamicBuffer<PlayerScalableStatElement>>().WithEntityAccess())
         {
@@ -82,17 +85,41 @@ public partial struct PlayerLevelUpSystem : ISystem
             // Pause progression consumption while a milestone selection is active.
             if (hasMilestoneSelectionData && milestoneSelectionState.IsSelectionActive != 0)
             {
+                int selectionActiveLevel = mathMax(0, playerLevel.ValueRO.Current);
+
+                if (PlayerProgressionPhaseUtility.HasReachedLevelCap(progressionConfig.ValueRO, selectionActiveLevel))
+                {
+                    playerLevel.ValueRW = new PlayerLevel
+                    {
+                        Current = selectionActiveLevel,
+                        ActiveGamePhaseIndex = PlayerProgressionPhaseUtility.ResolveActiveGamePhaseIndex(progressionConfig.ValueRO, selectionActiveLevel),
+                        RequiredExperienceForNextLevel = 0f
+                    };
+                }
+
                 SyncScalableStats(scalableStats, playerExperience.ValueRO.Current, playerLevel.ValueRO.Current);
+                PlayerExperiencePickupRadiusRuntimeUtility.SyncRuntimeComponent(ref playerExperienceCollection.ValueRW,
+                                                                               progressionConfig.ValueRO,
+                                                                               scalableStats);
                 continue;
             }
 
             float currentExperience = mathMax(0f, playerExperience.ValueRO.Current);
             int currentLevel = mathMax(0, playerLevel.ValueRO.Current);
-            float requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
+            int levelCap = PlayerProgressionPhaseUtility.ResolveLevelCap(progressionConfig.ValueRO);
+            int activeGamePhaseIndex = PlayerProgressionPhaseUtility.ResolveActiveGamePhaseIndex(progressionConfig.ValueRO, currentLevel);
+            bool nextLevelIsMilestone = false;
+            int nextMilestoneLevel = 0;
+            float requiredExperienceForNextLevel = 0f;
+
+            if (currentLevel < levelCap)
+            {
+                requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
                                                                                                                    currentLevel,
-                                                                                                                   out int activeGamePhaseIndex,
-                                                                                                                   out bool nextLevelIsMilestone,
-                                                                                                                   out int nextMilestoneLevel);
+                                                                                                                   out activeGamePhaseIndex,
+                                                                                                                   out nextLevelIsMilestone,
+                                                                                                                   out nextMilestoneLevel);
+            }
 
             int startingGamePhaseIndex = activeGamePhaseIndex;
             bool reachedMilestone = false;
@@ -101,7 +128,7 @@ public partial struct PlayerLevelUpSystem : ISystem
             bool openedMilestoneSelection = false;
             int milestoneOfferCount = 0;
 
-            while (currentExperience >= requiredExperienceForNextLevel)
+            while (currentLevel < levelCap && currentExperience >= requiredExperienceForNextLevel)
             {
                 int consumedRequirementPhaseIndex = activeGamePhaseIndex;
                 bool consumedRequirementWasMilestone = nextLevelIsMilestone;
@@ -131,11 +158,21 @@ public partial struct PlayerLevelUpSystem : ISystem
                                             scheduleDebugInfo.NewValue));
                 }
 
-                requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
-                                                                                                                   currentLevel,
-                                                                                                                   out activeGamePhaseIndex,
-                                                                                                                   out nextLevelIsMilestone,
-                                                                                                                   out nextMilestoneLevel);
+                if (currentLevel < levelCap)
+                {
+                    requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
+                                                                                                                       currentLevel,
+                                                                                                                       out activeGamePhaseIndex,
+                                                                                                                       out nextLevelIsMilestone,
+                                                                                                                       out nextMilestoneLevel);
+                }
+                else
+                {
+                    activeGamePhaseIndex = PlayerProgressionPhaseUtility.ResolveActiveGamePhaseIndex(progressionConfig.ValueRO, currentLevel);
+                    requiredExperienceForNextLevel = 0f;
+                    nextLevelIsMilestone = false;
+                    nextMilestoneLevel = 0;
+                }
 
                 if (!consumedRequirementWasMilestone)
                 {
@@ -208,6 +245,9 @@ public partial struct PlayerLevelUpSystem : ISystem
                 RequiredExperienceForNextLevel = requiredExperienceForNextLevel
             };
             SyncScalableStats(scalableStats, currentExperience, currentLevel);
+            PlayerExperiencePickupRadiusRuntimeUtility.SyncRuntimeComponent(ref playerExperienceCollection.ValueRW,
+                                                                           progressionConfig.ValueRO,
+                                                                           scalableStats);
 
             if (hasMilestoneSelectionData)
                 milestoneSelectionStateLookup[entity] = milestoneSelectionState;

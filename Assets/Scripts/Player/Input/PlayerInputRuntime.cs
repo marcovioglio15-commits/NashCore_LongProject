@@ -30,6 +30,7 @@ public static class PlayerInputRuntime
     private static InputAction cheatPresetDigitAction;
     private static InputAction cheatModifierControlAction;
     private static InputAction cheatModifierShiftAction;
+    private static InputAction runtimeGizmoPanelToggleAction;
     private static bool lookActionUsesMousePointer;
 
     private static string moveActionId;
@@ -172,6 +173,14 @@ public static class PlayerInputRuntime
         }
     }
 
+    public static InputAction RuntimeGizmoPanelToggleAction
+    {
+        get
+        {
+            return runtimeGizmoPanelToggleAction;
+        }
+    }
+
     public static bool LookActionUsesMousePointer
     {
         get
@@ -179,6 +188,9 @@ public static class PlayerInputRuntime
             return lookActionUsesMousePointer;
         }
     }
+
+    public static event Action RuntimeInitialized;
+    public static event Action RuntimeShutdown;
 
     /// <summary>
     /// Resolves whether mouse-pointer look should drive aim in the current runtime context.
@@ -375,8 +387,10 @@ public static class PlayerInputRuntime
         cheatPresetDigitAction = ResolveAction(instantiatedAsset, null, "CheatPresetDigit");
         cheatModifierControlAction = ResolveAction(instantiatedAsset, null, "CheatModifierControl");
         cheatModifierShiftAction = ResolveAction(instantiatedAsset, null, "CheatModifierShift");
+        runtimeGizmoPanelToggleAction = ResolveAction(instantiatedAsset, null, "ToggleRuntimeGizmoPanel");
         lookActionUsesMousePointer = ResolveLookActionUsesMousePointer(lookAction);
         PlayerInputBindingDisplayRuntime.Initialize();
+        RaiseRuntimeInitialized();
 
 #if UNITY_EDITOR
         LogInitializationStatus(instantiatedAsset);
@@ -388,6 +402,7 @@ public static class PlayerInputRuntime
     /// </summary>
     public static void Shutdown()
     {
+        RaiseRuntimeShutdown();
         PlayerInputBindingDisplayRuntime.Shutdown();
 
         if (runtimeAsset != null)
@@ -413,6 +428,7 @@ public static class PlayerInputRuntime
         cheatPresetDigitAction = null;
         cheatModifierControlAction = null;
         cheatModifierShiftAction = null;
+        runtimeGizmoPanelToggleAction = null;
         lookActionUsesMousePointer = false;
 
         moveActionId = null;
@@ -545,6 +561,26 @@ public static class PlayerInputRuntime
         lookValue = vector2Control.ReadValue();
         return true;
     }
+
+    private static void RaiseRuntimeInitialized()
+    {
+        Action runtimeInitialized = RuntimeInitialized;
+
+        if (runtimeInitialized == null)
+            return;
+
+        runtimeInitialized.Invoke();
+    }
+
+    private static void RaiseRuntimeShutdown()
+    {
+        Action runtimeShutdown = RuntimeShutdown;
+
+        if (runtimeShutdown == null)
+            return;
+
+        runtimeShutdown.Invoke();
+    }
     #endregion
 
 #if UNITY_EDITOR
@@ -554,7 +590,7 @@ public static class PlayerInputRuntime
         if (asset == null)
             return;
 
-        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | PowerUpSwapSlots: {6} | PowerUpContainerInteract: {7} | PowerUpContainerReplacePrimary: {8} | PowerUpContainerReplaceSecondary: {9} | UINavigate: {10} | UISubmit: {11} | UICancel: {12} | CheatPresetDigit: {13} | CheatModifierControl: {14} | CheatModifierShift: {15} | MousePointerLook: {16}",
+        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | PowerUpSwapSlots: {6} | PowerUpContainerInteract: {7} | PowerUpContainerReplacePrimary: {8} | PowerUpContainerReplaceSecondary: {9} | UINavigate: {10} | UISubmit: {11} | UICancel: {12} | CheatPresetDigit: {13} | CheatModifierControl: {14} | CheatModifierShift: {15} | ToggleRuntimeGizmoPanel: {16} | MousePointerLook: {17}",
                                        asset.name,
                                        BuildActionStatus(moveAction),
                                        BuildActionStatus(lookAction),
@@ -571,6 +607,7 @@ public static class PlayerInputRuntime
                                        BuildActionStatus(cheatPresetDigitAction),
                                        BuildActionStatus(cheatModifierControlAction),
                                        BuildActionStatus(cheatModifierShiftAction),
+                                       BuildActionStatus(runtimeGizmoPanelToggleAction),
                                        lookActionUsesMousePointer);
         Debug.Log(message, asset);
     }

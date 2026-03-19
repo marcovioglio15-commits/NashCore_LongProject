@@ -8529,10 +8529,9 @@ MonoBehaviour:
           stacksPerTick: 0
           applyIntervalSeconds: 0.01
     unreplaceable: 0
-  primaryActivePowerUpId: ActiveChargeShot
-  secondaryActivePowerUpId: ActiveGigaBomb
-  equippedPassivePowerUpIds:
-  - PassiveOrbitalProjectiles
+  primaryActivePowerUpId: 
+  secondaryActivePowerUpId: 
+  equippedPassivePowerUpIds: []
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT
