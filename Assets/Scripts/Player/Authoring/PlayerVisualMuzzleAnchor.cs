@@ -16,6 +16,12 @@ public sealed class PlayerVisualMuzzleAnchor : MonoBehaviour
     [Tooltip("Animated transform used as the authoritative projectile origin for the player visual.")]
     [SerializeField] private Transform muzzleTransform;
 
+    [Tooltip("Additional distance applied along the resolved shot direction after reading the animated muzzle transform.")]
+    [SerializeField] private float forwardShotOffset = 0.14f;
+
+    [Tooltip("Minimum planar separation kept between the player center and the projectile spawn origin.")]
+    [SerializeField] private float minimumPlanarDistanceFromPlayer = 0.72f;
+
     [Tooltip("When enabled, draws a selected gizmo that visualizes the muzzle forward axis.")]
     [SerializeField] private bool drawDebugGizmos = true;
 
@@ -39,6 +45,22 @@ public sealed class PlayerVisualMuzzleAnchor : MonoBehaviour
             return transform;
         }
     }
+
+    public float ForwardShotOffset
+    {
+        get
+        {
+            return Mathf.Max(0f, forwardShotOffset);
+        }
+    }
+
+    public float MinimumPlanarDistanceFromPlayer
+    {
+        get
+        {
+            return Mathf.Max(0f, minimumPlanarDistanceFromPlayer);
+        }
+    }
     #endregion
 
     #region Methods
@@ -48,6 +70,12 @@ public sealed class PlayerVisualMuzzleAnchor : MonoBehaviour
     {
         if (debugRayLength < 0f)
             debugRayLength = 0f;
+
+        if (forwardShotOffset < 0f)
+            forwardShotOffset = 0f;
+
+        if (minimumPlanarDistanceFromPlayer < 0f)
+            minimumPlanarDistanceFromPlayer = 0f;
     }
 
     private void OnDrawGizmosSelected()

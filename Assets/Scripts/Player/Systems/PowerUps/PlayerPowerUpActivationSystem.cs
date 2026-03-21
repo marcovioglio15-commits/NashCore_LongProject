@@ -46,7 +46,6 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         ComponentLookup<PlayerMovementState> movementLookup = SystemAPI.GetComponentLookup<PlayerMovementState>(true);
         ComponentLookup<PlayerControllerConfig> controllerLookup = SystemAPI.GetComponentLookup<PlayerControllerConfig>(true);
         ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
-        ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup = SystemAPI.GetComponentLookup<PlayerAnimatedMuzzleWorldPose>(true);
         ComponentLookup<ShooterMuzzleAnchor> muzzleLookup = SystemAPI.GetComponentLookup<ShooterMuzzleAnchor>(true);
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
@@ -138,7 +137,6 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 in movementState,
                                                                 in controllerConfig,
                                                                 in passiveToolsState,
-                                                                in animatedMuzzleLookup,
                                                                 in muzzleLookup,
                                                                 in transformLookup,
                                                                 in localToWorldLookup,
@@ -180,7 +178,6 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 in movementState,
                                                                 in controllerConfig,
                                                                 in passiveToolsState,
-                                                                in animatedMuzzleLookup,
                                                                 in muzzleLookup,
                                                                 in transformLookup,
                                                                 in localToWorldLookup,

@@ -26,6 +26,8 @@ public static class PlayerGameplayVisualSetupUtility
     private const string UpperShootStateName = "ST_Upper_Shoot";
     private const int PlayerLayer = 3;
     private const float MuzzleForwardPadding = 0.01f;
+    private const float GeneratedForwardShotOffset = 0.14f;
+    private const float GeneratedMinimumPlanarDistance = 0.72f;
     #endregion
 
     #region Methods
@@ -96,8 +98,12 @@ public static class PlayerGameplayVisualSetupUtility
             PlayerVisualMuzzleAnchor muzzleAnchorComponent = GetOrAddComponent<PlayerVisualMuzzleAnchor>(prefabContentsRoot);
             SerializedObject serializedMuzzleAnchor = new SerializedObject(muzzleAnchorComponent);
             SerializedProperty muzzleTransformProperty = serializedMuzzleAnchor.FindProperty("muzzleTransform");
+            SerializedProperty forwardShotOffsetProperty = serializedMuzzleAnchor.FindProperty("forwardShotOffset");
+            SerializedProperty minimumPlanarDistanceProperty = serializedMuzzleAnchor.FindProperty("minimumPlanarDistanceFromPlayer");
             serializedMuzzleAnchor.Update();
             muzzleTransformProperty.objectReferenceValue = muzzleAnchorTransform;
+            forwardShotOffsetProperty.floatValue = GeneratedForwardShotOffset;
+            minimumPlanarDistanceProperty.floatValue = GeneratedMinimumPlanarDistance;
             serializedMuzzleAnchor.ApplyModifiedPropertiesWithoutUndo();
 
             SetLayerRecursively(prefabContentsRoot, PlayerLayer);

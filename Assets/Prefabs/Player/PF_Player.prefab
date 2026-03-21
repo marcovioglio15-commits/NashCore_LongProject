@@ -47,8 +47,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAuthoring
   masterPreset: {fileID: 11400000, guid: 2aa7920f2d0dab444bbb97e34b3f90d8, type: 2}
   powerUpsCheatPresetLibrary: {fileID: 0}
-  weaponReference: {fileID: 7678767949032831145}
-  animatorComponent: {fileID: 6172769612222754639}
+  weaponReference: {fileID: 1813243613431695518}
+  animatorComponent: {fileID: 1351648500096826512}
   runtimeVisualBridgePrefab: {fileID: 8300188409459899355, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
   spawnRuntimeVisualBridgeWhenAnimatorMissing: 1
   runtimeVisualBridgeSyncRotation: 1
@@ -152,13 +152,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1917377410754265397, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
   m_PrefabInstance: {fileID: 835247543005528413}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &6172769612222754639 stripped
+--- !u!95 &1351648500096826512 stripped
 Animator:
-  m_CorrespondingSourceObject: {fileID: 6790707469489286674, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
+  m_CorrespondingSourceObject: {fileID: 1825470851326754253, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
   m_PrefabInstance: {fileID: 835247543005528413}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &7678767949032831145 stripped
+--- !u!4 &1813243613431695518 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 6991578881024948724, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
+  m_CorrespondingSourceObject: {fileID: 1350668956772026819, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
   m_PrefabInstance: {fileID: 835247543005528413}
   m_PrefabAsset: {fileID: 0}

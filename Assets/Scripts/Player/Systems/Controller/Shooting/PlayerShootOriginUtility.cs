@@ -4,7 +4,7 @@ using Unity.Transforms;
 
 /// <summary>
 /// Resolves the authoritative world-space projectile origin for player-fired shots.
-/// Animated muzzle data is preferred, then baked muzzle anchors, then the player transform fallback.
+/// Baked muzzle anchors are preferred, then the player transform fallback.
 /// /params None.
 /// /returns None.
 /// </summary>
@@ -14,11 +14,10 @@ public static class PlayerShootOriginUtility
 
     #region Public Methods
     /// <summary>
-    /// Resolves the world-space spawn position for one player-fired projectile while preserving authored shoot offset.
+    /// Resolves the world-space spawn position for one player-fired projectile.
     /// /params shooterEntity: Player entity requesting the projectile spawn.
     /// /params shooterTransform: Current player transform used as the final fallback reference pose.
     /// /params shootOffset: Authored local shoot offset rotated by the resolved muzzle rotation.
-    /// /params animatedMuzzleLookup: Lookup used to read the runtime animated muzzle pose.
     /// /params muzzleLookup: Lookup used to read the baked ECS muzzle anchor entity.
     /// /params transformLookup: Lookup used to read fallback LocalTransform data from the baked muzzle anchor.
     /// /params localToWorldLookup: Lookup used to read the most accurate world pose from the baked muzzle anchor.
@@ -27,22 +26,12 @@ public static class PlayerShootOriginUtility
     public static float3 ResolveSpawnPosition(Entity shooterEntity,
                                               in LocalTransform shooterTransform,
                                               in float3 shootOffset,
-                                              in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
                                               in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                               in ComponentLookup<LocalTransform> transformLookup,
                                               in ComponentLookup<LocalToWorld> localToWorldLookup)
     {
         float3 referencePosition = shooterTransform.Position;
         quaternion referenceRotation = shooterTransform.Rotation;
-
-        if (TryResolveAnimatedMuzzlePose(shooterEntity,
-                                         in animatedMuzzleLookup,
-                                         out referencePosition,
-                                         out referenceRotation))
-        {
-            float3 animatedOffset = math.rotate(referenceRotation, shootOffset);
-            return referencePosition + animatedOffset;
-        }
 
         if (TryResolveBakedMuzzlePose(shooterEntity,
                                       in muzzleLookup,
@@ -62,37 +51,7 @@ public static class PlayerShootOriginUtility
 
     #region Private Methods
     /// <summary>
-    /// Attempts to read the animated muzzle pose cached on the shooter entity.
-    /// /params shooterEntity: Player entity requesting the spawn origin.
-    /// /params animatedMuzzleLookup: Lookup used to read the cached animated muzzle pose.
-    /// /params position: Resolved animated muzzle position.
-    /// /params rotation: Resolved animated muzzle rotation.
-    /// /returns True when a valid animated muzzle pose exists, otherwise false.
-    /// </summary>
-    private static bool TryResolveAnimatedMuzzlePose(Entity shooterEntity,
-                                                     in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
-                                                     out float3 position,
-                                                     out quaternion rotation)
-    {
-        if (animatedMuzzleLookup.HasComponent(shooterEntity))
-        {
-            PlayerAnimatedMuzzleWorldPose animatedMuzzlePose = animatedMuzzleLookup[shooterEntity];
-
-            if (animatedMuzzlePose.IsValid != 0)
-            {
-                position = animatedMuzzlePose.Position;
-                rotation = animatedMuzzlePose.Rotation;
-                return true;
-            }
-        }
-
-        position = float3.zero;
-        rotation = quaternion.identity;
-        return false;
-    }
-
-    /// <summary>
-    /// Attempts to resolve the baked ECS muzzle anchor pose when no animated muzzle pose is available.
+    /// Attempts to resolve the baked ECS muzzle anchor pose.
     /// /params shooterEntity: Player entity requesting the spawn origin.
     /// /params muzzleLookup: Lookup used to read the baked muzzle anchor entity.
     /// /params transformLookup: Lookup used to read LocalTransform fallback data for the anchor.

@@ -27,6 +27,7 @@ public partial struct PlayerVisualMuzzleAssignmentSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerAnimatedMuzzleWorldPose>();
         pendingAssignments.Clear();
     }
 

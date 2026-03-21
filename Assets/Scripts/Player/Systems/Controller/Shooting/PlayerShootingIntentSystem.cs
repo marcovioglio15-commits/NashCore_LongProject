@@ -48,7 +48,6 @@ public partial struct PlayerShootingIntentSystem : ISystem
     {
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
         state.EntityManager.CompleteDependencyBeforeRO<LocalToWorld>();
-        ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup = SystemAPI.GetComponentLookup<PlayerAnimatedMuzzleWorldPose>(true);
         ComponentLookup<ShooterMuzzleAnchor> muzzleLookup = SystemAPI.GetComponentLookup<ShooterMuzzleAnchor>(true);
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
@@ -161,7 +160,6 @@ public partial struct PlayerShootingIntentSystem : ISystem
             float3 spawnPosition = PlayerShootOriginUtility.ResolveSpawnPosition(entity,
                                                                                 in localTransform.ValueRO,
                                                                                 in shootingConfig.ShootOffset,
-                                                                                in animatedMuzzleLookup,
                                                                                 in muzzleLookup,
                                                                                 in transformLookup,
                                                                                 in localToWorldLookup);

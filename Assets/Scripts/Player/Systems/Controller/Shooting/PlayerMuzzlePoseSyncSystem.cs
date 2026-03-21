@@ -1,9 +1,10 @@
 using Unity.Entities;
 using Unity.Transforms;
+using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
-/// Copies the managed muzzle transform pose into ECS so shooting systems can use an origin aligned with the animated weapon.
+/// Copies the managed muzzle transform pose into ECS and caches a player-local offset so shooting can reconstruct a stable current-frame origin.
 /// /params None.
 /// /returns None.
 /// </summary>
@@ -66,8 +67,18 @@ public partial struct PlayerMuzzlePoseSyncSystem : ISystem
                 continue;
             }
 
-            muzzleWorldPose.ValueRW.Position = muzzleTransform.position;
-            muzzleWorldPose.ValueRW.Rotation = muzzleTransform.rotation;
+            float3 playerPosition = localTransform.ValueRO.Position;
+            quaternion playerRotation = localTransform.ValueRO.Rotation;
+            quaternion inversePlayerRotation = math.inverse(playerRotation);
+            float3 muzzlePosition = muzzleTransform.position;
+            quaternion muzzleRotation = muzzleTransform.rotation;
+            float3 muzzleRelativePosition = muzzlePosition - playerPosition;
+
+            muzzleWorldPose.ValueRW.Position = muzzlePosition;
+            muzzleWorldPose.ValueRW.Rotation = muzzleRotation;
+            muzzleWorldPose.ValueRW.LocalPosition = math.rotate(inversePlayerRotation, muzzleRelativePosition);
+            muzzleWorldPose.ValueRW.ForwardShotOffset = muzzleAnchor.ForwardShotOffset;
+            muzzleWorldPose.ValueRW.MinimumPlanarDistanceFromPlayer = muzzleAnchor.MinimumPlanarDistanceFromPlayer;
             muzzleWorldPose.ValueRW.IsValid = 1;
         }
     }
@@ -84,6 +95,9 @@ public partial struct PlayerMuzzlePoseSyncSystem : ISystem
     {
         muzzleWorldPose.Position = localTransform.Position;
         muzzleWorldPose.Rotation = localTransform.Rotation;
+        muzzleWorldPose.LocalPosition = float3.zero;
+        muzzleWorldPose.ForwardShotOffset = 0f;
+        muzzleWorldPose.MinimumPlanarDistanceFromPlayer = 0f;
         muzzleWorldPose.IsValid = 0;
     }
     #endregion

@@ -1,36 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &7660637935273195391
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6991578881024948724}
-  m_Layer: 3
-  m_Name: MuzzleAnchor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6991578881024948724
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7660637935273195391}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.6957468, z: 0.3470782}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 90656483778930425}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8300188409459899355
 GameObject:
   m_ObjectHideFlags: 0
@@ -61,7 +30,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 638768575057622120}
+  - {fileID: 5743581312201320375}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6779138888497368028
@@ -76,11 +45,44 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c78a30fa2636bf64a98e7e8803455181, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerVisualMuzzleAnchor
-  muzzleTransform: {fileID: 6991578881024948724}
+  muzzleTransform: {fileID: 1350668956772026819}
+  forwardShotOffset: 0.14
+  minimumPlanarDistanceFromPlayer: 0.72
   drawDebugGizmos: 1
   debugRayLength: 0.45
   debugGizmoColor: {r: 1, g: 0.52, b: 0.18, a: 1}
---- !u!1001 &1105604979604886403
+--- !u!1 &8511698552817064094
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1350668956772026819}
+  m_Layer: 3
+  m_Name: MuzzleAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1350668956772026819
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8511698552817064094}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.6957468, z: 0.3470782}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5055857864452846886}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &5206149867888017500
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -377,16 +379,16 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 1014988082278708602, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6991578881024948724}
+      addedObject: {fileID: 1350668956772026819}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
---- !u!4 &90656483778930425 stripped
+--- !u!4 &5055857864452846886 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1014988082278708602, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
-  m_PrefabInstance: {fileID: 1105604979604886403}
+  m_PrefabInstance: {fileID: 5206149867888017500}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &638768575057622120 stripped
+--- !u!4 &5743581312201320375 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
-  m_PrefabInstance: {fileID: 1105604979604886403}
+  m_PrefabInstance: {fileID: 5206149867888017500}
   m_PrefabAsset: {fileID: 0}

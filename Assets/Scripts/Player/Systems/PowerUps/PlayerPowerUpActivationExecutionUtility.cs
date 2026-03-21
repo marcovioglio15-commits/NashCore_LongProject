@@ -33,7 +33,6 @@ public static class PlayerPowerUpActivationExecutionUtility
                                    in PlayerMovementState movementState,
                                    in PlayerControllerConfig controllerConfig,
                                    in PlayerPassiveToolsState passiveToolsState,
-                                   in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
                                    in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                    in ComponentLookup<LocalTransform> transformLookup,
                                    in ComponentLookup<LocalToWorld> localToWorldLookup,
@@ -69,7 +68,6 @@ public static class PlayerPowerUpActivationExecutionUtility
                                in controllerConfig,
                                in passiveToolsState,
                                playerEntity,
-                               in animatedMuzzleLookup,
                                in muzzleLookup,
                                in transformLookup,
                                in localToWorldLookup,
@@ -88,7 +86,6 @@ public static class PlayerPowerUpActivationExecutionUtility
                                          in PlayerControllerConfig controllerConfig,
                                          in PlayerPassiveToolsState passiveToolsState,
                                          Entity playerEntity,
-                                         in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
                                          in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                          in ComponentLookup<LocalTransform> transformLookup,
                                          in ComponentLookup<LocalToWorld> localToWorldLookup,
@@ -110,7 +107,6 @@ public static class PlayerPowerUpActivationExecutionUtility
         float3 spawnPosition = ResolveShootSpawnPosition(playerEntity,
                                                          in localTransform,
                                                          in controllerConfig,
-                                                         in animatedMuzzleLookup,
                                                          in muzzleLookup,
                                                          in transformLookup,
                                                          in localToWorldLookup);
@@ -245,7 +241,6 @@ public static class PlayerPowerUpActivationExecutionUtility
                                        in PlayerControllerConfig controllerConfig,
                                        in PlayerPassiveToolsState passiveToolsState,
                                        Entity playerEntity,
-                                       in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
                                        in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                        in ComponentLookup<LocalTransform> transformLookup,
                                        in ComponentLookup<LocalToWorld> localToWorldLookup,
@@ -257,7 +252,6 @@ public static class PlayerPowerUpActivationExecutionUtility
         float3 spawnPosition = ResolveShootSpawnPosition(playerEntity,
                                                          in localTransform,
                                                          in controllerConfig,
-                                                         in animatedMuzzleLookup,
                                                          in muzzleLookup,
                                                          in transformLookup,
                                                          in localToWorldLookup);
@@ -339,7 +333,6 @@ public static class PlayerPowerUpActivationExecutionUtility
     private static float3 ResolveShootSpawnPosition(Entity playerEntity,
                                                     in LocalTransform localTransform,
                                                     in PlayerControllerConfig controllerConfig,
-                                                    in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
                                                     in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                                     in ComponentLookup<LocalTransform> transformLookup,
                                                     in ComponentLookup<LocalToWorld> localToWorldLookup)
@@ -348,7 +341,6 @@ public static class PlayerPowerUpActivationExecutionUtility
         return PlayerShootOriginUtility.ResolveSpawnPosition(playerEntity,
                                                              in localTransform,
                                                              in shootOffset,
-                                                             in animatedMuzzleLookup,
                                                              in muzzleLookup,
                                                              in transformLookup,
                                                              in localToWorldLookup);
