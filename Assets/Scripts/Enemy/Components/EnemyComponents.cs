@@ -69,7 +69,6 @@ public struct EnemyVisualConfig : IComponentData
     public float MaxVisibleDistance;
     public float VisibleDistanceHysteresis;
     public byte UseDistanceCulling;
-    public int VisibilityPriorityTier;
 }
 
 /// <summary>
@@ -133,6 +132,22 @@ public struct EnemyOwnerSpawner : IComponentData
 }
 
 /// <summary>
+/// Stores the concrete pool entity that owns the enemy instance.
+/// </summary>
+public struct EnemyOwnerPool : IComponentData
+{
+    public Entity PoolEntity;
+}
+
+/// <summary>
+/// Stores the wave index that spawned the enemy instance.
+/// </summary>
+public struct EnemyWaveOwner : IComponentData
+{
+    public int WaveIndex;
+}
+
+/// <summary>
 /// Optional transform anchor used as follow target for attached elemental VFX.
 /// </summary>
 public struct EnemyElementalVfxAnchor : IComponentData
@@ -163,43 +178,5 @@ public enum EnemyDespawnReason : byte
 public struct EnemyDespawnRequest : IComponentData
 {
     public EnemyDespawnReason Reason;
-}
-#endregion
-
-#region Spawner Components
-/// <summary>
-/// Stores immutable spawn and pool configuration for a spawner.
-/// </summary>
-public struct EnemySpawner : IComponentData
-{
-    public Entity EnemyPrefab;
-    public int SpawnPerTick;
-    public float SpawnInterval;
-    public float InitialSpawnDelay;
-    public int InitialPoolCapacity;
-    public int ExpandBatch;
-    public int MaxAliveCount;
-    public float SpawnRadius;
-    public float SpawnHeightOffset;
-    public float DespawnDistance;
-}
-
-/// <summary>
-/// Stores mutable spawn runtime state.
-/// </summary>
-public struct EnemySpawnerState : IComponentData
-{
-    public float NextSpawnTime;
-    public int AliveCount;
-    public uint RandomState;
-    public byte Initialized;
-}
-
-/// <summary>
-/// Stores pooled enemy entity references per spawner.
-/// </summary>
-public struct EnemyPoolElement : IBufferElementData
-{
-    public Entity EnemyEntity;
 }
 #endregion

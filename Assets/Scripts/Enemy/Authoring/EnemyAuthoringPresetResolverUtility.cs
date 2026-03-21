@@ -24,6 +24,14 @@ public static class EnemyAuthoringPresetResolverUtility
         return fallbackAdvancedPatternPreset;
     }
 
+    public static EnemyVisualPreset ResolveVisualPreset(EnemyMasterPreset masterPreset, EnemyVisualPreset fallbackVisualPreset)
+    {
+        if (masterPreset != null && masterPreset.VisualPreset != null)
+            return masterPreset.VisualPreset;
+
+        return fallbackVisualPreset;
+    }
+
     public static EnemyBrainMovementSettings ResolveMovementSettings(EnemyMasterPreset masterPreset, EnemyBrainPreset fallbackBrainPreset)
     {
         EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset(masterPreset, fallbackBrainPreset);
@@ -64,14 +72,24 @@ public static class EnemyAuthoringPresetResolverUtility
         return resolvedBrainPreset.HealthStatistics;
     }
 
-    public static EnemyBrainVisualSettings ResolveVisualSettings(EnemyMasterPreset masterPreset, EnemyBrainPreset fallbackBrainPreset)
+    public static EnemyVisualVisibilitySettings ResolveVisibilitySettings(EnemyMasterPreset masterPreset, EnemyVisualPreset fallbackVisualPreset)
     {
-        EnemyBrainPreset resolvedBrainPreset = ResolveBrainPreset(masterPreset, fallbackBrainPreset);
+        EnemyVisualPreset resolvedVisualPreset = ResolveVisualPreset(masterPreset, fallbackVisualPreset);
 
-        if (resolvedBrainPreset == null)
+        if (resolvedVisualPreset == null)
             return null;
 
-        return resolvedBrainPreset.Visual;
+        return resolvedVisualPreset.Visibility;
+    }
+
+    public static EnemyVisualPrefabSettings ResolveVisualPrefabSettings(EnemyMasterPreset masterPreset, EnemyVisualPreset fallbackVisualPreset)
+    {
+        EnemyVisualPreset resolvedVisualPreset = ResolveVisualPreset(masterPreset, fallbackVisualPreset);
+
+        if (resolvedVisualPreset == null)
+            return null;
+
+        return resolvedVisualPreset.Prefabs;
     }
     #endregion
 

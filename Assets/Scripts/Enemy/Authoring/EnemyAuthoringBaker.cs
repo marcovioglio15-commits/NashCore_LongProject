@@ -111,8 +111,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             GpuLoopDuration = math.max(0.05f, authoring.GpuAnimationLoopDuration),
             MaxVisibleDistance = math.max(0f, authoring.MaxVisibleDistance),
             VisibleDistanceHysteresis = math.max(0f, authoring.VisibleDistanceHysteresis),
-            UseDistanceCulling = authoring.EnableDistanceCulling ? (byte)1 : (byte)0,
-            VisibilityPriorityTier = math.clamp(authoring.PriorityTier, -128, 128)
+            UseDistanceCulling = authoring.EnableDistanceCulling ? (byte)1 : (byte)0
         });
 
         Entity hitVfxPrefabEntity = ResolveHitVfxPrefabEntity(authoring);
@@ -158,6 +157,14 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         AddComponent(entity, new EnemyOwnerSpawner
         {
             SpawnerEntity = Entity.Null
+        });
+        AddComponent(entity, new EnemyOwnerPool
+        {
+            PoolEntity = Entity.Null
+        });
+        AddComponent(entity, new EnemyWaveOwner
+        {
+            WaveIndex = -1
         });
 
         AddComponent(entity, new EnemyElementalRuntimeState

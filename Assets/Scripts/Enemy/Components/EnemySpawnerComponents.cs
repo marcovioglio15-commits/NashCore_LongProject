@@ -1,0 +1,117 @@
+using Unity.Entities;
+using Unity.Mathematics;
+
+#region Enemy Spawner Components
+/// <summary>
+/// Defines immutable runtime configuration for a finite wave-based enemy spawner.
+/// </summary>
+public struct EnemySpawner : IComponentData
+{
+    public int InitialPoolCapacityPerPrefab;
+    public int ExpandBatchPerPrefab;
+    public float DespawnDistance;
+    public int TotalPlannedEnemyCount;
+}
+
+/// <summary>
+/// Stores mutable runtime state shared by all waves of a spawner.
+/// </summary>
+public struct EnemySpawnerState : IComponentData
+{
+    public float StartTime;
+    public int AliveCount;
+    public byte Initialized;
+}
+
+/// <summary>
+/// Declares how one wave derives its start time from the previous wave.
+/// </summary>
+public enum EnemyWaveStartMode : byte
+{
+    FromSpawnerStart = 0,
+    AfterPreviousWaveStart = 1,
+    AfterPreviousWaveSpawnEnd = 2,
+    AfterPreviousWaveCompleted = 3,
+    AfterPreviousWaveFirstKill = 4
+}
+
+/// <summary>
+/// Stores immutable wave timing and event-slice data.
+/// </summary>
+public struct EnemySpawnerWaveDefinitionElement : IBufferElementData
+{
+    public EnemyWaveStartMode StartMode;
+    public float StartDelaySeconds;
+    public float SpawnDurationSeconds;
+    public int FirstEventIndex;
+    public int EventCount;
+}
+
+/// <summary>
+/// Stores mutable runtime state for one authored wave.
+/// </summary>
+public struct EnemySpawnerWaveRuntimeElement : IBufferElementData
+{
+    public float ScheduledStartTime;
+    public float SpawnStartTime;
+    public float SpawnEndTime;
+    public float CompletionTime;
+    public float FirstKillTime;
+    public int NextEventIndex;
+    public int AliveCount;
+    public int SpawnedCount;
+    public byte StartScheduled;
+    public byte Started;
+    public byte SpawnFinished;
+    public byte Completed;
+    public byte FirstKillRegistered;
+}
+
+/// <summary>
+/// Stores one exact spawn event baked from authored wave cells and curves.
+/// </summary>
+public struct EnemySpawnerWaveEventElement : IBufferElementData
+{
+    public int WaveIndex;
+    public float RelativeTime;
+    public float3 LocalSpawnPosition;
+    public Entity PrefabEntity;
+}
+
+/// <summary>
+/// Stores one unique enemy prefab referenced by the spawner and its planned usage count.
+/// </summary>
+public struct EnemySpawnerPrefabRequirementElement : IBufferElementData
+{
+    public Entity PrefabEntity;
+    public int TotalPlannedCount;
+}
+
+/// <summary>
+/// Maps a referenced enemy prefab to the runtime pool entity created for it.
+/// </summary>
+public struct EnemySpawnerPrefabPoolMapElement : IBufferElementData
+{
+    public Entity PrefabEntity;
+    public Entity PoolEntity;
+}
+
+/// <summary>
+/// Stores immutable runtime settings for one enemy pool entity.
+/// </summary>
+public struct EnemyPoolState : IComponentData
+{
+    public Entity PrefabEntity;
+    public int InitialCapacity;
+    public int ExpandBatch;
+    public byte Initialized;
+}
+
+/// <summary>
+/// Stores pooled enemy entity references on one enemy pool entity.
+/// </summary>
+public struct EnemyPoolElement : IBufferElementData
+{
+    public Entity EnemyEntity;
+}
+#endregion

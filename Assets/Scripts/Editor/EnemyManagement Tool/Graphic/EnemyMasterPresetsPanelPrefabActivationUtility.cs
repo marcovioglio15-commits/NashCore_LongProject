@@ -151,12 +151,13 @@ internal static class EnemyMasterPresetsPanelPrefabActivationUtility
         SerializedObject serializedAuthoring = new SerializedObject(authoring);
         SerializedProperty masterPresetProperty = serializedAuthoring.FindProperty("masterPreset");
         SerializedProperty brainPresetProperty = serializedAuthoring.FindProperty("brainPreset");
+        SerializedProperty visualPresetProperty = serializedAuthoring.FindProperty("visualPreset");
         SerializedProperty advancedPatternPresetProperty = serializedAuthoring.FindProperty("advancedPatternPreset");
 
-        if (masterPresetProperty == null || brainPresetProperty == null || advancedPatternPresetProperty == null)
+        if (masterPresetProperty == null || brainPresetProperty == null || visualPresetProperty == null || advancedPatternPresetProperty == null)
         {
             EditorUtility.DisplayDialog("Set Active Preset",
-                                        "One or more preset properties are missing on EnemyAuthoring (masterPreset, brainPreset, advancedPatternPreset).",
+                                        "One or more preset properties are missing on EnemyAuthoring (masterPreset, brainPreset, visualPreset, advancedPatternPreset).",
                                         "OK");
             return;
         }
@@ -165,9 +166,28 @@ internal static class EnemyMasterPresetsPanelPrefabActivationUtility
         serializedAuthoring.Update();
         masterPresetProperty.objectReferenceValue = panel.SelectedPreset;
         brainPresetProperty.objectReferenceValue = panel.SelectedPreset.BrainPreset;
+        visualPresetProperty.objectReferenceValue = panel.SelectedPreset.VisualPreset;
         advancedPatternPresetProperty.objectReferenceValue = panel.SelectedPreset.AdvancedPatternPreset;
         serializedAuthoring.ApplyModifiedProperties();
         EditorUtility.SetDirty(authoring);
+
+        EnemyVisualPreset visualPreset = panel.SelectedPreset.VisualPreset;
+
+        if (visualPreset != null)
+        {
+            SerializedObject visualPresetSerializedObject = new SerializedObject(visualPreset);
+            SerializedProperty prefabsProperty = visualPresetSerializedObject.FindProperty("prefabs");
+            SerializedProperty enemyPrefabProperty = prefabsProperty != null ? prefabsProperty.FindPropertyRelative("enemyPrefab") : null;
+
+            if (enemyPrefabProperty != null && enemyPrefabProperty.objectReferenceValue != panel.SelectedEnemyPrefab)
+            {
+                Undo.RecordObject(visualPreset, "Assign Enemy Prefab To Visual Preset");
+                visualPresetSerializedObject.Update();
+                enemyPrefabProperty.objectReferenceValue = panel.SelectedEnemyPrefab;
+                visualPresetSerializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(visualPreset);
+            }
+        }
 
         if (PrefabUtility.IsPartOfPrefabInstance(authoring))
             PrefabUtility.RecordPrefabInstancePropertyModifications(authoring);

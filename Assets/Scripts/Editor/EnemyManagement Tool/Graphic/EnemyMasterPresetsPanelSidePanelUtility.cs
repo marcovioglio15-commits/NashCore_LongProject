@@ -42,13 +42,14 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
         }
 
         EnemyBrainPresetsPanel brainPanel;
+        EnemyVisualPresetsPanel visualPanel;
         EnemyAdvancedPatternPresetsPanel advancedPatternPanel;
-        VisualElement content = BuildSidePanelContent(panel, panelType, out brainPanel, out advancedPatternPanel);
+        VisualElement content = BuildSidePanelContent(panel, panelType, out brainPanel, out visualPanel, out advancedPatternPanel);
 
         if (content == null)
             return;
 
-        AddTab(panel, panelType, GetPanelTitle(panelType), content, brainPanel, advancedPatternPanel);
+        AddTab(panel, panelType, GetPanelTitle(panelType), content, brainPanel, visualPanel, advancedPatternPanel);
         SetActivePanel(panel, panelType);
         SyncSidePanelSelection(panel, panelType, panel.SidePanels[panelType]);
     }
@@ -92,6 +93,9 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
         if (panelType == EnemyManagementWindow.PanelType.EnemyBrainPresets)
             return "Enemy Brain Presets";
 
+        if (panelType == EnemyManagementWindow.PanelType.EnemyVisualPresets)
+            return "Enemy Visual Presets";
+
         if (panelType == EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets)
             return "Enemy Advanced Pattern Presets";
 
@@ -131,6 +135,7 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
                "Enemy Master Presets",
                panel.MainContentRoot,
                null,
+               null,
                null);
         RestoreOpenSidePanels(panel);
 
@@ -154,9 +159,11 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
     public static VisualElement BuildSidePanelContent(EnemyMasterPresetsPanel panel,
                                                       EnemyManagementWindow.PanelType panelType,
                                                       out EnemyBrainPresetsPanel brainPanel,
+                                                      out EnemyVisualPresetsPanel visualPanel,
                                                       out EnemyAdvancedPatternPresetsPanel advancedPatternPanel)
     {
         brainPanel = null;
+        visualPanel = null;
         advancedPatternPanel = null;
 
         VisualElement panelRoot = new VisualElement();
@@ -184,6 +191,13 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
         {
             brainPanel = new EnemyBrainPresetsPanel();
             panelRoot.Add(brainPanel.Root);
+            return panelRoot;
+        }
+
+        if (panelType == EnemyManagementWindow.PanelType.EnemyVisualPresets)
+        {
+            visualPanel = new EnemyVisualPresetsPanel();
+            panelRoot.Add(visualPanel.Root);
             return panelRoot;
         }
 
@@ -221,6 +235,7 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
                               string label,
                               VisualElement content,
                               EnemyBrainPresetsPanel brainPanel,
+                              EnemyVisualPresetsPanel visualPanel,
                               EnemyAdvancedPatternPresetsPanel advancedPatternPanel)
     {
         if (panel == null)
@@ -246,6 +261,7 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
         sidePanelEntry.TabButton = tabButton;
         sidePanelEntry.Content = content;
         sidePanelEntry.BrainPanel = brainPanel;
+        sidePanelEntry.VisualPanel = visualPanel;
         sidePanelEntry.AdvancedPatternPanel = advancedPatternPanel;
         panel.SidePanels[panelType] = sidePanelEntry;
 
@@ -283,6 +299,20 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
                 return;
 
             entry.BrainPanel.SelectPresetFromExternal(brainPreset);
+            return;
+        }
+
+        if (panelType == EnemyManagementWindow.PanelType.EnemyVisualPresets)
+        {
+            if (entry.VisualPanel == null)
+                return;
+
+            EnemyVisualPreset visualPreset = panel.SelectedPreset.VisualPreset;
+
+            if (visualPreset == null)
+                return;
+
+            entry.VisualPanel.SelectPresetFromExternal(visualPreset);
             return;
         }
 
@@ -333,6 +363,9 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
 
             if (entry.BrainPanel != null)
                 entry.BrainPanel.RefreshFromSessionChange();
+
+            if (entry.VisualPanel != null)
+                entry.VisualPanel.RefreshFromSessionChange();
 
             if (entry.AdvancedPatternPanel != null)
                 entry.AdvancedPatternPanel.RefreshFromSessionChange();
@@ -449,6 +482,9 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
 
         if (panel.SidePanels.ContainsKey(EnemyManagementWindow.PanelType.EnemyBrainPresets))
             openPanels.Add(EnemyManagementWindow.PanelType.EnemyBrainPresets);
+
+        if (panel.SidePanels.ContainsKey(EnemyManagementWindow.PanelType.EnemyVisualPresets))
+            openPanels.Add(EnemyManagementWindow.PanelType.EnemyVisualPresets);
 
         if (panel.SidePanels.ContainsKey(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets))
             openPanels.Add(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets);

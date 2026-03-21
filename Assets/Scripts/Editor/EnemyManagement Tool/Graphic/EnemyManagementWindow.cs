@@ -295,6 +295,9 @@ public sealed class EnemyManagementWindow : EditorWindow
         if (panelType == PanelType.EnemyBrainPresets)
             return "Enemy Brain Presets";
 
+        if (panelType == PanelType.EnemyVisualPresets)
+            return "Enemy Visual Presets";
+
         if (panelType == PanelType.EnemyAdvancedPatternPresets)
             return "Enemy Advanced Pattern Presets";
 
@@ -398,7 +401,8 @@ public sealed class EnemyManagementWindow : EditorWindow
     {
         EnemyMasterPresets = 0,
         EnemyBrainPresets = 1,
-        EnemyAdvancedPatternPresets = 2
+        EnemyVisualPresets = 2,
+        EnemyAdvancedPatternPresets = 3
     }
     #endregion
 }

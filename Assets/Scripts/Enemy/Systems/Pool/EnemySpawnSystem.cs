@@ -1,284 +1,415 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
 /// <summary>
-/// Spawns pooled enemies from active spawners.
+/// Consumes baked wave events and activates pooled enemies when their scheduled time becomes due.
 /// </summary>
 [UpdateInGroup(typeof(EnemySystemGroup))]
 [UpdateAfter(typeof(EnemyPoolInitializeSystem))]
 public partial struct EnemySpawnSystem : ISystem
 {
-    #region Constants
-    private const int MaxCatchUpTicksPerFrame = 8;
+    #region Fields
+    private EntityQuery spawnerQuery;
     #endregion
 
     #region Methods
 
     #region Lifecycle
+    /// <summary>
+    /// Caches the query used to iterate initialized wave spawners.
+    /// /params state: Current ECS system state.
+    /// /returns None.
+    /// </summary>
     public void OnCreate(ref SystemState state)
     {
-        state.RequireForUpdate<EnemySpawner>();
-        state.RequireForUpdate<EnemySpawnerState>();
-        state.RequireForUpdate<EnemyPoolElement>();
+        spawnerQuery = new EntityQueryBuilder(Allocator.Temp)
+            .WithAll<EnemySpawner,
+                     EnemySpawnerState,
+                     EnemySpawnerWaveDefinitionElement,
+                     EnemySpawnerWaveRuntimeElement,
+                     EnemySpawnerWaveEventElement,
+                     EnemySpawnerPrefabPoolMapElement,
+                     LocalToWorld>()
+            .Build(ref state);
+        state.RequireForUpdate(spawnerQuery);
     }
 
+    /// <summary>
+    /// Schedules wave starts, emits due events and activates pooled enemies at their baked positions.
+    /// /params state: Current ECS system state.
+    /// /returns None.
+    /// </summary>
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+        NativeArray<Entity> spawnerEntities = spawnerQuery.ToEntityArray(Allocator.Temp);
 
-        foreach ((RefRO<EnemySpawner> spawner,
-                  RefRW<EnemySpawnerState> spawnerState,
-                  RefRO<LocalTransform> spawnerTransform,
-                  Entity spawnerEntity) in SystemAPI.Query<RefRO<EnemySpawner>, RefRW<EnemySpawnerState>, RefRO<LocalTransform>>().WithEntityAccess())
+        try
         {
-            EnemySpawner currentSpawner = spawner.ValueRO;
-            EnemySpawnerState currentState = spawnerState.ValueRO;
-
-            if (currentState.Initialized == 0)
-                continue;
-
-            if (currentSpawner.SpawnPerTick <= 0)
-                continue;
-
-            if (currentSpawner.MaxAliveCount <= 0)
-                continue;
-
-            if (elapsedTime < currentState.NextSpawnTime)
-                continue;
-
-            float spawnInterval = math.max(0.01f, currentSpawner.SpawnInterval);
-            int dueTicks = CalculateDueTicks(elapsedTime, currentState.NextSpawnTime, spawnInterval);
-            currentState.NextSpawnTime += spawnInterval * dueTicks;
-
-            int availableSlots = currentSpawner.MaxAliveCount - currentState.AliveCount;
-
-            if (availableSlots <= 0)
-            {
-                spawnerState.ValueRW = currentState;
-                continue;
-            }
-
-            int requestedSpawnCount = dueTicks * currentSpawner.SpawnPerTick;
-            int spawnCount = math.min(availableSlots, requestedSpawnCount);
-
-            if (spawnCount <= 0)
-            {
-                spawnerState.ValueRW = currentState;
-                continue;
-            }
-
-            if (entityManager.HasBuffer<EnemyPoolElement>(spawnerEntity) == false)
-            {
-                spawnerState.ValueRW = currentState;
-                continue;
-            }
-
-            Entity enemyPrefab = currentSpawner.EnemyPrefab;
-
-            if (enemyPrefab == Entity.Null)
-            {
-                spawnerState.ValueRW = currentState;
-                continue;
-            }
-
-            if (entityManager.Exists(enemyPrefab) == false)
-            {
-                spawnerState.ValueRW = currentState;
-                continue;
-            }
-
-            DynamicBuffer<EnemyPoolElement> pool = entityManager.GetBuffer<EnemyPoolElement>(spawnerEntity);
-            int missingCount = spawnCount - pool.Length;
-
-            if (missingCount > 0)
-            {
-                int expandBatch = math.max(1, currentSpawner.ExpandBatch);
-                int expandCount = math.max(expandBatch, missingCount);
-                EnemyPoolUtility.ExpandPool(entityManager, spawnerEntity, enemyPrefab, expandCount);
-                pool = entityManager.GetBuffer<EnemyPoolElement>(spawnerEntity);
-            }
-
-            uint randomState = currentState.RandomState;
-
-            if (randomState == 0u)
-                randomState = 1u;
-
-            Unity.Mathematics.Random random = new Unity.Mathematics.Random(randomState);
-            float3 spawnerPosition = spawnerTransform.ValueRO.Position;
-            int spawnedCount = 0;
-
-            for (int index = 0; index < spawnCount; index++)
-            {
-                if (pool.Length == 0)
-                    break;
-
-                int lastPoolIndex = pool.Length - 1;
-                Entity enemyEntity = pool[lastPoolIndex].EnemyEntity;
-                pool.RemoveAt(lastPoolIndex);
-
-                if (entityManager.Exists(enemyEntity) == false)
-                    continue;
-
-                EnemyPoolUtility.EnsureEnemyComponents(entityManager, enemyEntity);
-
-                if (entityManager.HasComponent<LocalTransform>(enemyEntity) == false)
-                    continue;
-
-                if (entityManager.HasComponent<EnemyRuntimeState>(enemyEntity) == false)
-                    continue;
-
-                if (entityManager.HasComponent<EnemyOwnerSpawner>(enemyEntity) == false)
-                    continue;
-
-                LocalTransform enemyTransform = entityManager.GetComponentData<LocalTransform>(enemyEntity);
-                enemyTransform.Position = ResolveSpawnPosition(ref random, spawnerPosition, currentSpawner.SpawnRadius, currentSpawner.SpawnHeightOffset);
-                entityManager.SetComponentData(enemyEntity, enemyTransform);
-
-                EnemyRuntimeState runtimeState = entityManager.GetComponentData<EnemyRuntimeState>(enemyEntity);
-                runtimeState.Velocity = float3.zero;
-                runtimeState.ContactDamageCooldown = 0f;
-                runtimeState.AreaDamageCooldown = 0f;
-
-                unchecked
-                {
-                    runtimeState.SpawnVersion++;
-                }
-
-                if (runtimeState.SpawnVersion == 0u)
-                    runtimeState.SpawnVersion = 1u;
-
-                entityManager.SetComponentData(enemyEntity, runtimeState);
-
-                if (entityManager.HasComponent<EnemyPatternRuntimeState>(enemyEntity))
-                {
-                    EnemyPatternRuntimeState patternRuntimeState = entityManager.GetComponentData<EnemyPatternRuntimeState>(enemyEntity);
-                    patternRuntimeState.WanderTargetPosition = float3.zero;
-                    patternRuntimeState.WanderWaitTimer = 0f;
-                    patternRuntimeState.WanderRetryTimer = 0f;
-                    patternRuntimeState.LastWanderDirectionAngle = 0f;
-                    patternRuntimeState.WanderHasTarget = 0;
-                    patternRuntimeState.WanderInitialized = 0;
-                    patternRuntimeState.DvdDirection = float3.zero;
-                    patternRuntimeState.DvdInitialized = 0;
-                    entityManager.SetComponentData(enemyEntity, patternRuntimeState);
-                }
-
-                if (entityManager.HasComponent<EnemyShooterControlState>(enemyEntity))
-                {
-                    EnemyShooterControlState shooterControlState = entityManager.GetComponentData<EnemyShooterControlState>(enemyEntity);
-                    shooterControlState.MovementLocked = 0;
-                    entityManager.SetComponentData(enemyEntity, shooterControlState);
-                }
-
-                if (entityManager.HasBuffer<EnemyShooterRuntimeElement>(enemyEntity))
-                {
-                    DynamicBuffer<EnemyShooterRuntimeElement> shooterRuntime = entityManager.GetBuffer<EnemyShooterRuntimeElement>(enemyEntity);
-                    int shooterCount = 0;
-
-                    if (entityManager.HasBuffer<EnemyShooterConfigElement>(enemyEntity))
-                        shooterCount = entityManager.GetBuffer<EnemyShooterConfigElement>(enemyEntity).Length;
-
-                    shooterRuntime.Clear();
-
-                    for (int shooterIndex = 0; shooterIndex < shooterCount; shooterIndex++)
-                    {
-                        shooterRuntime.Add(new EnemyShooterRuntimeElement
-                        {
-                            NextBurstTimer = 0f,
-                            NextShotInBurstTimer = 0f,
-                            RemainingBurstShots = 0,
-                            LockedAimDirection = float3.zero,
-                            HasLockedAimDirection = 0
-                        });
-                    }
-                }
-
-                EnemyOwnerSpawner ownerSpawner = entityManager.GetComponentData<EnemyOwnerSpawner>(enemyEntity);
-                ownerSpawner.SpawnerEntity = spawnerEntity;
-                entityManager.SetComponentData(enemyEntity, ownerSpawner);
-
-                if (entityManager.HasComponent<EnemyHealth>(enemyEntity))
-                {
-                    EnemyHealth enemyHealth = entityManager.GetComponentData<EnemyHealth>(enemyEntity);
-
-                    if (enemyHealth.Max < 1f)
-                        enemyHealth.Max = 1f;
-
-                    if (enemyHealth.MaxShield < 0f)
-                        enemyHealth.MaxShield = 0f;
-
-                    enemyHealth.Current = enemyHealth.Max;
-                    enemyHealth.CurrentShield = enemyHealth.MaxShield;
-                    entityManager.SetComponentData(enemyEntity, enemyHealth);
-                }
-
-                if (entityManager.HasBuffer<EnemyElementStackElement>(enemyEntity))
-                {
-                    DynamicBuffer<EnemyElementStackElement> elementalStacks = entityManager.GetBuffer<EnemyElementStackElement>(enemyEntity);
-                    elementalStacks.Clear();
-                }
-
-                if (entityManager.HasComponent<EnemyElementalRuntimeState>(enemyEntity))
-                {
-                    EnemyElementalRuntimeState elementalRuntimeState = entityManager.GetComponentData<EnemyElementalRuntimeState>(enemyEntity);
-                    elementalRuntimeState.SlowPercent = 0f;
-                    entityManager.SetComponentData(enemyEntity, elementalRuntimeState);
-                }
-
-                EnemyPoolUtility.ResetVisualRuntimeState(entityManager, enemyEntity, 1);
-
-                if (entityManager.HasComponent<EnemyDespawnRequest>(enemyEntity))
-                    entityManager.RemoveComponent<EnemyDespawnRequest>(enemyEntity);
-
-                entityManager.SetComponentEnabled<EnemyActive>(enemyEntity, true);
-                spawnedCount++;
-            }
-
-            currentState.AliveCount += spawnedCount;
-            currentState.RandomState = random.state;
-
-            if (currentState.RandomState == 0u)
-                currentState.RandomState = 1u;
-
-            spawnerState.ValueRW = currentState;
+            for (int spawnerIndex = 0; spawnerIndex < spawnerEntities.Length; spawnerIndex++)
+                ProcessSpawner(entityManager, spawnerEntities[spawnerIndex], elapsedTime);
+        }
+        finally
+        {
+            if (spawnerEntities.IsCreated)
+                spawnerEntities.Dispose();
         }
     }
     #endregion
 
-    #region Spawn Helpers
-    private static int CalculateDueTicks(float elapsedTime, float nextSpawnTime, float spawnInterval)
+    #region Helpers
+    /// <summary>
+    /// Processes one spawner by updating wave scheduling and consuming due events.
+    /// /params entityManager: Entity manager used to access components and buffers.
+    /// /params spawnerEntity: Spawner entity being processed.
+    /// /params elapsedTime: Current elapsed world time.
+    /// /returns None.
+    /// </summary>
+    private static void ProcessSpawner(EntityManager entityManager, Entity spawnerEntity, float elapsedTime)
     {
-        float timePastNextSpawn = elapsedTime - nextSpawnTime;
+        if (!entityManager.Exists(spawnerEntity))
+            return;
 
-        if (timePastNextSpawn <= 0f)
-            return 1;
+        EnemySpawnerState spawnerState = entityManager.GetComponentData<EnemySpawnerState>(spawnerEntity);
 
-        int dueTicks = (int)math.floor(timePastNextSpawn / spawnInterval) + 1;
-        return math.clamp(dueTicks, 1, MaxCatchUpTicksPerFrame);
-    }
+        if (spawnerState.Initialized == 0)
+            return;
 
-    private static float3 ResolveSpawnPosition(ref Unity.Mathematics.Random random, float3 spawnerPosition, float spawnRadius, float spawnHeightOffset)
-    {
-        float clampedRadius = math.max(0f, spawnRadius);
+        DynamicBuffer<EnemySpawnerWaveDefinitionElement> waveDefinitions = entityManager.GetBuffer<EnemySpawnerWaveDefinitionElement>(spawnerEntity);
+        DynamicBuffer<EnemySpawnerWaveRuntimeElement> waveRuntime = entityManager.GetBuffer<EnemySpawnerWaveRuntimeElement>(spawnerEntity);
+        DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents = entityManager.GetBuffer<EnemySpawnerWaveEventElement>(spawnerEntity);
+        DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap = entityManager.GetBuffer<EnemySpawnerPrefabPoolMapElement>(spawnerEntity);
+        float4x4 localToWorld = entityManager.GetComponentData<LocalToWorld>(spawnerEntity).Value;
 
-        if (clampedRadius <= 0f)
+        for (int waveIndex = 0; waveIndex < waveDefinitions.Length; waveIndex++)
         {
-            float3 exactPosition = spawnerPosition;
-            exactPosition.y += spawnHeightOffset;
-            return exactPosition;
+            EnemySpawnerWaveDefinitionElement definition = waveDefinitions[waveIndex];
+            EnemySpawnerWaveRuntimeElement runtime = waveRuntime[waveIndex];
+
+            if (runtime.Completed != 0)
+                continue;
+
+            TryScheduleWaveStart(spawnerState, waveDefinitions, waveRuntime, waveIndex, ref runtime);
+            TryStartWave(elapsedTime, definition, ref runtime);
+
+            if (runtime.Started != 0 && runtime.SpawnFinished == 0)
+                SpawnDueEvents(entityManager,
+                               spawnerEntity,
+                               poolMap,
+                               waveEvents,
+                               localToWorld,
+                               elapsedTime,
+                               definition,
+                               ref runtime,
+                               ref spawnerState);
+
+            TryFinalizeWave(elapsedTime, definition, ref runtime);
+            waveRuntime[waveIndex] = runtime;
         }
 
-        float angle = random.NextFloat(0f, math.PI * 2f);
-        float radialDistance = math.sqrt(random.NextFloat()) * clampedRadius;
-        float2 planarOffset = new float2(math.cos(angle), math.sin(angle)) * radialDistance;
+        entityManager.SetComponentData(spawnerEntity, spawnerState);
+    }
 
-        float3 spawnPosition = spawnerPosition;
-        spawnPosition.x += planarOffset.x;
-        spawnPosition.z += planarOffset.y;
-        spawnPosition.y += spawnHeightOffset;
-        return spawnPosition;
+    /// <summary>
+    /// Assigns a deterministic scheduled start time to a wave as soon as its prerequisite state is available.
+    /// /params spawnerState: Global mutable spawner state.
+    /// /params waveDefinitions: Immutable wave definition buffer.
+    /// /params waveRuntime: Mutable wave runtime buffer.
+    /// /params waveIndex: Wave index to schedule.
+    /// /params runtime: Current wave runtime state to update.
+    /// /returns None.
+    /// </summary>
+    private static void TryScheduleWaveStart(EnemySpawnerState spawnerState,
+                                             DynamicBuffer<EnemySpawnerWaveDefinitionElement> waveDefinitions,
+                                             DynamicBuffer<EnemySpawnerWaveRuntimeElement> waveRuntime,
+                                             int waveIndex,
+                                             ref EnemySpawnerWaveRuntimeElement runtime)
+    {
+        if (runtime.StartScheduled != 0)
+            return;
+
+        EnemySpawnerWaveDefinitionElement definition = waveDefinitions[waveIndex];
+        float referenceTime = spawnerState.StartTime;
+
+        if (waveIndex > 0)
+        {
+            EnemySpawnerWaveRuntimeElement previousWaveRuntime = waveRuntime[waveIndex - 1];
+            EnemySpawnerWaveDefinitionElement previousWaveDefinition = waveDefinitions[waveIndex - 1];
+
+            if (!TryResolveReferenceTime(spawnerState,
+                                         previousWaveDefinition,
+                                         previousWaveRuntime,
+                                         definition.StartMode,
+                                         out referenceTime))
+                return;
+        }
+
+        runtime.ScheduledStartTime = referenceTime + math.max(0f, definition.StartDelaySeconds);
+        runtime.StartScheduled = 1;
+    }
+
+    /// <summary>
+    /// Starts a wave once the current world time reaches its scheduled start timestamp.
+    /// /params elapsedTime: Current elapsed world time.
+    /// /params definition: Immutable definition of the wave.
+    /// /params runtime: Current wave runtime state to update.
+    /// /returns None.
+    /// </summary>
+    private static void TryStartWave(float elapsedTime,
+                                     EnemySpawnerWaveDefinitionElement definition,
+                                     ref EnemySpawnerWaveRuntimeElement runtime)
+    {
+        if (runtime.StartScheduled == 0)
+            return;
+
+        if (runtime.Started != 0)
+            return;
+
+        if (elapsedTime < runtime.ScheduledStartTime)
+            return;
+
+        runtime.Started = 1;
+        runtime.SpawnStartTime = runtime.ScheduledStartTime;
+        runtime.SpawnEndTime = runtime.SpawnStartTime + math.max(0f, definition.SpawnDurationSeconds);
+
+        if (definition.EventCount <= 0 && runtime.SpawnEndTime <= elapsedTime)
+            runtime.SpawnFinished = 1;
+    }
+
+    /// <summary>
+    /// Emits all currently due spawn events for a started wave.
+    /// /params entityManager: Entity manager used to access pools and enemy instances.
+    /// /params spawnerEntity: Spawner that owns the wave.
+    /// /params poolMap: Prefab-to-pool map for this spawner.
+    /// /params waveEvents: Full baked event buffer for this spawner.
+    /// /params localToWorld: Current spawner local-to-world matrix.
+    /// /params elapsedTime: Current elapsed world time.
+    /// /params definition: Immutable definition of the wave.
+    /// /params runtime: Mutable runtime state for the wave.
+    /// /params spawnerState: Mutable global spawner state.
+    /// /returns None.
+    /// </summary>
+    private static void SpawnDueEvents(EntityManager entityManager,
+                                       Entity spawnerEntity,
+                                       DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap,
+                                       DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents,
+                                       float4x4 localToWorld,
+                                       float elapsedTime,
+                                       EnemySpawnerWaveDefinitionElement definition,
+                                       ref EnemySpawnerWaveRuntimeElement runtime,
+                                       ref EnemySpawnerState spawnerState)
+    {
+        while (runtime.NextEventIndex < definition.EventCount)
+        {
+            int eventIndex = definition.FirstEventIndex + runtime.NextEventIndex;
+
+            if (eventIndex < 0 || eventIndex >= waveEvents.Length)
+            {
+                runtime.NextEventIndex = definition.EventCount;
+                break;
+            }
+
+            EnemySpawnerWaveEventElement waveEvent = waveEvents[eventIndex];
+            float dueTime = runtime.SpawnStartTime + math.max(0f, waveEvent.RelativeTime);
+
+            if (elapsedTime < dueTime)
+                break;
+
+            Entity poolEntity;
+
+            if (!TryGetPoolEntity(poolMap, waveEvent.PrefabEntity, out poolEntity))
+                break;
+
+            Entity enemyEntity;
+
+            if (!TryAcquireEnemy(entityManager, poolEntity, spawnerEntity, waveEvent.PrefabEntity, out enemyEntity))
+                break;
+
+            float3 worldPosition = math.transform(localToWorld, waveEvent.LocalSpawnPosition);
+            EnemyPoolUtility.ActivateEnemy(entityManager,
+                                           enemyEntity,
+                                           spawnerEntity,
+                                           poolEntity,
+                                           waveEvent.WaveIndex,
+                                           worldPosition);
+            runtime.NextEventIndex++;
+            runtime.AliveCount++;
+            runtime.SpawnedCount++;
+            spawnerState.AliveCount++;
+        }
+    }
+
+    /// <summary>
+    /// Marks a wave as spawn-finished or completed once its conditions are satisfied.
+    /// /params elapsedTime: Current elapsed world time.
+    /// /params definition: Immutable definition of the wave.
+    /// /params runtime: Mutable runtime state for the wave.
+    /// /returns None.
+    /// </summary>
+    private static void TryFinalizeWave(float elapsedTime,
+                                        EnemySpawnerWaveDefinitionElement definition,
+                                        ref EnemySpawnerWaveRuntimeElement runtime)
+    {
+        if (runtime.Started == 0)
+            return;
+
+        if (runtime.SpawnFinished == 0)
+        {
+            bool allEventsConsumed = runtime.NextEventIndex >= definition.EventCount;
+            bool spawnWindowFinished = elapsedTime >= runtime.SpawnEndTime;
+
+            if (allEventsConsumed && spawnWindowFinished)
+                runtime.SpawnFinished = 1;
+        }
+
+        if (runtime.Completed != 0)
+            return;
+
+        if (runtime.SpawnFinished == 0)
+            return;
+
+        if (runtime.AliveCount > 0)
+            return;
+
+        runtime.Completed = 1;
+        runtime.CompletionTime = math.max(runtime.SpawnEndTime, elapsedTime);
+    }
+
+    /// <summary>
+    /// Resolves the prerequisite reference time that drives scheduling for a non-first wave.
+    /// /params spawnerState: Global mutable spawner state.
+    /// /params previousWaveDefinition: Immutable definition of the previous wave.
+    /// /params previousWaveRuntime: Mutable runtime state of the previous wave.
+    /// /params startMode: Requested start mode for the current wave.
+    /// /params referenceTime: Resolved reference time when the prerequisite is satisfied.
+    /// /returns True when the prerequisite is satisfied and the reference time is valid, otherwise false.
+    /// </summary>
+    private static bool TryResolveReferenceTime(EnemySpawnerState spawnerState,
+                                                EnemySpawnerWaveDefinitionElement previousWaveDefinition,
+                                                EnemySpawnerWaveRuntimeElement previousWaveRuntime,
+                                                EnemyWaveStartMode startMode,
+                                                out float referenceTime)
+    {
+        switch (startMode)
+        {
+            case EnemyWaveStartMode.FromSpawnerStart:
+                referenceTime = spawnerState.StartTime;
+                return true;
+
+            case EnemyWaveStartMode.AfterPreviousWaveStart:
+                if (previousWaveRuntime.Started == 0)
+                    break;
+
+                referenceTime = previousWaveRuntime.SpawnStartTime;
+                return true;
+
+            case EnemyWaveStartMode.AfterPreviousWaveSpawnEnd:
+                if (previousWaveRuntime.Started == 0)
+                    break;
+
+                referenceTime = previousWaveRuntime.SpawnStartTime + math.max(0f, previousWaveDefinition.SpawnDurationSeconds);
+                return true;
+
+            case EnemyWaveStartMode.AfterPreviousWaveCompleted:
+                if (previousWaveRuntime.Completed == 0)
+                    break;
+
+                referenceTime = previousWaveRuntime.CompletionTime;
+                return true;
+
+            case EnemyWaveStartMode.AfterPreviousWaveFirstKill:
+                if (previousWaveRuntime.FirstKillRegistered == 0)
+                    break;
+
+                referenceTime = previousWaveRuntime.FirstKillTime;
+                return true;
+        }
+
+        referenceTime = 0f;
+        return false;
+    }
+
+    /// <summary>
+    /// Resolves the concrete pool entity associated with the provided prefab.
+    /// /params poolMap: Prefab-to-pool map buffer stored on the spawner.
+    /// /params prefabEntity: Referenced prefab to resolve.
+    /// /params poolEntity: Resolved pool entity when found.
+    /// /returns True when the mapping exists, otherwise false.
+    /// </summary>
+    private static bool TryGetPoolEntity(DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap,
+                                         Entity prefabEntity,
+                                         out Entity poolEntity)
+    {
+        for (int mapIndex = 0; mapIndex < poolMap.Length; mapIndex++)
+        {
+            EnemySpawnerPrefabPoolMapElement mapEntry = poolMap[mapIndex];
+
+            if (mapEntry.PrefabEntity != prefabEntity)
+                continue;
+
+            poolEntity = mapEntry.PoolEntity;
+            return true;
+        }
+
+        poolEntity = Entity.Null;
+        return false;
+    }
+
+    /// <summary>
+    /// Acquires one pooled enemy instance from the requested pool, expanding it on demand.
+    /// /params entityManager: Entity manager used to access the pool entity.
+    /// /params poolEntity: Concrete pool that should provide an enemy instance.
+    /// /params spawnerEntity: Spawner that owns the pool.
+    /// /params prefabEntity: Prefab associated with the pool.
+    /// /params enemyEntity: Resolved pooled enemy instance when acquisition succeeds.
+    /// /returns True when an instance was acquired, otherwise false.
+    /// </summary>
+    private static bool TryAcquireEnemy(EntityManager entityManager,
+                                        Entity poolEntity,
+                                        Entity spawnerEntity,
+                                        Entity prefabEntity,
+                                        out Entity enemyEntity)
+    {
+        enemyEntity = Entity.Null;
+
+        if (!entityManager.Exists(poolEntity))
+            return false;
+
+        if (!entityManager.HasBuffer<EnemyPoolElement>(poolEntity))
+            return false;
+
+        DynamicBuffer<EnemyPoolElement> poolBuffer = entityManager.GetBuffer<EnemyPoolElement>(poolEntity);
+
+        if (poolBuffer.Length <= 0)
+        {
+            if (!entityManager.HasComponent<EnemyPoolState>(poolEntity))
+                return false;
+
+            EnemyPoolState poolState = entityManager.GetComponentData<EnemyPoolState>(poolEntity);
+            int expandCount = math.max(1, poolState.ExpandBatch);
+            EnemyPoolUtility.ExpandPool(entityManager,
+                                        poolEntity,
+                                        spawnerEntity,
+                                        prefabEntity,
+                                        expandCount);
+            poolBuffer = entityManager.GetBuffer<EnemyPoolElement>(poolEntity);
+        }
+
+        while (poolBuffer.Length > 0)
+        {
+            int lastPoolIndex = poolBuffer.Length - 1;
+            enemyEntity = poolBuffer[lastPoolIndex].EnemyEntity;
+            poolBuffer.RemoveAt(lastPoolIndex);
+
+            if (entityManager.Exists(enemyEntity))
+                return true;
+        }
+
+        enemyEntity = Entity.Null;
+        return false;
     }
     #endregion
 

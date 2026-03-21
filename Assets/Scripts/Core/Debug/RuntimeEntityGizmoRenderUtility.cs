@@ -377,7 +377,7 @@ public static class RuntimeEntityGizmoRenderUtility
 
                 if (RuntimeGizmoDebugState.SpawnerSpawnRadiusEnabled)
                 {
-                    primitiveDrawer.DrawWireDisc(spawnerPosition, spawner.SpawnRadius, SpawnerSpawnRadiusColor);
+                    primitiveDrawer.DrawWireDisc(spawnerPosition, 0.75f, SpawnerSpawnRadiusColor);
                     drewSpawnerGizmo = true;
                 }
 

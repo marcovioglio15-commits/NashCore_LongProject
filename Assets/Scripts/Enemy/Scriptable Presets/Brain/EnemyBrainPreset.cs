@@ -2,6 +2,10 @@ using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
+/// <summary>
+/// Stores movement settings used by enemy simulation and steering systems.
+/// /returns None.
+/// </summary>
 [Serializable]
 public sealed class EnemyBrainMovementSettings
 {
@@ -92,7 +96,11 @@ public sealed class EnemyBrainMovementSettings
 
     #region Methods
 
-    #region Validation
+    #region Public Methods
+    /// <summary>
+    /// Sanitizes movement values after asset edits.
+    /// /returns None.
+    /// </summary>
     public void Validate()
     {
         if (moveSpeed < 0f)
@@ -117,22 +125,15 @@ public sealed class EnemyBrainMovementSettings
         else
             steeringAggressiveness = Mathf.Clamp(steeringAggressiveness, 0f, 2.5f);
     }
-
-    public void MigrateLegacyVisibilityPriorityIfNeeded(int legacyVisibilityPriorityTier)
-    {
-        if (priorityTier != 0)
-            return;
-
-        if (legacyVisibilityPriorityTier == 0)
-            return;
-
-        priorityTier = Mathf.Clamp(legacyVisibilityPriorityTier, -128, 128);
-    }
     #endregion
 
     #endregion
 }
 
+/// <summary>
+/// Stores neighbor separation settings used by enemy steering.
+/// /returns None.
+/// </summary>
 [Serializable]
 public sealed class EnemyBrainSteeringSettings
 {
@@ -179,7 +180,11 @@ public sealed class EnemyBrainSteeringSettings
 
     #region Methods
 
-    #region Validation
+    #region Public Methods
+    /// <summary>
+    /// Sanitizes steering values after asset edits.
+    /// /returns None.
+    /// </summary>
     public void Validate()
     {
         if (separationRadius < 0.1f)
@@ -196,6 +201,10 @@ public sealed class EnemyBrainSteeringSettings
     #endregion
 }
 
+/// <summary>
+/// Stores enemy damage settings applied against the player.
+/// /returns None.
+/// </summary>
 [Serializable]
 public sealed class EnemyBrainDamageSettings
 {
@@ -299,7 +308,11 @@ public sealed class EnemyBrainDamageSettings
 
     #region Methods
 
-    #region Validation
+    #region Public Methods
+    /// <summary>
+    /// Sanitizes damage values after asset edits.
+    /// /returns None.
+    /// </summary>
     public void Validate()
     {
         if (contactRadius < 0f)
@@ -325,6 +338,10 @@ public sealed class EnemyBrainDamageSettings
     #endregion
 }
 
+/// <summary>
+/// Stores health and shield values assigned when an enemy is activated from pool.
+/// /returns None.
+/// </summary>
 [Serializable]
 public sealed class EnemyBrainHealthStatisticsSettings
 {
@@ -360,7 +377,11 @@ public sealed class EnemyBrainHealthStatisticsSettings
 
     #region Methods
 
-    #region Validation
+    #region Public Methods
+    /// <summary>
+    /// Sanitizes health values after asset edits.
+    /// /returns None.
+    /// </summary>
     public void Validate()
     {
         if (maxHealth < 1f)
@@ -374,168 +395,10 @@ public sealed class EnemyBrainHealthStatisticsSettings
     #endregion
 }
 
-[Serializable]
-public sealed class EnemyBrainVisualSettings
-{
-    #region Fields
-
-    #region Serialized Fields
-    [Tooltip("Visual runtime path: managed companion Animator (few actors) or GPU-baked playback (crowd scale).")]
-    [SerializeField] private EnemyVisualMode visualMode = EnemyVisualMode.GpuBaked;
-
-    [Tooltip("Playback speed multiplier used by both companion and GPU-baked visual paths.")]
-    [SerializeField] private float visualAnimationSpeed = 1f;
-
-    [Tooltip("Loop duration in seconds used by GPU-baked playback time wrapping.")]
-    [SerializeField] private float gpuAnimationLoopDuration = 1f;
-
-    [Tooltip("Enable distance-based visual culling while gameplay simulation remains fully active.")]
-    [SerializeField] private bool enableDistanceCulling = true;
-
-    [Tooltip("Maximum planar distance from player where visuals stay visible. Set to 0 to keep always visible.")]
-    [SerializeField] private float maxVisibleDistance = 55f;
-
-    [Tooltip("Additional distance band used to avoid visual popping when crossing the culling boundary.")]
-    [SerializeField] private float visibleDistanceHysteresis = 6f;
-
-    [Tooltip("Relative visibility priority used when enemies overlap visually. Higher values render on top where supported by renderer path.")]
-    [SerializeField] private int visibilityPriorityTier;
-
-    [Tooltip("Optional one-shot VFX prefab spawned every time this enemy receives a projectile hit.")]
-    [SerializeField] private GameObject hitVfxPrefab;
-
-    [Tooltip("Lifetime in seconds assigned to each spawned hit VFX instance.")]
-    [SerializeField] private float hitVfxLifetimeSeconds = 0.35f;
-
-    [Tooltip("Uniform scale multiplier applied to the spawned hit VFX instance.")]
-    [SerializeField] private float hitVfxScaleMultiplier = 1f;
-    #endregion
-
-    #endregion
-
-    #region Properties
-    public EnemyVisualMode VisualMode
-    {
-        get
-        {
-            return visualMode;
-        }
-    }
-
-    public float VisualAnimationSpeed
-    {
-        get
-        {
-            return visualAnimationSpeed;
-        }
-    }
-
-    public float GpuAnimationLoopDuration
-    {
-        get
-        {
-            return gpuAnimationLoopDuration;
-        }
-    }
-
-    public bool EnableDistanceCulling
-    {
-        get
-        {
-            return enableDistanceCulling;
-        }
-    }
-
-    public float MaxVisibleDistance
-    {
-        get
-        {
-            return maxVisibleDistance;
-        }
-    }
-
-    public float VisibleDistanceHysteresis
-    {
-        get
-        {
-            return visibleDistanceHysteresis;
-        }
-    }
-
-    public int VisibilityPriorityTier
-    {
-        get
-        {
-            return visibilityPriorityTier;
-        }
-    }
-
-    public GameObject HitVfxPrefab
-    {
-        get
-        {
-            return hitVfxPrefab;
-        }
-    }
-
-    public float HitVfxLifetimeSeconds
-    {
-        get
-        {
-            return hitVfxLifetimeSeconds;
-        }
-    }
-
-    public float HitVfxScaleMultiplier
-    {
-        get
-        {
-            return hitVfxScaleMultiplier;
-        }
-    }
-    #endregion
-
-    #region Methods
-
-    #region Validation
-    public void Validate()
-    {
-        switch (visualMode)
-        {
-            case EnemyVisualMode.CompanionAnimator:
-            case EnemyVisualMode.GpuBaked:
-                break;
-
-            default:
-                visualMode = EnemyVisualMode.GpuBaked;
-                break;
-        }
-
-        if (visualAnimationSpeed < 0f)
-            visualAnimationSpeed = 0f;
-
-        if (gpuAnimationLoopDuration < 0.05f)
-            gpuAnimationLoopDuration = 0.05f;
-
-        if (maxVisibleDistance < 0f)
-            maxVisibleDistance = 0f;
-
-        if (visibleDistanceHysteresis < 0f)
-            visibleDistanceHysteresis = 0f;
-
-        visibilityPriorityTier = Mathf.Clamp(visibilityPriorityTier, -128, 128);
-
-        if (float.IsNaN(hitVfxLifetimeSeconds) || float.IsInfinity(hitVfxLifetimeSeconds) || hitVfxLifetimeSeconds < 0.05f)
-            hitVfxLifetimeSeconds = 0.05f;
-
-        if (float.IsNaN(hitVfxScaleMultiplier) || float.IsInfinity(hitVfxScaleMultiplier) || hitVfxScaleMultiplier < 0.01f)
-            hitVfxScaleMultiplier = 0.01f;
-    }
-    #endregion
-
-    #endregion
-}
-
+/// <summary>
+/// Stores authoring-time simulation settings for one enemy brain preset.
+/// /returns None.
+/// </summary>
 [CreateAssetMenu(fileName = "EnemyBrainPreset", menuName = "Enemy/Brain Preset", order = 10)]
 public sealed class EnemyBrainPreset : ScriptableObject
 {
@@ -568,9 +431,6 @@ public sealed class EnemyBrainPreset : ScriptableObject
 
     [Tooltip("Health and shield settings block.")]
     [SerializeField] private EnemyBrainHealthStatisticsSettings healthStatistics = new EnemyBrainHealthStatisticsSettings();
-
-    [Tooltip("Visual behavior settings block.")]
-    [SerializeField] private EnemyBrainVisualSettings visual = new EnemyBrainVisualSettings();
     #endregion
 
     #endregion
@@ -639,19 +499,15 @@ public sealed class EnemyBrainPreset : ScriptableObject
             return healthStatistics;
         }
     }
-
-    public EnemyBrainVisualSettings Visual
-    {
-        get
-        {
-            return visual;
-        }
-    }
     #endregion
 
     #region Methods
 
     #region Public Methods
+    /// <summary>
+    /// Validates nested settings and guarantees stable metadata defaults.
+    /// /returns None.
+    /// </summary>
     public void ValidateValues()
     {
         if (string.IsNullOrWhiteSpace(presetId))
@@ -669,19 +525,18 @@ public sealed class EnemyBrainPreset : ScriptableObject
         if (healthStatistics == null)
             healthStatistics = new EnemyBrainHealthStatisticsSettings();
 
-        if (visual == null)
-            visual = new EnemyBrainVisualSettings();
-
         movement.Validate();
         steering.Validate();
         damage.Validate();
         healthStatistics.Validate();
-        visual.Validate();
-        movement.MigrateLegacyVisibilityPriorityIfNeeded(visual.VisibilityPriorityTier);
     }
     #endregion
 
     #region Unity Methods
+    /// <summary>
+    /// Revalidates the asset after inspector changes.
+    /// /returns None.
+    /// </summary>
     private void OnValidate()
     {
         ValidateValues();

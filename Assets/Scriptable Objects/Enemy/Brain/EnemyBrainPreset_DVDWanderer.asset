@@ -40,14 +40,3 @@ MonoBehaviour:
   healthStatistics:
     maxHealth: 8
     maxShield: 0
-  visual:
-    visualMode: 1
-    visualAnimationSpeed: 1
-    gpuAnimationLoopDuration: 1
-    enableDistanceCulling: 1
-    maxVisibleDistance: 55
-    visibleDistanceHysteresis: 6
-    visibilityPriorityTier: 2
-    hitVfxPrefab: {fileID: 0}
-    hitVfxLifetimeSeconds: 0.35
-    hitVfxScaleMultiplier: 1

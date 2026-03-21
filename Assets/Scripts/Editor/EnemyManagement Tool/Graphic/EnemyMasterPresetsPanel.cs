@@ -496,6 +496,11 @@ public sealed class EnemyMasterPresetsPanel
         EnemyMasterPresetsPanelSectionsUtility.CreateBrainPreset(this);
     }
 
+    internal void CreateVisualPreset()
+    {
+        EnemyMasterPresetsPanelSectionsUtility.CreateVisualPreset(this);
+    }
+
     internal void CreateAdvancedPatternPreset()
     {
         EnemyMasterPresetsPanelSectionsUtility.CreateAdvancedPatternPreset(this);
@@ -628,6 +633,7 @@ public sealed class EnemyMasterPresetsPanel
         public Button TabButton;
         public VisualElement Content;
         public EnemyBrainPresetsPanel BrainPanel;
+        public EnemyVisualPresetsPanel VisualPanel;
         public EnemyAdvancedPatternPresetsPanel AdvancedPatternPanel;
     }
     #endregion

@@ -2,12 +2,36 @@ using Unity.Mathematics;
 
 /// <summary>
 /// Centralizes fallback-value sanitization for enemy authoring data.
+/// /returns None.
 /// </summary>
 public static class EnemyAuthoringFallbackValidationUtility
 {
     #region Methods
 
     #region Validation
+    /// <summary>
+    /// Sanitizes fallback values used only when no preset source is assigned on EnemyAuthoring.
+    /// Called by EnemyAuthoring.OnValidate to keep hidden fallback data in a safe range.
+    /// /params moveSpeed: Fallback movement speed value.
+    /// /params maxSpeed: Fallback maximum movement speed value.
+    /// /params acceleration: Fallback acceleration value.
+    /// /params deceleration: Fallback deceleration value.
+    /// /params rotationSpeedDegreesPerSecond: Fallback self-rotation speed.
+    /// /params separationRadius: Fallback neighbor separation radius.
+    /// /params separationWeight: Fallback neighbor separation weight.
+    /// /params bodyRadius: Fallback body radius.
+    /// /params contactRadius: Fallback contact damage radius.
+    /// /params contactAmountPerTick: Fallback contact damage amount.
+    /// /params contactTickInterval: Fallback contact damage interval.
+    /// /params areaRadius: Fallback area damage radius.
+    /// /params areaAmountPerTickPercent: Fallback area damage percentage amount.
+    /// /params areaTickInterval: Fallback area damage interval.
+    /// /params maxHealth: Fallback maximum health.
+    /// /params maxShield: Fallback maximum shield.
+    /// /params priorityTier: Fallback priority tier.
+    /// /params steeringAggressiveness: Fallback steering aggressiveness.
+    /// /returns None.
+    /// </summary>
     public static void ValidateFallbackValues(ref float moveSpeed,
                                               ref float maxSpeed,
                                               ref float acceleration,
@@ -24,15 +48,8 @@ public static class EnemyAuthoringFallbackValidationUtility
                                               ref float areaTickInterval,
                                               ref float maxHealth,
                                               ref float maxShield,
-                                              ref EnemyVisualMode visualMode,
-                                              ref float visualAnimationSpeed,
-                                              ref float gpuAnimationLoopDuration,
-                                              ref float maxVisibleDistance,
-                                              ref float visibleDistanceHysteresis,
                                               ref int priorityTier,
-                                              ref float steeringAggressiveness,
-                                              ref float hitVfxLifetimeSeconds,
-                                              ref float hitVfxScaleMultiplier)
+                                              ref float steeringAggressiveness)
     {
         if (moveSpeed < 0f)
             moveSpeed = 0f;
@@ -82,41 +99,12 @@ public static class EnemyAuthoringFallbackValidationUtility
         if (maxShield < 0f)
             maxShield = 0f;
 
-        switch (visualMode)
-        {
-            case EnemyVisualMode.CompanionAnimator:
-            case EnemyVisualMode.GpuBaked:
-                break;
-
-            default:
-                visualMode = EnemyVisualMode.GpuBaked;
-                break;
-        }
-
-        if (visualAnimationSpeed < 0f)
-            visualAnimationSpeed = 0f;
-
-        if (gpuAnimationLoopDuration < 0.05f)
-            gpuAnimationLoopDuration = 0.05f;
-
-        if (maxVisibleDistance < 0f)
-            maxVisibleDistance = 0f;
-
-        if (visibleDistanceHysteresis < 0f)
-            visibleDistanceHysteresis = 0f;
-
         priorityTier = math.clamp(priorityTier, -128, 128);
 
         if (float.IsNaN(steeringAggressiveness) || float.IsInfinity(steeringAggressiveness))
             steeringAggressiveness = 1f;
         else
             steeringAggressiveness = math.clamp(steeringAggressiveness, 0f, 2.5f);
-
-        if (float.IsNaN(hitVfxLifetimeSeconds) || float.IsInfinity(hitVfxLifetimeSeconds) || hitVfxLifetimeSeconds < 0.05f)
-            hitVfxLifetimeSeconds = 0.05f;
-
-        if (float.IsNaN(hitVfxScaleMultiplier) || float.IsInfinity(hitVfxScaleMultiplier) || hitVfxScaleMultiplier < 0.01f)
-            hitVfxScaleMultiplier = 0.01f;
     }
     #endregion
 

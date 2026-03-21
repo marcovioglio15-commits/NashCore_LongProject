@@ -261,6 +261,8 @@ public static class EnemyManagementDraftSession
         AddAssetPathsOfType<EnemyMasterPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyBrainPresetLibrary>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyBrainPreset>(uniquePaths, TrackedEnemyAssetsRoot);
+        AddAssetPathsOfType<EnemyVisualPresetLibrary>(uniquePaths, TrackedEnemyAssetsRoot);
+        AddAssetPathsOfType<EnemyVisualPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyAdvancedPatternPresetLibrary>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyAdvancedPatternPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddEnemyPrefabPaths(uniquePaths);

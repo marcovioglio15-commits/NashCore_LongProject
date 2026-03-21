@@ -129,7 +129,6 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
         AddBrainSubSectionTab(panel, EnemyBrainPresetsPanel.BrainSubSectionType.Steering, "Steering", BuildSteeringSubSection(panel));
         AddBrainSubSectionTab(panel, EnemyBrainPresetsPanel.BrainSubSectionType.Damage, "Damage", BuildDamageSubSection(panel));
         AddBrainSubSectionTab(panel, EnemyBrainPresetsPanel.BrainSubSectionType.HealthStatistics, "Health Statistics", BuildHealthStatisticsSubSection(panel));
-        AddBrainSubSectionTab(panel, EnemyBrainPresetsPanel.BrainSubSectionType.Visual, "Visual", BuildVisualSubSection(panel));
 
         if (!panel.BrainSubSectionTabs.ContainsKey(panel.ActiveBrainSubSection))
             panel.ActiveBrainSubSection = EnemyBrainPresetsPanel.BrainSubSectionType.Movement;
@@ -421,28 +420,6 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
 
         AddPropertyField(panel, container, healthStatisticsProperty, "maxHealth", "Max Health", "Maximum and initial health assigned to this enemy when spawned from pool.");
         AddPropertyField(panel, container, healthStatisticsProperty, "maxShield", "Max Shield", "Maximum shield reserve assigned to this enemy at spawn. Shield absorbs incoming damage before health.");
-        return container;
-    }
-
-    /// <summary>
-    /// Builds the visual subsection content.
-    /// </summary>
-    /// <param name="panel">Owning panel that provides serialized context.</param>
-    /// <returns>Returns the visual subsection content.</returns>
-    private static VisualElement BuildVisualSubSection(EnemyBrainPresetsPanel panel)
-    {
-        SerializedProperty visualProperty = panel.PresetSerializedObject.FindProperty("visual");
-        VisualElement container = CreateBrainSubSectionContainer("Visual");
-
-        AddPropertyField(panel, container, visualProperty, "visualMode", "Visual Mode", "Visual runtime path: managed companion Animator (few actors) or GPU-baked playback (crowd scale).");
-        AddPropertyField(panel, container, visualProperty, "visualAnimationSpeed", "Visual Animation Speed", "Playback speed multiplier used by both companion and GPU-baked visual paths.");
-        AddPropertyField(panel, container, visualProperty, "gpuAnimationLoopDuration", "GPU Animation Loop Duration", "Loop duration in seconds used by GPU-baked playback time wrapping.");
-        AddPropertyField(panel, container, visualProperty, "enableDistanceCulling", "Enable Distance Culling", "Enable distance-based visual culling while gameplay simulation remains fully active.");
-        AddPropertyField(panel, container, visualProperty, "maxVisibleDistance", "Max Visible Distance", "Maximum planar distance from player where visuals stay visible. Set to 0 to keep always visible.");
-        AddPropertyField(panel, container, visualProperty, "visibleDistanceHysteresis", "Visible Distance Hysteresis", "Additional distance band used to avoid visual popping when crossing the culling boundary.");
-        AddPropertyField(panel, container, visualProperty, "hitVfxPrefab", "Hit VFX Prefab", "Optional one-shot VFX prefab spawned every time this enemy receives a projectile hit.");
-        AddPropertyField(panel, container, visualProperty, "hitVfxLifetimeSeconds", "Hit VFX Lifetime Seconds", "Lifetime in seconds assigned to each spawned hit VFX instance.");
-        AddPropertyField(panel, container, visualProperty, "hitVfxScaleMultiplier", "Hit VFX Scale Multiplier", "Uniform scale multiplier applied to the spawned hit VFX instance.");
         return container;
     }
     #endregion

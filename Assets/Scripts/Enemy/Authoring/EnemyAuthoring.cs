@@ -3,120 +3,120 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 /// <summary>
-/// Authoring component that defines ECS enemy movement, steering, damage and visual settings.
-/// Main configuration is sourced from EnemyMasterPreset and its sub-presets.
+/// Authoring component that defines ECS enemy movement, combat and presentation settings.
+/// Main configuration is sourced from EnemyMasterPreset and its linked sub-presets.
+/// /returns None.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class EnemyAuthoring : MonoBehaviour
 {
+    #region Constants
+    private const EnemyVisualMode DefaultVisualMode = EnemyVisualMode.GpuBaked;
+    private const float DefaultVisualAnimationSpeed = 1f;
+    private const float DefaultGpuAnimationLoopDuration = 1f;
+    private const float DefaultMaxVisibleDistance = 55f;
+    private const float DefaultVisibleDistanceHysteresis = 6f;
+    private const float DefaultHitVfxLifetimeSeconds = 0.35f;
+    private const float DefaultHitVfxScaleMultiplier = 1f;
+    #endregion
+
     #region Fields
+
     #region Serialized Fields
     [Header("Preset")]
     [Tooltip("Enemy master preset that resolves sub-presets used by this enemy.")]
     [SerializeField] private EnemyMasterPreset masterPreset;
-    [Tooltip(" direct brain preset fallback used when MasterPreset is missing or has no Brain preset assigned.")]
+
+    [Tooltip("Direct brain preset fallback used when MasterPreset is missing or has no Brain preset assigned.")]
     [SerializeField] private EnemyBrainPreset brainPreset;
-    [Tooltip(" direct advanced pattern preset fallback used when MasterPreset is missing or has no Advanced Pattern preset assigned.")]
+
+    [Tooltip("Direct visual preset fallback used when MasterPreset is missing or has no Visual preset assigned.")]
+    [SerializeField] private EnemyVisualPreset visualPreset;
+
+    [Tooltip("Direct advanced pattern preset fallback used when MasterPreset is missing or has no Advanced Pattern preset assigned.")]
     [SerializeField] private EnemyAdvancedPatternPreset advancedPatternPreset;
-    [Tooltip(" fallback move speed used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback move speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float moveSpeed = 3f;
-    [Tooltip(" fallback max speed used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback max speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxSpeed = 4f;
-    [Tooltip(" fallback acceleration used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback acceleration used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float acceleration = 8f;
-    [Tooltip(" fallback deceleration used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback deceleration used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float deceleration = 8f;
-    [Tooltip(" fallback self-rotation speed in degrees per second used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback self-rotation speed in degrees per second used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float rotationSpeedDegreesPerSecond;
-    [Tooltip(" fallback separation radius used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback separation radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float separationRadius = 1.1f;
-    [Tooltip(" fallback separation weight used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback separation weight used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float separationWeight = 2f;
-    [Tooltip(" fallback body radius used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback body radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float bodyRadius = 0.55f;
-    [Tooltip(" fallback contact radius used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback contact radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float contactRadius = 1.2f;
-    [Tooltip(" fallback contact damage enable used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback contact damage enable used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private bool contactDamageEnabled = true;
-    [Tooltip(" fallback contact amount per tick used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback contact amount per tick used when MasterPreset and BrainPreset are missing.")]
     [FormerlySerializedAs("contactDamage")]
     [SerializeField]
     [HideInInspector] private float contactAmountPerTick = 5f;
-    [Tooltip(" fallback contact tick interval used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback contact tick interval used when MasterPreset and BrainPreset are missing.")]
     [FormerlySerializedAs("contactInterval")]
     [SerializeField]
     [HideInInspector] private float contactTickInterval = 0.75f;
-    [Tooltip(" fallback area damage enable used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback area damage enable used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private bool areaDamageEnabled;
-    [Tooltip(" fallback area radius used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback area radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float areaRadius = 2.25f;
-    [Tooltip(" fallback area amount per tick percent used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback area amount per tick percent used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float areaAmountPerTickPercent = 2f;
-    [Tooltip(" fallback area tick interval used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback area tick interval used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float areaTickInterval = 1f;
-    [Tooltip(" fallback max health used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback max health used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxHealth = 30f;
-    [Tooltip(" fallback max shield used when MasterPreset and BrainPreset are missing.")]
+
+    [Tooltip("Fallback max shield used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float maxShield;
-    [Tooltip(" fallback visual mode used when MasterPreset and BrainPreset are missing.")]
-    [SerializeField]
-    [HideInInspector] private EnemyVisualMode visualMode = EnemyVisualMode.GpuBaked;
-    [Tooltip(" fallback visual animation speed used when MasterPreset and BrainPreset are missing.")]
-    [SerializeField]
-    [HideInInspector] private float visualAnimationSpeed = 1f;
 
-    [Tooltip(" fallback GPU loop duration used when MasterPreset and BrainPreset are missing.")]
-    [SerializeField]
-    [HideInInspector] private float gpuAnimationLoopDuration = 1f;
-
-    [Tooltip(" fallback distance culling toggle used when MasterPreset and BrainPreset are missing.")]
-    [SerializeField]
-    [HideInInspector] private bool enableDistanceCulling = true;
-
-    [Tooltip(" fallback max visible distance used when MasterPreset and BrainPreset are missing.")]
-    [SerializeField]
-    [HideInInspector] private float maxVisibleDistance = 55f;
-
-    [Tooltip(" fallback culling hysteresis used when MasterPreset and BrainPreset are missing.")]
-    [SerializeField]
-    [HideInInspector] private float visibleDistanceHysteresis = 6f;
-
-    [Tooltip(" fallback general priority tier used for steering right-of-way and visual overlap ordering.")]
-    [FormerlySerializedAs("visibilityPriorityTier")]
+    [Tooltip("Fallback general priority tier used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private int priorityTier;
 
-    [Tooltip(" fallback steering and clearance reactivity scalar used when MasterPreset and BrainPreset are missing.")]
+    [Tooltip("Fallback steering and clearance reactivity scalar used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float steeringAggressiveness = 1f;
-
-    [Tooltip(" fallback one-shot VFX prefab spawned each time this enemy receives a projectile hit.")]
-    [SerializeField]
-    [HideInInspector] private GameObject hitVfxPrefab;
-
-    [Tooltip(" fallback hit VFX lifetime in seconds used when MasterPreset and BrainPreset are missing.")]
-    [SerializeField]
-    [HideInInspector] private float hitVfxLifetimeSeconds = 0.35f;
-
-    [Tooltip(" fallback hit VFX scale multiplier used when MasterPreset and BrainPreset are missing.")]
-    [SerializeField]
-    [HideInInspector] private float hitVfxScaleMultiplier = 1f;
 
     [Header("Visual References")]
     [Tooltip("Optional Animator used when visual mode is CompanionAnimator.")]
@@ -127,7 +127,6 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     [Tooltip("Optional world-space status bars view used to display fillable health and shield images above this enemy.")]
     [SerializeField] private EnemyWorldSpaceStatusBarsView worldSpaceStatusBarsView;
-
     #endregion
 
     #endregion
@@ -149,6 +148,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public EnemyVisualPreset VisualPreset
+    {
+        get
+        {
+            return EnemyAuthoringPresetResolverUtility.ResolveVisualPreset(masterPreset, visualPreset);
+        }
+    }
+
     public EnemyAdvancedPatternPreset AdvancedPatternPreset
     {
         get
@@ -161,12 +168,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
 
-            if (movementSettings == null)
+            if (settings == null)
                 return moveSpeed;
 
-            return movementSettings.MoveSpeed;
+            return settings.MoveSpeed;
         }
     }
 
@@ -174,12 +181,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
 
-            if (movementSettings == null)
+            if (settings == null)
                 return maxSpeed;
 
-            return movementSettings.MaxSpeed;
+            return settings.MaxSpeed;
         }
     }
 
@@ -187,12 +194,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
 
-            if (movementSettings == null)
+            if (settings == null)
                 return acceleration;
 
-            return movementSettings.Acceleration;
+            return settings.Acceleration;
         }
     }
 
@@ -200,12 +207,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
 
-            if (movementSettings == null)
+            if (settings == null)
                 return deceleration;
 
-            return movementSettings.Deceleration;
+            return settings.Deceleration;
         }
     }
 
@@ -213,12 +220,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
 
-            if (movementSettings == null)
+            if (settings == null)
                 return rotationSpeedDegreesPerSecond;
 
-            return movementSettings.RotationSpeedDegreesPerSecond;
+            return settings.RotationSpeedDegreesPerSecond;
         }
     }
 
@@ -226,12 +233,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainSteeringSettings steeringSettings = EnemyAuthoringPresetResolverUtility.ResolveSteeringSettings(masterPreset, brainPreset);
+            EnemyBrainSteeringSettings settings = ResolveSteeringSettings();
 
-            if (steeringSettings == null)
+            if (settings == null)
                 return separationRadius;
 
-            return steeringSettings.SeparationRadius;
+            return settings.SeparationRadius;
         }
     }
 
@@ -239,12 +246,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainSteeringSettings steeringSettings = EnemyAuthoringPresetResolverUtility.ResolveSteeringSettings(masterPreset, brainPreset);
+            EnemyBrainSteeringSettings settings = ResolveSteeringSettings();
 
-            if (steeringSettings == null)
+            if (settings == null)
                 return separationWeight;
 
-            return steeringSettings.SeparationWeight;
+            return settings.SeparationWeight;
         }
     }
 
@@ -252,12 +259,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainSteeringSettings steeringSettings = EnemyAuthoringPresetResolverUtility.ResolveSteeringSettings(masterPreset, brainPreset);
+            EnemyBrainSteeringSettings settings = ResolveSteeringSettings();
 
-            if (steeringSettings == null)
+            if (settings == null)
                 return bodyRadius;
 
-            return steeringSettings.BodyRadius;
+            return settings.BodyRadius;
         }
     }
 
@@ -265,12 +272,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+            EnemyBrainDamageSettings settings = ResolveDamageSettings();
 
-            if (damageSettings == null)
+            if (settings == null)
                 return contactRadius;
 
-            return damageSettings.ContactRadius;
+            return settings.ContactRadius;
         }
     }
 
@@ -278,12 +285,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+            EnemyBrainDamageSettings settings = ResolveDamageSettings();
 
-            if (damageSettings == null)
+            if (settings == null)
                 return contactDamageEnabled;
 
-            return damageSettings.ContactDamageEnabled;
+            return settings.ContactDamageEnabled;
         }
     }
 
@@ -291,12 +298,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+            EnemyBrainDamageSettings settings = ResolveDamageSettings();
 
-            if (damageSettings == null)
+            if (settings == null)
                 return contactAmountPerTick;
 
-            return damageSettings.ContactAmountPerTick;
+            return settings.ContactAmountPerTick;
         }
     }
 
@@ -304,12 +311,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+            EnemyBrainDamageSettings settings = ResolveDamageSettings();
 
-            if (damageSettings == null)
+            if (settings == null)
                 return contactTickInterval;
 
-            return damageSettings.ContactTickInterval;
+            return settings.ContactTickInterval;
         }
     }
 
@@ -317,12 +324,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+            EnemyBrainDamageSettings settings = ResolveDamageSettings();
 
-            if (damageSettings == null)
+            if (settings == null)
                 return areaDamageEnabled;
 
-            return damageSettings.AreaDamageEnabled;
+            return settings.AreaDamageEnabled;
         }
     }
 
@@ -330,12 +337,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+            EnemyBrainDamageSettings settings = ResolveDamageSettings();
 
-            if (damageSettings == null)
+            if (settings == null)
                 return areaRadius;
 
-            return damageSettings.AreaRadius;
+            return settings.AreaRadius;
         }
     }
 
@@ -343,12 +350,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+            EnemyBrainDamageSettings settings = ResolveDamageSettings();
 
-            if (damageSettings == null)
+            if (settings == null)
                 return areaAmountPerTickPercent;
 
-            return damageSettings.AreaAmountPerTickPercent;
+            return settings.AreaAmountPerTickPercent;
         }
     }
 
@@ -356,12 +363,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainDamageSettings damageSettings = EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+            EnemyBrainDamageSettings settings = ResolveDamageSettings();
 
-            if (damageSettings == null)
+            if (settings == null)
                 return areaTickInterval;
 
-            return damageSettings.AreaTickInterval;
+            return settings.AreaTickInterval;
         }
     }
 
@@ -369,12 +376,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainHealthStatisticsSettings healthSettings = EnemyAuthoringPresetResolverUtility.ResolveHealthStatisticsSettings(masterPreset, brainPreset);
+            EnemyBrainHealthStatisticsSettings settings = ResolveHealthSettings();
 
-            if (healthSettings == null)
+            if (settings == null)
                 return maxHealth;
 
-            return healthSettings.MaxHealth;
+            return settings.MaxHealth;
         }
     }
 
@@ -382,12 +389,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainHealthStatisticsSettings healthSettings = EnemyAuthoringPresetResolverUtility.ResolveHealthStatisticsSettings(masterPreset, brainPreset);
+            EnemyBrainHealthStatisticsSettings settings = ResolveHealthSettings();
 
-            if (healthSettings == null)
+            if (settings == null)
                 return maxShield;
 
-            return healthSettings.MaxShield;
+            return settings.MaxShield;
         }
     }
 
@@ -395,12 +402,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualVisibilitySettings settings = ResolveVisibilitySettings();
 
-            if (visualSettings == null)
-                return visualMode;
+            if (settings == null)
+                return DefaultVisualMode;
 
-            return visualSettings.VisualMode;
+            return settings.VisualMode;
         }
     }
 
@@ -408,12 +415,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualVisibilitySettings settings = ResolveVisibilitySettings();
 
-            if (visualSettings == null)
-                return visualAnimationSpeed;
+            if (settings == null)
+                return DefaultVisualAnimationSpeed;
 
-            return visualSettings.VisualAnimationSpeed;
+            return settings.VisualAnimationSpeed;
         }
     }
 
@@ -421,12 +428,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualVisibilitySettings settings = ResolveVisibilitySettings();
 
-            if (visualSettings == null)
-                return gpuAnimationLoopDuration;
+            if (settings == null)
+                return DefaultGpuAnimationLoopDuration;
 
-            return visualSettings.GpuAnimationLoopDuration;
+            return settings.GpuAnimationLoopDuration;
         }
     }
 
@@ -434,12 +441,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualVisibilitySettings settings = ResolveVisibilitySettings();
 
-            if (visualSettings == null)
-                return enableDistanceCulling;
+            if (settings == null)
+                return true;
 
-            return visualSettings.EnableDistanceCulling;
+            return settings.EnableDistanceCulling;
         }
     }
 
@@ -447,12 +454,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualVisibilitySettings settings = ResolveVisibilitySettings();
 
-            if (visualSettings == null)
-                return maxVisibleDistance;
+            if (settings == null)
+                return DefaultMaxVisibleDistance;
 
-            return visualSettings.MaxVisibleDistance;
+            return settings.MaxVisibleDistance;
         }
     }
 
@@ -460,12 +467,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualVisibilitySettings settings = ResolveVisibilitySettings();
 
-            if (visualSettings == null)
-                return visibleDistanceHysteresis;
+            if (settings == null)
+                return DefaultVisibleDistanceHysteresis;
 
-            return visualSettings.VisibleDistanceHysteresis;
+            return settings.VisibleDistanceHysteresis;
         }
     }
 
@@ -473,15 +480,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
 
-            if (movementSettings != null)
-                return math.clamp(movementSettings.PriorityTier, -128, 128);
-
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
-
-            if (visualSettings != null)
-                return math.clamp(visualSettings.VisibilityPriorityTier, -128, 128);
+            if (settings != null)
+                return math.clamp(settings.PriorityTier, -128, 128);
 
             return math.clamp(priorityTier, -128, 128);
         }
@@ -491,11 +493,11 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainMovementSettings movementSettings = EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
 
-            if (movementSettings != null)
+            if (settings != null)
             {
-                float resolvedAggressiveness = movementSettings.SteeringAggressiveness;
+                float resolvedAggressiveness = settings.SteeringAggressiveness;
 
                 if (float.IsNaN(resolvedAggressiveness) || float.IsInfinity(resolvedAggressiveness))
                     return 1f;
@@ -510,24 +512,16 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
-    public int VisibilityPriorityTier
-    {
-        get
-        {
-            return PriorityTier;
-        }
-    }
-
     public GameObject HitVfxPrefab
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualPrefabSettings settings = ResolveVisualPrefabSettings();
 
-            if (visualSettings == null)
-                return hitVfxPrefab;
+            if (settings == null)
+                return null;
 
-            return visualSettings.HitVfxPrefab;
+            return settings.HitVfxPrefab;
         }
     }
 
@@ -535,12 +529,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualPrefabSettings settings = ResolveVisualPrefabSettings();
 
-            if (visualSettings == null)
-                return hitVfxLifetimeSeconds;
+            if (settings == null)
+                return DefaultHitVfxLifetimeSeconds;
 
-            return visualSettings.HitVfxLifetimeSeconds;
+            return settings.HitVfxLifetimeSeconds;
         }
     }
 
@@ -548,12 +542,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     {
         get
         {
-            EnemyBrainVisualSettings visualSettings = EnemyAuthoringPresetResolverUtility.ResolveVisualSettings(masterPreset, brainPreset);
+            EnemyVisualPrefabSettings settings = ResolveVisualPrefabSettings();
 
-            if (visualSettings == null)
-                return hitVfxScaleMultiplier;
+            if (settings == null)
+                return DefaultHitVfxScaleMultiplier;
 
-            return visualSettings.HitVfxScaleMultiplier;
+            return settings.HitVfxScaleMultiplier;
         }
     }
 
@@ -585,6 +579,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #region Methods
 
     #region Unity Methods
+    /// <summary>
+    /// Sanitizes fallback values and validates linked presets after inspector edits.
+    /// /returns None.
+    /// </summary>
     private void OnValidate()
     {
         EnemyAuthoringFallbackValidationUtility.ValidateFallbackValues(ref moveSpeed,
@@ -603,15 +601,8 @@ public sealed class EnemyAuthoring : MonoBehaviour
                                                                       ref areaTickInterval,
                                                                       ref maxHealth,
                                                                       ref maxShield,
-                                                                      ref visualMode,
-                                                                      ref visualAnimationSpeed,
-                                                                      ref gpuAnimationLoopDuration,
-                                                                      ref maxVisibleDistance,
-                                                                      ref visibleDistanceHysteresis,
                                                                       ref priorityTier,
-                                                                      ref steeringAggressiveness,
-                                                                      ref hitVfxLifetimeSeconds,
-                                                                      ref hitVfxScaleMultiplier);
+                                                                      ref steeringAggressiveness);
 
         if (masterPreset != null)
             masterPreset.ValidateValues();
@@ -619,10 +610,68 @@ public sealed class EnemyAuthoring : MonoBehaviour
         if (brainPreset != null)
             brainPreset.ValidateValues();
 
+        if (visualPreset != null)
+            visualPreset.ValidateValues();
+
         if (advancedPatternPreset != null)
             advancedPatternPreset.ValidateValues();
     }
+    #endregion
 
+    #region Helpers
+    /// <summary>
+    /// Resolves the active movement settings source.
+    /// /returns Resolved movement settings or null when no preset source is available.
+    /// </summary>
+    private EnemyBrainMovementSettings ResolveMovementSettings()
+    {
+        return EnemyAuthoringPresetResolverUtility.ResolveMovementSettings(masterPreset, brainPreset);
+    }
+
+    /// <summary>
+    /// Resolves the active steering settings source.
+    /// /returns Resolved steering settings or null when no preset source is available.
+    /// </summary>
+    private EnemyBrainSteeringSettings ResolveSteeringSettings()
+    {
+        return EnemyAuthoringPresetResolverUtility.ResolveSteeringSettings(masterPreset, brainPreset);
+    }
+
+    /// <summary>
+    /// Resolves the active damage settings source.
+    /// /returns Resolved damage settings or null when no preset source is available.
+    /// </summary>
+    private EnemyBrainDamageSettings ResolveDamageSettings()
+    {
+        return EnemyAuthoringPresetResolverUtility.ResolveDamageSettings(masterPreset, brainPreset);
+    }
+
+    /// <summary>
+    /// Resolves the active health settings source.
+    /// /returns Resolved health settings or null when no preset source is available.
+    /// </summary>
+    private EnemyBrainHealthStatisticsSettings ResolveHealthSettings()
+    {
+        return EnemyAuthoringPresetResolverUtility.ResolveHealthStatisticsSettings(masterPreset, brainPreset);
+    }
+
+    /// <summary>
+    /// Resolves the active visual visibility settings source.
+    /// /returns Resolved visibility settings or null when no preset source is available.
+    /// </summary>
+    private EnemyVisualVisibilitySettings ResolveVisibilitySettings()
+    {
+        return EnemyAuthoringPresetResolverUtility.ResolveVisibilitySettings(masterPreset, visualPreset);
+    }
+
+    /// <summary>
+    /// Resolves the active visual prefab settings source.
+    /// /returns Resolved prefab settings or null when no preset source is available.
+    /// </summary>
+    private EnemyVisualPrefabSettings ResolveVisualPrefabSettings()
+    {
+        return EnemyAuthoringPresetResolverUtility.ResolveVisualPrefabSettings(masterPreset, visualPreset);
+    }
     #endregion
 
     #endregion

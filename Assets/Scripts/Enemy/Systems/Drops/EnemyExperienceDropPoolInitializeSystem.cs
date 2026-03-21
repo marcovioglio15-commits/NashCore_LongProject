@@ -34,10 +34,10 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
                             .WithAll<EnemyExperienceDropPoolRegistry>()
                             .Build(ref state);
         spawnerQuery = new EntityQueryBuilder(Allocator.Temp)
-                           .WithAll<EnemySpawner>()
+                           .WithAll<EnemySpawner, EnemySpawnerPrefabRequirementElement>()
                            .Build(ref state);
         poolSettingsApplied = 0;
-        state.RequireForUpdate<EnemySpawner>();
+        state.RequireForUpdate(spawnerQuery);
         EnsureRegistrySingleton(ref state);
 
         if (TryGetRegistryEntity(out Entity registryEntity))
@@ -74,9 +74,19 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
             int spawnerCount = spawnerQuery.CalculateEntityCountWithoutFiltering();
             int dictionaryCapacity = math.max(4, spawnerCount * 2);
             Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab = new Dictionary<Entity, PoolBuildSettings>(dictionaryCapacity);
+            BufferLookup<EnemySpawnerPrefabRequirementElement> requirementLookup = SystemAPI.GetBufferLookup<EnemySpawnerPrefabRequirementElement>(true);
 
-            foreach (RefRO<EnemySpawner> spawner in SystemAPI.Query<RefRO<EnemySpawner>>())
-                AggregateSpawnerPoolSettings(state.EntityManager, spawner.ValueRO, poolSettingsByPrefab);
+            foreach ((RefRO<EnemySpawner> spawner,
+                      Entity spawnerEntity) in SystemAPI.Query<RefRO<EnemySpawner>>().WithEntityAccess())
+            {
+                if (!requirementLookup.HasBuffer(spawnerEntity))
+                    continue;
+
+                AggregateSpawnerPoolSettings(state.EntityManager,
+                                             spawner.ValueRO,
+                                             requirementLookup[spawnerEntity],
+                                             poolSettingsByPrefab);
+            }
 
             ApplyPoolSettings(state.EntityManager, registryEntity, poolSettingsByPrefab);
             poolSettingsApplied = 1;
@@ -138,92 +148,99 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
 
     private static void AggregateSpawnerPoolSettings(EntityManager entityManager,
                                                      EnemySpawner spawner,
+                                                     DynamicBuffer<EnemySpawnerPrefabRequirementElement> requirements,
                                                      Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab)
     {
-        if (spawner.EnemyPrefab == Entity.Null)
-            return;
-
-        if (entityManager.Exists(spawner.EnemyPrefab) == false)
-            return;
-
-        if (entityManager.HasComponent<EnemyDropItemsConfig>(spawner.EnemyPrefab) == false)
-            return;
-
-        EnemyDropItemsConfig dropItemsConfig = entityManager.GetComponentData<EnemyDropItemsConfig>(spawner.EnemyPrefab);
-
-        if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
-            return;
-
-        if (dropItemsConfig.MaximumTotalExperienceDrop <= 0f)
-            return;
-
-        if (entityManager.HasBuffer<EnemyExperienceDropDefinitionElement>(spawner.EnemyPrefab) == false)
-            return;
-
-        DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions = entityManager.GetBuffer<EnemyExperienceDropDefinitionElement>(spawner.EnemyPrefab);
-
-        if (definitions.Length <= 0)
-            return;
-
-        int estimatedDropsPerDeath = math.max(1, dropItemsConfig.EstimatedDropsPerDeath);
-
-        if (dropItemsConfig.EstimatedDropsPerDeath <= 0)
+        for (int requirementIndex = 0; requirementIndex < requirements.Length; requirementIndex++)
         {
-            float deliveredExperience;
-            float absoluteError;
-            estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsPerDeath(definitions,
-                                                                                                   dropItemsConfig.MaximumTotalExperienceDrop,
-                                                                                                   dropItemsConfig.Distribution,
-                                                                                                   out deliveredExperience,
-                                                                                                   out absoluteError);
-            estimatedDropsPerDeath = math.max(1, estimatedDropsPerDeath);
-        }
+            EnemySpawnerPrefabRequirementElement requirement = requirements[requirementIndex];
+            Entity enemyPrefab = requirement.PrefabEntity;
 
-        int initialCapacityPerPrefab = EstimateInitialCapacity(spawner.MaxAliveCount, estimatedDropsPerDeath);
-        int expandBatchPerPrefab = EstimateExpandBatch(spawner.SpawnPerTick, estimatedDropsPerDeath);
-
-        for (int definitionIndex = 0; definitionIndex < definitions.Length; definitionIndex++)
-        {
-            EnemyExperienceDropDefinitionElement definition = definitions[definitionIndex];
-
-            if (definition.PrefabEntity == Entity.Null)
+            if (enemyPrefab == Entity.Null)
                 continue;
 
-            if (definition.ExperienceAmount <= 0f)
+            if (!entityManager.Exists(enemyPrefab))
                 continue;
 
-            PoolBuildSettings currentSettings;
+            if (!entityManager.HasComponent<EnemyDropItemsConfig>(enemyPrefab))
+                continue;
 
-            if (poolSettingsByPrefab.TryGetValue(definition.PrefabEntity, out currentSettings))
+            EnemyDropItemsConfig dropItemsConfig = entityManager.GetComponentData<EnemyDropItemsConfig>(enemyPrefab);
+
+            if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
+                continue;
+
+            if (dropItemsConfig.MaximumTotalExperienceDrop <= 0f)
+                continue;
+
+            if (!entityManager.HasBuffer<EnemyExperienceDropDefinitionElement>(enemyPrefab))
+                continue;
+
+            DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions = entityManager.GetBuffer<EnemyExperienceDropDefinitionElement>(enemyPrefab);
+
+            if (definitions.Length <= 0)
+                continue;
+
+            int estimatedDropsPerDeath = math.max(1, dropItemsConfig.EstimatedDropsPerDeath);
+
+            if (dropItemsConfig.EstimatedDropsPerDeath <= 0)
             {
-                currentSettings.InitialCapacity += initialCapacityPerPrefab;
-
-                if (expandBatchPerPrefab > currentSettings.ExpandBatch)
-                    currentSettings.ExpandBatch = expandBatchPerPrefab;
-
-                poolSettingsByPrefab[definition.PrefabEntity] = currentSettings;
-                continue;
+                float deliveredExperience;
+                float absoluteError;
+                estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsPerDeath(definitions,
+                                                                                                       dropItemsConfig.MaximumTotalExperienceDrop,
+                                                                                                       dropItemsConfig.Distribution,
+                                                                                                       out deliveredExperience,
+                                                                                                       out absoluteError);
+                estimatedDropsPerDeath = math.max(1, estimatedDropsPerDeath);
             }
 
-            poolSettingsByPrefab[definition.PrefabEntity] = new PoolBuildSettings
+            int initialCapacityPerPrefab = EstimateInitialCapacity(requirement.TotalPlannedCount, estimatedDropsPerDeath);
+            int expandBatchPerPrefab = EstimateExpandBatch(spawner.ExpandBatchPerPrefab, estimatedDropsPerDeath);
+
+            for (int definitionIndex = 0; definitionIndex < definitions.Length; definitionIndex++)
             {
-                InitialCapacity = initialCapacityPerPrefab,
-                ExpandBatch = expandBatchPerPrefab
-            };
+                EnemyExperienceDropDefinitionElement definition = definitions[definitionIndex];
+
+                if (definition.PrefabEntity == Entity.Null)
+                    continue;
+
+                if (definition.ExperienceAmount <= 0f)
+                    continue;
+
+                PoolBuildSettings currentSettings;
+
+                if (poolSettingsByPrefab.TryGetValue(definition.PrefabEntity, out currentSettings))
+                {
+                    currentSettings.InitialCapacity += initialCapacityPerPrefab;
+
+                    if (expandBatchPerPrefab > currentSettings.ExpandBatch)
+                        currentSettings.ExpandBatch = expandBatchPerPrefab;
+
+                    poolSettingsByPrefab[definition.PrefabEntity] = currentSettings;
+                    continue;
+                }
+
+                poolSettingsByPrefab[definition.PrefabEntity] = new PoolBuildSettings
+                {
+                    InitialCapacity = initialCapacityPerPrefab,
+                    ExpandBatch = expandBatchPerPrefab
+                };
+            }
         }
     }
 
     /// <summary>
     /// Computes the initial pool capacity for a prefab from max alive enemies and expected drop count.
     /// </summary>
-    /// <param name="maxAliveCount">Maximum alive count configured on the spawner.</param>
+    /// <param name="plannedEnemyCount">Maximum planned instances of the enemy prefab for the spawner.</param>
     /// <param name="estimatedDropsPerDeath">Estimated drop instances generated per enemy death.</param>
     /// <returns>Resolved initial pool capacity clamped to a safe runtime range.</returns>
-    private static int EstimateInitialCapacity(int maxAliveCount, int estimatedDropsPerDeath)
+    private static int EstimateInitialCapacity(int plannedEnemyCount, int estimatedDropsPerDeath)
     {
-        int sanitizedMaxAliveCount = math.max(1, maxAliveCount);
+        int sanitizedPlannedEnemyCount = math.max(1, plannedEnemyCount);
         int sanitizedEstimatedDrops = math.max(1, estimatedDropsPerDeath);
-        float baseCapacity = sanitizedMaxAliveCount * sanitizedEstimatedDrops;
+        float baseCapacity = sanitizedPlannedEnemyCount * sanitizedEstimatedDrops;
         float safetyCapacity = baseCapacity * 0.1f;
         int resolvedCapacity = (int)math.ceil(baseCapacity + safetyCapacity) + 4;
         return math.clamp(math.max(4, resolvedCapacity), 4, 262144);
@@ -232,14 +249,14 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     /// <summary>
     /// Computes the pool expansion batch size from spawn burst size and expected drop count.
     /// </summary>
-    /// <param name="spawnPerTick">Spawn burst size configured on the spawner.</param>
+    /// <param name="expandBatchPerPrefab">Enemy pool expansion batch configured on the spawner.</param>
     /// <param name="estimatedDropsPerDeath">Estimated drop instances generated per enemy death.</param>
     /// <returns>Resolved expansion batch size clamped to a safe runtime range.</returns>
-    private static int EstimateExpandBatch(int spawnPerTick, int estimatedDropsPerDeath)
+    private static int EstimateExpandBatch(int expandBatchPerPrefab, int estimatedDropsPerDeath)
     {
-        int sanitizedSpawnPerTick = math.max(1, spawnPerTick);
+        int sanitizedExpandBatch = math.max(1, expandBatchPerPrefab);
         int sanitizedEstimatedDrops = math.max(1, estimatedDropsPerDeath);
-        float baseBatch = sanitizedSpawnPerTick * sanitizedEstimatedDrops * 0.5f;
+        float baseBatch = sanitizedExpandBatch * sanitizedEstimatedDrops * 0.5f;
         int resolvedBatch = (int)math.ceil(baseBatch) + 2;
         return math.clamp(math.max(4, resolvedBatch), 4, 16384);
     }

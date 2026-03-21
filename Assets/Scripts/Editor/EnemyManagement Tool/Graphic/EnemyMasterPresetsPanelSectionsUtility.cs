@@ -100,6 +100,7 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
 
         SerializedObject presetSerializedObject = panel.PresetSerializedObject;
         SerializedProperty brainProperty = presetSerializedObject.FindProperty("brainPreset");
+        SerializedProperty visualProperty = presetSerializedObject.FindProperty("visualPreset");
         SerializedProperty advancedPatternProperty = presetSerializedObject.FindProperty("advancedPatternPreset");
 
         sectionContainer.Add(BuildSubPresetRow(panel,
@@ -109,6 +110,13 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
                                                panel.CreateBrainPreset,
                                                () => EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyBrainPresets),
                                                EnemyManagementWindow.PanelType.EnemyBrainPresets));
+        sectionContainer.Add(BuildSubPresetRow(panel,
+                                               "Visual Preset",
+                                               typeof(EnemyVisualPreset),
+                                               visualProperty,
+                                               panel.CreateVisualPreset,
+                                               () => EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyVisualPresets),
+                                               EnemyManagementWindow.PanelType.EnemyVisualPresets));
         sectionContainer.Add(BuildSubPresetRow(panel,
                                                "Advanced Pattern Preset",
                                                typeof(EnemyAdvancedPatternPreset),
@@ -208,6 +216,11 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
         Button openBrainButton = new Button(() => EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyBrainPresets));
         openBrainButton.text = "Open Brain";
         row.Add(openBrainButton);
+
+        Button openVisualButton = new Button(() => EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyVisualPresets));
+        openVisualButton.text = "Open Visual";
+        openVisualButton.style.marginLeft = 4f;
+        row.Add(openVisualButton);
 
         Button openAdvancedPatternButton = new Button(() => EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets));
         openAdvancedPatternButton.text = "Open Advanced Pattern";
@@ -387,6 +400,29 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
 
         AssignSubPreset(panel, "advancedPatternPreset", newPreset);
         EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets);
+    }
+
+    /// <summary>
+    /// Creates one new enemy visual preset, registers it in the library, assigns it and opens the related side panel.
+    /// </summary>
+    /// <param name="panel">Owning panel that provides assignment callbacks and selection sync.</param>
+
+    public static void CreateVisualPreset(EnemyMasterPresetsPanel panel)
+    {
+        EnemyVisualPreset newPreset = EnemyVisualPresetLibraryUtility.CreatePresetAsset("EnemyVisualPreset");
+
+        if (newPreset == null)
+            return;
+
+        EnemyVisualPresetLibrary visualLibrary = EnemyVisualPresetLibraryUtility.GetOrCreateLibrary();
+        Undo.RegisterCreatedObjectUndo(newPreset, "Create Enemy Visual Preset Asset");
+        Undo.RecordObject(visualLibrary, "Add Enemy Visual Preset");
+        visualLibrary.AddPreset(newPreset);
+        EditorUtility.SetDirty(visualLibrary);
+        EnemyManagementDraftSession.MarkDirty();
+
+        AssignSubPreset(panel, "visualPreset", newPreset);
+        EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyVisualPresets);
     }
 
     /// <summary>
