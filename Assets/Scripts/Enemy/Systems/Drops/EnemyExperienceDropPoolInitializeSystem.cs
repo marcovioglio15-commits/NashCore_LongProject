@@ -17,6 +17,8 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     #region Fields
     private EntityQuery registryQuery;
     private EntityQuery spawnerQuery;
+    private EntityQuery dropPoolQuery;
+    private EntityQuery dropEntityQuery;
     private byte poolSettingsApplied;
     #endregion
 
@@ -36,6 +38,12 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
         spawnerQuery = new EntityQueryBuilder(Allocator.Temp)
                            .WithAll<EnemySpawner, EnemySpawnerPrefabRequirementElement>()
                            .Build(ref state);
+        dropPoolQuery = new EntityQueryBuilder(Allocator.Temp)
+                            .WithAll<EnemyExperienceDropPoolState>()
+                            .Build(ref state);
+        dropEntityQuery = new EntityQueryBuilder(Allocator.Temp)
+                              .WithAll<EnemyExperienceDrop>()
+                              .Build(ref state);
         poolSettingsApplied = 0;
         state.RequireForUpdate(spawnerQuery);
         EnsureRegistrySingleton(ref state);
@@ -45,7 +53,7 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
             EnemyExperienceDropPoolRegistry registry = state.EntityManager.GetComponentData<EnemyExperienceDropPoolRegistry>(registryEntity);
 
             if (registry.Initialized != 0)
-                state.Enabled = false;
+                poolSettingsApplied = 1;
         }
     }
 
@@ -61,43 +69,40 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
         if (TryGetRegistryEntity(out Entity registryEntity) == false)
             return;
 
-        EnemyExperienceDropPoolRegistry registry = state.EntityManager.GetComponentData<EnemyExperienceDropPoolRegistry>(registryEntity);
+        EntityManager entityManager = state.EntityManager;
+        EnemyExperienceDropPoolRegistry registry = entityManager.GetComponentData<EnemyExperienceDropPoolRegistry>(registryEntity);
+        Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab = BuildPoolSettingsByPrefab(ref state);
+        uint sourceHash = ComputePoolSettingsHash(poolSettingsByPrefab);
+        bool registryMatchesPoolSettings = RegistryMatchesPoolSettings(entityManager,
+                                                                      registryEntity,
+                                                                      poolSettingsByPrefab);
+        bool requiresRegistryRefresh = poolSettingsApplied == 0 ||
+                                       registry.SourceHash != sourceHash ||
+                                       !registryMatchesPoolSettings;
+
+        if (requiresRegistryRefresh)
+        {
+            ResetRegistry(entityManager,
+                          registryEntity,
+                          dropPoolQuery,
+                          dropEntityQuery);
+            ApplyPoolSettings(entityManager, registryEntity, poolSettingsByPrefab);
+            poolSettingsApplied = 1;
+            registry = entityManager.GetComponentData<EnemyExperienceDropPoolRegistry>(registryEntity);
+            registry.Initialized = 0;
+            registry.SourceHash = sourceHash;
+            entityManager.SetComponentData(registryEntity, registry);
+        }
 
         if (registry.Initialized != 0)
-        {
-            state.Enabled = false;
             return;
-        }
 
-        if (poolSettingsApplied == 0)
-        {
-            int spawnerCount = spawnerQuery.CalculateEntityCountWithoutFiltering();
-            int dictionaryCapacity = math.max(4, spawnerCount * 2);
-            Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab = new Dictionary<Entity, PoolBuildSettings>(dictionaryCapacity);
-            BufferLookup<EnemySpawnerPrefabRequirementElement> requirementLookup = SystemAPI.GetBufferLookup<EnemySpawnerPrefabRequirementElement>(true);
-
-            foreach ((RefRO<EnemySpawner> spawner,
-                      Entity spawnerEntity) in SystemAPI.Query<RefRO<EnemySpawner>>().WithEntityAccess())
-            {
-                if (!requirementLookup.HasBuffer(spawnerEntity))
-                    continue;
-
-                AggregateSpawnerPoolSettings(state.EntityManager,
-                                             spawner.ValueRO,
-                                             requirementLookup[spawnerEntity],
-                                             poolSettingsByPrefab);
-            }
-
-            ApplyPoolSettings(state.EntityManager, registryEntity, poolSettingsByPrefab);
-            poolSettingsApplied = 1;
-        }
-
-        if (InitializePools(state.EntityManager, registryEntity, MaxDropPoolPrewarmEntitiesPerFrame) == false)
+        if (InitializePools(entityManager, registryEntity, MaxDropPoolPrewarmEntitiesPerFrame) == false)
             return;
 
         registry.Initialized = 1;
-        state.EntityManager.SetComponentData(registryEntity, registry);
-        state.Enabled = false;
+        registry.SourceHash = sourceHash;
+        entityManager.SetComponentData(registryEntity, registry);
     }
     #endregion
 
@@ -115,7 +120,8 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
         Entity registryEntity = state.EntityManager.CreateEntity();
         state.EntityManager.AddComponentData(registryEntity, new EnemyExperienceDropPoolRegistry
         {
-            Initialized = 0
+            Initialized = 0,
+            SourceHash = 0u
         });
         state.EntityManager.AddBuffer<EnemyExperienceDropPoolMapElement>(registryEntity);
     }
@@ -139,6 +145,36 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     #endregion
 
     #region Aggregation
+    /// <summary>
+    /// Builds the current per-prefab drop-pool settings from every active enemy spawner in the world.
+    /// </summary>
+    /// <param name="state">Current ECS system state.</param>
+    /// <returns>Current per-prefab build settings keyed by experience-drop prefab entity.</returns>
+    private Dictionary<Entity, PoolBuildSettings> BuildPoolSettingsByPrefab(ref SystemState state)
+    {
+        int spawnerCount = spawnerQuery.CalculateEntityCountWithoutFiltering();
+        int dictionaryCapacity = math.max(4, spawnerCount * 2);
+        Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab = new Dictionary<Entity, PoolBuildSettings>(dictionaryCapacity);
+        BufferLookup<EnemySpawnerPrefabRequirementElement> requirementLookup = SystemAPI.GetBufferLookup<EnemySpawnerPrefabRequirementElement>(true);
+
+        // Aggregate every authored spawner contribution into one per-prefab pool plan.
+        foreach ((RefRO<EnemySpawner> spawner,
+                  Entity spawnerEntity)
+                 in SystemAPI.Query<RefRO<EnemySpawner>>()
+                             .WithEntityAccess())
+        {
+            if (!requirementLookup.HasBuffer(spawnerEntity))
+                continue;
+
+            AggregateSpawnerPoolSettings(state.EntityManager,
+                                         spawner.ValueRO,
+                                         requirementLookup[spawnerEntity],
+                                         poolSettingsByPrefab);
+        }
+
+        return poolSettingsByPrefab;
+    }
+
     /// <summary>
     /// Aggregates pool sizing requirements from a single spawner into per-prefab build settings.
     /// </summary>
@@ -263,6 +299,122 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
     #endregion
 
     #region Pool Setup
+    /// <summary>
+    /// Returns an order-independent hash of the current pool-build settings so scene reloads can invalidate stale registries.
+    /// </summary>
+    /// <param name="poolSettingsByPrefab">Resolved pool sizing settings grouped by prefab entity.</param>
+    /// <returns>Order-independent signature of the current pool settings.</returns>
+    private static uint ComputePoolSettingsHash(Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab)
+    {
+        uint xorHash = 0u;
+        uint sumHash = 0u;
+
+        foreach (KeyValuePair<Entity, PoolBuildSettings> pair in poolSettingsByPrefab)
+        {
+            PoolBuildSettings settings = pair.Value;
+            uint entryHash = math.hash(new int4(pair.Key.Index,
+                                                pair.Key.Version,
+                                                settings.InitialCapacity,
+                                                settings.ExpandBatch));
+            xorHash ^= entryHash;
+            sumHash += entryHash * 16777619u;
+        }
+
+        return math.hash(new uint4(xorHash,
+                                   sumHash,
+                                   (uint)poolSettingsByPrefab.Count,
+                                   2246822519u));
+    }
+
+    /// <summary>
+    /// Validates that the registry still maps every current prefab requirement to a live pool entity with compatible settings.
+    /// </summary>
+    /// <param name="entityManager">Entity manager used to inspect existing pool entities.</param>
+    /// <param name="registryEntity">Registry singleton entity that stores the pool map buffer.</param>
+    /// <param name="poolSettingsByPrefab">Current pool build settings grouped by prefab entity.</param>
+    /// <returns>True when the registry fully matches the current spawner-derived settings, otherwise false.</returns>
+    private static bool RegistryMatchesPoolSettings(EntityManager entityManager,
+                                                    Entity registryEntity,
+                                                    Dictionary<Entity, PoolBuildSettings> poolSettingsByPrefab)
+    {
+        if (entityManager.HasBuffer<EnemyExperienceDropPoolMapElement>(registryEntity) == false)
+            return poolSettingsByPrefab.Count <= 0;
+
+        DynamicBuffer<EnemyExperienceDropPoolMapElement> poolMap = entityManager.GetBuffer<EnemyExperienceDropPoolMapElement>(registryEntity);
+
+        if (poolMap.Length != poolSettingsByPrefab.Count)
+            return false;
+
+        foreach (KeyValuePair<Entity, PoolBuildSettings> pair in poolSettingsByPrefab)
+        {
+            Entity poolEntity;
+
+            if (!EnemyExperienceDropPoolUtility.TryResolvePoolEntity(poolMap, pair.Key, out poolEntity))
+                return false;
+
+            if (poolEntity == Entity.Null || !entityManager.Exists(poolEntity))
+                return false;
+
+            if (entityManager.HasComponent<EnemyExperienceDropPoolState>(poolEntity) == false)
+                return false;
+
+            EnemyExperienceDropPoolState poolState = entityManager.GetComponentData<EnemyExperienceDropPoolState>(poolEntity);
+
+            if (poolState.PrefabEntity != pair.Key)
+                return false;
+
+            if (poolState.InitialCapacity < pair.Value.InitialCapacity)
+                return false;
+
+            if (poolState.ExpandBatch < pair.Value.ExpandBatch)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Clears all current experience-drop pools and active drop entities so the registry can be rebuilt safely for a new scene run.
+    /// </summary>
+    /// <param name="entityManager">Entity manager used for structural cleanup.</param>
+    /// <param name="registryEntity">Registry singleton entity that stores the pool map buffer.</param>
+    /// <param name="dropPoolQuery">Query selecting every experience-drop pool entity.</param>
+    /// <param name="dropEntityQuery">Query selecting every spawned experience-drop entity.</param>
+    /// <returns>None.</returns>
+    private static void ResetRegistry(EntityManager entityManager,
+                                      Entity registryEntity,
+                                      EntityQuery dropPoolQuery,
+                                      EntityQuery dropEntityQuery)
+    {
+        // Destroy all live or pooled drops first so no stale entities survive across scene reloads.
+        NativeArray<Entity> dropEntities = dropEntityQuery.ToEntityArray(Allocator.Temp);
+
+        if (dropEntities.Length > 0)
+            entityManager.DestroyEntity(dropEntities);
+
+        dropEntities.Dispose();
+
+        // Destroy every existing pool entity so the map can be recreated from the current spawner bake.
+        NativeArray<Entity> poolEntities = dropPoolQuery.ToEntityArray(Allocator.Temp);
+
+        if (poolEntities.Length > 0)
+            entityManager.DestroyEntity(poolEntities);
+
+        poolEntities.Dispose();
+
+        if (entityManager.HasBuffer<EnemyExperienceDropPoolMapElement>(registryEntity))
+            entityManager.GetBuffer<EnemyExperienceDropPoolMapElement>(registryEntity).Clear();
+
+        if (entityManager.HasComponent<EnemyExperienceDropPoolRegistry>(registryEntity))
+        {
+            entityManager.SetComponentData(registryEntity, new EnemyExperienceDropPoolRegistry
+            {
+                Initialized = 0,
+                SourceHash = 0u
+            });
+        }
+    }
+
     /// <summary>
     /// Applies aggregated pool settings by updating existing pools or creating new pool entities.
     /// </summary>

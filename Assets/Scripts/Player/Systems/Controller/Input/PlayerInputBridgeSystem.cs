@@ -46,6 +46,7 @@ public partial struct PlayerInputBridgeSystem : ISystem
         float swapPowerUpSlots = 0f;
         bool isInputReady = PlayerInputRuntime.IsReady;
         bool useMousePointerLook = PlayerInputRuntime.ShouldUseMousePointerLook();
+        ComponentLookup<PlayerRunOutcomeState> runOutcomeLookup = SystemAPI.GetComponentLookup<PlayerRunOutcomeState>(true);
 
         if (isInputReady)
         {
@@ -90,16 +91,22 @@ public partial struct PlayerInputBridgeSystem : ISystem
 
         // Single local input source by design: only the first matching player receives live input.
         // Additional player entities are explicitly zeroed to prevent duplicated actions.
-        foreach (RefRW<PlayerInputState> inputState in SystemAPI.Query<RefRW<PlayerInputState>>().WithAll<PlayerControllerConfig>())
+        foreach ((RefRW<PlayerInputState> inputState,
+                  Entity entity)
+                 in SystemAPI.Query<RefRW<PlayerInputState>>()
+                             .WithAll<PlayerControllerConfig>()
+                             .WithEntityAccess())
         {
+            bool isFinalized = PlayerRunOutcomeRuntimeUtility.IsFinalized(entity, in runOutcomeLookup);
+
             if (!assignedLocalInput)
             {
-                inputState.ValueRW.Move = move;
-                inputState.ValueRW.Look = look;
-                inputState.ValueRW.Shoot = shoot;
-                inputState.ValueRW.PowerUpPrimary = powerUpPrimary;
-                inputState.ValueRW.PowerUpSecondary = powerUpSecondary;
-                inputState.ValueRW.SwapPowerUpSlots = swapPowerUpSlots;
+                inputState.ValueRW.Move = isFinalized ? float2.zero : move;
+                inputState.ValueRW.Look = isFinalized ? float2.zero : look;
+                inputState.ValueRW.Shoot = isFinalized ? 0f : shoot;
+                inputState.ValueRW.PowerUpPrimary = isFinalized ? 0f : powerUpPrimary;
+                inputState.ValueRW.PowerUpSecondary = isFinalized ? 0f : powerUpSecondary;
+                inputState.ValueRW.SwapPowerUpSlots = isFinalized ? 0f : swapPowerUpSlots;
                 assignedLocalInput = true;
                 continue;
             }

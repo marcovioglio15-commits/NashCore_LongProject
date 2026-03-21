@@ -160,8 +160,6 @@ public partial struct EnemyPoolInitializeSystem : ISystem
                 spawnerEntities.Dispose();
         }
 
-        if (pendingInitializationCount <= 0)
-            state.Enabled = false;
     }
     #endregion
 

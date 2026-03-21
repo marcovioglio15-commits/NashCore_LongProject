@@ -52,5 +52,5 @@ MonoBehaviour:
   aimBackwardClip: {fileID: 0}
   aimLeftClip: {fileID: 0}
   aimRightClip: {fileID: 0}
-  shootClip: {fileID: 0}
+  shootClip: {fileID: -471824937721752958, guid: a28a3cd21ddaad140a8ed7162f543003, type: 3}
   dashClip: {fileID: 0}

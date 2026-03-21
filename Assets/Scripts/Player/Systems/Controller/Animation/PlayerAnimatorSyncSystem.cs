@@ -150,7 +150,7 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
             float2 localAim = ToLocalPlanar(desiredLookDirection, right, forward);
             float moveSpeed = math.length(movementState.Velocity);
             bool isMoving = moveSpeed > math.max(0f, parameterConfig.ValueRO.MovingSpeedThreshold);
-            bool isShooting = shootingState.PreviousShootPressed != 0;
+            bool isShooting = shootingState.VisualShootingActive != 0;
             bool isDashing = dashLookup.HasComponent(entity) && dashLookup[entity].IsDashing != 0;
 
             WriteFloatParameter(animator,

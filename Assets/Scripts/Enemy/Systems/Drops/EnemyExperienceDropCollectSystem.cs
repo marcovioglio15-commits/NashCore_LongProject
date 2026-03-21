@@ -31,7 +31,7 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
     {
         state.RequireForUpdate<EnemyExperienceDropActive>();
         playerQuery = new EntityQueryBuilder(Allocator.Temp)
-                          .WithAll<LocalTransform, PlayerMovementState, PlayerExperienceCollection, PlayerExperience, PlayerLevel, PlayerProgressionConfig>()
+                          .WithAll<LocalTransform, PlayerMovementState, PlayerExperienceCollection, PlayerExperience, PlayerLevel, PlayerProgressionConfig, PlayerRunOutcomeState>()
                           .Build(ref state);
         state.RequireForUpdate(playerQuery);
     }
@@ -45,6 +45,11 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
     {
         EntityManager entityManager = state.EntityManager;
         Entity playerEntity = playerQuery.GetSingletonEntity();
+        PlayerRunOutcomeState runOutcomeState = entityManager.GetComponentData<PlayerRunOutcomeState>(playerEntity);
+
+        if (runOutcomeState.IsFinalized != 0)
+            return;
+
         float3 playerPosition = entityManager.GetComponentData<LocalTransform>(playerEntity).Position;
         float3 planarVelocity = entityManager.GetComponentData<PlayerMovementState>(playerEntity).Velocity;
         planarVelocity.y = 0f;

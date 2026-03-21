@@ -31,12 +31,24 @@ public partial struct PlayerMilestoneTimeScaleResumeSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         float unscaledDeltaTime = math.max(0f, Time.unscaledDeltaTime);
+        ComponentLookup<PlayerRunOutcomeState> runOutcomeLookup = SystemAPI.GetComponentLookup<PlayerRunOutcomeState>(true);
 
         foreach ((RefRO<PlayerMilestonePowerUpSelectionState> selectionState,
-                  RefRW<PlayerMilestoneTimeScaleResumeState> resumeState)
+                  RefRW<PlayerMilestoneTimeScaleResumeState> resumeState,
+                  Entity entity)
                  in SystemAPI.Query<RefRO<PlayerMilestonePowerUpSelectionState>,
-                                    RefRW<PlayerMilestoneTimeScaleResumeState>>())
+                                    RefRW<PlayerMilestoneTimeScaleResumeState>>()
+                             .WithEntityAccess())
         {
+            if (PlayerRunOutcomeRuntimeUtility.IsFinalized(entity, in runOutcomeLookup))
+            {
+                if (resumeState.ValueRO.IsResuming != 0)
+                    resumeState.ValueRW = PlayerMilestoneSelectionOutcomeUtility.CreateInactiveResumeState();
+
+                Time.timeScale = 0f;
+                continue;
+            }
+
             // Any new milestone pause interrupts a previous resume immediately.
             if (selectionState.ValueRO.IsSelectionActive != 0)
             {

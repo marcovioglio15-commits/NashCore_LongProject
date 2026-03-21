@@ -59,6 +59,7 @@ public struct EnemyExperienceDropActive : IComponentData, IEnableableComponent
 public struct EnemyExperienceDropPoolRegistry : IComponentData
 {
     public byte Initialized;
+    public uint SourceHash;
 }
 
 /// <summary>

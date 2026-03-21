@@ -55,6 +55,10 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
                                              in PlayerLookState lookState,
                                              in PlayerControllerConfig controllerConfig,
                                              in PlayerPassiveToolsState passiveToolsState,
+                                             in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
+                                             in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
+                                             in ComponentLookup<LocalTransform> transformLookup,
+                                             in ComponentLookup<LocalToWorld> localToWorldLookup,
                                              ref float slotEnergy,
                                              ref float cooldownRemaining,
                                              ref float charge,
@@ -163,6 +167,11 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
                                                                           in lookState,
                                                                           in controllerConfig,
                                                                           in passiveToolsState,
+                                                                          playerEntity,
+                                                                          in animatedMuzzleLookup,
+                                                                          in muzzleLookup,
+                                                                          in transformLookup,
+                                                                          in localToWorldLookup,
                                                                           shootRequests);
 
                 cooldownRemaining = math.max(0f, slotConfig.CooldownSeconds);

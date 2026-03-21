@@ -58,11 +58,13 @@ public partial struct PlayerLookDirectionSystem : ISystem
         foreach ((RefRO<PlayerInputState> inputState,
                   RefRO<PlayerMovementState> movementState,
                   RefRW<PlayerLookState> lookState,
+                  RefRO<PlayerRunOutcomeState> runOutcomeState,
                   RefRO<PlayerControllerConfig> controllerConfig,
                   RefRO<LocalTransform> localTransform)
                  in SystemAPI.Query<RefRO<PlayerInputState>,
                                     RefRO<PlayerMovementState>,
                                     RefRW<PlayerLookState>,
+                                    RefRO<PlayerRunOutcomeState>,
                                     RefRO<PlayerControllerConfig>,
                                     RefRO<LocalTransform>>())
         {
@@ -70,6 +72,12 @@ public partial struct PlayerLookDirectionSystem : ISystem
             ref LookConfig lookConfig = ref controllerConfig.ValueRO.Config.Value.Look;
             float3 playerForward = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
             float3 fallbackDirection = lookState.ValueRO.CurrentDirection;
+
+            if (runOutcomeState.ValueRO.IsFinalized != 0)
+            {
+                lookState.ValueRW.DesiredDirection = PlayerControllerMath.NormalizePlanar(fallbackDirection, playerForward);
+                continue;
+            }
 
             if (math.lengthsq(fallbackDirection) < 1e-6f)
                 fallbackDirection = playerForward;

@@ -80,10 +80,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             !hasMissingLevel &&
             !hasMissingExperienceCollection &&
             !hasMissingScalableStatsBuffer)
-        {
-            state.Enabled = false;
             return;
-        }
 
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
@@ -115,13 +112,6 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
         bool hasRemainingMissingExperienceCollection = !missingExperienceCollectionQuery.IsEmptyIgnoreFilter;
         bool hasRemainingMissingScalableStatsBuffer = !missingScalableStatsBufferQuery.IsEmptyIgnoreFilter;
 
-        if (!hasRemainingMissingHealth &&
-            !hasRemainingMissingShield &&
-            !hasRemainingMissingExperience &&
-            !hasRemainingMissingLevel &&
-            !hasRemainingMissingExperienceCollection &&
-            !hasRemainingMissingScalableStatsBuffer)
-            state.Enabled = false;
     }
     #endregion
 

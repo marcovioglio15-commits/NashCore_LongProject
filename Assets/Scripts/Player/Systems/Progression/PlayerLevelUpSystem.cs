@@ -51,6 +51,7 @@ public partial struct PlayerLevelUpSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
+        ComponentLookup<PlayerRunOutcomeState> runOutcomeStateLookup = SystemAPI.GetComponentLookup<PlayerRunOutcomeState>(true);
         ComponentLookup<PlayerMilestonePowerUpSelectionState> milestoneSelectionStateLookup = SystemAPI.GetComponentLookup<PlayerMilestonePowerUpSelectionState>(false);
         BufferLookup<PlayerMilestonePowerUpSelectionOfferElement> milestoneSelectionOffersLookup = SystemAPI.GetBufferLookup<PlayerMilestonePowerUpSelectionOfferElement>(false);
         BufferLookup<PlayerPowerUpUnlockCatalogElement> unlockCatalogLookup = SystemAPI.GetBufferLookup<PlayerPowerUpUnlockCatalogElement>(false);
@@ -72,6 +73,9 @@ public partial struct PlayerLevelUpSystem : ISystem
                                     RefRO<PlayerProgressionConfig>,
                                     DynamicBuffer<PlayerScalableStatElement>>().WithEntityAccess())
         {
+            if (PlayerRunOutcomeRuntimeUtility.IsFinalized(entity, in runOutcomeStateLookup))
+                continue;
+
             bool hasMilestoneSelectionData = PlayerMilestonePowerUpRollUtility.HasMilestoneSelectionData(entity,
                                                                                                            in milestoneSelectionStateLookup,
                                                                                                            in milestoneSelectionOffersLookup,

@@ -1,6 +1,6 @@
 using Unity.Collections;
 using Unity.Entities;
-
+using Unity.Mathematics;
 
 /// <summary>
 /// This system initializes player controller entities by adding necessary state 
@@ -21,6 +21,8 @@ public partial struct PlayerControllerInitializeSystem : ISystem
     private EntityQuery missingLookStateQuery; // Query to find entities with PlayerControllerConfig but missing PlayerLookState
     private EntityQuery missingMovementModifiersQuery; // Query to find entities with PlayerControllerConfig but missing PlayerMovementModifiers
     private EntityQuery missingShootingStateQuery; // Query to find entities with PlayerControllerConfig but missing PlayerShootingState
+    private EntityQuery missingAnimatedMuzzleWorldPoseQuery; // Query to find entities with PlayerControllerConfig but missing PlayerAnimatedMuzzleWorldPose
+    private EntityQuery missingRunOutcomeStateQuery; // Query to find entities with PlayerControllerConfig but missing PlayerRunOutcomeState
     private EntityQuery missingProjectilePoolStateQuery; // Query to find entities with PlayerControllerConfig and ShooterProjectilePrefab but missing ProjectilePoolState
     private EntityQuery missingShootRequestBufferQuery; // Query to find entities with PlayerControllerConfig and ShooterProjectilePrefab but missing ShootRequest buffer
     private EntityQuery missingProjectilePoolBufferQuery; // Query to find entities with PlayerControllerConfig and ShooterProjectilePrefab but missing ProjectilePoolElement buffer
@@ -62,6 +64,16 @@ public partial struct PlayerControllerInitializeSystem : ISystem
             .WithNone<PlayerShootingState>()
             .Build();
 
+        missingAnimatedMuzzleWorldPoseQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerControllerConfig>()
+            .WithNone<PlayerAnimatedMuzzleWorldPose>()
+            .Build();
+
+        missingRunOutcomeStateQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerControllerConfig>()
+            .WithNone<PlayerRunOutcomeState>()
+            .Build();
+
         missingProjectilePoolStateQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerControllerConfig, ShooterProjectilePrefab>()
             .WithNone<ProjectilePoolState>()
@@ -91,6 +103,8 @@ public partial struct PlayerControllerInitializeSystem : ISystem
         bool hasMissingLook = missingLookStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingModifiers = missingMovementModifiersQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingShootingState = missingShootingStateQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingAnimatedMuzzleWorldPose = missingAnimatedMuzzleWorldPoseQuery.IsEmptyIgnoreFilter == false;
+        bool hasMissingRunOutcomeState = missingRunOutcomeStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingProjectilePoolState = missingProjectilePoolStateQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingShootRequestBuffer = missingShootRequestBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasMissingProjectilePoolBuffer = missingProjectilePoolBufferQuery.IsEmptyIgnoreFilter == false;
@@ -101,13 +115,12 @@ public partial struct PlayerControllerInitializeSystem : ISystem
             hasMissingLook == false &&
             hasMissingModifiers == false &&
             hasMissingShootingState == false &&
+            hasMissingAnimatedMuzzleWorldPose == false &&
+            hasMissingRunOutcomeState == false &&
             hasMissingProjectilePoolState == false &&
             hasMissingShootRequestBuffer == false &&
             hasMissingProjectilePoolBuffer == false)
-        {
-            state.Enabled = false;
             return;
-        }
 
         // Create an EntityCommandBuffer to batch add components and buffers to entities
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
@@ -192,6 +205,41 @@ public partial struct PlayerControllerInitializeSystem : ISystem
             entities.Dispose();
         }
 
+        if (hasMissingAnimatedMuzzleWorldPose)
+        {
+            NativeArray<Entity> entities = missingAnimatedMuzzleWorldPoseQuery.ToEntityArray(Allocator.Temp);
+
+            for (int index = 0; index < entities.Length; index++)
+            {
+                Entity entity = entities[index];
+                commandBuffer.AddComponent(entity, new PlayerAnimatedMuzzleWorldPose
+                {
+                    Position = float3.zero,
+                    Rotation = quaternion.identity,
+                    IsValid = 0
+                });
+            }
+
+            entities.Dispose();
+        }
+
+        if (hasMissingRunOutcomeState)
+        {
+            NativeArray<Entity> entities = missingRunOutcomeStateQuery.ToEntityArray(Allocator.Temp);
+
+            for (int index = 0; index < entities.Length; index++)
+            {
+                Entity entity = entities[index];
+                commandBuffer.AddComponent(entity, new PlayerRunOutcomeState
+                {
+                    Outcome = PlayerRunOutcome.None,
+                    IsFinalized = 0
+                });
+            }
+
+            entities.Dispose();
+        }
+
         // Repeat the process for ShootRequest buffer
         if (hasMissingShootRequestBuffer)
         {
@@ -253,15 +301,6 @@ public partial struct PlayerControllerInitializeSystem : ISystem
         bool hasRemainingMissingShootRequestBuffer = missingShootRequestBufferQuery.IsEmptyIgnoreFilter == false;
         bool hasRemainingMissingProjectilePoolBuffer = missingProjectilePoolBufferQuery.IsEmptyIgnoreFilter == false;
 
-        if (hasRemainingMissingInput == false &&
-            hasRemainingMissingMovement == false &&
-            hasRemainingMissingLook == false &&
-            hasRemainingMissingModifiers == false &&
-            hasRemainingMissingShootingState == false &&
-            hasRemainingMissingProjectilePoolState == false &&
-            hasRemainingMissingShootRequestBuffer == false &&
-            hasRemainingMissingProjectilePoolBuffer == false)
-            state.Enabled = false;
     }
 
     #endregion

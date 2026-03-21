@@ -33,6 +33,10 @@ public static class PlayerPowerUpActivationExecutionUtility
                                    in PlayerMovementState movementState,
                                    in PlayerControllerConfig controllerConfig,
                                    in PlayerPassiveToolsState passiveToolsState,
+                                   in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
+                                   in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
+                                   in ComponentLookup<LocalTransform> transformLookup,
+                                   in ComponentLookup<LocalToWorld> localToWorldLookup,
                                    float2 moveInput,
                                    float3 lastValidMovementDirection,
                                    Entity playerEntity,
@@ -64,6 +68,11 @@ public static class PlayerPowerUpActivationExecutionUtility
                                in lookState,
                                in controllerConfig,
                                in passiveToolsState,
+                               playerEntity,
+                               in animatedMuzzleLookup,
+                               in muzzleLookup,
+                               in transformLookup,
+                               in localToWorldLookup,
                                shootRequests);
                 return;
             case ActiveToolKind.PortableHealthPack:
@@ -78,6 +87,11 @@ public static class PlayerPowerUpActivationExecutionUtility
                                          in PlayerLookState lookState,
                                          in PlayerControllerConfig controllerConfig,
                                          in PlayerPassiveToolsState passiveToolsState,
+                                         Entity playerEntity,
+                                         in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
+                                         in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
+                                         in ComponentLookup<LocalTransform> transformLookup,
+                                         in ComponentLookup<LocalToWorld> localToWorldLookup,
                                          DynamicBuffer<ShootRequest> shootRequests)
     {
         bool hasPassiveShotgunPayload = passiveToolsState.HasShotgun != 0;
@@ -93,7 +107,13 @@ public static class PlayerPowerUpActivationExecutionUtility
         }
 
         float3 shootDirection = ResolveShootDirection(in lookState, in localTransform);
-        float3 spawnPosition = ResolveShootSpawnPosition(in localTransform, in controllerConfig);
+        float3 spawnPosition = ResolveShootSpawnPosition(playerEntity,
+                                                         in localTransform,
+                                                         in controllerConfig,
+                                                         in animatedMuzzleLookup,
+                                                         in muzzleLookup,
+                                                         in transformLookup,
+                                                         in localToWorldLookup);
         ProjectileRequestTemplate template = BuildProjectileTemplate(in controllerConfig,
                                                                      in passiveToolsState,
                                                                      slotConfig.ChargeShot.SizeMultiplier,
@@ -224,12 +244,23 @@ public static class PlayerPowerUpActivationExecutionUtility
                                        in PlayerLookState lookState,
                                        in PlayerControllerConfig controllerConfig,
                                        in PlayerPassiveToolsState passiveToolsState,
+                                       Entity playerEntity,
+                                       in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
+                                       in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
+                                       in ComponentLookup<LocalTransform> transformLookup,
+                                       in ComponentLookup<LocalToWorld> localToWorldLookup,
                                        DynamicBuffer<ShootRequest> shootRequests)
     {
         int projectileCount = math.max(1, slotConfig.Shotgun.ProjectileCount);
         float coneAngleDegrees = math.max(0f, slotConfig.Shotgun.ConeAngleDegrees);
         float3 shootDirection = ResolveShootDirection(in lookState, in localTransform);
-        float3 spawnPosition = ResolveShootSpawnPosition(in localTransform, in controllerConfig);
+        float3 spawnPosition = ResolveShootSpawnPosition(playerEntity,
+                                                         in localTransform,
+                                                         in controllerConfig,
+                                                         in animatedMuzzleLookup,
+                                                         in muzzleLookup,
+                                                         in transformLookup,
+                                                         in localToWorldLookup);
         ProjectileRequestTemplate template = BuildProjectileTemplate(in controllerConfig,
                                                                      in passiveToolsState,
                                                                      slotConfig.Shotgun.SizeMultiplier,
@@ -305,11 +336,22 @@ public static class PlayerPowerUpActivationExecutionUtility
         return math.normalizesafe(fallbackDirection, new float3(0f, 0f, 1f));
     }
 
-    private static float3 ResolveShootSpawnPosition(in LocalTransform localTransform, in PlayerControllerConfig controllerConfig)
+    private static float3 ResolveShootSpawnPosition(Entity playerEntity,
+                                                    in LocalTransform localTransform,
+                                                    in PlayerControllerConfig controllerConfig,
+                                                    in ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup,
+                                                    in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
+                                                    in ComponentLookup<LocalTransform> transformLookup,
+                                                    in ComponentLookup<LocalToWorld> localToWorldLookup)
     {
         float3 shootOffset = controllerConfig.Config.Value.Shooting.ShootOffset;
-        float3 worldOffset = math.rotate(localTransform.Rotation, shootOffset);
-        return localTransform.Position + worldOffset;
+        return PlayerShootOriginUtility.ResolveSpawnPosition(playerEntity,
+                                                             in localTransform,
+                                                             in shootOffset,
+                                                             in animatedMuzzleLookup,
+                                                             in muzzleLookup,
+                                                             in transformLookup,
+                                                             in localToWorldLookup);
     }
 
     private static ProjectileRequestTemplate BuildProjectileTemplate(in PlayerControllerConfig controllerConfig,

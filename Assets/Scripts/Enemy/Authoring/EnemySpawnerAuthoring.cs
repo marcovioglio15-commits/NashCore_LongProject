@@ -328,7 +328,10 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     [SerializeField] private float despawnDistance = 85f;
 
     [Header("Waves")]
-    [Tooltip("Finite sequence of authored waves emitted by this spawner.")]
+    [Tooltip("Wave preset asset that contains the finite sequence of authored waves emitted by this spawner.")]
+    [SerializeField] private EnemyWavePreset wavePreset;
+
+    [HideInInspector]
     [SerializeField] private List<EnemySpawnWaveAuthoring> waves = new List<EnemySpawnWaveAuthoring>();
 
     [Header("Debug")]
@@ -409,10 +412,21 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
         }
     }
 
+    public EnemyWavePreset WavePreset
+    {
+        get
+        {
+            return wavePreset;
+        }
+    }
+
     public List<EnemySpawnWaveAuthoring> Waves
     {
         get
         {
+            if (wavePreset != null)
+                return wavePreset.Waves;
+
             return waves;
         }
     }
@@ -469,6 +483,12 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
         if (despawnDistance < 0f)
             despawnDistance = 0f;
 
+        if (wavePreset != null)
+        {
+            wavePreset.ValidateAgainstGrid(gridSizeX, gridSizeZ);
+            return;
+        }
+
         if (waves == null)
             waves = new List<EnemySpawnWaveAuthoring>();
 
@@ -522,11 +542,13 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     /// </summary>
     public bool TryGetPreviewWaveIndex(out int waveIndex)
     {
-        if (waves != null)
+        List<EnemySpawnWaveAuthoring> resolvedWaves = Waves;
+
+        if (resolvedWaves != null)
         {
-            for (int index = 0; index < waves.Count; index++)
+            for (int index = 0; index < resolvedWaves.Count; index++)
             {
-                EnemySpawnWaveAuthoring wave = waves[index];
+                EnemySpawnWaveAuthoring wave = resolvedWaves[index];
 
                 if (wave == null)
                     continue;
@@ -576,15 +598,19 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     /// </summary>
     private void DrawPreviewWaveGizmos()
     {
+        List<EnemySpawnWaveAuthoring> resolvedWaves = Waves;
         int previewWaveIndex;
 
         if (!TryGetPreviewWaveIndex(out previewWaveIndex))
             return;
 
-        if (previewWaveIndex < 0 || previewWaveIndex >= waves.Count)
+        if (resolvedWaves == null)
             return;
 
-        EnemySpawnWaveAuthoring previewWave = waves[previewWaveIndex];
+        if (previewWaveIndex < 0 || previewWaveIndex >= resolvedWaves.Count)
+            return;
+
+        EnemySpawnWaveAuthoring previewWave = resolvedWaves[previewWaveIndex];
 
         if (previewWave == null || previewWave.PaintedCells == null)
             return;
@@ -670,15 +696,19 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     /// </summary>
     private void DrawPreviewCellCountLabels()
     {
+        List<EnemySpawnWaveAuthoring> resolvedWaves = Waves;
         int previewWaveIndex;
 
         if (!TryGetPreviewWaveIndex(out previewWaveIndex))
             return;
 
-        if (previewWaveIndex < 0 || previewWaveIndex >= waves.Count)
+        if (resolvedWaves == null)
             return;
 
-        EnemySpawnWaveAuthoring previewWave = waves[previewWaveIndex];
+        if (previewWaveIndex < 0 || previewWaveIndex >= resolvedWaves.Count)
+            return;
+
+        EnemySpawnWaveAuthoring previewWave = resolvedWaves[previewWaveIndex];
 
         if (previewWave == null || previewWave.PaintedCells == null)
             return;

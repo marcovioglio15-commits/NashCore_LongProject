@@ -48,6 +48,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
     {
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
         state.EntityManager.CompleteDependencyBeforeRO<LocalToWorld>();
+        ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup = SystemAPI.GetComponentLookup<PlayerAnimatedMuzzleWorldPose>(true);
         ComponentLookup<ShooterMuzzleAnchor> muzzleLookup = SystemAPI.GetComponentLookup<ShooterMuzzleAnchor>(true);
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
@@ -95,6 +96,9 @@ public partial struct PlayerShootingIntentSystem : ISystem
 
             if (isShootingSuppressed)
             {
+                shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
+                shootingState.ValueRW.VisualShootingActive = 0;
+
                 if (values.RateOfFire > 0f)
                     shootingState.ValueRW.NextShotTime = elapsedTime;
 
@@ -105,6 +109,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
             if (values.RateOfFire <= 0f || projectileSpeed <= 0f)
             {
                 shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
+                shootingState.ValueRW.VisualShootingActive = 0;
                 continue;
             }
 
@@ -118,14 +123,17 @@ public partial struct PlayerShootingIntentSystem : ISystem
             // based on the shooting trigger mode, determine if the player should shoot this frame
             bool shouldShoot = ResolveShootingTrigger(ref shootingState.ValueRW, shootingConfig.TriggerMode, shootPressedThisFrame, shootReleasedThisFrame);
             bool automaticIsEnabled = shootingState.ValueRO.AutomaticEnabled != 0;
+            bool visualShootingActive = isShootPressed;
 
             if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle || shootingConfig.TriggerMode == ShootingTriggerMode.ManualContinousShot)
             {
+                visualShootingActive = visualShootingActive || automaticIsEnabled;
                 bool automaticEnabledThisFrame = automaticWasEnabled == false && automaticIsEnabled;
                 bool automaticDisabledThisFrame = automaticWasEnabled && automaticIsEnabled == false;
 
                 if (automaticDisabledThisFrame)
                 {
+                    shootingState.ValueRW.VisualShootingActive = 0;
                     shootingState.ValueRW.NextShotTime = elapsedTime + shotInterval;
                     continue;
                 }
@@ -133,6 +141,8 @@ public partial struct PlayerShootingIntentSystem : ISystem
                 if (automaticEnabledThisFrame)
                     shootingState.ValueRW.NextShotTime = elapsedTime;
             }
+
+            shootingState.ValueRW.VisualShootingActive = visualShootingActive ? (byte)1 : (byte)0;
 
             if (shouldShoot == false)
                 continue;
@@ -148,7 +158,13 @@ public partial struct PlayerShootingIntentSystem : ISystem
             // falling back to their forward direction if the look direction is zero
             float3 forwardFallback = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
             float3 shootDirection = PlayerControllerMath.NormalizePlanar(lookState.ValueRO.DesiredDirection, forwardFallback);
-            float3 spawnPosition = ResolveSpawnPosition(entity, localTransform.ValueRO, shootingConfig.ShootOffset, muzzleLookup, transformLookup, localToWorldLookup);
+            float3 spawnPosition = PlayerShootOriginUtility.ResolveSpawnPosition(entity,
+                                                                                in localTransform.ValueRO,
+                                                                                in shootingConfig.ShootOffset,
+                                                                                in animatedMuzzleLookup,
+                                                                                in muzzleLookup,
+                                                                                in transformLookup,
+                                                                                in localToWorldLookup);
 
             // enqueue the appropriate number of shoot requests with the resolved spawn position,
             // shoot direction, and shooting parameters from the config
@@ -280,54 +296,6 @@ public partial struct PlayerShootingIntentSystem : ISystem
 
         shootingState.NextShotTime = nextShotTime;
         return shotsToFire;
-    }
-
-    /// <summary>
-    /// This method resolves the spawn position for projectiles based on the shooter's position and rotation,
-    /// and an optional shoot offset defined in the shooting config. If the shooter has a muzzle anchor component,
-    /// and the referenced muzzle entity has a LocalToWorld or LocalTransform component, 
-    /// those will be used as the reference for calculating the spawn position and rotation instead of the shooter's transform. 
-    /// This allows projectiles to spawn from the muzzle position and orientation, 
-    /// which can be different from the shooter's main transform, 
-    /// enabling more accurate and visually consistent shooting behavior.
-    /// </summary>
-    /// <param name="shooterEntity"></param>
-    /// <param name="shooterTransform"></param>
-    /// <param name="shootOffset"></param>
-    /// <param name="muzzleLookup"></param>
-    /// <param name="transformLookup"></param>
-    /// <param name="localToWorldLookup"></param>
-    /// <returns></returns>
-    private static float3 ResolveSpawnPosition(Entity shooterEntity,
-                                               in LocalTransform shooterTransform,
-                                               in float3 shootOffset,
-                                               in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
-                                               in ComponentLookup<LocalTransform> transformLookup,
-                                               in ComponentLookup<LocalToWorld> localToWorldLookup)
-    {
-        float3 referencePosition = shooterTransform.Position;
-        quaternion referenceRotation = shooterTransform.Rotation;
-
-        if (muzzleLookup.HasComponent(shooterEntity))
-        {
-            Entity muzzleEntity = muzzleLookup[shooterEntity].AnchorEntity;
-
-            if (localToWorldLookup.HasComponent(muzzleEntity))
-            {
-                LocalToWorld localToWorld = localToWorldLookup[muzzleEntity];
-                referencePosition = localToWorld.Value.c3.xyz;
-                referenceRotation = quaternion.LookRotationSafe(localToWorld.Value.c2.xyz, localToWorld.Value.c1.xyz);
-            }
-            else if (transformLookup.HasComponent(muzzleEntity))
-            {
-                LocalTransform muzzleTransform = transformLookup[muzzleEntity];
-                referencePosition = muzzleTransform.Position;
-                referenceRotation = muzzleTransform.Rotation;
-            }
-        }
-
-        float3 rotatedOffset = math.rotate(referenceRotation, shootOffset);
-        return referencePosition + rotatedOffset;
     }
 
     private static PlayerPassiveToolsState ResolvePassiveToolsState(Entity shooterEntity,

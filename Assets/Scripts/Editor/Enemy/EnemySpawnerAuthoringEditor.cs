@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,10 +25,13 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
     private SerializedProperty initialPoolCapacityPerPrefabProperty;
     private SerializedProperty expandBatchPerPrefabProperty;
     private SerializedProperty despawnDistanceProperty;
+    private SerializedProperty wavePresetProperty;
     private SerializedProperty wavesProperty;
     private SerializedProperty drawGridGizmosProperty;
     private SerializedProperty drawCellCoordinatesProperty;
     private SerializedProperty drawCellCountsProperty;
+    private SerializedObject wavePresetSerializedObject;
+    private EnemyWavePreset cachedWavePreset;
 
     private EnemyMasterPreset brushMasterPreset;
     private int brushEnemyCount = 1;
@@ -61,12 +65,13 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         initialPoolCapacityPerPrefabProperty = serializedObject.FindProperty("initialPoolCapacityPerPrefab");
         expandBatchPerPrefabProperty = serializedObject.FindProperty("expandBatchPerPrefab");
         despawnDistanceProperty = serializedObject.FindProperty("despawnDistance");
-        wavesProperty = serializedObject.FindProperty("waves");
+        wavePresetProperty = serializedObject.FindProperty("wavePreset");
         drawGridGizmosProperty = serializedObject.FindProperty("drawGridGizmos");
         drawCellCoordinatesProperty = serializedObject.FindProperty("drawCellCoordinates");
         drawCellCountsProperty = serializedObject.FindProperty("drawCellCounts");
         gridCoordinateLabelStyle = CreateGridLabelStyle(TextAnchor.UpperCenter, 9, FontStyle.Bold, new Color(0.95f, 0.97f, 1f, 0.98f));
         gridCountLabelStyle = CreateGridLabelStyle(TextAnchor.LowerCenter, 10, FontStyle.Bold, Color.white);
+        RefreshWavePresetBinding();
 
         if (brushDistributionCurve == null)
             brushDistributionCurve = EnemySpawnerWaveBakeUtility.CreateDefaultDistributionCurve();
@@ -83,14 +88,24 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         EditorGUILayout.Space(6f);
         DrawPoolSection();
         EditorGUILayout.Space(6f);
+        DrawWavePresetSection();
+        EditorGUILayout.Space(6f);
         DrawPainterSection();
         EditorGUILayout.Space(6f);
+        DrawDebugSection();
+        EditorGUILayout.Space(6f);
+        serializedObject.ApplyModifiedProperties();
+        RefreshWavePresetBinding();
+
+        if (wavePresetSerializedObject != null)
+            wavePresetSerializedObject.Update();
+
         DrawWavesSection();
         EditorGUILayout.Space(6f);
         DrawSelectedCellSection();
-        EditorGUILayout.Space(6f);
-        DrawDebugSection();
-        serializedObject.ApplyModifiedProperties();
+
+        if (wavePresetSerializedObject != null)
+            wavePresetSerializedObject.ApplyModifiedProperties();
 
         if (GUI.changed)
             Repaint();
@@ -156,6 +171,38 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
     }
 
     /// <summary>
+    /// Draws the wave-preset reference field and helper actions used to create or inspect the assigned preset asset.
+    /// /returns None.
+    /// </summary>
+    private void DrawWavePresetSection()
+    {
+        EditorGUILayout.LabelField("Wave Preset", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(wavePresetProperty);
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button(new GUIContent("Create Preset",
+                                            "Create a new EnemyWavePreset asset and assign it to this spawner.")))
+        {
+            CreateAndAssignWavePreset();
+            GUIUtility.ExitGUI();
+        }
+
+        using (new EditorGUI.DisabledScope(wavePresetProperty.objectReferenceValue == null))
+        {
+            if (GUILayout.Button(new GUIContent("Ping Preset",
+                                                "Ping the currently assigned EnemyWavePreset asset in the Project window.")))
+            {
+                EditorGUIUtility.PingObject(wavePresetProperty.objectReferenceValue);
+            }
+        }
+
+        EditorGUILayout.EndHorizontal();
+
+        if (wavePresetProperty.objectReferenceValue == null)
+            EditorGUILayout.HelpBox("Assign or create an EnemyWavePreset before editing waves. The wave painter below operates directly on that preset asset.", MessageType.Info);
+    }
+
+    /// <summary>
     /// Draws the current paint brush controls.
     /// /returns None.
     /// </summary>
@@ -198,7 +245,10 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         EditorGUILayout.LabelField("Waves", EditorStyles.boldLabel);
 
         if (wavesProperty == null)
+        {
+            EditorGUILayout.HelpBox("No EnemyWavePreset is assigned. Create or assign one to edit waves.", MessageType.Info);
             return;
+        }
         
         DrawGridZoomSection();
 
@@ -221,6 +271,12 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
     private void DrawSelectedCellSection()
     {
         EditorGUILayout.LabelField("Selected Cell", EditorStyles.boldLabel);
+
+        if (wavesProperty == null)
+        {
+            EditorGUILayout.HelpBox("No EnemyWavePreset is assigned.", MessageType.Info);
+            return;
+        }
 
         if (selectedWaveIndex < 0)
         {
@@ -289,8 +345,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         if (GUILayout.Button(new GUIContent("Remove Cell",
                                             "Delete the currently selected painted cell from the wave.")))
         {
-            EnemySpawnerAuthoringEditorWaveUtility.RemoveCell(serializedObject,
-                                                              target,
+            EnemySpawnerAuthoringEditorWaveUtility.RemoveCell(wavePresetSerializedObject,
+                                                              cachedWavePreset,
                                                               wavesProperty,
                                                               selectedWaveIndex,
                                                               selectedCellCoordinate,
@@ -325,8 +381,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         if (GUILayout.Button(new GUIContent("Add Wave",
                                             "Append a new empty wave at the end of the array.")))
         {
-            EnemySpawnerAuthoringEditorWaveUtility.AddWave(serializedObject,
-                                                           target,
+            EnemySpawnerAuthoringEditorWaveUtility.AddWave(wavePresetSerializedObject,
+                                                           cachedWavePreset,
                                                            wavesProperty,
                                                            waveFoldoutState);
             GUIUtility.ExitGUI();
@@ -416,11 +472,14 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
     private void DrawWaveSummary(int waveIndex)
     {
         EnemySpawnerAuthoring authoring = target as EnemySpawnerAuthoring;
+        List<EnemySpawnWaveAuthoring> authoredWaves = authoring != null
+            ? authoring.Waves
+            : null;
 
-        if (authoring == null || waveIndex < 0 || waveIndex >= authoring.Waves.Count)
+        if (authoredWaves == null || waveIndex < 0 || waveIndex >= authoredWaves.Count)
             return;
 
-        EnemySpawnWaveAuthoring wave = authoring.Waves[waveIndex];
+        EnemySpawnWaveAuthoring wave = authoredWaves[waveIndex];
         int totalEnemies = EnemySpawnerWaveBakeUtility.CountWaveEnemies(wave);
         int totalCells = wave != null && wave.PaintedCells != null ? wave.PaintedCells.Count : 0;
         int totalTypes = EnemySpawnerWaveBakeUtility.CountWaveEnemyTypes(wave);
@@ -440,8 +499,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         if (GUILayout.Button(new GUIContent("Preview",
                                             "Enable scene preview for this wave and disable it on all others.")))
         {
-            EnemySpawnerAuthoringEditorWaveUtility.SetWavePreview(serializedObject,
-                                                                  target,
+            EnemySpawnerAuthoringEditorWaveUtility.SetWavePreview(wavePresetSerializedObject,
+                                                                  cachedWavePreset,
                                                                   wavesProperty,
                                                                   waveIndex);
             GUIUtility.ExitGUI();
@@ -450,8 +509,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         if (GUILayout.Button(new GUIContent("Clear Cells",
                                             "Remove all painted cells from this wave.")))
         {
-            EnemySpawnerAuthoringEditorWaveUtility.ClearWaveCells(serializedObject,
-                                                                  target,
+            EnemySpawnerAuthoringEditorWaveUtility.ClearWaveCells(wavePresetSerializedObject,
+                                                                  cachedWavePreset,
                                                                   wavesProperty,
                                                                   waveIndex,
                                                                   ref selectedWaveIndex,
@@ -462,8 +521,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         if (GUILayout.Button(new GUIContent("Delete Wave",
                                             "Delete this wave from the spawner.")))
         {
-            EnemySpawnerAuthoringEditorWaveUtility.DeleteWave(serializedObject,
-                                                              target,
+            EnemySpawnerAuthoringEditorWaveUtility.DeleteWave(wavePresetSerializedObject,
+                                                              cachedWavePreset,
                                                               wavesProperty,
                                                               waveIndex,
                                                               ref selectedWaveIndex,
@@ -563,8 +622,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
         if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
         {
-            bool didChange = EnemySpawnerAuthoringEditorWaveUtility.PaintCell(serializedObject,
-                                                                              target,
+            bool didChange = EnemySpawnerAuthoringEditorWaveUtility.PaintCell(wavePresetSerializedObject,
+                                                                              cachedWavePreset,
                                                                               wavesProperty,
                                                                               waveIndex,
                                                                               coordinate,
@@ -590,8 +649,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
         if (currentEvent.type == EventType.MouseDrag && paintDragActive && paintDragWaveIndex == waveIndex && coordinate != lastPaintedCoordinate)
         {
-            bool didChange = EnemySpawnerAuthoringEditorWaveUtility.PaintCell(serializedObject,
-                                                                              target,
+            bool didChange = EnemySpawnerAuthoringEditorWaveUtility.PaintCell(wavePresetSerializedObject,
+                                                                              cachedWavePreset,
                                                                               wavesProperty,
                                                                               waveIndex,
                                                                               coordinate,
@@ -660,10 +719,67 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
     /// </summary>
     private void EnforceSinglePreviewWave(int previewWaveIndex)
     {
-        EnemySpawnerAuthoringEditorWaveUtility.SetWavePreview(serializedObject,
-                                                              target,
+        EnemySpawnerAuthoringEditorWaveUtility.SetWavePreview(wavePresetSerializedObject,
+                                                              cachedWavePreset,
                                                               wavesProperty,
                                                               previewWaveIndex);
+    }
+
+    /// <summary>
+    /// Refreshes the cached SerializedObject used to edit the currently assigned EnemyWavePreset asset.
+    /// /returns None.
+    /// </summary>
+    private void RefreshWavePresetBinding()
+    {
+        EnemyWavePreset currentWavePreset = wavePresetProperty != null
+            ? wavePresetProperty.objectReferenceValue as EnemyWavePreset
+            : null;
+
+        if (cachedWavePreset == currentWavePreset && wavePresetSerializedObject != null)
+        {
+            wavesProperty = wavePresetSerializedObject.FindProperty("waves");
+            return;
+        }
+
+        cachedWavePreset = currentWavePreset;
+        wavePresetSerializedObject = currentWavePreset != null
+            ? new SerializedObject(currentWavePreset)
+            : null;
+        wavesProperty = wavePresetSerializedObject != null
+            ? wavePresetSerializedObject.FindProperty("waves")
+            : null;
+    }
+
+    /// <summary>
+    /// Creates a new EnemyWavePreset asset beside the currently selected spawner asset folder and assigns it immediately.
+    /// /returns None.
+    /// </summary>
+    private void CreateAndAssignWavePreset()
+    {
+        string defaultFolder = "Assets";
+        string spawnerAssetPath = AssetDatabase.GetAssetPath(target);
+
+        if (!string.IsNullOrWhiteSpace(spawnerAssetPath))
+        {
+            string resolvedFolder = Path.GetDirectoryName(spawnerAssetPath);
+
+            if (!string.IsNullOrWhiteSpace(resolvedFolder))
+                defaultFolder = resolvedFolder.Replace("\\", "/");
+        }
+
+        string assetPath = AssetDatabase.GenerateUniqueAssetPath(defaultFolder + "/EnemyWavePreset.asset");
+        EnemyWavePreset newPreset = ScriptableObject.CreateInstance<EnemyWavePreset>();
+        EnemySpawnerAuthoring authoring = target as EnemySpawnerAuthoring;
+
+        if (authoring != null)
+            EditorUtility.CopySerializedManagedFieldsOnly(authoring, newPreset);
+
+        AssetDatabase.CreateAsset(newPreset, assetPath);
+        AssetDatabase.SaveAssets();
+        wavePresetProperty.objectReferenceValue = newPreset;
+        serializedObject.ApplyModifiedProperties();
+        RefreshWavePresetBinding();
+        EditorGUIUtility.PingObject(newPreset);
     }
 
     /// <summary>

@@ -215,10 +215,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingMilestoneSelectionCommandBufferQuery);
 
         if (!missingFlags.HasAnyMissing)
-        {
-            state.Enabled = false;
             return;
-        }
 
         uint currentKillCount = 0u;
 
@@ -392,10 +389,6 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingMilestoneSelectionOfferBufferQuery,
             in missingMilestoneSelectionCommandBufferQuery);
 
-        if (!remainingMissingFlags.HasAnyMissing)
-        {
-            state.Enabled = false;
-        }
     }
     #endregion
     #endregion

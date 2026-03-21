@@ -27,6 +27,7 @@ public static class PlayerInputRuntime
     private static InputAction uiNavigateAction;
     private static InputAction uiSubmitAction;
     private static InputAction uiCancelAction;
+    private static InputAction pauseAction;
     private static InputAction cheatPresetDigitAction;
     private static InputAction cheatModifierControlAction;
     private static InputAction cheatModifierShiftAction;
@@ -146,6 +147,14 @@ public static class PlayerInputRuntime
         get
         {
             return uiCancelAction;
+        }
+    }
+
+    public static InputAction PauseAction
+    {
+        get
+        {
+            return pauseAction;
         }
     }
 
@@ -384,6 +393,7 @@ public static class PlayerInputRuntime
         uiNavigateAction = ResolveAction(instantiatedAsset, null, "UI/Navigate");
         uiSubmitAction = ResolveAction(instantiatedAsset, null, "UI/Submit");
         uiCancelAction = ResolveAction(instantiatedAsset, null, "UI/Cancel");
+        pauseAction = ResolveAction(instantiatedAsset, null, "Pause");
         cheatPresetDigitAction = ResolveAction(instantiatedAsset, null, "CheatPresetDigit");
         cheatModifierControlAction = ResolveAction(instantiatedAsset, null, "CheatModifierControl");
         cheatModifierShiftAction = ResolveAction(instantiatedAsset, null, "CheatModifierShift");
@@ -425,6 +435,7 @@ public static class PlayerInputRuntime
         uiNavigateAction = null;
         uiSubmitAction = null;
         uiCancelAction = null;
+        pauseAction = null;
         cheatPresetDigitAction = null;
         cheatModifierControlAction = null;
         cheatModifierShiftAction = null;
@@ -590,7 +601,7 @@ public static class PlayerInputRuntime
         if (asset == null)
             return;
 
-        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | PowerUpSwapSlots: {6} | PowerUpContainerInteract: {7} | PowerUpContainerReplacePrimary: {8} | PowerUpContainerReplaceSecondary: {9} | UINavigate: {10} | UISubmit: {11} | UICancel: {12} | CheatPresetDigit: {13} | CheatModifierControl: {14} | CheatModifierShift: {15} | ToggleRuntimeGizmoPanel: {16} | MousePointerLook: {17}",
+        string message = string.Format("[PlayerInputRuntime] Initialized '{0}'. Move: {1} | Look: {2} | Shoot: {3} | PowerUpPrimary: {4} | PowerUpSecondary: {5} | PowerUpSwapSlots: {6} | PowerUpContainerInteract: {7} | PowerUpContainerReplacePrimary: {8} | PowerUpContainerReplaceSecondary: {9} | UINavigate: {10} | UISubmit: {11} | UICancel: {12} | Pause: {13} | CheatPresetDigit: {14} | CheatModifierControl: {15} | CheatModifierShift: {16} | ToggleRuntimeGizmoPanel: {17} | MousePointerLook: {18}",
                                        asset.name,
                                        BuildActionStatus(moveAction),
                                        BuildActionStatus(lookAction),
@@ -604,6 +615,7 @@ public static class PlayerInputRuntime
                                        BuildActionStatus(uiNavigateAction),
                                        BuildActionStatus(uiSubmitAction),
                                        BuildActionStatus(uiCancelAction),
+                                       BuildActionStatus(pauseAction),
                                        BuildActionStatus(cheatPresetDigitAction),
                                        BuildActionStatus(cheatModifierControlAction),
                                        BuildActionStatus(cheatModifierShiftAction),

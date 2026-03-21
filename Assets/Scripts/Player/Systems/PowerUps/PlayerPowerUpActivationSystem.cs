@@ -39,13 +39,17 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
+        state.EntityManager.CompleteDependencyBeforeRO<LocalToWorld>();
         ComponentLookup<PlayerHealth> healthLookup = SystemAPI.GetComponentLookup<PlayerHealth>(false);
         ComponentLookup<PlayerShield> shieldLookup = SystemAPI.GetComponentLookup<PlayerShield>(false);
         ComponentLookup<PlayerLookState> lookLookup = SystemAPI.GetComponentLookup<PlayerLookState>(true);
         ComponentLookup<PlayerMovementState> movementLookup = SystemAPI.GetComponentLookup<PlayerMovementState>(true);
         ComponentLookup<PlayerControllerConfig> controllerLookup = SystemAPI.GetComponentLookup<PlayerControllerConfig>(true);
         ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
+        ComponentLookup<PlayerAnimatedMuzzleWorldPose> animatedMuzzleLookup = SystemAPI.GetComponentLookup<PlayerAnimatedMuzzleWorldPose>(true);
+        ComponentLookup<ShooterMuzzleAnchor> muzzleLookup = SystemAPI.GetComponentLookup<ShooterMuzzleAnchor>(true);
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
+        ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
         ComponentLookup<PlayerBulletTimeState> bulletTimeLookup = SystemAPI.GetComponentLookup<PlayerBulletTimeState>(false);
         ComponentLookup<PlayerHealOverTimeState> healOverTimeLookup = SystemAPI.GetComponentLookup<PlayerHealOverTimeState>(false);
 
@@ -134,6 +138,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 in movementState,
                                                                 in controllerConfig,
                                                                 in passiveToolsState,
+                                                                in animatedMuzzleLookup,
+                                                                in muzzleLookup,
+                                                                in transformLookup,
+                                                                in localToWorldLookup,
                                                                 inputState.ValueRO.Move,
                                                                 powerUpsState.ValueRO.LastValidMovementDirection,
                                                                 ref primaryEnergy,
@@ -172,6 +180,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 in movementState,
                                                                 in controllerConfig,
                                                                 in passiveToolsState,
+                                                                in animatedMuzzleLookup,
+                                                                in muzzleLookup,
+                                                                in transformLookup,
+                                                                in localToWorldLookup,
                                                                 inputState.ValueRO.Move,
                                                                 powerUpsState.ValueRO.LastValidMovementDirection,
                                                                 ref secondaryEnergy,

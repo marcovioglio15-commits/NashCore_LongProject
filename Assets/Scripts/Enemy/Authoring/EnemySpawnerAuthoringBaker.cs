@@ -21,6 +21,8 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
         if (authoring == null)
             return;
 
+        DependsOn(authoring.WavePreset);
+
         Entity spawnerEntity = GetEntity(TransformUsageFlags.Dynamic);
         List<EnemySpawnerWaveDefinitionElement> stagedWaveDefinitions = new List<EnemySpawnerWaveDefinitionElement>();
         List<EnemySpawnerWaveRuntimeElement> stagedWaveRuntime = new List<EnemySpawnerWaveRuntimeElement>();

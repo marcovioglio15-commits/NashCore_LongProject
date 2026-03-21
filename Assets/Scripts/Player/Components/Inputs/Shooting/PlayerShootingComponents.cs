@@ -10,6 +10,7 @@ public struct PlayerShootingState : IComponentData
 {
     public byte AutomaticEnabled;
     public byte PreviousShootPressed;
+    public byte VisualShootingActive;
     public float NextShotTime;
 }
 

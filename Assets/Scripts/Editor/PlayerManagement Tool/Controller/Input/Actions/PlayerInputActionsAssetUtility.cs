@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, and cheat preset bindings) are present in the asset, and if not, it creates them with default bindings. 
+/// This utility class provides methods to load or create the player input action asset used for managing player controls. It ensures that the required input actions (Move, Look, Shoot, Pause, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, and cheat preset bindings) are present in the asset, and if not, it creates them with default bindings. 
 /// The utility also handles asset creation and folder management within the Unity Editor.
 /// </summary>
 public static class PlayerInputActionsAssetUtility
@@ -43,7 +43,7 @@ public static class PlayerInputActionsAssetUtility
     #region Private Methods
     /// <summary>
     /// This method checks the provided input action asset for the presence of required actions 
-    /// (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, CheatPresetDigit, CheatModifierControl, CheatModifierShift) within a "Player" action map. If any of the required actions are missing, 
+    /// (Move, Look, Shoot, Pause, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, CheatPresetDigit, CheatModifierControl, CheatModifierShift) within a "Player" action map. If any of the required actions are missing, 
     /// it creates them with default configurations and bindings. If any changes are made to the asset, 
     /// it marks it as dirty and saves the changes to ensure they persist in the Unity Editor.
     /// </summary>
@@ -66,6 +66,7 @@ public static class PlayerInputActionsAssetUtility
         changed |= EnsureAction(map, "Move", InputActionType.Value, "Vector2", AddDefaultMoveBindings);
         changed |= EnsureAction(map, "Look", InputActionType.Value, "Vector2", AddDefaultLookBindings);
         changed |= EnsureAction(map, "Shoot", InputActionType.Button, "Button", AddDefaultShootBindings);
+        changed |= EnsureAction(map, "Pause", InputActionType.Button, "Button", AddDefaultPauseBindings);
         changed |= EnsureAction(map, "PowerUpPrimary", InputActionType.Button, "Button", AddDefaultPowerUpPrimaryBindings);
         changed |= EnsureAction(map, "PowerUpSecondary", InputActionType.Button, "Button", AddDefaultPowerUpSecondaryBindings);
         changed |= EnsureAction(map, "PowerUpSwapSlots", InputActionType.Button, "Button", AddDefaultPowerUpSwapSlotsBindings);
@@ -161,6 +162,20 @@ public static class PlayerInputActionsAssetUtility
         action.AddBinding("<Mouse>/leftButton");
         action.AddBinding("<Gamepad>/rightTrigger");
         action.AddBinding("<Keyboard>/space");
+    }
+
+    /// <summary>
+    /// Adds default bindings for the gameplay pause action.
+    /// </summary>
+    /// <param name="action"></param>
+    private static void AddDefaultPauseBindings(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        action.AddBinding("<Keyboard>/p").WithGroup("Keyboard&Mouse");
+        action.AddBinding("<Keyboard>/escape").WithGroup("Keyboard&Mouse");
+        action.AddBinding("<Gamepad>/start").WithGroup("Gamepad");
     }
 
     /// <summary>
@@ -304,7 +319,7 @@ public static class PlayerInputActionsAssetUtility
 
     /// <summary>
     /// This method creates a new input action asset with a "Player" action map containing 
-    /// the required actions (Move, Look, Shoot, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, and cheat preset actions) and their default bindings.
+    /// the required actions (Move, Look, Shoot, Pause, PowerUpPrimary, PowerUpSecondary, PowerUpSwapSlots, PowerUpContainerInteract, PowerUpContainerReplacePrimary, PowerUpContainerReplaceSecondary, and cheat preset actions) and their default bindings.
     /// </summary>
     /// <returns> Returns the created InputActionAsset instance. </returns>
     private static InputActionAsset CreateDefaultAsset()
@@ -322,6 +337,9 @@ public static class PlayerInputActionsAssetUtility
 
         InputAction shoot = map.AddAction("Shoot", InputActionType.Button, null, null, null, null, "Button");
         AddDefaultShootBindings(shoot);
+
+        InputAction pause = map.AddAction("Pause", InputActionType.Button, null, null, null, null, "Button");
+        AddDefaultPauseBindings(pause);
 
         InputAction powerUpPrimary = map.AddAction("PowerUpPrimary", InputActionType.Button, null, null, null, null, "Button");
         AddDefaultPowerUpPrimaryBindings(powerUpPrimary);

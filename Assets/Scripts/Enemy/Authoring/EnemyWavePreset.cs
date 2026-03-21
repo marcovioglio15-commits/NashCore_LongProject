@@ -1,0 +1,71 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// Stores the authored wave list shared by one or more enemy spawners.
+/// The preset is validated against the owning spawner grid whenever that spawner changes.
+/// /params None.
+/// /returns None.
+/// </summary>
+[CreateAssetMenu(fileName = "EnemyWavePreset", menuName = "NashCore/Enemy/Enemy Wave Preset")]
+public sealed class EnemyWavePreset : ScriptableObject
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Finite sequence of authored waves emitted by any spawner using this preset.")]
+    [SerializeField] private List<EnemySpawnWaveAuthoring> waves = new List<EnemySpawnWaveAuthoring>();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public List<EnemySpawnWaveAuthoring> Waves
+    {
+        get
+        {
+            EnsureWaveList();
+            return waves;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Unity Methods
+    private void OnValidate()
+    {
+        EnsureWaveList();
+    }
+    #endregion
+
+    #region Public Methods
+    /// <summary>
+    /// Validates all contained waves against one spawner grid definition.
+    /// Called from EnemySpawnerAuthoring.OnValidate so the preset stays bake-safe.
+    /// /params gridSizeX: Grid width in cells of the owning spawner.
+    /// /params gridSizeZ: Grid depth in cells of the owning spawner.
+    /// /returns None.
+    /// </summary>
+    public void ValidateAgainstGrid(int gridSizeX, int gridSizeZ)
+    {
+        EnsureWaveList();
+        EnemySpawnerWaveBakeUtility.ValidateWaves(waves, gridSizeX, gridSizeZ);
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Recreates the serialized wave list when Unity deserializes a missing reference as null.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void EnsureWaveList()
+    {
+        if (waves == null)
+            waves = new List<EnemySpawnWaveAuthoring>();
+    }
+    #endregion
+
+    #endregion
+}
