@@ -27,6 +27,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
     {
         state.RequireForUpdate<PlayerPassiveToolsState>();
         state.RequireForUpdate<PlayerElementalTrailAttachedVfxState>();
+        state.RequireForUpdate<PlayerMovementState>();
         state.RequireForUpdate<LocalTransform>();
     }
 
@@ -52,10 +53,12 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
         CleanupInvalidOwnerInstances(entityManager);
 
         foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
+                  RefRO<PlayerMovementState> movementState,
                   RefRO<LocalTransform> playerTransform,
                   RefRW<PlayerElementalTrailAttachedVfxState> trailAttachedVfxState,
                   Entity playerEntity)
                  in SystemAPI.Query<RefRO<PlayerPassiveToolsState>,
+                                    RefRO<PlayerMovementState>,
                                     RefRO<LocalTransform>,
                                     RefRW<PlayerElementalTrailAttachedVfxState>>()
                              .WithEntityAccess())
@@ -86,8 +89,11 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
             float widthMultiplier = math.max(0.01f, trailConfig.TrailAttachedVfxScaleMultiplier);
             float desiredTrailWidth = math.max(0.02f, radius * 2f * widthMultiplier);
             float3 desiredPosition = playerTransform.ValueRO.Position + trailConfig.TrailAttachedVfxOffset;
+            float3 planarVelocity = movementState.ValueRO.Velocity;
+            planarVelocity.y = 0f;
+            bool isMoving = math.lengthsq(planarVelocity) > 0.0001f;
 
-            SetManagedInstanceActive(playerEntity, true, desiredPosition, 1f, desiredTrailWidth);
+            SetManagedInstanceActive(playerEntity, true, desiredPosition, 1f, isMoving ? desiredTrailWidth : 0f);
             trailAttachedVfxState.ValueRW = default;
         }
     }
@@ -165,7 +171,7 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
 
         if (!isActive)
         {
-            ApplyTrailRenderersState(managedInstance, false, 0f);
+            ApplyTrailRenderersState(managedInstance, false, 0f, true);
 
             if (managedInstance.InstanceObject.activeSelf)
                 managedInstance.InstanceObject.SetActive(false);
@@ -184,10 +190,14 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
         if (!managedInstance.InstanceObject.activeSelf)
             managedInstance.InstanceObject.SetActive(true);
 
-        ApplyTrailRenderersState(managedInstance, true, desiredTrailWidth);
+        bool shouldEmit = desiredTrailWidth > 0.0001f;
+        ApplyTrailRenderersState(managedInstance, shouldEmit, desiredTrailWidth, false);
     }
 
-    private static void ApplyTrailRenderersState(ManagedTrailVfxInstance managedInstance, bool isEmitting, float desiredTrailWidth)
+    private static void ApplyTrailRenderersState(ManagedTrailVfxInstance managedInstance,
+                                                 bool isEmitting,
+                                                 float desiredTrailWidth,
+                                                 bool clearWhenDisabled)
     {
         if (managedInstance == null || managedInstance.TrailRenderers == null || managedInstance.TrailRenderers.Length <= 0)
             return;
@@ -202,13 +212,17 @@ public partial struct PlayerElementalTrailAttachedVfxSystem : ISystem
             if (isEmitting && !trailRenderer.enabled)
                 trailRenderer.Clear();
 
-            trailRenderer.enabled = isEmitting;
+            trailRenderer.enabled = isEmitting || !clearWhenDisabled;
             trailRenderer.emitting = isEmitting;
 
             if (isEmitting)
+            {
                 trailRenderer.widthMultiplier = math.max(0.01f, desiredTrailWidth);
-            else
+            }
+            else if (clearWhenDisabled)
+            {
                 trailRenderer.Clear();
+            }
         }
     }
 

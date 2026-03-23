@@ -19,6 +19,7 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
         state.RequireForUpdate<PlayerPassiveToolsState>();
         state.RequireForUpdate<PlayerElementalTrailState>();
         state.RequireForUpdate<PlayerElementalTrailSegmentElement>();
+        state.RequireForUpdate<PlayerMovementState>();
         state.RequireForUpdate<LocalTransform>();
     }
 
@@ -28,16 +29,18 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
         EntityManager entityManager = state.EntityManager;
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
-            foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
-                      RefRW<PlayerElementalTrailState> trailState,
-                      RefRO<LocalTransform> playerTransform,
-                      DynamicBuffer<PlayerElementalTrailSegmentElement> trailSegments,
-                      Entity playerEntity)
-                     in SystemAPI.Query<RefRO<PlayerPassiveToolsState>,
-                                        RefRW<PlayerElementalTrailState>,
-                                        RefRO<LocalTransform>,
-                                        DynamicBuffer<PlayerElementalTrailSegmentElement>>()
-                                 .WithEntityAccess())
+        foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
+                  RefRW<PlayerElementalTrailState> trailState,
+                  RefRO<PlayerMovementState> movementState,
+                  RefRO<LocalTransform> playerTransform,
+                  DynamicBuffer<PlayerElementalTrailSegmentElement> trailSegments,
+                  Entity playerEntity)
+                 in SystemAPI.Query<RefRO<PlayerPassiveToolsState>,
+                                    RefRW<PlayerElementalTrailState>,
+                                    RefRO<PlayerMovementState>,
+                                    RefRO<LocalTransform>,
+                                    DynamicBuffer<PlayerElementalTrailSegmentElement>>()
+                             .WithEntityAccess())
         {
             PlayerElementalTrailState currentTrailState = trailState.ValueRO;
             CompactSegments(entityManager, trailSegments, ref currentTrailState);
@@ -72,6 +75,17 @@ public partial struct PlayerElementalTrailSpawnSystem : ISystem
             float3 delta = playerPosition - currentTrailState.LastSpawnPosition;
             delta.y = 0f;
             float movedDistance = math.length(delta);
+            float3 planarVelocity = movementState.ValueRO.Velocity;
+            planarVelocity.y = 0f;
+            bool isMoving = math.lengthsq(planarVelocity) > 0.0001f;
+
+            if (!isMoving)
+            {
+                currentTrailState.SpawnTimer = nextSpawnTimer;
+                trailState.ValueRW = currentTrailState;
+                continue;
+            }
+
             bool distanceTriggered = trailConfig.TrailSpawnDistance > 0f && movedDistance >= trailConfig.TrailSpawnDistance;
             bool timerTriggered = nextSpawnTimer <= 0f;
 

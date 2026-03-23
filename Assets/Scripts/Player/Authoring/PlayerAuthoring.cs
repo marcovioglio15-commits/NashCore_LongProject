@@ -278,6 +278,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (controllerPreset == null)
             return;
 
+        PlayerControllerPreset sourceControllerPreset = controllerPreset;
         PlayerProgressionPreset progressionPreset = authoring.GetProgressionPreset();
         PlayerPowerUpsPreset powerUpsPreset = authoring.GetPowerUpsPreset();
         PlayerProgressionPreset sourceProgressionPreset = progressionPreset;
@@ -314,6 +315,119 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         //  Add player controller config component to entity
         AddComponent(entity, config);
+        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseMovementConfig(sourceControllerPreset));
+        AddComponent(entity, new PlayerRuntimeMovementConfig
+        {
+            DirectionsMode = controllerPreset.MovementSettings.DirectionsMode,
+            DiscreteDirectionCount = math.max(1, controllerPreset.MovementSettings.DiscreteDirectionCount),
+            DirectionOffsetDegrees = controllerPreset.MovementSettings.DirectionOffsetDegrees,
+            MovementReference = controllerPreset.MovementSettings.MovementReference,
+            Values = new MovementValuesBlob
+            {
+                BaseSpeed = controllerPreset.MovementSettings.Values.BaseSpeed,
+                MaxSpeed = controllerPreset.MovementSettings.Values.MaxSpeed,
+                Acceleration = controllerPreset.MovementSettings.Values.Acceleration,
+                Deceleration = controllerPreset.MovementSettings.Values.Deceleration,
+                OppositeDirectionBrakeMultiplier = controllerPreset.MovementSettings.Values.OppositeDirectionBrakeMultiplier,
+                WallBounceCoefficient = controllerPreset.MovementSettings.Values.WallBounceCoefficient,
+                WallCollisionSkinWidth = controllerPreset.MovementSettings.Values.WallCollisionSkinWidth,
+                InputDeadZone = controllerPreset.MovementSettings.Values.InputDeadZone,
+                DigitalReleaseGraceSeconds = controllerPreset.MovementSettings.Values.DigitalReleaseGraceSeconds
+            }
+        });
+        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseLookConfig(sourceControllerPreset));
+        AddComponent(entity, new PlayerRuntimeLookConfig
+        {
+            DirectionsMode = controllerPreset.LookSettings.DirectionsMode,
+            DiscreteDirectionCount = math.max(1, controllerPreset.LookSettings.DiscreteDirectionCount),
+            DirectionOffsetDegrees = controllerPreset.LookSettings.DirectionOffsetDegrees,
+            RotationMode = controllerPreset.LookSettings.RotationMode,
+            RotationSpeed = controllerPreset.LookSettings.RotationSpeed,
+            MultiplierSampling = controllerPreset.LookSettings.MultiplierSampling,
+            FrontCone = new ConeConfig
+            {
+                Enabled = controllerPreset.LookSettings.FrontConeEnabled,
+                AngleDegrees = controllerPreset.LookSettings.FrontConeAngle,
+                MaxSpeedMultiplier = controllerPreset.LookSettings.FrontConeMaxSpeedMultiplier,
+                AccelerationMultiplier = controllerPreset.LookSettings.FrontConeAccelerationMultiplier
+            },
+            BackCone = new ConeConfig
+            {
+                Enabled = controllerPreset.LookSettings.BackConeEnabled,
+                AngleDegrees = controllerPreset.LookSettings.BackConeAngle,
+                MaxSpeedMultiplier = controllerPreset.LookSettings.BackConeMaxSpeedMultiplier,
+                AccelerationMultiplier = controllerPreset.LookSettings.BackConeAccelerationMultiplier
+            },
+            LeftCone = new ConeConfig
+            {
+                Enabled = controllerPreset.LookSettings.LeftConeEnabled,
+                AngleDegrees = controllerPreset.LookSettings.LeftConeAngle,
+                MaxSpeedMultiplier = controllerPreset.LookSettings.LeftConeMaxSpeedMultiplier,
+                AccelerationMultiplier = controllerPreset.LookSettings.LeftConeAccelerationMultiplier
+            },
+            RightCone = new ConeConfig
+            {
+                Enabled = controllerPreset.LookSettings.RightConeEnabled,
+                AngleDegrees = controllerPreset.LookSettings.RightConeAngle,
+                MaxSpeedMultiplier = controllerPreset.LookSettings.RightConeMaxSpeedMultiplier,
+                AccelerationMultiplier = controllerPreset.LookSettings.RightConeAccelerationMultiplier
+            },
+            Values = new LookValuesBlob
+            {
+                RotationDamping = controllerPreset.LookSettings.Values.RotationDamping,
+                RotationMaxSpeed = controllerPreset.LookSettings.Values.RotationMaxSpeed,
+                RotationDeadZone = controllerPreset.LookSettings.Values.RotationDeadZone,
+                DigitalReleaseGraceSeconds = controllerPreset.LookSettings.Values.DigitalReleaseGraceSeconds
+            }
+        });
+        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseCameraConfig(sourceControllerPreset));
+        AddComponent(entity, new PlayerRuntimeCameraConfig
+        {
+            Behavior = controllerPreset.CameraSettings.Behavior,
+            FollowOffset = new float3(controllerPreset.CameraSettings.FollowOffset.x,
+                                      controllerPreset.CameraSettings.FollowOffset.y,
+                                      controllerPreset.CameraSettings.FollowOffset.z),
+            Values = new CameraValuesBlob
+            {
+                FollowSpeed = controllerPreset.CameraSettings.Values.FollowSpeed,
+                CameraLag = controllerPreset.CameraSettings.Values.CameraLag,
+                Damping = controllerPreset.CameraSettings.Values.Damping,
+                MaxFollowDistance = controllerPreset.CameraSettings.Values.MaxFollowDistance,
+                DeadZoneRadius = controllerPreset.CameraSettings.Values.DeadZoneRadius
+            }
+        });
+        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseShootingConfig(sourceControllerPreset));
+        AddComponent(entity, new PlayerRuntimeShootingConfig
+        {
+            TriggerMode = controllerPreset.ShootingSettings.TriggerMode,
+            ProjectilesInheritPlayerSpeed = controllerPreset.ShootingSettings.ProjectilesInheritPlayerSpeed ? (byte)1 : (byte)0,
+            ShootOffset = new float3(controllerPreset.ShootingSettings.ShootOffset.x,
+                                     controllerPreset.ShootingSettings.ShootOffset.y,
+                                     controllerPreset.ShootingSettings.ShootOffset.z),
+            Values = new ShootingValuesBlob
+            {
+                ShootSpeed = controllerPreset.ShootingSettings.Values.ShootSpeed,
+                RateOfFire = controllerPreset.ShootingSettings.Values.RateOfFire,
+                ProjectileSizeMultiplier = controllerPreset.ShootingSettings.Values.ProjectileSizeMultiplier,
+                ExplosionRadius = controllerPreset.ShootingSettings.Values.ExplosionRadius,
+                Range = controllerPreset.ShootingSettings.Values.Range,
+                Lifetime = controllerPreset.ShootingSettings.Values.Lifetime,
+                Damage = controllerPreset.ShootingSettings.Values.Damage,
+                PenetrationMode = controllerPreset.ShootingSettings.Values.PenetrationMode,
+                MaxPenetrations = math.max(0, controllerPreset.ShootingSettings.Values.MaxPenetrations)
+            }
+        });
+        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseHealthStatisticsConfig(sourceControllerPreset));
+        AddComponent(entity, new PlayerRuntimeHealthStatisticsConfig
+        {
+            MaxHealth = math.max(1f, controllerPreset.HealthStatistics.MaxHealth),
+            MaxShield = math.max(0f, controllerPreset.HealthStatistics.MaxShield)
+        });
+        AddComponent(entity, new PlayerRuntimeScalingState());
+        DynamicBuffer<PlayerRuntimeControllerScalingElement> controllerScalingBuffer = AddBuffer<PlayerRuntimeControllerScalingElement>(entity);
+#if UNITY_EDITOR
+        PlayerRuntimeScalingBakeUtility.PopulateControllerScalingMetadata(sourceControllerPreset, controllerScalingBuffer);
+#endif
 
         PlayerWorldLayersConfig worldLayersConfig = PlayerControllerConfigBakeUtility.BuildWorldLayersConfig(authoring.MasterPreset);
         AddComponent(entity, worldLayersConfig);
@@ -369,6 +483,16 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             };
 
             AddComponent(entity, progressionConfig);
+            DynamicBuffer<PlayerBaseGamePhaseElement> baseGamePhasesBuffer = AddBuffer<PlayerBaseGamePhaseElement>(entity);
+            DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhasesBuffer = AddBuffer<PlayerRuntimeGamePhaseElement>(entity);
+            DynamicBuffer<PlayerRuntimeProgressionScalingElement> progressionScalingBuffer = AddBuffer<PlayerRuntimeProgressionScalingElement>(entity);
+            PlayerRuntimeScalingBakeUtility.PopulateProgressionPhaseBuffers(progressionPreset,
+                                                                           sourceProgressionPreset,
+                                                                           baseGamePhasesBuffer,
+                                                                           runtimeGamePhasesBuffer);
+#if UNITY_EDITOR
+            PlayerRuntimeScalingBakeUtility.PopulateProgressionScalingMetadata(sourceProgressionPreset, progressionScalingBuffer);
+#endif
             AddComponent(entity, PlayerPowerUpContainerBakeUtility.BuildInteractionConfig(progressionPreset,
                                                                                          ResolveDynamicPrefabEntity));
             AddComponent(entity, new PlayerPowerUpContainerProximityState
@@ -386,6 +510,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                                                      powerUpsPreset,
                                                                                                      ResolveDynamicPrefabEntity);
             AddComponent(entity, powerUpsConfig);
+            AddComponent(entity, new PlayerChargeCharacterTuningState());
+            AddBuffer<PlayerChargeCharacterTuningBaseStatElement>(entity);
             PlayerPowerUpVfxCapConfig powerUpVfxCapConfig = PlayerPowerUpBakeSharedUtility.BuildPowerUpVfxCapConfig(authoring);
             AddComponent(entity, powerUpVfxCapConfig);
             PlayerElementalVfxConfig elementalVfxConfig = PlayerPowerUpBakeSharedUtility.BuildElementalVfxConfig(authoring,
@@ -415,17 +541,28 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                                ResolveDynamicPrefabEntity,
                                                                                equippedPassiveToolsBuffer);
             DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer = AddBuffer<PlayerPowerUpUnlockCatalogElement>(entity);
+            DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> powerUpCharacterTuningFormulaBuffer = AddBuffer<PlayerPowerUpCharacterTuningFormulaElement>(entity);
             DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer = AddBuffer<PlayerPowerUpTierDefinitionElement>(entity);
             DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer = AddBuffer<PlayerPowerUpTierEntryElement>(entity);
             DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer = AddBuffer<PlayerPowerUpTierEntryScalingElement>(entity);
+            DynamicBuffer<PlayerPowerUpBaseConfigElement> powerUpBaseConfigBuffer = AddBuffer<PlayerPowerUpBaseConfigElement>(entity);
+            DynamicBuffer<PlayerRuntimePowerUpScalingElement> powerUpScalingBuffer = AddBuffer<PlayerRuntimePowerUpScalingElement>(entity);
             PlayerPowerUpCatalogBakeUtility.PopulatePowerUpUnlockTierBuffers(authoring,
                                                                              powerUpsPreset,
                                                                              sourcePowerUpsPreset,
                                                                              ResolveDynamicPrefabEntity,
                                                                              powerUpUnlockCatalogBuffer,
+                                                                             powerUpCharacterTuningFormulaBuffer,
                                                                              powerUpTierDefinitionsBuffer,
                                                                              powerUpTierEntriesBuffer,
                                                                              powerUpTierEntryScalingBuffer);
+            PlayerRuntimeScalingBakeUtility.PopulatePowerUpBaseConfigs(authoring,
+                                                                       sourcePowerUpsPreset,
+                                                                       ResolveDynamicPrefabEntity,
+                                                                       powerUpBaseConfigBuffer);
+#if UNITY_EDITOR
+            PlayerRuntimeScalingBakeUtility.PopulatePowerUpScalingMetadata(sourcePowerUpsPreset, powerUpScalingBuffer);
+#endif
             DynamicBuffer<PlayerPowerUpCheatPresetEntry> cheatPresetEntriesBuffer = AddBuffer<PlayerPowerUpCheatPresetEntry>(entity);
             DynamicBuffer<PlayerPowerUpCheatPresetPassiveElement> cheatPresetPassivesBuffer = AddBuffer<PlayerPowerUpCheatPresetPassiveElement>(entity);
             PlayerPowerUpCatalogBakeUtility.PopulatePowerUpCheatPresetBuffers(authoring,

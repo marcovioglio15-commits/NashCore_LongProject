@@ -98,6 +98,7 @@ public struct BulletTimePowerUpConfig
 {
     public float Duration;
     public float EnemySlowPercent;
+    public float TransitionTimeSeconds;
 }
 
 /// <summary>
@@ -167,6 +168,16 @@ public enum PassiveHealTriggerMode
 }
 
 /// <summary>
+/// Runtime trigger mode used by passive bullet-time payloads.
+/// </summary>
+public enum PassiveBulletTimeTriggerMode
+{
+    Periodic = 0,
+    OnPlayerDamaged = 1,
+    OnEnemyKilled = 2
+}
+
+/// <summary>
 /// Holds baked runtime configuration for passive heal-over-time behavior.
 /// </summary>
 public struct PassiveHealConfig
@@ -177,6 +188,18 @@ public struct PassiveHealConfig
     public float DurationSeconds;
     public float TickIntervalSeconds;
     public PowerUpHealStackPolicy StackPolicy;
+}
+
+/// <summary>
+/// Holds baked runtime configuration for passive bullet-time behavior.
+/// </summary>
+public struct PassiveBulletTimeConfig
+{
+    public PassiveBulletTimeTriggerMode TriggerMode;
+    public float CooldownSeconds;
+    public float DurationSeconds;
+    public float EnemySlowPercent;
+    public float TransitionTimeSeconds;
 }
 
 /// <summary>
@@ -195,6 +218,7 @@ public struct PlayerPassiveToolConfig
     public byte HasExplosion;
     public byte HasElementalTrail;
     public byte HasHeal;
+    public byte HasBulletTime;
     public ProjectileSizePassiveConfig ProjectileSize;
     public ShotgunPowerUpConfig Shotgun;
     public ElementalProjectilesPassiveConfig ElementalProjectiles;
@@ -204,6 +228,7 @@ public struct PlayerPassiveToolConfig
     public ExplosionPassiveConfig Explosion;
     public ElementalTrailPassiveConfig ElementalTrail;
     public PassiveHealConfig Heal;
+    public PassiveBulletTimeConfig BulletTime;
 }
 
 /// <summary>
@@ -211,6 +236,7 @@ public struct PlayerPassiveToolConfig
 /// </summary>
 public struct EquippedPassiveToolElement : IBufferElementData
 {
+    public FixedString64Bytes PowerUpId;
     public PlayerPassiveToolConfig Tool;
 }
 

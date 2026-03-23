@@ -10,12 +10,15 @@ public static class EnemyDamageUtility
     #region Public Methods
     public static void ApplyFlatShieldDamage(ref EnemyHealth enemyHealth, float incomingDamage)
     {
+        ConsumeFlatShieldDamage(ref enemyHealth, incomingDamage);
+    }
+
+    public static float ConsumeFlatShieldDamage(ref EnemyHealth enemyHealth, float incomingDamage)
+    {
         float remainingDamage = math.max(0f, incomingDamage);
 
         if (remainingDamage <= 0f)
-        {
-            return;
-        }
+            return 0f;
 
         if (enemyHealth.CurrentShield > 0f)
         {
@@ -24,22 +27,20 @@ public static class EnemyDamageUtility
             remainingDamage -= absorbedDamage;
 
             if (enemyHealth.CurrentShield < 0f)
-            {
                 enemyHealth.CurrentShield = 0f;
-            }
         }
 
         if (remainingDamage <= 0f)
-        {
-            return;
-        }
+            return 0f;
 
-        enemyHealth.Current -= remainingDamage;
+        float appliedHealthDamage = math.min(enemyHealth.Current, remainingDamage);
+        enemyHealth.Current -= appliedHealthDamage;
+        remainingDamage -= appliedHealthDamage;
 
         if (enemyHealth.Current < 0f)
-        {
             enemyHealth.Current = 0f;
-        }
+
+        return math.max(0f, remainingDamage);
     }
     #endregion
 

@@ -145,6 +145,35 @@ public static class PlayerScalingFormulaValidationUtility
         TrimScopedCache();
         return scopedVariables;
     }
+
+    /// <summary>
+    /// Formats the helper label that lists the variables available to one scaling or assignment formula.
+    /// </summary>
+    /// <param name="allowedVariables">Case-insensitive variable set available in the current editor scope.</param>
+    /// <returns>User-facing label text describing the available variables.</returns>
+    public static string BuildAvailableVariablesLabelText(ISet<string> allowedVariables)
+    {
+        if (allowedVariables == null || allowedVariables.Count == 0)
+            return "Available Variables: [this]";
+
+        List<string> sortedVariables = new List<string>(allowedVariables);
+        sortedVariables.Sort(StringComparer.OrdinalIgnoreCase);
+
+        if (sortedVariables.Count == 1)
+            return string.Format("Available Variables: [this], [{0}]", sortedVariables[0]);
+
+        string joinedVariables = string.Empty;
+
+        for (int index = 0; index < sortedVariables.Count; index++)
+        {
+            if (index > 0)
+                joinedVariables += ", ";
+
+            joinedVariables += string.Format("[{0}]", sortedVariables[index]);
+        }
+
+        return string.Format("Available Variables: [this], {0}", joinedVariables);
+    }
     #endregion
 
     #region Helpers

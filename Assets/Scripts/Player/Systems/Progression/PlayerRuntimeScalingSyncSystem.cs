@@ -1,0 +1,146 @@
+using Unity.Collections;
+using Unity.Entities;
+
+/// <summary>
+/// Keeps runtime-scaled configs synchronized with scalable-stat changes between authoring bake and gameplay systems.
+/// </summary>
+[UpdateInGroup(typeof(PlayerControllerSystemGroup))]
+[UpdateAfter(typeof(PlayerLevelUpSystem))]
+[UpdateAfter(typeof(PlayerMilestonePowerUpSelectionResolveSystem))]
+[UpdateAfter(typeof(PlayerPowerUpCharacterTuningInitializeSystem))]
+[UpdateBefore(typeof(PlayerPowerUpRechargeSystem))]
+[UpdateBefore(typeof(PlayerMovementDirectionSystem))]
+[UpdateBefore(typeof(PlayerLookDirectionSystem))]
+[UpdateBefore(typeof(PlayerLookMultiplierSystem))]
+[UpdateBefore(typeof(PlayerPassiveBulletTimeSystem))]
+[UpdateBefore(typeof(PlayerPassiveExplosionSystem))]
+[UpdateBefore(typeof(PlayerPassiveHealSystem))]
+[UpdateBefore(typeof(PlayerPowerUpActivationSystem))]
+[UpdateBefore(typeof(PlayerMovementSpeedSystem))]
+[UpdateBefore(typeof(PlayerShootingIntentSystem))]
+public partial struct PlayerRuntimeScalingSyncSystem : ISystem
+{
+    #region Fields
+    private EntityQuery runtimeScalingQuery;
+    #endregion
+
+    #region Methods
+
+    #region Lifecycle
+    /// <summary>
+    /// Declares the runtime data required to rebuild scaled controller, progression, and power-up configs.
+    /// /params state: Current ECS system state.
+    /// /returns void.
+    /// </summary>
+    public void OnCreate(ref SystemState state)
+    {
+        runtimeScalingQuery = new EntityQueryBuilder(Allocator.Temp)
+                                 .WithAll<PlayerRuntimeScalingState>()
+                                 .WithAll<PlayerScalableStatElement>()
+                                 .WithAll<PlayerRuntimeControllerScalingElement>()
+                                 .WithAll<PlayerBaseMovementConfig>()
+                                 .WithAll<PlayerRuntimeMovementConfig>()
+                                 .WithAll<PlayerBaseLookConfig>()
+                                 .WithAll<PlayerRuntimeLookConfig>()
+                                 .WithAll<PlayerBaseCameraConfig>()
+                                 .WithAll<PlayerRuntimeCameraConfig>()
+                                 .WithAll<PlayerBaseShootingConfig>()
+                                 .WithAll<PlayerRuntimeShootingConfig>()
+                                 .WithAll<PlayerBaseHealthStatisticsConfig>()
+                                 .WithAll<PlayerRuntimeHealthStatisticsConfig>()
+                                 .WithAll<PlayerRuntimeProgressionScalingElement>()
+                                 .WithAll<PlayerBaseGamePhaseElement>()
+                                 .WithAll<PlayerRuntimeGamePhaseElement>()
+                                 .WithAll<PlayerPowerUpBaseConfigElement>()
+                                 .WithAll<PlayerRuntimePowerUpScalingElement>()
+                                 .WithAll<PlayerPowerUpsConfig>()
+                                 .WithAll<PlayerPowerUpUnlockCatalogElement>()
+                                 .WithAll<EquippedPassiveToolElement>()
+                                 .WithAll<PlayerPassiveToolsState>()
+                                 .WithAll<PlayerHealth>()
+                                 .WithAll<PlayerShield>()
+                                 .WithAll<PlayerProgressionConfig>()
+                                 .WithAll<PlayerExperience>()
+                                 .WithAll<PlayerLevel>()
+                                 .WithAll<PlayerExperienceCollection>()
+                                 .Build(ref state);
+        state.RequireForUpdate(runtimeScalingQuery);
+    }
+
+    /// <summary>
+    /// Rebuilds runtime-scaled configs only when the scalable-stat hash changed since the previous applied sample.
+    /// /params state: Current ECS system state.
+    /// /returns void.
+    /// </summary>
+    public void OnUpdate(ref SystemState state)
+    {
+        BufferLookup<PlayerScalableStatElement> scalableStatsLookup = SystemAPI.GetBufferLookup<PlayerScalableStatElement>(false);
+        BufferLookup<PlayerRuntimeControllerScalingElement> controllerScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimeControllerScalingElement>(true);
+        ComponentLookup<PlayerBaseMovementConfig> baseMovementLookup = SystemAPI.GetComponentLookup<PlayerBaseMovementConfig>(true);
+        ComponentLookup<PlayerRuntimeMovementConfig> runtimeMovementLookup = SystemAPI.GetComponentLookup<PlayerRuntimeMovementConfig>(false);
+        ComponentLookup<PlayerBaseLookConfig> baseLookLookup = SystemAPI.GetComponentLookup<PlayerBaseLookConfig>(true);
+        ComponentLookup<PlayerRuntimeLookConfig> runtimeLookLookup = SystemAPI.GetComponentLookup<PlayerRuntimeLookConfig>(false);
+        ComponentLookup<PlayerBaseCameraConfig> baseCameraLookup = SystemAPI.GetComponentLookup<PlayerBaseCameraConfig>(true);
+        ComponentLookup<PlayerRuntimeCameraConfig> runtimeCameraLookup = SystemAPI.GetComponentLookup<PlayerRuntimeCameraConfig>(false);
+        ComponentLookup<PlayerBaseShootingConfig> baseShootingLookup = SystemAPI.GetComponentLookup<PlayerBaseShootingConfig>(true);
+        ComponentLookup<PlayerRuntimeShootingConfig> runtimeShootingLookup = SystemAPI.GetComponentLookup<PlayerRuntimeShootingConfig>(false);
+        ComponentLookup<PlayerBaseHealthStatisticsConfig> baseHealthLookup = SystemAPI.GetComponentLookup<PlayerBaseHealthStatisticsConfig>(true);
+        ComponentLookup<PlayerRuntimeHealthStatisticsConfig> runtimeHealthLookup = SystemAPI.GetComponentLookup<PlayerRuntimeHealthStatisticsConfig>(false);
+        BufferLookup<PlayerRuntimeProgressionScalingElement> progressionScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimeProgressionScalingElement>(true);
+        BufferLookup<PlayerBaseGamePhaseElement> baseGamePhasesLookup = SystemAPI.GetBufferLookup<PlayerBaseGamePhaseElement>(true);
+        BufferLookup<PlayerRuntimeGamePhaseElement> runtimeGamePhasesLookup = SystemAPI.GetBufferLookup<PlayerRuntimeGamePhaseElement>(false);
+        BufferLookup<PlayerPowerUpBaseConfigElement> basePowerUpConfigsLookup = SystemAPI.GetBufferLookup<PlayerPowerUpBaseConfigElement>(true);
+        BufferLookup<PlayerRuntimePowerUpScalingElement> powerUpScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimePowerUpScalingElement>(true);
+        ComponentLookup<PlayerPowerUpsConfig> powerUpsConfigLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsConfig>(false);
+        BufferLookup<PlayerPowerUpUnlockCatalogElement> unlockCatalogLookup = SystemAPI.GetBufferLookup<PlayerPowerUpUnlockCatalogElement>(false);
+        BufferLookup<EquippedPassiveToolElement> equippedPassiveToolsLookup = SystemAPI.GetBufferLookup<EquippedPassiveToolElement>(false);
+        ComponentLookup<PlayerPassiveToolsState> passiveToolsStateLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(false);
+        ComponentLookup<PlayerHealth> healthLookup = SystemAPI.GetComponentLookup<PlayerHealth>(false);
+        ComponentLookup<PlayerShield> shieldLookup = SystemAPI.GetComponentLookup<PlayerShield>(false);
+        ComponentLookup<PlayerProgressionConfig> progressionConfigLookup = SystemAPI.GetComponentLookup<PlayerProgressionConfig>(true);
+        ComponentLookup<PlayerExperience> experienceLookup = SystemAPI.GetComponentLookup<PlayerExperience>(false);
+        ComponentLookup<PlayerLevel> levelLookup = SystemAPI.GetComponentLookup<PlayerLevel>(false);
+        ComponentLookup<PlayerExperienceCollection> experienceCollectionLookup = SystemAPI.GetComponentLookup<PlayerExperienceCollection>(false);
+        ComponentLookup<PlayerRuntimeScalingState> runtimeScalingStateLookup = SystemAPI.GetComponentLookup<PlayerRuntimeScalingState>(false);
+        NativeArray<Entity> entities = runtimeScalingQuery.ToEntityArray(Allocator.Temp);
+
+        for (int entityIndex = 0; entityIndex < entities.Length; entityIndex++)
+        {
+            PlayerRuntimeScalingRefreshUtility.TryApplyForEntity(entities[entityIndex],
+                                                                 scalableStatsLookup,
+                                                                 controllerScalingLookup,
+                                                                 baseMovementLookup,
+                                                                 runtimeMovementLookup,
+                                                                 baseLookLookup,
+                                                                 runtimeLookLookup,
+                                                                 baseCameraLookup,
+                                                                 runtimeCameraLookup,
+                                                                 baseShootingLookup,
+                                                                 runtimeShootingLookup,
+                                                                 baseHealthLookup,
+                                                                 runtimeHealthLookup,
+                                                                 progressionScalingLookup,
+                                                                 baseGamePhasesLookup,
+                                                                 runtimeGamePhasesLookup,
+                                                                 basePowerUpConfigsLookup,
+                                                                 powerUpScalingLookup,
+                                                                 powerUpsConfigLookup,
+                                                                 unlockCatalogLookup,
+                                                                 equippedPassiveToolsLookup,
+                                                                 passiveToolsStateLookup,
+                                                                 healthLookup,
+                                                                 shieldLookup,
+                                                                 progressionConfigLookup,
+                                                                 experienceLookup,
+                                                                 levelLookup,
+                                                                 experienceCollectionLookup,
+                                                                 runtimeScalingStateLookup,
+                                                                 false);
+        }
+
+        entities.Dispose();
+    }
+    #endregion
+
+    #endregion
+}

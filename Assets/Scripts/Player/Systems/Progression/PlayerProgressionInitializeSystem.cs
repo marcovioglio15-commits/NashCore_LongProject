@@ -28,14 +28,15 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerRuntimeHealthStatisticsConfig>();
 
         missingHealthQuery = SystemAPI.QueryBuilder()
-            .WithAll<PlayerControllerConfig>()
+            .WithAll<PlayerControllerConfig, PlayerRuntimeHealthStatisticsConfig>()
             .WithNone<PlayerHealth>()
             .Build();
 
         missingShieldQuery = SystemAPI.QueryBuilder()
-            .WithAll<PlayerControllerConfig>()
+            .WithAll<PlayerControllerConfig, PlayerRuntimeHealthStatisticsConfig>()
             .WithNone<PlayerShield>()
             .Build();
 
@@ -124,17 +125,13 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     private void AddMissingHealth(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingHealthQuery.ToEntityArray(Allocator.Temp);
-        NativeArray<PlayerControllerConfig> configs = missingHealthQuery.ToComponentDataArray<PlayerControllerConfig>(Allocator.Temp);
+        NativeArray<PlayerRuntimeHealthStatisticsConfig> configs = missingHealthQuery.ToComponentDataArray<PlayerRuntimeHealthStatisticsConfig>(Allocator.Temp);
 
         for (int index = 0; index < entities.Length; index++)
         {
             Entity entity = entities[index];
-            PlayerControllerConfig controllerConfig = configs[index];
-
-            if (!controllerConfig.Config.IsCreated)
-                continue;
-
-            float maxHealth = controllerConfig.Config.Value.HealthStatistics.MaxHealth;
+            PlayerRuntimeHealthStatisticsConfig runtimeHealthConfig = configs[index];
+            float maxHealth = runtimeHealthConfig.MaxHealth;
 
             if (maxHealth < 1f)
                 maxHealth = 1f;
@@ -158,17 +155,13 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     private void AddMissingShield(ref EntityCommandBuffer commandBuffer)
     {
         NativeArray<Entity> entities = missingShieldQuery.ToEntityArray(Allocator.Temp);
-        NativeArray<PlayerControllerConfig> configs = missingShieldQuery.ToComponentDataArray<PlayerControllerConfig>(Allocator.Temp);
+        NativeArray<PlayerRuntimeHealthStatisticsConfig> configs = missingShieldQuery.ToComponentDataArray<PlayerRuntimeHealthStatisticsConfig>(Allocator.Temp);
 
         for (int index = 0; index < entities.Length; index++)
         {
             Entity entity = entities[index];
-            PlayerControllerConfig controllerConfig = configs[index];
-
-            if (!controllerConfig.Config.IsCreated)
-                continue;
-
-            float maxShield = controllerConfig.Config.Value.HealthStatistics.MaxShield;
+            PlayerRuntimeHealthStatisticsConfig runtimeHealthConfig = configs[index];
+            float maxShield = runtimeHealthConfig.MaxShield;
 
             if (maxShield < 0f)
                 maxShield = 0f;

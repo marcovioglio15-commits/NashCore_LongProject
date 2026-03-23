@@ -20,7 +20,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
         state.RequireForUpdate<PlayerInputState>();
         state.RequireForUpdate<PlayerMovementState>();
         state.RequireForUpdate<PlayerLookState>();
-        state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerRuntimeLookConfig>();
     }
     #endregion
 
@@ -59,17 +59,17 @@ public partial struct PlayerLookDirectionSystem : ISystem
                   RefRO<PlayerMovementState> movementState,
                   RefRW<PlayerLookState> lookState,
                   RefRO<PlayerRunOutcomeState> runOutcomeState,
-                  RefRO<PlayerControllerConfig> controllerConfig,
+                  RefRO<PlayerRuntimeLookConfig> runtimeLookConfig,
                   RefRO<LocalTransform> localTransform)
                  in SystemAPI.Query<RefRO<PlayerInputState>,
                                     RefRO<PlayerMovementState>,
                                     RefRW<PlayerLookState>,
                                     RefRO<PlayerRunOutcomeState>,
-                                    RefRO<PlayerControllerConfig>,
+                                    RefRO<PlayerRuntimeLookConfig>,
                                     RefRO<LocalTransform>>())
         {
             // Retrieve the look configuration from the controller config
-            ref LookConfig lookConfig = ref controllerConfig.ValueRO.Config.Value.Look;
+            PlayerRuntimeLookConfig lookConfig = runtimeLookConfig.ValueRO;
             float3 playerForward = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
             float3 fallbackDirection = lookState.ValueRO.CurrentDirection;
 
@@ -246,7 +246,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
         return math.normalizesafe(snappedWorld, forward);
     }
 
-    private static float3 GetClampedDirectionFromWorld(float3 worldDirection, float3 forward, float3 right, ref LookConfig lookConfig)
+    private static float3 GetClampedDirectionFromWorld(float3 worldDirection, float3 forward, float3 right, ref PlayerRuntimeLookConfig lookConfig)
     {
         float3 planar = PlayerControllerMath.NormalizePlanar(worldDirection, forward);
         float2 local = new float2(math.dot(planar, right), math.dot(planar, forward));
@@ -296,7 +296,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
         return PlayerControllerMath.ResolveDigitalMask(currMask, pressTimes);
     }
 
-    private static bool TryClampToCones(float angle, ref LookConfig lookConfig, out float clampedAngle)
+    private static bool TryClampToCones(float angle, ref PlayerRuntimeLookConfig lookConfig, out float clampedAngle)
     {
         bool anyEnabled = false;
         bool insideCone = false;

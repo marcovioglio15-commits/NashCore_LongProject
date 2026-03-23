@@ -27,7 +27,7 @@ public partial struct PlayerCameraFollowSystem : ISystem
     /// <param name="state"></param>
     public void OnCreate(ref SystemState state)
     {
-        state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerRuntimeCameraConfig>();
     }
 
     /// <summary>
@@ -51,10 +51,10 @@ public partial struct PlayerCameraFollowSystem : ISystem
 
         // Only support one player camera config at a time, so breaks after the first iteration.
         foreach ((RefRO<LocalTransform> localTransform,
-                  RefRO<PlayerControllerConfig> controllerConfig,
-                  Entity entity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerControllerConfig>>().WithEntityAccess())
+                  RefRO<PlayerRuntimeCameraConfig> runtimeCameraConfig,
+                  Entity entity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerRuntimeCameraConfig>>().WithEntityAccess())
         {
-            ref CameraConfig cameraConfig = ref controllerConfig.ValueRO.Config.Value.Camera;
+            PlayerRuntimeCameraConfig cameraConfig = runtimeCameraConfig.ValueRO;
             float3 playerPosition = localTransform.ValueRO.Position;
 
             if (localToWorldLookup.HasComponent(entity))

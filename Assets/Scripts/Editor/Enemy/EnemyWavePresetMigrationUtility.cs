@@ -17,7 +17,7 @@ public static class EnemyWavePresetMigrationUtility
     /// /params None.
     /// /returns None.
     /// </summary>
-    [MenuItem("Tools/NashCore/Enemy/Migrate Enemy Wave Presets")]
+    //[MenuItem("Tools/NashCore/Enemy/Migrate Enemy Wave Presets")]
     public static void MigrateAllMissingWavePresets()
     {
         string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab");
@@ -84,19 +84,14 @@ public static class EnemyWavePresetMigrationUtility
 
     #region Helpers
     /// <summary>
-    /// Resolves a unique preset asset path beside the source prefab.
+    /// Resolves a unique preset asset path inside the canonical wave-preset folder.
     /// /params prefabPath: Source spawner prefab path.
     /// /returns Unique asset path where the migrated EnemyWavePreset should be saved.
     /// </summary>
     private static string ResolvePresetAssetPath(string prefabPath)
     {
-        string prefabDirectory = Path.GetDirectoryName(prefabPath);
         string prefabName = Path.GetFileNameWithoutExtension(prefabPath);
-        string normalizedDirectory = string.IsNullOrWhiteSpace(prefabDirectory)
-            ? "Assets"
-            : prefabDirectory.Replace("\\", "/");
-        string basePath = normalizedDirectory + "/" + prefabName + "_WavePreset.asset";
-        return AssetDatabase.GenerateUniqueAssetPath(basePath);
+        return EnemyWavePresetAssetUtility.CreateUniquePresetAssetPath(prefabName + "_WavePreset");
     }
     #endregion
 

@@ -23,7 +23,8 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
                config.HasSplittingProjectiles != 0 ||
                config.HasExplosion != 0 ||
                config.HasElementalTrail != 0 ||
-               config.HasHeal != 0;
+               config.HasHeal != 0 ||
+               config.HasBulletTime != 0;
     }
 
     public static PassiveToolKind ResolvePassiveToolKind(PlayerPassiveToolConfig config)
@@ -45,6 +46,9 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
 
         if (config.HasElementalProjectiles != 0)
             return PassiveToolKind.ElementalProjectiles;
+
+        if (config.HasBulletTime != 0)
+            return PassiveToolKind.BulletTime;
 
         if (config.HasHeal != 0)
             return PassiveToolKind.Custom;
@@ -97,6 +101,24 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
                 return PassiveHealTriggerMode.OnPlayerDamaged;
             default:
                 return PassiveHealTriggerMode.Periodic;
+        }
+    }
+
+    public static PassiveBulletTimeTriggerMode ResolvePassiveBulletTimeTriggerMode(bool hasTriggerEvent,
+                                                                                   PowerUpTriggerEventType triggerEventType,
+                                                                                   PassiveBulletTimeTriggerMode fallback)
+    {
+        if (!hasTriggerEvent)
+            return fallback;
+
+        switch (triggerEventType)
+        {
+            case PowerUpTriggerEventType.OnEnemyKilled:
+                return PassiveBulletTimeTriggerMode.OnEnemyKilled;
+            case PowerUpTriggerEventType.OnPlayerDamaged:
+                return PassiveBulletTimeTriggerMode.OnPlayerDamaged;
+            default:
+                return PassiveBulletTimeTriggerMode.Periodic;
         }
     }
 

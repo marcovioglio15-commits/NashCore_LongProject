@@ -24,7 +24,7 @@ public static class PowerUpModuleEnumDescriptions
         PowerUpModuleKind.GateResource,
         PowerUpModuleKind.StateSuppressShooting,
         PowerUpModuleKind.ProjectilesPatternCone,
-        PowerUpModuleKind.ProjectilesTuning,
+        PowerUpModuleKind.CharacterTuning,
         PowerUpModuleKind.SpawnObject,
         PowerUpModuleKind.Dash,
         PowerUpModuleKind.TimeDilationEnemies,
@@ -34,7 +34,8 @@ public static class PowerUpModuleEnumDescriptions
         PowerUpModuleKind.DeathExplosion,
         PowerUpModuleKind.OrbitalProjectiles,
         PowerUpModuleKind.BouncingProjectiles,
-        PowerUpModuleKind.ProjectileSplit
+        PowerUpModuleKind.ProjectileSplit,
+        PowerUpModuleKind.Stackable
     };
     #endregion
 
@@ -112,8 +113,8 @@ public static class PowerUpModuleEnumDescriptions
                 return "Suppresses base shooting and can interrupt opposite slot.";
             case PowerUpModuleKind.ProjectilesPatternCone:
                 return "Sets projectile cone pattern emission.";
-            case PowerUpModuleKind.ProjectilesTuning:
-                return "Sets projectile multipliers and penetration behavior.";
+            case PowerUpModuleKind.CharacterTuning:
+                return "Applies scalable-stat assignment formulas on acquisition for standard actives, while owned for passives, temporarily while charging with Trigger Hold Charge, or only while active with toggleable Resource Gate.";
             case PowerUpModuleKind.SpawnObject:
                 return "Spawns configured object payload, optionally with damage.";
             case PowerUpModuleKind.Dash:
@@ -134,6 +135,8 @@ public static class PowerUpModuleEnumDescriptions
                 return "Adds wall bounce logic to projectiles.";
             case PowerUpModuleKind.ProjectileSplit:
                 return "Splits projectiles on configured split trigger.";
+            case PowerUpModuleKind.Stackable:
+                return "Allows a Character Tuning power-up to be rolled multiple times up to a configured cap.";
             default:
                 return "No description available.";
         }
@@ -173,9 +176,9 @@ public static class PowerUpModuleEnumDescriptions
                 relativePropertyPath = "projectilePatternCone";
                 payloadLabel = "Projectile Pattern Payload";
                 return true;
-            case PowerUpModuleKind.ProjectilesTuning:
-                relativePropertyPath = "projectileTuning";
-                payloadLabel = "Projectile Tuning Payload";
+            case PowerUpModuleKind.CharacterTuning:
+                relativePropertyPath = "characterTuning";
+                payloadLabel = "Character Tuning Payload";
                 return true;
             case PowerUpModuleKind.SpawnObject:
                 relativePropertyPath = "bomb";
@@ -216,6 +219,10 @@ public static class PowerUpModuleEnumDescriptions
             case PowerUpModuleKind.ProjectileSplit:
                 relativePropertyPath = "projectileSplit";
                 payloadLabel = "Projectile Split Payload";
+                return true;
+            case PowerUpModuleKind.Stackable:
+                relativePropertyPath = "stackable";
+                payloadLabel = "Stackable Payload";
                 return true;
             default:
                 relativePropertyPath = string.Empty;

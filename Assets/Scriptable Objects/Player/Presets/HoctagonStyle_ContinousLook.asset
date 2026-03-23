@@ -99,6 +99,9 @@ MonoBehaviour:
       range: 20
       lifetime: 2
       damage: 1
+      projectileSizeMultiplier: 1
+      penetrationMode: 0
+      maxPenetrations: 0
     initialPoolCapacity: 512
     poolExpandBatch: 128
   healthStatistics:

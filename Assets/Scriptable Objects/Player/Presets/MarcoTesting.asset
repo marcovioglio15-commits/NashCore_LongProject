@@ -115,6 +115,9 @@ MonoBehaviour:
       range: 20
       lifetime: 2
       damage: 1
+      projectileSizeMultiplier: 1
+      penetrationMode: 1
+      maxPenetrations: 0
     initialPoolCapacity: 1500
     poolExpandBatch: 1500
   healthStatistics:
@@ -165,6 +168,16 @@ MonoBehaviour:
   - statKey: shootingSettings.values.lifetime
     addScaling: 1
     formula: '[this] + [ShotRange]'
+    debugInConsole: 1
+    debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.maxPenetrations
+    addScaling: 1
+    formula: '[BulletPenetration]'
+    debugInConsole: 1
+    debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.projectileSizeMultiplier
+    addScaling: 1
+    formula: '[this] * [BulletSizeMultiplier]'
     debugInConsole: 1
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   moveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408

@@ -170,6 +170,7 @@ public partial struct PlayerPowerUpCheatSystem : ISystem
 
             equippedPassiveTools.Add(new EquippedPassiveToolElement
             {
+                PowerUpId = default,
                 Tool = passiveToolConfig
             });
         }

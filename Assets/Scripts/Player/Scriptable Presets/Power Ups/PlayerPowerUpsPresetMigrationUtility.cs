@@ -241,7 +241,7 @@ internal static class PlayerPowerUpsPresetMigrationUtility
             case "ModuleEffectProjectileScale":
             case "ModuleEffectProjectilePenetration":
             case "ModuleEffectProjectileTuning":
-                return PlayerPowerUpsPresetDefaultsUtility.ModuleIdProjectilesTuning;
+                return PlayerPowerUpsPresetDefaultsUtility.ModuleIdCharacterTuning;
             case "ModuleEffectSpawnBomb":
             case "ModuleEffectSpawnObject":
                 return PlayerPowerUpsPresetDefaultsUtility.ModuleIdSpawnObject;
@@ -320,9 +320,9 @@ internal static class PlayerPowerUpsPresetMigrationUtility
             case "ModuleEffectProjectileScale":
             case "ModuleEffectProjectilePenetration":
             case "ModuleEffectProjectileTuning":
-                mappedModuleId = PlayerPowerUpsPresetDefaultsUtility.ModuleIdProjectilesTuning;
-                mappedDisplayName = "Projectiles Tuning";
-                mappedModuleKind = PowerUpModuleKind.ProjectilesTuning;
+                mappedModuleId = PlayerPowerUpsPresetDefaultsUtility.ModuleIdCharacterTuning;
+                mappedDisplayName = "Character Tuning";
+                mappedModuleKind = PowerUpModuleKind.CharacterTuning;
                 return true;
             case "ModuleEffectSpawnBomb":
             case "ModuleEffectSpawnObject":

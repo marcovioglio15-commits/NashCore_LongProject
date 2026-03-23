@@ -187,7 +187,7 @@ public sealed class PowerUpTierLevelDefinition
     }
 
     /// <summary>
-    /// Removes tier entries that reference non-existing modular power-up IDs.
+    /// Removes null tier entries and preserves authored invalid IDs so the editor can repair mismatched references manually.
     /// </summary>
     /// <param name="validActivePowerUpIds">Set of active modular power-up IDs available in the preset.</param>
     /// <param name="validPassivePowerUpIds">Set of passive modular power-up IDs available in the preset.</param>
@@ -207,17 +207,7 @@ public sealed class PowerUpTierLevelDefinition
                 continue;
             }
 
-            ISet<string> validIds = entry.EntryKind == PowerUpTierEntryKind.Active
-                ? validActivePowerUpIds
-                : validPassivePowerUpIds;
-
-            if (string.IsNullOrWhiteSpace(entry.PowerUpId))
-                continue;
-
-            if (validIds == null || validIds.Contains(entry.PowerUpId))
-                continue;
-
-            entries.RemoveAt(entryIndex);
+            // Preserve invalid references until the user explicitly repairs them in the editor.
         }
     }
     #endregion

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -751,30 +750,24 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
     }
 
     /// <summary>
-    /// Creates a new EnemyWavePreset asset beside the currently selected spawner asset folder and assigns it immediately.
+    /// Creates a new EnemyWavePreset asset in the canonical wave-preset folder and assigns it immediately.
     /// /returns None.
     /// </summary>
     private void CreateAndAssignWavePreset()
     {
-        string defaultFolder = "Assets";
-        string spawnerAssetPath = AssetDatabase.GetAssetPath(target);
-
-        if (!string.IsNullOrWhiteSpace(spawnerAssetPath))
-        {
-            string resolvedFolder = Path.GetDirectoryName(spawnerAssetPath);
-
-            if (!string.IsNullOrWhiteSpace(resolvedFolder))
-                defaultFolder = resolvedFolder.Replace("\\", "/");
-        }
-
-        string assetPath = AssetDatabase.GenerateUniqueAssetPath(defaultFolder + "/EnemyWavePreset.asset");
-        EnemyWavePreset newPreset = ScriptableObject.CreateInstance<EnemyWavePreset>();
         EnemySpawnerAuthoring authoring = target as EnemySpawnerAuthoring;
+        string presetName = authoring != null && !string.IsNullOrWhiteSpace(authoring.name)
+            ? authoring.name + "_WavePreset"
+            : "EnemyWavePreset";
+        string assetPath = EnemyWavePresetAssetUtility.CreateUniquePresetAssetPath(presetName);
+        EnemyWavePreset newPreset = ScriptableObject.CreateInstance<EnemyWavePreset>();
 
         if (authoring != null)
             EditorUtility.CopySerializedManagedFieldsOnly(authoring, newPreset);
 
         AssetDatabase.CreateAsset(newPreset, assetPath);
+        newPreset.name = System.IO.Path.GetFileNameWithoutExtension(assetPath);
+        EditorUtility.SetDirty(newPreset);
         AssetDatabase.SaveAssets();
         wavePresetProperty.objectReferenceValue = newPreset;
         serializedObject.ApplyModifiedProperties();

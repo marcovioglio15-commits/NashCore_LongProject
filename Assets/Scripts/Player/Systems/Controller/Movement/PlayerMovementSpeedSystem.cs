@@ -29,7 +29,7 @@ public partial struct PlayerMovementSpeedSystem : ISystem
     {
         state.RequireForUpdate<PlayerMovementState>();
         state.RequireForUpdate<PlayerMovementModifiers>();
-        state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerRuntimeMovementConfig>();
     }
 
     /// <summary>
@@ -47,10 +47,10 @@ public partial struct PlayerMovementSpeedSystem : ISystem
 
         foreach ((RefRW<PlayerMovementState> movementState,
                   RefRO<PlayerMovementModifiers> modifiers,
-                  RefRO<PlayerControllerConfig> controllerConfig,
-                  Entity playerEntity) in SystemAPI.Query<RefRW<PlayerMovementState>, RefRO<PlayerMovementModifiers>, RefRO<PlayerControllerConfig>>().WithEntityAccess())
+                  RefRO<PlayerRuntimeMovementConfig> runtimeMovementConfig,
+                  Entity playerEntity) in SystemAPI.Query<RefRW<PlayerMovementState>, RefRO<PlayerMovementModifiers>, RefRO<PlayerRuntimeMovementConfig>>().WithEntityAccess())
         {
-            ref MovementConfig movementConfig = ref controllerConfig.ValueRO.Config.Value.Movement;
+            PlayerRuntimeMovementConfig movementConfig = runtimeMovementConfig.ValueRO;
             float3 desiredDirection = movementState.ValueRO.DesiredDirection;
             bool hasInput = math.lengthsq(desiredDirection) > 1e-6f;
             float speedMultiplier = math.max(0f, modifiers.ValueRO.MaxSpeedMultiplier);

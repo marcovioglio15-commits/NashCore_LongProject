@@ -30,10 +30,12 @@ public static class PlayerPowerUpCatalogBakeUtility
             return;
 
         List<PlayerPassiveToolConfig> equippedPassiveToolConfigs = new List<PlayerPassiveToolConfig>(8);
+        List<FixedString64Bytes> equippedPassiveToolIds = new List<FixedString64Bytes>(8);
         PlayerPowerUpPassiveBakeUtility.CollectEquippedPassiveToolConfigs(authoring,
                                                                           preset,
                                                                           resolveDynamicPrefabEntity,
-                                                                          equippedPassiveToolConfigs);
+                                                                          equippedPassiveToolConfigs,
+                                                                          equippedPassiveToolIds);
 
         for (int passiveToolIndex = 0; passiveToolIndex < equippedPassiveToolConfigs.Count; passiveToolIndex++)
         {
@@ -44,6 +46,7 @@ public static class PlayerPowerUpCatalogBakeUtility
 
             equippedPassiveToolsBuffer.Add(new EquippedPassiveToolElement
             {
+                PowerUpId = passiveToolIndex < equippedPassiveToolIds.Count ? equippedPassiveToolIds[passiveToolIndex] : default,
                 Tool = passiveToolConfig
             });
         }
@@ -66,11 +69,13 @@ public static class PlayerPowerUpCatalogBakeUtility
                                                         PlayerPowerUpsPreset sourcePreset,
                                                         Func<GameObject, Entity> resolveDynamicPrefabEntity,
                                                         DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
+                                                        DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> powerUpCharacterTuningFormulaBuffer,
                                                         DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer,
                                                         DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer,
                                                         DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer)
     {
         powerUpUnlockCatalogBuffer.Clear();
+        powerUpCharacterTuningFormulaBuffer.Clear();
         powerUpTierDefinitionsBuffer.Clear();
         powerUpTierEntriesBuffer.Clear();
         powerUpTierEntryScalingBuffer.Clear();
@@ -87,6 +92,7 @@ public static class PlayerPowerUpCatalogBakeUtility
                                 activePowerUps,
                                 PlayerPowerUpUnlockKind.Active,
                                 resolveDynamicPrefabEntity,
+                                powerUpCharacterTuningFormulaBuffer,
                                 powerUpUnlockCatalogBuffer,
                                 unlockCatalogIndexByKey);
         AddUnlockCatalogEntries(authoring,
@@ -94,6 +100,7 @@ public static class PlayerPowerUpCatalogBakeUtility
                                 passivePowerUps,
                                 PlayerPowerUpUnlockKind.Passive,
                                 resolveDynamicPrefabEntity,
+                                powerUpCharacterTuningFormulaBuffer,
                                 powerUpUnlockCatalogBuffer,
                                 unlockCatalogIndexByKey);
         MarkInitialLoadoutUnlocks(preset, activePowerUps, powerUpUnlockCatalogBuffer, unlockCatalogIndexByKey);
@@ -189,6 +196,7 @@ public static class PlayerPowerUpCatalogBakeUtility
                                                 IReadOnlyList<ModularPowerUpDefinition> powerUps,
                                                 PlayerPowerUpUnlockKind unlockKind,
                                                 Func<GameObject, Entity> resolveDynamicPrefabEntity,
+                                                DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> powerUpCharacterTuningFormulaBuffer,
                                                 DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer,
                                                 Dictionary<string, int> unlockCatalogIndexByKey)
     {
@@ -215,6 +223,11 @@ public static class PlayerPowerUpCatalogBakeUtility
                 Description = new FixedString128Bytes(string.IsNullOrWhiteSpace(powerUp.CommonData.Description) ? string.Empty : powerUp.CommonData.Description.Trim()),
                 UnlockKind = unlockKind,
                 IsUnlocked = 0,
+                PendingInitialCharacterTuningApply = 0,
+                CurrentUnlockCount = 0,
+                MaximumUnlockCount = ResolveMaximumUnlockCount(preset, powerUp),
+                CharacterTuningFormulaStartIndex = powerUpCharacterTuningFormulaBuffer.Length,
+                CharacterTuningFormulaCount = AppendCharacterTuningFormulas(preset, powerUp, powerUpCharacterTuningFormulaBuffer),
                 ActiveSlotConfig = default,
                 PassiveToolConfig = default
             };
@@ -337,7 +350,9 @@ public static class PlayerPowerUpCatalogBakeUtility
                     if (catalogIndex < 0 || catalogIndex >= powerUpUnlockCatalogBuffer.Length)
                         continue;
 
-                    if (powerUpUnlockCatalogBuffer[catalogIndex].IsUnlocked != 0)
+                    PlayerPowerUpUnlockCatalogElement catalogEntry = powerUpUnlockCatalogBuffer[catalogIndex];
+
+                    if (!HasRemainingUnlocks(catalogEntry))
                         continue;
 
                     powerUpTierEntriesBuffer.Add(new PlayerPowerUpTierEntryElement
@@ -374,7 +389,9 @@ public static class PlayerPowerUpCatalogBakeUtility
 
         for (int catalogIndex = 0; catalogIndex < powerUpUnlockCatalogBuffer.Length; catalogIndex++)
         {
-            if (powerUpUnlockCatalogBuffer[catalogIndex].IsUnlocked != 0)
+            PlayerPowerUpUnlockCatalogElement catalogEntry = powerUpUnlockCatalogBuffer[catalogIndex];
+
+            if (!HasRemainingUnlocks(catalogEntry))
                 continue;
 
             powerUpTierEntriesBuffer.Add(new PlayerPowerUpTierEntryElement
@@ -437,8 +454,102 @@ public static class PlayerPowerUpCatalogBakeUtility
             return;
 
         PlayerPowerUpUnlockCatalogElement catalogEntry = powerUpUnlockCatalogBuffer[catalogIndex];
+        int maximumUnlockCount = math.max(1, catalogEntry.MaximumUnlockCount);
+
+        if (catalogEntry.CurrentUnlockCount >= maximumUnlockCount)
+            return;
+
+        catalogEntry.CurrentUnlockCount = math.min(maximumUnlockCount, catalogEntry.CurrentUnlockCount + 1);
         catalogEntry.IsUnlocked = 1;
+        catalogEntry.PendingInitialCharacterTuningApply = PlayerPowerUpCharacterTuningRuntimeUtility.ShouldApplyOnAcquisition(in catalogEntry) ? (byte)1 : (byte)0;
         powerUpUnlockCatalogBuffer[catalogIndex] = catalogEntry;
+    }
+
+    private static bool HasRemainingUnlocks(PlayerPowerUpUnlockCatalogElement catalogEntry)
+    {
+        return catalogEntry.CurrentUnlockCount < math.max(1, catalogEntry.MaximumUnlockCount);
+    }
+
+    private static int ResolveMaximumUnlockCount(PlayerPowerUpsPreset preset, ModularPowerUpDefinition powerUp)
+    {
+        IReadOnlyList<PowerUpModuleBinding> moduleBindings = powerUp != null ? powerUp.ModuleBindings : null;
+
+        if (moduleBindings == null)
+            return 1;
+
+        int maximumUnlockCount = 1;
+
+        for (int bindingIndex = 0; bindingIndex < moduleBindings.Count; bindingIndex++)
+        {
+            PowerUpModuleBinding binding = moduleBindings[bindingIndex];
+
+            if (binding == null || !binding.IsEnabled)
+                continue;
+
+            PowerUpModuleDefinition moduleDefinition = PlayerPowerUpBakeSharedUtility.ResolveModuleDefinitionById(preset, binding.ModuleId);
+
+            if (moduleDefinition == null || moduleDefinition.ModuleKind != PowerUpModuleKind.Stackable)
+                continue;
+
+            PowerUpModuleData payload = binding.ResolvePayload(moduleDefinition);
+            PowerUpStackableModuleData stackableData = payload != null ? payload.Stackable : null;
+
+            if (stackableData == null)
+                continue;
+
+            maximumUnlockCount = math.max(maximumUnlockCount, stackableData.MaxAcquisitions);
+        }
+
+        return maximumUnlockCount;
+    }
+
+    private static int AppendCharacterTuningFormulas(PlayerPowerUpsPreset preset,
+                                                     ModularPowerUpDefinition powerUp,
+                                                     DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> powerUpCharacterTuningFormulaBuffer)
+    {
+        IReadOnlyList<PowerUpModuleBinding> moduleBindings = powerUp != null ? powerUp.ModuleBindings : null;
+
+        if (moduleBindings == null)
+            return 0;
+
+        int appendedFormulaCount = 0;
+
+        for (int bindingIndex = 0; bindingIndex < moduleBindings.Count; bindingIndex++)
+        {
+            PowerUpModuleBinding binding = moduleBindings[bindingIndex];
+
+            if (binding == null || !binding.IsEnabled)
+                continue;
+
+            PowerUpModuleDefinition moduleDefinition = PlayerPowerUpBakeSharedUtility.ResolveModuleDefinitionById(preset, binding.ModuleId);
+
+            if (moduleDefinition == null || moduleDefinition.ModuleKind != PowerUpModuleKind.CharacterTuning)
+                continue;
+
+            PowerUpModuleData payload = binding.ResolvePayload(moduleDefinition);
+            PowerUpCharacterTuningModuleData characterTuningData = payload != null ? payload.CharacterTuning : null;
+            IReadOnlyList<PowerUpCharacterTuningFormulaData> formulas = characterTuningData != null ? characterTuningData.Formulas : null;
+
+            if (formulas == null)
+                continue;
+
+            for (int formulaIndex = 0; formulaIndex < formulas.Count; formulaIndex++)
+            {
+                PowerUpCharacterTuningFormulaData formulaData = formulas[formulaIndex];
+                string formula = formulaData != null ? formulaData.Formula : string.Empty;
+
+                if (string.IsNullOrWhiteSpace(formula))
+                    continue;
+
+                powerUpCharacterTuningFormulaBuffer.Add(new PlayerPowerUpCharacterTuningFormulaElement
+                {
+                    Formula = new FixedString128Bytes(formula.Trim())
+                });
+                appendedFormulaCount++;
+            }
+        }
+
+        return appendedFormulaCount;
     }
 
     private static string BuildUnlockCatalogKey(PlayerPowerUpUnlockKind unlockKind, string powerUpId)

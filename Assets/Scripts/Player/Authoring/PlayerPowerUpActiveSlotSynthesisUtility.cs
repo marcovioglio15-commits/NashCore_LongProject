@@ -219,6 +219,7 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                                                                  float dashInvulnerabilityExtraTime,
                                                                  float bulletTimeDuration,
                                                                  float bulletTimeEnemySlowPercent,
+                                                                 float bulletTimeTransitionTimeSeconds,
                                                                  bool hasTriggerPress,
                                                                  bool hasTriggerRelease,
                                                                  bool hasHoldCharge,
@@ -319,7 +320,8 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
             BulletTime = new BulletTimePowerUpConfig
             {
                 Duration = math.max(0.05f, bulletTimeDuration),
-                EnemySlowPercent = math.clamp(bulletTimeEnemySlowPercent, 0f, 100f)
+                EnemySlowPercent = math.clamp(bulletTimeEnemySlowPercent, 0f, 100f),
+                TransitionTimeSeconds = math.max(0f, bulletTimeTransitionTimeSeconds)
             },
             Shotgun = new ShotgunPowerUpConfig
             {

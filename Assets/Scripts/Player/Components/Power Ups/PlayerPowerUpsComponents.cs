@@ -84,8 +84,43 @@ public struct PlayerPowerUpUnlockCatalogElement : IBufferElementData
     public FixedString128Bytes Description;
     public PlayerPowerUpUnlockKind UnlockKind;
     public byte IsUnlocked;
+    public byte PendingInitialCharacterTuningApply;
+    public int CurrentUnlockCount;
+    public int MaximumUnlockCount;
+    public int CharacterTuningFormulaStartIndex;
+    public int CharacterTuningFormulaCount;
     public PlayerPowerUpSlotConfig ActiveSlotConfig;
     public PlayerPassiveToolConfig PassiveToolConfig;
+}
+
+/// <summary>
+/// Stores one flattened Character Tuning formula referenced by unlock catalog entries.
+/// </summary>
+public struct PlayerPowerUpCharacterTuningFormulaElement : IBufferElementData
+{
+    public FixedString128Bytes Formula;
+}
+
+/// <summary>
+/// Tracks which active runtime-scoped slots currently own a temporary Character Tuning application.
+/// </summary>
+public struct PlayerChargeCharacterTuningState : IComponentData
+{
+    public byte PrimaryIsApplied;
+    public byte SecondaryIsApplied;
+    public uint PrimaryOwnershipSignature;
+    public uint SecondaryOwnershipSignature;
+    public uint PassiveOwnershipSignature;
+}
+
+/// <summary>
+/// Stores one baseline scalable-stat value that must be restored after temporary runtime-scoped Character Tuning ends.
+/// </summary>
+public struct PlayerChargeCharacterTuningBaseStatElement : IBufferElementData
+{
+    public FixedString64Bytes Name;
+    public byte Type;
+    public float Value;
 }
 
 /// <summary>
@@ -197,6 +232,8 @@ public struct PlayerPassiveToolsState : IComponentData
     public ElementalTrailPassiveConfig ElementalTrail;
     public byte HasHeal;
     public PassiveHealConfig Heal;
+    public byte HasBulletTime;
+    public PassiveBulletTimeConfig BulletTime;
 }
 
 /// <summary>
@@ -221,8 +258,16 @@ public struct PlayerDashState : IComponentData
 /// </summary>
 public struct PlayerBulletTimeState : IComponentData
 {
-    public float RemainingDuration;
-    public float SlowPercent;
+    public float TimedRemainingDuration;
+    public float TimedSlowPercent;
+    public float TimedTransitionTimeSeconds;
+    public float ToggleSlowPercent;
+    public float ToggleTransitionTimeSeconds;
+    public float CurrentSlowPercent;
+    public float TransitionStartSlowPercent;
+    public float TransitionTargetSlowPercent;
+    public float TransitionDurationSeconds;
+    public float TransitionElapsedSeconds;
 }
 
 /// <summary>
@@ -302,6 +347,15 @@ public struct PlayerPassiveExplosionState : IComponentData
 /// Holds runtime timers for passive heal-over-time logic.
 /// </summary>
 public struct PlayerPassiveHealState : IComponentData
+{
+    public float CooldownRemaining;
+    public float PreviousObservedHealth;
+}
+
+/// <summary>
+/// Holds runtime timers for passive bullet-time logic.
+/// </summary>
+public struct PlayerPassiveBulletTimeState : IComponentData
 {
     public float CooldownRemaining;
     public float PreviousObservedHealth;

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
@@ -36,9 +37,13 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
         state.RequireForUpdate<PlayerMilestonePowerUpSelectionState>();
         state.RequireForUpdate<PlayerMilestoneTimeScaleResumeState>();
         state.RequireForUpdate<PlayerPowerUpUnlockCatalogElement>();
+        state.RequireForUpdate<PlayerPowerUpCharacterTuningFormulaElement>();
         state.RequireForUpdate<PlayerProgressionConfig>();
+        state.RequireForUpdate<PlayerRuntimeGamePhaseElement>();
         state.RequireForUpdate<PlayerLevel>();
         state.RequireForUpdate<PlayerExperience>();
+        state.RequireForUpdate<PlayerExperienceCollection>();
+        state.RequireForUpdate<PlayerScalableStatElement>();
         state.RequireForUpdate<PlayerHealth>();
         state.RequireForUpdate<PlayerShield>();
         state.RequireForUpdate<PlayerPowerUpsConfig>();
@@ -60,8 +65,9 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
         ComponentLookup<PlayerPassiveToolsState> passiveToolsStateLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(false);
         ComponentLookup<PlayerMilestoneTimeScaleResumeState> milestoneTimeScaleResumeStateLookup = SystemAPI.GetComponentLookup<PlayerMilestoneTimeScaleResumeState>(false);
         ComponentLookup<PlayerProgressionConfig> progressionConfigLookup = SystemAPI.GetComponentLookup<PlayerProgressionConfig>(true);
-        ComponentLookup<PlayerLevel> playerLevelLookup = SystemAPI.GetComponentLookup<PlayerLevel>(true);
+        ComponentLookup<PlayerLevel> playerLevelLookup = SystemAPI.GetComponentLookup<PlayerLevel>(false);
         ComponentLookup<PlayerExperience> playerExperienceLookup = SystemAPI.GetComponentLookup<PlayerExperience>(false);
+        ComponentLookup<PlayerExperienceCollection> playerExperienceCollectionLookup = SystemAPI.GetComponentLookup<PlayerExperienceCollection>(false);
         ComponentLookup<PlayerHealth> playerHealthLookup = SystemAPI.GetComponentLookup<PlayerHealth>(false);
         ComponentLookup<PlayerShield> playerShieldLookup = SystemAPI.GetComponentLookup<PlayerShield>(false);
         ComponentLookup<PlayerPowerUpsConfig> powerUpsConfigLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsConfig>(false);
@@ -74,11 +80,17 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
         foreach ((DynamicBuffer<PlayerMilestonePowerUpSelectionCommand> selectionCommands,
                   DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffers,
                   DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
+                  DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
+                  DynamicBuffer<PlayerScalableStatElement> scalableStats,
+                  DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
                   RefRW<PlayerMilestonePowerUpSelectionState> selectionState,
                   Entity entity)
                  in SystemAPI.Query<DynamicBuffer<PlayerMilestonePowerUpSelectionCommand>,
                                     DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement>,
                                     DynamicBuffer<PlayerPowerUpUnlockCatalogElement>,
+                                    DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement>,
+                                    DynamicBuffer<PlayerScalableStatElement>,
+                                    DynamicBuffer<PlayerRuntimeGamePhaseElement>,
                                     RefRW<PlayerMilestonePowerUpSelectionState>>().WithEntityAccess())
         {
             if (!passiveToolsStateLookup.HasComponent(entity) ||
@@ -86,6 +98,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
                 !progressionConfigLookup.HasComponent(entity) ||
                 !playerLevelLookup.HasComponent(entity) ||
                 !playerExperienceLookup.HasComponent(entity) ||
+                !playerExperienceCollectionLookup.HasComponent(entity) ||
                 !playerHealthLookup.HasComponent(entity) ||
                 !playerShieldLookup.HasComponent(entity) ||
                 !powerUpsConfigLookup.HasComponent(entity) ||
@@ -96,6 +109,9 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             DynamicBuffer<PlayerMilestonePowerUpSelectionCommand> selectionCommandsBuffer = selectionCommands;
             DynamicBuffer<PlayerMilestonePowerUpSelectionOfferElement> selectionOffersBuffer = selectionOffers;
             DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalogBuffer = unlockCatalog;
+            DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulaBuffer = characterTuningFormulas;
+            DynamicBuffer<PlayerScalableStatElement> scalableStatsBuffer = scalableStats;
+            DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhaseBuffer = runtimeGamePhases;
             DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer = equippedPassiveToolsLookup[entity];
 
             if (selectionCommandsBuffer.Length <= 0)
@@ -121,6 +137,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             PlayerMilestoneTimeScaleResumeState milestoneTimeScaleResumeStateValue = milestoneTimeScaleResumeStateLookup[entity];
             PlayerProgressionConfig progressionConfigValue = progressionConfigLookup[entity];
             PlayerLevel playerLevelValue = playerLevelLookup[entity];
+            PlayerExperienceCollection playerExperienceCollectionValue = playerExperienceCollectionLookup[entity];
             PlayerPowerUpsConfig powerUpsConfigValue = powerUpsConfigLookup[entity];
             PlayerPowerUpsState powerUpsStateValue = powerUpsStateLookup[entity];
             PlayerExperience playerExperienceValue = playerExperienceLookup[entity];
@@ -131,6 +148,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             {
                 int skippedMilestoneLevel = selectionStateValue.MilestoneLevel;
                 int appliedCompensationCount = PlayerMilestoneSelectionOutcomeUtility.ApplySkipCompensations(progressionConfigValue,
+                                                                                                              runtimeGamePhaseBuffer,
                                                                                                               in selectionStateValue,
                                                                                                               ref playerHealthValue,
                                                                                                               ref playerShieldValue,
@@ -181,29 +199,66 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
 
             PlayerPassiveToolsState passiveToolsState = passiveToolsStateLookup[entity];
             PlayerPowerUpUnlockCatalogElement selectedCatalogEntry = unlockCatalogBuffer[selectedCatalogIndex];
-            bool wasAlreadyUnlocked = selectedCatalogEntry.IsUnlocked != 0;
-            bool runtimeApplied = ApplySelectedUnlock(selectedOffer.UnlockKind,
-                                                      in selectedCatalogEntry,
-                                                      in physicsWorldSingleton,
-                                                      ref powerUpsConfigValue,
-                                                      ref powerUpsStateValue,
-                                                      equippedPassiveToolsBuffer,
-                                                      ref passiveToolsState,
-                                                      entity,
-                                                      in localTransformLookup,
-                                                      in powerUpContainerConfigLookup,
-                                                      ref commandBuffer,
-                                                      out string applyTarget);
+            int maximumUnlockCount = math.max(1, selectedCatalogEntry.MaximumUnlockCount);
 
-            if (runtimeApplied)
+            if (selectedCatalogEntry.CurrentUnlockCount >= maximumUnlockCount)
             {
-                selectedCatalogEntry.IsUnlocked = 1;
-                unlockCatalogBuffer[selectedCatalogIndex] = selectedCatalogEntry;
+                Debug.LogWarning(string.Format(CultureInfo.InvariantCulture,
+                                               "[PlayerMilestonePowerUpSelectionResolveSystem] Ignored selected offer '{0}' because the unlock already reached its acquisition cap ({1}/{2}).",
+                                               selectedCatalogEntry.PowerUpId.ToString(),
+                                               selectedCatalogEntry.CurrentUnlockCount,
+                                               maximumUnlockCount));
+                continue;
             }
+
+            bool isFirstAcquisition = selectedCatalogEntry.CurrentUnlockCount <= 0;
+            bool wasAlreadyUnlocked = selectedCatalogEntry.IsUnlocked != 0;
+            bool runtimeApplied = false;
+            string runtimeApplyTarget = "NoRuntimeEffect";
+
+            if (isFirstAcquisition)
+            {
+                runtimeApplied = ApplySelectedUnlock(selectedOffer.UnlockKind,
+                                                    in selectedCatalogEntry,
+                                                    in physicsWorldSingleton,
+                                                    ref powerUpsConfigValue,
+                                                    ref powerUpsStateValue,
+                                                    equippedPassiveToolsBuffer,
+                                                    ref passiveToolsState,
+                                                    entity,
+                                                    in localTransformLookup,
+                                                    in powerUpContainerConfigLookup,
+                                                    ref commandBuffer,
+                                                    out runtimeApplyTarget);
+            }
+
+            bool characterTuningApplied = false;
+            int appliedCharacterTuningCount = 0;
+
+            if (PlayerPowerUpCharacterTuningRuntimeUtility.ShouldApplyOnAcquisition(in selectedCatalogEntry))
+            {
+                characterTuningApplied = PlayerPowerUpCharacterTuningRuntimeUtility.TryApplyCharacterTuning(in selectedCatalogEntry,
+                                                                                                             characterTuningFormulaBuffer,
+                                                                                                             scalableStatsBuffer,
+                                                                                                             progressionConfigValue,
+                                                                                                             runtimeGamePhaseBuffer,
+                                                                                                             ref playerExperienceValue,
+                                                                                                             ref playerLevelValue,
+                                                                                                             ref playerExperienceCollectionValue,
+                                                                                                             out appliedCharacterTuningCount);
+            }
+
+            selectedCatalogEntry.CurrentUnlockCount = math.min(maximumUnlockCount, selectedCatalogEntry.CurrentUnlockCount + 1);
+            selectedCatalogEntry.IsUnlocked = 1;
+            selectedCatalogEntry.PendingInitialCharacterTuningApply = 0;
+            unlockCatalogBuffer[selectedCatalogIndex] = selectedCatalogEntry;
 
             powerUpsConfigLookup[entity] = powerUpsConfigValue;
             powerUpsStateLookup[entity] = powerUpsStateValue;
             passiveToolsStateLookup[entity] = passiveToolsState;
+            playerExperienceLookup[entity] = playerExperienceValue;
+            playerLevelLookup[entity] = playerLevelValue;
+            playerExperienceCollectionLookup[entity] = playerExperienceCollectionValue;
             FinalizeSelection(progressionConfigValue,
                               selectionOffersBuffer,
                               ref selectionStateValue,
@@ -212,13 +267,17 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             milestoneTimeScaleResumeStateLookup[entity] = milestoneTimeScaleResumeStateValue;
 
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                                    "[PlayerMilestonePowerUpSelectionResolveSystem] Selected offer {0}: Power-Up '{1}' ({2}). Already Unlocked: {3}. Runtime Applied: {4} ({5}).",
+                                    "[PlayerMilestonePowerUpSelectionResolveSystem] Selected offer {0}: Power-Up '{1}' ({2}). Already Unlocked: {3}. Runtime Applied: {4} ({5}). Character Tuning Applied: {6} ({7} formulas). Unlock Count: {8}/{9}.",
                                     selectedOfferIndex,
                                     selectedOffer.PowerUpId.ToString(),
                                     selectedOffer.UnlockKind,
                                     wasAlreadyUnlocked ? "Yes" : "No",
                                     runtimeApplied ? "Yes" : "No",
-                                    applyTarget));
+                                    runtimeApplyTarget,
+                                    characterTuningApplied ? "Yes" : "No",
+                                    appliedCharacterTuningCount,
+                                    selectedCatalogEntry.CurrentUnlockCount,
+                                    maximumUnlockCount));
         }
 
         commandBuffer.Playback(state.EntityManager);
@@ -320,7 +379,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
                                             ref commandBuffer,
                                             out applyTarget);
             case PlayerPowerUpUnlockKind.Passive:
-                return TryEquipPassiveUnlock(in selectedCatalogEntry.PassiveToolConfig,
+                return TryEquipPassiveUnlock(in selectedCatalogEntry,
                                              equippedPassiveTools,
                                              ref passiveToolsState,
                                              out applyTarget);
@@ -417,11 +476,12 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// <param name="passiveToolsState">Aggregated passive runtime state to update.</param>
     /// <param name="applyTarget">Debug label describing the passive-apply result.</param>
     /// <returns>True when a passive tool was added; otherwise false.</returns>
-    private static bool TryEquipPassiveUnlock(in PlayerPassiveToolConfig passiveToolConfig,
+    private static bool TryEquipPassiveUnlock(in PlayerPowerUpUnlockCatalogElement selectedCatalogEntry,
                                               DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools,
                                               ref PlayerPassiveToolsState passiveToolsState,
                                               out string applyTarget)
     {
+        PlayerPassiveToolConfig passiveToolConfig = selectedCatalogEntry.PassiveToolConfig;
         applyTarget = "PassiveBuffer";
 
         if (passiveToolConfig.IsDefined == 0)
@@ -438,6 +498,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
 
         equippedPassiveTools.Add(new EquippedPassiveToolElement
         {
+            PowerUpId = selectedCatalogEntry.PowerUpId,
             Tool = passiveToolConfig
         });
         passiveToolsState = PlayerPassiveToolsAggregationUtility.BuildPassiveToolsState(equippedPassiveTools);

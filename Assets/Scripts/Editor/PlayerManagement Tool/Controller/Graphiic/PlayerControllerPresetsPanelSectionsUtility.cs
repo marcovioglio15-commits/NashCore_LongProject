@@ -318,18 +318,55 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
                                                                                                 InputActionSelectionElement.SelectionMode.Shooting);
         section.Add(bindingsFoldout);
 
-        Foldout valuesFoldout = PlayerControllerPresetsPanelFieldUtility.BuildValuesFoldout(valuesProperty,
-                                                                                            scalingRulesProperty,
-                                                                                            new string[]
-        {
-            "shootSpeed",
-            "rateOfFire",
-            "explosionRadius",
-            "range",
-            "lifetime",
-            "damage"
-        });
+        SerializedProperty shootSpeedProperty = valuesProperty.FindPropertyRelative("shootSpeed");
+        SerializedProperty rateOfFireProperty = valuesProperty.FindPropertyRelative("rateOfFire");
+        SerializedProperty projectileSizeMultiplierProperty = valuesProperty.FindPropertyRelative("projectileSizeMultiplier");
+        SerializedProperty explosionRadiusProperty = valuesProperty.FindPropertyRelative("explosionRadius");
+        SerializedProperty rangeProperty = valuesProperty.FindPropertyRelative("range");
+        SerializedProperty lifetimeProperty = valuesProperty.FindPropertyRelative("lifetime");
+        SerializedProperty damageProperty = valuesProperty.FindPropertyRelative("damage");
+        SerializedProperty penetrationModeProperty = valuesProperty.FindPropertyRelative("penetrationMode");
+        SerializedProperty maxPenetrationsProperty = valuesProperty.FindPropertyRelative("maxPenetrations");
+
+        Foldout valuesFoldout = new Foldout();
+        valuesFoldout.text = "Values";
+        valuesFoldout.value = true;
+
+        VisualElement valuesContainer = new VisualElement();
+        valuesContainer.style.flexDirection = FlexDirection.Column;
+        valuesFoldout.Add(valuesContainer);
+
+        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(shootSpeedProperty, scalingRulesProperty));
+        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(rateOfFireProperty, scalingRulesProperty));
+        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(projectileSizeMultiplierProperty, scalingRulesProperty));
+        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(explosionRadiusProperty, scalingRulesProperty));
+        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(rangeProperty, scalingRulesProperty));
+        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(lifetimeProperty, scalingRulesProperty));
+        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(damageProperty, scalingRulesProperty));
+
+        VisualElement penetrationModeField = PlayerScalingFieldElementFactory.CreateField(penetrationModeProperty,
+                                                                                          scalingRulesProperty,
+                                                                                          "Penetration Mode");
+        valuesContainer.Add(penetrationModeField);
+
+        VisualElement maxPenetrationsField = PlayerScalingFieldElementFactory.CreateField(maxPenetrationsProperty,
+                                                                                          scalingRulesProperty,
+                                                                                          "Max Penetration");
+        valuesContainer.Add(maxPenetrationsField);
         section.Add(valuesFoldout);
+
+        void RefreshPenetrationFieldVisibility()
+        {
+            ProjectilePenetrationMode penetrationMode = (ProjectilePenetrationMode)penetrationModeProperty.enumValueIndex;
+            bool shouldShowMaxPenetration = ShouldDisplayMaxPenetrationField(penetrationMode);
+            maxPenetrationsField.style.display = shouldShowMaxPenetration ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        penetrationModeField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            RefreshPenetrationFieldVisibility();
+        });
+        RefreshPenetrationFieldVisibility();
 
         Foldout objectPoolFoldout = new Foldout();
         objectPoolFoldout.text = "Object Pool";
@@ -344,6 +381,23 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         objectPoolFoldout.Add(poolExpandBatchField);
 
         section.Add(objectPoolFoldout);
+    }
+
+    /// <summary>
+    /// Resolves whether the Max Penetration field is relevant for the selected penetration mode.
+    /// </summary>
+    /// <param name="penetrationMode">Currently selected projectile penetration behavior.</param>
+    /// <returns>True when the mode requires a maximum penetration count.</returns>
+    private static bool ShouldDisplayMaxPenetrationField(ProjectilePenetrationMode penetrationMode)
+    {
+        switch (penetrationMode)
+        {
+            case ProjectilePenetrationMode.FixedHits:
+            case ProjectilePenetrationMode.DamageBased:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>

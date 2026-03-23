@@ -24,9 +24,8 @@ internal static class PlayerControllerPresetsPanelFieldUtility
         foldout.text = "Values";
         foldout.value = true;
 
-        ScrollView scrollView = new ScrollView(ScrollViewMode.Vertical);
-        scrollView.style.maxHeight = 160f;
-        scrollView.style.minHeight = 100f;
+        VisualElement valuesContainer = new VisualElement();
+        valuesContainer.style.flexDirection = FlexDirection.Column;
 
         if (valuesProperty != null)
         {
@@ -37,11 +36,11 @@ internal static class PlayerControllerPresetsPanelFieldUtility
                 if (fieldProperty == null)
                     continue;
 
-                scrollView.Add(PlayerScalingFieldElementFactory.CreateField(fieldProperty, scalingRulesProperty));
+                valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(fieldProperty, scalingRulesProperty));
             }
         }
 
-        foldout.Add(scrollView);
+        foldout.Add(valuesContainer);
         return foldout;
     }
 

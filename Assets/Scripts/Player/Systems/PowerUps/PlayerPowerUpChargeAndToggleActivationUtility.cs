@@ -53,7 +53,7 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
                                              float deltaTime,
                                              in LocalTransform localTransform,
                                              in PlayerLookState lookState,
-                                             in PlayerControllerConfig controllerConfig,
+                                             in PlayerRuntimeShootingConfig runtimeShootingConfig,
                                              in PlayerPassiveToolsState passiveToolsState,
                                              in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                              in ComponentLookup<LocalTransform> transformLookup,
@@ -164,7 +164,7 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
                 PlayerPowerUpActivationExecutionUtility.ExecuteChargeShot(in slotConfig,
                                                                           in localTransform,
                                                                           in lookState,
-                                                                          in controllerConfig,
+                                                                          in runtimeShootingConfig,
                                                                           in passiveToolsState,
                                                                           playerEntity,
                                                                           in muzzleLookup,
@@ -334,8 +334,7 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
         dashState.Speed = 0f;
         dashState.TransitionInDuration = 0f;
         dashState.TransitionOutDuration = 0f;
-        bulletTimeState.RemainingDuration = 0f;
-        bulletTimeState.SlowPercent = 0f;
+        PlayerBulletTimeRuntimeUtility.Clear(ref bulletTimeState);
     }
     #endregion
 

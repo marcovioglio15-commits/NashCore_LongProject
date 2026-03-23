@@ -59,7 +59,8 @@ public enum PassiveToolKind
     SplittingProjectiles = 4,
     Explosion = 5,
     ElementalTrail = 6,
-    Custom = 7
+    Custom = 7,
+    BulletTime = 8
 }
 
 public enum ProjectileOrbitPathMode

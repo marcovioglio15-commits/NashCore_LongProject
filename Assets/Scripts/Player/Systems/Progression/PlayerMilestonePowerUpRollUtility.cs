@@ -332,7 +332,7 @@ public static class PlayerMilestonePowerUpRollUtility
 
             PlayerPowerUpUnlockCatalogElement unlockEntry = unlockCatalog[catalogIndex];
 
-            if (unlockEntry.IsUnlocked != 0)
+            if (!HasRemainingUnlocks(in unlockEntry))
                 continue;
 
             if (IsPassiveOfferBlocked(in unlockEntry, blockedPassiveKinds))
@@ -396,7 +396,7 @@ public static class PlayerMilestonePowerUpRollUtility
 
             PlayerPowerUpUnlockCatalogElement unlockEntry = unlockCatalog[candidateCatalogIndex];
 
-            if (unlockEntry.IsUnlocked != 0)
+            if (!HasRemainingUnlocks(in unlockEntry))
                 continue;
 
             if (IsPassiveOfferBlocked(in unlockEntry, blockedPassiveKinds))
@@ -441,6 +441,9 @@ public static class PlayerMilestonePowerUpRollUtility
         if (unlockEntry.UnlockKind != PlayerPowerUpUnlockKind.Passive)
             return false;
 
+        if (unlockEntry.CurrentUnlockCount > 0)
+            return false;
+
         if (unlockEntry.PassiveToolConfig.IsDefined == 0)
             return false;
 
@@ -448,6 +451,11 @@ public static class PlayerMilestonePowerUpRollUtility
             return false;
 
         return blockedPassiveKinds.Contains(unlockEntry.PassiveToolConfig.ToolKind);
+    }
+
+    private static bool HasRemainingUnlocks(in PlayerPowerUpUnlockCatalogElement unlockEntry)
+    {
+        return unlockEntry.CurrentUnlockCount < mathMax(1, unlockEntry.MaximumUnlockCount);
     }
 
     private static float ResolveTierRollPercentage(ref PlayerMilestoneTierRollBlob tierRoll,

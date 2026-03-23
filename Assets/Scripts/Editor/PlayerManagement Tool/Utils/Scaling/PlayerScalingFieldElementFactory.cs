@@ -271,7 +271,7 @@ public static class PlayerScalingFieldElementFactory
             formulaContainer.style.display = addScaling ? DisplayStyle.Flex : DisplayStyle.None;
             debugColorField.style.display = addScaling && debugInConsole ? DisplayStyle.Flex : DisplayStyle.None;
             ISet<string> resolvedAllowedVariables = ResolveAllowedVariables(allowedVariables, scalingRulesProperty);
-            availableVariablesLabel.text = BuildAvailableVariablesLabelText(resolvedAllowedVariables);
+            availableVariablesLabel.text = PlayerScalingFormulaValidationUtility.BuildAvailableVariablesLabelText(resolvedAllowedVariables);
 
             if (addScaling == false)
             {
@@ -613,29 +613,6 @@ public static class PlayerScalingFieldElementFactory
         return mergedVariables;
     }
 
-    private static string BuildAvailableVariablesLabelText(ISet<string> allowedVariables)
-    {
-        if (allowedVariables == null || allowedVariables.Count == 0)
-            return "Available Variables: [this]";
-
-        List<string> sortedVariables = new List<string>(allowedVariables);
-        sortedVariables.Sort(StringComparer.OrdinalIgnoreCase);
-
-        if (sortedVariables.Count == 1)
-            return string.Format("Available Variables: [this], [{0}]", sortedVariables[0]);
-
-        string joinedVariables = string.Empty;
-
-        for (int index = 0; index < sortedVariables.Count; index++)
-        {
-            if (index > 0)
-                joinedVariables += ", ";
-
-            joinedVariables += string.Format("[{0}]", sortedVariables[index]);
-        }
-
-        return string.Format("Available Variables: [this], {0}", joinedVariables);
-    }
     #endregion
 
     #endregion

@@ -19,6 +19,11 @@ public static class PlayerScalingStatKeyUtility
         "phaseID"
     };
 
+    private static readonly string[] StableNestedStringIdPropertyPaths =
+    {
+        "commonData.powerUpId"
+    };
+
     private static readonly string[] StableIntegerIdPropertyNames =
     {
         "milestoneLevel"
@@ -454,6 +459,29 @@ public static class PlayerScalingStatKeyUtility
             return string.Format("{0}:{1}", candidateName, sanitizedValue);
         }
 
+        for (int candidateIndex = 0; candidateIndex < StableNestedStringIdPropertyPaths.Length; candidateIndex++)
+        {
+            string candidatePath = StableNestedStringIdPropertyPaths[candidateIndex];
+            SerializedProperty candidateProperty = arrayElementProperty.FindPropertyRelative(candidatePath);
+
+            if (candidateProperty == null)
+                continue;
+
+            if (candidateProperty.propertyType != SerializedPropertyType.String)
+                continue;
+
+            if (string.IsNullOrWhiteSpace(candidateProperty.stringValue))
+                continue;
+
+            string sanitizedValue = candidateProperty.stringValue.Trim();
+            string tokenName = ResolveStableTokenName(candidatePath);
+
+            if (string.IsNullOrWhiteSpace(tokenName))
+                continue;
+
+            return string.Format("{0}:{1}", tokenName, sanitizedValue);
+        }
+
         for (int candidateIndex = 0; candidateIndex < StableIntegerIdPropertyNames.Length; candidateIndex++)
         {
             string candidateName = StableIntegerIdPropertyNames[candidateIndex];
@@ -469,6 +497,19 @@ public static class PlayerScalingStatKeyUtility
         }
 
         return string.Empty;
+    }
+
+    private static string ResolveStableTokenName(string propertyPath)
+    {
+        if (string.IsNullOrWhiteSpace(propertyPath))
+            return string.Empty;
+
+        int lastSeparatorIndex = propertyPath.LastIndexOf('.');
+
+        if (lastSeparatorIndex < 0 || lastSeparatorIndex >= propertyPath.Length - 1)
+            return propertyPath.Trim();
+
+        return propertyPath.Substring(lastSeparatorIndex + 1).Trim();
     }
 
     /// <summary>

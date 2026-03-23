@@ -14,6 +14,7 @@ public partial struct PlayerLookMultiplierSystem : ISystem
         state.RequireForUpdate<PlayerLookState>();
         state.RequireForUpdate<PlayerMovementModifiers>();
         state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerRuntimeLookConfig>();
     }
     #endregion
 
@@ -23,9 +24,15 @@ public partial struct PlayerLookMultiplierSystem : ISystem
         foreach ((RefRO<PlayerLookState> lookState,
                   RefRW<PlayerMovementModifiers> movementModifiers,
                   RefRO<PlayerControllerConfig> controllerConfig,
-                  RefRO<LocalTransform> localTransform) in SystemAPI.Query<RefRO<PlayerLookState>, RefRW<PlayerMovementModifiers>, RefRO<PlayerControllerConfig>, RefRO<LocalTransform>>())
+                  RefRO<PlayerRuntimeLookConfig> runtimeLookConfig,
+                  RefRO<LocalTransform> localTransform) in SystemAPI.Query<RefRO<PlayerLookState>,
+                                                                          RefRW<PlayerMovementModifiers>,
+                                                                          RefRO<PlayerControllerConfig>,
+                                                                          RefRO<PlayerRuntimeLookConfig>,
+                                                                          RefRO<LocalTransform>>())
         {
-            ref LookConfig lookConfig = ref controllerConfig.ValueRO.Config.Value.Look;
+            ref LookConfig bakedLookConfig = ref controllerConfig.ValueRO.Config.Value.Look;
+            PlayerRuntimeLookConfig lookConfig = runtimeLookConfig.ValueRO;
             float3 desiredDirection = lookState.ValueRO.DesiredDirection;
 
             if (math.lengthsq(desiredDirection) < 1e-6f)
@@ -56,8 +63,8 @@ public partial struct PlayerLookMultiplierSystem : ISystem
                     int count = math.max(1, lookConfig.DiscreteDirectionCount);
                     float offset = math.radians(lookConfig.DirectionOffsetDegrees);
                     float angle = math.atan2(localDir.x, localDir.y);
-                    maxSpeedMultiplier = SampleDiscrete(ref lookConfig.DiscreteMaxSpeedMultipliers, count, angle, offset, lookConfig.MultiplierSampling);
-                    accelerationMultiplier = SampleDiscrete(ref lookConfig.DiscreteAccelerationMultipliers, count, angle, offset, lookConfig.MultiplierSampling);
+                    maxSpeedMultiplier = SampleDiscrete(ref bakedLookConfig.DiscreteMaxSpeedMultipliers, count, angle, offset, lookConfig.MultiplierSampling);
+                    accelerationMultiplier = SampleDiscrete(ref bakedLookConfig.DiscreteAccelerationMultipliers, count, angle, offset, lookConfig.MultiplierSampling);
                     break;
                 case LookDirectionsMode.Cones:
                     float coneAngle = math.atan2(localDir.x, localDir.y);
@@ -107,7 +114,7 @@ public partial struct PlayerLookMultiplierSystem : ISystem
         return math.lerp(multipliers[index0], multipliers[index1], blend);
     }
 
-    private static bool TryGetConeMultipliers(float angle, ref LookConfig lookConfig, out float maxSpeed, out float acceleration)
+    private static bool TryGetConeMultipliers(float angle, ref PlayerRuntimeLookConfig lookConfig, out float maxSpeed, out float acceleration)
     {
         bool found = false;
         float bestDelta = float.MaxValue;

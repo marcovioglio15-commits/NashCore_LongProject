@@ -12,7 +12,8 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
     internal const string ModuleIdGateResource = "Module_GateResource";
     internal const string ModuleIdStateSuppressShooting = "Module_StateSuppressShooting";
     internal const string ModuleIdProjectilesPatternCone = "Module_ProjectilesPatternCone";
-    internal const string ModuleIdProjectilesTuning = "Module_ProjectilesTuning";
+    internal const string ModuleIdCharacterTuning = "Module_CharacterTuning";
+    internal const string ModuleIdProjectilesTuning = ModuleIdCharacterTuning;
     internal const string ModuleIdSpawnObject = "Module_SpawnObject";
     internal const string ModuleIdDash = "Module_Dash";
     internal const string ModuleIdTimeDilationEnemies = "Module_TimeDilationEnemies";
@@ -23,6 +24,7 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
     internal const string ModuleIdOrbitalProjectiles = "Module_OrbitalProjectiles";
     internal const string ModuleIdBouncingProjectiles = "Module_BouncingProjectiles";
     internal const string ModuleIdProjectileSplit = "Module_ProjectileSplit";
+    internal const string ModuleIdStackable = "Module_Stackable";
 
     internal const string ActivePowerUpIdShotgun = "ActiveShotgun";
     internal const string ActivePowerUpIdChargeShot = "ActiveChargeShot";
@@ -153,7 +155,7 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
         definitions.Add(CreateModuleDefinition(ModuleIdGateResource, "Resource Gate", PowerUpModuleKind.GateResource, PowerUpModuleStage.Gate, "Checks resource costs, recharge and cooldown."));
         definitions.Add(CreateModuleDefinition(ModuleIdStateSuppressShooting, "Suppress Shooting", PowerUpModuleKind.StateSuppressShooting, PowerUpModuleStage.StateEnter, "Disables base shooting while active."));
         definitions.Add(CreateModuleDefinition(ModuleIdProjectilesPatternCone, "Projectiles Pattern Cone", PowerUpModuleKind.ProjectilesPatternCone, PowerUpModuleStage.Execute, "Shoots a cone of multiple projectiles."));
-        definitions.Add(CreateModuleDefinition(ModuleIdProjectilesTuning, "Projectiles Tuning", PowerUpModuleKind.ProjectilesTuning, PowerUpModuleStage.Execute, "Applies projectile multipliers and penetration behavior."));
+        definitions.Add(CreateModuleDefinition(ModuleIdCharacterTuning, "Character Tuning", PowerUpModuleKind.CharacterTuning, PowerUpModuleStage.PostExecute, "Applies scalable-stat assignments on acquisition for standard actives, while owned for passives, temporarily during charge with Trigger Hold Charge, or only while active with toggleable Resource Gate."));
         definitions.Add(CreateModuleDefinition(ModuleIdSpawnObject, "Spawn Object", PowerUpModuleKind.SpawnObject, PowerUpModuleStage.Execute, "Spawns a configured object with optional damage payload."));
         definitions.Add(CreateModuleDefinition(ModuleIdDash, "Dash", PowerUpModuleKind.Dash, PowerUpModuleStage.Execute, "Moves player rapidly with optional invulnerability."));
         definitions.Add(CreateModuleDefinition(ModuleIdTimeDilationEnemies, "Time Dilation Enemies", PowerUpModuleKind.TimeDilationEnemies, PowerUpModuleStage.Execute, "Slows enemy simulation for a short duration."));
@@ -164,6 +166,7 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
         definitions.Add(CreateModuleDefinition(ModuleIdOrbitalProjectiles, "Orbital Projectiles", PowerUpModuleKind.OrbitalProjectiles, PowerUpModuleStage.Hook, "Overrides projectile trajectory to orbital behavior."));
         definitions.Add(CreateModuleDefinition(ModuleIdBouncingProjectiles, "Bouncing Projectiles", PowerUpModuleKind.BouncingProjectiles, PowerUpModuleStage.Hook, "Adds wall bounce behavior to projectiles."));
         definitions.Add(CreateModuleDefinition(ModuleIdProjectileSplit, "Projectile Split", PowerUpModuleKind.ProjectileSplit, PowerUpModuleStage.Hook, "Splits projectiles based on configured trigger mode."));
+        definitions.Add(CreateModuleDefinition(ModuleIdStackable, "Stackable", PowerUpModuleKind.Stackable, PowerUpModuleStage.PostExecute, "Allows milestone reacquisition up to a configured total count."));
         return definitions;
     }
 
@@ -218,8 +221,7 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
                                                 false,
                                                 CreateBinding(ModuleIdTriggerPress, PowerUpModuleStage.Trigger, null),
                                                 CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, CreateResourceGatePayload(100f, 30f, 25f, 0f, PowerUpChargeType.Time, 0.7f)),
-                                                CreateBinding(ModuleIdProjectilesPatternCone, PowerUpModuleStage.Execute, CreateProjectilePatternPayload(6, 45f)),
-                                                CreateBinding(ModuleIdProjectilesTuning, PowerUpModuleStage.Execute, CreateProjectileTuningPayload(1f, 1f, 1f, 1f, 1f, ProjectilePenetrationMode.None, 0))));
+                                                CreateBinding(ModuleIdProjectilesPatternCone, PowerUpModuleStage.Execute, CreateProjectilePatternPayload(6, 45f))));
 
         definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdChargeShot,
                                                 "Charge Shot",
@@ -232,8 +234,7 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
                                                 CreateBinding(ModuleIdTriggerHoldCharge, PowerUpModuleStage.Trigger, CreateHoldChargePayload(80f, 120f, 140f)),
                                                 CreateBinding(ModuleIdTriggerRelease, PowerUpModuleStage.Trigger, null),
                                                 CreateBinding(ModuleIdGateResource, PowerUpModuleStage.Gate, CreateResourceGatePayload(100f, 35f, 20f, 0f, PowerUpChargeType.Time, 0.35f)),
-                                                CreateBinding(ModuleIdStateSuppressShooting, PowerUpModuleStage.StateEnter, CreateSuppressShootingPayload(true)),
-                                                CreateBinding(ModuleIdProjectilesTuning, PowerUpModuleStage.Execute, CreateProjectileTuningPayload(1.85f, 2f, 1f, 1.25f, 1.25f, ProjectilePenetrationMode.FixedHits, 2))));
+                                                CreateBinding(ModuleIdStateSuppressShooting, PowerUpModuleStage.StateEnter, CreateSuppressShootingPayload(true))));
 
         definitions.Add(CreatePowerUpDefinition(ActivePowerUpIdGigaBomb,
                                                 "Giga Bomb",
@@ -369,11 +370,14 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
             case PowerUpModuleKind.ProjectilesPatternCone:
                 payload.ProjectilePatternCone.Configure(6, 45f);
                 break;
-            case PowerUpModuleKind.ProjectilesTuning:
-                payload.ProjectileTuning.Configure(1f, 1f, 1f, 1f, 1f, ProjectilePenetrationMode.FixedHits, 1);
+            case PowerUpModuleKind.CharacterTuning:
+                payload.CharacterTuning.Configure(new List<PowerUpCharacterTuningFormulaData>());
                 break;
             case PowerUpModuleKind.Heal:
                 payload.HealMissingHealth.Configure(PowerUpHealApplicationMode.Instant, 35f, 0f, 0.2f, PowerUpHealStackPolicy.Refresh);
+                break;
+            case PowerUpModuleKind.Stackable:
+                payload.Stackable.Configure(2);
                 break;
             default:
                 break;
@@ -480,26 +484,6 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
     {
         PowerUpModuleData payload = new PowerUpModuleData();
         payload.ProjectilePatternCone.Configure(projectileCount, coneAngleDegrees);
-        payload.Validate();
-        return payload;
-    }
-
-    private static PowerUpModuleData CreateProjectileTuningPayload(float sizeMultiplier,
-                                                                   float damageMultiplier,
-                                                                   float speedMultiplier,
-                                                                   float rangeMultiplier,
-                                                                   float lifetimeMultiplier,
-                                                                   ProjectilePenetrationMode penetrationMode,
-                                                                   int maxPenetrations)
-    {
-        PowerUpModuleData payload = new PowerUpModuleData();
-        payload.ProjectileTuning.Configure(sizeMultiplier,
-                                           damageMultiplier,
-                                           speedMultiplier,
-                                           rangeMultiplier,
-                                           lifetimeMultiplier,
-                                           penetrationMode,
-                                           maxPenetrations);
         payload.Validate();
         return payload;
     }

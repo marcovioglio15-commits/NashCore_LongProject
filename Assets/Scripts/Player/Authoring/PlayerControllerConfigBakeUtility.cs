@@ -328,10 +328,13 @@ public static class PlayerControllerConfigBakeUtility
             {
                 ShootSpeed = shootingSettings.Values.ShootSpeed,
                 RateOfFire = shootingSettings.Values.RateOfFire,
+                ProjectileSizeMultiplier = math.max(0.01f, shootingSettings.Values.ProjectileSizeMultiplier),
                 ExplosionRadius = shootingSettings.Values.ExplosionRadius,
                 Range = shootingSettings.Values.Range,
                 Lifetime = shootingSettings.Values.Lifetime,
-                Damage = shootingSettings.Values.Damage
+                Damage = shootingSettings.Values.Damage,
+                PenetrationMode = shootingSettings.Values.PenetrationMode,
+                MaxPenetrations = math.max(0, shootingSettings.Values.MaxPenetrations)
             }
         };
 

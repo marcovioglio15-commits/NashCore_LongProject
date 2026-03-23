@@ -24,12 +24,17 @@ public static class PlayerPowerUpPassiveBakeUtility
     public static void CollectEquippedPassiveToolConfigs(PlayerAuthoring authoring,
                                                          PlayerPowerUpsPreset preset,
                                                          Func<GameObject, Entity> resolveDynamicPrefabEntity,
-                                                         List<PlayerPassiveToolConfig> outputPassiveToolConfigs)
+                                                         List<PlayerPassiveToolConfig> outputPassiveToolConfigs,
+                                                         List<FixedString64Bytes> outputPowerUpIds = null)
     {
         if (preset == null || outputPassiveToolConfigs == null)
             return;
 
         outputPassiveToolConfigs.Clear();
+
+        if (outputPowerUpIds != null)
+            outputPowerUpIds.Clear();
+
         IReadOnlyList<ModularPowerUpDefinition> passivePowerUps = preset.PassivePowerUps;
 
         if (passivePowerUps != null && passivePowerUps.Count > 0)
@@ -65,6 +70,9 @@ public static class PlayerPowerUpPassiveBakeUtility
                     continue;
 
                 outputPassiveToolConfigs.Add(passiveToolConfig);
+
+                if (outputPowerUpIds != null)
+                    outputPowerUpIds.Add(new FixedString64Bytes(passivePowerUp.CommonData.PowerUpId.Trim()));
             }
 
             return;
@@ -98,6 +106,9 @@ public static class PlayerPowerUpPassiveBakeUtility
                 continue;
 
             outputPassiveToolConfigs.Add(passiveToolConfig);
+
+            if (outputPowerUpIds != null)
+                outputPowerUpIds.Add(default);
         }
     }
 
@@ -140,7 +151,6 @@ public static class PlayerPowerUpPassiveBakeUtility
         BouncingProjectilesPassiveConfig bounceConfig = default;
         bool hasSplit = false;
         SplittingProjectilesPassiveConfig splitConfig = default;
-        bool hasProjectileTuning = false;
         bool hasShotgunPattern = false;
         float projectileSizeMultiplier = 1f;
         float projectileDamageMultiplier = 1f;
@@ -159,6 +169,10 @@ public static class PlayerPowerUpPassiveBakeUtility
         float healDurationSeconds = 0.5f;
         float healTickIntervalSeconds = 0.2f;
         PowerUpHealStackPolicy healStackPolicy = PowerUpHealStackPolicy.Refresh;
+        bool hasBulletTime = false;
+        float bulletTimeDurationSeconds = 0.05f;
+        float bulletTimeEnemySlowPercent = 0f;
+        float bulletTimeTransitionTimeSeconds = 0f;
         IReadOnlyList<PowerUpModuleBinding> moduleBindings = powerUp.ModuleBindings;
 
         if (moduleBindings == null || moduleBindings.Count == 0)
@@ -316,30 +330,8 @@ public static class PlayerPowerUpPassiveBakeUtility
                     shotgunProjectileCount += math.max(1, shotgunPatternData.ProjectileCount);
                     shotgunConeAngleDegrees = math.max(shotgunConeAngleDegrees, math.max(0f, shotgunPatternData.ConeAngleDegrees));
                     break;
-                case PowerUpModuleKind.ProjectilesTuning:
-                    PowerUpProjectileTuningModuleData projectileTuningData = payload.ProjectileTuning;
-
-                    if (projectileTuningData == null)
-                        break;
-
-                    hasProjectileTuning = true;
-                    projectileSizeMultiplier *= math.max(0.01f, projectileTuningData.SizeMultiplier);
-                    projectileDamageMultiplier *= math.max(0f, projectileTuningData.DamageMultiplier);
-                    projectileSpeedMultiplier *= math.max(0f, projectileTuningData.SpeedMultiplier);
-                    projectileRangeMultiplier *= math.max(0f, projectileTuningData.RangeMultiplier);
-                    projectileLifetimeMultiplier *= math.max(0f, projectileTuningData.LifetimeMultiplier);
-                    projectilePenetrationMode = (ProjectilePenetrationMode)math.max((int)projectilePenetrationMode, (int)projectileTuningData.PenetrationMode);
-                    projectileMaxPenetrations += math.max(0, projectileTuningData.MaxPenetrations);
-
-                    if (projectileTuningData.ApplyElementalOnHit &&
-                        projectileTuningData.ElementalEffectData != null &&
-                        projectileTuningData.ElementalStacksPerHit > 0f)
-                    {
-                        hasElementalProjectiles = true;
-                        elementalProjectilesEffect = PlayerPowerUpBakeSharedUtility.BuildElementalEffectConfig(projectileTuningData.ElementalEffectData);
-                        elementalProjectilesStacksPerHit += math.max(0f, projectileTuningData.ElementalStacksPerHit);
-                    }
-
+                case PowerUpModuleKind.CharacterTuning:
+                case PowerUpModuleKind.Stackable:
                     break;
                 case PowerUpModuleKind.Heal:
                     PowerUpHealMissingHealthModuleData healData = payload.HealMissingHealth;
@@ -355,6 +347,19 @@ public static class PlayerPowerUpPassiveBakeUtility
                                                                                                                            healData.DurationSeconds));
                     healTickIntervalSeconds = math.min(healTickIntervalSeconds, math.max(0.01f, healData.TickIntervalSeconds));
                     healStackPolicy = healData.StackPolicy;
+                    break;
+                case PowerUpModuleKind.TimeDilationEnemies:
+                    BulletTimeToolData bulletTimeData = payload.BulletTime;
+
+                    if (bulletTimeData == null)
+                        break;
+
+                    hasBulletTime = true;
+                    bulletTimeDurationSeconds = math.max(bulletTimeDurationSeconds, math.max(0.05f, bulletTimeData.Duration));
+                    bulletTimeEnemySlowPercent = math.max(bulletTimeEnemySlowPercent,
+                                                          math.clamp(bulletTimeData.EnemySlowPercent, 0f, 100f));
+                    bulletTimeTransitionTimeSeconds = math.max(bulletTimeTransitionTimeSeconds,
+                                                               math.max(0f, bulletTimeData.TransitionTimeSeconds));
                     break;
             }
         }
@@ -374,8 +379,8 @@ public static class PlayerPowerUpPassiveBakeUtility
         {
             IsDefined = 0,
             ToolKind = PassiveToolKind.Custom,
-            HasProjectileSize = hasProjectileTuning ? (byte)1 : (byte)0,
-            HasShotgun = hasShotgunPattern || hasProjectileTuning ? (byte)1 : (byte)0,
+            HasProjectileSize = 0,
+            HasShotgun = hasShotgunPattern ? (byte)1 : (byte)0,
             HasElementalProjectiles = hasElementalProjectiles ? (byte)1 : (byte)0,
             HasPerfectCircle = hasOrbit ? (byte)1 : (byte)0,
             HasBouncingProjectiles = hasBounce ? (byte)1 : (byte)0,
@@ -383,6 +388,7 @@ public static class PlayerPowerUpPassiveBakeUtility
             HasExplosion = hasExplosion ? (byte)1 : (byte)0,
             HasElementalTrail = hasTrailSpawn || hasAreaTick ? (byte)1 : (byte)0,
             HasHeal = hasHeal && healAmount > 0f ? (byte)1 : (byte)0,
+            HasBulletTime = hasBulletTime && bulletTimeEnemySlowPercent > 0f ? (byte)1 : (byte)0,
             ProjectileSize = new ProjectileSizePassiveConfig
             {
                 SizeMultiplier = math.max(0.01f, projectileSizeMultiplier),
@@ -439,6 +445,16 @@ public static class PlayerPowerUpPassiveBakeUtility
                 DurationSeconds = math.max(0.05f, healDurationSeconds),
                 TickIntervalSeconds = math.max(0.01f, healTickIntervalSeconds),
                 StackPolicy = healStackPolicy
+            },
+            BulletTime = new PassiveBulletTimeConfig
+            {
+                TriggerMode = PlayerPowerUpPassiveConfigBuildUtility.ResolvePassiveBulletTimeTriggerMode(hasTriggerEvent,
+                                                                                                         triggerEventType,
+                                                                                                         PassiveBulletTimeTriggerMode.Periodic),
+                CooldownSeconds = hasSharedCooldown ? math.max(0f, sharedCooldownSeconds) : 0f,
+                DurationSeconds = math.max(0.05f, bulletTimeDurationSeconds),
+                EnemySlowPercent = math.clamp(bulletTimeEnemySlowPercent, 0f, 100f),
+                TransitionTimeSeconds = math.max(0f, bulletTimeTransitionTimeSeconds)
             }
         };
 

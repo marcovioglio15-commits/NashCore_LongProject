@@ -6,7 +6,7 @@ public sealed class ShootingSettings
 {
     #region Serialized Fields
     [Header("Shooting Trigger")]
-    [Tooltip("Defines whether shooting is toggled on/off or triggered once per button press.")]
+    [Tooltip("Defines whether shooting is toggled on/off, fired once per press, or kept active while the input is held.")]
     [SerializeField] private ShootingTriggerMode triggerMode = ShootingTriggerMode.AutomaticToggle;
 
     [Tooltip("When enabled, projectile movement keeps inheriting the shooter's horizontal velocity after spawn.")]
@@ -127,6 +127,15 @@ public sealed class ShootingValues
 
     [Tooltip("Damage applied by each projectile.")]
     [SerializeField] private float damage = 1f;
+
+    [Tooltip("Multiplier applied to projectile base scale before passive or active power-up modifiers.")]
+    [SerializeField] private float projectileSizeMultiplier = 1f;
+
+    [Tooltip("Penetration rule applied by default to all player-fired projectiles.")]
+    [SerializeField] private ProjectilePenetrationMode penetrationMode = ProjectilePenetrationMode.None;
+
+    [Tooltip("Maximum extra enemies a projectile can pass through after the first valid hit.")]
+    [SerializeField] private int maxPenetrations;
     #endregion
 
     #region Properties
@@ -177,6 +186,30 @@ public sealed class ShootingValues
             return damage;
         }
     }
+
+    public float ProjectileSizeMultiplier
+    {
+        get
+        {
+            return projectileSizeMultiplier;
+        }
+    }
+
+    public ProjectilePenetrationMode PenetrationMode
+    {
+        get
+        {
+            return penetrationMode;
+        }
+    }
+
+    public int MaxPenetrations
+    {
+        get
+        {
+            return maxPenetrations;
+        }
+    }
     #endregion
 
     #region Validation
@@ -193,6 +226,12 @@ public sealed class ShootingValues
 
         if (damage < 0f)
             damage = 0f;
+
+        if (projectileSizeMultiplier < 0.01f)
+            projectileSizeMultiplier = 0.01f;
+
+        if (maxPenetrations < 0)
+            maxPenetrations = 0;
     }
     #endregion
 }

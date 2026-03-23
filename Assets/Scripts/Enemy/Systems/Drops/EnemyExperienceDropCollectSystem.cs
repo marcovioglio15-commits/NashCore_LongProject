@@ -31,7 +31,14 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
     {
         state.RequireForUpdate<EnemyExperienceDropActive>();
         playerQuery = new EntityQueryBuilder(Allocator.Temp)
-                          .WithAll<LocalTransform, PlayerMovementState, PlayerExperienceCollection, PlayerExperience, PlayerLevel, PlayerProgressionConfig, PlayerRunOutcomeState>()
+                          .WithAll<LocalTransform>()
+                          .WithAll<PlayerMovementState>()
+                          .WithAll<PlayerExperienceCollection>()
+                          .WithAll<PlayerExperience>()
+                          .WithAll<PlayerLevel>()
+                          .WithAll<PlayerProgressionConfig>()
+                          .WithAll<PlayerRuntimeGamePhaseElement>()
+                          .WithAll<PlayerRunOutcomeState>()
                           .Build(ref state);
         state.RequireForUpdate(playerQuery);
     }
@@ -56,9 +63,11 @@ public partial struct EnemyExperienceDropCollectSystem : ISystem
         float playerSpeed = math.max(0f, math.length(planarVelocity));
         float pickupRadius = math.max(0f, entityManager.GetComponentData<PlayerExperienceCollection>(playerEntity).PickupRadius);
         PlayerProgressionConfig progressionConfig = entityManager.GetComponentData<PlayerProgressionConfig>(playerEntity);
+        DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases = entityManager.GetBuffer<PlayerRuntimeGamePhaseElement>(playerEntity);
         PlayerLevel playerLevel = entityManager.GetComponentData<PlayerLevel>(playerEntity);
         PlayerExperience playerExperience = entityManager.GetComponentData<PlayerExperience>(playerEntity);
         float remainingExperienceCapacity = PlayerProgressionPhaseUtility.ResolveRemainingExperienceUntilLevelCap(progressionConfig,
+                                                                                                                   runtimeGamePhases,
                                                                                                                    playerLevel.Current,
                                                                                                                    playerExperience.Current);
 

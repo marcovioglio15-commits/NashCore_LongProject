@@ -176,6 +176,7 @@ public static class PlayerPowerUpActiveBakeUtility
         bool hasBulletTime = false;
         float bulletTimeDuration = 0.05f;
         float bulletTimeEnemySlowPercent = 0f;
+        float bulletTimeTransitionTimeSeconds = 0f;
         bool hasHealthPack = false;
         bool hasHealthPackOverTime = false;
         float healthPackHealAmount = 0f;
@@ -286,27 +287,8 @@ public static class PlayerPowerUpActiveBakeUtility
                     shotgunProjectileCount += math.max(1, shotgunPatternData.ProjectileCount);
                     shotgunConeAngleDegrees = math.max(shotgunConeAngleDegrees, math.max(0f, shotgunPatternData.ConeAngleDegrees));
                     break;
-                case PowerUpModuleKind.ProjectilesTuning:
-                    PowerUpProjectileTuningModuleData projectileTuningData = payload.ProjectileTuning;
-
-                    if (projectileTuningData == null)
-                        break;
-
-                    projectileSizeMultiplier *= math.max(0.01f, projectileTuningData.SizeMultiplier);
-                    projectileDamageMultiplier *= math.max(0f, projectileTuningData.DamageMultiplier);
-                    projectileSpeedMultiplier *= math.max(0f, projectileTuningData.SpeedMultiplier);
-                    projectileRangeMultiplier *= math.max(0f, projectileTuningData.RangeMultiplier);
-                    projectileLifetimeMultiplier *= math.max(0f, projectileTuningData.LifetimeMultiplier);
-                    projectilePenetrationMode = (ProjectilePenetrationMode)math.max((int)projectilePenetrationMode, (int)projectileTuningData.PenetrationMode);
-                    projectileMaxPenetrations += math.max(0, projectileTuningData.MaxPenetrations);
-
-                    if (projectileTuningData.ApplyElementalOnHit && projectileTuningData.ElementalEffectData != null)
-                    {
-                        hasProjectileElementalPayload = true;
-                        projectileElementalEffect = PlayerPowerUpBakeSharedUtility.BuildElementalEffectConfig(projectileTuningData.ElementalEffectData);
-                        projectileElementalStacksPerHit += math.max(0f, projectileTuningData.ElementalStacksPerHit);
-                    }
-
+                case PowerUpModuleKind.CharacterTuning:
+                case PowerUpModuleKind.Stackable:
                     break;
                 case PowerUpModuleKind.SpawnObject:
                     PlayerPowerUpActiveSlotSynthesisUtility.AccumulateBombData(payload.Bomb,
@@ -364,6 +346,8 @@ public static class PlayerPowerUpActiveBakeUtility
                     hasBulletTime = true;
                     bulletTimeDuration = math.max(bulletTimeDuration, math.max(0.05f, bulletTimeModuleData.Duration));
                     bulletTimeEnemySlowPercent = math.max(bulletTimeEnemySlowPercent, math.clamp(bulletTimeModuleData.EnemySlowPercent, 0f, 100f));
+                    bulletTimeTransitionTimeSeconds = math.max(bulletTimeTransitionTimeSeconds,
+                                                               math.max(0f, bulletTimeModuleData.TransitionTimeSeconds));
                     break;
                 case PowerUpModuleKind.Heal:
                     PowerUpHealMissingHealthModuleData healModuleData = payload.HealMissingHealth;
@@ -495,6 +479,7 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                               dashInvulnerabilityExtraTime,
                                                                               bulletTimeDuration,
                                                                               bulletTimeEnemySlowPercent,
+                                                                              bulletTimeTransitionTimeSeconds,
                                                                               hasTriggerPress,
                                                                               hasTriggerRelease,
                                                                               hasHoldCharge,

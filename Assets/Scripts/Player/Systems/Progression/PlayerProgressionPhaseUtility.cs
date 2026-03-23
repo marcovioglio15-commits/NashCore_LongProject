@@ -51,6 +51,41 @@ public static class PlayerProgressionPhaseUtility
     }
 
     /// <summary>
+    /// Resolves required experience for the next level-up attempt using the current runtime-scaled phase values.
+    /// </summary>
+    /// <param name="progressionConfig">Runtime progression configuration component.</param>
+    /// <param name="runtimeGamePhases">Runtime-scaled phase buffer.</param>
+    /// <param name="levelValue">Current player level used to resolve the next level-up requirement.</param>
+    /// <param name="activeGamePhaseIndex">Resolved index of the active game phase.</param>
+    /// <param name="isMilestoneRequirement">True when the next level-up reaches a milestone with a custom requirement.</param>
+    /// <param name="milestoneLevel">Target milestone level reached by the next level-up, or 0 when not used.</param>
+    /// <returns>Required experience for the next level-up attempt.</returns>
+    public static float ResolveRequiredExperienceForLevel(PlayerProgressionConfig progressionConfig,
+                                                          DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
+                                                          int levelValue,
+                                                          out int activeGamePhaseIndex,
+                                                          out bool isMilestoneRequirement,
+                                                          out int milestoneLevel)
+    {
+        if (!runtimeGamePhases.IsCreated || runtimeGamePhases.Length <= 0)
+        {
+            return ResolveRequiredExperienceForLevel(progressionConfig,
+                                                    levelValue,
+                                                    out activeGamePhaseIndex,
+                                                    out isMilestoneRequirement,
+                                                    out milestoneLevel);
+        }
+
+        return ResolveRequiredExperienceForLevel(progressionConfig,
+                                                 runtimeGamePhases,
+                                                 levelValue,
+                                                 out activeGamePhaseIndex,
+                                                 out isMilestoneRequirement,
+                                                 out milestoneLevel,
+                                                 false);
+    }
+
+    /// <summary>
     /// Resolves the configured runtime level cap using a safe fallback when progression data is missing.
     /// /params progressionConfig Runtime progression configuration component.
     /// /returns Maximum reachable player level for this configuration.
@@ -128,6 +163,57 @@ public static class PlayerProgressionPhaseUtility
             {
                 remainingExperience += remainingRequirement;
             }
+
+            bufferedExperience = 0f;
+            simulatedLevel += 1;
+        }
+
+        return remainingExperience;
+    }
+
+    /// <summary>
+    /// Resolves how much additional experience the player can still receive before reaching the configured level cap using runtime-scaled phase values.
+    /// /params progressionConfig Runtime progression configuration component.
+    /// /params runtimeGamePhases Runtime-scaled phase buffer.
+    /// /params levelValue Current player level.
+    /// /params currentExperience Current stored progress toward the next level-up.
+    /// /returns Remaining experience capacity until the level cap is reached.
+    /// </summary>
+    public static float ResolveRemainingExperienceUntilLevelCap(PlayerProgressionConfig progressionConfig,
+                                                                DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
+                                                                int levelValue,
+                                                                float currentExperience)
+    {
+        if (!runtimeGamePhases.IsCreated || runtimeGamePhases.Length <= 0)
+            return ResolveRemainingExperienceUntilLevelCap(progressionConfig, levelValue, currentExperience);
+
+        if (levelValue < 0)
+            levelValue = 0;
+
+        if (currentExperience < 0f)
+            currentExperience = 0f;
+
+        int levelCap = ResolveLevelCap(progressionConfig);
+
+        if (levelValue >= levelCap)
+            return 0f;
+
+        float remainingExperience = 0f;
+        int simulatedLevel = levelValue;
+        float bufferedExperience = currentExperience;
+
+        while (simulatedLevel < levelCap)
+        {
+            float requiredExperienceForNextLevel = ResolveRequiredExperienceForLevel(progressionConfig,
+                                                                                     runtimeGamePhases,
+                                                                                     simulatedLevel,
+                                                                                     out int _,
+                                                                                     out bool _,
+                                                                                     out int _);
+            float remainingRequirement = requiredExperienceForNextLevel - bufferedExperience;
+
+            if (remainingRequirement > 0f)
+                remainingExperience += remainingRequirement;
 
             bufferedExperience = 0f;
             simulatedLevel += 1;
@@ -263,6 +349,67 @@ public static class PlayerProgressionPhaseUtility
             {
                 milestoneRequirement = 1f;
             }
+
+            resolvedRequirement = milestoneRequirement;
+            isMilestoneRequirement = true;
+            milestoneLevel = targetLevel;
+            break;
+        }
+
+        return resolvedRequirement;
+    }
+
+    private static float ResolveRequiredExperienceForLevel(PlayerProgressionConfig progressionConfig,
+                                                           DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
+                                                           int levelValue,
+                                                           out int activeGamePhaseIndex,
+                                                           out bool isMilestoneRequirement,
+                                                           out int milestoneLevel,
+                                                           bool unusedFlag)
+    {
+        if (levelValue < 0)
+            levelValue = 0;
+
+        activeGamePhaseIndex = ResolveActiveGamePhaseIndex(progressionConfig, levelValue);
+        isMilestoneRequirement = false;
+        milestoneLevel = 0;
+
+        if (!runtimeGamePhases.IsCreated || runtimeGamePhases.Length == 0)
+            return DefaultRequiredExperience;
+
+        if (activeGamePhaseIndex < 0 || activeGamePhaseIndex >= runtimeGamePhases.Length)
+            activeGamePhaseIndex = 0;
+
+        PlayerRuntimeGamePhaseElement activeGamePhase = runtimeGamePhases[activeGamePhaseIndex];
+        int targetLevel = levelValue + 1;
+        int relativePhaseLevel = levelValue - activeGamePhase.StartsAtLevel;
+
+        if (relativePhaseLevel < 0)
+            relativePhaseLevel = 0;
+
+        float resolvedRequirement = activeGamePhase.StartingRequiredLevelUpExp + (activeGamePhase.RequiredExperienceGrouth * relativePhaseLevel);
+
+        if (resolvedRequirement < 1f)
+            resolvedRequirement = 1f;
+
+        ref BlobArray<PlayerGamePhaseBlob> bakedGamePhases = ref progressionConfig.Config.Value.GamePhases;
+
+        if (activeGamePhaseIndex < 0 || activeGamePhaseIndex >= bakedGamePhases.Length)
+            return resolvedRequirement;
+
+        ref BlobArray<PlayerLevelUpMilestoneBlob> milestones = ref bakedGamePhases[activeGamePhaseIndex].Milestones;
+
+        for (int milestoneIndex = 0; milestoneIndex < milestones.Length; milestoneIndex++)
+        {
+            ref PlayerLevelUpMilestoneBlob milestone = ref milestones[milestoneIndex];
+
+            if (!MatchesMilestoneLevel(ref milestone, targetLevel))
+                continue;
+
+            float milestoneRequirement = milestone.SpecialExpRequirement;
+
+            if (milestoneRequirement < 1f)
+                milestoneRequirement = 1f;
 
             resolvedRequirement = milestoneRequirement;
             isMilestoneRequirement = true;

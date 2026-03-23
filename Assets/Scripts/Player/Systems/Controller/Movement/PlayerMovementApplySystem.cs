@@ -16,7 +16,7 @@ public partial struct PlayerMovementApplySystem : ISystem
     {
         state.RequireForUpdate<PlayerMovementState>();
         state.RequireForUpdate<LocalTransform>();
-        state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerRuntimeMovementConfig>();
         state.RequireForUpdate<PhysicsWorldSingleton>();
     }
 
@@ -33,9 +33,9 @@ public partial struct PlayerMovementApplySystem : ISystem
 
         foreach ((RefRW<LocalTransform> localTransform,
                   RefRW<PlayerMovementState> movementState,
-                  RefRO<PlayerControllerConfig> controllerConfig) in SystemAPI.Query<RefRW<LocalTransform>, RefRW<PlayerMovementState>, RefRO<PlayerControllerConfig>>())
+                  RefRO<PlayerRuntimeMovementConfig> runtimeMovementConfig) in SystemAPI.Query<RefRW<LocalTransform>, RefRW<PlayerMovementState>, RefRO<PlayerRuntimeMovementConfig>>())
         {
-            float wallCollisionSkinWidth = math.max(0f, controllerConfig.ValueRO.Config.Value.Movement.Values.WallCollisionSkinWidth);
+            float wallCollisionSkinWidth = math.max(0f, runtimeMovementConfig.ValueRO.Values.WallCollisionSkinWidth);
             float3 currentPosition = localTransform.ValueRO.Position;
             float3 resolvedPosition = currentPosition;
             float3 resolvedVelocity = movementState.ValueRO.Velocity;
@@ -58,7 +58,7 @@ public partial struct PlayerMovementApplySystem : ISystem
 
                     if (hitWall)
                     {
-                        float wallBounceCoefficient = controllerConfig.ValueRO.Config.Value.Movement.Values.WallBounceCoefficient;
+                        float wallBounceCoefficient = runtimeMovementConfig.ValueRO.Values.WallBounceCoefficient;
                         resolvedVelocity = WorldWallCollisionUtility.ComputeBounceVelocity(resolvedVelocity, hitNormal, wallBounceCoefficient);
                     }
                 }

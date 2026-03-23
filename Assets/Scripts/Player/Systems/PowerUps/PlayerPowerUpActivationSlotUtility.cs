@@ -19,7 +19,8 @@ public static class PlayerPowerUpActivationSlotUtility
                                         in LocalTransform localTransform,
                                         in PlayerLookState lookState,
                                         in PlayerMovementState movementState,
-                                        in PlayerControllerConfig controllerConfig,
+                                        in PlayerRuntimeMovementConfig runtimeMovementConfig,
+                                        in PlayerRuntimeShootingConfig runtimeShootingConfig,
                                         in PlayerPassiveToolsState passiveToolsState,
                                         in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                         in ComponentLookup<LocalTransform> transformLookup,
@@ -63,7 +64,7 @@ public static class PlayerPowerUpActivationSlotUtility
                                                                                 deltaTime,
                                                                                 in localTransform,
                                                                                 in lookState,
-                                                                                in controllerConfig,
+                                                                                in runtimeShootingConfig,
                                                                                 in passiveToolsState,
                                                                                 in muzzleLookup,
                                                                                 in transformLookup,
@@ -146,7 +147,8 @@ public static class PlayerPowerUpActivationSlotUtility
                             in bulletTimeState,
                             in healOverTimeState,
                             in movementState,
-                            in controllerConfig,
+                            in runtimeMovementConfig,
+                            in runtimeShootingConfig,
                             in localTransform,
                             moveInput,
                             lastValidMovementDirection,
@@ -194,7 +196,8 @@ public static class PlayerPowerUpActivationSlotUtility
                                                             in localTransform,
                                                             in lookState,
                                                             in movementState,
-                                                            in controllerConfig,
+                                                            in runtimeMovementConfig,
+                                                            in runtimeShootingConfig,
                                                             in passiveToolsState,
                                                             in muzzleLookup,
                                                             in transformLookup,
@@ -221,7 +224,8 @@ public static class PlayerPowerUpActivationSlotUtility
                                        in PlayerBulletTimeState bulletTimeState,
                                        in PlayerHealOverTimeState healOverTimeState,
                                        in PlayerMovementState movementState,
-                                       in PlayerControllerConfig controllerConfig,
+                                       in PlayerRuntimeMovementConfig runtimeMovementConfig,
+                                       in PlayerRuntimeShootingConfig runtimeShootingConfig,
                                        in LocalTransform localTransform,
                                        float2 moveInput,
                                        float3 lastValidMovementDirection,
@@ -245,7 +249,7 @@ public static class PlayerPowerUpActivationSlotUtility
                     return false;
 
                 if (!PlayerPowerUpActivationExecutionUtility.TryResolveDashActivationDirection(in movementState,
-                                                                                               in controllerConfig,
+                                                                                               in runtimeMovementConfig,
                                                                                                in localTransform,
                                                                                                moveInput,
                                                                                                lastValidMovementDirection,
@@ -260,15 +264,12 @@ public static class PlayerPowerUpActivationSlotUtility
                 if (slotConfig.BulletTime.EnemySlowPercent <= 0f)
                     return false;
 
-                if (bulletTimeState.RemainingDuration > 0f)
-                    return false;
-
                 return true;
             case ActiveToolKind.Shotgun:
                 if (slotConfig.Shotgun.ProjectileCount <= 0)
                     return false;
 
-                if (controllerConfig.Config.Value.Shooting.Values.ShootSpeed <= 0f)
+                if (runtimeShootingConfig.Values.ShootSpeed <= 0f)
                     return false;
 
                 return true;
@@ -302,7 +303,7 @@ public static class PlayerPowerUpActivationSlotUtility
                     slotConfig.ChargeShot.PassiveChargeGainWhileReleased == 0)
                     return false;
 
-                if (controllerConfig.Config.Value.Shooting.Values.ShootSpeed <= 0f)
+                if (runtimeShootingConfig.Values.ShootSpeed <= 0f)
                     return false;
 
                 return true;

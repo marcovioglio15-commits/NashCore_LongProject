@@ -35,6 +35,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
         state.RequireForUpdate<PlayerInputState>();
         state.RequireForUpdate<PlayerLookState>();
         state.RequireForUpdate<PlayerShootingState>();
+        state.RequireForUpdate<PlayerRuntimeShootingConfig>();
         state.RequireForUpdate<ShooterProjectilePrefab>();
         state.RequireForUpdate<ShootRequest>();
     }
@@ -59,20 +60,20 @@ public partial struct PlayerShootingIntentSystem : ISystem
         // and if so, enqueue shoot requests with the appropriate parameters for projectile spawning
         foreach ((RefRO<PlayerInputState> inputState,
                   RefRO<PlayerLookState> lookState,
-                  RefRO<PlayerControllerConfig> controllerConfig,
+                  RefRO<PlayerRuntimeShootingConfig> runtimeShootingConfig,
                   RefRO<LocalTransform> localTransform,
                   RefRW<PlayerShootingState> shootingState,
                   DynamicBuffer<ShootRequest> shootRequests,
                   Entity entity) in SystemAPI.Query<RefRO<PlayerInputState>,
                                                    RefRO<PlayerLookState>,
-                                                   RefRO<PlayerControllerConfig>,
+                                                   RefRO<PlayerRuntimeShootingConfig>,
                                                    RefRO<LocalTransform>,
                                                    RefRW<PlayerShootingState>,
                                                    DynamicBuffer<ShootRequest>>().WithEntityAccess())
         {
             // if shooting is disabled in the config, skip processing shooting logic for this player
-            ref ShootingConfig shootingConfig = ref controllerConfig.ValueRO.Config.Value.Shooting;
-            ref ShootingValuesBlob values = ref shootingConfig.Values;
+            PlayerRuntimeShootingConfig shootingConfig = runtimeShootingConfig.ValueRO;
+            ShootingValuesBlob values = shootingConfig.Values;
             byte inheritPlayerSpeed = shootingConfig.ProjectilesInheritPlayerSpeed;
             PlayerPassiveToolsState passiveToolsState = ResolvePassiveToolsState(entity, in passiveToolsLookup);
             bool isShootingSuppressed = false;
@@ -80,7 +81,8 @@ public partial struct PlayerShootingIntentSystem : ISystem
             if (powerUpsStateLookup.HasComponent(entity))
                 isShootingSuppressed = powerUpsStateLookup[entity].IsShootingSuppressed != 0;
 
-            float projectileScaleMultiplier = math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier);
+            float projectileScaleMultiplier = math.max(0.01f,
+                                                       values.ProjectileSizeMultiplier * math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier));
             float projectileSpeed = math.max(0f, values.ShootSpeed * math.max(0f, passiveToolsState.ProjectileSpeedMultiplier));
             float projectileDamage = math.max(0f, values.Damage * math.max(0f, passiveToolsState.ProjectileDamageMultiplier));
             float projectileExplosionRadius = math.max(0f, values.ExplosionRadius);
@@ -89,9 +91,13 @@ public partial struct PlayerShootingIntentSystem : ISystem
             bool hasPassiveShotgunPayload = passiveToolsState.HasShotgun != 0;
             int passiveShotgunProjectileCount = hasPassiveShotgunPayload ? math.max(1, passiveToolsState.Shotgun.ProjectileCount) : 1;
             float passiveShotgunConeAngle = hasPassiveShotgunPayload ? math.max(0f, passiveToolsState.Shotgun.ConeAngleDegrees) : 0f;
-            ProjectilePenetrationMode passivePenetrationMode = hasPassiveShotgunPayload ? passiveToolsState.Shotgun.PenetrationMode : ProjectilePenetrationMode.None;
-            int passiveMaxPenetrations = hasPassiveShotgunPayload ? math.max(0, passiveToolsState.Shotgun.MaxPenetrations) : 0;
+            ProjectilePenetrationMode basePenetrationMode = values.PenetrationMode;
+            int baseMaxPenetrations = math.max(0, values.MaxPenetrations);
             bool isShootPressed = inputState.ValueRO.Shoot > 0.5f;
+            bool usesAutomaticLatch = shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle;
+
+            if (!usesAutomaticLatch && shootingState.ValueRO.AutomaticEnabled != 0)
+                shootingState.ValueRW.AutomaticEnabled = 0;
 
             if (isShootingSuppressed)
             {
@@ -116,15 +122,19 @@ public partial struct PlayerShootingIntentSystem : ISystem
             bool shootPressedThisFrame = isShootPressed && shootingState.ValueRO.PreviousShootPressed == 0;
             bool shootReleasedThisFrame = isShootPressed == false && shootingState.ValueRO.PreviousShootPressed != 0;
             shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
-            bool automaticWasEnabled = shootingState.ValueRO.AutomaticEnabled != 0;
+            bool automaticWasEnabled = usesAutomaticLatch && shootingState.ValueRO.AutomaticEnabled != 0;
             float shotInterval = 1f / values.RateOfFire;
 
             // based on the shooting trigger mode, determine if the player should shoot this frame
-            bool shouldShoot = ResolveShootingTrigger(ref shootingState.ValueRW, shootingConfig.TriggerMode, shootPressedThisFrame, shootReleasedThisFrame);
-            bool automaticIsEnabled = shootingState.ValueRO.AutomaticEnabled != 0;
+            bool shouldShoot = ResolveShootingTrigger(ref shootingState.ValueRW,
+                                                      shootingConfig.TriggerMode,
+                                                      isShootPressed,
+                                                      shootPressedThisFrame,
+                                                      shootReleasedThisFrame);
+            bool automaticIsEnabled = usesAutomaticLatch && shootingState.ValueRW.AutomaticEnabled != 0;
             bool visualShootingActive = isShootPressed;
 
-            if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle || shootingConfig.TriggerMode == ShootingTriggerMode.ManualContinousShot)
+            if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle)
             {
                 visualShootingActive = visualShootingActive || automaticIsEnabled;
                 bool automaticEnabledThisFrame = automaticWasEnabled == false && automaticIsEnabled;
@@ -180,8 +190,8 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                     projectileDamage,
                                     projectileScaleMultiplier,
                                     inheritPlayerSpeed,
-                                    passivePenetrationMode,
-                                    passiveMaxPenetrations);
+                                    basePenetrationMode,
+                                    baseMaxPenetrations);
                     continue;
                 }
 
@@ -207,8 +217,8 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                     projectileDamage,
                                     projectileScaleMultiplier,
                                     inheritPlayerSpeed,
-                                    passivePenetrationMode,
-                                    passiveMaxPenetrations);
+                                    basePenetrationMode,
+                                    baseMaxPenetrations);
                 }
             }
         }
@@ -224,9 +234,14 @@ public partial struct PlayerShootingIntentSystem : ISystem
     /// </summary>
     /// <param name="shootingState"></param>
     /// <param name="triggerMode"></param>
+    /// <param name="isShootPressed"></param>
     /// <param name="shootPressedThisFrame"></param>
     /// <returns></returns>
-    private static bool ResolveShootingTrigger(ref PlayerShootingState shootingState, ShootingTriggerMode triggerMode, bool shootPressedThisFrame,bool shootReleasedThisFrame)
+    private static bool ResolveShootingTrigger(ref PlayerShootingState shootingState,
+                                               ShootingTriggerMode triggerMode,
+                                               bool isShootPressed,
+                                               bool shootPressedThisFrame,
+                                               bool shootReleasedThisFrame)
     {
         switch (triggerMode)
         {
@@ -238,11 +253,10 @@ public partial struct PlayerShootingIntentSystem : ISystem
             case ShootingTriggerMode.ManualSingleShot:
                 return shootPressedThisFrame;
             case ShootingTriggerMode.ManualContinousShot:
-                if (shootPressedThisFrame || shootReleasedThisFrame)
-                    shootingState.AutomaticEnabled = shootingState.AutomaticEnabled == 0 ? (byte)1 : (byte)0;
-
-                return shootPressedThisFrame || shootingState.AutomaticEnabled != 0;
+                shootingState.AutomaticEnabled = 0;
+                return isShootPressed;
             default:
+                shootingState.AutomaticEnabled = 0;
                 return false;
         }
     }

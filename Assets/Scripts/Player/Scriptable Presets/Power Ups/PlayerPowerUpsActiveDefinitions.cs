@@ -352,6 +352,9 @@ public sealed class BulletTimeToolData
 
     [Tooltip("Enemy slowdown percentage while Bullet Time is active. 0 means no slowdown, 100 means full stop.")]
     [SerializeField] private float enemySlowPercent = 40f;
+
+    [Tooltip("Seconds used to blend the slow effect in and out whenever Bullet Time changes state.")]
+    [SerializeField] private float transitionTimeSeconds = 0.2f;
     #endregion
 
     #endregion
@@ -372,6 +375,14 @@ public sealed class BulletTimeToolData
             return enemySlowPercent;
         }
     }
+
+    public float TransitionTimeSeconds
+    {
+        get
+        {
+            return transitionTimeSeconds;
+        }
+    }
     #endregion
 
     #region Methods
@@ -387,6 +398,9 @@ public sealed class BulletTimeToolData
 
         if (enemySlowPercent > 100f)
             enemySlowPercent = 100f;
+
+        if (transitionTimeSeconds < 0f)
+            transitionTimeSeconds = 0f;
     }
     #endregion
 

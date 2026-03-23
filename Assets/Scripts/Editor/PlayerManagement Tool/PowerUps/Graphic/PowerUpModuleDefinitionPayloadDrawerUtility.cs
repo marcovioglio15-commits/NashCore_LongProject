@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -48,14 +49,17 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             case PowerUpModuleKind.StateSuppressShooting:
                 BuildSuppressShootingPayloadUi(payloadContainer, payloadProperty);
                 return;
-            case PowerUpModuleKind.ProjectilesTuning:
-                BuildProjectileTuningPayloadUi(payloadContainer, payloadProperty);
+            case PowerUpModuleKind.CharacterTuning:
+                BuildCharacterTuningPayloadUi(payloadContainer, payloadProperty);
                 return;
             case PowerUpModuleKind.ProjectilesPatternCone:
                 PowerUpModuleDefinitionVisualizationUtility.BuildProjectilePatternConePayloadUi(payloadContainer, payloadProperty);
                 return;
             case PowerUpModuleKind.OrbitalProjectiles:
                 BuildOrbitalProjectilesPayloadUi(payloadContainer, payloadProperty);
+                return;
+            case PowerUpModuleKind.Stackable:
+                BuildStackablePayloadUi(payloadContainer, payloadProperty);
                 return;
         }
 
@@ -399,69 +403,57 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         });
     }
 
-    private static void BuildProjectileTuningPayloadUi(VisualElement payloadContainer, SerializedProperty projectileTuningPayloadProperty)
+    private static void BuildCharacterTuningPayloadUi(VisualElement payloadContainer, SerializedProperty characterTuningPayloadProperty)
     {
-        if (payloadContainer == null || projectileTuningPayloadProperty == null)
+        if (payloadContainer == null || characterTuningPayloadProperty == null)
             return;
 
-        SerializedProperty sizeMultiplierProperty = projectileTuningPayloadProperty.FindPropertyRelative("sizeMultiplier");
-        SerializedProperty damageMultiplierProperty = projectileTuningPayloadProperty.FindPropertyRelative("damageMultiplier");
-        SerializedProperty speedMultiplierProperty = projectileTuningPayloadProperty.FindPropertyRelative("speedMultiplier");
-        SerializedProperty rangeMultiplierProperty = projectileTuningPayloadProperty.FindPropertyRelative("rangeMultiplier");
-        SerializedProperty lifetimeMultiplierProperty = projectileTuningPayloadProperty.FindPropertyRelative("lifetimeMultiplier");
-        SerializedProperty penetrationModeProperty = projectileTuningPayloadProperty.FindPropertyRelative("penetrationMode");
-        SerializedProperty maxPenetrationsProperty = projectileTuningPayloadProperty.FindPropertyRelative("maxPenetrations");
-        SerializedProperty applyElementalOnHitProperty = projectileTuningPayloadProperty.FindPropertyRelative("applyElementalOnHit");
-        SerializedProperty elementalEffectDataProperty = projectileTuningPayloadProperty.FindPropertyRelative("elementalEffectData");
-        SerializedProperty elementalStacksPerHitProperty = projectileTuningPayloadProperty.FindPropertyRelative("elementalStacksPerHit");
+        SerializedProperty formulasProperty = characterTuningPayloadProperty.FindPropertyRelative("formulas");
 
-        if (sizeMultiplierProperty == null ||
-            damageMultiplierProperty == null ||
-            speedMultiplierProperty == null ||
-            rangeMultiplierProperty == null ||
-            lifetimeMultiplierProperty == null ||
-            penetrationModeProperty == null ||
-            maxPenetrationsProperty == null ||
-            applyElementalOnHitProperty == null ||
-            elementalEffectDataProperty == null ||
-            elementalStacksPerHitProperty == null)
+        if (formulasProperty == null)
         {
-            HelpBox errorBox = new HelpBox("Projectile tuning payload fields are missing.", HelpBoxMessageType.Warning);
+            HelpBox errorBox = new HelpBox("Character Tuning payload fields are missing.", HelpBoxMessageType.Warning);
             payloadContainer.Add(errorBox);
             return;
         }
 
-        AddField(payloadContainer, sizeMultiplierProperty, "Size Multiplier");
-        AddField(payloadContainer, damageMultiplierProperty, "Damage Multiplier");
-        AddField(payloadContainer, speedMultiplierProperty, "Speed Multiplier");
-        AddField(payloadContainer, rangeMultiplierProperty, "Range Multiplier");
-        AddField(payloadContainer, lifetimeMultiplierProperty, "Lifetime Multiplier");
-        AddField(payloadContainer, penetrationModeProperty, "Penetration Mode");
+        HelpBox infoBox = new HelpBox("Each entry uses [TargetStat] = expression syntax. The right-hand expression supports the same operators available in Add Scaling formulas.", HelpBoxMessageType.Info);
+        payloadContainer.Add(infoBox);
+        AddField(payloadContainer, formulasProperty, "Acquisition Formulas");
+        Label availableVariablesLabel = new Label(string.Empty);
+        availableVariablesLabel.style.marginTop = 2f;
+        availableVariablesLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+        payloadContainer.Add(availableVariablesLabel);
 
-        VisualElement penetrationContainer = new VisualElement();
-        penetrationContainer.style.marginLeft = 12f;
-        payloadContainer.Add(penetrationContainer);
-        AddField(penetrationContainer, maxPenetrationsProperty, "Max Penetrations");
+        HelpBox warningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+        payloadContainer.Add(warningBox);
+        RefreshCharacterTuningAvailableVariables(characterTuningPayloadProperty.serializedObject, availableVariablesLabel);
+        RefreshCharacterTuningWarnings(characterTuningPayloadProperty.serializedObject, formulasProperty, warningBox);
 
-        UpdatePenetrationOptionsVisibility(penetrationModeProperty, penetrationContainer);
-        payloadContainer.TrackPropertyValue(penetrationModeProperty, changedProperty =>
+        payloadContainer.TrackSerializedObjectValue(characterTuningPayloadProperty.serializedObject, changedObject =>
         {
-            UpdatePenetrationOptionsVisibility(changedProperty, penetrationContainer);
+            RefreshCharacterTuningAvailableVariables(changedObject, availableVariablesLabel);
+            RefreshCharacterTuningWarnings(changedObject, formulasProperty, warningBox);
         });
+    }
 
-        AddField(payloadContainer, applyElementalOnHitProperty, "Apply Elemental On Hit");
+    private static void BuildStackablePayloadUi(VisualElement payloadContainer, SerializedProperty stackablePayloadProperty)
+    {
+        if (payloadContainer == null || stackablePayloadProperty == null)
+            return;
 
-        VisualElement elementalPayloadContainer = new VisualElement();
-        elementalPayloadContainer.style.marginLeft = 12f;
-        payloadContainer.Add(elementalPayloadContainer);
-        AddField(elementalPayloadContainer, elementalEffectDataProperty, "Elemental Effect");
-        AddField(elementalPayloadContainer, elementalStacksPerHitProperty, "Elemental Stacks Per Hit");
+        SerializedProperty maxAcquisitionsProperty = stackablePayloadProperty.FindPropertyRelative("maxAcquisitions");
 
-        UpdateElementalPayloadOptionsVisibility(applyElementalOnHitProperty, elementalPayloadContainer);
-        payloadContainer.TrackPropertyValue(applyElementalOnHitProperty, changedProperty =>
+        if (maxAcquisitionsProperty == null)
         {
-            UpdateElementalPayloadOptionsVisibility(changedProperty, elementalPayloadContainer);
-        });
+            HelpBox errorBox = new HelpBox("Stackable payload fields are missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(errorBox);
+            return;
+        }
+
+        HelpBox infoBox = new HelpBox("Stackable controls how many times the same power-up can be acquired from milestones. Pair it with Character Tuning so repeated pickups have a meaningful acquisition effect.", HelpBoxMessageType.Info);
+        payloadContainer.Add(infoBox);
+        AddField(payloadContainer, maxAcquisitionsProperty, "Max Acquisitions");
     }
 
     private static void BuildOrbitalProjectilesPayloadUi(VisualElement payloadContainer, SerializedProperty orbitalPayloadProperty)
@@ -599,21 +591,6 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         interruptOptionsContainer.style.display = interruptOtherSlotOnEnterProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
-    private static void UpdatePenetrationOptionsVisibility(SerializedProperty penetrationModeProperty, VisualElement penetrationContainer)
-    {
-        if (penetrationContainer == null)
-            return;
-
-        if (penetrationModeProperty == null)
-        {
-            penetrationContainer.style.display = DisplayStyle.None;
-            return;
-        }
-
-        ProjectilePenetrationMode penetrationMode = (ProjectilePenetrationMode)penetrationModeProperty.enumValueIndex;
-        penetrationContainer.style.display = penetrationMode == ProjectilePenetrationMode.FixedHits ? DisplayStyle.Flex : DisplayStyle.None;
-    }
-
     private static void UpdateElementalPayloadOptionsVisibility(SerializedProperty applyElementalOnHitProperty, VisualElement elementalPayloadContainer)
     {
         if (elementalPayloadContainer == null)
@@ -626,6 +603,85 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         }
 
         elementalPayloadContainer.style.display = applyElementalOnHitProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    private static void RefreshCharacterTuningWarnings(SerializedObject serializedObject,
+                                                       SerializedProperty formulasProperty,
+                                                       HelpBox warningBox)
+    {
+        if (warningBox == null)
+            return;
+
+        if (serializedObject == null || formulasProperty == null || !formulasProperty.isArray)
+        {
+            warningBox.text = "Character Tuning formulas are not available.";
+            warningBox.style.display = DisplayStyle.Flex;
+            return;
+        }
+
+        List<string> warningLines = new List<string>();
+        HashSet<string> allowedVariables = PlayerScalingFormulaValidationUtility.BuildScopedVariableSet(serializedObject);
+
+        if (formulasProperty.arraySize <= 0)
+            warningLines.Add("No acquisition formula configured. Character Tuning currently has no effect.");
+
+        for (int formulaIndex = 0; formulaIndex < formulasProperty.arraySize; formulaIndex++)
+        {
+            SerializedProperty formulaEntryProperty = formulasProperty.GetArrayElementAtIndex(formulaIndex);
+
+            if (formulaEntryProperty == null)
+            {
+                warningLines.Add(string.Format("Formula #{0} is missing.", formulaIndex + 1));
+                continue;
+            }
+
+            SerializedProperty formulaProperty = formulaEntryProperty.FindPropertyRelative("formula");
+
+            if (formulaProperty == null || formulaProperty.propertyType != SerializedPropertyType.String)
+            {
+                warningLines.Add(string.Format("Formula #{0} payload is invalid.", formulaIndex + 1));
+                continue;
+            }
+
+            string formulaValue = formulaProperty.stringValue;
+
+            if (string.IsNullOrWhiteSpace(formulaValue))
+            {
+                warningLines.Add(string.Format("Formula #{0} is empty.", formulaIndex + 1));
+                continue;
+            }
+
+            if (PlayerCharacterTuningFormulaValidationUtility.TryValidateAssignmentFormula(formulaValue,
+                                                                                          allowedVariables,
+                                                                                          out string warningMessage))
+            {
+                continue;
+            }
+
+            warningLines.Add(string.Format("Formula #{0}: {1}", formulaIndex + 1, warningMessage));
+        }
+
+        if (warningLines.Count <= 0)
+        {
+            warningBox.text = string.Empty;
+            warningBox.style.display = DisplayStyle.None;
+            return;
+        }
+
+        warningBox.text = string.Join("\n", warningLines);
+        warningBox.style.display = DisplayStyle.Flex;
+    }
+
+    private static void RefreshCharacterTuningAvailableVariables(SerializedObject serializedObject, Label availableVariablesLabel)
+    {
+        if (availableVariablesLabel == null)
+            return;
+
+        HashSet<string> allowedVariables = serializedObject != null
+            ? PlayerScalingFormulaValidationUtility.BuildScopedVariableSet(serializedObject)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        availableVariablesLabel.text = PlayerScalingFormulaValidationUtility.BuildAvailableVariablesLabelText(allowedVariables);
     }
 
     private static void UpdateOrbitPathModeContainers(SerializedProperty pathModeProperty,

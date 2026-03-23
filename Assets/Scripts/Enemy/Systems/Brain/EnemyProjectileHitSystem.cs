@@ -18,6 +18,14 @@ public partial struct EnemyProjectileHitSystem : ISystem
     private const float BaseProjectileHitRadius = 0.05f;
     #endregion
 
+    #region Nested Types
+    private struct ProjectileHitCandidate
+    {
+        public int EnemyIndex;
+        public float DistanceSquared;
+    }
+    #endregion
+
     #region Fields
     private EntityQuery enemyQuery;
     private EntityQuery projectileQuery;
@@ -204,7 +212,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         JobHandle hitCollectHandle = hitCollectJob.Schedule(projectileCount, 64, state.Dependency);
         hitCollectHandle.Complete();
 
-        NativeArray<float> damageByEnemy = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+        NativeArray<EnemyHealth> projectedEnemyHealth = new NativeArray<EnemyHealth>(enemyHealthArray, Allocator.Temp);
         BufferLookup<ProjectilePoolElement> projectilePoolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
         BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
@@ -214,8 +222,9 @@ public partial struct EnemyProjectileHitSystem : ISystem
         ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup = SystemAPI.GetComponentLookup<PlayerElementalVfxConfig>(true);
         ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup = SystemAPI.GetComponentLookup<EnemyHitVfxConfig>(true);
         NativeStream.Reader projectileHitReader = projectileHitStream.AsReader();
+        NativeList<ProjectileHitCandidate> hitCandidates = new NativeList<ProjectileHitCandidate>(16, Allocator.Temp);
 
-        // Hits are processed per projectile, but health application is deferred and aggregated per enemy.
+        // Hits are resolved sequentially per projectile so penetration modes can update projected health correctly.
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
             int hitCount = projectileHitReader.BeginForEachIndex(projectileIndex);
@@ -234,9 +243,8 @@ public partial struct EnemyProjectileHitSystem : ISystem
             float currentScaleMultiplier = ResolveCurrentScaleMultiplier(projectileEntities[projectileIndex],
                                                                         projectileTransform.Scale,
                                                                         in projectileBaseScaleLookup);
-            float projectileDamage = math.max(0f, projectileData.Damage);
             bool hasValidHit = false;
-            int validHitCount = 0;
+            bool canProjectileContinue = false;
             bool enemyKilledByProjectile = false;
             ElementalVfxDefinitionConfig elementalVfxConfig = default;
             bool canEnqueueShooterVfxRequests = vfxRequestLookup.HasBuffer(projectileOwner.ShooterEntity);
@@ -248,62 +256,174 @@ public partial struct EnemyProjectileHitSystem : ISystem
             if (canEnqueueShooterVfxRequests && elementalPayload.Enabled != 0 && elementalPayload.StacksPerHit > 0f)
             {
                 elementalVfxConfig = ResolveElementalVfxDefinition(projectileOwner.ShooterEntity,
-                                                                    elementalPayload.Effect.ElementType,
-                                                                    in elementalVfxConfigLookup);
+                                                                   elementalPayload.Effect.ElementType,
+                                                                   in elementalVfxConfigLookup);
             }
+
+            hitCandidates.Clear();
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
                 int enemyIndex = projectileHitReader.Read<int>();
 
                 if (enemyIndex < 0 || enemyIndex >= enemyCount)
-                {
                     continue;
-                }
 
-                hasValidHit = true;
-                validHitCount++;
-
-                if (projectileDamage > 0f)
-                {
-                    damageByEnemy[enemyIndex] += projectileDamage;
-                    float projectedRemainingHealth = enemyHealthArray[enemyIndex].Current - damageByEnemy[enemyIndex];
-
-                    if (projectedRemainingHealth <= 0f)
-                    {
-                        enemyKilledByProjectile = true;
-                    }
-                }
-
-                Entity enemyEntity = enemyEntities[enemyIndex];
-                float3 enemyPosition = enemyPositions[enemyIndex];
-                EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
-                TryApplyElementalPayload(enemyEntity,
-                                         enemyPosition,
-                                         in elementalPayload,
-                                         in enemyRuntimeState,
-                                         in elementalVfxConfig,
-                                         in elementalVfxAnchorLookup,
-                                         canEnqueueShooterVfxRequests,
-                                         ref shooterVfxRequests,
-                                         ref elementalStackLookup);
-                TryEnqueueEnemyHitVfx(enemyEntity,
-                                      enemyPosition,
-                                      in enemyRuntimeState,
-                                      in enemyHitVfxConfigLookup,
-                                      canEnqueueShooterVfxRequests,
-                                      ref shooterVfxRequests);
+                float3 delta = projectilePositions[projectileIndex] - enemyPositions[enemyIndex];
+                delta.y = 0f;
+                AddHitCandidateSorted(ref hitCandidates, enemyIndex, math.lengthsq(delta));
             }
 
             projectileHitReader.EndForEachIndex();
 
-            if (!hasValidHit)
-            {
+            if (hitCandidates.Length <= 0)
                 continue;
+
+            switch (projectileData.PenetrationMode)
+            {
+                case ProjectilePenetrationMode.Infinite:
+                    for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
+                    {
+                        int enemyIndex = hitCandidates[candidateIndex].EnemyIndex;
+
+                        if (!TryApplyFlatDamageHit(ref projectedEnemyHealth, enemyIndex, math.max(0f, projectileData.Damage), out bool enemyKilled))
+                            continue;
+
+                        hasValidHit = true;
+                        enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
+                        ApplyHitPayloads(enemyIndex,
+                                         in elementalPayload,
+                                         in elementalVfxConfig,
+                                         enemyEntities,
+                                         enemyPositions,
+                                         enemyRuntimeArray,
+                                         in elementalVfxAnchorLookup,
+                                         in enemyHitVfxConfigLookup,
+                                         canEnqueueShooterVfxRequests,
+                                         ref shooterVfxRequests,
+                                         ref elementalStackLookup);
+                    }
+
+                    canProjectileContinue = hasValidHit;
+                    break;
+                case ProjectilePenetrationMode.FixedHits:
+                    int originalRemainingPenetrations = math.max(0, projectileData.RemainingPenetrations);
+                    int maximumHitCount = 1 + originalRemainingPenetrations;
+                    int appliedHitCount = 0;
+
+                    for (int candidateIndex = 0; candidateIndex < hitCandidates.Length && appliedHitCount < maximumHitCount; candidateIndex++)
+                    {
+                        int enemyIndex = hitCandidates[candidateIndex].EnemyIndex;
+
+                        if (!TryApplyFlatDamageHit(ref projectedEnemyHealth, enemyIndex, math.max(0f, projectileData.Damage), out bool enemyKilled))
+                            continue;
+
+                        hasValidHit = true;
+                        appliedHitCount++;
+                        enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
+                        ApplyHitPayloads(enemyIndex,
+                                         in elementalPayload,
+                                         in elementalVfxConfig,
+                                         enemyEntities,
+                                         enemyPositions,
+                                         enemyRuntimeArray,
+                                         in elementalVfxAnchorLookup,
+                                         in enemyHitVfxConfigLookup,
+                                         canEnqueueShooterVfxRequests,
+                                         ref shooterVfxRequests,
+                                         ref elementalStackLookup);
+                    }
+
+                    projectileData.RemainingPenetrations = math.max(0, originalRemainingPenetrations - appliedHitCount);
+                    canProjectileContinue = hasValidHit && appliedHitCount <= originalRemainingPenetrations;
+                    break;
+                case ProjectilePenetrationMode.DamageBased:
+                    int originalDamagePenetrations = math.max(0, projectileData.RemainingPenetrations);
+                    int consumedPenetrations = 0;
+                    float remainingDamage = math.max(0f, projectileData.Damage);
+
+                    for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
+                    {
+                        int enemyIndex = hitCandidates[candidateIndex].EnemyIndex;
+                        EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
+
+                        if (enemyHealth.Current <= 0f)
+                            continue;
+
+                        hasValidHit = true;
+                        bool enemyKilled = false;
+                        float leftoverDamage = 0f;
+
+                        if (remainingDamage > 0f)
+                        {
+                            leftoverDamage = ApplyDamageBasedHit(ref projectedEnemyHealth, enemyIndex, remainingDamage, out enemyKilled);
+                        }
+
+                        enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
+                        ApplyHitPayloads(enemyIndex,
+                                         in elementalPayload,
+                                         in elementalVfxConfig,
+                                         enemyEntities,
+                                         enemyPositions,
+                                         enemyRuntimeArray,
+                                         in elementalVfxAnchorLookup,
+                                         in enemyHitVfxConfigLookup,
+                                         canEnqueueShooterVfxRequests,
+                                         ref shooterVfxRequests,
+                                         ref elementalStackLookup);
+
+                        if (remainingDamage <= 0f || leftoverDamage <= 0f || !enemyKilled)
+                        {
+                            remainingDamage = 0f;
+                            break;
+                        }
+
+                        consumedPenetrations++;
+                        remainingDamage = leftoverDamage;
+
+                        if (consumedPenetrations > originalDamagePenetrations)
+                        {
+                            remainingDamage = 0f;
+                            break;
+                        }
+                    }
+
+                    projectileData.Damage = remainingDamage;
+                    projectileData.RemainingPenetrations = math.max(0, originalDamagePenetrations - consumedPenetrations);
+                    canProjectileContinue = hasValidHit && remainingDamage > 0f && consumedPenetrations <= originalDamagePenetrations;
+                    break;
+                default:
+                    for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
+                    {
+                        int enemyIndex = hitCandidates[candidateIndex].EnemyIndex;
+
+                        if (!TryApplyFlatDamageHit(ref projectedEnemyHealth, enemyIndex, math.max(0f, projectileData.Damage), out bool enemyKilled))
+                            continue;
+
+                        hasValidHit = true;
+                        enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
+                        ApplyHitPayloads(enemyIndex,
+                                         in elementalPayload,
+                                         in elementalVfxConfig,
+                                         enemyEntities,
+                                         enemyPositions,
+                                         enemyRuntimeArray,
+                                         in elementalVfxAnchorLookup,
+                                         in enemyHitVfxConfigLookup,
+                                         canEnqueueShooterVfxRequests,
+                                         ref shooterVfxRequests,
+                                         ref elementalStackLookup);
+                        break;
+                    }
+
+                    canProjectileContinue = false;
+                    break;
             }
 
+            if (!hasValidHit)
+                continue;
+
             bool shouldSplitOnHitEvent = ProjectileSplitUtility.ShouldSplitOnHitEvent(in splitState, enemyKilledByProjectile);
-            bool canProjectileContinue = CanProjectileContinueAfterHit(ref projectileData, validHitCount);
 
             if (canProjectileContinue)
             {
@@ -350,18 +470,18 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
         for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
         {
-            float damage = damageByEnemy[enemyIndex];
-
-            if (damage <= 0f)
+            if (projectedEnemyHealth[enemyIndex].Current == enemyHealthArray[enemyIndex].Current &&
+                projectedEnemyHealth[enemyIndex].CurrentShield == enemyHealthArray[enemyIndex].CurrentShield)
+            {
                 continue;
+            }
 
             Entity enemyEntity = enemyEntities[enemyIndex];
 
             if (!entityManager.Exists(enemyEntity))
                 continue;
 
-            EnemyHealth enemyHealth = enemyHealthArray[enemyIndex];
-            EnemyDamageUtility.ApplyFlatShieldDamage(ref enemyHealth, damage);
+            EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
             entityManager.SetComponentData(enemyEntity, enemyHealth);
 
             if (enemyHealth.Current <= 0f)
@@ -398,30 +518,107 @@ public partial struct EnemyProjectileHitSystem : ISystem
         projectileRadii.Dispose();
         projectileHitStream.Dispose();
         enemyCellMap.Dispose();
-        damageByEnemy.Dispose();
+        projectedEnemyHealth.Dispose();
+        hitCandidates.Dispose();
     }
     #endregion
 
     #region Helpers
-    private static bool CanProjectileContinueAfterHit(ref Projectile projectileData, int hitCount)
+    private static void AddHitCandidateSorted(ref NativeList<ProjectileHitCandidate> hitCandidates,
+                                              int enemyIndex,
+                                              float distanceSquared)
     {
-        switch (projectileData.PenetrationMode)
+        hitCandidates.Add(new ProjectileHitCandidate
         {
-            case ProjectilePenetrationMode.Infinite:
-                return true;
-            case ProjectilePenetrationMode.FixedHits:
-                int consumedHitCount = math.max(1, hitCount);
-                int remainingPenetrationsBeforeHit = projectileData.RemainingPenetrations;
+            EnemyIndex = enemyIndex,
+            DistanceSquared = distanceSquared
+        });
 
-                if (remainingPenetrationsBeforeHit <= 0)
-                    return false;
+        for (int candidateIndex = hitCandidates.Length - 1; candidateIndex > 0; candidateIndex--)
+        {
+            ProjectileHitCandidate currentCandidate = hitCandidates[candidateIndex];
+            ProjectileHitCandidate previousCandidate = hitCandidates[candidateIndex - 1];
 
-                projectileData.RemainingPenetrations = math.max(0, remainingPenetrationsBeforeHit - consumedHitCount);
+            if (previousCandidate.DistanceSquared <= currentCandidate.DistanceSquared)
+                break;
 
-                return remainingPenetrationsBeforeHit >= consumedHitCount;
-            default:
-                return false;
+            hitCandidates[candidateIndex - 1] = currentCandidate;
+            hitCandidates[candidateIndex] = previousCandidate;
         }
+    }
+
+    private static bool TryApplyFlatDamageHit(ref NativeArray<EnemyHealth> projectedEnemyHealth,
+                                              int enemyIndex,
+                                              float damage,
+                                              out bool enemyKilled)
+    {
+        enemyKilled = false;
+
+        if (enemyIndex < 0 || enemyIndex >= projectedEnemyHealth.Length)
+            return false;
+
+        EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
+
+        if (enemyHealth.Current <= 0f)
+            return false;
+
+        EnemyDamageUtility.ApplyFlatShieldDamage(ref enemyHealth, damage);
+        enemyKilled = enemyHealth.Current <= 0f;
+        projectedEnemyHealth[enemyIndex] = enemyHealth;
+        return true;
+    }
+
+    private static float ApplyDamageBasedHit(ref NativeArray<EnemyHealth> projectedEnemyHealth,
+                                             int enemyIndex,
+                                             float damage,
+                                             out bool enemyKilled)
+    {
+        enemyKilled = false;
+
+        if (enemyIndex < 0 || enemyIndex >= projectedEnemyHealth.Length)
+            return 0f;
+
+        EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
+
+        if (enemyHealth.Current <= 0f)
+            return 0f;
+
+        float leftoverDamage = EnemyDamageUtility.ConsumeFlatShieldDamage(ref enemyHealth, damage);
+        enemyKilled = enemyHealth.Current <= 0f;
+        projectedEnemyHealth[enemyIndex] = enemyHealth;
+        return leftoverDamage;
+    }
+
+    private static void ApplyHitPayloads(int enemyIndex,
+                                         in ProjectileElementalPayload elementalPayload,
+                                         in ElementalVfxDefinitionConfig elementalVfxConfig,
+                                         NativeArray<Entity> enemyEntities,
+                                         NativeArray<float3> enemyPositions,
+                                         NativeArray<EnemyRuntimeState> enemyRuntimeArray,
+                                         in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
+                                         in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
+                                         bool canEnqueueShooterVfxRequests,
+                                         ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
+                                         ref BufferLookup<EnemyElementStackElement> elementalStackLookup)
+    {
+        Entity enemyEntity = enemyEntities[enemyIndex];
+        float3 enemyPosition = enemyPositions[enemyIndex];
+        EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
+        TryApplyElementalPayload(enemyEntity,
+                                 enemyPosition,
+                                 in elementalPayload,
+                                 in enemyRuntimeState,
+                                 in elementalVfxConfig,
+                                 in elementalVfxAnchorLookup,
+                                 canEnqueueShooterVfxRequests,
+                                 ref shooterVfxRequests,
+                                 ref elementalStackLookup);
+        TryEnqueueEnemyHitVfx(enemyEntity,
+                              enemyPosition,
+                              in enemyRuntimeState,
+                              in enemyHitVfxConfigLookup,
+                              canEnqueueShooterVfxRequests,
+                              ref shooterVfxRequests);
     }
 
     private static float ResolveCurrentScaleMultiplier(Entity projectileEntity,

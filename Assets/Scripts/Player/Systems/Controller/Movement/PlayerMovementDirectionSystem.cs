@@ -30,7 +30,7 @@ public partial struct PlayerMovementDirectionSystem : ISystem
     {
         state.RequireForUpdate<PlayerInputState>();
         state.RequireForUpdate<PlayerMovementState>();
-        state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerRuntimeMovementConfig>();
     }
 
 
@@ -59,10 +59,10 @@ public partial struct PlayerMovementDirectionSystem : ISystem
 
         foreach ((RefRO<PlayerInputState> inputState,
                   RefRW<PlayerMovementState> movementState,
-                  RefRO<PlayerControllerConfig> controllerConfig,
-                  RefRO<LocalTransform> localTransform) in SystemAPI.Query<RefRO<PlayerInputState>, RefRW<PlayerMovementState>, RefRO<PlayerControllerConfig>, RefRO<LocalTransform>>())
+                  RefRO<PlayerRuntimeMovementConfig> runtimeMovementConfig,
+                  RefRO<LocalTransform> localTransform) in SystemAPI.Query<RefRO<PlayerInputState>, RefRW<PlayerMovementState>, RefRO<PlayerRuntimeMovementConfig>, RefRO<LocalTransform>>())
         {
-            ref MovementConfig movementConfig = ref controllerConfig.ValueRO.Config.Value.Movement;
+            PlayerRuntimeMovementConfig movementConfig = runtimeMovementConfig.ValueRO;
 
             float2 moveInput = inputState.ValueRO.Move;
             float deadZone = movementConfig.Values.InputDeadZone;

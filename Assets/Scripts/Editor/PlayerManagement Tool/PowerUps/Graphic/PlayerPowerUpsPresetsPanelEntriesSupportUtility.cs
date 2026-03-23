@@ -352,6 +352,8 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         List<string> unresolvedModuleIds = new List<string>();
         List<string> unsupportedModuleKinds = new List<string>();
         bool hasToggleableGate = false;
+        bool hasCharacterTuning = false;
+        bool hasStackable = false;
 
         for (int bindingIndex = 0; bindingIndex < moduleBindingsProperty.arraySize; bindingIndex++)
         {
@@ -381,6 +383,12 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
 
             moduleKinds.Add(moduleEntry.ModuleKind);
 
+            if (moduleEntry.ModuleKind == PowerUpModuleKind.CharacterTuning)
+                hasCharacterTuning = true;
+
+            if (moduleEntry.ModuleKind == PowerUpModuleKind.Stackable)
+                hasStackable = true;
+
             if (moduleEntry.ModuleKind == PowerUpModuleKind.GateResource &&
                 ResolveBindingResourceGateToggleable(bindingProperty, powerUpProperty.serializedObject, normalizedModuleId))
             {
@@ -403,6 +411,9 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
             string unsupportedPrefix = isActiveSection ? "Ignored in Active runtime: " : "Ignored in Passive runtime: ";
             warningLines.Add(unsupportedPrefix + string.Join(", ", unsupportedModuleKinds));
         }
+
+        if (hasStackable && !hasCharacterTuning)
+            warningLines.Add("Stackable requires Character Tuning. Repeated milestone acquisitions would otherwise have no acquisition effect.");
 
         string contextWarning = isActiveSection
             ? BuildActiveCoverageWarning(moduleKinds, hasToggleableGate)
@@ -430,7 +441,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
                 case PowerUpModuleKind.GateResource:
                 case PowerUpModuleKind.StateSuppressShooting:
                 case PowerUpModuleKind.ProjectilesPatternCone:
-                case PowerUpModuleKind.ProjectilesTuning:
+                case PowerUpModuleKind.CharacterTuning:
                 case PowerUpModuleKind.SpawnTrailSegment:
                 case PowerUpModuleKind.AreaTickApplyElement:
                 case PowerUpModuleKind.SpawnObject:
@@ -441,6 +452,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
                 case PowerUpModuleKind.Dash:
                 case PowerUpModuleKind.TimeDilationEnemies:
                 case PowerUpModuleKind.Heal:
+                case PowerUpModuleKind.Stackable:
                     return true;
                 default:
                     return false;
@@ -453,13 +465,15 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
             case PowerUpModuleKind.GateResource:
             case PowerUpModuleKind.Heal:
             case PowerUpModuleKind.ProjectilesPatternCone:
-            case PowerUpModuleKind.ProjectilesTuning:
+            case PowerUpModuleKind.CharacterTuning:
             case PowerUpModuleKind.SpawnTrailSegment:
             case PowerUpModuleKind.AreaTickApplyElement:
             case PowerUpModuleKind.DeathExplosion:
             case PowerUpModuleKind.OrbitalProjectiles:
             case PowerUpModuleKind.BouncingProjectiles:
             case PowerUpModuleKind.ProjectileSplit:
+            case PowerUpModuleKind.TimeDilationEnemies:
+            case PowerUpModuleKind.Stackable:
                 return true;
             default:
                 return false;
@@ -481,6 +495,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         bool hasDash = moduleKinds.Contains(PowerUpModuleKind.Dash);
         bool hasBulletTime = moduleKinds.Contains(PowerUpModuleKind.TimeDilationEnemies);
         bool hasHeal = moduleKinds.Contains(PowerUpModuleKind.Heal);
+        bool hasCharacterTuning = moduleKinds.Contains(PowerUpModuleKind.CharacterTuning);
         bool hasDeathExplosion = moduleKinds.Contains(PowerUpModuleKind.DeathExplosion);
         bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
         bool hasTriggerPress = moduleKinds.Contains(PowerUpModuleKind.TriggerPress);
@@ -510,8 +525,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         if (hasHeal)
             executeKindCount += 1;
 
-        if (executeKindCount == 0)
+        if (executeKindCount == 0 && !hasCharacterTuning)
             warningLines.Add("No execute module selected. This active power up compiles as undefined.");
+        else if (executeKindCount == 0)
+            warningLines.Add("No active execute module selected. Only Character Tuning acquisition effects will apply.");
 
         if (executeKindCount > 1)
             warningLines.Add("Multiple execute modules found. Runtime priority is: TriggerHoldCharge > ProjectilesPatternCone > SpawnObject > Dash > TimeDilationEnemies > Heal.");
@@ -545,11 +562,13 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         bool hasOrbit = moduleKinds.Contains(PowerUpModuleKind.OrbitalProjectiles);
         bool hasBounce = moduleKinds.Contains(PowerUpModuleKind.BouncingProjectiles);
         bool hasSplit = moduleKinds.Contains(PowerUpModuleKind.ProjectileSplit);
-        bool hasShotgun = moduleKinds.Contains(PowerUpModuleKind.ProjectilesPatternCone) || moduleKinds.Contains(PowerUpModuleKind.ProjectilesTuning);
+        bool hasShotgun = moduleKinds.Contains(PowerUpModuleKind.ProjectilesPatternCone);
         bool hasHeal = moduleKinds.Contains(PowerUpModuleKind.Heal);
+        bool hasBulletTime = moduleKinds.Contains(PowerUpModuleKind.TimeDilationEnemies);
+        bool hasCharacterTuning = moduleKinds.Contains(PowerUpModuleKind.CharacterTuning);
         bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
         bool hasTriggerRelease = moduleKinds.Contains(PowerUpModuleKind.TriggerRelease);
-        bool hasPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal;
+        bool hasPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal || hasBulletTime || hasCharacterTuning;
         List<string> ignoredActiveModules = new List<string>();
 
         if (!hasPassiveRuntimeConsumer)
@@ -564,17 +583,14 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         if (moduleKinds.Contains(PowerUpModuleKind.Dash))
             ignoredActiveModules.Add(PowerUpModuleEnumDescriptions.FormatModuleKindOption(PowerUpModuleKind.Dash));
 
-        if (moduleKinds.Contains(PowerUpModuleKind.TimeDilationEnemies))
-            ignoredActiveModules.Add(PowerUpModuleEnumDescriptions.FormatModuleKindOption(PowerUpModuleKind.TimeDilationEnemies));
-
         if (ignoredActiveModules.Count > 0)
             warningLines.Add("Ignored while GateResource Is Toggleable is enabled: " + string.Join(", ", ignoredActiveModules));
 
         if (hasTriggerRelease)
             warningLines.Add("TriggerRelease is ignored while GateResource Is Toggleable is enabled. Toggle activation always uses button press.");
 
-        if (hasTriggerEvent && !hasExplosion && !hasSplit && !hasHeal)
-            warningLines.Add("TriggerEvent has no toggleable-passive consumer without DeathExplosion, ProjectileSplit, or Heal.");
+        if (hasTriggerEvent && !hasExplosion && !hasSplit && !hasHeal && !hasBulletTime)
+            warningLines.Add("TriggerEvent has no toggleable-passive consumer without DeathExplosion, ProjectileSplit, Heal, or TimeDilationEnemies.");
 
         if (warningLines.Count <= 0)
             return string.Empty;
@@ -658,20 +674,22 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         bool hasOrbit = moduleKinds.Contains(PowerUpModuleKind.OrbitalProjectiles);
         bool hasBounce = moduleKinds.Contains(PowerUpModuleKind.BouncingProjectiles);
         bool hasSplit = moduleKinds.Contains(PowerUpModuleKind.ProjectileSplit);
-        bool hasShotgun = moduleKinds.Contains(PowerUpModuleKind.ProjectilesPatternCone) || moduleKinds.Contains(PowerUpModuleKind.ProjectilesTuning);
+        bool hasShotgun = moduleKinds.Contains(PowerUpModuleKind.ProjectilesPatternCone);
         bool hasHeal = moduleKinds.Contains(PowerUpModuleKind.Heal);
+        bool hasBulletTime = moduleKinds.Contains(PowerUpModuleKind.TimeDilationEnemies);
+        bool hasCharacterTuning = moduleKinds.Contains(PowerUpModuleKind.CharacterTuning);
         bool hasGateResource = moduleKinds.Contains(PowerUpModuleKind.GateResource);
         bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
-        bool hasAnyPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal;
+        bool hasAnyPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal || hasBulletTime || hasCharacterTuning;
 
         if (!hasAnyPassiveRuntimeConsumer)
             warningLines.Add("No passive runtime module found. This passive power up compiles as undefined.");
 
-        if (hasTriggerEvent && !hasExplosion && !hasSplit && !hasHeal)
-            warningLines.Add("TriggerEvent has no passive consumer without DeathExplosion, ProjectileSplit, or Heal.");
+        if (hasTriggerEvent && !hasExplosion && !hasSplit && !hasHeal && !hasBulletTime)
+            warningLines.Add("TriggerEvent has no passive consumer without DeathExplosion, ProjectileSplit, Heal, or TimeDilationEnemies.");
 
-        if (hasGateResource && !hasHeal)
-            warningLines.Add("GateResource in Passive currently only contributes cooldown data to Heal modules.");
+        if (hasGateResource && !hasHeal && !hasBulletTime)
+            warningLines.Add("GateResource in Passive currently only contributes cooldown data to Heal and TimeDilationEnemies modules.");
 
         if (warningLines.Count <= 0)
             return string.Empty;

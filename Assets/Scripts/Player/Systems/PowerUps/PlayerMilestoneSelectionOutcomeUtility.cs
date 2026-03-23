@@ -79,6 +79,7 @@ public static class PlayerMilestoneSelectionOutcomeUtility
     /// <param name="powerUpsState">Mutable active-slot runtime state.</param>
     /// <returns>Number of compensation entries that effectively changed runtime state.</returns>
     public static int ApplySkipCompensations(PlayerProgressionConfig progressionConfig,
+                                             DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
                                              in PlayerMilestonePowerUpSelectionState selectionState,
                                              ref PlayerHealth playerHealth,
                                              ref PlayerShield playerShield,
@@ -105,6 +106,7 @@ public static class PlayerMilestoneSelectionOutcomeUtility
             ref PlayerMilestoneSkipCompensationBlob compensation = ref milestoneBlob.SkipCompensationResources[compensationIndex];
 
             if (!TryApplySkipCompensation(progressionConfig,
+                                          runtimeGamePhases,
                                           in compensation,
                                           ref playerHealth,
                                           ref playerShield,
@@ -151,6 +153,7 @@ public static class PlayerMilestoneSelectionOutcomeUtility
     /// <param name="powerUpsState">Mutable active-slot runtime state.</param>
     /// <returns>True when runtime state changed; otherwise false.</returns>
     private static bool TryApplySkipCompensation(PlayerProgressionConfig progressionConfig,
+                                                 DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
                                                  in PlayerMilestoneSkipCompensationBlob compensation,
                                                  ref PlayerHealth playerHealth,
                                                  ref PlayerShield playerShield,
@@ -182,6 +185,7 @@ public static class PlayerMilestoneSelectionOutcomeUtility
                                                   ref powerUpsState.SecondaryEnergy);
             case PlayerMilestoneSkipCompensationResourceType.Experience:
                 return TryApplyExperienceCompensation(progressionConfig,
+                                                     runtimeGamePhases,
                                                      applyMode,
                                                      compensation.Value,
                                                      ref playerExperience,
@@ -299,12 +303,14 @@ public static class PlayerMilestoneSelectionOutcomeUtility
     /// <param name="playerLevel">Current player level state used to resolve the next required experience.</param>
     /// <returns>True when experience changed; otherwise false.</returns>
     private static bool TryApplyExperienceCompensation(PlayerProgressionConfig progressionConfig,
+                                                       DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
                                                        PlayerMilestoneCompensationApplyMode applyMode,
                                                        float rawValue,
                                                        ref PlayerExperience playerExperience,
                                                        in PlayerLevel playerLevel)
     {
         float remainingExperienceCapacity = PlayerProgressionPhaseUtility.ResolveRemainingExperienceUntilLevelCap(progressionConfig,
+                                                                                                                   runtimeGamePhases,
                                                                                                                    playerLevel.Current,
                                                                                                                    playerExperience.Current);
 

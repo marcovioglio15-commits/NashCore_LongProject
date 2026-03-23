@@ -30,9 +30,10 @@ public sealed class PowerUpModuleData
     [Tooltip("Projectile cone settings used by ProjectilesPatternCone modules.")]
     [SerializeField] private PowerUpProjectilePatternConeModuleData projectilePatternCone = new PowerUpProjectilePatternConeModuleData();
 
-    [Header("Execute - Projectile Tuning")]
-    [Tooltip("Combined projectile tuning settings used by ProjectilesTuning modules.")]
-    [SerializeField] private PowerUpProjectileTuningModuleData projectileTuning = new PowerUpProjectileTuningModuleData();
+    [Header("Post Execute - Character Tuning")]
+    [Tooltip("Scalable-stat assignment settings applied on acquisition for standard actives, while owned for passives, temporarily during charge with Trigger Hold Charge, or only while active with toggleable Resource Gate.")]
+    [FormerlySerializedAs("projectileTuning")]
+    [SerializeField] private PowerUpCharacterTuningModuleData characterTuning = new PowerUpCharacterTuningModuleData();
 
     [Header("Execute - Spawn Object")]
     [Tooltip("Spawn-object settings used by SpawnObject modules.")]
@@ -74,6 +75,10 @@ public sealed class PowerUpModuleData
     [Header("Hook - Elemental Area Tick")]
     [Tooltip("Area tick elemental settings used by AreaTickApplyElement modules.")]
     [SerializeField] private PowerUpElementalAreaTickModuleData elementalAreaTick = new PowerUpElementalAreaTickModuleData();
+
+    [Header("Post Execute - Stackable")]
+    [Tooltip("Stack-count settings used by Stackable modules.")]
+    [SerializeField] private PowerUpStackableModuleData stackable = new PowerUpStackableModuleData();
     #endregion
 
     #endregion
@@ -119,11 +124,11 @@ public sealed class PowerUpModuleData
         }
     }
 
-    public PowerUpProjectileTuningModuleData ProjectileTuning
+    public PowerUpCharacterTuningModuleData CharacterTuning
     {
         get
         {
-            return projectileTuning;
+            return characterTuning;
         }
     }
 
@@ -206,6 +211,14 @@ public sealed class PowerUpModuleData
             return elementalAreaTick;
         }
     }
+
+    public PowerUpStackableModuleData Stackable
+    {
+        get
+        {
+            return stackable;
+        }
+    }
     #endregion
 
     #region Methods
@@ -228,8 +241,8 @@ public sealed class PowerUpModuleData
         if (projectilePatternCone == null)
             projectilePatternCone = new PowerUpProjectilePatternConeModuleData();
 
-        if (projectileTuning == null)
-            projectileTuning = new PowerUpProjectileTuningModuleData();
+        if (characterTuning == null)
+            characterTuning = new PowerUpCharacterTuningModuleData();
 
         if (bomb == null)
             bomb = new BombToolData();
@@ -261,10 +274,13 @@ public sealed class PowerUpModuleData
         if (elementalAreaTick == null)
             elementalAreaTick = new PowerUpElementalAreaTickModuleData();
 
+        if (stackable == null)
+            stackable = new PowerUpStackableModuleData();
+
         holdCharge.Validate();
         resourceGate.Validate();
         projectilePatternCone.Validate();
-        projectileTuning.Validate();
+        characterTuning.Validate();
         bomb.Validate();
         dash.Validate();
         bulletTime.Validate();
@@ -275,6 +291,7 @@ public sealed class PowerUpModuleData
         projectileSplit.Validate();
         trailSpawn.Validate();
         elementalAreaTick.Validate();
+        stackable.Validate();
     }
     #endregion
 

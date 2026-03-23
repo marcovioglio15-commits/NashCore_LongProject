@@ -218,22 +218,49 @@ public static class PlayerPassiveToolsAggregationUtility
         }
 
         if (passiveToolConfig.HasHeal == 0)
+        {
+            if (passiveToolConfig.HasBulletTime == 0)
+                return;
+        }
+        else
+        {
+            passiveToolsState.HasHeal = 1;
+
+            if (passiveToolsState.Heal.HealAmount <= 0f)
+            {
+                passiveToolsState.Heal = passiveToolConfig.Heal;
+            }
+            else
+            {
+                passiveToolsState.Heal.HealAmount += math.max(0f, passiveToolConfig.Heal.HealAmount);
+                passiveToolsState.Heal.CooldownSeconds = math.min(passiveToolsState.Heal.CooldownSeconds, passiveToolConfig.Heal.CooldownSeconds);
+                passiveToolsState.Heal.DurationSeconds = math.max(passiveToolsState.Heal.DurationSeconds, passiveToolConfig.Heal.DurationSeconds);
+                passiveToolsState.Heal.TickIntervalSeconds = math.min(passiveToolsState.Heal.TickIntervalSeconds, passiveToolConfig.Heal.TickIntervalSeconds);
+                passiveToolsState.Heal.StackPolicy = passiveToolConfig.Heal.StackPolicy;
+                passiveToolsState.Heal.TriggerMode = passiveToolConfig.Heal.TriggerMode;
+            }
+        }
+
+        if (passiveToolConfig.HasBulletTime == 0)
             return;
 
-        passiveToolsState.HasHeal = 1;
+        passiveToolsState.HasBulletTime = 1;
 
-        if (passiveToolsState.Heal.HealAmount <= 0f)
+        if (passiveToolsState.BulletTime.EnemySlowPercent <= 0f)
         {
-            passiveToolsState.Heal = passiveToolConfig.Heal;
+            passiveToolsState.BulletTime = passiveToolConfig.BulletTime;
             return;
         }
 
-        passiveToolsState.Heal.HealAmount += math.max(0f, passiveToolConfig.Heal.HealAmount);
-        passiveToolsState.Heal.CooldownSeconds = math.min(passiveToolsState.Heal.CooldownSeconds, passiveToolConfig.Heal.CooldownSeconds);
-        passiveToolsState.Heal.DurationSeconds = math.max(passiveToolsState.Heal.DurationSeconds, passiveToolConfig.Heal.DurationSeconds);
-        passiveToolsState.Heal.TickIntervalSeconds = math.min(passiveToolsState.Heal.TickIntervalSeconds, passiveToolConfig.Heal.TickIntervalSeconds);
-        passiveToolsState.Heal.StackPolicy = passiveToolConfig.Heal.StackPolicy;
-        passiveToolsState.Heal.TriggerMode = passiveToolConfig.Heal.TriggerMode;
+        passiveToolsState.BulletTime.TriggerMode = passiveToolConfig.BulletTime.TriggerMode;
+        passiveToolsState.BulletTime.CooldownSeconds = math.min(passiveToolsState.BulletTime.CooldownSeconds,
+                                                                passiveToolConfig.BulletTime.CooldownSeconds);
+        passiveToolsState.BulletTime.DurationSeconds = math.max(passiveToolsState.BulletTime.DurationSeconds,
+                                                                passiveToolConfig.BulletTime.DurationSeconds);
+        passiveToolsState.BulletTime.EnemySlowPercent = math.max(passiveToolsState.BulletTime.EnemySlowPercent,
+                                                                 passiveToolConfig.BulletTime.EnemySlowPercent);
+        passiveToolsState.BulletTime.TransitionTimeSeconds = math.max(passiveToolsState.BulletTime.TransitionTimeSeconds,
+                                                                      passiveToolConfig.BulletTime.TransitionTimeSeconds);
     }
     #endregion
 
@@ -262,7 +289,9 @@ public static class PlayerPassiveToolsAggregationUtility
             HasElementalTrail = 0,
             ElementalTrail = default,
             HasHeal = 0,
-            Heal = default
+            Heal = default,
+            HasBulletTime = 0,
+            BulletTime = default
         };
     }
     #endregion

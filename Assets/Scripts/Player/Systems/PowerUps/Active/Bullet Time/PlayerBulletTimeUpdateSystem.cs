@@ -34,29 +34,7 @@ public partial struct PlayerBulletTimeUpdateSystem : ISystem
 
         foreach (RefRW<PlayerBulletTimeState> bulletTimeState in SystemAPI.Query<RefRW<PlayerBulletTimeState>>())
         {
-            float remainingDuration = bulletTimeState.ValueRO.RemainingDuration;
-
-            if (remainingDuration <= 0f)
-            {
-                bulletTimeState.ValueRW.RemainingDuration = 0f;
-                bulletTimeState.ValueRW.SlowPercent = 0f;
-                continue;
-            }
-
-            remainingDuration -= deltaTime;
-
-            if (remainingDuration < 0f)
-                remainingDuration = 0f;
-
-            bulletTimeState.ValueRW.RemainingDuration = remainingDuration;
-
-            if (remainingDuration <= 0f)
-            {
-                bulletTimeState.ValueRW.SlowPercent = 0f;
-                continue;
-            }
-
-            float slowPercent = math.clamp(bulletTimeState.ValueRO.SlowPercent, 0f, 100f);
+            float slowPercent = PlayerBulletTimeRuntimeUtility.Tick(ref bulletTimeState.ValueRW, deltaTime);
 
             if (slowPercent > maxSlowPercent)
                 maxSlowPercent = slowPercent;

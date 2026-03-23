@@ -42,6 +42,28 @@ public partial struct PlayerLevelUpSystem : ISystem
         state.RequireForUpdate<PlayerLevel>();
         state.RequireForUpdate<PlayerExperienceCollection>();
         state.RequireForUpdate<PlayerProgressionConfig>();
+        state.RequireForUpdate<PlayerPowerUpsConfig>();
+        state.RequireForUpdate<PlayerPassiveToolsState>();
+        state.RequireForUpdate<PlayerHealth>();
+        state.RequireForUpdate<PlayerShield>();
+        state.RequireForUpdate<PlayerRuntimeScalingState>();
+        state.RequireForUpdate<PlayerRuntimeControllerScalingElement>();
+        state.RequireForUpdate<PlayerBaseMovementConfig>();
+        state.RequireForUpdate<PlayerRuntimeMovementConfig>();
+        state.RequireForUpdate<PlayerBaseLookConfig>();
+        state.RequireForUpdate<PlayerRuntimeLookConfig>();
+        state.RequireForUpdate<PlayerBaseCameraConfig>();
+        state.RequireForUpdate<PlayerRuntimeCameraConfig>();
+        state.RequireForUpdate<PlayerBaseShootingConfig>();
+        state.RequireForUpdate<PlayerRuntimeShootingConfig>();
+        state.RequireForUpdate<PlayerBaseHealthStatisticsConfig>();
+        state.RequireForUpdate<PlayerRuntimeHealthStatisticsConfig>();
+        state.RequireForUpdate<PlayerRuntimeProgressionScalingElement>();
+        state.RequireForUpdate<PlayerBaseGamePhaseElement>();
+        state.RequireForUpdate<PlayerPowerUpBaseConfigElement>();
+        state.RequireForUpdate<PlayerRuntimePowerUpScalingElement>();
+        state.RequireForUpdate<PlayerPowerUpUnlockCatalogElement>();
+        state.RequireForUpdate<EquippedPassiveToolElement>();
     }
 
     /// <summary>
@@ -51,30 +73,101 @@ public partial struct PlayerLevelUpSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
+        ComponentLookup<PlayerBaseMovementConfig> baseMovementLookup = SystemAPI.GetComponentLookup<PlayerBaseMovementConfig>(true);
+        ComponentLookup<PlayerRuntimeMovementConfig> runtimeMovementLookup = SystemAPI.GetComponentLookup<PlayerRuntimeMovementConfig>(false);
+        ComponentLookup<PlayerBaseLookConfig> baseLookLookup = SystemAPI.GetComponentLookup<PlayerBaseLookConfig>(true);
+        ComponentLookup<PlayerRuntimeLookConfig> runtimeLookLookup = SystemAPI.GetComponentLookup<PlayerRuntimeLookConfig>(false);
+        ComponentLookup<PlayerBaseCameraConfig> baseCameraLookup = SystemAPI.GetComponentLookup<PlayerBaseCameraConfig>(true);
+        ComponentLookup<PlayerRuntimeCameraConfig> runtimeCameraLookup = SystemAPI.GetComponentLookup<PlayerRuntimeCameraConfig>(false);
+        ComponentLookup<PlayerBaseShootingConfig> baseShootingLookup = SystemAPI.GetComponentLookup<PlayerBaseShootingConfig>(true);
+        ComponentLookup<PlayerRuntimeShootingConfig> runtimeShootingLookup = SystemAPI.GetComponentLookup<PlayerRuntimeShootingConfig>(false);
+        ComponentLookup<PlayerBaseHealthStatisticsConfig> baseHealthLookup = SystemAPI.GetComponentLookup<PlayerBaseHealthStatisticsConfig>(true);
+        ComponentLookup<PlayerRuntimeHealthStatisticsConfig> runtimeHealthLookup = SystemAPI.GetComponentLookup<PlayerRuntimeHealthStatisticsConfig>(false);
+        ComponentLookup<PlayerPowerUpsConfig> powerUpsConfigLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsConfig>(false);
+        ComponentLookup<PlayerPassiveToolsState> passiveToolsStateLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(false);
+        ComponentLookup<PlayerHealth> healthLookup = SystemAPI.GetComponentLookup<PlayerHealth>(false);
+        ComponentLookup<PlayerShield> shieldLookup = SystemAPI.GetComponentLookup<PlayerShield>(false);
+        ComponentLookup<PlayerProgressionConfig> progressionConfigLookup = SystemAPI.GetComponentLookup<PlayerProgressionConfig>(true);
+        ComponentLookup<PlayerExperience> experienceLookup = SystemAPI.GetComponentLookup<PlayerExperience>(false);
+        ComponentLookup<PlayerLevel> levelLookup = SystemAPI.GetComponentLookup<PlayerLevel>(false);
+        ComponentLookup<PlayerExperienceCollection> experienceCollectionLookup = SystemAPI.GetComponentLookup<PlayerExperienceCollection>(false);
+        ComponentLookup<PlayerRuntimeScalingState> runtimeScalingStateLookup = SystemAPI.GetComponentLookup<PlayerRuntimeScalingState>(false);
         ComponentLookup<PlayerRunOutcomeState> runOutcomeStateLookup = SystemAPI.GetComponentLookup<PlayerRunOutcomeState>(true);
         ComponentLookup<PlayerMilestonePowerUpSelectionState> milestoneSelectionStateLookup = SystemAPI.GetComponentLookup<PlayerMilestonePowerUpSelectionState>(false);
         BufferLookup<PlayerMilestonePowerUpSelectionOfferElement> milestoneSelectionOffersLookup = SystemAPI.GetBufferLookup<PlayerMilestonePowerUpSelectionOfferElement>(false);
+        BufferLookup<PlayerScalableStatElement> scalableStatsLookup = SystemAPI.GetBufferLookup<PlayerScalableStatElement>(false);
+        BufferLookup<PlayerRuntimeControllerScalingElement> controllerScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimeControllerScalingElement>(true);
+        BufferLookup<PlayerRuntimeProgressionScalingElement> progressionScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimeProgressionScalingElement>(true);
+        BufferLookup<PlayerBaseGamePhaseElement> baseGamePhasesLookup = SystemAPI.GetBufferLookup<PlayerBaseGamePhaseElement>(true);
+        BufferLookup<PlayerRuntimeGamePhaseElement> runtimeGamePhasesLookup = SystemAPI.GetBufferLookup<PlayerRuntimeGamePhaseElement>(false);
+        BufferLookup<PlayerPowerUpBaseConfigElement> basePowerUpConfigsLookup = SystemAPI.GetBufferLookup<PlayerPowerUpBaseConfigElement>(true);
+        BufferLookup<PlayerRuntimePowerUpScalingElement> powerUpScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimePowerUpScalingElement>(true);
         BufferLookup<PlayerPowerUpUnlockCatalogElement> unlockCatalogLookup = SystemAPI.GetBufferLookup<PlayerPowerUpUnlockCatalogElement>(false);
         BufferLookup<PlayerPowerUpTierDefinitionElement> tierDefinitionsLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierDefinitionElement>(true);
         BufferLookup<PlayerPowerUpTierEntryElement> tierEntriesLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierEntryElement>(true);
         BufferLookup<PlayerPowerUpTierEntryScalingElement> tierEntryScalingLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierEntryScalingElement>(true);
-        BufferLookup<EquippedPassiveToolElement> equippedPassiveToolsLookup = SystemAPI.GetBufferLookup<EquippedPassiveToolElement>(true);
+        BufferLookup<EquippedPassiveToolElement> equippedPassiveToolsLookup = SystemAPI.GetBufferLookup<EquippedPassiveToolElement>(false);
         ComponentLookup<PlayerMilestoneTimeScaleResumeState> milestoneTimeScaleResumeStateLookup = SystemAPI.GetComponentLookup<PlayerMilestoneTimeScaleResumeState>(false);
 
         foreach ((RefRW<PlayerExperience> playerExperience,
                   RefRW<PlayerLevel> playerLevel,
                   RefRW<PlayerExperienceCollection> playerExperienceCollection,
                   RefRO<PlayerProgressionConfig> progressionConfig,
+                  DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
                   DynamicBuffer<PlayerScalableStatElement> scalableStats,
                   Entity entity)
                  in SystemAPI.Query<RefRW<PlayerExperience>,
                                     RefRW<PlayerLevel>,
                                     RefRW<PlayerExperienceCollection>,
                                     RefRO<PlayerProgressionConfig>,
+                                    DynamicBuffer<PlayerRuntimeGamePhaseElement>,
                                     DynamicBuffer<PlayerScalableStatElement>>().WithEntityAccess())
         {
             if (PlayerRunOutcomeRuntimeUtility.IsFinalized(entity, in runOutcomeStateLookup))
                 continue;
+
+            bool runtimeScalingRefreshed = PlayerRuntimeScalingRefreshUtility.TryApplyForEntity(entity,
+                                                                                                 scalableStatsLookup,
+                                                                                                 controllerScalingLookup,
+                                                                                                 baseMovementLookup,
+                                                                                                 runtimeMovementLookup,
+                                                                                                 baseLookLookup,
+                                                                                                 runtimeLookLookup,
+                                                                                                 baseCameraLookup,
+                                                                                                 runtimeCameraLookup,
+                                                                                                 baseShootingLookup,
+                                                                                                 runtimeShootingLookup,
+                                                                                                 baseHealthLookup,
+                                                                                                 runtimeHealthLookup,
+                                                                                                 progressionScalingLookup,
+                                                                                                 baseGamePhasesLookup,
+                                                                                                 runtimeGamePhasesLookup,
+                                                                                                 basePowerUpConfigsLookup,
+                                                                                                 powerUpScalingLookup,
+                                                                                                 powerUpsConfigLookup,
+                                                                                                 unlockCatalogLookup,
+                                                                                                 equippedPassiveToolsLookup,
+                                                                                                 passiveToolsStateLookup,
+                                                                                                 healthLookup,
+                                                                                                 shieldLookup,
+                                                                                                 progressionConfigLookup,
+                                                                                                 experienceLookup,
+                                                                                                 levelLookup,
+                                                                                                 experienceCollectionLookup,
+                                                                                                 runtimeScalingStateLookup,
+                                                                                                 false);
+
+            if (runtimeScalingRefreshed)
+            {
+                if (experienceLookup.HasComponent(entity))
+                    playerExperience.ValueRW = experienceLookup[entity];
+
+                if (levelLookup.HasComponent(entity))
+                    playerLevel.ValueRW = levelLookup[entity];
+
+                if (experienceCollectionLookup.HasComponent(entity))
+                    playerExperienceCollection.ValueRW = experienceCollectionLookup[entity];
+            }
 
             bool hasMilestoneSelectionData = PlayerMilestonePowerUpRollUtility.HasMilestoneSelectionData(entity,
                                                                                                            in milestoneSelectionStateLookup,
@@ -119,6 +212,7 @@ public partial struct PlayerLevelUpSystem : ISystem
             if (currentLevel < levelCap)
             {
                 requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
+                                                                                                                  runtimeGamePhases,
                                                                                                                    currentLevel,
                                                                                                                    out activeGamePhaseIndex,
                                                                                                                    out nextLevelIsMilestone,
@@ -142,6 +236,7 @@ public partial struct PlayerLevelUpSystem : ISystem
                 currentExperience -= requiredExperienceForNextLevel;
                 currentLevel += 1;
                 gainedLevelsCount += 1;
+                SyncScalableStats(scalableStats, currentExperience, currentLevel);
 
                 // Apply repeating level-up schedule for the newly reached level.
                 if (TryApplyScheduleStep(progressionConfig.ValueRO,
@@ -162,9 +257,53 @@ public partial struct PlayerLevelUpSystem : ISystem
                                             scheduleDebugInfo.NewValue));
                 }
 
+                runtimeScalingRefreshed = PlayerRuntimeScalingRefreshUtility.TryApplyForEntity(entity,
+                                                                                               scalableStatsLookup,
+                                                                                               controllerScalingLookup,
+                                                                                               baseMovementLookup,
+                                                                                               runtimeMovementLookup,
+                                                                                               baseLookLookup,
+                                                                                               runtimeLookLookup,
+                                                                                               baseCameraLookup,
+                                                                                               runtimeCameraLookup,
+                                                                                               baseShootingLookup,
+                                                                                               runtimeShootingLookup,
+                                                                                               baseHealthLookup,
+                                                                                               runtimeHealthLookup,
+                                                                                               progressionScalingLookup,
+                                                                                               baseGamePhasesLookup,
+                                                                                               runtimeGamePhasesLookup,
+                                                                                               basePowerUpConfigsLookup,
+                                                                                               powerUpScalingLookup,
+                                                                                               powerUpsConfigLookup,
+                                                                                               unlockCatalogLookup,
+                                                                                               equippedPassiveToolsLookup,
+                                                                                               passiveToolsStateLookup,
+                                                                                               healthLookup,
+                                                                                               shieldLookup,
+                                                                                               progressionConfigLookup,
+                                                                                               experienceLookup,
+                                                                                               levelLookup,
+                                                                                               experienceCollectionLookup,
+                                                                                               runtimeScalingStateLookup,
+                                                                                               false);
+
+                if (runtimeScalingRefreshed)
+                {
+                    if (experienceLookup.HasComponent(entity))
+                        playerExperience.ValueRW = experienceLookup[entity];
+
+                    if (levelLookup.HasComponent(entity))
+                        playerLevel.ValueRW = levelLookup[entity];
+
+                    if (experienceCollectionLookup.HasComponent(entity))
+                        playerExperienceCollection.ValueRW = experienceCollectionLookup[entity];
+                }
+
                 if (currentLevel < levelCap)
                 {
                     requiredExperienceForNextLevel = PlayerProgressionPhaseUtility.ResolveRequiredExperienceForLevel(progressionConfig.ValueRO,
+                                                                                                                      runtimeGamePhases,
                                                                                                                        currentLevel,
                                                                                                                        out activeGamePhaseIndex,
                                                                                                                        out nextLevelIsMilestone,
@@ -197,9 +336,6 @@ public partial struct PlayerLevelUpSystem : ISystem
                     break;
                 }
 
-                // Keep runtime scalable stats aligned with the freshly applied schedule step
-                // before any milestone roll resolves tier or drop-pool probabilities.
-                SyncScalableStats(scalableStats, currentExperience, currentLevel);
                 DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog = unlockCatalogLookup[entity];
                 DynamicBuffer<PlayerPowerUpTierDefinitionElement> tierDefinitions = tierDefinitionsLookup[entity];
                 DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries = tierEntriesLookup[entity];

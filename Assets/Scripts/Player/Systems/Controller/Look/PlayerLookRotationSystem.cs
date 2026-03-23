@@ -30,7 +30,7 @@ public partial struct PlayerLookRotationSystem : ISystem
     {
         state.RequireForUpdate<PlayerLookState>();
         state.RequireForUpdate<LocalTransform>();
-        state.RequireForUpdate<PlayerControllerConfig>();
+        state.RequireForUpdate<PlayerRuntimeLookConfig>();
     }
     #endregion
 
@@ -49,9 +49,9 @@ public partial struct PlayerLookRotationSystem : ISystem
 
         foreach ((RefRW<PlayerLookState> lookState,
                   RefRW<LocalTransform> localTransform,
-                  RefRO<PlayerControllerConfig> controllerConfig) in SystemAPI.Query<RefRW<PlayerLookState>, RefRW<LocalTransform>, RefRO<PlayerControllerConfig>>())
+                  RefRO<PlayerRuntimeLookConfig> runtimeLookConfig) in SystemAPI.Query<RefRW<PlayerLookState>, RefRW<LocalTransform>, RefRO<PlayerRuntimeLookConfig>>())
         {
-            ref LookConfig lookConfig = ref controllerConfig.ValueRO.Config.Value.Look;
+            PlayerRuntimeLookConfig lookConfig = runtimeLookConfig.ValueRO;
             PlayerLookState lookStateData = lookState.ValueRO;
             LocalTransform localTransformData = localTransform.ValueRO;
             bool stateChanged = false;

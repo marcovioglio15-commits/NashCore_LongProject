@@ -13,6 +13,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     public readonly bool HasMissingHealOverTimeState;
     public readonly bool HasMissingPassiveExplosionState;
     public readonly bool HasMissingPassiveHealState;
+    public readonly bool HasMissingPassiveBulletTimeState;
     public readonly bool HasMissingElementalTrailState;
     public readonly bool HasMissingElementalTrailAttachedVfxState;
     public readonly bool HasMissingBombRequestBuffer;
@@ -25,6 +26,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     public readonly bool HasMissingPowerUpCheatPresetEntryBuffer;
     public readonly bool HasMissingPowerUpCheatPresetPassiveBuffer;
     public readonly bool HasMissingPowerUpUnlockCatalogBuffer;
+    public readonly bool HasMissingPowerUpCharacterTuningFormulaBuffer;
     public readonly bool HasMissingPowerUpTierDefinitionBuffer;
     public readonly bool HasMissingPowerUpTierEntryBuffer;
     public readonly bool HasMissingPowerUpTierEntryScalingBuffer;
@@ -46,6 +48,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
                    HasMissingHealOverTimeState ||
                    HasMissingPassiveExplosionState ||
                    HasMissingPassiveHealState ||
+                   HasMissingPassiveBulletTimeState ||
                    HasMissingElementalTrailState ||
                    HasMissingElementalTrailAttachedVfxState ||
                    HasMissingBombRequestBuffer ||
@@ -58,6 +61,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
                    HasMissingPowerUpCheatPresetEntryBuffer ||
                    HasMissingPowerUpCheatPresetPassiveBuffer ||
                    HasMissingPowerUpUnlockCatalogBuffer ||
+                   HasMissingPowerUpCharacterTuningFormulaBuffer ||
                    HasMissingPowerUpTierDefinitionBuffer ||
                    HasMissingPowerUpTierEntryBuffer ||
                    HasMissingPowerUpTierEntryScalingBuffer ||
@@ -82,6 +86,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     /// <param name="hasMissingHealOverTimeState">True when PlayerHealOverTimeState is missing.</param>
     /// <param name="hasMissingPassiveExplosionState">True when PlayerPassiveExplosionState is missing.</param>
     /// <param name="hasMissingPassiveHealState">True when PlayerPassiveHealState is missing.</param>
+    /// <param name="hasMissingPassiveBulletTimeState">True when PlayerPassiveBulletTimeState is missing.</param>
     /// <param name="hasMissingElementalTrailState">True when PlayerElementalTrailState is missing.</param>
     /// <param name="hasMissingElementalTrailAttachedVfxState">True when PlayerElementalTrailAttachedVfxState is missing.</param>
     /// <param name="hasMissingBombRequestBuffer">True when PlayerBombSpawnRequest buffer is missing.</param>
@@ -94,6 +99,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     /// <param name="hasMissingPowerUpCheatPresetEntryBuffer">True when PlayerPowerUpCheatPresetEntry buffer is missing.</param>
     /// <param name="hasMissingPowerUpCheatPresetPassiveBuffer">True when PlayerPowerUpCheatPresetPassiveElement buffer is missing.</param>
     /// <param name="hasMissingPowerUpUnlockCatalogBuffer">True when PlayerPowerUpUnlockCatalogElement buffer is missing.</param>
+    /// <param name="hasMissingPowerUpCharacterTuningFormulaBuffer">True when PlayerPowerUpCharacterTuningFormulaElement buffer is missing.</param>
     /// <param name="hasMissingPowerUpTierDefinitionBuffer">True when PlayerPowerUpTierDefinitionElement buffer is missing.</param>
     /// <param name="hasMissingPowerUpTierEntryBuffer">True when PlayerPowerUpTierEntryElement buffer is missing.</param>
     /// <param name="hasMissingPowerUpTierEntryScalingBuffer">True when PlayerPowerUpTierEntryScalingElement buffer is missing.</param>
@@ -110,6 +116,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         bool hasMissingHealOverTimeState,
         bool hasMissingPassiveExplosionState,
         bool hasMissingPassiveHealState,
+        bool hasMissingPassiveBulletTimeState,
         bool hasMissingElementalTrailState,
         bool hasMissingElementalTrailAttachedVfxState,
         bool hasMissingBombRequestBuffer,
@@ -122,6 +129,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         bool hasMissingPowerUpCheatPresetEntryBuffer,
         bool hasMissingPowerUpCheatPresetPassiveBuffer,
         bool hasMissingPowerUpUnlockCatalogBuffer,
+        bool hasMissingPowerUpCharacterTuningFormulaBuffer,
         bool hasMissingPowerUpTierDefinitionBuffer,
         bool hasMissingPowerUpTierEntryBuffer,
         bool hasMissingPowerUpTierEntryScalingBuffer,
@@ -137,6 +145,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         HasMissingHealOverTimeState = hasMissingHealOverTimeState;
         HasMissingPassiveExplosionState = hasMissingPassiveExplosionState;
         HasMissingPassiveHealState = hasMissingPassiveHealState;
+        HasMissingPassiveBulletTimeState = hasMissingPassiveBulletTimeState;
         HasMissingElementalTrailState = hasMissingElementalTrailState;
         HasMissingElementalTrailAttachedVfxState = hasMissingElementalTrailAttachedVfxState;
         HasMissingBombRequestBuffer = hasMissingBombRequestBuffer;
@@ -149,6 +158,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         HasMissingPowerUpCheatPresetEntryBuffer = hasMissingPowerUpCheatPresetEntryBuffer;
         HasMissingPowerUpCheatPresetPassiveBuffer = hasMissingPowerUpCheatPresetPassiveBuffer;
         HasMissingPowerUpUnlockCatalogBuffer = hasMissingPowerUpUnlockCatalogBuffer;
+        HasMissingPowerUpCharacterTuningFormulaBuffer = hasMissingPowerUpCharacterTuningFormulaBuffer;
         HasMissingPowerUpTierDefinitionBuffer = hasMissingPowerUpTierDefinitionBuffer;
         HasMissingPowerUpTierEntryBuffer = hasMissingPowerUpTierEntryBuffer;
         HasMissingPowerUpTierEntryScalingBuffer = hasMissingPowerUpTierEntryScalingBuffer;
@@ -170,6 +180,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     /// <param name="missingHealOverTimeStateQuery">Query for entities missing PlayerHealOverTimeState.</param>
     /// <param name="missingPassiveExplosionStateQuery">Query for entities missing PlayerPassiveExplosionState.</param>
     /// <param name="missingPassiveHealStateQuery">Query for entities missing PlayerPassiveHealState.</param>
+    /// <param name="missingPassiveBulletTimeStateQuery">Query for entities missing PlayerPassiveBulletTimeState.</param>
     /// <param name="missingElementalTrailStateQuery">Query for entities missing PlayerElementalTrailState.</param>
     /// <param name="missingElementalTrailAttachedVfxStateQuery">Query for entities missing PlayerElementalTrailAttachedVfxState.</param>
     /// <param name="missingBombRequestBufferQuery">Query for entities missing PlayerBombSpawnRequest buffer.</param>
@@ -182,6 +193,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
     /// <param name="missingPowerUpCheatPresetEntryBufferQuery">Query for entities missing PlayerPowerUpCheatPresetEntry buffer.</param>
     /// <param name="missingPowerUpCheatPresetPassiveBufferQuery">Query for entities missing PlayerPowerUpCheatPresetPassiveElement buffer.</param>
     /// <param name="missingPowerUpUnlockCatalogBufferQuery">Query for entities missing PlayerPowerUpUnlockCatalogElement buffer.</param>
+    /// <param name="missingPowerUpCharacterTuningFormulaBufferQuery">Query for entities missing PlayerPowerUpCharacterTuningFormulaElement buffer.</param>
     /// <param name="missingPowerUpTierDefinitionBufferQuery">Query for entities missing PlayerPowerUpTierDefinitionElement buffer.</param>
     /// <param name="missingPowerUpTierEntryBufferQuery">Query for entities missing PlayerPowerUpTierEntryElement buffer.</param>
     /// <param name="missingPowerUpTierEntryScalingBufferQuery">Query for entities missing PlayerPowerUpTierEntryScalingElement buffer.</param>
@@ -198,6 +210,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         in EntityQuery missingHealOverTimeStateQuery,
         in EntityQuery missingPassiveExplosionStateQuery,
         in EntityQuery missingPassiveHealStateQuery,
+        in EntityQuery missingPassiveBulletTimeStateQuery,
         in EntityQuery missingElementalTrailStateQuery,
         in EntityQuery missingElementalTrailAttachedVfxStateQuery,
         in EntityQuery missingBombRequestBufferQuery,
@@ -210,6 +223,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
         in EntityQuery missingPowerUpCheatPresetEntryBufferQuery,
         in EntityQuery missingPowerUpCheatPresetPassiveBufferQuery,
         in EntityQuery missingPowerUpUnlockCatalogBufferQuery,
+        in EntityQuery missingPowerUpCharacterTuningFormulaBufferQuery,
         in EntityQuery missingPowerUpTierDefinitionBufferQuery,
         in EntityQuery missingPowerUpTierEntryBufferQuery,
         in EntityQuery missingPowerUpTierEntryScalingBufferQuery,
@@ -226,6 +240,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
             !missingHealOverTimeStateQuery.IsEmptyIgnoreFilter,
             !missingPassiveExplosionStateQuery.IsEmptyIgnoreFilter,
             !missingPassiveHealStateQuery.IsEmptyIgnoreFilter,
+            !missingPassiveBulletTimeStateQuery.IsEmptyIgnoreFilter,
             !missingElementalTrailStateQuery.IsEmptyIgnoreFilter,
             !missingElementalTrailAttachedVfxStateQuery.IsEmptyIgnoreFilter,
             !missingBombRequestBufferQuery.IsEmptyIgnoreFilter,
@@ -238,6 +253,7 @@ internal readonly struct PlayerPowerUpsMissingRuntimeFlags
             !missingPowerUpCheatPresetEntryBufferQuery.IsEmptyIgnoreFilter,
             !missingPowerUpCheatPresetPassiveBufferQuery.IsEmptyIgnoreFilter,
             !missingPowerUpUnlockCatalogBufferQuery.IsEmptyIgnoreFilter,
+            !missingPowerUpCharacterTuningFormulaBufferQuery.IsEmptyIgnoreFilter,
             !missingPowerUpTierDefinitionBufferQuery.IsEmptyIgnoreFilter,
             !missingPowerUpTierEntryBufferQuery.IsEmptyIgnoreFilter,
             !missingPowerUpTierEntryScalingBufferQuery.IsEmptyIgnoreFilter,

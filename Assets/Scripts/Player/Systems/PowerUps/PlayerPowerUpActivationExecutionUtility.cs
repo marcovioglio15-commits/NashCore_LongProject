@@ -31,7 +31,8 @@ public static class PlayerPowerUpActivationExecutionUtility
                                    in LocalTransform localTransform,
                                    in PlayerLookState lookState,
                                    in PlayerMovementState movementState,
-                                   in PlayerControllerConfig controllerConfig,
+                                   in PlayerRuntimeMovementConfig runtimeMovementConfig,
+                                   in PlayerRuntimeShootingConfig runtimeShootingConfig,
                                    in PlayerPassiveToolsState passiveToolsState,
                                    in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                    in ComponentLookup<LocalTransform> transformLookup,
@@ -52,7 +53,7 @@ public static class PlayerPowerUpActivationExecutionUtility
             case ActiveToolKind.Dash:
                 ExecuteDash(in slotConfig,
                             in movementState,
-                            in controllerConfig,
+                            in runtimeMovementConfig,
                             in localTransform,
                             moveInput,
                             lastValidMovementDirection,
@@ -65,7 +66,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                 ExecuteShotgun(in slotConfig,
                                in localTransform,
                                in lookState,
-                               in controllerConfig,
+                               in runtimeShootingConfig,
                                in passiveToolsState,
                                playerEntity,
                                in muzzleLookup,
@@ -83,7 +84,7 @@ public static class PlayerPowerUpActivationExecutionUtility
     public static void ExecuteChargeShot(in PlayerPowerUpSlotConfig slotConfig,
                                          in LocalTransform localTransform,
                                          in PlayerLookState lookState,
-                                         in PlayerControllerConfig controllerConfig,
+                                         in PlayerRuntimeShootingConfig runtimeShootingConfig,
                                          in PlayerPassiveToolsState passiveToolsState,
                                          Entity playerEntity,
                                          in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
@@ -94,23 +95,20 @@ public static class PlayerPowerUpActivationExecutionUtility
         bool hasPassiveShotgunPayload = passiveToolsState.HasShotgun != 0;
         int projectileCount = hasPassiveShotgunPayload ? math.max(1, passiveToolsState.Shotgun.ProjectileCount) : 1;
         float coneAngleDegrees = hasPassiveShotgunPayload ? math.max(0f, passiveToolsState.Shotgun.ConeAngleDegrees) : 0f;
-        ProjectilePenetrationMode penetrationMode = slotConfig.ChargeShot.PenetrationMode;
-        int maxPenetrations = math.max(0, slotConfig.ChargeShot.MaxPenetrations);
-
-        if (hasPassiveShotgunPayload)
-        {
-            penetrationMode = (ProjectilePenetrationMode)math.max((int)penetrationMode, (int)passiveToolsState.Shotgun.PenetrationMode);
-            maxPenetrations = math.max(maxPenetrations, math.max(0, passiveToolsState.Shotgun.MaxPenetrations));
-        }
+        ResolvePenetrationSettings(in runtimeShootingConfig.Values,
+                                   slotConfig.ChargeShot.PenetrationMode,
+                                   slotConfig.ChargeShot.MaxPenetrations,
+                                   out ProjectilePenetrationMode penetrationMode,
+                                   out int maxPenetrations);
 
         float3 shootDirection = ResolveShootDirection(in lookState, in localTransform);
         float3 spawnPosition = ResolveShootSpawnPosition(playerEntity,
                                                          in localTransform,
-                                                         in controllerConfig,
+                                                         in runtimeShootingConfig,
                                                          in muzzleLookup,
                                                          in transformLookup,
                                                          in localToWorldLookup);
-        ProjectileRequestTemplate template = BuildProjectileTemplate(in controllerConfig,
+        ProjectileRequestTemplate template = BuildProjectileTemplate(in runtimeShootingConfig,
                                                                      in passiveToolsState,
                                                                      slotConfig.ChargeShot.SizeMultiplier,
                                                                      slotConfig.ChargeShot.DamageMultiplier,
@@ -175,14 +173,14 @@ public static class PlayerPowerUpActivationExecutionUtility
 
     private static void ExecuteDash(in PlayerPowerUpSlotConfig slotConfig,
                                     in PlayerMovementState movementState,
-                                    in PlayerControllerConfig controllerConfig,
+                                    in PlayerRuntimeMovementConfig runtimeMovementConfig,
                                     in LocalTransform localTransform,
                                     float2 moveInput,
                                     float3 lastValidMovementDirection,
                                     ref PlayerDashState dashState)
     {
         if (!TryResolveDashActivationDirection(in movementState,
-                                               in controllerConfig,
+                                               in runtimeMovementConfig,
                                                in localTransform,
                                                moveInput,
                                                lastValidMovementDirection,
@@ -231,14 +229,16 @@ public static class PlayerPowerUpActivationExecutionUtility
 
     private static void ExecuteBulletTime(in PlayerPowerUpSlotConfig slotConfig, ref PlayerBulletTimeState bulletTimeState)
     {
-        bulletTimeState.RemainingDuration = math.max(0.05f, slotConfig.BulletTime.Duration);
-        bulletTimeState.SlowPercent = math.clamp(slotConfig.BulletTime.EnemySlowPercent, 0f, 100f);
+        PlayerBulletTimeRuntimeUtility.ActivateTimedEffect(ref bulletTimeState,
+                                                           slotConfig.BulletTime.Duration,
+                                                           slotConfig.BulletTime.EnemySlowPercent,
+                                                           slotConfig.BulletTime.TransitionTimeSeconds);
     }
 
     private static void ExecuteShotgun(in PlayerPowerUpSlotConfig slotConfig,
                                        in LocalTransform localTransform,
                                        in PlayerLookState lookState,
-                                       in PlayerControllerConfig controllerConfig,
+                                       in PlayerRuntimeShootingConfig runtimeShootingConfig,
                                        in PlayerPassiveToolsState passiveToolsState,
                                        Entity playerEntity,
                                        in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
@@ -248,14 +248,19 @@ public static class PlayerPowerUpActivationExecutionUtility
     {
         int projectileCount = math.max(1, slotConfig.Shotgun.ProjectileCount);
         float coneAngleDegrees = math.max(0f, slotConfig.Shotgun.ConeAngleDegrees);
+        ResolvePenetrationSettings(in runtimeShootingConfig.Values,
+                                   slotConfig.Shotgun.PenetrationMode,
+                                   slotConfig.Shotgun.MaxPenetrations,
+                                   out ProjectilePenetrationMode penetrationMode,
+                                   out int maxPenetrations);
         float3 shootDirection = ResolveShootDirection(in lookState, in localTransform);
         float3 spawnPosition = ResolveShootSpawnPosition(playerEntity,
                                                          in localTransform,
-                                                         in controllerConfig,
+                                                         in runtimeShootingConfig,
                                                          in muzzleLookup,
                                                          in transformLookup,
                                                          in localToWorldLookup);
-        ProjectileRequestTemplate template = BuildProjectileTemplate(in controllerConfig,
+        ProjectileRequestTemplate template = BuildProjectileTemplate(in runtimeShootingConfig,
                                                                      in passiveToolsState,
                                                                      slotConfig.Shotgun.SizeMultiplier,
                                                                      slotConfig.Shotgun.DamageMultiplier,
@@ -272,8 +277,8 @@ public static class PlayerPowerUpActivationExecutionUtility
                         spawnPosition,
                         shootDirection,
                         in template,
-                        slotConfig.Shotgun.PenetrationMode,
-                        slotConfig.Shotgun.MaxPenetrations);
+                        penetrationMode,
+                        maxPenetrations);
     }
 
     private static void AddShotgunBurst(ref DynamicBuffer<ShootRequest> shootRequests,
@@ -332,12 +337,12 @@ public static class PlayerPowerUpActivationExecutionUtility
 
     private static float3 ResolveShootSpawnPosition(Entity playerEntity,
                                                     in LocalTransform localTransform,
-                                                    in PlayerControllerConfig controllerConfig,
+                                                    in PlayerRuntimeShootingConfig runtimeShootingConfig,
                                                     in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                                     in ComponentLookup<LocalTransform> transformLookup,
                                                     in ComponentLookup<LocalToWorld> localToWorldLookup)
     {
-        float3 shootOffset = controllerConfig.Config.Value.Shooting.ShootOffset;
+        float3 shootOffset = runtimeShootingConfig.ShootOffset;
         return PlayerShootOriginUtility.ResolveSpawnPosition(playerEntity,
                                                              in localTransform,
                                                              in shootOffset,
@@ -346,7 +351,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                                              in localToWorldLookup);
     }
 
-    private static ProjectileRequestTemplate BuildProjectileTemplate(in PlayerControllerConfig controllerConfig,
+    private static ProjectileRequestTemplate BuildProjectileTemplate(in PlayerRuntimeShootingConfig runtimeShootingConfig,
                                                                      in PlayerPassiveToolsState passiveToolsState,
                                                                      float sizeMultiplier,
                                                                      float damageMultiplier,
@@ -357,9 +362,11 @@ public static class PlayerPowerUpActivationExecutionUtility
                                                                      in ElementalEffectConfig elementalEffectOverride,
                                                                      float elementalStacksPerHitOverride)
     {
-        ref ShootingConfig shootingConfig = ref controllerConfig.Config.Value.Shooting;
-        ref ShootingValuesBlob values = ref shootingConfig.Values;
-        float scale = math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier * math.max(0.01f, sizeMultiplier));
+        ShootingValuesBlob values = runtimeShootingConfig.Values;
+        float scale = math.max(0.01f,
+                               math.max(0.01f, values.ProjectileSizeMultiplier) *
+                               math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier) *
+                               math.max(0.01f, sizeMultiplier));
         float damage = math.max(0f, values.Damage * math.max(0f, passiveToolsState.ProjectileDamageMultiplier) * math.max(0f, damageMultiplier));
         float speed = math.max(0f, values.ShootSpeed * math.max(0f, passiveToolsState.ProjectileSpeedMultiplier) * math.max(0f, speedMultiplier));
         float range = values.Range;
@@ -379,11 +386,26 @@ public static class PlayerPowerUpActivationExecutionUtility
             Range = range,
             Lifetime = lifetime,
             ScaleMultiplier = scale,
-            InheritPlayerSpeed = shootingConfig.ProjectilesInheritPlayerSpeed,
+            InheritPlayerSpeed = runtimeShootingConfig.ProjectilesInheritPlayerSpeed,
             HasElementalPayloadOverride = hasElementalPayloadOverride ? (byte)1 : (byte)0,
             ElementalEffectOverride = elementalEffectOverride,
             ElementalStacksPerHitOverride = math.max(0f, elementalStacksPerHitOverride)
         };
+    }
+
+    private static void ResolvePenetrationSettings(in ShootingValuesBlob baseShootingValues,
+                                                   ProjectilePenetrationMode overrideMode,
+                                                   int overrideMaxPenetrations,
+                                                   out ProjectilePenetrationMode resolvedMode,
+                                                   out int resolvedMaxPenetrations)
+    {
+        resolvedMode = baseShootingValues.PenetrationMode;
+        resolvedMaxPenetrations = math.max(0, baseShootingValues.MaxPenetrations);
+
+        if (overrideMode != ProjectilePenetrationMode.None)
+            resolvedMode = (ProjectilePenetrationMode)math.max((int)resolvedMode, (int)overrideMode);
+
+        resolvedMaxPenetrations = math.max(resolvedMaxPenetrations, math.max(0, overrideMaxPenetrations));
     }
 
     private static void AddShootRequest(ref DynamicBuffer<ShootRequest> shootRequests,
@@ -460,14 +482,14 @@ public static class PlayerPowerUpActivationExecutionUtility
     }
 
     public static bool TryResolveDashActivationDirection(in PlayerMovementState movementState,
-                                                         in PlayerControllerConfig controllerConfig,
+                                                         in PlayerRuntimeMovementConfig runtimeMovementConfig,
                                                          in LocalTransform localTransform,
                                                          float2 moveInput,
                                                          float3 lastValidMovementDirection,
                                                          out float3 dashDirection)
     {
         if (TryResolveDashDirectionFromReleaseMask(in movementState,
-                                                   in controllerConfig,
+                                                   in runtimeMovementConfig,
                                                    in localTransform,
                                                    out dashDirection))
             return true;
@@ -495,11 +517,11 @@ public static class PlayerPowerUpActivationExecutionUtility
             return true;
         }
 
-        return TryResolveDashDirectionFromInput(moveInput, in controllerConfig, in localTransform, out dashDirection);
+        return TryResolveDashDirectionFromInput(moveInput, in runtimeMovementConfig, in localTransform, out dashDirection);
     }
 
     private static bool TryResolveDashDirectionFromReleaseMask(in PlayerMovementState movementState,
-                                                               in PlayerControllerConfig controllerConfig,
+                                                               in PlayerRuntimeMovementConfig runtimeMovementConfig,
                                                                in LocalTransform localTransform,
                                                                out float3 dashDirection)
     {
@@ -527,17 +549,17 @@ public static class PlayerPowerUpActivationExecutionUtility
         float2 preservedInput = PlayerControllerMath.ResolveDigitalMask(previousMask, movementState.MovePressTimes);
 
         return TryResolveDashDirectionFromInput(preservedInput,
-                                                in controllerConfig,
+                                                in runtimeMovementConfig,
                                                 in localTransform,
                                                 out dashDirection);
     }
 
     private static bool TryResolveDashDirectionFromInput(float2 input,
-                                                         in PlayerControllerConfig controllerConfig,
+                                                         in PlayerRuntimeMovementConfig runtimeMovementConfig,
                                                          in LocalTransform localTransform,
                                                          out float3 dashDirection)
     {
-        ref MovementConfig movementConfig = ref controllerConfig.Config.Value.Movement;
+        PlayerRuntimeMovementConfig movementConfig = runtimeMovementConfig;
         float deadZone = movementConfig.Values.InputDeadZone;
 
         if (math.lengthsq(input) <= deadZone * deadZone)

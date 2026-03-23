@@ -37,7 +37,7 @@ public sealed class EnemyShooterProjectilePayload
     [Tooltip("Projectile penetration behavior for this shooter module.")]
     [SerializeField] private ProjectilePenetrationMode penetrationMode = ProjectilePenetrationMode.None;
 
-    [Tooltip("Maximum penetrations when penetration mode is FixedHits.")]
+    [Tooltip("Maximum extra penetrations when penetration mode is FixedHits or DamageBased.")]
     [SerializeField] private int maxPenetrations;
 
     [Tooltip("When enabled, projectiles inherit owner velocity similarly to player projectiles.")]
@@ -176,6 +176,7 @@ public sealed class EnemyShooterProjectilePayload
             case ProjectilePenetrationMode.None:
             case ProjectilePenetrationMode.FixedHits:
             case ProjectilePenetrationMode.Infinite:
+            case ProjectilePenetrationMode.DamageBased:
                 break;
 
             default:

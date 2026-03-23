@@ -15,6 +15,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingHealOverTimeStateQuery;
     private EntityQuery missingPassiveExplosionStateQuery;
     private EntityQuery missingPassiveHealStateQuery;
+    private EntityQuery missingPassiveBulletTimeStateQuery;
     private EntityQuery missingElementalTrailStateQuery;
     private EntityQuery missingElementalTrailAttachedVfxStateQuery;
     private EntityQuery missingBombRequestBufferQuery;
@@ -27,6 +28,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingPowerUpCheatPresetEntryBufferQuery;
     private EntityQuery missingPowerUpCheatPresetPassiveBufferQuery;
     private EntityQuery missingPowerUpUnlockCatalogBufferQuery;
+    private EntityQuery missingPowerUpCharacterTuningFormulaBufferQuery;
     private EntityQuery missingPowerUpTierDefinitionBufferQuery;
     private EntityQuery missingPowerUpTierEntryBufferQuery;
     private EntityQuery missingPowerUpTierEntryScalingBufferQuery;
@@ -81,6 +83,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         missingPassiveHealStateQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerPassiveHealState>()
+            .Build();
+
+        missingPassiveBulletTimeStateQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPassiveBulletTimeState>()
             .Build();
 
         missingElementalTrailStateQuery = SystemAPI.QueryBuilder()
@@ -143,6 +150,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithNone<PlayerPowerUpUnlockCatalogElement>()
             .Build();
 
+        missingPowerUpCharacterTuningFormulaBufferQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerPowerUpCharacterTuningFormulaElement>()
+            .Build();
+
         missingPowerUpTierDefinitionBufferQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerPowerUpTierDefinitionElement>()
@@ -194,6 +206,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingHealOverTimeStateQuery,
             in missingPassiveExplosionStateQuery,
             in missingPassiveHealStateQuery,
+            in missingPassiveBulletTimeStateQuery,
             in missingElementalTrailStateQuery,
             in missingElementalTrailAttachedVfxStateQuery,
             in missingBombRequestBufferQuery,
@@ -206,6 +219,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingPowerUpCheatPresetEntryBufferQuery,
             in missingPowerUpCheatPresetPassiveBufferQuery,
             in missingPowerUpUnlockCatalogBufferQuery,
+            in missingPowerUpCharacterTuningFormulaBufferQuery,
             in missingPowerUpTierDefinitionBufferQuery,
             in missingPowerUpTierEntryBufferQuery,
             in missingPowerUpTierEntryScalingBufferQuery,
@@ -260,6 +274,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         if (missingFlags.HasMissingPassiveHealState)
         {
             PlayerPowerUpsInitializeBootstrapUtility.AddMissingPassiveHealState(ref commandBuffer, in missingPassiveHealStateQuery);
+        }
+
+        if (missingFlags.HasMissingPassiveBulletTimeState)
+        {
+            PlayerPowerUpsInitializeBootstrapUtility.AddMissingPassiveBulletTimeState(ref commandBuffer, in missingPassiveBulletTimeStateQuery);
         }
 
         if (missingFlags.HasMissingElementalTrailState)
@@ -322,6 +341,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             PlayerPowerUpsInitializeBootstrapUtility.AddMissingPowerUpUnlockCatalogBuffers(ref commandBuffer, in missingPowerUpUnlockCatalogBufferQuery);
         }
 
+        if (missingFlags.HasMissingPowerUpCharacterTuningFormulaBuffer)
+        {
+            PlayerPowerUpsInitializeBootstrapUtility.AddMissingPowerUpCharacterTuningFormulaBuffers(ref commandBuffer,
+                                                                                                    in missingPowerUpCharacterTuningFormulaBufferQuery);
+        }
+
         if (missingFlags.HasMissingPowerUpTierDefinitionBuffer)
         {
             PlayerPowerUpsInitializeBootstrapUtility.AddMissingPowerUpTierDefinitionBuffers(ref commandBuffer, in missingPowerUpTierDefinitionBufferQuery);
@@ -369,6 +394,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingHealOverTimeStateQuery,
             in missingPassiveExplosionStateQuery,
             in missingPassiveHealStateQuery,
+            in missingPassiveBulletTimeStateQuery,
             in missingElementalTrailStateQuery,
             in missingElementalTrailAttachedVfxStateQuery,
             in missingBombRequestBufferQuery,
@@ -381,6 +407,7 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingPowerUpCheatPresetEntryBufferQuery,
             in missingPowerUpCheatPresetPassiveBufferQuery,
             in missingPowerUpUnlockCatalogBufferQuery,
+            in missingPowerUpCharacterTuningFormulaBufferQuery,
             in missingPowerUpTierDefinitionBufferQuery,
             in missingPowerUpTierEntryBufferQuery,
             in missingPowerUpTierEntryScalingBufferQuery,

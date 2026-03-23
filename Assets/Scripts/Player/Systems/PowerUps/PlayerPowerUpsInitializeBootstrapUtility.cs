@@ -90,11 +90,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
 
     public static void AddMissingBulletTimeState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingBulletTimeStateQuery)
     {
-        PlayerBulletTimeState initialState = new PlayerBulletTimeState
-        {
-            RemainingDuration = 0f,
-            SlowPercent = 0f
-        };
+        PlayerBulletTimeState initialState = default;
 
         AddComponentForEntities(ref commandBuffer, in missingBulletTimeStateQuery, initialState);
     }
@@ -152,6 +148,22 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
         };
 
         AddComponentForEntities(ref commandBuffer, in missingPassiveHealStateQuery, initialState);
+    }
+
+    /// <summary>
+    /// Adds PlayerPassiveBulletTimeState to entities missing it.
+    /// </summary>
+    /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
+    /// <param name="missingPassiveBulletTimeStateQuery">Query selecting entities without PlayerPassiveBulletTimeState.</param>
+    public static void AddMissingPassiveBulletTimeState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingPassiveBulletTimeStateQuery)
+    {
+        PlayerPassiveBulletTimeState initialState = new PlayerPassiveBulletTimeState
+        {
+            CooldownRemaining = 0f,
+            PreviousObservedHealth = -1f
+        };
+
+        AddComponentForEntities(ref commandBuffer, in missingPassiveBulletTimeStateQuery, initialState);
     }
 
     /// <summary>
@@ -315,6 +327,18 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
         in EntityQuery missingPowerUpUnlockCatalogBufferQuery)
     {
         AddBufferForEntities<PlayerPowerUpUnlockCatalogElement>(ref commandBuffer, in missingPowerUpUnlockCatalogBufferQuery);
+    }
+
+    /// <summary>
+    /// Adds PlayerPowerUpCharacterTuningFormulaElement buffers to entities missing them.
+    /// </summary>
+    /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
+    /// <param name="missingPowerUpCharacterTuningFormulaBufferQuery">Query selecting entities without PlayerPowerUpCharacterTuningFormulaElement buffer.</param>
+    public static void AddMissingPowerUpCharacterTuningFormulaBuffers(ref EntityCommandBuffer commandBuffer,
+                                                                      in EntityQuery missingPowerUpCharacterTuningFormulaBufferQuery)
+    {
+        AddBufferForEntities<PlayerPowerUpCharacterTuningFormulaElement>(ref commandBuffer,
+                                                                         in missingPowerUpCharacterTuningFormulaBufferQuery);
     }
 
     /// <summary>

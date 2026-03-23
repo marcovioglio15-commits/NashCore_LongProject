@@ -17,7 +17,7 @@ MonoBehaviour:
   description: 
   version: 1.0.0
   scalingRules:
-  - statKey: activePowerUps.Array.data[1].moduleBindings.Array.data[2|moduleId:Module_GateResource].overridePayload.resourceGate.cooldownSeconds
+  - statKey: activePowerUps.Array.data[1|powerUpId:ActiveChargeShot].moduleBindings.Array.data[2|moduleId:Module_GateResource].overridePayload.resourceGate.cooldownSeconds
     addScaling: 0
     formula: 
     debugInConsole: 0
@@ -37,6 +37,11 @@ MonoBehaviour:
     formula: 
     debugInConsole: 0
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: activePowerUps.Array.data[0|powerUpId:ActiveShotgun].moduleBindings.Array.data[2|moduleId:Module_ProjectilesPatternCone].overridePayload.projectilePatternCone.projectileCount
+    addScaling: 1
+    formula: '[ShotgunBarrels]'
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   primaryToolActionId: e0ab25f2-733a-4721-9b7a-2c8198b602da
   secondaryToolActionId: 348a94c1-2df4-48f8-82f6-83416ff0bd17
   swapSlotsActionId: 177203f0-5426-45f1-860f-94c110fbb1cd
@@ -54,7 +59,7 @@ MonoBehaviour:
     entries:
     - entryKind: 0
       powerUpId: ActiveShotgun
-      selectionWeight: 10
+      selectionWeight: 60
     - entryKind: 0
       powerUpId: ActiveChargeShot
       selectionWeight: 5
@@ -79,21 +84,6 @@ MonoBehaviour:
     - entryKind: 1
       powerUpId: PassiveOrbitalProjectiles
       selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveBouncingProjectiles
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveSplittingProjectiles
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveBigShots
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveShotgun
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: Marco's Special
-      selectionWeight: 30
   - tierId: Tier1
     entries:
     - entryKind: 0
@@ -128,10 +118,7 @@ MonoBehaviour:
       selectionWeight: 5
     - entryKind: 1
       powerUpId: PassiveBigShots
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveShotgun
-      selectionWeight: 5
+      selectionWeight: 10
   dropPoolCatalog:
   - Milestone
   - Shop
@@ -173,32 +160,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -226,6 +189,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -302,6 +266,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_TriggerRelease
     displayName: Trigger Release
     moduleKind: 1
@@ -338,32 +304,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -391,6 +333,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -467,6 +410,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_TriggerHoldCharge
     displayName: Trigger Hold Charge
     moduleKind: 2
@@ -503,32 +448,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -556,6 +477,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -632,6 +554,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_GateResource
     displayName: Resource Gate
     moduleKind: 4
@@ -668,32 +592,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -721,6 +621,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -797,6 +698,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_TriggerEvent
     displayName: Trigger Event
     moduleKind: 3
@@ -833,32 +736,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -886,6 +765,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -962,6 +842,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_StateSuppressShooting
     displayName: Suppress Shooting
     moduleKind: 5
@@ -998,32 +880,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -1051,6 +909,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -1127,6 +986,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_ProjectilesPatternCone
     displayName: Projectiles Pattern Cone
     moduleKind: 6
@@ -1163,32 +1024,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -1216,6 +1053,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -1292,10 +1130,12 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
-  - moduleId: Module_ProjectilesTuning
-    displayName: Projectile Scale
+      stackable:
+        maxAcquisitions: 2
+  - moduleId: Module_Character Tuning
+    displayName: Character Tuning
     moduleKind: 7
-    defaultStage: 4
+    defaultStage: 6
     notes: Applies scale and stat multipliers to projectiles.
     data:
       holdCharge:
@@ -1328,32 +1168,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 3
-        damageMultiplier: 3
-        speedMultiplier: 0.9
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -1381,6 +1197,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -1457,6 +1274,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_SpawnObject
     displayName: Spawn Bomb
     moduleKind: 8
@@ -1493,32 +1312,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 7369153295349678932, guid: dca4840ccd694c04299341737a490946, type: 3}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -1546,6 +1341,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -1622,6 +1418,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_Dash
     displayName: Dash
     moduleKind: 9
@@ -1658,32 +1456,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -1711,6 +1485,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -1787,6 +1562,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_TimeDilationEnemies
     displayName: Time Dilation Enemies
     moduleKind: 10
@@ -1823,32 +1600,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -1876,6 +1629,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -1952,6 +1706,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_Heal
     displayName: Heal Missing Health
     moduleKind: 11
@@ -1988,32 +1744,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -2041,6 +1773,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 35
@@ -2117,6 +1850,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_SpawnTrailSegment
     displayName: Spawn Trail Segment
     moduleKind: 12
@@ -2153,32 +1888,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -2206,6 +1917,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -2282,6 +1994,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_AreaTickApplyElement
     displayName: Area Tick Apply Element
     moduleKind: 13
@@ -2318,32 +2032,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -2371,6 +2061,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -2447,6 +2138,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_DeathExplosion
     displayName: Death Explosion
     moduleKind: 14
@@ -2483,32 +2176,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -2536,6 +2205,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -2612,6 +2282,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_OrbitalProjectiles
     displayName: Orbital Projectiles
     moduleKind: 15
@@ -2648,32 +2320,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -2701,6 +2349,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -2777,6 +2426,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_BouncingProjectiles
     displayName: Bouncing Projectiles
     moduleKind: 16
@@ -2813,32 +2464,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -2866,6 +2493,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -2942,6 +2570,8 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   - moduleId: Module_ProjectileSplit
     displayName: Projectile Split
     moduleKind: 17
@@ -2978,32 +2608,8 @@ MonoBehaviour:
       projectilePatternCone:
         projectileCount: 6
         coneAngleDegrees: 45
-      projectileTuning:
-        sizeMultiplier: 1
-        damageMultiplier: 1
-        speedMultiplier: 1
-        rangeMultiplier: 1
-        lifetimeMultiplier: 1
-        penetrationMode: 0
-        maxPenetrations: 0
-        applyElementalOnHit: 0
-        elementalEffectData:
-          elementType: 0
-          effectKind: 0
-          procMode: 0
-          reapplyMode: 0
-          procThresholdStacks: 5
-          maximumStacks: 20
-          stackDecayPerSecond: 1
-          consumeStacksOnProc: 0
-          dotDamagePerTick: 4
-          dotTickInterval: 0.5
-          dotDurationSeconds: 2
-          impedimentSlowPercentPerStack: 10
-          impedimentProcSlowPercent: 50
-          impedimentMaxSlowPercent: 100
-          impedimentDurationSeconds: 2
-        elementalStacksPerHit: 1
+      characterTuning:
+        formulas: []
       bomb:
         bombPrefab: {fileID: 0}
         spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -3031,6 +2637,7 @@ MonoBehaviour:
       bulletTime:
         duration: 3
         enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
         healAmount: 30
@@ -3107,6 +2714,152 @@ MonoBehaviour:
           impedimentDurationSeconds: 2
         stacksPerTick: 1
         applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
+  - moduleId: ModuleStackable
+    displayName: Stackable
+    moduleKind: 18
+    defaultStage: 6
+    notes: 
+    data:
+      holdCharge:
+        requiredCharge: 500
+        maximumCharge: 500
+        chargeRatePerSecond: 125
+        decayAfterRelease: 0
+        decayAfterReleasePercentPerSecond: 25
+        passiveChargeGainWhileReleased: 0
+        passiveChargeGainPercentPerSecond: 10
+      triggerEvent:
+        eventType: 0
+      resourceGate:
+        activationResource: 1
+        maintenanceResource: 1
+        maximumEnergy: 100
+        activationCost: 100
+        maintenanceCostPerSecond: 0
+        isToggleable: 0
+        maintenanceTicksPerSecond: 4
+        minimumActivationEnergyPercent: 0
+        chargeType: 0
+        chargePerTrigger: 100
+        cooldownSeconds: 1
+        allowRechargeDuringToggleStartupLock: 0
+      suppressShooting:
+        suppressBaseShootingWhileActive: 1
+        interruptOtherSlotOnEnter: 0
+        interruptOtherSlotChargingOnly: 1
+      projectilePatternCone:
+        projectileCount: 6
+        coneAngleDegrees: 45
+      characterTuning:
+        formulas: []
+      bomb:
+        bombPrefab: {fileID: 0}
+        spawnOffset: {x: 0, y: 0, z: 1.2}
+        spawnOffsetOrientation: 0
+        deploySpeed: 4.5
+        collisionRadius: 0.18
+        bounceOnWalls: 1
+        bounceDamping: 0.65
+        linearDampingPerSecond: 1.2
+        fuseSeconds: 1.25
+        radius: 7
+        enableDamagePayload: 1
+        damage: 120
+        affectAllEnemiesInRadius: 1
+        explosionVfxPrefab: {fileID: 0}
+        scaleVfxToRadius: 1
+        vfxScaleMultiplier: 1
+      dash:
+        distance: 6
+        duration: 0.18
+        speedTransitionInSeconds: 0.06
+        speedTransitionOutSeconds: 0.08
+        grantsInvulnerability: 1
+        invulnerabilityExtraTime: 0.1
+      bulletTime:
+        duration: 3
+        enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
+      healMissingHealth:
+        applyMode: 0
+        healAmount: 30
+        durationSeconds: 2
+        tickIntervalSeconds: 0.2
+        stackPolicy: 0
+      deathExplosion:
+        triggerMode: 0
+        cooldownSeconds: 2
+        radius: 4
+        damage: 20
+        affectAllEnemiesInRadius: 1
+        triggerOffset: {x: 0, y: 0, z: 0}
+        explosionVfxPrefab: {fileID: 0}
+        scaleVfxToRadius: 1
+        vfxScaleMultiplier: 1
+      projectileOrbitOverride:
+        pathMode: 0
+        radialEntrySpeed: 12
+        orbitalSpeed: 8
+        orbitRadiusMin: 4
+        orbitRadiusMax: 6
+        orbitPulseFrequency: 0.7
+        orbitEntryRatio: 0.9
+        orbitBlendDuration: 0.3
+        heightOffset: 0
+        goldenAngleDegrees: 137.5
+        spiralStartRadius: 2.5
+        spiralMaximumRadius: 8
+        spiralAngularSpeedDegreesPerSecond: 240
+        spiralGrowthMultiplier: 1
+        spiralTurnsBeforeDespawn: 1.25
+        spiralClockwise: 0
+      projectileBounceOnWalls:
+        maxBounces: 2
+        speedPercentChangePerBounce: -5
+        minimumSpeedMultiplierAfterBounce: 0.1
+        maximumSpeedMultiplierAfterBounce: 3
+      projectileSplit:
+        triggerMode: 2
+        directionMode: 0
+        splitProjectileCount: 4
+        splitOffsetDegrees: 45
+        customAnglesDegrees:
+        - -20
+        - 20
+        splitDamagePercentFromOriginal: 50
+        splitSizePercentFromOriginal: 75
+        splitSpeedPercentFromOriginal: 85
+        splitLifetimePercentFromOriginal: 65
+      trailSpawn:
+        trailSegmentLifetimeSeconds: 1.5
+        trailSpawnDistance: 0.6
+        trailSpawnIntervalSeconds: 0.1
+        trailRadius: 1.2
+        maxActiveSegmentsPerPlayer: 30
+        trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
+      elementalAreaTick:
+        effectData:
+          elementType: 0
+          effectKind: 0
+          procMode: 0
+          reapplyMode: 0
+          procThresholdStacks: 5
+          maximumStacks: 20
+          stackDecayPerSecond: 1
+          consumeStacksOnProc: 0
+          dotDamagePerTick: 4
+          dotTickInterval: 0.5
+          dotDurationSeconds: 2
+          impedimentSlowPercentPerStack: 10
+          impedimentProcSlowPercent: 50
+          impedimentMaxSlowPercent: 100
+          impedimentDurationSeconds: 2
+        stacksPerTick: 1
+        applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
   activePowerUps:
   - commonData:
       powerUpId: ActiveShotgun
@@ -3155,32 +2908,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1.85
-          damageMultiplier: 2
-          speedMultiplier: 1
-          rangeMultiplier: 1.25
-          lifetimeMultiplier: 1.25
-          penetrationMode: 1
-          maxPenetrations: 2
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -3208,6 +2937,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -3284,6 +3014,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
@@ -3319,32 +3051,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1.85
-          damageMultiplier: 2
-          speedMultiplier: 1
-          rangeMultiplier: 1.25
-          lifetimeMultiplier: 1.25
-          penetrationMode: 1
-          maxPenetrations: 2
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -3372,6 +3080,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -3448,6 +3157,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_ProjectilesPatternCone
       stage: 4
       isEnabled: 1
@@ -3481,34 +3192,10 @@ MonoBehaviour:
           interruptOtherSlotOnEnter: 0
           interruptOtherSlotChargingOnly: 1
         projectilePatternCone:
-          projectileCount: 6
+          projectileCount: 1
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -3536,6 +3223,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -3612,8 +3300,10 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
-    - moduleId: Module_ProjectilesTuning
-      stage: 4
+        stackable:
+          maxAcquisitions: 2
+    - moduleId: Module_TriggerPress
+      stage: 0
       isEnabled: 1
       useOverridePayload: 1
       overridePayload:
@@ -3647,32 +3337,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -3700,6 +3366,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -3776,6 +3443,295 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
+    - moduleId: ModuleStackable
+      stage: 6
+      isEnabled: 1
+      useOverridePayload: 1
+      overridePayload:
+        holdCharge:
+          requiredCharge: 500
+          maximumCharge: 500
+          chargeRatePerSecond: 125
+          decayAfterRelease: 0
+          decayAfterReleasePercentPerSecond: 25
+          passiveChargeGainWhileReleased: 0
+          passiveChargeGainPercentPerSecond: 10
+        triggerEvent:
+          eventType: 0
+        resourceGate:
+          activationResource: 1
+          maintenanceResource: 1
+          maximumEnergy: 100
+          activationCost: 100
+          maintenanceCostPerSecond: 0
+          isToggleable: 0
+          maintenanceTicksPerSecond: 4
+          minimumActivationEnergyPercent: 0
+          chargeType: 0
+          chargePerTrigger: 100
+          cooldownSeconds: 1
+          allowRechargeDuringToggleStartupLock: 0
+        suppressShooting:
+          suppressBaseShootingWhileActive: 1
+          interruptOtherSlotOnEnter: 0
+          interruptOtherSlotChargingOnly: 1
+        projectilePatternCone:
+          projectileCount: 6
+          coneAngleDegrees: 45
+        characterTuning:
+          formulas: []
+        bomb:
+          bombPrefab: {fileID: 0}
+          spawnOffset: {x: 0, y: 0, z: 1.2}
+          spawnOffsetOrientation: 0
+          deploySpeed: 4.5
+          collisionRadius: 0.18
+          bounceOnWalls: 1
+          bounceDamping: 0.65
+          linearDampingPerSecond: 1.2
+          fuseSeconds: 1.25
+          radius: 7
+          enableDamagePayload: 1
+          damage: 120
+          affectAllEnemiesInRadius: 1
+          explosionVfxPrefab: {fileID: 0}
+          scaleVfxToRadius: 1
+          vfxScaleMultiplier: 1
+        dash:
+          distance: 6
+          duration: 0.18
+          speedTransitionInSeconds: 0.06
+          speedTransitionOutSeconds: 0.08
+          grantsInvulnerability: 1
+          invulnerabilityExtraTime: 0.1
+        bulletTime:
+          duration: 3
+          enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
+        healMissingHealth:
+          applyMode: 0
+          healAmount: 30
+          durationSeconds: 2
+          tickIntervalSeconds: 0.2
+          stackPolicy: 0
+        deathExplosion:
+          triggerMode: 0
+          cooldownSeconds: 2
+          radius: 4
+          damage: 20
+          affectAllEnemiesInRadius: 1
+          triggerOffset: {x: 0, y: 0, z: 0}
+          explosionVfxPrefab: {fileID: 0}
+          scaleVfxToRadius: 1
+          vfxScaleMultiplier: 1
+        projectileOrbitOverride:
+          pathMode: 0
+          radialEntrySpeed: 12
+          orbitalSpeed: 8
+          orbitRadiusMin: 4
+          orbitRadiusMax: 6
+          orbitPulseFrequency: 0.7
+          orbitEntryRatio: 0.9
+          orbitBlendDuration: 0.3
+          heightOffset: 0
+          goldenAngleDegrees: 137.5
+          spiralStartRadius: 2.5
+          spiralMaximumRadius: 8
+          spiralAngularSpeedDegreesPerSecond: 240
+          spiralGrowthMultiplier: 1
+          spiralTurnsBeforeDespawn: 1.25
+          spiralClockwise: 0
+        projectileBounceOnWalls:
+          maxBounces: 2
+          speedPercentChangePerBounce: -5
+          minimumSpeedMultiplierAfterBounce: 0.1
+          maximumSpeedMultiplierAfterBounce: 3
+        projectileSplit:
+          triggerMode: 0
+          directionMode: 0
+          splitProjectileCount: 2
+          splitOffsetDegrees: 0
+          customAnglesDegrees:
+          - -20
+          - 20
+          splitDamagePercentFromOriginal: 50
+          splitSizePercentFromOriginal: 75
+          splitSpeedPercentFromOriginal: 85
+          splitLifetimePercentFromOriginal: 65
+        trailSpawn:
+          trailSegmentLifetimeSeconds: 1.5
+          trailSpawnDistance: 0.6
+          trailSpawnIntervalSeconds: 0.1
+          trailRadius: 1.2
+          maxActiveSegmentsPerPlayer: 30
+          trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
+        elementalAreaTick:
+          effectData:
+            elementType: 0
+            effectKind: 0
+            procMode: 0
+            reapplyMode: 0
+            procThresholdStacks: 5
+            maximumStacks: 20
+            stackDecayPerSecond: 1
+            consumeStacksOnProc: 0
+            dotDamagePerTick: 4
+            dotTickInterval: 0.5
+            dotDurationSeconds: 2
+            impedimentSlowPercentPerStack: 10
+            impedimentProcSlowPercent: 50
+            impedimentMaxSlowPercent: 100
+            impedimentDurationSeconds: 2
+          stacksPerTick: 1
+          applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 4
+    - moduleId: Module_Character Tuning
+      stage: 6
+      isEnabled: 1
+      useOverridePayload: 1
+      overridePayload:
+        holdCharge:
+          requiredCharge: 500
+          maximumCharge: 500
+          chargeRatePerSecond: 125
+          decayAfterRelease: 0
+          decayAfterReleasePercentPerSecond: 25
+          passiveChargeGainWhileReleased: 0
+          passiveChargeGainPercentPerSecond: 10
+        triggerEvent:
+          eventType: 0
+        resourceGate:
+          activationResource: 1
+          maintenanceResource: 1
+          maximumEnergy: 100
+          activationCost: 100
+          maintenanceCostPerSecond: 0
+          isToggleable: 0
+          maintenanceTicksPerSecond: 4
+          minimumActivationEnergyPercent: 0
+          chargeType: 0
+          chargePerTrigger: 100
+          cooldownSeconds: 1
+          allowRechargeDuringToggleStartupLock: 0
+        suppressShooting:
+          suppressBaseShootingWhileActive: 1
+          interruptOtherSlotOnEnter: 0
+          interruptOtherSlotChargingOnly: 1
+        projectilePatternCone:
+          projectileCount: 6
+          coneAngleDegrees: 45
+        characterTuning:
+          formulas:
+          - formula: '[ShotgunBarrels]=[ShotgunBarrels]+1'
+        bomb:
+          bombPrefab: {fileID: 0}
+          spawnOffset: {x: 0, y: 0, z: 1.2}
+          spawnOffsetOrientation: 0
+          deploySpeed: 4.5
+          collisionRadius: 0.18
+          bounceOnWalls: 1
+          bounceDamping: 0.65
+          linearDampingPerSecond: 1.2
+          fuseSeconds: 1.25
+          radius: 7
+          enableDamagePayload: 1
+          damage: 120
+          affectAllEnemiesInRadius: 1
+          explosionVfxPrefab: {fileID: 0}
+          scaleVfxToRadius: 1
+          vfxScaleMultiplier: 1
+        dash:
+          distance: 6
+          duration: 0.18
+          speedTransitionInSeconds: 0.06
+          speedTransitionOutSeconds: 0.08
+          grantsInvulnerability: 1
+          invulnerabilityExtraTime: 0.1
+        bulletTime:
+          duration: 3
+          enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
+        healMissingHealth:
+          applyMode: 0
+          healAmount: 30
+          durationSeconds: 2
+          tickIntervalSeconds: 0.2
+          stackPolicy: 0
+        deathExplosion:
+          triggerMode: 0
+          cooldownSeconds: 2
+          radius: 4
+          damage: 20
+          affectAllEnemiesInRadius: 1
+          triggerOffset: {x: 0, y: 0, z: 0}
+          explosionVfxPrefab: {fileID: 0}
+          scaleVfxToRadius: 1
+          vfxScaleMultiplier: 1
+        projectileOrbitOverride:
+          pathMode: 0
+          radialEntrySpeed: 12
+          orbitalSpeed: 8
+          orbitRadiusMin: 4
+          orbitRadiusMax: 6
+          orbitPulseFrequency: 0.7
+          orbitEntryRatio: 0.9
+          orbitBlendDuration: 0.3
+          heightOffset: 0
+          goldenAngleDegrees: 137.5
+          spiralStartRadius: 2.5
+          spiralMaximumRadius: 8
+          spiralAngularSpeedDegreesPerSecond: 240
+          spiralGrowthMultiplier: 1
+          spiralTurnsBeforeDespawn: 1.25
+          spiralClockwise: 0
+        projectileBounceOnWalls:
+          maxBounces: 2
+          speedPercentChangePerBounce: -5
+          minimumSpeedMultiplierAfterBounce: 0.1
+          maximumSpeedMultiplierAfterBounce: 3
+        projectileSplit:
+          triggerMode: 0
+          directionMode: 0
+          splitProjectileCount: 2
+          splitOffsetDegrees: 0
+          customAnglesDegrees:
+          - -20
+          - 20
+          splitDamagePercentFromOriginal: 50
+          splitSizePercentFromOriginal: 75
+          splitSpeedPercentFromOriginal: 85
+          splitLifetimePercentFromOriginal: 65
+        trailSpawn:
+          trailSegmentLifetimeSeconds: 1.5
+          trailSpawnDistance: 0.6
+          trailSpawnIntervalSeconds: 0.1
+          trailRadius: 1.2
+          maxActiveSegmentsPerPlayer: 30
+          trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
+        elementalAreaTick:
+          effectData:
+            elementType: 0
+            effectKind: 0
+            procMode: 0
+            reapplyMode: 0
+            procThresholdStacks: 5
+            maximumStacks: 20
+            stackDecayPerSecond: 1
+            consumeStacksOnProc: 0
+            dotDamagePerTick: 4
+            dotTickInterval: 0.5
+            dotDurationSeconds: 2
+            impedimentSlowPercentPerStack: 10
+            impedimentProcSlowPercent: 50
+            impedimentMaxSlowPercent: 100
+            impedimentDurationSeconds: 2
+          stacksPerTick: 1
+          applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 4
     unreplaceable: 0
   - commonData:
       powerUpId: ActiveChargeShot
@@ -3824,32 +3780,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -3877,6 +3809,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -3953,6 +3886,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_TriggerHoldCharge
       stage: 0
       isEnabled: 1
@@ -3988,32 +3923,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -4041,6 +3952,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -4117,6 +4029,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_GateResource
       stage: 2
       isEnabled: 0
@@ -4152,32 +4066,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -4205,6 +4095,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -4281,6 +4172,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_StateSuppressShooting
       stage: 3
       isEnabled: 1
@@ -4316,32 +4209,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -4369,6 +4238,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -4445,8 +4315,10 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
-    - moduleId: Module_ProjectilesTuning
-      stage: 4
+        stackable:
+          maxAcquisitions: 2
+    - moduleId: Module_Character Tuning
+      stage: 6
       isEnabled: 1
       useOverridePayload: 1
       overridePayload:
@@ -4480,32 +4352,10 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 6
-          damageMultiplier: 2
-          speedMultiplier: 1
-          rangeMultiplier: 1.25
-          lifetimeMultiplier: 1.25
-          penetrationMode: 2
-          maxPenetrations: 2
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas:
+          - formula: '[BulletPenetration]=[BulletPenetration]+999'
+          - formula: '[BulletSizeMultiplier]=[BulletSizeMultiplier]*3'
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -4533,6 +4383,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -4609,6 +4460,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: ActiveGigaBomb
@@ -4657,32 +4510,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -4710,6 +4539,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -4786,6 +4616,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
@@ -4821,32 +4653,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -4874,6 +4682,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -4950,6 +4759,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_SpawnObject
       stage: 4
       isEnabled: 1
@@ -4985,32 +4796,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -5038,6 +4825,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -5114,6 +4902,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: ActiveBasicDash
@@ -5162,32 +4952,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -5215,6 +4981,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -5291,6 +5058,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
@@ -5326,32 +5095,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -5379,6 +5124,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -5455,6 +5201,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_Dash
       stage: 4
       isEnabled: 1
@@ -5490,32 +5238,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -5543,6 +5267,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -5619,6 +5344,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: ActivePortableHealthPack
@@ -5667,32 +5394,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -5720,6 +5423,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -5796,6 +5500,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
@@ -5831,32 +5537,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -5884,6 +5566,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -5960,6 +5643,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_Heal
       stage: 4
       isEnabled: 1
@@ -5995,32 +5680,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -6048,6 +5709,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 35
@@ -6124,6 +5786,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: ActiveBulletTime
@@ -6172,32 +5836,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -6225,6 +5865,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -6301,6 +5942,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
@@ -6320,10 +5963,10 @@ MonoBehaviour:
           activationResource: 1
           maintenanceResource: 1
           maximumEnergy: 100
-          activationCost: 80
-          maintenanceCostPerSecond: 0
-          isToggleable: 0
-          maintenanceTicksPerSecond: 4
+          activationCost: 40
+          maintenanceCostPerSecond: 20
+          isToggleable: 1
+          maintenanceTicksPerSecond: 5
           minimumActivationEnergyPercent: 0
           chargeType: 1
           chargePerTrigger: 20
@@ -6336,32 +5979,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -6389,6 +6008,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -6465,10 +6085,12 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_TimeDilationEnemies
       stage: 4
       isEnabled: 1
-      useOverridePayload: 0
+      useOverridePayload: 1
       overridePayload:
         holdCharge:
           requiredCharge: 500
@@ -6500,32 +6122,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -6552,7 +6150,8 @@ MonoBehaviour:
           invulnerabilityExtraTime: 0.1
         bulletTime:
           duration: 3
-          enemySlowPercent: 40
+          enemySlowPercent: 80
+          transitionTimeSeconds: 1
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -6629,6 +6228,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   passivePowerUps:
   - commonData:
@@ -6678,32 +6279,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -6731,6 +6308,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -6807,6 +6385,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     - moduleId: Module_AreaTickApplyElement
       stage: 7
       isEnabled: 1
@@ -6842,32 +6422,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -6895,6 +6451,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -6971,6 +6528,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: PassiveEnemiesExplodeOnDeath
@@ -7019,32 +6578,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -7072,6 +6607,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -7148,6 +6684,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: PassiveOrbitalProjectiles
@@ -7196,32 +6734,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -7249,6 +6763,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -7325,6 +6840,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: PassiveBouncingProjectiles
@@ -7373,32 +6890,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -7426,6 +6919,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -7502,6 +6996,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: PassiveSplittingProjectiles
@@ -7550,32 +7046,8 @@ MonoBehaviour:
         projectilePatternCone:
           projectileCount: 6
           coneAngleDegrees: 45
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+        characterTuning:
+          formulas: []
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}
@@ -7603,6 +7075,7 @@ MonoBehaviour:
         bulletTime:
           duration: 3
           enemySlowPercent: 40
+          transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
           healAmount: 30
@@ -7679,6 +7152,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 2
           stacksPerTick: 1
           applyIntervalSeconds: 0.2
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   - commonData:
       powerUpId: PassiveBigShots
@@ -7692,183 +7167,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_ProjectilesTuning
-      stage: 4
-      isEnabled: 1
-      useOverridePayload: 0
-      overridePayload:
-        holdCharge:
-          requiredCharge: 0
-          maximumCharge: 0
-          chargeRatePerSecond: 0
-          decayAfterRelease: 0
-          decayAfterReleasePercentPerSecond: 25
-          passiveChargeGainWhileReleased: 0
-          passiveChargeGainPercentPerSecond: 10
-        triggerEvent:
-          eventType: 0
-        resourceGate:
-          activationResource: 0
-          maintenanceResource: 0
-          maximumEnergy: 0
-          activationCost: 0
-          maintenanceCostPerSecond: 0
-          isToggleable: 0
-          maintenanceTicksPerSecond: 4
-          minimumActivationEnergyPercent: 0
-          chargeType: 0
-          chargePerTrigger: 0
-          cooldownSeconds: 1
-          allowRechargeDuringToggleStartupLock: 0
-        suppressShooting:
-          suppressBaseShootingWhileActive: 0
-          interruptOtherSlotOnEnter: 0
-          interruptOtherSlotChargingOnly: 1
-        projectilePatternCone:
-          projectileCount: 1
-          coneAngleDegrees: 0
-        projectileTuning:
-          sizeMultiplier: 1
-          damageMultiplier: 1
-          speedMultiplier: 1
-          rangeMultiplier: 1
-          lifetimeMultiplier: 1
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
-        bomb:
-          bombPrefab: {fileID: 0}
-          spawnOffset: {x: 0, y: 0, z: 0}
-          spawnOffsetOrientation: 0
-          deploySpeed: 0
-          collisionRadius: 0.01
-          bounceOnWalls: 0
-          bounceDamping: 0
-          linearDampingPerSecond: 0
-          fuseSeconds: 0.05
-          radius: 0.1
-          enableDamagePayload: 1
-          damage: 0
-          affectAllEnemiesInRadius: 0
-          explosionVfxPrefab: {fileID: 0}
-          scaleVfxToRadius: 1
-          vfxScaleMultiplier: 1
-        dash:
-          distance: 0
-          duration: 0.01
-          speedTransitionInSeconds: 0
-          speedTransitionOutSeconds: 0
-          grantsInvulnerability: 0
-          invulnerabilityExtraTime: 0
-        bulletTime:
-          duration: 0.05
-          enemySlowPercent: 0
-        healMissingHealth:
-          applyMode: 0
-          healAmount: 0
-          durationSeconds: 2
-          tickIntervalSeconds: 0.2
-          stackPolicy: 0
-        deathExplosion:
-          triggerMode: 0
-          cooldownSeconds: 0
-          radius: 0
-          damage: 0
-          affectAllEnemiesInRadius: 0
-          triggerOffset: {x: 0, y: 0, z: 0}
-          explosionVfxPrefab: {fileID: 0}
-          scaleVfxToRadius: 0
-          vfxScaleMultiplier: 0.01
-        projectileOrbitOverride:
-          pathMode: 0
-          radialEntrySpeed: 0
-          orbitalSpeed: 0
-          orbitRadiusMin: 0
-          orbitRadiusMax: 0
-          orbitPulseFrequency: 0
-          orbitEntryRatio: 0
-          orbitBlendDuration: 0
-          heightOffset: 0
-          goldenAngleDegrees: 0
-          spiralStartRadius: 2.5
-          spiralMaximumRadius: 8
-          spiralAngularSpeedDegreesPerSecond: 240
-          spiralGrowthMultiplier: 1
-          spiralTurnsBeforeDespawn: 1.25
-          spiralClockwise: 0
-        projectileBounceOnWalls:
-          maxBounces: 0
-          speedPercentChangePerBounce: 0
-          minimumSpeedMultiplierAfterBounce: 0
-          maximumSpeedMultiplierAfterBounce: 0
-        projectileSplit:
-          triggerMode: 0
-          directionMode: 0
-          splitProjectileCount: 1
-          splitOffsetDegrees: 0
-          customAnglesDegrees: []
-          splitDamagePercentFromOriginal: 0
-          splitSizePercentFromOriginal: 0
-          splitSpeedPercentFromOriginal: 0
-          splitLifetimePercentFromOriginal: 0
-        trailSpawn:
-          trailSegmentLifetimeSeconds: 0.05
-          trailSpawnDistance: 0
-          trailSpawnIntervalSeconds: 0.01
-          trailRadius: 0
-          maxActiveSegmentsPerPlayer: 1
-          trailAttachedVfxOffset: {x: 0, y: 0, z: 0}
-        elementalAreaTick:
-          effectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 0.1
-            maximumStacks: 0.1
-            stackDecayPerSecond: 0
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 0
-            dotTickInterval: 0.01
-            dotDurationSeconds: 0.05
-            impedimentSlowPercentPerStack: 0
-            impedimentProcSlowPercent: 0
-            impedimentMaxSlowPercent: 0
-            impedimentDurationSeconds: 0.05
-          stacksPerTick: 0
-          applyIntervalSeconds: 0.01
-    unreplaceable: 0
-  - commonData:
-      powerUpId: PassiveShotgun
-      displayName: PassiveShotgun
-      description: 
-      icon: {fileID: 0}
-      dropPools:
-      - Milestone
-      - Shop
-      - Boss
-      dropTier: 1
-      purchaseCost: 0
-    moduleBindings:
-    - moduleId: Module_ProjectilesPatternCone
-      stage: 4
+    - moduleId: Module_Character Tuning
+      stage: 6
       isEnabled: 1
       useOverridePayload: 1
       overridePayload:
@@ -7877,9 +7177,9 @@ MonoBehaviour:
           maximumCharge: 0
           chargeRatePerSecond: 0
           decayAfterRelease: 0
-          decayAfterReleasePercentPerSecond: 25
+          decayAfterReleasePercentPerSecond: 0
           passiveChargeGainWhileReleased: 0
-          passiveChargeGainPercentPerSecond: 10
+          passiveChargeGainPercentPerSecond: 0
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -7889,7 +7189,7 @@ MonoBehaviour:
           activationCost: 0
           maintenanceCostPerSecond: 0
           isToggleable: 0
-          maintenanceTicksPerSecond: 4
+          maintenanceTicksPerSecond: 0
           minimumActivationEnergyPercent: 0
           chargeType: 0
           chargePerTrigger: 0
@@ -7900,34 +7200,11 @@ MonoBehaviour:
           interruptOtherSlotOnEnter: 0
           interruptOtherSlotChargingOnly: 0
         projectilePatternCone:
-          projectileCount: 3
-          coneAngleDegrees: 30
-        projectileTuning:
-          sizeMultiplier: 0.01
-          damageMultiplier: 0
-          speedMultiplier: 0
-          rangeMultiplier: 0
-          lifetimeMultiplier: 0
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
+          projectileCount: 1
+          coneAngleDegrees: 0
+        characterTuning:
+          formulas:
+          - formula: '[BulletSizeMultiplier]=[BulletSizeMultiplier]*2'
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 0}
@@ -7943,8 +7220,8 @@ MonoBehaviour:
           damage: 0
           affectAllEnemiesInRadius: 0
           explosionVfxPrefab: {fileID: 0}
-          scaleVfxToRadius: 1
-          vfxScaleMultiplier: 1
+          scaleVfxToRadius: 0
+          vfxScaleMultiplier: 0.01
         dash:
           distance: 0
           duration: 0.01
@@ -7955,6 +7232,7 @@ MonoBehaviour:
         bulletTime:
           duration: 0.05
           enemySlowPercent: 0
+          transitionTimeSeconds: 0
         healMissingHealth:
           applyMode: 0
           healAmount: 0
@@ -7982,11 +7260,11 @@ MonoBehaviour:
           orbitBlendDuration: 0
           heightOffset: 0
           goldenAngleDegrees: 0
-          spiralStartRadius: 2.5
-          spiralMaximumRadius: 8
-          spiralAngularSpeedDegreesPerSecond: 240
-          spiralGrowthMultiplier: 1
-          spiralTurnsBeforeDespawn: 1.25
+          spiralStartRadius: 0
+          spiralMaximumRadius: 0
+          spiralAngularSpeedDegreesPerSecond: 0
+          spiralGrowthMultiplier: 0
+          spiralTurnsBeforeDespawn: 0.1
           spiralClockwise: 0
         projectileBounceOnWalls:
           maxBounces: 0
@@ -8029,505 +7307,8 @@ MonoBehaviour:
             impedimentDurationSeconds: 0.05
           stacksPerTick: 0
           applyIntervalSeconds: 0.01
-    unreplaceable: 0
-  - commonData:
-      powerUpId: Marco's Special
-      displayName: Marco's Special
-      description: Marco's Special
-      icon: {fileID: 21300000, guid: 283ddc3a73b4fc649a727c325fc6787e, type: 3}
-      dropPools:
-      - Milestone
-      - Shop
-      - Boss
-      dropTier: 1
-      purchaseCost: 0
-    moduleBindings:
-    - moduleId: Module_ProjectilesPatternCone
-      stage: 4
-      isEnabled: 1
-      useOverridePayload: 0
-      overridePayload:
-        holdCharge:
-          requiredCharge: 0
-          maximumCharge: 0
-          chargeRatePerSecond: 0
-          decayAfterRelease: 0
-          decayAfterReleasePercentPerSecond: 25
-          passiveChargeGainWhileReleased: 0
-          passiveChargeGainPercentPerSecond: 10
-        triggerEvent:
-          eventType: 0
-        resourceGate:
-          activationResource: 0
-          maintenanceResource: 0
-          maximumEnergy: 0
-          activationCost: 0
-          maintenanceCostPerSecond: 0
-          isToggleable: 0
-          maintenanceTicksPerSecond: 4
-          minimumActivationEnergyPercent: 0
-          chargeType: 0
-          chargePerTrigger: 0
-          cooldownSeconds: 0
-          allowRechargeDuringToggleStartupLock: 0
-        suppressShooting:
-          suppressBaseShootingWhileActive: 0
-          interruptOtherSlotOnEnter: 0
-          interruptOtherSlotChargingOnly: 0
-        projectilePatternCone:
-          projectileCount: 1
-          coneAngleDegrees: 0
-        projectileTuning:
-          sizeMultiplier: 0.01
-          damageMultiplier: 0
-          speedMultiplier: 0
-          rangeMultiplier: 0
-          lifetimeMultiplier: 0
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
-        bomb:
-          bombPrefab: {fileID: 0}
-          spawnOffset: {x: 0, y: 0, z: 0}
-          spawnOffsetOrientation: 0
-          deploySpeed: 0
-          collisionRadius: 0.01
-          bounceOnWalls: 0
-          bounceDamping: 0
-          linearDampingPerSecond: 0
-          fuseSeconds: 0.05
-          radius: 0.1
-          enableDamagePayload: 0
-          damage: 0
-          affectAllEnemiesInRadius: 0
-          explosionVfxPrefab: {fileID: 0}
-          scaleVfxToRadius: 1
-          vfxScaleMultiplier: 1
-        dash:
-          distance: 0
-          duration: 0.01
-          speedTransitionInSeconds: 0
-          speedTransitionOutSeconds: 0
-          grantsInvulnerability: 0
-          invulnerabilityExtraTime: 0
-        bulletTime:
-          duration: 0.05
-          enemySlowPercent: 0
-        healMissingHealth:
-          applyMode: 0
-          healAmount: 0
-          durationSeconds: 0
-          tickIntervalSeconds: 0.01
-          stackPolicy: 0
-        deathExplosion:
-          triggerMode: 0
-          cooldownSeconds: 0
-          radius: 0
-          damage: 0
-          affectAllEnemiesInRadius: 0
-          triggerOffset: {x: 0, y: 0, z: 0}
-          explosionVfxPrefab: {fileID: 0}
-          scaleVfxToRadius: 0
-          vfxScaleMultiplier: 0.01
-        projectileOrbitOverride:
-          pathMode: 0
-          radialEntrySpeed: 0
-          orbitalSpeed: 0
-          orbitRadiusMin: 0
-          orbitRadiusMax: 0
-          orbitPulseFrequency: 0
-          orbitEntryRatio: 0
-          orbitBlendDuration: 0
-          heightOffset: 0
-          goldenAngleDegrees: 0
-          spiralStartRadius: 2.5
-          spiralMaximumRadius: 8
-          spiralAngularSpeedDegreesPerSecond: 240
-          spiralGrowthMultiplier: 1
-          spiralTurnsBeforeDespawn: 1.25
-          spiralClockwise: 0
-        projectileBounceOnWalls:
-          maxBounces: 0
-          speedPercentChangePerBounce: 0
-          minimumSpeedMultiplierAfterBounce: 0
-          maximumSpeedMultiplierAfterBounce: 0
-        projectileSplit:
-          triggerMode: 0
-          directionMode: 0
-          splitProjectileCount: 1
-          splitOffsetDegrees: 0
-          customAnglesDegrees: []
-          splitDamagePercentFromOriginal: 0
-          splitSizePercentFromOriginal: 0
-          splitSpeedPercentFromOriginal: 0
-          splitLifetimePercentFromOriginal: 0
-        trailSpawn:
-          trailSegmentLifetimeSeconds: 0.05
-          trailSpawnDistance: 0
-          trailSpawnIntervalSeconds: 0.01
-          trailRadius: 0
-          maxActiveSegmentsPerPlayer: 1
-          trailAttachedVfxOffset: {x: 0, y: 0, z: 0}
-        elementalAreaTick:
-          effectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 0.1
-            maximumStacks: 0.1
-            stackDecayPerSecond: 0
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 0
-            dotTickInterval: 0.01
-            dotDurationSeconds: 0.05
-            impedimentSlowPercentPerStack: 0
-            impedimentProcSlowPercent: 0
-            impedimentMaxSlowPercent: 0
-            impedimentDurationSeconds: 0.05
-          stacksPerTick: 0
-          applyIntervalSeconds: 0.01
-    - moduleId: Module_Heal
-      stage: 4
-      isEnabled: 1
-      useOverridePayload: 1
-      overridePayload:
-        holdCharge:
-          requiredCharge: 0
-          maximumCharge: 0
-          chargeRatePerSecond: 0
-          decayAfterRelease: 0
-          decayAfterReleasePercentPerSecond: 25
-          passiveChargeGainWhileReleased: 0
-          passiveChargeGainPercentPerSecond: 10
-        triggerEvent:
-          eventType: 0
-        resourceGate:
-          activationResource: 0
-          maintenanceResource: 0
-          maximumEnergy: 0
-          activationCost: 0
-          maintenanceCostPerSecond: 0
-          isToggleable: 0
-          maintenanceTicksPerSecond: 4
-          minimumActivationEnergyPercent: 0
-          chargeType: 0
-          chargePerTrigger: 0
-          cooldownSeconds: 0
-          allowRechargeDuringToggleStartupLock: 0
-        suppressShooting:
-          suppressBaseShootingWhileActive: 0
-          interruptOtherSlotOnEnter: 0
-          interruptOtherSlotChargingOnly: 0
-        projectilePatternCone:
-          projectileCount: 1
-          coneAngleDegrees: 0
-        projectileTuning:
-          sizeMultiplier: 0.01
-          damageMultiplier: 0
-          speedMultiplier: 0
-          rangeMultiplier: 0
-          lifetimeMultiplier: 0
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
-        bomb:
-          bombPrefab: {fileID: 0}
-          spawnOffset: {x: 0, y: 0, z: 0}
-          spawnOffsetOrientation: 0
-          deploySpeed: 0
-          collisionRadius: 0.01
-          bounceOnWalls: 0
-          bounceDamping: 0
-          linearDampingPerSecond: 0
-          fuseSeconds: 0.05
-          radius: 0.1
-          enableDamagePayload: 0
-          damage: 0
-          affectAllEnemiesInRadius: 0
-          explosionVfxPrefab: {fileID: 0}
-          scaleVfxToRadius: 1
-          vfxScaleMultiplier: 1
-        dash:
-          distance: 0
-          duration: 0.01
-          speedTransitionInSeconds: 0
-          speedTransitionOutSeconds: 0
-          grantsInvulnerability: 0
-          invulnerabilityExtraTime: 0
-        bulletTime:
-          duration: 0.05
-          enemySlowPercent: 0
-        healMissingHealth:
-          applyMode: 1
-          healAmount: 20
-          durationSeconds: 1
-          tickIntervalSeconds: 0.01
-          stackPolicy: 0
-        deathExplosion:
-          triggerMode: 0
-          cooldownSeconds: 0
-          radius: 0
-          damage: 0
-          affectAllEnemiesInRadius: 0
-          triggerOffset: {x: 0, y: 0, z: 0}
-          explosionVfxPrefab: {fileID: 0}
-          scaleVfxToRadius: 0
-          vfxScaleMultiplier: 0.01
-        projectileOrbitOverride:
-          pathMode: 0
-          radialEntrySpeed: 0
-          orbitalSpeed: 0
-          orbitRadiusMin: 0
-          orbitRadiusMax: 0
-          orbitPulseFrequency: 0
-          orbitEntryRatio: 0
-          orbitBlendDuration: 0
-          heightOffset: 0
-          goldenAngleDegrees: 0
-          spiralStartRadius: 2.5
-          spiralMaximumRadius: 8
-          spiralAngularSpeedDegreesPerSecond: 240
-          spiralGrowthMultiplier: 1
-          spiralTurnsBeforeDespawn: 1.25
-          spiralClockwise: 0
-        projectileBounceOnWalls:
-          maxBounces: 0
-          speedPercentChangePerBounce: 0
-          minimumSpeedMultiplierAfterBounce: 0
-          maximumSpeedMultiplierAfterBounce: 0
-        projectileSplit:
-          triggerMode: 0
-          directionMode: 0
-          splitProjectileCount: 1
-          splitOffsetDegrees: 0
-          customAnglesDegrees: []
-          splitDamagePercentFromOriginal: 0
-          splitSizePercentFromOriginal: 0
-          splitSpeedPercentFromOriginal: 0
-          splitLifetimePercentFromOriginal: 0
-        trailSpawn:
-          trailSegmentLifetimeSeconds: 0.05
-          trailSpawnDistance: 0
-          trailSpawnIntervalSeconds: 0.01
-          trailRadius: 0
-          maxActiveSegmentsPerPlayer: 1
-          trailAttachedVfxOffset: {x: 0, y: 0, z: 0}
-        elementalAreaTick:
-          effectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 0.1
-            maximumStacks: 0.1
-            stackDecayPerSecond: 0
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 0
-            dotTickInterval: 0.01
-            dotDurationSeconds: 0.05
-            impedimentSlowPercentPerStack: 0
-            impedimentProcSlowPercent: 0
-            impedimentMaxSlowPercent: 0
-            impedimentDurationSeconds: 0.05
-          stacksPerTick: 0
-          applyIntervalSeconds: 0.01
-    - moduleId: Module_DeathExplosion
-      stage: 7
-      isEnabled: 1
-      useOverridePayload: 1
-      overridePayload:
-        holdCharge:
-          requiredCharge: 0
-          maximumCharge: 0
-          chargeRatePerSecond: 0
-          decayAfterRelease: 0
-          decayAfterReleasePercentPerSecond: 25
-          passiveChargeGainWhileReleased: 0
-          passiveChargeGainPercentPerSecond: 10
-        triggerEvent:
-          eventType: 0
-        resourceGate:
-          activationResource: 0
-          maintenanceResource: 0
-          maximumEnergy: 0
-          activationCost: 0
-          maintenanceCostPerSecond: 0
-          isToggleable: 0
-          maintenanceTicksPerSecond: 4
-          minimumActivationEnergyPercent: 0
-          chargeType: 0
-          chargePerTrigger: 0
-          cooldownSeconds: 0
-          allowRechargeDuringToggleStartupLock: 0
-        suppressShooting:
-          suppressBaseShootingWhileActive: 0
-          interruptOtherSlotOnEnter: 0
-          interruptOtherSlotChargingOnly: 0
-        projectilePatternCone:
-          projectileCount: 1
-          coneAngleDegrees: 0
-        projectileTuning:
-          sizeMultiplier: 0.01
-          damageMultiplier: 0
-          speedMultiplier: 0
-          rangeMultiplier: 0
-          lifetimeMultiplier: 0
-          penetrationMode: 0
-          maxPenetrations: 0
-          applyElementalOnHit: 0
-          elementalEffectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 5
-            maximumStacks: 20
-            stackDecayPerSecond: 1
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 4
-            dotTickInterval: 0.5
-            dotDurationSeconds: 2
-            impedimentSlowPercentPerStack: 10
-            impedimentProcSlowPercent: 50
-            impedimentMaxSlowPercent: 100
-            impedimentDurationSeconds: 2
-          elementalStacksPerHit: 1
-        bomb:
-          bombPrefab: {fileID: 0}
-          spawnOffset: {x: 0, y: 0, z: 0}
-          spawnOffsetOrientation: 0
-          deploySpeed: 0
-          collisionRadius: 0.01
-          bounceOnWalls: 0
-          bounceDamping: 0
-          linearDampingPerSecond: 0
-          fuseSeconds: 0.05
-          radius: 0.1
-          enableDamagePayload: 0
-          damage: 0
-          affectAllEnemiesInRadius: 0
-          explosionVfxPrefab: {fileID: 0}
-          scaleVfxToRadius: 1
-          vfxScaleMultiplier: 1
-        dash:
-          distance: 0
-          duration: 0.01
-          speedTransitionInSeconds: 0
-          speedTransitionOutSeconds: 0
-          grantsInvulnerability: 0
-          invulnerabilityExtraTime: 0
-        bulletTime:
-          duration: 0.05
-          enemySlowPercent: 0
-        healMissingHealth:
-          applyMode: 1
-          healAmount: 20
-          durationSeconds: 1
-          tickIntervalSeconds: 0.01
-          stackPolicy: 0
-        deathExplosion:
-          triggerMode: 2
-          cooldownSeconds: 0
-          radius: 4
-          damage: 10
-          affectAllEnemiesInRadius: 1
-          triggerOffset: {x: 0, y: 0, z: 0}
-          explosionVfxPrefab: {fileID: 1211940420721360282, guid: 28a3caab1d07a7941b99718216a0fea3, type: 3}
-          scaleVfxToRadius: 1
-          vfxScaleMultiplier: 1
-        projectileOrbitOverride:
-          pathMode: 0
-          radialEntrySpeed: 0
-          orbitalSpeed: 0
-          orbitRadiusMin: 0
-          orbitRadiusMax: 0
-          orbitPulseFrequency: 0
-          orbitEntryRatio: 0
-          orbitBlendDuration: 0
-          heightOffset: 0
-          goldenAngleDegrees: 0
-          spiralStartRadius: 2.5
-          spiralMaximumRadius: 8
-          spiralAngularSpeedDegreesPerSecond: 240
-          spiralGrowthMultiplier: 1
-          spiralTurnsBeforeDespawn: 1.25
-          spiralClockwise: 0
-        projectileBounceOnWalls:
-          maxBounces: 0
-          speedPercentChangePerBounce: 0
-          minimumSpeedMultiplierAfterBounce: 0
-          maximumSpeedMultiplierAfterBounce: 0
-        projectileSplit:
-          triggerMode: 0
-          directionMode: 0
-          splitProjectileCount: 1
-          splitOffsetDegrees: 0
-          customAnglesDegrees: []
-          splitDamagePercentFromOriginal: 0
-          splitSizePercentFromOriginal: 0
-          splitSpeedPercentFromOriginal: 0
-          splitLifetimePercentFromOriginal: 0
-        trailSpawn:
-          trailSegmentLifetimeSeconds: 0.05
-          trailSpawnDistance: 0
-          trailSpawnIntervalSeconds: 0.01
-          trailRadius: 0
-          maxActiveSegmentsPerPlayer: 1
-          trailAttachedVfxOffset: {x: 0, y: 0, z: 0}
-        elementalAreaTick:
-          effectData:
-            elementType: 0
-            effectKind: 0
-            procMode: 0
-            reapplyMode: 0
-            procThresholdStacks: 0.1
-            maximumStacks: 0.1
-            stackDecayPerSecond: 0
-            consumeStacksOnProc: 0
-            dotDamagePerTick: 0
-            dotTickInterval: 0.01
-            dotDurationSeconds: 0.05
-            impedimentSlowPercentPerStack: 0
-            impedimentProcSlowPercent: 0
-            impedimentMaxSlowPercent: 0
-            impedimentDurationSeconds: 0.05
-          stacksPerTick: 0
-          applyIntervalSeconds: 0.01
+        stackable:
+          maxAcquisitions: 2
     unreplaceable: 0
   primaryActivePowerUpId: ActiveChargeShot
   secondaryActivePowerUpId: ActiveGigaBomb
@@ -9425,6 +8206,7 @@ MonoBehaviour:
     bulletTimeData:
       duration: 3
       enemySlowPercent: 40
+      transitionTimeSeconds: 0.2
   - commonData:
       powerUpId: Bomb
       displayName: Bomb
@@ -9471,6 +8253,7 @@ MonoBehaviour:
     bulletTimeData:
       duration: 3
       enemySlowPercent: 40
+      transitionTimeSeconds: 0.2
   - commonData:
       powerUpId: Bullet Time
       displayName: Bullet Time
@@ -9517,6 +8300,7 @@ MonoBehaviour:
     bulletTimeData:
       duration: 3
       enemySlowPercent: 40
+      transitionTimeSeconds: 0.2
   primaryActiveToolId: Dash
   secondaryActiveToolId: Bullet Time
   equippedPassiveToolIds:

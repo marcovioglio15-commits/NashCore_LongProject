@@ -11,6 +11,7 @@ public partial struct PlayerCameraRoomAnchorSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PlayerCameraAnchor>();
+        state.RequireForUpdate<PlayerRuntimeCameraConfig>();
     }
 
     public void OnUpdate(ref SystemState state)
@@ -23,9 +24,9 @@ public partial struct PlayerCameraRoomAnchorSystem : ISystem
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
         ComponentLookup<LocalTransform> localTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
 
-        foreach ((RefRO<PlayerCameraAnchor> cameraAnchor, RefRO<PlayerControllerConfig> controllerConfig) in SystemAPI.Query<RefRO<PlayerCameraAnchor>, RefRO<PlayerControllerConfig>>())
+        foreach ((RefRO<PlayerCameraAnchor> cameraAnchor, RefRO<PlayerRuntimeCameraConfig> runtimeCameraConfig) in SystemAPI.Query<RefRO<PlayerCameraAnchor>, RefRO<PlayerRuntimeCameraConfig>>())
         {
-            ref CameraConfig cameraConfig = ref controllerConfig.ValueRO.Config.Value.Camera;
+            PlayerRuntimeCameraConfig cameraConfig = runtimeCameraConfig.ValueRO;
 
             switch (cameraConfig.Behavior)
             {

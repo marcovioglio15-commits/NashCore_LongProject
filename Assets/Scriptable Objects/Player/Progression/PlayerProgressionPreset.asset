@@ -19,7 +19,7 @@ MonoBehaviour:
   scalableStats:
   - statName: Health
     statType: 0
-    defaultValue: 99
+    defaultValue: 990000
   - statName: Shield
     statType: 0
     defaultValue: 99
@@ -41,6 +41,15 @@ MonoBehaviour:
   - statName: Luck
     statType: 0
     defaultValue: 6
+  - statName: BulletPenetration
+    statType: 1
+    defaultValue: 0
+  - statName: ShotgunBarrels
+    statType: 1
+    defaultValue: 2
+  - statName: BulletSizeMultiplier
+    statType: 0
+    defaultValue: 1
   scalingRules:
   - statKey: gamePhasesDefinition.Array.data[0|phaseID:Phase0].requiredExperienceGrouth
     addScaling: 0
@@ -245,7 +254,7 @@ MonoBehaviour:
       value: 3
     - statName: FireRate
       applyMode: 0
-      value: 1
+      value: 0.1
     - statName: MovementSpeed
       applyMode: 0
       value: 0.5

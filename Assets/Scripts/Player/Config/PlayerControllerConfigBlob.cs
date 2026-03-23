@@ -77,16 +77,19 @@ public struct ShootingConfig
 
 /// <summary>
 /// Holds shooting-related values such as shoot speed, 
-/// rate of fire, explosion radius, range, lifetime, and damage for projectiles.
+/// rate of fire, explosion radius, range, lifetime, damage, and default penetration for projectiles.
 /// </summary>
 public struct ShootingValuesBlob
 {
     public float ShootSpeed;
     public float RateOfFire;
+    public float ProjectileSizeMultiplier;
     public float ExplosionRadius;
     public float Range;
     public float Lifetime;
     public float Damage;
+    public ProjectilePenetrationMode PenetrationMode;
+    public int MaxPenetrations;
 }
 #endregion
 

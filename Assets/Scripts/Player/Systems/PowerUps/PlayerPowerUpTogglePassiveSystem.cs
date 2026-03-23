@@ -6,6 +6,7 @@ using Unity.Mathematics;
 /// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerPowerUpActivationSystem))]
+[UpdateBefore(typeof(PlayerBulletTimeUpdateSystem))]
 [UpdateBefore(typeof(PlayerMovementSpeedSystem))]
 public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
 {
@@ -22,6 +23,7 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
         state.RequireForUpdate<PlayerPowerUpsConfig>();
         state.RequireForUpdate<PlayerPowerUpsState>();
         state.RequireForUpdate<PlayerPassiveToolsState>();
+        state.RequireForUpdate<PlayerBulletTimeState>();
         state.RequireForUpdate<EquippedPassiveToolElement>();
     }
 
@@ -40,14 +42,17 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
                   RefRW<PlayerPowerUpsState> powerUpsState,
                   DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools,
                   RefRW<PlayerPassiveToolsState> passiveToolsState,
+                  RefRW<PlayerBulletTimeState> bulletTimeState,
                   Entity playerEntity)
                  in SystemAPI.Query<RefRO<PlayerPowerUpsConfig>,
                                     RefRW<PlayerPowerUpsState>,
                                     DynamicBuffer<EquippedPassiveToolElement>,
-                                    RefRW<PlayerPassiveToolsState>>()
+                                    RefRW<PlayerPassiveToolsState>,
+                                    RefRW<PlayerBulletTimeState>>()
                              .WithEntityAccess())
         {
             PlayerPassiveToolsState aggregatedPassiveToolsState = PlayerPassiveToolsAggregationUtility.BuildPassiveToolsState(equippedPassiveTools);
+            PlayerBulletTimeState currentBulletTimeState = bulletTimeState.ValueRO;
             byte isShootingSuppressed = powerUpsState.ValueRO.IsShootingSuppressed;
             bool healthChanged = false;
             PlayerHealth updatedHealth = default;
@@ -61,6 +66,8 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
             byte secondaryIsActive = powerUpsState.ValueRO.SecondaryIsActive;
             float primaryMaintenanceTickTimer = powerUpsState.ValueRO.PrimaryMaintenanceTickTimer;
             float secondaryMaintenanceTickTimer = powerUpsState.ValueRO.SecondaryMaintenanceTickTimer;
+            float toggleBulletTimeSlowPercent = 0f;
+            float toggleBulletTimeTransitionTimeSeconds = 0f;
 
             ProcessTogglePassiveSlot(in powerUpsConfig.ValueRO.PrimarySlot,
                                      deltaTime,
@@ -76,7 +83,9 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
                                      ref healthChanged,
                                      ref shieldLookup,
                                      ref updatedShield,
-                                     ref shieldChanged);
+                                     ref shieldChanged,
+                                     ref toggleBulletTimeSlowPercent,
+                                     ref toggleBulletTimeTransitionTimeSeconds);
             ProcessTogglePassiveSlot(in powerUpsConfig.ValueRO.SecondarySlot,
                                      deltaTime,
                                      playerEntity,
@@ -91,7 +100,9 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
                                      ref healthChanged,
                                      ref shieldLookup,
                                      ref updatedShield,
-                                     ref shieldChanged);
+                                     ref shieldChanged,
+                                     ref toggleBulletTimeSlowPercent,
+                                     ref toggleBulletTimeTransitionTimeSeconds);
 
             if (healthChanged)
                 healthLookup[playerEntity] = updatedHealth;
@@ -109,6 +120,14 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
             powerUpsState.ValueRW.SecondaryMaintenanceTickTimer = secondaryMaintenanceTickTimer;
             powerUpsState.ValueRW.IsShootingSuppressed = isShootingSuppressed;
             passiveToolsState.ValueRW = aggregatedPassiveToolsState;
+
+            if (toggleBulletTimeSlowPercent <= 0f && currentBulletTimeState.ToggleSlowPercent > 0f)
+                toggleBulletTimeTransitionTimeSeconds = math.max(toggleBulletTimeTransitionTimeSeconds,
+                                                                 currentBulletTimeState.ToggleTransitionTimeSeconds);
+
+            currentBulletTimeState.ToggleSlowPercent = toggleBulletTimeSlowPercent;
+            currentBulletTimeState.ToggleTransitionTimeSeconds = math.max(0f, toggleBulletTimeTransitionTimeSeconds);
+            bulletTimeState.ValueRW = currentBulletTimeState;
         }
     }
     #endregion
@@ -147,7 +166,9 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
                                                  ref bool healthChanged,
                                                  ref ComponentLookup<PlayerShield> shieldLookup,
                                                  ref PlayerShield updatedShield,
-                                                 ref bool shieldChanged)
+                                                 ref bool shieldChanged,
+                                                 ref float toggleBulletTimeSlowPercent,
+                                                 ref float toggleBulletTimeTransitionTimeSeconds)
     {
         if (slotConfig.IsDefined == 0 || slotConfig.ToolKind != ActiveToolKind.PassiveToggle || slotConfig.Toggleable == 0)
         {
@@ -183,7 +204,28 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
         if (isActive == 0 || slotConfig.TogglePassiveTool.IsDefined == 0)
             return;
 
-        PlayerPassiveToolsAggregationUtility.AccumulatePassiveTool(ref passiveToolsState, in slotConfig.TogglePassiveTool);
+        PlayerPassiveToolConfig togglePassiveTool = slotConfig.TogglePassiveTool;
+
+        if (togglePassiveTool.HasBulletTime != 0 && togglePassiveTool.BulletTime.EnemySlowPercent > 0f)
+        {
+            float slowPercent = math.clamp(togglePassiveTool.BulletTime.EnemySlowPercent, 0f, 100f);
+            float transitionTimeSeconds = math.max(0f, togglePassiveTool.BulletTime.TransitionTimeSeconds);
+
+            if (slowPercent > toggleBulletTimeSlowPercent)
+            {
+                toggleBulletTimeSlowPercent = slowPercent;
+                toggleBulletTimeTransitionTimeSeconds = transitionTimeSeconds;
+            }
+            else if (math.abs(slowPercent - toggleBulletTimeSlowPercent) <= 0.0001f)
+            {
+                toggleBulletTimeTransitionTimeSeconds = math.max(toggleBulletTimeTransitionTimeSeconds, transitionTimeSeconds);
+            }
+
+            togglePassiveTool.HasBulletTime = 0;
+            togglePassiveTool.BulletTime = default;
+        }
+
+        PlayerPassiveToolsAggregationUtility.AccumulatePassiveTool(ref passiveToolsState, in togglePassiveTool);
     }
 
     /// <summary>
