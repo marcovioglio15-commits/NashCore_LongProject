@@ -397,10 +397,7 @@ public static class PlayerPresetScalingBakeUtility
             if (string.IsNullOrWhiteSpace(scalableStat.StatName))
                 continue;
 
-            float value = scalableStat.DefaultValue;
-
-            if (scalableStat.StatType == PlayerScalableStatType.Integer)
-                value = Mathf.Round(value);
+            float value = scalableStat.ResolveRuntimeDefaultValue();
 
             variableContext[scalableStat.StatName] = value;
         }

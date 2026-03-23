@@ -16,6 +16,8 @@ public sealed class PlayerScalableStatDefinitionPropertyDrawer : PropertyDrawer
         SerializedProperty statNameProperty = property.FindPropertyRelative("statName");
         SerializedProperty statTypeProperty = property.FindPropertyRelative("statType");
         SerializedProperty defaultValueProperty = property.FindPropertyRelative("defaultValue");
+        SerializedProperty minimumValueProperty = property.FindPropertyRelative("minimumValue");
+        SerializedProperty maximumValueProperty = property.FindPropertyRelative("maximumValue");
         SerializedProperty scalingRulesProperty = property.serializedObject != null
             ? property.serializedObject.FindProperty("scalingRules")
             : null;
@@ -24,7 +26,11 @@ public sealed class PlayerScalableStatDefinitionPropertyDrawer : PropertyDrawer
             : null;
         HashSet<string> allowedVariables = PlayerScalingFormulaValidationUtility.BuildVariableSet(scalableStatsProperty);
 
-        if (statNameProperty == null || statTypeProperty == null || defaultValueProperty == null)
+        if (statNameProperty == null ||
+            statTypeProperty == null ||
+            defaultValueProperty == null ||
+            minimumValueProperty == null ||
+            maximumValueProperty == null)
         {
             Label missingLabel = new Label("Scalable stat entry is missing serialized fields.");
             missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -35,6 +41,8 @@ public sealed class PlayerScalableStatDefinitionPropertyDrawer : PropertyDrawer
         AddField(root, statNameProperty, scalingRulesProperty, "Name", allowedVariables);
         AddField(root, statTypeProperty, scalingRulesProperty, "Type", allowedVariables);
         AddField(root, defaultValueProperty, scalingRulesProperty, "Default Value", allowedVariables);
+        AddField(root, minimumValueProperty, null, "Min", allowedVariables);
+        AddField(root, maximumValueProperty, null, "Max", allowedVariables);
         return root;
     }
     #endregion

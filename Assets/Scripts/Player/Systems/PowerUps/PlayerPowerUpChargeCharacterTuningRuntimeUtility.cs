@@ -283,7 +283,7 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
             if (Math.Abs(scalableStat.Value - baseStat.Value) <= 0.0001f)
                 continue;
 
-            scalableStat.Value = baseStat.Value;
+            scalableStat.Value = PlayerScalableStatClampUtility.ResolveNormalizedValue(in scalableStat, baseStat.Value);
             scalableStats[scalableStatIndex] = scalableStat;
             anyChanged = true;
         }

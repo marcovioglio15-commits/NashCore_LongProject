@@ -376,8 +376,54 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
 
     private static string ValidateScalableStatEntry(string statName, int statIndex, SerializedProperty scalableStatsProperty)
     {
+        List<string> warnings = new List<string>();
+
         if (!PlayerScalableStatNameUtility.IsValid(statName))
-            return "Invalid name. Use letters/digits/underscore, start with letter or underscore, and avoid 'this'.";
+            warnings.Add("Invalid name. Use letters/digits/underscore, start with letter or underscore, and avoid 'this'.");
+
+        SerializedProperty statElementProperty = scalableStatsProperty.GetArrayElementAtIndex(statIndex);
+        SerializedProperty statTypeProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("statType") : null;
+        SerializedProperty defaultValueProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("defaultValue") : null;
+        SerializedProperty minimumValueProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("minimumValue") : null;
+        SerializedProperty maximumValueProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("maximumValue") : null;
+
+        if (minimumValueProperty != null && maximumValueProperty != null)
+        {
+            float minimumValue = minimumValueProperty.floatValue;
+            float maximumValue = maximumValueProperty.floatValue;
+
+            if (minimumValue > maximumValue)
+            {
+                warnings.Add("Min is above Max. Runtime uses the ordered pair without snapping authoring values.");
+            }
+
+            if (defaultValueProperty != null)
+            {
+                PlayerScalableStatClampUtility.ResolveOrderedRange(minimumValue,
+                                                                   maximumValue,
+                                                                   out float resolvedMinimumValue,
+                                                                   out float resolvedMaximumValue);
+                float defaultValue = defaultValueProperty.floatValue;
+
+                if (defaultValue < resolvedMinimumValue || defaultValue > resolvedMaximumValue)
+                {
+                    warnings.Add("Default Value is outside the configured clamp range and will be clamped only at runtime.");
+                }
+            }
+        }
+
+        if (statTypeProperty != null &&
+            statTypeProperty.enumValueIndex == (int)PlayerScalableStatType.Integer)
+        {
+            if (defaultValueProperty != null && HasFractionalPart(defaultValueProperty.floatValue))
+                warnings.Add("Default Value has decimals on an Integer stat and will be rounded only at runtime.");
+
+            if (minimumValueProperty != null && HasFractionalPart(minimumValueProperty.floatValue))
+                warnings.Add("Min has decimals on an Integer stat and may produce ambiguous runtime bounds.");
+
+            if (maximumValueProperty != null && HasFractionalPart(maximumValueProperty.floatValue))
+                warnings.Add("Max has decimals on an Integer stat and may produce ambiguous runtime bounds.");
+        }
 
         for (int index = 0; index < scalableStatsProperty.arraySize; index++)
         {
@@ -393,10 +439,16 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
             if (!string.Equals(otherStatNameProperty.stringValue, statName, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            return "Duplicate name.";
+            warnings.Add("Duplicate name.");
+            break;
         }
 
-        return string.Empty;
+        return string.Join(Environment.NewLine, warnings);
+    }
+
+    private static bool HasFractionalPart(float value)
+    {
+        return Mathf.Abs(value - Mathf.Round(value)) > 0.0001f;
     }
     #endregion
 

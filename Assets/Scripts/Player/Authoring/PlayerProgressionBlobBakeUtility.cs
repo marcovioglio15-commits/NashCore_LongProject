@@ -294,11 +294,10 @@ internal static class PlayerProgressionBlobBakeUtility
         {
             PlayerScalableStatDefinition scalableStat = scalableStats[statIndex];
             string statName = scalableStat != null ? scalableStat.StatName : string.Format("stat{0}", statIndex + 1);
-            float defaultValue = scalableStat != null ? scalableStat.DefaultValue : 0f;
+            float defaultValue = scalableStat != null ? scalableStat.ResolveRuntimeDefaultValue() : 0f;
             PlayerScalableStatType statType = scalableStat != null ? scalableStat.StatType : PlayerScalableStatType.Float;
-
-            if (statType == PlayerScalableStatType.Integer)
-                defaultValue = Mathf.Round(defaultValue);
+            float minimumValue = scalableStat != null ? scalableStat.MinimumValue : PlayerScalableStatClampUtility.DefaultMinimumValue;
+            float maximumValue = scalableStat != null ? scalableStat.MaximumValue : PlayerScalableStatClampUtility.DefaultMaximumValue;
 
             if (string.IsNullOrWhiteSpace(statName))
                 statName = string.Format("stat{0}", statIndex + 1);
@@ -306,7 +305,9 @@ internal static class PlayerProgressionBlobBakeUtility
             scalableStatsArray[statIndex] = new PlayerScalableStatBlob
             {
                 Type = (byte)statType,
-                DefaultValue = defaultValue
+                DefaultValue = defaultValue,
+                MinimumValue = minimumValue,
+                MaximumValue = maximumValue
             };
             builder.AllocateString(ref scalableStatsArray[statIndex].Name, statName);
         }

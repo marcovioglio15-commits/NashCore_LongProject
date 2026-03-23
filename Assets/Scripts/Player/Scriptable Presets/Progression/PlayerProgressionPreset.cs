@@ -289,7 +289,11 @@ public sealed class PlayerProgressionPreset : ScriptableObject
                 suffix += 1;
             }
 
-            statDefinition.Configure(uniqueName, statDefinition.StatType, statDefinition.DefaultValue);
+            statDefinition.Configure(uniqueName,
+                                     statDefinition.StatType,
+                                     statDefinition.DefaultValue,
+                                     statDefinition.MinimumValue,
+                                     statDefinition.MaximumValue);
             visitedNames.Add(uniqueName);
         }
     }

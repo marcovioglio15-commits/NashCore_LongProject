@@ -53,6 +53,8 @@ public struct PlayerScalableStatElement : IBufferElementData
 {
     public FixedString64Bytes Name;
     public byte Type;
+    public float MinimumValue;
+    public float MaximumValue;
     public float Value;
 }
 #endregion

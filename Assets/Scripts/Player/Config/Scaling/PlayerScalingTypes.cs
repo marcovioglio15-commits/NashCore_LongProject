@@ -28,6 +28,12 @@ public sealed class PlayerScalableStatDefinition
 
     [Tooltip("Default raw value of this scalable stat before formula-based scaling is evaluated.")]
     [SerializeField] private float defaultValue;
+
+    [Tooltip("Minimum runtime value allowed for this scalable stat. Runtime sorts Min/Max if they are inverted.")]
+    [SerializeField] private float minimumValue = PlayerScalableStatClampUtility.DefaultMinimumValue;
+
+    [Tooltip("Maximum runtime value allowed for this scalable stat. Runtime sorts Min/Max if they are inverted.")]
+    [SerializeField] private float maximumValue = PlayerScalableStatClampUtility.DefaultMaximumValue;
     #endregion
 
     #endregion
@@ -56,13 +62,29 @@ public sealed class PlayerScalableStatDefinition
             return defaultValue;
         }
     }
+
+    public float MinimumValue
+    {
+        get
+        {
+            return minimumValue;
+        }
+    }
+
+    public float MaximumValue
+    {
+        get
+        {
+            return maximumValue;
+        }
+    }
     #endregion
 
     #region Methods
 
     #region Validation
     /// <summary>
-    /// Sanitizes this stat entry to keep name/type/value data valid for formulas and runtime baking.
+    /// Sanitizes this stat entry to keep name data valid for formulas while preserving designer-authored numeric values.
     /// </summary>
     /// <param name="fallbackName">Name to apply when the current name is empty or invalid.</param>
     /// <returns>True when at least one field was modified during validation, otherwise false.</returns>
@@ -77,18 +99,19 @@ public sealed class PlayerScalableStatDefinition
             changed = true;
         }
 
-        float sanitizedDefaultValue = defaultValue;
-
-        if (statType == PlayerScalableStatType.Integer)
-            sanitizedDefaultValue = Mathf.Round(sanitizedDefaultValue);
-
-        if (!Mathf.Approximately(sanitizedDefaultValue, defaultValue))
-        {
-            defaultValue = sanitizedDefaultValue;
-            changed = true;
-        }
-
         return changed;
+    }
+
+    /// <summary>
+    /// Resolves the normalized runtime default value after clamp and integer rules are applied.
+    /// </summary>
+    /// <returns>Runtime-ready scalable-stat default value.</returns>
+    public float ResolveRuntimeDefaultValue()
+    {
+        return PlayerScalableStatClampUtility.ResolveNormalizedValue(statType,
+                                                                    minimumValue,
+                                                                    maximumValue,
+                                                                    defaultValue);
     }
     #endregion
 
@@ -102,9 +125,32 @@ public sealed class PlayerScalableStatDefinition
 
     public void Configure(string statNameValue, PlayerScalableStatType statTypeValue, float defaultValueValue)
     {
+        Configure(statNameValue,
+                  statTypeValue,
+                  defaultValueValue,
+                  PlayerScalableStatClampUtility.DefaultMinimumValue,
+                  PlayerScalableStatClampUtility.DefaultMaximumValue);
+    }
+
+    /// <summary>
+    /// Assigns all serialized fields for this scalable stat in one call, including runtime clamp bounds.
+    /// </summary>
+    /// <param name="statNameValue">Formula variable name for this stat.</param>
+    /// <param name="statTypeValue">Runtime data type of this stat.</param>
+    /// <param name="defaultValueValue">Default raw stat value before scaling.</param>
+    /// <param name="minimumValueValue">Minimum runtime clamp value.</param>
+    /// <param name="maximumValueValue">Maximum runtime clamp value.</param>
+    public void Configure(string statNameValue,
+                          PlayerScalableStatType statTypeValue,
+                          float defaultValueValue,
+                          float minimumValueValue,
+                          float maximumValueValue)
+    {
         statName = statNameValue;
         statType = statTypeValue;
         defaultValue = defaultValueValue;
+        minimumValue = minimumValueValue;
+        maximumValue = maximumValueValue;
     }
     #endregion
 

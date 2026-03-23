@@ -215,10 +215,7 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
     /// </summary>
     public static float ResolveStatValue(in PlayerScalableStatElement scalableStat, float evaluatedValue)
     {
-        if ((PlayerScalableStatType)scalableStat.Type != PlayerScalableStatType.Integer)
-            return evaluatedValue;
-
-        return (float)Math.Round(evaluatedValue, MidpointRounding.AwayFromZero);
+        return PlayerScalableStatClampUtility.ResolveNormalizedValue(in scalableStat, evaluatedValue);
     }
     #endregion
 

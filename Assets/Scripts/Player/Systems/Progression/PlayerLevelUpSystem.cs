@@ -483,8 +483,7 @@ public partial struct PlayerLevelUpSystem : ISystem
             ? previousValue + (previousValue * (deltaValue * 0.01f))
             : previousValue + deltaValue;
 
-        if ((PlayerScalableStatType)scalableStat.Type == PlayerScalableStatType.Integer)
-            newValue = (float)Math.Round(newValue, MidpointRounding.AwayFromZero);
+        newValue = PlayerScalableStatClampUtility.ResolveNormalizedValue(in scalableStat, newValue);
 
         scalableStat.Value = newValue;
         scalableStats[statBufferIndex] = scalableStat;
@@ -544,7 +543,7 @@ public partial struct PlayerLevelUpSystem : ISystem
 
             if (string.Equals(statName, "experience", StringComparison.OrdinalIgnoreCase))
             {
-                statElement.Value = experienceValue;
+                statElement.Value = PlayerScalableStatClampUtility.ResolveNormalizedValue(in statElement, experienceValue);
                 scalableStats[statIndex] = statElement;
                 continue;
             }
@@ -552,7 +551,7 @@ public partial struct PlayerLevelUpSystem : ISystem
             if (!string.Equals(statName, "level", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            statElement.Value = levelValue;
+            statElement.Value = PlayerScalableStatClampUtility.ResolveNormalizedValue(in statElement, levelValue);
             scalableStats[statIndex] = statElement;
         }
     }

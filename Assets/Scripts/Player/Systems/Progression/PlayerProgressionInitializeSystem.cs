@@ -293,15 +293,14 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
                 ref PlayerScalableStatBlob scalableStat = ref scalableStats[statIndex];
                 string statNameString = scalableStat.Name.ToString();
                 FixedString64Bytes statName = new FixedString64Bytes(statNameString);
-                float resolvedValue = scalableStat.DefaultValue;
-
-                if ((PlayerScalableStatType)scalableStat.Type == PlayerScalableStatType.Integer)
-                    resolvedValue = (float)Math.Round(resolvedValue, MidpointRounding.AwayFromZero);
+                float resolvedValue = PlayerScalableStatClampUtility.ResolveNormalizedValue(ref scalableStat, scalableStat.DefaultValue);
 
                 scalableStatsBuffer.Add(new PlayerScalableStatElement
                 {
                     Name = statName,
                     Type = scalableStat.Type,
+                    MinimumValue = scalableStat.MinimumValue,
+                    MaximumValue = scalableStat.MaximumValue,
                     Value = resolvedValue
                 });
             }
@@ -326,12 +325,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             if (!string.Equals(scalableStatName, statName, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            float resolvedValue = scalableStat.DefaultValue;
-
-            if ((PlayerScalableStatType)scalableStat.Type == PlayerScalableStatType.Integer)
-                resolvedValue = (float)Math.Round(resolvedValue, MidpointRounding.AwayFromZero);
-
-            return resolvedValue;
+            return PlayerScalableStatClampUtility.ResolveNormalizedValue(ref scalableStat, scalableStat.DefaultValue);
         }
 
         return fallbackValue;

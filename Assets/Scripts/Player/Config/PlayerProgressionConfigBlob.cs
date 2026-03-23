@@ -92,6 +92,8 @@ public struct PlayerScalableStatBlob
     public BlobString Name;
     public byte Type;
     public float DefaultValue;
+    public float MinimumValue;
+    public float MaximumValue;
 }
 #endregion
 
