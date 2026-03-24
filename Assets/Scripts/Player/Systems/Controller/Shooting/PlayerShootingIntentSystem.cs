@@ -105,7 +105,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
                 shootingState.ValueRW.VisualShootingActive = 0;
 
                 if (values.RateOfFire > 0f)
-                    shootingState.ValueRW.NextShotTime = elapsedTime;
+                    ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
 
                 continue;
             }
@@ -115,30 +115,33 @@ public partial struct PlayerShootingIntentSystem : ISystem
             {
                 shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
                 shootingState.ValueRW.VisualShootingActive = 0;
+                ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
                 continue;
             }
 
             // determine if the shoot button is currently pressed and if it was just pressed this frame
             bool shootPressedThisFrame = isShootPressed && shootingState.ValueRO.PreviousShootPressed == 0;
-            bool shootReleasedThisFrame = isShootPressed == false && shootingState.ValueRO.PreviousShootPressed != 0;
             shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
             bool automaticWasEnabled = usesAutomaticLatch && shootingState.ValueRO.AutomaticEnabled != 0;
             float shotInterval = 1f / values.RateOfFire;
+
+            // Manual continuous fire must restart from the current frame, otherwise idle time becomes a burst backlog.
+            if (shootingConfig.TriggerMode == ShootingTriggerMode.ManualContinousShot && shootPressedThisFrame)
+                ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
 
             // based on the shooting trigger mode, determine if the player should shoot this frame
             bool shouldShoot = ResolveShootingTrigger(ref shootingState.ValueRW,
                                                       shootingConfig.TriggerMode,
                                                       isShootPressed,
-                                                      shootPressedThisFrame,
-                                                      shootReleasedThisFrame);
+                                                      shootPressedThisFrame);
             bool automaticIsEnabled = usesAutomaticLatch && shootingState.ValueRW.AutomaticEnabled != 0;
             bool visualShootingActive = isShootPressed;
 
             if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle)
             {
                 visualShootingActive = visualShootingActive || automaticIsEnabled;
-                bool automaticEnabledThisFrame = automaticWasEnabled == false && automaticIsEnabled;
-                bool automaticDisabledThisFrame = automaticWasEnabled && automaticIsEnabled == false;
+                bool automaticEnabledThisFrame = !automaticWasEnabled && automaticIsEnabled;
+                bool automaticDisabledThisFrame = automaticWasEnabled && !automaticIsEnabled;
 
                 if (automaticDisabledThisFrame)
                 {
@@ -148,12 +151,12 @@ public partial struct PlayerShootingIntentSystem : ISystem
                 }
 
                 if (automaticEnabledThisFrame)
-                    shootingState.ValueRW.NextShotTime = elapsedTime;
+                    ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
             }
 
             shootingState.ValueRW.VisualShootingActive = visualShootingActive ? (byte)1 : (byte)0;
 
-            if (shouldShoot == false)
+            if (!shouldShoot)
                 continue;
 
             // compute how many shots to fire this frame based on the elapsed time and the player's rate of fire,
@@ -240,8 +243,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
     private static bool ResolveShootingTrigger(ref PlayerShootingState shootingState,
                                                ShootingTriggerMode triggerMode,
                                                bool isShootPressed,
-                                               bool shootPressedThisFrame,
-                                               bool shootReleasedThisFrame)
+                                               bool shootPressedThisFrame)
     {
         switch (triggerMode)
         {
@@ -308,6 +310,19 @@ public partial struct PlayerShootingIntentSystem : ISystem
 
         shootingState.NextShotTime = nextShotTime;
         return shotsToFire;
+    }
+
+    /// <summary>
+    /// Resets the next-shot schedule to the current frame so idle or temporarily disabled fire does not accumulate
+    /// deferred automatic shots.
+    /// /params shootingState: Mutable firing state that stores the next scheduled shot time.
+    /// /params elapsedTime: Current world elapsed time used as the new schedule anchor.
+    /// /returns None.
+    /// </summary>
+    private static void ResetShotSchedule(ref PlayerShootingState shootingState,
+                                          float elapsedTime)
+    {
+        shootingState.NextShotTime = elapsedTime;
     }
 
     private static PlayerPassiveToolsState ResolvePassiveToolsState(Entity shooterEntity,
