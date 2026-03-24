@@ -39,9 +39,9 @@ MonoBehaviour:
     maximumValue: 1000000
   - statName: FireRate
     statType: 0
-    defaultValue: 1
-    minimumValue: -1000000
-    maximumValue: 1000000
+    defaultValue: 2
+    minimumValue: 0.1
+    maximumValue: 8
   - statName: ShotRange
     statType: 0
     defaultValue: 1
@@ -276,7 +276,7 @@ MonoBehaviour:
       value: 3
     - statName: FireRate
       applyMode: 0
-      value: 0.1
+      value: 0.3
     - statName: MovementSpeed
       applyMode: 0
       value: 0.5

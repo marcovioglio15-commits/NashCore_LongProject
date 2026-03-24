@@ -38,5 +38,5 @@ MonoBehaviour:
     areaAmountPerTickPercent: 0
     areaTickInterval: 1
   healthStatistics:
-    maxHealth: 1
-    maxShield: 1
+    maxHealth: 8
+    maxShield: 0

@@ -273,7 +273,7 @@ GameObject:
   - component: {fileID: 7824275491676149767}
   - component: {fileID: 2362197013061763177}
   - component: {fileID: 8212256973497844587}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: PF_Enemy_Grunt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -331,27 +331,11 @@ MonoBehaviour:
   areaTickInterval: 1
   maxHealth: 1
   maxShield: 0
-  visualMode: 1
-  visualAnimationSpeed: 1
-  gpuAnimationLoopDuration: 1
-  enableDistanceCulling: 1
-  maxVisibleDistance: 55
-  visibleDistanceHysteresis: 6
   priorityTier: 0
   steeringAggressiveness: 1
-  hitVfxPrefab: {fileID: 0}
-  hitVfxLifetimeSeconds: 0.35
-  hitVfxScaleMultiplier: 1
   animatorComponent: {fileID: 0}
   elementalVfxAnchor: {fileID: 1506323467520610189}
   worldSpaceStatusBarsView: {fileID: 6141157981899037380}
-  drawContactRadiusGizmo: 1
-  drawAreaRadiusGizmo: 1
-  drawSeparationRadiusGizmo: 0
-  drawBodyRadiusGizmo: 0
-  drawAggressivenessRadiusGizmo: 0
-  drawVisualDistanceGizmo: 1
-  drawWorldSpaceBarsGizmo: 1
 --- !u!33 &2362197013061763177
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -633,7 +617,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 7914505bb0e7e8347b3bbfe02f0478f6, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

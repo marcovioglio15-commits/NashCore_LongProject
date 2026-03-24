@@ -473,7 +473,7 @@ MonoBehaviour:
             experienceAmount: 9
           complessiveExperienceDropMinimum: 3
           complessiveExperienceDropMaximum: 12
-          dropsDistribution: 1
+          dropsDistribution: 0.4
           dropRadius: 1.2
           collectionMovement:
             moveSpeed: 14

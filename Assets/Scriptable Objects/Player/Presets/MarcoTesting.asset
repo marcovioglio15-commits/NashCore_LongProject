@@ -110,11 +110,11 @@ MonoBehaviour:
     shootOffset: {x: 0, y: 0, z: 0}
     values:
       shootSpeed: 24
-      rateOfFire: 8
+      rateOfFire: 1
       explosionRadius: 1
       range: 20
       lifetime: 2
-      damage: 1
+      damage: 3
       projectileSizeMultiplier: 1
       penetrationMode: 1
       maxPenetrations: 0
@@ -137,7 +137,7 @@ MonoBehaviour:
     debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   - statKey: shootingSettings.values.rateOfFire
     addScaling: 1
-    formula: '[this] * [FireRate]'
+    formula: '[FireRate]'
     debugInConsole: 1
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   - statKey: movementSettings.values.baseSpeed
