@@ -19,9 +19,9 @@ MonoBehaviour:
   scalableStats:
   - statName: Health
     statType: 1
-    defaultValue: 80
-    minimumValue: 10
-    maximumValue: 1000000
+    defaultValue: 5
+    minimumValue: 1
+    maximumValue: 26
   - statName: Shield
     statType: 1
     defaultValue: 0
@@ -290,7 +290,7 @@ MonoBehaviour:
   legacyExperienceRequiredPerLevel: 100
   levelCap: 100
   experiencePickupRadius: 1
-  milestoneTimeScaleResumeDurationSeconds: 3
+  milestoneTimeScaleResumeDurationSeconds: 1.5
   powerUpContainerSettings:
     containerPrefab: {fileID: 7549901088543619621, guid: 518a26c8b52a63e42a92768c649a250c, type: 3}
     interactionRadius: 2.25

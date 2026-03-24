@@ -70,41 +70,6 @@ MonoBehaviour:
     - tierId: Tier0
       selectionPercentage: 100
   tierLevels:
-  - tierId: Tier0
-    entries:
-    - entryKind: 0
-      powerUpId: ActiveShotgun
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActiveChargeShot
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActiveGigaBomb
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActiveBasicDash
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActivePortableHealthPack
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActiveBulletTime
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveElementalTrail
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveEnemiesExplodeOnDeath
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveOrbitalProjectiles
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: Passive_AdditionalBarrel
-      selectionWeight: 50
-    - entryKind: 1
-      powerUpId: Passive_HealthIncrease
-      selectionWeight: 5
   - tierId: Tier1
     entries:
     - entryKind: 0
@@ -140,6 +105,41 @@ MonoBehaviour:
     - entryKind: 1
       powerUpId: PassiveBigShots
       selectionWeight: 10
+  - tierId: Tier0
+    entries:
+    - entryKind: 0
+      powerUpId: ActiveShotgun
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActiveChargeShot
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActiveGigaBomb
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActiveBasicDash
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActivePortableHealthPack
+      selectionWeight: 5
+    - entryKind: 0
+      powerUpId: ActiveBulletTime
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveElementalTrail
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveEnemiesExplodeOnDeath
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: PassiveOrbitalProjectiles
+      selectionWeight: 5
+    - entryKind: 1
+      powerUpId: Passive_AdditionalBarrel
+      selectionWeight: 50
+    - entryKind: 1
+      powerUpId: Passive_HealthIncrease
+      selectionWeight: 5
   dropPoolCatalog:
   - Milestone
   - Shop
@@ -4521,7 +4521,7 @@ MonoBehaviour:
           maintenanceTicksPerSecond: 4
           minimumActivationEnergyPercent: 100
           chargeType: 1
-          chargePerTrigger: 1
+          chargePerTrigger: 25
           cooldownSeconds: 5
           allowRechargeDuringToggleStartupLock: 0
         suppressShooting:
@@ -5590,7 +5590,7 @@ MonoBehaviour:
           transitionTimeSeconds: 0.2
         healMissingHealth:
           applyMode: 0
-          healAmount: 35
+          healAmount: 1
           durationSeconds: 2
           tickIntervalSeconds: 0.2
           stackPolicy: 0
