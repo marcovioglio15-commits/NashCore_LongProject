@@ -101,7 +101,6 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
         DrawWavesSection();
         EditorGUILayout.Space(6f);
-        DrawSelectedCellSection();
 
         if (wavePresetSerializedObject != null)
             wavePresetSerializedObject.ApplyModifiedProperties();
@@ -252,7 +251,10 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         DrawGridZoomSection();
 
         for (int waveIndex = 0; waveIndex < wavesProperty.arraySize; waveIndex++)
+        {
             DrawWaveElement(waveIndex, wavesProperty.GetArrayElementAtIndex(waveIndex));
+            DrawSelectedCellSection();
+        }
 
         EditorGUILayout.Space(6f);
         DrawWaveToolbar();
