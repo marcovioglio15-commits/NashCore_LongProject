@@ -30,8 +30,8 @@ MonoBehaviour:
     bodyRadius: 0.55
   damage:
     contactDamageEnabled: 1
-    contactRadius: 1.2
-    contactAmountPerTick: 5
+    contactRadius: 0.8
+    contactAmountPerTick: 1
     contactTickInterval: 0.75
     areaDamageEnabled: 1
     areaRadius: 0
