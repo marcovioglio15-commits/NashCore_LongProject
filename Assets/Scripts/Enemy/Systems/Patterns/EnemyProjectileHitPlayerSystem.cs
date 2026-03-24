@@ -25,7 +25,7 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         playerQuery = SystemAPI.QueryBuilder()
-            .WithAll<PlayerControllerConfig, LocalTransform, PlayerHealth, PlayerShield>()
+            .WithAll<PlayerControllerConfig, LocalTransform, PlayerHealth, PlayerShield, PlayerRuntimeHealthStatisticsConfig, PlayerDamageGraceState>()
             .Build();
 
         state.RequireForUpdate(playerQuery);
@@ -44,12 +44,21 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
         LocalTransform playerTransform = default;
         PlayerHealth playerHealth = default;
         PlayerShield playerShield = default;
+        PlayerRuntimeHealthStatisticsConfig runtimeHealthConfig = default;
+        PlayerDamageGraceState playerDamageGraceState = default;
+        float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
 
         foreach ((RefRO<LocalTransform> candidatePlayerTransform,
                   RefRO<PlayerHealth> candidatePlayerHealth,
                   RefRO<PlayerShield> candidatePlayerShield,
+                  RefRO<PlayerRuntimeHealthStatisticsConfig> candidateRuntimeHealthConfig,
+                  RefRO<PlayerDamageGraceState> candidatePlayerDamageGraceState,
                   Entity candidatePlayerEntity)
-                 in SystemAPI.Query<RefRO<LocalTransform>, RefRO<PlayerHealth>, RefRO<PlayerShield>>()
+                 in SystemAPI.Query<RefRO<LocalTransform>,
+                                    RefRO<PlayerHealth>,
+                                    RefRO<PlayerShield>,
+                                    RefRO<PlayerRuntimeHealthStatisticsConfig>,
+                                    RefRO<PlayerDamageGraceState>>()
                              .WithAll<PlayerControllerConfig>()
                              .WithEntityAccess())
         {
@@ -57,6 +66,8 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
             playerTransform = candidatePlayerTransform.ValueRO;
             playerHealth = candidatePlayerHealth.ValueRO;
             playerShield = candidatePlayerShield.ValueRO;
+            runtimeHealthConfig = candidateRuntimeHealthConfig.ValueRO;
+            playerDamageGraceState = candidatePlayerDamageGraceState.ValueRO;
             break;
         }
 
@@ -76,6 +87,9 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
             if (dashState.RemainingInvulnerability > 0f)
                 return;
         }
+
+        if (PlayerDamageUtility.IsDamageGraceActive(in playerDamageGraceState, elapsedTime))
+            return;
 
         float3 playerPosition = playerTransform.Position;
         float accumulatedDamage = 0f;
@@ -126,10 +140,19 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
         if (accumulatedDamage <= 0f)
             return;
 
-        PlayerDamageUtility.ApplyFlatShieldDamage(ref playerHealth, ref playerShield, accumulatedDamage);
+        bool damageApplied = PlayerDamageUtility.TryApplyFlatShieldDamage(ref playerHealth,
+                                                                          ref playerShield,
+                                                                          ref playerDamageGraceState,
+                                                                          in runtimeHealthConfig,
+                                                                          elapsedTime,
+                                                                          accumulatedDamage);
+
+        if (!damageApplied)
+            return;
 
         entityManager.SetComponentData(playerEntity, playerHealth);
         entityManager.SetComponentData(playerEntity, playerShield);
+        entityManager.SetComponentData(playerEntity, playerDamageGraceState);
     }
     #endregion
 

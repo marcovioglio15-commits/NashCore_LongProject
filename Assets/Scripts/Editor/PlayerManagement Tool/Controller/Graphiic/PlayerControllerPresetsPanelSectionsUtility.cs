@@ -494,8 +494,9 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
 
         SerializedProperty maxHealthProperty = healthStatisticsProperty.FindPropertyRelative("maxHealth");
         SerializedProperty maxShieldProperty = healthStatisticsProperty.FindPropertyRelative("maxShield");
+        SerializedProperty graceTimeProperty = healthStatisticsProperty.FindPropertyRelative("graceTimeSeconds");
 
-        if (maxHealthProperty == null || maxShieldProperty == null)
+        if (maxHealthProperty == null || maxShieldProperty == null || graceTimeProperty == null)
         {
             Label missingFieldsLabel = new Label("Health statistics fields are missing on this preset.");
             missingFieldsLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -505,6 +506,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
 
         section.Add(PlayerScalingFieldElementFactory.CreateField(maxHealthProperty, scalingRulesProperty, "Max Health"));
         section.Add(PlayerScalingFieldElementFactory.CreateField(maxShieldProperty, scalingRulesProperty, "Max Shield"));
+        section.Add(PlayerScalingFieldElementFactory.CreateField(graceTimeProperty, scalingRulesProperty, "Grace Time Seconds"));
     }
 
     /// <summary>

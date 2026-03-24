@@ -421,7 +421,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         AddComponent(entity, new PlayerRuntimeHealthStatisticsConfig
         {
             MaxHealth = math.max(1f, controllerPreset.HealthStatistics.MaxHealth),
-            MaxShield = math.max(0f, controllerPreset.HealthStatistics.MaxShield)
+            MaxShield = math.max(0f, controllerPreset.HealthStatistics.MaxShield),
+            GraceTimeSeconds = math.max(0f, controllerPreset.HealthStatistics.GraceTimeSeconds)
         });
         AddComponent(entity, new PlayerRuntimeScalingState());
         DynamicBuffer<PlayerRuntimeControllerScalingElement> controllerScalingBuffer = AddBuffer<PlayerRuntimeControllerScalingElement>(entity);

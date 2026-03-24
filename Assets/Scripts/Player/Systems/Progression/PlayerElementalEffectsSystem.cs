@@ -18,21 +18,28 @@ public partial struct PlayerElementalEffectsSystem : ISystem
         state.RequireForUpdate<PlayerElementStackElement>();
         state.RequireForUpdate<PlayerHealth>();
         state.RequireForUpdate<PlayerShield>();
+        state.RequireForUpdate<PlayerRuntimeHealthStatisticsConfig>();
+        state.RequireForUpdate<PlayerDamageGraceState>();
     }
 
     public void OnUpdate(ref SystemState state)
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
+        float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
 
         if (deltaTime <= 0f)
             return;
 
         foreach ((RefRW<PlayerHealth> playerHealth,
                   RefRW<PlayerShield> playerShield,
+                  RefRO<PlayerRuntimeHealthStatisticsConfig> runtimeHealthConfig,
+                  RefRW<PlayerDamageGraceState> playerDamageGraceState,
                   RefRW<PlayerElementalRuntimeState> elementalRuntimeState,
                   DynamicBuffer<PlayerElementStackElement> elementalStacks)
                  in SystemAPI.Query<RefRW<PlayerHealth>,
                                     RefRW<PlayerShield>,
+                                    RefRO<PlayerRuntimeHealthStatisticsConfig>,
+                                    RefRW<PlayerDamageGraceState>,
                                     RefRW<PlayerElementalRuntimeState>,
                                     DynamicBuffer<PlayerElementStackElement>>()
                              .WithAll<PlayerControllerConfig>())
@@ -65,10 +72,20 @@ public partial struct PlayerElementalEffectsSystem : ISystem
 
             PlayerHealth nextHealth = playerHealth.ValueRO;
             PlayerShield nextShield = playerShield.ValueRO;
-            PlayerDamageUtility.ApplyFlatShieldDamage(ref nextHealth, ref nextShield, accumulatedDotDamage);
+            PlayerDamageGraceState nextDamageGraceState = playerDamageGraceState.ValueRO;
+            bool damageApplied = PlayerDamageUtility.TryApplyFlatShieldDamage(ref nextHealth,
+                                                                              ref nextShield,
+                                                                              ref nextDamageGraceState,
+                                                                              in runtimeHealthConfig.ValueRO,
+                                                                              elapsedTime,
+                                                                              accumulatedDotDamage);
+
+            if (!damageApplied)
+                continue;
 
             playerHealth.ValueRW = nextHealth;
             playerShield.ValueRW = nextShield;
+            playerDamageGraceState.ValueRW = nextDamageGraceState;
         }
     }
     #endregion

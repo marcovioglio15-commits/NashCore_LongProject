@@ -25,6 +25,7 @@ public struct HealthStatisticsConfig
 {
     public float MaxHealth;
     public float MaxShield;
+    public float GraceTimeSeconds;
 }
 #endregion
 

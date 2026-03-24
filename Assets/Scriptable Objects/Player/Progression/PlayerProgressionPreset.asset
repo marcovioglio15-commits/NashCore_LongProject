@@ -19,7 +19,7 @@ MonoBehaviour:
   scalableStats:
   - statName: Health
     statType: 1
-    defaultValue: 1000000
+    defaultValue: 80
     minimumValue: 10
     maximumValue: 1000000
   - statName: Shield

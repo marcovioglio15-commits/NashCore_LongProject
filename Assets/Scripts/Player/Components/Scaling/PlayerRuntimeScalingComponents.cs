@@ -130,6 +130,7 @@ public struct PlayerRuntimeHealthStatisticsConfig : IComponentData
 {
     public float MaxHealth;
     public float MaxShield;
+    public float GraceTimeSeconds;
 }
 
 /// <summary>
@@ -141,6 +142,7 @@ public struct PlayerBaseHealthStatisticsConfig : IComponentData
 {
     public float MaxHealth;
     public float MaxShield;
+    public float GraceTimeSeconds;
 }
 #endregion
 
@@ -256,7 +258,8 @@ public enum PlayerRuntimeControllerFieldId : byte
     ShootingDamage = 47,
     ShootingMaxPenetrations = 48,
     HealthMaxHealth = 49,
-    HealthMaxShield = 50
+    HealthMaxShield = 50,
+    HealthGraceTimeSeconds = 51
 }
 
 /// <summary>

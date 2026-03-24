@@ -353,7 +353,8 @@ public static class PlayerControllerConfigBakeUtility
             root.HealthStatistics = new HealthStatisticsConfig
             {
                 MaxHealth = 100f,
-                MaxShield = 0f
+                MaxShield = 0f,
+                GraceTimeSeconds = 0f
             };
             return;
         }
@@ -361,7 +362,8 @@ public static class PlayerControllerConfigBakeUtility
         root.HealthStatistics = new HealthStatisticsConfig
         {
             MaxHealth = math.max(1f, healthStatistics.MaxHealth),
-            MaxShield = math.max(0f, healthStatistics.MaxShield)
+            MaxShield = math.max(0f, healthStatistics.MaxShield),
+            GraceTimeSeconds = math.max(0f, healthStatistics.GraceTimeSeconds)
         };
     }
     #endregion

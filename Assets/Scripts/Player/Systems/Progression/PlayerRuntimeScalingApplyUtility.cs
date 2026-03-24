@@ -359,6 +359,9 @@ internal static class PlayerRuntimeScalingApplyUtility
             case PlayerRuntimeControllerFieldId.HealthMaxShield:
                 runtimeHealth.MaxShield = math.max(0f, resolvedValue);
                 return;
+            case PlayerRuntimeControllerFieldId.HealthGraceTimeSeconds:
+                runtimeHealth.GraceTimeSeconds = math.max(0f, resolvedValue);
+                return;
         }
     }
     #endregion
@@ -656,7 +659,8 @@ internal static class PlayerRuntimeScalingApplyUtility
         return new PlayerRuntimeHealthStatisticsConfig
         {
             MaxHealth = baseHealth.MaxHealth,
-            MaxShield = baseHealth.MaxShield
+            MaxShield = baseHealth.MaxShield,
+            GraceTimeSeconds = baseHealth.GraceTimeSeconds
         };
     }
     #endregion

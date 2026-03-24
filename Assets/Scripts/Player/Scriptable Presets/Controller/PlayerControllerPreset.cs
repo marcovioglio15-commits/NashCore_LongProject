@@ -253,6 +253,9 @@ public sealed class PlayerHealthStatisticsSettings
     [Tooltip("Maximum and initial shield reserve assigned to the player when initialized at runtime. Shield absorbs damage before health.")]
     [SerializeField] private float maxShield;
 
+    [Tooltip("Optional invulnerability window in seconds applied after the player receives valid damage. Zero disables the grace window.")]
+    [SerializeField] private float graceTimeSeconds;
+
     [Tooltip("Internal migration marker used to import legacy progression health only once.")]
     [SerializeField] private bool legacyHealthMigrated;
     #endregion
@@ -273,6 +276,14 @@ public sealed class PlayerHealthStatisticsSettings
             return maxShield;
         }
     }
+
+    public float GraceTimeSeconds
+    {
+        get
+        {
+            return graceTimeSeconds;
+        }
+    }
     #endregion
 
     #region Validation
@@ -283,6 +294,9 @@ public sealed class PlayerHealthStatisticsSettings
 
         if (maxShield < 0f)
             maxShield = 0f;
+
+        if (graceTimeSeconds < 0f)
+            graceTimeSeconds = 0f;
     }
     #endregion
 

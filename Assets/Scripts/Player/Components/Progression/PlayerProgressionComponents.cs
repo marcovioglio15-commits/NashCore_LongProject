@@ -21,6 +21,14 @@ public struct PlayerShield : IComponentData
 }
 
 /// <summary>
+/// Stores the current player damage-grace window end time.
+/// </summary>
+public struct PlayerDamageGraceState : IComponentData
+{
+    public float IgnoreDamageUntilTime;
+}
+
+/// <summary>
 /// Stores runtime player experience value.
 /// </summary>
 public struct PlayerExperience : IComponentData

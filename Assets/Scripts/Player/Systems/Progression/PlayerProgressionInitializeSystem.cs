@@ -11,6 +11,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     #region Fields
     private EntityQuery missingHealthQuery;
     private EntityQuery missingShieldQuery;
+    private EntityQuery missingDamageGraceStateQuery;
     private EntityQuery missingExperienceQuery;
     private EntityQuery missingLevelQuery;
     private EntityQuery missingExperienceCollectionQuery;
@@ -38,6 +39,11 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
         missingShieldQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerControllerConfig, PlayerRuntimeHealthStatisticsConfig>()
             .WithNone<PlayerShield>()
+            .Build();
+
+        missingDamageGraceStateQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerControllerConfig, PlayerRuntimeHealthStatisticsConfig>()
+            .WithNone<PlayerDamageGraceState>()
             .Build();
 
         missingExperienceQuery = SystemAPI.QueryBuilder()
@@ -70,6 +76,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
     {
         bool hasMissingHealth = !missingHealthQuery.IsEmptyIgnoreFilter;
         bool hasMissingShield = !missingShieldQuery.IsEmptyIgnoreFilter;
+        bool hasMissingDamageGraceState = !missingDamageGraceStateQuery.IsEmptyIgnoreFilter;
         bool hasMissingExperience = !missingExperienceQuery.IsEmptyIgnoreFilter;
         bool hasMissingLevel = !missingLevelQuery.IsEmptyIgnoreFilter;
         bool hasMissingExperienceCollection = !missingExperienceCollectionQuery.IsEmptyIgnoreFilter;
@@ -77,6 +84,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
 
         if (!hasMissingHealth &&
             !hasMissingShield &&
+            !hasMissingDamageGraceState &&
             !hasMissingExperience &&
             !hasMissingLevel &&
             !hasMissingExperienceCollection &&
@@ -90,6 +98,9 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
 
         if (hasMissingShield)
             AddMissingShield(ref commandBuffer);
+
+        if (hasMissingDamageGraceState)
+            AddMissingDamageGraceState(ref commandBuffer);
 
         if (hasMissingExperience)
             AddMissingExperience(ref commandBuffer);
@@ -108,6 +119,7 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
 
         bool hasRemainingMissingHealth = !missingHealthQuery.IsEmptyIgnoreFilter;
         bool hasRemainingMissingShield = !missingShieldQuery.IsEmptyIgnoreFilter;
+        bool hasRemainingMissingDamageGraceState = !missingDamageGraceStateQuery.IsEmptyIgnoreFilter;
         bool hasRemainingMissingExperience = !missingExperienceQuery.IsEmptyIgnoreFilter;
         bool hasRemainingMissingLevel = !missingLevelQuery.IsEmptyIgnoreFilter;
         bool hasRemainingMissingExperienceCollection = !missingExperienceCollectionQuery.IsEmptyIgnoreFilter;
@@ -175,6 +187,26 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
 
         entities.Dispose();
         configs.Dispose();
+    }
+
+    /// <summary>
+    /// Adds PlayerDamageGraceState to entities that already expose runtime health statistics.
+    /// </summary>
+    /// <param name="commandBuffer">Command buffer used for deferred entity writes.</param>
+
+    private void AddMissingDamageGraceState(ref EntityCommandBuffer commandBuffer)
+    {
+        NativeArray<Entity> entities = missingDamageGraceStateQuery.ToEntityArray(Allocator.Temp);
+
+        for (int index = 0; index < entities.Length; index++)
+        {
+            commandBuffer.AddComponent(entities[index], new PlayerDamageGraceState
+            {
+                IgnoreDamageUntilTime = 0f
+            });
+        }
+
+        entities.Dispose();
     }
 
     /// <summary>

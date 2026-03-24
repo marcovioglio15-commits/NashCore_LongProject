@@ -192,7 +192,8 @@ internal static class PlayerRuntimeScalingBakeUtility
         return new PlayerBaseHealthStatisticsConfig
         {
             MaxHealth = math.max(1f, healthStatistics.MaxHealth),
-            MaxShield = math.max(0f, healthStatistics.MaxShield)
+            MaxShield = math.max(0f, healthStatistics.MaxShield),
+            GraceTimeSeconds = math.max(0f, healthStatistics.GraceTimeSeconds)
         };
     }
 
@@ -809,6 +810,9 @@ internal static class PlayerRuntimeScalingBakeUtility
                 return true;
             case "healthStatistics.maxShield":
                 fieldId = PlayerRuntimeControllerFieldId.HealthMaxShield;
+                return true;
+            case "healthStatistics.graceTimeSeconds":
+                fieldId = PlayerRuntimeControllerFieldId.HealthGraceTimeSeconds;
                 return true;
             default:
                 return false;

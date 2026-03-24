@@ -123,6 +123,7 @@ MonoBehaviour:
   healthStatistics:
     maxHealth: 1
     maxShield: 0
+    graceTimeSeconds: 1
     legacyHealthMigrated: 1
   scalingRules:
   - statKey: healthStatistics.maxHealth
