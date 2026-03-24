@@ -4521,7 +4521,7 @@ MonoBehaviour:
           maintenanceTicksPerSecond: 4
           minimumActivationEnergyPercent: 100
           chargeType: 1
-          chargePerTrigger: 1
+          chargePerTrigger: 25
           cooldownSeconds: 5
           allowRechargeDuringToggleStartupLock: 0
         suppressShooting:
