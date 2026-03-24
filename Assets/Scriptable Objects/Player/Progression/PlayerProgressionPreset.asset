@@ -18,13 +18,13 @@ MonoBehaviour:
   version: 1.0.0
   scalableStats:
   - statName: Health
-    statType: 0
-    defaultValue: 990000
-    minimumValue: -1000000
+    statType: 1
+    defaultValue: 1000000
+    minimumValue: 10
     maximumValue: 1000000
   - statName: Shield
-    statType: 0
-    defaultValue: 99
+    statType: 1
+    defaultValue: 0
     minimumValue: 0
     maximumValue: 100
   - statName: MovementSpeed
@@ -64,9 +64,9 @@ MonoBehaviour:
     maximumValue: 1000000
   - statName: ShotgunBarrels
     statType: 1
-    defaultValue: 2
-    minimumValue: -1000000
-    maximumValue: 1000000
+    defaultValue: 1
+    minimumValue: 1
+    maximumValue: 10
   - statName: BulletSizeMultiplier
     statType: 0
     defaultValue: 1
