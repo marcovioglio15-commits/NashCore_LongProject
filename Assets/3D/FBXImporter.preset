@@ -209,6 +209,18 @@ Preset:
     value: 1
     objectReference: {fileID: 0}
   - target: {fileID: 0}
+    propertyPath: generateMeshLods
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: meshLodGenerationFlags
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: maximumMeshLod
+    value: -1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
     propertyPath: meshOptimizationFlags
     value: -1
     objectReference: {fileID: 0}
@@ -246,7 +258,7 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: m_UseFileScale
-    value: 0
+    value: 1
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: m_StrictVertexDataChecks
