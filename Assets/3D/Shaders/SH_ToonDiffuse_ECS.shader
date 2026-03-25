@@ -162,12 +162,16 @@ Shader "Cel Shader/Toon Diffuse ECS"
                 #if defined(UNITY_DOTS_INSTANCING_ENABLED)
                     // DOTS deformation path:
                     // 1) read per-instance mesh start index
-                    // 2) fetch deformed vertex using vertexID
-                    // 3) replace object-space position/normal before transform.
+                    // 2) skip fetch when the entity has no deformation data
+                    // 3) fetch deformed vertex using vertexID only for valid deformed meshes.
                     uint meshStartIndex = asuint(UNITY_ACCESS_HYBRID_INSTANCED_PROP(_ComputeMeshIndex, float));
-                    DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + input.vertexID];
-                    positionOS = deformedVertex.Position;
-                    normalOS = deformedVertex.Normal;
+
+                    if (meshStartIndex > 0u)
+                    {
+                        DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + input.vertexID];
+                        positionOS = deformedVertex.Position;
+                        normalOS = deformedVertex.Normal;
+                    }
                 #endif
 
                 // URP helper transforms (object -> clip/world), 

@@ -186,7 +186,7 @@ public sealed class EnemyPatternModuleDefinition
 
     #region Validation
     /// <summary>
-    /// Normalizes module definition values and nested payload.
+    /// Ensures module definition identity and nested payload references remain structurally valid without snapping authored settings.
     /// </summary>
     public void Validate()
     {
@@ -195,20 +195,6 @@ public sealed class EnemyPatternModuleDefinition
 
         if (string.IsNullOrWhiteSpace(displayName))
             displayName = moduleId;
-
-        switch (moduleKind)
-        {
-            case EnemyPatternModuleKind.Stationary:
-            case EnemyPatternModuleKind.Grunt:
-            case EnemyPatternModuleKind.Wanderer:
-            case EnemyPatternModuleKind.Shooter:
-            case EnemyPatternModuleKind.DropItems:
-                break;
-
-            default:
-                moduleKind = EnemyPatternModuleKind.Grunt;
-                break;
-        }
 
         if (data == null)
             data = new EnemyPatternModulePayloadData();

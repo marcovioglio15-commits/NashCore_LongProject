@@ -29,20 +29,38 @@ public sealed class PlayerAuthoring : MonoBehaviour
 
     [Header("Animation")]
     [Tooltip("Optional Animator used for ECS-driven visual animation sync.")]
+    [HideInInspector]
     [SerializeField] private Animator animatorComponent;
 
     [Header("Runtime Visual Bridge")]
     [Tooltip("Optional prefab asset instantiated at runtime when no valid Animator companion exists. Use a visual-only prefab with Animator and full rig hierarchy.")]
+    [HideInInspector]
     [SerializeField] private GameObject runtimeVisualBridgePrefab;
 
     [Tooltip("When enabled, spawns the runtime visual bridge only if Animator companion is missing or null at runtime.")]
+    [HideInInspector]
     [SerializeField] private bool spawnRuntimeVisualBridgeWhenAnimatorMissing = true;
 
     [Tooltip("When enabled, runtime visual bridge follows ECS player rotation.")]
+    [HideInInspector]
     [SerializeField] private bool runtimeVisualBridgeSyncRotation = true;
 
     [Tooltip("Local-space position offset applied to runtime visual bridge relative to ECS player transform.")]
+    [HideInInspector]
     [SerializeField] private Vector3 runtimeVisualBridgeOffset = Vector3.zero;
+
+    [Header("Damage Feedback")]
+    [Tooltip("Tint color applied during the brief damage flash after the player takes valid damage.")]
+    [HideInInspector]
+    [SerializeField] private Color damageFlashColor = new Color(1f, 0.15f, 0.15f, 1f);
+
+    [Tooltip("Flash duration in seconds. Use very small values for a 1-3 frame reaction.")]
+    [HideInInspector]
+    [SerializeField] private float damageFlashDurationSeconds = 0.06f;
+
+    [Tooltip("Maximum overlay strength reached immediately after a valid hit.")]
+    [HideInInspector]
+    [SerializeField] private float damageFlashMaximumBlend = 0.85f;
 
     [Header("Hybrid Bake Safety")]
     [Tooltip("When enabled, bakes the attached Elemental Trail prefab reference into ECS. Disable to isolate SubScene object-reference streaming issues.")]
@@ -53,24 +71,31 @@ public sealed class PlayerAuthoring : MonoBehaviour
 
     [Header("Power-Ups VFX")]
     [Tooltip("Optional attached VFX prefab activated while Elemental Trail passive is enabled.")]
+    [HideInInspector]
     [SerializeField] private GameObject elementalTrailAttachedVfxPrefab;
 
     [Tooltip("Scale multiplier applied to the attached Elemental Trail VFX instance.")]
+    [HideInInspector]
     [SerializeField] private float elementalTrailAttachedVfxScaleMultiplier = 1f;
 
     [Tooltip("Maximum number of identical one-shot VFX allowed in the same spatial cell. Set 0 to disable this cap.")]
+    [HideInInspector]
     [SerializeField] private int maxIdenticalOneShotVfxPerCell = 6;
 
     [Tooltip("Cell size in meters used by the one-shot VFX per-cell cap.")]
+    [HideInInspector]
     [SerializeField] private float oneShotVfxCellSize = 2.5f;
 
     [Tooltip("Maximum number of identical attached elemental VFX allowed on the same target. Set 0 to disable this cap.")]
+    [HideInInspector]
     [SerializeField] private int maxAttachedElementalVfxPerTarget = 1;
 
     [Tooltip("Maximum number of active one-shot power-up VFX managed by one player. Set 0 to disable this cap.")]
+    [HideInInspector]
     [SerializeField] private int maxActiveOneShotPowerUpVfx = 400;
 
     [Tooltip("When enabled, hitting the attached-target cap refreshes lifetime of the existing VFX.")]
+    [HideInInspector]
     [SerializeField] private bool refreshAttachedElementalVfxLifetimeOnCapHit = true;
     #endregion
 
@@ -113,7 +138,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return runtimeVisualBridgePrefab;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveRuntimeVisualBridgePrefab(masterPreset, runtimeVisualBridgePrefab);
         }
     }
 
@@ -121,7 +146,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return spawnRuntimeVisualBridgeWhenAnimatorMissing;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveSpawnRuntimeVisualBridgeWhenAnimatorMissing(masterPreset,
+                                                                                                                spawnRuntimeVisualBridgeWhenAnimatorMissing);
         }
     }
 
@@ -129,7 +155,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return runtimeVisualBridgeSyncRotation;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveRuntimeVisualBridgeSyncRotation(masterPreset,
+                                                                                                     runtimeVisualBridgeSyncRotation);
         }
     }
 
@@ -137,7 +164,31 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return runtimeVisualBridgeOffset;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveRuntimeVisualBridgeOffset(masterPreset, runtimeVisualBridgeOffset);
+        }
+    }
+
+    public Color DamageFlashColor
+    {
+        get
+        {
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveDamageFlashColor(masterPreset, damageFlashColor);
+        }
+    }
+
+    public float DamageFlashDurationSeconds
+    {
+        get
+        {
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveDamageFlashDurationSeconds(masterPreset, damageFlashDurationSeconds);
+        }
+    }
+
+    public float DamageFlashMaximumBlend
+    {
+        get
+        {
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveDamageFlashMaximumBlend(masterPreset, damageFlashMaximumBlend);
         }
     }
 
@@ -161,7 +212,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return elementalTrailAttachedVfxPrefab;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveElementalTrailAttachedVfxPrefab(masterPreset, elementalTrailAttachedVfxPrefab);
         }
     }
 
@@ -169,7 +220,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return elementalTrailAttachedVfxScaleMultiplier;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveElementalTrailAttachedVfxScaleMultiplier(masterPreset,
+                                                                                                               elementalTrailAttachedVfxScaleMultiplier);
         }
     }
 
@@ -177,7 +229,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return maxIdenticalOneShotVfxPerCell;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveMaxIdenticalOneShotVfxPerCell(masterPreset, maxIdenticalOneShotVfxPerCell);
         }
     }
 
@@ -185,7 +237,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return oneShotVfxCellSize;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveOneShotVfxCellSize(masterPreset, oneShotVfxCellSize);
         }
     }
 
@@ -193,7 +245,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return maxAttachedElementalVfxPerTarget;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveMaxAttachedElementalVfxPerTarget(masterPreset,
+                                                                                                       maxAttachedElementalVfxPerTarget);
         }
     }
 
@@ -201,7 +254,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return maxActiveOneShotPowerUpVfx;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveMaxActiveOneShotPowerUpVfx(masterPreset, maxActiveOneShotPowerUpVfx);
         }
     }
 
@@ -209,7 +262,8 @@ public sealed class PlayerAuthoring : MonoBehaviour
     {
         get
         {
-            return refreshAttachedElementalVfxLifetimeOnCapHit;
+            return PlayerAuthoringVisualPresetResolverUtility.ResolveRefreshAttachedElementalVfxLifetimeOnCapHit(masterPreset,
+                                                                                                                  refreshAttachedElementalVfxLifetimeOnCapHit);
         }
     }
     #endregion
@@ -461,6 +515,17 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                         authoring.RuntimeVisualBridgeOffset.z),
             SyncRotation = authoring.RuntimeVisualBridgeSyncRotation ? (byte)1 : (byte)0,
             SpawnWhenAnimatorMissing = authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing ? (byte)1 : (byte)0
+        });
+        AddComponent(entity, new DamageFlashConfig
+        {
+            FlashColor = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.DamageFlashColor),
+            DurationSeconds = math.max(0f, authoring.DamageFlashDurationSeconds),
+            MaximumBlend = math.saturate(authoring.DamageFlashMaximumBlend)
+        });
+        AddComponent(entity, new DamageFlashState
+        {
+            RemainingSeconds = 0f,
+            AppliedBlend = 0f
         });
 
         if (authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing &&

@@ -70,8 +70,13 @@ public partial struct EnemyElementalEffectsSystem : ISystem
                 continue;
 
             EnemyHealth nextHealth = enemyHealth.ValueRO;
-            EnemyDamageUtility.ApplyFlatShieldDamage(ref nextHealth, accumulatedDotDamage);
+            bool damageApplied = EnemyDamageUtility.TryApplyFlatShieldDamage(ref nextHealth, accumulatedDotDamage);
+
+            if (!damageApplied)
+                continue;
+
             enemyHealth.ValueRW = nextHealth;
+            DamageFlashRuntimeUtility.Trigger(state.EntityManager, enemyEntity);
 
             if (nextHealth.Current > 0f)
                 continue;

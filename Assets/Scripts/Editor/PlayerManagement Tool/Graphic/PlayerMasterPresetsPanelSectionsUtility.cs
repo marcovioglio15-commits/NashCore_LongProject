@@ -96,6 +96,7 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
         SerializedProperty controllerProperty = presetSerializedObject.FindProperty("m_ControllerPreset");
         SerializedProperty progressionProperty = presetSerializedObject.FindProperty("m_ProgressionPreset");
         SerializedProperty powerUpsProperty = presetSerializedObject.FindProperty("m_PowerUpsPreset");
+        SerializedProperty visualProperty = presetSerializedObject.FindProperty("visualPreset");
         SerializedProperty animationProperty = presetSerializedObject.FindProperty("m_AnimationBindingsPreset");
 
         sectionContainer.Add(BuildSubPresetRow(panel,
@@ -119,6 +120,13 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
                                                panel.CreatePowerUpsPreset,
                                                () => PlayerMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, PlayerManagementWindow.PanelType.PowerUps),
                                                PlayerManagementWindow.PanelType.PowerUps));
+        sectionContainer.Add(BuildSubPresetRow(panel,
+                                               "Visual Preset",
+                                               typeof(PlayerVisualPreset),
+                                               visualProperty,
+                                               panel.CreateVisualPreset,
+                                               () => PlayerMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, PlayerManagementWindow.PanelType.PlayerVisualPresets),
+                                               PlayerManagementWindow.PanelType.PlayerVisualPresets));
         sectionContainer.Add(BuildSubPresetRow(panel,
                                                "Animation Bindings Preset",
                                                typeof(PlayerAnimationBindingsPreset),
@@ -206,6 +214,11 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
         powerUpsButton.text = "Open Power-Ups";
         powerUpsButton.style.marginLeft = 4f;
         row.Add(powerUpsButton);
+
+        Button visualButton = new Button(() => PlayerMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, PlayerManagementWindow.PanelType.PlayerVisualPresets));
+        visualButton.text = "Open Visual";
+        visualButton.style.marginLeft = 4f;
+        row.Add(visualButton);
 
         Button animationButton = new Button(() => PlayerMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, PlayerManagementWindow.PanelType.AnimationBindings));
         animationButton.text = "Open Animations";
@@ -496,6 +509,31 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
     }
 
     /// <summary>
+    /// Creates one new visual sub-preset and assigns it to the selected master preset.
+    /// </summary>
+    /// <param name="panel">Owning panel that stores selected preset state.</param>
+
+    public static void CreateVisualPreset(PlayerMasterPresetsPanel panel)
+    {
+        if (panel == null)
+            return;
+
+        PlayerVisualPreset newPreset = CreateSubPresetAsset<PlayerVisualPreset>("PlayerVisualPreset", PlayerMasterPresetsPanel.VisualPresetsFolder);
+
+        if (newPreset != null)
+        {
+            PlayerVisualPresetLibrary visualLibrary = PlayerVisualPresetLibraryUtility.GetOrCreateLibrary();
+            Undo.RegisterCreatedObjectUndo(newPreset, "Create Visual Preset Asset");
+            Undo.RecordObject(visualLibrary, "Add Visual Preset");
+            visualLibrary.AddPreset(newPreset);
+            EditorUtility.SetDirty(visualLibrary);
+            PlayerManagementDraftSession.MarkDirty();
+        }
+
+        AssignSubPreset(panel, "visualPreset", newPreset);
+    }
+
+    /// <summary>
     /// Assigns one sub-preset reference on the selected master preset.
     /// </summary>
     /// <param name="panel">Owning panel that stores the selected preset and serialized object.</param>
@@ -556,6 +594,7 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
                 case PlayerManagementWindow.PanelType.PlayerControllerPresets:
                 case PlayerManagementWindow.PanelType.LevelUpProgression:
                 case PlayerManagementWindow.PanelType.PowerUps:
+                case PlayerManagementWindow.PanelType.PlayerVisualPresets:
                 case PlayerManagementWindow.PanelType.AnimationBindings:
                     PlayerMasterPresetsPanelSidePanelUtility.SyncOpenSidePanels(panel);
                     break;

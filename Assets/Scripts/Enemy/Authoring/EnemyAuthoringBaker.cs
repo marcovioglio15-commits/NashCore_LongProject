@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Rendering;
 using UnityEngine;
 
 /// <summary>
@@ -75,7 +76,9 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         });
         AddComponent(entity, new EnemyShooterControlState
         {
-            MovementLocked = 0
+            MovementLocked = 0,
+            AimDirection = float3.zero,
+            HasAimDirection = 0
         });
 
         if (compiledPattern.HasCustomMovement)
@@ -121,6 +124,20 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             LifetimeSeconds = math.max(0.05f, authoring.HitVfxLifetimeSeconds),
             ScaleMultiplier = math.max(0.01f, authoring.HitVfxScaleMultiplier)
         });
+
+        float4 damageFlashColor = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.DamageFlashColor);
+        AddComponent(entity, new DamageFlashConfig
+        {
+            FlashColor = damageFlashColor,
+            DurationSeconds = math.max(0f, authoring.DamageFlashDurationSeconds),
+            MaximumBlend = math.saturate(authoring.DamageFlashMaximumBlend)
+        });
+        AddComponent(entity, new DamageFlashState
+        {
+            RemainingSeconds = 0f,
+            AppliedBlend = 0f
+        });
+        BakeDamageFlashRenderTargets(authoring, entity);
 
         AddComponent(entity, new EnemyVisualRuntimeState
         {
@@ -472,6 +489,85 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             return Entity.Null;
 
         return GetEntity(viewGameObject, TransformUsageFlags.Dynamic);
+    }
+
+    /// <summary>
+    /// Registers all renderer entities that must react to enemy hit flash feedback.
+    /// /params authoring: Source enemy authoring component used to enumerate renderers.
+    /// /params rootEntity: Root enemy entity that owns the flash config and render target buffer.
+    /// /returns None.
+    /// </summary>
+    private void BakeDamageFlashRenderTargets(EnemyAuthoring authoring, Entity rootEntity)
+    {
+        if (authoring == null)
+            return;
+
+        DynamicBuffer<DamageFlashRenderTargetElement> renderTargets = AddBuffer<DamageFlashRenderTargetElement>(rootEntity);
+        Renderer[] renderers = authoring.GetComponentsInChildren<Renderer>(true);
+        HashSet<Entity> bakedRenderEntities = new HashSet<Entity>();
+
+        for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+        {
+            Renderer renderer = renderers[rendererIndex];
+
+            if (renderer == null)
+                continue;
+
+            Entity renderEntity = GetEntity(renderer.gameObject, TransformUsageFlags.Renderable);
+
+            if (!bakedRenderEntities.Add(renderEntity))
+                continue;
+
+            renderTargets.Add(new DamageFlashRenderTargetElement
+            {
+                Value = renderEntity,
+                BaseColor = ResolveRendererBaseColor(renderer)
+            });
+        }
+
+        if (renderTargets.Length > 0)
+            return;
+
+        renderTargets.Add(new DamageFlashRenderTargetElement
+        {
+            Value = rootEntity,
+            BaseColor = new float4(1f, 1f, 1f, 1f)
+        });
+    }
+
+    /// <summary>
+    /// Resolves the first valid base color exposed by one authored renderer.
+    /// /params renderer: Renderer inspected for compatible material color properties.
+    /// /returns Resolved base color or white when the renderer has no supported color property.
+    /// </summary>
+    private static float4 ResolveRendererBaseColor(Renderer renderer)
+    {
+        if (renderer == null)
+            return new float4(1f, 1f, 1f, 1f);
+
+        Material[] sharedMaterials = renderer.sharedMaterials;
+
+        for (int materialIndex = 0; materialIndex < sharedMaterials.Length; materialIndex++)
+        {
+            Material sharedMaterial = sharedMaterials[materialIndex];
+
+            if (sharedMaterial == null)
+                continue;
+
+            if (sharedMaterial.HasProperty("_BaseColor"))
+            {
+                Color baseColor = sharedMaterial.GetColor("_BaseColor");
+                return new float4(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+            }
+
+            if (sharedMaterial.HasProperty("_Color"))
+            {
+                Color baseColor = sharedMaterial.GetColor("_Color");
+                return new float4(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+            }
+        }
+
+        return new float4(1f, 1f, 1f, 1f);
     }
     #endregion
 

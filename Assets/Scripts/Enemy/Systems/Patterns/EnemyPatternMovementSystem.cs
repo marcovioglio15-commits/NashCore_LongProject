@@ -13,7 +13,6 @@ using Unity.Transforms;
 public partial struct EnemyPatternMovementSystem : ISystem
 {
     #region Constants
-    private static readonly float3 UpAxis = new float3(0f, 1f, 0f);
     private static readonly float3 ForwardAxis = new float3(0f, 0f, 1f);
     private const float DirectionEpsilon = 1e-6f;
     private const float RotationSpeedEpsilon = 1e-4f;
@@ -188,7 +187,12 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float acceleration = math.max(0f, currentEnemyData.Acceleration);
             float deceleration = math.max(0f, currentEnemyData.Deceleration);
             float steeringAggressiveness = ResolveSteeringAggressiveness(currentEnemyData.SteeringAggressiveness);
-            bool movementLocked = shooterControlLookup.HasComponent(enemyEntity) && shooterControlLookup[enemyEntity].MovementLocked != 0;
+            EnemyShooterControlState shooterControlState = default;
+
+            if (shooterControlLookup.HasComponent(enemyEntity))
+                shooterControlState = shooterControlLookup[enemyEntity];
+
+            bool movementLocked = shooterControlState.MovementLocked != 0;
             bool ignoreSteeringAndPriority = ShouldIgnoreSteeringAndPriority(in currentPatternConfig);
             float3 desiredVelocity = float3.zero;
             float priorityYieldUrgency = 0f;
@@ -414,8 +418,6 @@ public partial struct EnemyPatternMovementSystem : ISystem
             nextPosition.y = currentEnemyTransform.Position.y;
             currentEnemyTransform.Position = nextPosition;
 
-            float planarVelocitySquared = currentEnemyRuntimeState.Velocity.x * currentEnemyRuntimeState.Velocity.x +
-                                          currentEnemyRuntimeState.Velocity.z * currentEnemyRuntimeState.Velocity.z;
             bool freezeRotation = currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.Stationary &&
                                   currentPatternConfig.StationaryFreezeRotation != 0;
 
@@ -430,10 +432,14 @@ public partial struct EnemyPatternMovementSystem : ISystem
                     quaternion deltaRotation = quaternion.RotateY(deltaYawRadians);
                     currentEnemyTransform.Rotation = math.normalize(math.mul(currentEnemyTransform.Rotation, deltaRotation));
                 }
-                else if (planarVelocitySquared > DirectionEpsilon)
+                else
                 {
-                    float3 forward = math.normalizesafe(new float3(currentEnemyRuntimeState.Velocity.x, 0f, currentEnemyRuntimeState.Velocity.z), ForwardAxis);
-                    currentEnemyTransform.Rotation = quaternion.LookRotationSafe(forward, UpAxis);
+                    currentEnemyTransform.Rotation = EnemySteeringUtility.ResolveDynamicLookRotation(currentEnemyTransform.Rotation,
+                                                                                                      currentEnemyRuntimeState.Velocity,
+                                                                                                      math.max(moveSpeed, effectiveMaxSpeed),
+                                                                                                      in shooterControlState,
+                                                                                                      steeringAggressiveness,
+                                                                                                      deltaTime);
                 }
             }
 

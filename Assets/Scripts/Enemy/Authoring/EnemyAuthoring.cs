@@ -18,6 +18,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private const float DefaultVisibleDistanceHysteresis = 6f;
     private const float DefaultHitVfxLifetimeSeconds = 0.35f;
     private const float DefaultHitVfxScaleMultiplier = 1f;
+    private static readonly Color DefaultDamageFlashColor = new Color(1f, 0.15f, 0.15f, 1f);
+    private const float DefaultDamageFlashDurationSeconds = 0.06f;
+    private const float DefaultDamageFlashMaximumBlend = 0.85f;
     #endregion
 
     #region Fields
@@ -551,6 +554,45 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public Color DamageFlashColor
+    {
+        get
+        {
+            EnemyVisualDamageFeedbackSettings settings = ResolveDamageFeedbackSettings();
+
+            if (settings == null)
+                return DefaultDamageFlashColor;
+
+            return settings.FlashColor;
+        }
+    }
+
+    public float DamageFlashDurationSeconds
+    {
+        get
+        {
+            EnemyVisualDamageFeedbackSettings settings = ResolveDamageFeedbackSettings();
+
+            if (settings == null)
+                return DefaultDamageFlashDurationSeconds;
+
+            return settings.FlashDurationSeconds;
+        }
+    }
+
+    public float DamageFlashMaximumBlend
+    {
+        get
+        {
+            EnemyVisualDamageFeedbackSettings settings = ResolveDamageFeedbackSettings();
+
+            if (settings == null)
+                return DefaultDamageFlashMaximumBlend;
+
+            return settings.FlashMaximumBlend;
+        }
+    }
+
     public Animator AnimatorComponent
     {
         get
@@ -671,6 +713,20 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private EnemyVisualPrefabSettings ResolveVisualPrefabSettings()
     {
         return EnemyAuthoringPresetResolverUtility.ResolveVisualPrefabSettings(masterPreset, visualPreset);
+    }
+
+    /// <summary>
+    /// Resolves the active damage flash settings source.
+    /// /returns Resolved damage flash settings or null when no preset source is available.
+    /// </summary>
+    private EnemyVisualDamageFeedbackSettings ResolveDamageFeedbackSettings()
+    {
+        EnemyVisualPreset resolvedVisualPreset = EnemyAuthoringPresetResolverUtility.ResolveVisualPreset(masterPreset, visualPreset);
+
+        if (resolvedVisualPreset == null)
+            return null;
+
+        return resolvedVisualPreset.DamageFeedback;
     }
     #endregion
 

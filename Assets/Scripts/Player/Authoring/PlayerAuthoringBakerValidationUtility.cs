@@ -92,7 +92,7 @@ public static class PlayerAuthoringBakerValidationUtility
         if (assignedPrefab.scene.IsValid())
         {
 #if UNITY_EDITOR
-            Debug.LogWarning(string.Format("[PlayerAuthoringBaker] RuntimeVisualBridgePrefab on '{0}' points to a scene object. Assign a prefab asset instead.",
+            Debug.LogWarning(string.Format("[PlayerAuthoringBaker] RuntimeVisualBridgePrefab on '{0}' points to a scene object. Assign a prefab asset on the active visual preset or hidden authoring fallback instead.",
                                            authoring.name),
                              authoring);
 #endif

@@ -42,6 +42,7 @@ public sealed class PlayerPowerUpsPresetsPanel
     internal string activePowerUpDisplayNameFilterText = string.Empty;
     internal string passivePowerUpIdFilterText = string.Empty;
     internal string passivePowerUpDisplayNameFilterText = string.Empty;
+    private bool activeSectionRebuildScheduled;
     #endregion
 
     #region Properties
@@ -570,6 +571,25 @@ public sealed class PlayerPowerUpsPresetsPanel
                 PlayerPowerUpsPresetsPanelLoadoutUtility.BuildLoadoutInputSection(this);
                 return;
         }
+    }
+
+    internal void ScheduleActiveSectionRebuild()
+    {
+        if (sectionContentRoot == null)
+        {
+            BuildActiveSection();
+            return;
+        }
+
+        if (activeSectionRebuildScheduled)
+            return;
+
+        activeSectionRebuildScheduled = true;
+        sectionContentRoot.schedule.Execute(() =>
+        {
+            activeSectionRebuildScheduled = false;
+            BuildActiveSection();
+        });
     }
 
     internal void RegeneratePresetId()

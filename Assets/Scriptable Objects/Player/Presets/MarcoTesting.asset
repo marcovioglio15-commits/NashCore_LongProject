@@ -181,6 +181,11 @@ MonoBehaviour:
     formula: '[this] * [BulletSizeMultiplier]'
     debugInConsole: 1
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.explosionRadius
+    addScaling: 1
+    formula: '[this] * [BulletSizeMultiplier]'
+    debugInConsole: 1
+    debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   moveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
   lookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
   shootActionId: a1c9633a-dc63-42a5-ae60-1a5d6f5f171b

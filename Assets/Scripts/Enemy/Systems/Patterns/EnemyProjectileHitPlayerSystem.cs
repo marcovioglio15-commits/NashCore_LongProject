@@ -153,6 +153,7 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
         entityManager.SetComponentData(playerEntity, playerHealth);
         entityManager.SetComponentData(playerEntity, playerShield);
         entityManager.SetComponentData(playerEntity, playerDamageGraceState);
+        DamageFlashRuntimeUtility.Trigger(entityManager, playerEntity);
     }
     #endregion
 

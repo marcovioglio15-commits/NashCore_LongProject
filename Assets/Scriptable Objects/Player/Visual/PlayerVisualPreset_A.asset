@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25213ccc02454c188e8be9ab0a7e91d1, type: 3}
+  m_Name: PlayerVisualPreset_A
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerVisualPreset
+  presetId: 4af03b6246f24d0bb1dd3b02e523b988
+  presetName: PlayerVisualPreset_A
+  description: Default player visual setup migrated from PlayerAuthoring.
+  version: 1.0.0
+  runtimeVisualBridgePrefab: {fileID: 8300188409459899355, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
+  spawnRuntimeVisualBridgeWhenAnimatorMissing: 1
+  runtimeVisualBridgeSyncRotation: 1
+  runtimeVisualBridgeOffset: {x: 0, y: 0, z: 0}
+  damageFlashColor: {r: 1, g: 0.15, b: 0.15, a: 1}
+  damageFlashDurationSeconds: 0.06
+  damageFlashMaximumBlend: 0.85
+  elementalTrailAttachedVfxPrefab: {fileID: 5679156216372977872, guid: 92d93d035892fff40a63205dfd234520, type: 3}
+  elementalTrailAttachedVfxScaleMultiplier: 1
+  maxIdenticalOneShotVfxPerCell: 1
+  oneShotVfxCellSize: 1.5
+  maxAttachedElementalVfxPerTarget: 1
+  maxActiveOneShotPowerUpVfx: 300
+  refreshAttachedElementalVfxLifetimeOnCapHit: 1

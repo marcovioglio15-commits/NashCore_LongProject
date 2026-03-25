@@ -113,6 +113,8 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
         SerializedProperty property = panel.PresetSerializedObject.FindProperty("patterns");
         EnemyAdvancedPatternPresetsPanelElementUtility.AddTrackedPropertyField(panel, sectionContainer, property, "Patterns");
+        EnemyAdvancedPatternCompositionWarningUtility.AddWarnings(panel, sectionContainer);
+        EnemyAdvancedPatternPresetsPanelElementUtility.AddReactiveDetailsRefreshTracker(panel, sectionContainer);
     }
 
     /// <summary>
@@ -130,11 +132,15 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
         if (sectionContainer == null)
             return;
 
-        Label loadoutHeader = new Label("Active Pattern IDs");
+        Label loadoutHeader = new Label("Active Pattern ID");
         loadoutHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
         loadoutHeader.style.marginTop = 2f;
         loadoutHeader.style.marginBottom = 2f;
         sectionContainer.Add(loadoutHeader);
+
+        HelpBox loadoutInfoBox = new HelpBox("Use one assembled pattern in the active loadout. Combine one base movement module with optional Shooter and Drop Items modules inside Pattern Assemble.", HelpBoxMessageType.Info);
+        loadoutInfoBox.style.marginBottom = 4f;
+        sectionContainer.Add(loadoutInfoBox);
 
         SerializedObject presetSerializedObject = panel.PresetSerializedObject;
 
@@ -161,6 +167,8 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
         }
 
         BuildPatternLoadoutArray(panel, activePatternIdsProperty, loadoutOptions, sectionContainer);
+        EnemyAdvancedPatternCompositionWarningUtility.AddWarnings(panel, sectionContainer);
+        EnemyAdvancedPatternPresetsPanelElementUtility.AddReactiveDetailsRefreshTracker(panel, sectionContainer);
     }
     #endregion
 
@@ -269,7 +277,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
             AddPatternLoadoutEntry(panel, activePatternIdsProperty, loadoutOptions);
         });
         addButton.text = "Add Pattern";
-        addButton.tooltip = "Add one more active pattern entry to the loadout.";
+        addButton.tooltip = "Add one active assembled pattern to the runtime loadout.";
         addButton.style.marginTop = 2f;
         addButton.SetEnabled(CanAddPatternLoadoutEntry(activePatternIdsProperty, loadoutOptions));
         sectionContainer.Add(addButton);
@@ -529,11 +537,11 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     }
 
     /// <summary>
-    /// Checks whether one more distinct pattern can still be added to the loadout.
+    /// Checks whether the active loadout can receive one pattern entry.
     /// </summary>
     /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns true when there is at least one option not already used.</returns>
+    /// <returns>Returns true when the loadout is empty and at least one option exists.</returns>
     private static bool CanAddPatternLoadoutEntry(SerializedProperty activePatternIdsProperty,
                                                   List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
@@ -541,6 +549,9 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
             return false;
 
         if (loadoutOptions == null || loadoutOptions.Count <= 0)
+            return false;
+
+        if (activePatternIdsProperty.arraySize > 0)
             return false;
 
         for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)

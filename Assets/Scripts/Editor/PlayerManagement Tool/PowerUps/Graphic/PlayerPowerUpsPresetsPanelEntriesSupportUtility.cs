@@ -149,7 +149,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         mutation(powerUpsProperty);
         panel.presetSerializedObject.ApplyModifiedProperties();
         PlayerManagementDraftSession.MarkDirty();
-        panel.BuildActiveSection();
+        panel.ScheduleActiveSectionRebuild();
     }
     #endregion
 

@@ -223,7 +223,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
             slotToolIdProperty.stringValue = selectedToolId;
             panel.presetSerializedObject.ApplyModifiedProperties();
             PlayerManagementDraftSession.MarkDirty();
-            panel.BuildActiveSection();
+            panel.ScheduleActiveSectionRebuild();
         });
         panel.sectionContentRoot.Add(selector);
     }
@@ -452,7 +452,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         NormalizePassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
         panel.presetSerializedObject.ApplyModifiedProperties();
         PlayerManagementDraftSession.MarkDirty();
-        panel.BuildActiveSection();
+        panel.ScheduleActiveSectionRebuild();
     }
 
     private static void RemovePassiveLoadoutEntry(PlayerPowerUpsPresetsPanel panel, SerializedProperty equippedPassiveToolIdsProperty, int entryIndex, List<string> passiveToolIds)
@@ -471,7 +471,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         NormalizePassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
         panel.presetSerializedObject.ApplyModifiedProperties();
         PlayerManagementDraftSession.MarkDirty();
-        panel.BuildActiveSection();
+        panel.ScheduleActiveSectionRebuild();
     }
 
     private static void SetPassiveLoadoutEntry(PlayerPowerUpsPresetsPanel panel,
@@ -505,7 +505,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         NormalizePassiveLoadoutArray(equippedPassiveToolIdsProperty, passiveToolIds);
         panel.presetSerializedObject.ApplyModifiedProperties();
         PlayerManagementDraftSession.MarkDirty();
-        panel.BuildActiveSection();
+        panel.ScheduleActiveSectionRebuild();
     }
 
     private static bool NormalizePassiveLoadoutArray(SerializedProperty equippedPassiveToolIdsProperty, List<string> passiveToolIds)
