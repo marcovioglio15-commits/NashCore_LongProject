@@ -182,8 +182,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3195244879624863391}
   - {fileID: 4572730845561396957}
+  - {fileID: 3195244879624863391}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7824275491676149767
@@ -220,27 +220,11 @@ MonoBehaviour:
   areaTickInterval: 1
   maxHealth: 1
   maxShield: 0
-  visualMode: 1
-  visualAnimationSpeed: 1
-  gpuAnimationLoopDuration: 1
-  enableDistanceCulling: 1
-  maxVisibleDistance: 55
-  visibleDistanceHysteresis: 6
   priorityTier: 0
   steeringAggressiveness: 1
-  hitVfxPrefab: {fileID: 0}
-  hitVfxLifetimeSeconds: 0.35
-  hitVfxScaleMultiplier: 1
   animatorComponent: {fileID: 0}
   elementalVfxAnchor: {fileID: 1506323467520610189}
   worldSpaceStatusBarsView: {fileID: 2958477449858110983}
-  drawContactRadiusGizmo: 1
-  drawAreaRadiusGizmo: 1
-  drawSeparationRadiusGizmo: 0
-  drawBodyRadiusGizmo: 0
-  drawAggressivenessRadiusGizmo: 0
-  drawVisualDistanceGizmo: 1
-  drawWorldSpaceBarsGizmo: 1
 --- !u!33 &2362197013061763177
 MeshFilter:
   m_ObjectHideFlags: 0
