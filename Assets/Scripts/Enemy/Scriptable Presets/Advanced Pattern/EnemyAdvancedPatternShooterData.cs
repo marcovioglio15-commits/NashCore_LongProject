@@ -140,52 +140,10 @@ public sealed class EnemyShooterProjectilePayload
 
     #region Validation
     /// <summary>
-    /// Normalizes Shooter projectile payload values.
+    /// Ensures Shooter projectile payload references remain structurally valid without snapping authored settings.
     /// </summary>
     public void Validate()
     {
-        if (projectilesPerShot < 1)
-            projectilesPerShot = 1;
-
-        if (projectilesPerShot > 64)
-            projectilesPerShot = 64;
-
-        if (spreadAngleDegrees < 0f)
-            spreadAngleDegrees = 0f;
-
-        if (projectileSpeed < 0f)
-            projectileSpeed = 0f;
-
-        if (projectileDamage < 0f)
-            projectileDamage = 0f;
-
-        if (projectileRange < 0f)
-            projectileRange = 0f;
-
-        if (projectileLifetime < 0f)
-            projectileLifetime = 0f;
-
-        if (projectileExplosionRadius < 0f)
-            projectileExplosionRadius = 0f;
-
-        if (projectileScaleMultiplier < 0.01f)
-            projectileScaleMultiplier = 0.01f;
-
-        switch (penetrationMode)
-        {
-            case ProjectilePenetrationMode.None:
-            case ProjectilePenetrationMode.FixedHits:
-            case ProjectilePenetrationMode.Infinite:
-            case ProjectilePenetrationMode.DamageBased:
-                break;
-
-            default:
-                penetrationMode = ProjectilePenetrationMode.None;
-                break;
-        }
-
-        if (maxPenetrations < 0)
-            maxPenetrations = 0;
     }
     #endregion
 
@@ -258,15 +216,10 @@ public sealed class EnemyShooterRuntimeProjectilePayload
 
     #region Validation
     /// <summary>
-    /// Normalizes Shooter runtime projectile payload values.
+    /// Ensures Shooter runtime projectile payload references remain structurally valid without snapping authored settings.
     /// </summary>
     public void Validate()
     {
-        if (poolInitialCapacity < 0)
-            poolInitialCapacity = 0;
-
-        if (poolExpandBatch < 1)
-            poolExpandBatch = 1;
     }
     #endregion
 
@@ -324,17 +277,12 @@ public sealed class EnemyShooterElementalPayload
 
     #region Validation
     /// <summary>
-    /// Normalizes Shooter elemental payload values.
+    /// Ensures Shooter elemental payload references remain structurally valid without snapping authored settings.
     /// </summary>
     public void Validate()
     {
         if (effectData == null)
             effectData = new ElementalEffectDefinitionData();
-
-        effectData.Validate();
-
-        if (stacksPerHit < 0f)
-            stacksPerHit = 0f;
     }
     #endregion
 
@@ -491,53 +439,10 @@ public sealed class EnemyShooterModuleData
 
     #region Validation
     /// <summary>
-    /// Normalizes Shooter module data and nested payloads.
+    /// Ensures Shooter module nested payload references remain structurally valid without snapping authored settings.
     /// </summary>
     public void Validate()
     {
-        switch (aimPolicy)
-        {
-            case EnemyShooterAimPolicy.LockOnFireStart:
-            case EnemyShooterAimPolicy.ContinuousTracking:
-                break;
-
-            default:
-                aimPolicy = EnemyShooterAimPolicy.LockOnFireStart;
-                break;
-        }
-
-        switch (movementPolicy)
-        {
-            case EnemyShooterMovementPolicy.KeepMoving:
-            case EnemyShooterMovementPolicy.StopWhileAiming:
-                break;
-
-            default:
-                movementPolicy = EnemyShooterMovementPolicy.KeepMoving;
-                break;
-        }
-
-        if (fireInterval < 0.01f)
-            fireInterval = 0.01f;
-
-        if (burstCount < 1)
-            burstCount = 1;
-
-        if (burstCount > 64)
-            burstCount = 64;
-
-        if (intraBurstDelay < 0f)
-            intraBurstDelay = 0f;
-
-        if (minimumRange < 0f)
-            minimumRange = 0f;
-
-        if (maximumRange < 0f)
-            maximumRange = 0f;
-
-        if (maximumRange < minimumRange)
-            maximumRange = minimumRange;
-
         if (projectile == null)
             projectile = new EnemyShooterProjectilePayload();
 

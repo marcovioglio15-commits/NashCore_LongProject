@@ -184,60 +184,10 @@ public sealed class EnemyWandererBasicPayload
 
     #region Validation
     /// <summary>
-    /// Normalizes Basic wanderer payload values.
+    /// Ensures Basic wanderer payload references remain structurally valid without snapping authored settings.
     /// </summary>
     public void Validate()
     {
-        if (searchRadius < 0.5f)
-            searchRadius = 0.5f;
-
-        if (minimumTravelDistance < 0f)
-            minimumTravelDistance = 0f;
-
-        if (maximumTravelDistance < 0.1f)
-            maximumTravelDistance = 0.1f;
-
-        if (minimumTravelDistance > maximumTravelDistance)
-            minimumTravelDistance = maximumTravelDistance;
-
-        if (arrivalTolerance < 0.05f)
-            arrivalTolerance = 0.05f;
-
-        if (waitCooldownSeconds < 0f)
-            waitCooldownSeconds = 0f;
-
-        if (candidateSampleCount < 1)
-            candidateSampleCount = 1;
-
-        if (candidateSampleCount > 32)
-            candidateSampleCount = 32;
-
-        if (infiniteDirectionStepDegrees < 0.5f)
-            infiniteDirectionStepDegrees = 0.5f;
-
-        if (infiniteDirectionStepDegrees > 90f)
-            infiniteDirectionStepDegrees = 90f;
-
-        if (unexploredDirectionPreference < 0f)
-            unexploredDirectionPreference = 0f;
-
-        if (towardPlayerPreference < 0f)
-            towardPlayerPreference = 0f;
-
-        if (minimumWallDistance < 0f)
-            minimumWallDistance = 0f;
-
-        if (minimumEnemyClearance < 0f)
-            minimumEnemyClearance = 0f;
-
-        if (trajectoryPredictionTime < 0f)
-            trajectoryPredictionTime = 0f;
-
-        if (freeTrajectoryPreference < 0f)
-            freeTrajectoryPreference = 0f;
-
-        if (blockedPathRetryDelay < 0f)
-            blockedPathRetryDelay = 0f;
     }
     #endregion
 
@@ -328,21 +278,10 @@ public sealed class EnemyWandererDvdPayload
 
     #region Validation
     /// <summary>
-    /// Normalizes DVD wanderer payload values.
+    /// Ensures DVD wanderer payload references remain structurally valid without snapping authored settings.
     /// </summary>
     public void Validate()
     {
-        if (speedMultiplier < 0f)
-            speedMultiplier = 0f;
-
-        if (bounceDamping < 0f)
-            bounceDamping = 0f;
-
-        if (bounceDamping > 1f)
-            bounceDamping = 1f;
-
-        if (cornerNudgeDistance < 0f)
-            cornerNudgeDistance = 0f;
     }
     #endregion
 
@@ -400,21 +339,10 @@ public sealed class EnemyWandererModuleData
 
     #region Validation
     /// <summary>
-    /// Normalizes Wanderer module data and nested payloads.
+    /// Ensures Wanderer nested payload references remain structurally valid without snapping authored settings.
     /// </summary>
     public void Validate()
     {
-        switch (mode)
-        {
-            case EnemyWandererMode.Basic:
-            case EnemyWandererMode.Dvd:
-                break;
-
-            default:
-                mode = EnemyWandererMode.Basic;
-                break;
-        }
-
         if (basic == null)
             basic = new EnemyWandererBasicPayload();
 

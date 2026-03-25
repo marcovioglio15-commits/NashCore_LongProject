@@ -165,6 +165,9 @@ public static class EnemyPoolUtility
                 ScaleMultiplier = 1f
             });
 
+        if (!entityManager.HasBuffer<DamageFlashRenderTargetElement>(enemyEntity))
+            entityManager.AddBuffer<DamageFlashRenderTargetElement>(enemyEntity);
+
         if (!entityManager.HasComponent<EnemyActive>(enemyEntity))
             entityManager.AddComponent<EnemyActive>(enemyEntity);
 
@@ -393,6 +396,8 @@ public static class EnemyPoolUtility
         {
             EnemyShooterControlState shooterControlState = entityManager.GetComponentData<EnemyShooterControlState>(enemyEntity);
             shooterControlState.MovementLocked = 0;
+            shooterControlState.AimDirection = float3.zero;
+            shooterControlState.HasAimDirection = 0;
             entityManager.SetComponentData(enemyEntity, shooterControlState);
         }
 
@@ -401,6 +406,24 @@ public static class EnemyPoolUtility
 
         if (entityManager.HasComponent<EnemyHealth>(enemyEntity))
             ResetHealth(entityManager, enemyEntity);
+
+        if (entityManager.HasComponent<DamageFlashState>(enemyEntity))
+        {
+            DamageFlashState damageFlashState = entityManager.GetComponentData<DamageFlashState>(enemyEntity);
+            damageFlashState.RemainingSeconds = 0f;
+            damageFlashState.AppliedBlend = 0f;
+            entityManager.SetComponentData(enemyEntity, damageFlashState);
+        }
+
+        EnemyDamageFlashRenderUtility.ResetGpuFlash(entityManager, enemyEntity);
+
+        if (entityManager.HasComponent<Animator>(enemyEntity))
+        {
+            Animator animator = entityManager.GetComponentObject<Animator>(enemyEntity);
+
+            if (animator != null)
+                ManagedDamageFlashRendererUtility.ApplyToAnimator(animator, Color.white, 0f);
+        }
 
         if (entityManager.HasBuffer<EnemyElementStackElement>(enemyEntity))
             entityManager.GetBuffer<EnemyElementStackElement>(enemyEntity).Clear();

@@ -93,9 +93,13 @@ Shader "Cel Shader/Toon Outline ECS"
 
                 #if defined(UNITY_DOTS_INSTANCING_ENABLED)
                     uint meshStartIndex = asuint(UNITY_ACCESS_HYBRID_INSTANCED_PROP(_ComputeMeshIndex, float));
-                    DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + input.vertexID];
-                    positionOS = deformedVertex.Position;
-                    normalOS = deformedVertex.Normal;
+
+                    if (meshStartIndex > 0u)
+                    {
+                        DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + input.vertexID];
+                        positionOS = deformedVertex.Position;
+                        normalOS = deformedVertex.Normal;
+                    }
                 #endif
 
                 float outlineThickness = _OutlineThickness / 250.0;

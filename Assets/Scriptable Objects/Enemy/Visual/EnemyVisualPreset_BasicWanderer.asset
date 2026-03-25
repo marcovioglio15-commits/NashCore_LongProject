@@ -23,6 +23,10 @@ MonoBehaviour:
     enableDistanceCulling: 1
     maxVisibleDistance: 55
     visibleDistanceHysteresis: 6
+  damageFeedback:
+    flashColor: {r: 1, g: 0.15, b: 0.15, a: 1}
+    flashDurationSeconds: 0.06
+    flashMaximumBlend: 0.85
   prefabs:
     enemyPrefab: {fileID: 3091458169621715366, guid: 65af5c6d3a3173f498a19033f08c547d, type: 3}
     hitVfxPrefab: {fileID: 3021818779694104051, guid: afa1147b43317a74db598d39f92f660e, type: 3}

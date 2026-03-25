@@ -170,6 +170,81 @@ internal static class EnemySteeringUtility
     }
 
     /// <summary>
+    /// Resolves one planar facing direction by prioritizing active shooter aim and falling back to movement direction.
+    /// </summary>
+    /// <param name="velocity">Current planar velocity candidate.</param>
+    /// <param name="velocityMaxSpeed">Current movement max speed used to filter noisy velocity look updates.</param>
+    /// <param name="shooterControlState">Current shooter control state that may expose an active aim direction.</param>
+    /// <param name="facingDirection">Resolved planar facing direction when available.</param>
+    /// <returns>Returns true when a valid facing direction is available.</returns>
+    internal static bool TryResolveFacingDirection(float3 velocity,
+                                                   float velocityMaxSpeed,
+                                                   in EnemyShooterControlState shooterControlState,
+                                                   out float3 facingDirection)
+    {
+        if (shooterControlState.HasAimDirection != 0)
+        {
+            float3 aimDirection = new float3(shooterControlState.AimDirection.x, 0f, shooterControlState.AimDirection.z);
+
+            if (math.lengthsq(aimDirection) > DirectionEpsilon)
+            {
+                facingDirection = math.normalizesafe(aimDirection, ForwardAxis);
+                return true;
+            }
+        }
+
+        float3 planarVelocity = new float3(velocity.x, 0f, velocity.z);
+        float planarVelocitySquared = math.lengthsq(planarVelocity);
+
+        if (planarVelocitySquared <= DirectionEpsilon)
+        {
+            facingDirection = float3.zero;
+            return false;
+        }
+
+        float planarSpeed = math.sqrt(planarVelocitySquared);
+        float lookSpeedThreshold = ResolveLookSpeedThreshold(velocityMaxSpeed);
+
+        if (planarSpeed <= lookSpeedThreshold)
+        {
+            facingDirection = float3.zero;
+            return false;
+        }
+
+        facingDirection = math.normalizesafe(planarVelocity, ForwardAxis);
+        return true;
+    }
+
+    /// <summary>
+    /// Resolves one smoothed look rotation used by enemy movement and shooter systems.
+    /// </summary>
+    /// <param name="currentRotation">Current world rotation.</param>
+    /// <param name="velocity">Current planar velocity candidate.</param>
+    /// <param name="velocityMaxSpeed">Current movement max speed used to filter noisy velocity look updates.</param>
+    /// <param name="shooterControlState">Current shooter control state that may expose an active aim direction.</param>
+    /// <param name="steeringAggressiveness">Resolved steering aggressiveness used to determine turn speed.</param>
+    /// <param name="deltaTime">Current frame delta time.</param>
+    /// <returns>Returns the updated world rotation.</returns>
+    internal static quaternion ResolveDynamicLookRotation(quaternion currentRotation,
+                                                          float3 velocity,
+                                                          float velocityMaxSpeed,
+                                                          in EnemyShooterControlState shooterControlState,
+                                                          float steeringAggressiveness,
+                                                          float deltaTime)
+    {
+        float3 facingDirection;
+
+        if (!TryResolveFacingDirection(velocity, velocityMaxSpeed, in shooterControlState, out facingDirection))
+            return currentRotation;
+
+        float lookTurnRateDegrees = ResolveAggressivenessScale(steeringAggressiveness,
+                                                               LookRotationMinDegreesPerSecond,
+                                                               LookRotationMaxDegreesPerSecond);
+        float maxRadiansDelta = math.radians(lookTurnRateDegrees) * math.max(0f, deltaTime);
+        return RotateTowardsPlanar(currentRotation, facingDirection, maxRadiansDelta);
+    }
+
+    /// <summary>
     /// Rotates one current orientation toward one planar forward direction with a bounded angular delta.
     /// </summary>
     /// <param name="currentRotation">Current world rotation.</param>

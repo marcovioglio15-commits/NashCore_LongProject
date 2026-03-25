@@ -398,6 +398,8 @@ public static class EnemyManagementDraftSession
                 continue;
             }
 
+            SyncPresetAssetNameToFileName(assetObject, currentFileName);
+
             string directoryPath = Path.GetDirectoryName(assetPath);
 
             if (string.IsNullOrWhiteSpace(directoryPath))
@@ -437,6 +439,9 @@ public static class EnemyManagementDraftSession
             return true;
 
         if (assetObject is EnemyBrainPreset)
+            return true;
+
+        if (assetObject is EnemyVisualPreset)
             return true;
 
         if (assetObject is EnemyAdvancedPatternPreset)
@@ -501,6 +506,11 @@ public static class EnemyManagementDraftSession
         EnemyBrainPresetLibrary brainLibrary = EnemyBrainPresetLibraryUtility.GetOrCreateLibrary();
 
         if (LibraryContainsPath(brainLibrary.Presets, assetPath))
+            return true;
+
+        EnemyVisualPresetLibrary visualLibrary = EnemyVisualPresetLibraryUtility.GetOrCreateLibrary();
+
+        if (LibraryContainsPath(visualLibrary.Presets, assetPath))
             return true;
 
         EnemyAdvancedPatternPresetLibrary advancedPatternLibrary = EnemyAdvancedPatternPresetLibraryUtility.GetOrCreateLibrary();

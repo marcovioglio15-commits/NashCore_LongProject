@@ -317,6 +317,9 @@ public sealed class PlayerManagementWindow : EditorWindow
         if (panelType == PanelType.PowerUps)
             return "Power-Ups";
 
+        if (panelType == PanelType.PlayerVisualPresets)
+            return "Visual Presets";
+
         return "Animation Bindings";
     }
     #endregion
@@ -422,7 +425,8 @@ public sealed class PlayerManagementWindow : EditorWindow
         PlayerControllerPresets = 1,
         LevelUpProgression = 2,
         PowerUps = 3,
-        AnimationBindings = 4
+        AnimationBindings = 4,
+        PlayerVisualPresets = 5
     }
     #endregion
 }

@@ -351,7 +351,6 @@ public partial struct EnemySteeringSystem : ISystem
             position.y = enemyTransform.Position.y;
             enemyTransform.Position = position;
 
-            float planarVelocitySquared = runtimeState.Velocity.x * runtimeState.Velocity.x + runtimeState.Velocity.z * runtimeState.Velocity.z;
             float rotationSpeedDegreesPerSecond = enemyData.RotationSpeedDegreesPerSecond;
             bool hasSelfRotation = math.abs(rotationSpeedDegreesPerSecond) > EnemySteeringUtility.RotationSpeedEpsilon;
 
@@ -361,20 +360,15 @@ public partial struct EnemySteeringSystem : ISystem
                 quaternion deltaRotation = quaternion.RotateY(deltaYawRadians);
                 enemyTransform.Rotation = math.normalize(math.mul(enemyTransform.Rotation, deltaRotation));
             }
-            else if (planarVelocitySquared > EnemySteeringUtility.DirectionEpsilon)
+            else
             {
-                float planarSpeed = math.sqrt(planarVelocitySquared);
-                float lookSpeedThreshold = EnemySteeringUtility.ResolveLookSpeedThreshold(velocityMaxSpeed);
-
-                if (planarSpeed > lookSpeedThreshold)
-                {
-                    float3 forward = math.normalizesafe(new float3(runtimeState.Velocity.x, 0f, runtimeState.Velocity.z), EnemySteeringUtility.ForwardAxis);
-                    float lookTurnRateDegrees = EnemySteeringUtility.ResolveAggressivenessScale(enemySteeringAggressiveness,
-                                                                                                EnemySteeringUtility.LookRotationMinDegreesPerSecond,
-                                                                                                EnemySteeringUtility.LookRotationMaxDegreesPerSecond);
-                    float maxRadiansDelta = math.radians(lookTurnRateDegrees) * deltaTime;
-                    enemyTransform.Rotation = EnemySteeringUtility.RotateTowardsPlanar(enemyTransform.Rotation, forward, maxRadiansDelta);
-                }
+                EnemyShooterControlState shooterControlState = enemyShooterControlArray[enemyIndex];
+                enemyTransform.Rotation = EnemySteeringUtility.ResolveDynamicLookRotation(enemyTransform.Rotation,
+                                                                                          runtimeState.Velocity,
+                                                                                          velocityMaxSpeed,
+                                                                                          in shooterControlState,
+                                                                                          enemySteeringAggressiveness,
+                                                                                          deltaTime);
             }
 
             enemyRuntimeArray[enemyIndex] = runtimeState;

@@ -119,6 +119,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
                     continue;
 
                 entityManager.SetComponentData(enemyEntity, enemyHealthArray[enemyIndex]);
+                DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
             }
 
             enemyEntities.Dispose();
@@ -344,7 +345,11 @@ public partial struct PlayerBombExplosionSystem : ISystem
         if (enemyHealth.Current <= 0f)
             return;
 
-        EnemyDamageUtility.ApplyFlatShieldDamage(ref enemyHealth, explosionDamage);
+        bool damageApplied = EnemyDamageUtility.TryApplyFlatShieldDamage(ref enemyHealth, explosionDamage);
+
+        if (!damageApplied)
+            return;
+
         enemyHealthArray[enemyIndex] = enemyHealth;
         enemyDirtyFlags[enemyIndex] = 1;
 

@@ -374,7 +374,7 @@ public partial struct PlayerManagedVisualAnimatorBridgeSystem : ISystem
 #if UNITY_EDITOR
             if (missingPrefabLogCache.Add(playerEntity.Index))
             {
-                Debug.LogWarning("[PlayerManagedVisualAnimatorBridgeSystem] Runtime visual bridge prefab is missing. Assign a prefab asset on PlayerAuthoring.RuntimeVisualBridgePrefab.");
+                Debug.LogWarning("[PlayerManagedVisualAnimatorBridgeSystem] Runtime visual bridge prefab is missing. Assign a prefab asset on the active PlayerVisualPreset, or keep the hidden PlayerAuthoring fallback populated.");
             }
 #endif
             return null;

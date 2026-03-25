@@ -119,6 +119,10 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
                                "Visibility",
                                BuildVisibilitySubSection(panel));
         AddVisualSubSectionTab(panel,
+                               EnemyVisualPresetsPanel.VisualSubSectionType.DamageFeedback,
+                               "Damage Feedback",
+                               BuildDamageFeedbackSubSection(panel));
+        AddVisualSubSectionTab(panel,
                                EnemyVisualPresetsPanel.VisualSubSectionType.Prefabs,
                                "Prefabs",
                                BuildPrefabsSubSection(panel));
@@ -292,6 +296,17 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         AddPropertyField(panel, container, prefabsProperty, "hitVfxLifetimeSeconds", "Hit VFX Lifetime Seconds", "Lifetime in seconds assigned to each spawned hit VFX instance.");
         AddPropertyField(panel, container, prefabsProperty, "hitVfxScaleMultiplier", "Hit VFX Scale Multiplier", "Uniform scale multiplier applied to the spawned hit VFX instance.");
         AddPropertyField(panel, container, prefabsProperty, "spawnPaintColor", "Spawn Paint Color", "Color used by the wave painter and scene preview for this enemy type.");
+        return container;
+    }
+
+    private static VisualElement BuildDamageFeedbackSubSection(EnemyVisualPresetsPanel panel)
+    {
+        SerializedProperty damageFeedbackProperty = panel.PresetSerializedObject.FindProperty("damageFeedback");
+        VisualElement container = CreateSubSectionContainer("Damage Feedback");
+
+        AddPropertyField(panel, container, damageFeedbackProperty, "flashColor", "Flash Color", "Tint color applied during the brief damage flash.");
+        AddPropertyField(panel, container, damageFeedbackProperty, "flashDurationSeconds", "Flash Duration Seconds", "Flash duration in seconds. Use very small values for a 1-3 frame reaction.");
+        AddPropertyField(panel, container, damageFeedbackProperty, "flashMaximumBlend", "Flash Maximum Blend", "Maximum overlay strength reached immediately after a valid hit.");
         return container;
     }
     #endregion

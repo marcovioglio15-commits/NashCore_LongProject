@@ -448,6 +448,7 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
         if (moduleBindingsProperty == null)
             return;
 
+        string powerUpPropertyPath = powerUpProperty.propertyPath;
         UnityEngine.Object targetObject = serializedObject.targetObject;
 
         if (targetObject != null)
@@ -465,7 +466,10 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
         if (cardsContainer == null)
             return;
 
-        RebuildBindingsCards(powerUpProperty, cardsContainer, countLabel);
+        ScheduleBindingsCardsRebuild(serializedObject,
+                                     powerUpPropertyPath,
+                                     cardsContainer,
+                                     countLabel);
     }
 
     private static void SetVisibleBindingFoldoutStates(SerializedProperty powerUpProperty, bool expanded)
@@ -638,6 +642,35 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
         }
 
         filterByContextKey[contextKey] = value;
+    }
+
+    private static void ScheduleBindingsCardsRebuild(SerializedObject serializedObject,
+                                                     string powerUpPropertyPath,
+                                                     VisualElement cardsContainer,
+                                                     Label countLabel)
+    {
+        if (serializedObject == null)
+            return;
+
+        if (cardsContainer == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(powerUpPropertyPath))
+            return;
+
+        cardsContainer.schedule.Execute(() =>
+        {
+            if (serializedObject.targetObject == null)
+                return;
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty reboundPowerUpProperty = serializedObject.FindProperty(powerUpPropertyPath);
+
+            if (reboundPowerUpProperty == null)
+                return;
+
+            RebuildBindingsCards(reboundPowerUpProperty, cardsContainer, countLabel);
+        });
     }
 
     private static void AddField(VisualElement parent, SerializedProperty property, string label)

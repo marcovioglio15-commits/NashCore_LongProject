@@ -53,6 +53,8 @@ public struct EnemyPatternRuntimeState : IComponentData
 public struct EnemyShooterControlState : IComponentData
 {
     public byte MovementLocked;
+    public float3 AimDirection;
+    public byte HasAimDirection;
 }
 
 /// <summary>

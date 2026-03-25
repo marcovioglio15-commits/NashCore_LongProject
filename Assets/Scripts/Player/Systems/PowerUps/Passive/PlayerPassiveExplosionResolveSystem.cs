@@ -101,6 +101,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
                 continue;
 
             entityManager.SetComponentData(enemyEntity, enemyHealthArray[enemyIndex]);
+            DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
         }
 
         commandBuffer.Playback(entityManager);
@@ -291,7 +292,11 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
         if (enemyHealth.Current <= 0f)
             return;
 
-        EnemyDamageUtility.ApplyFlatShieldDamage(ref enemyHealth, damage);
+        bool damageApplied = EnemyDamageUtility.TryApplyFlatShieldDamage(ref enemyHealth, damage);
+
+        if (!damageApplied)
+            return;
+
         enemyHealthArray[enemyIndex] = enemyHealth;
         enemyDirtyFlags[enemyIndex] = 1;
 

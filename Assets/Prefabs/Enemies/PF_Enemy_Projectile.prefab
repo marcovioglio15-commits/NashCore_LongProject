@@ -9,11 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1506323467520610189}
-  - component: {fileID: 7824275491676149767}
   - component: {fileID: 2362197013061763177}
   - component: {fileID: 8212256973497844587}
   m_Layer: 0
-  m_Name: PF_Enemy_Tank
+  m_Name: PF_Enemy_Projectile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29,66 +28,12 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 3.66415, y: -0, z: 21.31899}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7624880062243014312}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7824275491676149767
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3091458169621715366}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3597e1a6814d4df49c96f8a7147488ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyAuthoring
-  masterPreset: {fileID: 0}
-  brainPreset: {fileID: 0}
-  advancedPatternPreset: {fileID: 0}
-  moveSpeed: 3
-  maxSpeed: 4
-  acceleration: 8
-  deceleration: 8
-  rotationSpeedDegreesPerSecond: 0
-  separationRadius: 1.1
-  separationWeight: 2
-  bodyRadius: 1
-  contactRadius: 2
-  contactDamageEnabled: 1
-  contactAmountPerTick: 5
-  contactTickInterval: 0.75
-  areaDamageEnabled: 0
-  areaRadius: 2.25
-  areaAmountPerTickPercent: 2
-  areaTickInterval: 1
-  maxHealth: 100
-  maxShield: 0
-  visualMode: 1
-  visualAnimationSpeed: 1
-  gpuAnimationLoopDuration: 1
-  enableDistanceCulling: 1
-  maxVisibleDistance: 55
-  visibleDistanceHysteresis: 6
-  priorityTier: 0
-  steeringAggressiveness: 1
-  hitVfxPrefab: {fileID: 0}
-  hitVfxLifetimeSeconds: 0.35
-  hitVfxScaleMultiplier: 1
-  animatorComponent: {fileID: 0}
-  elementalVfxAnchor: {fileID: 7624880062243014312}
-  worldSpaceStatusBarsView: {fileID: 0}
-  drawContactRadiusGizmo: 1
-  drawAreaRadiusGizmo: 1
-  drawSeparationRadiusGizmo: 0
-  drawBodyRadiusGizmo: 0
-  drawAggressivenessRadiusGizmo: 0
-  drawVisualDistanceGizmo: 1
-  drawWorldSpaceBarsGizmo: 1
 --- !u!33 &2362197013061763177
 MeshFilter:
   m_ObjectHideFlags: 0

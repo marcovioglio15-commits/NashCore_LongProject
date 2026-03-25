@@ -654,7 +654,8 @@ public sealed class EnemyVisualPresetsPanel
     internal enum VisualSubSectionType
     {
         Visibility = 0,
-        Prefabs = 1
+        DamageFeedback = 1,
+        Prefabs = 2
     }
 
     internal sealed class VisualSubSectionTabEntry

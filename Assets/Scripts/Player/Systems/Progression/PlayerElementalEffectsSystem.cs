@@ -35,14 +35,16 @@ public partial struct PlayerElementalEffectsSystem : ISystem
                   RefRO<PlayerRuntimeHealthStatisticsConfig> runtimeHealthConfig,
                   RefRW<PlayerDamageGraceState> playerDamageGraceState,
                   RefRW<PlayerElementalRuntimeState> elementalRuntimeState,
-                  DynamicBuffer<PlayerElementStackElement> elementalStacks)
+                  DynamicBuffer<PlayerElementStackElement> elementalStacks,
+                  Entity playerEntity)
                  in SystemAPI.Query<RefRW<PlayerHealth>,
                                     RefRW<PlayerShield>,
                                     RefRO<PlayerRuntimeHealthStatisticsConfig>,
                                     RefRW<PlayerDamageGraceState>,
                                     RefRW<PlayerElementalRuntimeState>,
                                     DynamicBuffer<PlayerElementStackElement>>()
-                             .WithAll<PlayerControllerConfig>())
+                             .WithAll<PlayerControllerConfig>()
+                             .WithEntityAccess())
         {
             float accumulatedDotDamage = 0f;
             float maximumSlowPercent = 0f;
@@ -86,6 +88,7 @@ public partial struct PlayerElementalEffectsSystem : ISystem
             playerHealth.ValueRW = nextHealth;
             playerShield.ValueRW = nextShield;
             playerDamageGraceState.ValueRW = nextDamageGraceState;
+            DamageFlashRuntimeUtility.Trigger(state.EntityManager, playerEntity);
         }
     }
     #endregion

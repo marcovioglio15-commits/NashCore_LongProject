@@ -43,13 +43,11 @@ public sealed class EnemyExperienceDropDefinitionData
 
     #region Validation
     /// <summary>
-    /// Normalizes one experience drop-definition entry.
+    /// Ensures one experience drop-definition entry remains structurally valid without snapping authored settings.
     /// </summary>
 
     public void Validate()
     {
-        if (experienceAmount < 0f)
-            experienceAmount = 0f;
     }
     #endregion
 
@@ -129,25 +127,11 @@ public sealed class EnemyExperienceDropCollectionSettings
 
     #region Validation
     /// <summary>
-    /// Normalizes movement settings used by collected experience drops.
+    /// Ensures experience drop collection settings remain structurally valid without snapping authored settings.
     /// </summary>
 
     public void Validate()
     {
-        if (moveSpeed < 0f)
-            moveSpeed = 0f;
-
-        if (collectDistance < 0.01f)
-            collectDistance = 0.01f;
-
-        if (collectDistancePerPlayerSpeed < 0f)
-            collectDistancePerPlayerSpeed = 0f;
-
-        if (spawnAnimationMinDuration < 0f)
-            spawnAnimationMinDuration = 0f;
-
-        if (spawnAnimationMaxDuration < spawnAnimationMinDuration)
-            spawnAnimationMaxDuration = spawnAnimationMinDuration;
     }
     #endregion
 
@@ -240,7 +224,7 @@ public sealed class EnemyExperienceDropPayload
 
     #region Validation
     /// <summary>
-    /// Normalizes experience payload values and nested drop definitions.
+    /// Ensures experience payload references remain structurally valid without snapping authored settings.
     /// </summary>
 
     public void Validate()
@@ -248,32 +232,8 @@ public sealed class EnemyExperienceDropPayload
         if (dropDefinitions == null)
             dropDefinitions = new List<EnemyExperienceDropDefinitionData>();
 
-        for (int index = dropDefinitions.Count - 1; index >= 0; index--)
-        {
-            EnemyExperienceDropDefinitionData definition = dropDefinitions[index];
-
-            if (definition == null)
-            {
-                dropDefinitions.RemoveAt(index);
-                continue;
-            }
-
-            definition.Validate();
-        }
-
-        if (dropsDistribution < 0f)
-            dropsDistribution = 0f;
-
-        if (dropsDistribution > 1f)
-            dropsDistribution = 1f;
-
-        if (dropRadius < 0f)
-            dropRadius = 0f;
-
         if (collectionMovement == null)
             collectionMovement = new EnemyExperienceDropCollectionSettings();
-
-        collectionMovement.Validate();
     }
     #endregion
 
@@ -320,21 +280,11 @@ public sealed class EnemyDropItemsModuleData
 
     #region Validation
     /// <summary>
-    /// Normalizes DropItems module selection and nested payload values.
+    /// Ensures DropItems nested payload references remain structurally valid without snapping authored settings.
     /// </summary>
 
     public void Validate()
     {
-        switch (dropPayloadKind)
-        {
-            case EnemyDropItemsPayloadKind.Experience:
-                break;
-
-            default:
-                dropPayloadKind = EnemyDropItemsPayloadKind.Experience;
-                break;
-        }
-
         if (experience == null)
             experience = new EnemyExperienceDropPayload();
 

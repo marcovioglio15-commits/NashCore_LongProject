@@ -179,6 +179,7 @@ public static class PlayerGameplayVisualSetupUtility
             animatorComponentProperty.objectReferenceValue = resolvedAnimator;
             runtimeVisualBridgePrefabProperty.objectReferenceValue = playerVisualPrefab;
             serializedAuthoring.ApplyModifiedPropertiesWithoutUndo();
+            TryAssignGeneratedVisualPrefabToMasterVisualPreset(playerAuthoring.MasterPreset, playerVisualPrefab);
 
             EditorUtility.SetDirty(playerAuthoring);
             PrefabUtility.SaveAsPrefabAsset(prefabContentsRoot, PlayerPrefabPath);
@@ -223,6 +224,36 @@ public static class PlayerGameplayVisualSetupUtility
         instantiatedVisual.transform.localScale = Vector3.one;
         SetLayerRecursively(instantiatedVisual, prefabContentsRoot.layer);
         return instantiatedVisual;
+    }
+    #endregion
+
+    #region Visual Preset Synchronization
+    /// <summary>
+    /// Synchronizes the generated player visual prefab with the visual preset referenced by the active master preset.
+    /// /params masterPreset: Master preset that may own the visual preset to update.
+    /// /params playerVisualPrefab: Generated visual wrapper prefab asset.
+    /// /returns None.
+    /// </summary>
+    private static void TryAssignGeneratedVisualPrefabToMasterVisualPreset(PlayerMasterPreset masterPreset, GameObject playerVisualPrefab)
+    {
+        if (masterPreset == null || playerVisualPrefab == null)
+            return;
+
+        PlayerVisualPreset visualPreset = masterPreset.VisualPreset;
+
+        if (visualPreset == null)
+            return;
+
+        SerializedObject serializedPreset = new SerializedObject(visualPreset);
+        SerializedProperty runtimeVisualBridgePrefabProperty = serializedPreset.FindProperty("runtimeVisualBridgePrefab");
+
+        if (runtimeVisualBridgePrefabProperty == null)
+            return;
+
+        serializedPreset.Update();
+        runtimeVisualBridgePrefabProperty.objectReferenceValue = playerVisualPrefab;
+        serializedPreset.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(visualPreset);
     }
     #endregion
 

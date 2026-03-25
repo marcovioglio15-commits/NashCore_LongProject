@@ -471,9 +471,13 @@ Shader "Cel Shader/Toon Diffuse ECS Blur"
 
                 #if defined(UNITY_DOTS_INSTANCING_ENABLED)
                     uint meshStartIndex = asuint(UNITY_ACCESS_HYBRID_INSTANCED_PROP(_ComputeMeshIndex, float));
-                    DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + input.vertexID];
-                    positionOS = deformedVertex.Position;
-                    normalOS = deformedVertex.Normal;
+
+                    if (meshStartIndex > 0u)
+                    {
+                        DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + input.vertexID];
+                        positionOS = deformedVertex.Position;
+                        normalOS = deformedVertex.Normal;
+                    }
                 #endif
 
                 VertexPositionInputs vertexPositionInputs = GetVertexPositionInputs(positionOS);

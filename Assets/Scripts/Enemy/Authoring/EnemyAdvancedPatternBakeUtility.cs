@@ -59,12 +59,14 @@ public static class EnemyAdvancedPatternBakeUtility
 
                 EnemyPatternModulePayloadData resolvedPayload = ResolveBindingPayload(moduleDefinition, binding);
 
-                switch (moduleDefinition.ModuleKind)
+                EnemyPatternModuleKind resolvedModuleKind = ResolveModuleKind(moduleDefinition.ModuleKind);
+
+                switch (resolvedModuleKind)
                 {
                     case EnemyPatternModuleKind.Stationary:
                     case EnemyPatternModuleKind.Grunt:
                     case EnemyPatternModuleKind.Wanderer:
-                        TryApplyMovementModule(moduleDefinition.ModuleKind,
+                        TryApplyMovementModule(resolvedModuleKind,
                                                resolvedPayload,
                                                ref result.PatternConfig,
                                                ref selectedMovementPriority,
@@ -208,6 +210,7 @@ public static class EnemyAdvancedPatternBakeUtility
         EnemyWandererModuleData wanderer = payload.Wanderer;
         EnemyWandererBasicPayload basic = wanderer.Basic;
         EnemyWandererDvdPayload dvd = wanderer.Dvd;
+        EnemyWandererMode resolvedMode = ResolveWandererMode(wanderer.Mode);
 
         if (basic != null)
         {
@@ -216,7 +219,7 @@ public static class EnemyAdvancedPatternBakeUtility
             patternConfig.BasicMaximumTravelDistance = math.max(patternConfig.BasicMinimumTravelDistance, basic.MaximumTravelDistance);
             patternConfig.BasicArrivalTolerance = math.max(0.05f, basic.ArrivalTolerance);
             patternConfig.BasicWaitCooldownSeconds = math.max(0f, basic.WaitCooldownSeconds);
-            patternConfig.BasicCandidateSampleCount = math.max(1, basic.CandidateSampleCount);
+            patternConfig.BasicCandidateSampleCount = math.clamp(math.max(1, basic.CandidateSampleCount), 1, 32);
             patternConfig.BasicUseInfiniteDirectionSampling = basic.UseInfiniteDirectionSampling ? (byte)1 : (byte)0;
             patternConfig.BasicInfiniteDirectionStepDegrees = math.clamp(basic.InfiniteDirectionStepDegrees, 0.5f, 90f);
             patternConfig.BasicUnexploredDirectionPreference = math.max(0f, basic.UnexploredDirectionPreference);
@@ -238,7 +241,7 @@ public static class EnemyAdvancedPatternBakeUtility
             patternConfig.DvdIgnoreSteeringAndPriority = dvd.IgnoreSteeringAndPriority ? (byte)1 : (byte)0;
         }
 
-        switch (wanderer.Mode)
+        switch (resolvedMode)
         {
             case EnemyWandererMode.Dvd:
                 patternConfig.MovementKind = EnemyCompiledMovementPatternKind.WandererDvd;
@@ -281,18 +284,21 @@ public static class EnemyAdvancedPatternBakeUtility
         if (projectilePayload == null)
             return;
 
+        float minimumRange = math.max(0f, shooterData.MinimumRange);
+        float maximumRange = math.max(minimumRange, shooterData.MaximumRange);
+
         EnemyShooterConfigElement shooterConfig = new EnemyShooterConfigElement
         {
-            AimPolicy = shooterData.AimPolicy,
-            MovementPolicy = shooterData.MovementPolicy,
+            AimPolicy = ResolveShooterAimPolicy(shooterData.AimPolicy),
+            MovementPolicy = ResolveShooterMovementPolicy(shooterData.MovementPolicy),
             FireInterval = math.max(0.01f, shooterData.FireInterval),
-            BurstCount = math.max(1, shooterData.BurstCount),
+            BurstCount = math.clamp(math.max(1, shooterData.BurstCount), 1, 64),
             IntraBurstDelay = math.max(0f, shooterData.IntraBurstDelay),
             UseMinimumRange = shooterData.UseMinimumRange ? (byte)1 : (byte)0,
-            MinimumRange = math.max(0f, shooterData.MinimumRange),
+            MinimumRange = minimumRange,
             UseMaximumRange = shooterData.UseMaximumRange ? (byte)1 : (byte)0,
-            MaximumRange = math.max(0f, shooterData.MaximumRange),
-            ProjectilesPerShot = math.max(1, projectilePayload.ProjectilesPerShot),
+            MaximumRange = maximumRange,
+            ProjectilesPerShot = math.clamp(math.max(1, projectilePayload.ProjectilesPerShot), 1, 64),
             SpreadAngleDegrees = math.max(0f, projectilePayload.SpreadAngleDegrees),
             ProjectileSpeed = math.max(0f, projectilePayload.ProjectileSpeed),
             ProjectileDamage = math.max(0f, projectilePayload.ProjectileDamage),
@@ -300,7 +306,7 @@ public static class EnemyAdvancedPatternBakeUtility
             ProjectileLifetime = math.max(0f, projectilePayload.ProjectileLifetime),
             ProjectileExplosionRadius = math.max(0f, projectilePayload.ProjectileExplosionRadius),
             ProjectileScaleMultiplier = math.max(0.01f, projectilePayload.ProjectileScaleMultiplier),
-            PenetrationMode = projectilePayload.PenetrationMode,
+            PenetrationMode = ResolveProjectilePenetrationMode(projectilePayload.PenetrationMode),
             MaxPenetrations = math.max(0, projectilePayload.MaxPenetrations),
             InheritShooterSpeed = projectilePayload.InheritShooterSpeed ? (byte)1 : (byte)0,
             HasElementalPayload = 0,
@@ -326,7 +332,7 @@ public static class EnemyAdvancedPatternBakeUtility
         if (payload == null || payload.DropItems == null)
             return;
 
-        if (payload.DropItems.DropPayloadKind != EnemyDropItemsPayloadKind.Experience)
+        if (ResolveDropItemsPayloadKind(payload.DropItems.DropPayloadKind) != EnemyDropItemsPayloadKind.Experience)
             return;
 
         EnemyExperienceDropPayload experiencePayload = payload.DropItems.Experience;
@@ -429,6 +435,88 @@ public static class EnemyAdvancedPatternBakeUtility
         result.ShooterProjectilePoolInitialCapacity = math.max(0, runtimePayload.PoolInitialCapacity);
         result.ShooterProjectilePoolExpandBatch = math.max(1, runtimePayload.PoolExpandBatch);
         result.HasShooterRuntimeSettings = true;
+    }
+
+    private static EnemyPatternModuleKind ResolveModuleKind(EnemyPatternModuleKind moduleKind)
+    {
+        switch (moduleKind)
+        {
+            case EnemyPatternModuleKind.Stationary:
+            case EnemyPatternModuleKind.Grunt:
+            case EnemyPatternModuleKind.Wanderer:
+            case EnemyPatternModuleKind.Shooter:
+            case EnemyPatternModuleKind.DropItems:
+                return moduleKind;
+
+            default:
+                return EnemyPatternModuleKind.Grunt;
+        }
+    }
+
+    private static EnemyWandererMode ResolveWandererMode(EnemyWandererMode mode)
+    {
+        switch (mode)
+        {
+            case EnemyWandererMode.Basic:
+            case EnemyWandererMode.Dvd:
+                return mode;
+
+            default:
+                return EnemyWandererMode.Basic;
+        }
+    }
+
+    private static EnemyShooterAimPolicy ResolveShooterAimPolicy(EnemyShooterAimPolicy aimPolicy)
+    {
+        switch (aimPolicy)
+        {
+            case EnemyShooterAimPolicy.LockOnFireStart:
+            case EnemyShooterAimPolicy.ContinuousTracking:
+                return aimPolicy;
+
+            default:
+                return EnemyShooterAimPolicy.LockOnFireStart;
+        }
+    }
+
+    private static EnemyShooterMovementPolicy ResolveShooterMovementPolicy(EnemyShooterMovementPolicy movementPolicy)
+    {
+        switch (movementPolicy)
+        {
+            case EnemyShooterMovementPolicy.KeepMoving:
+            case EnemyShooterMovementPolicy.StopWhileAiming:
+                return movementPolicy;
+
+            default:
+                return EnemyShooterMovementPolicy.KeepMoving;
+        }
+    }
+
+    private static ProjectilePenetrationMode ResolveProjectilePenetrationMode(ProjectilePenetrationMode penetrationMode)
+    {
+        switch (penetrationMode)
+        {
+            case ProjectilePenetrationMode.None:
+            case ProjectilePenetrationMode.FixedHits:
+            case ProjectilePenetrationMode.Infinite:
+            case ProjectilePenetrationMode.DamageBased:
+                return penetrationMode;
+
+            default:
+                return ProjectilePenetrationMode.None;
+        }
+    }
+
+    private static EnemyDropItemsPayloadKind ResolveDropItemsPayloadKind(EnemyDropItemsPayloadKind payloadKind)
+    {
+        switch (payloadKind)
+        {
+            case EnemyDropItemsPayloadKind.Experience:
+                return payloadKind;
+
+            default:
+                return EnemyDropItemsPayloadKind.Experience;
+        }
     }
 
     private static ElementalEffectConfig BuildElementalEffectConfig(ElementalEffectDefinitionData definitionData)

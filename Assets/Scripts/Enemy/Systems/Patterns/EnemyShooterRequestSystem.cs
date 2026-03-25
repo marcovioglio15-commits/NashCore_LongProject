@@ -55,8 +55,10 @@ public partial struct EnemyShooterRequestSystem : ISystem
         if (playerEntity == Entity.Null)
             return;
 
-        if (entityManager.Exists(playerEntity) == false)
+        if (!entityManager.Exists(playerEntity))
+        {
             return;
+        }
 
         float enemyTimeScale = 1f;
 
@@ -101,6 +103,9 @@ public partial struct EnemyShooterRequestSystem : ISystem
             toPlayer.y = 0f;
             float playerDistance = math.length(toPlayer);
             bool movementLocked = false;
+            float3 resolvedAimDirection = float3.zero;
+            bool hasResolvedAimDirection = false;
+            int aimPriority = int.MinValue;
 
             for (int shooterIndex = 0; shooterIndex < shooterConfigs.Length; shooterIndex++)
             {
@@ -110,7 +115,7 @@ public partial struct EnemyShooterRequestSystem : ISystem
                 runtime.NextBurstTimer = math.max(0f, runtime.NextBurstTimer - deltaTime);
                 runtime.NextShotInBurstTimer = math.max(0f, runtime.NextShotInBurstTimer - deltaTime);
 
-                if (IsInRange(playerDistance, in shooterConfig) == false)
+                if (!IsInRange(playerDistance, in shooterConfig))
                 {
                     runtime.RemainingBurstShots = 0;
                     runtime.NextShotInBurstTimer = 0f;
@@ -132,8 +137,24 @@ public partial struct EnemyShooterRequestSystem : ISystem
                     }
                 }
 
-                if (runtime.RemainingBurstShots > 0 && shooterConfig.MovementPolicy == EnemyShooterMovementPolicy.StopWhileAiming)
+                if (runtime.RemainingBurstShots > 0 &&
+                    shooterConfig.MovementPolicy == EnemyShooterMovementPolicy.StopWhileAiming)
+                {
                     movementLocked = true;
+                }
+
+                if (runtime.RemainingBurstShots > 0)
+                {
+                    float3 activeAimDirection = ResolveAimDirection(in shooterConfig,
+                                                                    in runtime,
+                                                                    toPlayer,
+                                                                    enemyTransform.ValueRO.Rotation);
+                    TryCaptureAimDirection(activeAimDirection,
+                                           shooterConfig.MovementPolicy,
+                                           ref resolvedAimDirection,
+                                           ref hasResolvedAimDirection,
+                                           ref aimPriority);
+                }
 
                 if (runtime.RemainingBurstShots > 0 && runtime.NextShotInBurstTimer <= 0f)
                 {
@@ -165,7 +186,9 @@ public partial struct EnemyShooterRequestSystem : ISystem
 
             shooterControlState.ValueRW = new EnemyShooterControlState
             {
-                MovementLocked = movementLocked ? (byte)1 : (byte)0
+                MovementLocked = movementLocked ? (byte)1 : (byte)0,
+                AimDirection = hasResolvedAimDirection ? resolvedAimDirection : float3.zero,
+                HasAimDirection = hasResolvedAimDirection ? (byte)1 : (byte)0
             };
         }
     }
@@ -225,6 +248,34 @@ public partial struct EnemyShooterRequestSystem : ISystem
         float3 forward = math.forward(rotation);
         forward.y = 0f;
         return math.normalizesafe(forward, ForwardAxis);
+    }
+
+    /// <summary>
+    /// Captures the best current aim direction used to orient the shooter visuals before projectile spawn.
+    /// </summary>
+    /// <param name="candidateDirection">Current shooter aim direction candidate.</param>
+    /// <param name="movementPolicy">Movement policy associated with the current shooter module.</param>
+    /// <param name="resolvedAimDirection">Best resolved aim direction retained across modules.</param>
+    /// <param name="hasResolvedAimDirection">Whether a valid aim direction has already been captured.</param>
+    /// <param name="aimPriority">Priority of the currently captured aim direction.</param>
+    /// <returns>None.</returns>
+    private static void TryCaptureAimDirection(float3 candidateDirection,
+                                               EnemyShooterMovementPolicy movementPolicy,
+                                               ref float3 resolvedAimDirection,
+                                               ref bool hasResolvedAimDirection,
+                                               ref int aimPriority)
+    {
+        if (math.lengthsq(candidateDirection) <= DirectionEpsilon)
+            return;
+
+        int candidatePriority = movementPolicy == EnemyShooterMovementPolicy.StopWhileAiming ? 1 : 0;
+
+        if (hasResolvedAimDirection && candidatePriority < aimPriority)
+            return;
+
+        resolvedAimDirection = math.normalizesafe(candidateDirection, ForwardAxis);
+        hasResolvedAimDirection = true;
+        aimPriority = candidatePriority;
     }
 
     private static void EnqueueShotRequests(DynamicBuffer<ShootRequest> shootRequests,

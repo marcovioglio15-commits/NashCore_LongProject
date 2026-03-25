@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03ce30e7ff27e12418b7854dd61a2d7d, type: 3}
+  m_Name: EnemyMasterPreset_Shooters
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyMasterPreset
+  presetId: 898d80aaf752428aa4986d7ce9350366
+  presetName: EnemyMasterPreset_Shooters
+  description: 
+  version: 1.0.0
+  brainPreset: {fileID: 11400000, guid: 89ded635a1f4c2c49a017976a230aa9b, type: 2}
+  visualPreset: {fileID: 11400000, guid: d8cc915a97ceef24e90258abc2b428a7, type: 2}
+  advancedPatternPreset: {fileID: 11400000, guid: 1b2d7918d09c6b046b5d669d2d0542ee, type: 2}
+  testUiSettings:
+    worldOffset: {x: 0, y: 1.8, z: 0}
+    rootWidthPixels: 120
+    rootHeightPixels: 26
+    worldScale: 0.01
+    canvasSortingOrder: 4000
+    healthBarWidthPixels: 108
+    healthBarHeightPixels: 8
+    healthBarYOffsetPixels: 5
+    shieldBarWidthPixels: 108
+    shieldBarHeightPixels: 6
+    shieldBarYOffsetPixels: -5
+    healthFillColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
+    healthBackgroundColor: {r: 0, g: 0, b: 0, a: 0.55}
+    shieldFillColor: {r: 0.2, g: 0.85, b: 1, a: 1}
+    shieldBackgroundColor: {r: 0, g: 0, b: 0, a: 0.45}
+    hideShieldWhenEmpty: 1
+    hideWhenEnemyInactive: 1
+    hideWhenEnemyCulled: 0
+    smoothingSeconds: 0
+    shieldSmoothingSeconds: 0.08
+    billboardToCamera: 1
+    billboardYawOnly: 0

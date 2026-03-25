@@ -69,6 +69,50 @@ internal static class EnemyAdvancedPatternPresetsPanelElementUtility
         });
         parent.Add(field);
     }
+
+    /// <summary>
+    /// Registers one hidden reactive tracker that rebuilds the active details section when the preset serialized object changes.
+    /// </summary>
+    /// <param name="panel">Owning panel that should rebuild its active details section.</param>
+    /// <param name="parent">Section container that owns the tracker lifetime.</param>
+    /// <returns>None.</returns>
+    public static void AddReactiveDetailsRefreshTracker(EnemyAdvancedPatternPresetsPanel panel, VisualElement parent)
+    {
+        if (panel == null)
+            return;
+
+        if (parent == null)
+            return;
+
+        SerializedObject presetSerializedObject = panel.PresetSerializedObject;
+
+        if (presetSerializedObject == null)
+            return;
+
+        VisualElement detailsRoot = panel.DetailsSectionContentRoot;
+
+        if (detailsRoot == null)
+            return;
+
+        VisualElement tracker = new VisualElement();
+        tracker.style.display = DisplayStyle.None;
+        bool refreshScheduled = false;
+        tracker.TrackSerializedObjectValue(presetSerializedObject, changedObject =>
+        {
+            if (refreshScheduled || changedObject == null)
+            {
+                return;
+            }
+
+            refreshScheduled = true;
+            detailsRoot.schedule.Execute(() =>
+            {
+                refreshScheduled = false;
+                panel.BuildActiveDetailsSection();
+            });
+        });
+        parent.Add(tracker);
+    }
     #endregion
 
     #endregion

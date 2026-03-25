@@ -31,6 +31,9 @@ public sealed class PlayerMasterPreset : ScriptableObject
     [Tooltip("Craftable power-ups preset reference.")]
     [SerializeField] private PlayerPowerUpsPreset m_PowerUpsPreset;
 
+    [Tooltip("Visual presentation preset reference.")]
+    [SerializeField] private PlayerVisualPreset visualPreset;
+
     [Tooltip("Animation bindings preset reference.")]
     [SerializeField] private PlayerAnimationBindingsPreset m_AnimationBindingsPreset;
 
@@ -93,6 +96,14 @@ public sealed class PlayerMasterPreset : ScriptableObject
         get
         {
             return m_PowerUpsPreset;
+        }
+    }
+
+    public PlayerVisualPreset VisualPreset
+    {
+        get
+        {
+            return visualPreset;
         }
     }
 

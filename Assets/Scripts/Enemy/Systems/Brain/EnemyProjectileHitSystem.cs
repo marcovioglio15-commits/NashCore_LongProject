@@ -483,6 +483,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
             EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
             entityManager.SetComponentData(enemyEntity, enemyHealth);
+            DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
 
             if (enemyHealth.Current <= 0f)
             {
