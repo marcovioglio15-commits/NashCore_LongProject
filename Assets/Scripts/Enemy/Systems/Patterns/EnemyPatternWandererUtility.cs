@@ -61,6 +61,7 @@ public static class EnemyPatternWandererUtility
     /// <param name="patternRuntimeState">Pattern runtime state to mutate.</param>
     /// <param name="enemyPosition">Current enemy position.</param>
     /// <param name="playerPosition">Current player position.</param>
+    /// <param name="minimumWallDistance">Extra distance kept from static walls by the active brain movement settings.</param>
     /// <param name="moveSpeed">Resolved movement speed.</param>
     /// <param name="maxSpeed">Resolved max speed.</param>
     /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
@@ -77,6 +78,7 @@ public static class EnemyPatternWandererUtility
                                                       ref EnemyPatternRuntimeState patternRuntimeState,
                                                       float3 enemyPosition,
                                                       float3 playerPosition,
+                                                      float minimumWallDistance,
                                                       float moveSpeed,
                                                       float maxSpeed,
                                                       float steeringAggressiveness,
@@ -205,6 +207,7 @@ public static class EnemyPatternWandererUtility
                                                           in patternConfig,
                                                           enemyPosition,
                                                           playerPosition,
+                                                          minimumWallDistance,
                                                           patternRuntimeState.LastWanderDirectionAngle,
                                                           patternRuntimeState.WanderInitialized != 0,
                                                           elapsedTime,
@@ -295,6 +298,7 @@ public static class EnemyPatternWandererUtility
     /// <param name="patternConfig">Compiled pattern config.</param>
     /// <param name="enemyPosition">Current enemy position.</param>
     /// <param name="playerPosition">Current player position.</param>
+    /// <param name="minimumWallDistance">Extra distance kept from static walls by the active brain movement settings.</param>
     /// <param name="lastDirectionAngle">Previously selected direction angle in degrees.</param>
     /// <param name="hasPreviousDirection">Whether a previous direction exists.</param>
     /// <param name="elapsedTime">Elapsed world time.</param>
@@ -311,6 +315,7 @@ public static class EnemyPatternWandererUtility
                                                  in EnemyPatternConfig patternConfig,
                                                  float3 enemyPosition,
                                                  float3 playerPosition,
+                                                 float minimumWallDistance,
                                                  float lastDirectionAngle,
                                                  bool hasPreviousDirection,
                                                  float elapsedTime,
@@ -329,7 +334,6 @@ public static class EnemyPatternWandererUtility
         float maximumDistance = math.max(minimumDistance, patternConfig.BasicMaximumTravelDistance);
         float unexploredPreference = math.max(0f, patternConfig.BasicUnexploredDirectionPreference);
         float towardPlayerPreference = math.max(0f, patternConfig.BasicTowardPlayerPreference);
-        float minimumWallDistance = math.max(0f, patternConfig.BasicMinimumWallDistance);
         float minimumEnemyClearance = math.max(0f, patternConfig.BasicMinimumEnemyClearance);
         float trajectoryPredictionTime = math.max(0f, patternConfig.BasicTrajectoryPredictionTime);
         float freeTrajectoryPreference = math.max(0f, patternConfig.BasicFreeTrajectoryPreference);
@@ -349,7 +353,7 @@ public static class EnemyPatternWandererUtility
         }
 
         float stepRadians = math.radians(directionStepDegrees);
-        float collisionRadius = math.max(0.01f, bodyRadius + minimumWallDistance);
+        float collisionRadius = math.max(0.01f, bodyRadius + math.max(0f, minimumWallDistance));
         float bestScore = float.NegativeInfinity;
         bool foundCandidate = false;
 

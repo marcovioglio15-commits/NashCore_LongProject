@@ -287,7 +287,6 @@ public static class EnemyPoolUtility
             BasicInfiniteDirectionStepDegrees = 8f,
             BasicUnexploredDirectionPreference = 0.65f,
             BasicTowardPlayerPreference = 0.35f,
-            BasicMinimumWallDistance = 0.25f,
             BasicMinimumEnemyClearance = 0.2f,
             BasicTrajectoryPredictionTime = 0.35f,
             BasicFreeTrajectoryPreference = 4f,

@@ -13,7 +13,6 @@ using Unity.Transforms;
 public partial struct EnemyPatternMovementSystem : ISystem
 {
     #region Constants
-    private static readonly float3 ForwardAxis = new float3(0f, 0f, 1f);
     private const float DirectionEpsilon = 1e-6f;
     private const float RotationSpeedEpsilon = 1e-4f;
     private const float ClearanceEpsilon = 1e-4f;
@@ -100,17 +99,22 @@ public partial struct EnemyPatternMovementSystem : ISystem
         NativeList<float3> occupancyPositions = new NativeList<float3>(Allocator.Temp);
         NativeList<float3> occupancyVelocities = new NativeList<float3>(Allocator.Temp);
         NativeList<float> occupancyRadii = new NativeList<float>(Allocator.Temp);
+        NativeList<byte> occupancyDvdFlags = new NativeList<byte>(Allocator.Temp);
+        NativeList<float> occupancyDvdBounceDamping = new NativeList<float>(Allocator.Temp);
         NativeList<int> occupancyPriorityTiers = new NativeList<int>(Allocator.Temp);
         float occupancyMaxRadius = 0.05f;
+        float occupancyMaxPlanarSpeed = 0f;
 
         // Build spatial hash map of nearby enemies for efficient avoidance queries.
         // Only active non-despawning enemies
         // are considered as occupancy since they are the only ones relevant for movement.
         foreach ((RefRO<EnemyData> occupancyEnemyData,
+                  RefRO<EnemyPatternConfig> occupancyPatternConfig,
                   RefRO<EnemyRuntimeState> occupancyEnemyRuntimeState,
                   RefRO<LocalTransform> occupancyEnemyTransform,
                   Entity occupancyEnemyEntity)
                  in SystemAPI.Query<RefRO<EnemyData>,
+                                    RefRO<EnemyPatternConfig>,
                                     RefRO<EnemyRuntimeState>,
                                     RefRO<LocalTransform>>()
                              .WithAll<EnemyActive>()
@@ -123,13 +127,19 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float3 planarVelocity = occupancyEnemyRuntimeState.ValueRO.Velocity;
             planarVelocity.y = 0f;
             occupancyVelocities.Add(planarVelocity);
+            occupancyDvdFlags.Add(occupancyPatternConfig.ValueRO.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd ? (byte)1 : (byte)0);
+            occupancyDvdBounceDamping.Add(math.clamp(occupancyPatternConfig.ValueRO.DvdBounceDamping, 0f, 1f));
 
             float occupancyRadius = math.max(0.05f, occupancyEnemyData.ValueRO.BodyRadius);
             occupancyRadii.Add(occupancyRadius);
             occupancyPriorityTiers.Add(math.clamp(occupancyEnemyData.ValueRO.PriorityTier, -128, 128));
+            float occupancySpeed = math.length(planarVelocity);
 
             if (occupancyRadius > occupancyMaxRadius)
                 occupancyMaxRadius = occupancyRadius;
+
+            if (occupancySpeed > occupancyMaxPlanarSpeed)
+                occupancyMaxPlanarSpeed = occupancySpeed;
         }
 
         int occupancyCount = occupancyEntities.Length;
@@ -154,6 +164,16 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                                                                           occupancyCellMap,
                                                                                                                           occupancyInverseCellSize,
                                                                                                                           occupancyMaxRadius);
+        EnemyPatternDvdCollisionUtility.OccupancyContext dvdCollisionContext = new EnemyPatternDvdCollisionUtility.OccupancyContext(occupancyEntities.AsArray(),
+                                                                                                                                    occupancyPositions.AsArray(),
+                                                                                                                                    occupancyVelocities.AsArray(),
+                                                                                                                                    occupancyRadii.AsArray(),
+                                                                                                                                    occupancyDvdFlags.AsArray(),
+                                                                                                                                    occupancyDvdBounceDamping.AsArray(),
+                                                                                                                                    occupancyCellMap,
+                                                                                                                                    occupancyInverseCellSize,
+                                                                                                                                    occupancyMaxRadius,
+                                                                                                                                    occupancyMaxPlanarSpeed);
 
         foreach ((RefRO<EnemyData> enemyData,
                   RefRO<EnemyPatternConfig> patternConfig,
@@ -212,6 +232,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                                                ref currentPatternRuntimeState,
                                                                                                currentEnemyTransform.Position,
                                                                                                playerPosition,
+                                                                                               math.max(0f, currentEnemyData.MinimumWallDistance),
                                                                                                moveSpeed,
                                                                                                maxSpeed,
                                                                                                steeringAggressiveness,
@@ -224,12 +245,12 @@ public partial struct EnemyPatternMovementSystem : ISystem
                     break;
 
                 case EnemyCompiledMovementPatternKind.WandererDvd:
-                    desiredVelocity = ResolveWandererDvdVelocity(enemyEntity,
-                                                                in currentPatternConfig,
-                                                                ref currentPatternRuntimeState,
-                                                                moveSpeed,
-                                                                maxSpeed,
-                                                                elapsedTime);
+                    desiredVelocity = EnemyPatternMovementRuntimeUtility.ResolveWandererDvdVelocity(enemyEntity,
+                                                                                                   in currentPatternConfig,
+                                                                                                   ref currentPatternRuntimeState,
+                                                                                                   moveSpeed,
+                                                                                                   maxSpeed,
+                                                                                                   elapsedTime);
                     break;
 
                 default:
@@ -328,9 +349,29 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float3 desiredDisplacement = currentEnemyRuntimeState.Velocity * deltaTime;
             float3 nextPosition = currentEnemyTransform.Position;
             float baseCollisionRadius = math.max(0.01f, currentEnemyData.BodyRadius);
-            float additionalWallClearance = ResolveWallClearanceForMovement(in currentPatternConfig);
+            float additionalWallClearance = EnemyPatternMovementRuntimeUtility.ResolveWallClearanceForMovement(in currentPatternConfig,
+                                                                                                               in currentEnemyData);
             float wallCollisionRadius = math.max(0.01f, baseCollisionRadius + additionalWallClearance);
             bool expandedWallClearance = wallCollisionRadius > baseCollisionRadius + ClearanceEpsilon;
+
+            if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd &&
+                EnemyPatternDvdCollisionUtility.TryResolveBounceVelocity(enemyEntity,
+                                                                        currentEnemyTransform.Position,
+                                                                        currentEnemyRuntimeState.Velocity,
+                                                                        baseCollisionRadius,
+                                                                        currentPatternConfig.DvdBounceDamping,
+                                                                        deltaTime,
+                                                                        in dvdCollisionContext,
+                                                                        out float3 bouncedVelocity,
+                                                                        out float collisionTimeSeconds))
+            {
+                float preCollisionTime = math.clamp(collisionTimeSeconds, 0f, deltaTime);
+                float postCollisionTime = math.max(0f, deltaTime - preCollisionTime);
+                float3 preCollisionVelocity = currentEnemyRuntimeState.Velocity;
+                currentEnemyRuntimeState.Velocity = bouncedVelocity;
+                currentPatternRuntimeState.DvdDirection = math.normalizesafe(new float3(bouncedVelocity.x, 0f, bouncedVelocity.z), currentPatternRuntimeState.DvdDirection);
+                desiredDisplacement = preCollisionVelocity * preCollisionTime + bouncedVelocity * postCollisionTime;
+            }
 
             // Handle wall collisions and clearance if enabled, otherwise apply desired displacement directly.
             if (wallsEnabled)
@@ -352,15 +393,15 @@ public partial struct EnemyPatternMovementSystem : ISystem
                 {
                     if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd)
                     {
-                        float3 bouncedVelocity = WorldWallCollisionUtility.ComputeBounceVelocity(currentEnemyRuntimeState.Velocity,
-                                                                                                 hitNormal,
-                                                                                                 currentPatternConfig.DvdBounceDamping);
+                        float3 wallBouncedVelocity = WorldWallCollisionUtility.ComputeBounceVelocity(currentEnemyRuntimeState.Velocity,
+                                                                                                     hitNormal,
+                                                                                                     currentPatternConfig.DvdBounceDamping);
 
-                        if (math.lengthsq(bouncedVelocity) <= DirectionEpsilon)
-                            bouncedVelocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(currentEnemyRuntimeState.Velocity, hitNormal);
+                        if (math.lengthsq(wallBouncedVelocity) <= DirectionEpsilon)
+                            wallBouncedVelocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(currentEnemyRuntimeState.Velocity, hitNormal);
 
-                        currentEnemyRuntimeState.Velocity = bouncedVelocity;
-                        currentPatternRuntimeState.DvdDirection = math.normalizesafe(new float3(bouncedVelocity.x, 0f, bouncedVelocity.z), float3.zero);
+                        currentEnemyRuntimeState.Velocity = wallBouncedVelocity;
+                        currentPatternRuntimeState.DvdDirection = math.normalizesafe(new float3(wallBouncedVelocity.x, 0f, wallBouncedVelocity.z), float3.zero);
 
                         if (currentPatternConfig.DvdCornerNudgeDistance > 0f)
                             nextPosition += math.normalizesafe(hitNormal, float3.zero) * currentPatternConfig.DvdCornerNudgeDistance;
@@ -374,7 +415,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
                         if (currentPatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic && expandedWallClearance)
                         {
                             float allowedDisplacementDistance = math.length(allowedDisplacement);
-                            float blockedDisplacementRatio = ResolveBlockedDisplacementRatio(requestedDisplacementDistance, allowedDisplacementDistance);
+                            float blockedDisplacementRatio = EnemyPatternMovementRuntimeUtility.ResolveBlockedDisplacementRatio(requestedDisplacementDistance, allowedDisplacementDistance);
 
                             if (blockedDisplacementRatio >= WallBlockedRepathThreshold)
                                 clearanceReachedTarget = true;
@@ -408,7 +449,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
                 }
 
                 if (clearanceReachedTarget)
-                    ConsumeWanderTargetOnClearance(ref currentPatternRuntimeState, in currentPatternConfig);
+                    EnemyPatternMovementRuntimeUtility.ConsumeWanderTargetOnClearance(ref currentPatternRuntimeState, in currentPatternConfig);
             }
             else
             {
@@ -449,6 +490,8 @@ public partial struct EnemyPatternMovementSystem : ISystem
         }
 
         occupancyCellMap.Dispose();
+        occupancyDvdBounceDamping.Dispose();
+        occupancyDvdFlags.Dispose();
         occupancyRadii.Dispose();
         occupancyPriorityTiers.Dispose();
         occupancyVelocities.Dispose();
@@ -596,106 +639,6 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                    PriorityYieldGapAccelerationScaleMax,
                                    math.saturate(priorityGapNormalized));
         return normalizedUrgency * PriorityYieldMaxAccelerationBoost * aggressivenessScale * gapScale;
-    }
-
-    /// <summary>
-    /// Computes how much requested displacement was blocked by wall collision resolution.
-    /// </summary>
-    /// <param name="requestedDistance">Requested displacement length.</param>
-    /// <param name="allowedDistance">Allowed displacement length.</param>
-    /// <returns>Blocked ratio in [0..1].</returns>
-    private static float ResolveBlockedDisplacementRatio(float requestedDistance, float allowedDistance)
-    {
-        if (requestedDistance <= DirectionEpsilon)
-            return 0f;
-
-        float allowedRatio = math.saturate(allowedDistance / requestedDistance);
-        return 1f - allowedRatio;
-    }
-
-    /// <summary>
-    /// Resolves additional wall-clearance radius to enforce during runtime displacement.
-    /// </summary>
-    /// <param name="patternConfig">Current compiled pattern configuration.</param>
-    /// <returns>Additional wall-clearance radius in meters.</returns>
-    private static float ResolveWallClearanceForMovement(in EnemyPatternConfig patternConfig)
-    {
-        if (patternConfig.MovementKind != EnemyCompiledMovementPatternKind.WandererBasic)
-            return 0f;
-
-        return math.max(0f, patternConfig.BasicMinimumWallDistance);
-    }
-
-    /// <summary>
-    /// Consumes the active Wanderer target when wall-clearance blocks remaining progress.
-    /// </summary>
-    /// <param name="patternRuntimeState">Mutable Wanderer runtime state.</param>
-    /// <param name="patternConfig">Current compiled pattern configuration.</param>
-    private static void ConsumeWanderTargetOnClearance(ref EnemyPatternRuntimeState patternRuntimeState,
-                                                       in EnemyPatternConfig patternConfig)
-    {
-        if (patternRuntimeState.WanderHasTarget == 0)
-            return;
-
-        patternRuntimeState.WanderHasTarget = 0;
-        patternRuntimeState.WanderWaitTimer = math.min(0.08f, math.max(0f, patternConfig.BasicWaitCooldownSeconds * 0.2f));
-        patternRuntimeState.WanderRetryTimer = math.max(0.02f, patternConfig.BasicBlockedPathRetryDelay * 0.5f);
-    }
-
-    /// <summary>
-    /// Resolves current Wanderer DVD desired velocity and initializes first direction.
-    /// </summary>
-    /// <param name="enemyEntity">Current enemy entity.</param>
-    /// <param name="patternConfig">Current compiled pattern configuration.</param>
-    /// <param name="patternRuntimeState">Mutable Wanderer runtime state.</param>
-    /// <param name="moveSpeed">Resolved movement speed.</param>
-    /// <param name="maxSpeed">Resolved max speed.</param>
-    /// <param name="elapsedTime">Elapsed world time in seconds.</param>
-    /// <returns>Desired planar velocity for this frame.</returns>
-    private static float3 ResolveWandererDvdVelocity(Entity enemyEntity,
-                                                     in EnemyPatternConfig patternConfig,
-                                                     ref EnemyPatternRuntimeState patternRuntimeState,
-                                                     float moveSpeed,
-                                                     float maxSpeed,
-                                                     float elapsedTime)
-    {
-        if (patternRuntimeState.DvdInitialized == 0)
-        {
-            float angleDegrees = patternConfig.DvdFixedInitialDirectionDegrees;
-
-            if (patternConfig.DvdRandomizeInitialDirection != 0)
-            {
-                uint seed = math.hash(new int3(enemyEntity.Index, enemyEntity.Version, (int)(elapsedTime * 13f)));
-                int diagonalIndex = (int)(seed % 4u);
-
-                switch (diagonalIndex)
-                {
-                    case 0:
-                        angleDegrees = 45f;
-                        break;
-
-                    case 1:
-                        angleDegrees = 135f;
-                        break;
-
-                    case 2:
-                        angleDegrees = 225f;
-                        break;
-
-                    default:
-                        angleDegrees = 315f;
-                        break;
-                }
-            }
-
-            float radians = math.radians(angleDegrees);
-            patternRuntimeState.DvdDirection = math.normalizesafe(new float3(math.sin(radians), 0f, math.cos(radians)), ForwardAxis);
-            patternRuntimeState.DvdInitialized = 1;
-        }
-
-        float movementSpeed = maxSpeed > 0f ? math.min(moveSpeed, maxSpeed) : moveSpeed;
-        movementSpeed *= math.max(0f, patternConfig.DvdSpeedMultiplier);
-        return patternRuntimeState.DvdDirection * movementSpeed;
     }
 
     #endregion

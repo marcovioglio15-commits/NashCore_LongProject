@@ -40,9 +40,6 @@ public sealed class EnemyWandererBasicPayload
     [Tooltip("Bias factor for preferring candidates closer to the player. Applied only after free-trajectory checks and scoring.")]
     [SerializeField] private float towardPlayerPreference = 0.35f;
 
-    [Tooltip("Minimum extra distance in meters kept from wall colliders during path validation to reduce corner-stuck cases.")]
-    [SerializeField] private float minimumWallDistance = 0.25f;
-
     [Tooltip("Minimum extra clearance in meters kept from neighboring enemies when selecting a destination or trajectory.")]
     [SerializeField] private float minimumEnemyClearance = 0.2f;
 
@@ -136,14 +133,6 @@ public sealed class EnemyWandererBasicPayload
         get
         {
             return towardPlayerPreference;
-        }
-    }
-
-    public float MinimumWallDistance
-    {
-        get
-        {
-            return minimumWallDistance;
         }
     }
 

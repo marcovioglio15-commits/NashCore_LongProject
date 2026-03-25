@@ -51,7 +51,7 @@ MonoBehaviour:
   spawnHeightOffset: 0
   initialPoolCapacityPerPrefab: 24
   expandBatchPerPrefab: 12
-  despawnDistance: 25
+  despawnDistance: 85
   wavePreset: {fileID: 11400000, guid: 9cbb29f3fe1317e4db97052b606d7bf0, type: 2}
   waves: []
   drawGridGizmos: 1

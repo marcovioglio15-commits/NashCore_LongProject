@@ -10,6 +10,7 @@ public struct EnemySpawner : IComponentData
     public int InitialPoolCapacityPerPrefab;
     public int ExpandBatchPerPrefab;
     public float DespawnDistance;
+    public float MaximumSpawnDistanceFromCenter;
     public int TotalPlannedEnemyCount;
 }
 

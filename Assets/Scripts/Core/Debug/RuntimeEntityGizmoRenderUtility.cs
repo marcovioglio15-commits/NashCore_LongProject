@@ -383,7 +383,8 @@ public static class RuntimeEntityGizmoRenderUtility
 
                 if (RuntimeGizmoDebugState.SpawnerDespawnRadiusEnabled)
                 {
-                    primitiveDrawer.DrawWireDisc(spawnerPosition, spawner.DespawnDistance, SpawnerDespawnRadiusColor);
+                    float effectiveDespawnDistance = EnemySpawnerRuntimeUtility.ResolveEffectiveDespawnDistance(in spawner);
+                    primitiveDrawer.DrawWireDisc(spawnerPosition, effectiveDespawnDistance, SpawnerDespawnRadiusColor);
                     drewSpawnerGizmo = true;
                 }
 

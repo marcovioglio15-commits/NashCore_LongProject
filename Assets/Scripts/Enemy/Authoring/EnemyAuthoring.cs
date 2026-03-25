@@ -59,6 +59,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [SerializeField]
     [HideInInspector] private float rotationSpeedDegreesPerSecond;
 
+    [Tooltip("Fallback extra distance in meters kept from static wall colliders by standard steering-driven enemies when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float minimumWallDistance = 0.25f;
+
     [Tooltip("Fallback separation radius used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float separationRadius = 1.1f;
@@ -229,6 +233,19 @@ public sealed class EnemyAuthoring : MonoBehaviour
                 return rotationSpeedDegreesPerSecond;
 
             return settings.RotationSpeedDegreesPerSecond;
+        }
+    }
+
+    public float MinimumWallDistance
+    {
+        get
+        {
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
+
+            if (settings == null)
+                return minimumWallDistance;
+
+            return settings.MinimumWallDistance;
         }
     }
 
@@ -632,6 +649,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
                                                                       ref acceleration,
                                                                       ref deceleration,
                                                                       ref rotationSpeedDegreesPerSecond,
+                                                                      ref minimumWallDistance,
                                                                       ref separationRadius,
                                                                       ref separationWeight,
                                                                       ref bodyRadius,

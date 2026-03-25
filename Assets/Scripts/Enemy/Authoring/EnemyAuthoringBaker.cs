@@ -29,6 +29,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             SeparationRadius = math.max(0.1f, authoring.SeparationRadius),
             SeparationWeight = math.max(0f, authoring.SeparationWeight),
             BodyRadius = math.max(0.05f, authoring.BodyRadius),
+            MinimumWallDistance = math.max(0f, authoring.MinimumWallDistance),
             PriorityTier = math.clamp(authoring.PriorityTier, -128, 128),
             SteeringAggressiveness = math.clamp(authoring.SteeringAggressiveness, 0f, 2.5f),
             ContactDamageEnabled = authoring.ContactDamageEnabled ? (byte)1 : (byte)0,

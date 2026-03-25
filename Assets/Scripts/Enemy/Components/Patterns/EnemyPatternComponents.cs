@@ -19,7 +19,6 @@ public struct EnemyPatternConfig : IComponentData
     public float BasicInfiniteDirectionStepDegrees;
     public float BasicUnexploredDirectionPreference;
     public float BasicTowardPlayerPreference;
-    public float BasicMinimumWallDistance;
     public float BasicMinimumEnemyClearance;
     public float BasicTrajectoryPredictionTime;
     public float BasicFreeTrajectoryPreference;

@@ -1,0 +1,679 @@
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Physics;
+
+/// <summary>
+/// Builds and queries the shared enemy navigation flow field derived from static wall colliders.
+/// </summary>
+public static class EnemyNavigationFlowFieldUtility
+{
+    #region Constants
+    public const int InvalidCellIndex = -1;
+    public const int UnreachableCellCost = int.MaxValue;
+
+    private const float DirectionEpsilon = 1e-6f;
+    private const float MinimumNavigationCellSize = 0.45f;
+    private const float MaximumNavigationCellSize = 0.85f;
+    private const float DefaultNavigationBodyRadius = 0.55f;
+    private const float GridPaddingInCells = 2f;
+    private const float MinimumWalkableClearance = 0.08f;
+    private const float MaximumWalkableClearanceRatio = 0.48f;
+    private const float MinimumAgentRadius = 0.12f;
+    private const float AgentRadiusPadding = 0.04f;
+    public const float FlowRefreshIntervalSeconds = 0.12f;
+    private const int SearchRadiusWhenCellBlocked = 3;
+    private const uint WallHashSeed = 2166136261u;
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Collects one world-space AABB that encloses all static wall bodies matching the provided layer mask.
+    /// /params physicsWorldSingleton: Physics world used to enumerate static rigid bodies.
+    /// /params wallsLayerMask: Layer mask that identifies wall colliders.
+    /// /params wallBounds: Output union bounds of all detected static wall colliders.
+    /// /params layoutHash: Output hash used to detect static wall-layout changes.
+    /// /returns True when at least one matching static wall body is found; otherwise false.
+    /// </summary>
+    public static bool TryCollectStaticWallBounds(in PhysicsWorldSingleton physicsWorldSingleton,
+                                                  int wallsLayerMask,
+                                                  out Aabb wallBounds,
+                                                  out uint layoutHash)
+    {
+        wallBounds = default;
+        layoutHash = WallHashSeed;
+
+        if (wallsLayerMask == 0)
+            return false;
+
+        NativeArray<RigidBody> staticBodies = physicsWorldSingleton.StaticBodies;
+        uint wallsMask = (uint)wallsLayerMask;
+        bool foundWall = false;
+
+        // Aggregate all static wall AABBs so the navigation grid automatically tracks authored obstacles.
+        for (int bodyIndex = 0; bodyIndex < staticBodies.Length; bodyIndex++)
+        {
+            RigidBody rigidBody = staticBodies[bodyIndex];
+
+            if (!rigidBody.Collider.IsCreated)
+                continue;
+
+            CollisionFilter collisionFilter = rigidBody.Collider.Value.GetCollisionFilter();
+
+            if ((collisionFilter.BelongsTo & wallsMask) == 0u)
+                continue;
+
+            Aabb bodyAabb = rigidBody.CalculateAabb();
+
+            if (!foundWall)
+            {
+                wallBounds = bodyAabb;
+                foundWall = true;
+            }
+            else
+            {
+                wallBounds.Min = math.min(wallBounds.Min, bodyAabb.Min);
+                wallBounds.Max = math.max(wallBounds.Max, bodyAabb.Max);
+            }
+
+            uint bodyHash = math.hash(new float4(bodyAabb.Min.x,
+                                                 bodyAabb.Min.z,
+                                                 bodyAabb.Max.x,
+                                                 bodyAabb.Max.z));
+            layoutHash = math.hash(new uint3(layoutHash, (uint)rigidBody.Entity.Index, bodyHash));
+        }
+
+        return foundWall;
+    }
+
+    /// <summary>
+    /// Rebuilds the navigation grid layout and all cell connectivity from static wall geometry.
+    /// /params navigationCells: Dynamic buffer that stores one navigation cell per grid slot.
+    /// /params navigationGridState: Mutable grid-state component rebuilt in place.
+    /// /params physicsWorldSingleton: Physics world used for wall clearance and edge traversal checks.
+    /// /params wallBounds: Union bounds of all static wall colliders.
+    /// /params wallsLayerMask: Layer mask that identifies wall colliders.
+    /// /params maximumNavigationRadius: Largest enemy body-plus-wall-distance radius used to size the shared traversal clearance.
+    /// /params staticLayoutHash: Hash of the current static wall layout.
+    /// /returns None.
+    /// </summary>
+    public static void RebuildGrid(ref DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                   ref EnemyNavigationGridState navigationGridState,
+                                   in PhysicsWorldSingleton physicsWorldSingleton,
+                                   in Aabb wallBounds,
+                                   int wallsLayerMask,
+                                   float maximumNavigationRadius,
+                                   uint staticLayoutHash)
+    {
+        float resolvedBodyRadius = math.max(DefaultNavigationBodyRadius, maximumNavigationRadius);
+        float cellSize = ResolveCellSize(resolvedBodyRadius);
+        float2 origin = wallBounds.Min.xz - cellSize * GridPaddingInCells;
+        float2 maximum = wallBounds.Max.xz + cellSize * GridPaddingInCells;
+        float2 extents = maximum - origin;
+        int width = math.max(1, (int)math.ceil(extents.x / cellSize));
+        int height = math.max(1, (int)math.ceil(extents.y / cellSize));
+        float agentRadius = ResolveAgentRadius(resolvedBodyRadius);
+        float walkableClearance = ResolveWalkableClearance(agentRadius, cellSize);
+        int cellCount = width * height;
+
+        navigationCells.Clear();
+        navigationCells.ResizeUninitialized(cellCount);
+
+        navigationGridState = new EnemyNavigationGridState
+        {
+            Origin = origin,
+            CellSize = cellSize,
+            InverseCellSize = 1f / cellSize,
+            AgentRadius = agentRadius,
+            Width = width,
+            Height = height,
+            PlayerCellIndex = InvalidCellIndex,
+            NextFlowRefreshTime = 0f,
+            StaticLayoutHash = staticLayoutHash,
+            Initialized = 1,
+            FlowReady = 0
+        };
+
+        // First pass marks cells that provide enough static clearance from wall colliders.
+        for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
+        {
+            int2 coordinates = ResolveCoordinatesFromIndex(cellIndex, width);
+            float2 center = ResolveCellCenter(origin, cellSize, coordinates.x, coordinates.y);
+            bool walkable = IsCellWalkable(in physicsWorldSingleton, center, walkableClearance, wallsLayerMask);
+            navigationCells[cellIndex] = new EnemyNavigationCellElement
+            {
+                Cost = UnreachableCellCost,
+                Walkable = walkable ? (byte)1 : (byte)0,
+                NeighborMask = 0,
+                FlowDirection = float2.zero
+            };
+        }
+
+        // Second pass evaluates static edge connectivity so runtime flow-field refreshes only touch costs and directions.
+        for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
+        {
+            EnemyNavigationCellElement cell = navigationCells[cellIndex];
+
+            if (cell.Walkable == 0)
+            {
+                navigationCells[cellIndex] = cell;
+                continue;
+            }
+
+            int2 coordinates = ResolveCoordinatesFromIndex(cellIndex, width);
+            cell.NeighborMask = ResolveNeighborMask(in physicsWorldSingleton,
+                                                    navigationCells,
+                                                    origin,
+                                                    cellSize,
+                                                    width,
+                                                    height,
+                                                    coordinates.x,
+                                                    coordinates.y,
+                                                    agentRadius,
+                                                    wallsLayerMask);
+            navigationCells[cellIndex] = cell;
+        }
+    }
+
+    /// <summary>
+    /// Resolves the walkable player cell and rebuilds the flow field when a valid target cell is available.
+    /// /params navigationCells: Dynamic buffer that stores navigation cells.
+    /// /params navigationGridState: Mutable grid-state component updated in place.
+    /// /params playerPosition: Current player world position.
+    /// /returns True when the flow field is ready for runtime navigation queries; otherwise false.
+    /// </summary>
+    public static bool TryRefreshFlowField(ref DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                           ref EnemyNavigationGridState navigationGridState,
+                                           float3 playerPosition)
+    {
+        if (navigationGridState.Initialized == 0)
+            return false;
+
+        if (!TryResolveBestCellIndex(playerPosition, in navigationGridState, navigationCells, out int playerCellIndex))
+        {
+            navigationGridState.PlayerCellIndex = InvalidCellIndex;
+            navigationGridState.FlowReady = 0;
+            return false;
+        }
+
+        navigationGridState.PlayerCellIndex = playerCellIndex;
+        RebuildFlowField(ref navigationCells, in navigationGridState, playerCellIndex);
+        navigationGridState.FlowReady = navigationCells.Length > 0 ? (byte)1 : (byte)0;
+        return navigationGridState.FlowReady != 0;
+    }
+
+    /// <summary>
+    /// Returns whether the shared flow field should be refreshed at the current time.
+    /// /params navigationGridState: Current grid-state component.
+    /// /params playerPosition: Current player world position.
+    /// /params elapsedTime: Current world elapsed time.
+    /// /returns True when the flow field should be rebuilt this frame; otherwise false.
+    /// </summary>
+    public static bool ShouldRefreshFlowField(in EnemyNavigationGridState navigationGridState,
+                                              float3 playerPosition,
+                                              float elapsedTime)
+    {
+        if (navigationGridState.Initialized == 0)
+            return false;
+
+        if (navigationGridState.FlowReady == 0)
+            return true;
+
+        if (elapsedTime >= navigationGridState.NextFlowRefreshTime)
+            return true;
+
+        if (!TryResolveCellCoordinates(playerPosition, in navigationGridState, out int playerCellX, out int playerCellY))
+            return true;
+
+        int playerCellIndex = ResolveCellIndex(playerCellX, playerCellY, navigationGridState.Width);
+        return playerCellIndex != navigationGridState.PlayerCellIndex;
+    }
+
+    /// <summary>
+    /// Resolves one navigation-aware desired velocity toward the player by preferring direct line of sight and falling back to the shared flow field.
+    /// /params currentPosition: Current enemy world position.
+    /// /params targetPosition: Current player world position.
+    /// /params collisionRadius: Current enemy navigation collision radius used for direct-path wall checks.
+    /// /params desiredSpeed: Desired movement speed before acceleration integration.
+    /// /params physicsWorldSingleton: Physics world used for direct-path wall checks.
+    /// /params wallsLayerMask: Layer mask that identifies wall colliders.
+    /// /params navigationGridState: Current shared navigation-grid state.
+    /// /params navigationCells: Current shared navigation cells buffer.
+    /// /params desiredVelocity: Output navigation-aware desired velocity.
+    /// /returns True when a valid navigation velocity is produced; otherwise false.
+    /// </summary>
+    public static bool TryResolveNavigationVelocity(float3 currentPosition,
+                                                    float3 targetPosition,
+                                                    float collisionRadius,
+                                                    float desiredSpeed,
+                                                    in PhysicsWorldSingleton physicsWorldSingleton,
+                                                    int wallsLayerMask,
+                                                    in EnemyNavigationGridState navigationGridState,
+                                                    DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                                    out float3 desiredVelocity)
+    {
+        desiredVelocity = float3.zero;
+
+        if (navigationGridState.FlowReady == 0)
+            return false;
+
+        if (desiredSpeed <= DirectionEpsilon)
+            return false;
+
+        float3 toTarget = targetPosition - currentPosition;
+        toTarget.y = 0f;
+        float targetDistance = math.length(toTarget);
+
+        if (targetDistance <= DirectionEpsilon)
+            return false;
+
+        float navigationRadius = math.max(math.max(collisionRadius, navigationGridState.AgentRadius), MinimumAgentRadius);
+        bool directPathBlocked = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                                                                         currentPosition,
+                                                                                         toTarget,
+                                                                                         navigationRadius,
+                                                                                         wallsLayerMask,
+                                                                                         out float3 allowedDisplacement,
+                                                                                         out float3 _);
+
+        if (!directPathBlocked || math.lengthsq(allowedDisplacement) >= math.lengthsq(toTarget) * 0.95f)
+        {
+            float3 directDirection = toTarget / math.max(targetDistance, DirectionEpsilon);
+            desiredVelocity = directDirection * desiredSpeed;
+            return true;
+        }
+
+        if (!TryResolveBestCellIndex(currentPosition, in navigationGridState, navigationCells, out int cellIndex))
+            return false;
+
+        EnemyNavigationCellElement navigationCell = navigationCells[cellIndex];
+
+        if (navigationCell.Cost == UnreachableCellCost)
+            return false;
+
+        float2 flowDirection = navigationCell.FlowDirection;
+
+        if (math.lengthsq(flowDirection) <= DirectionEpsilon)
+            return false;
+
+        desiredVelocity = new float3(flowDirection.x, 0f, flowDirection.y) * desiredSpeed;
+        return true;
+    }
+    #endregion
+
+    #region Grid Build
+    private static float ResolveCellSize(float maximumEnemyBodyRadius)
+    {
+        float resolvedRadius = math.max(DefaultNavigationBodyRadius, maximumEnemyBodyRadius);
+        return math.clamp(resolvedRadius * 1.15f, MinimumNavigationCellSize, MaximumNavigationCellSize);
+    }
+
+    private static float ResolveAgentRadius(float maximumEnemyBodyRadius)
+    {
+        return math.max(MinimumAgentRadius, maximumEnemyBodyRadius + AgentRadiusPadding);
+    }
+
+    private static float ResolveWalkableClearance(float agentRadius, float cellSize)
+    {
+        float maximumClearance = cellSize * MaximumWalkableClearanceRatio;
+        return math.max(MinimumWalkableClearance, math.min(maximumClearance, agentRadius));
+    }
+
+    private static bool IsCellWalkable(in PhysicsWorldSingleton physicsWorldSingleton,
+                                       float2 cellCenter,
+                                       float clearanceRadius,
+                                       int wallsLayerMask)
+    {
+        float3 worldPosition = new float3(cellCenter.x, 0f, cellCenter.y);
+        return !WorldWallCollisionUtility.TryResolveMinimumClearance(physicsWorldSingleton,
+                                                                     worldPosition,
+                                                                     clearanceRadius,
+                                                                     wallsLayerMask,
+                                                                     out float3 _,
+                                                                     out float3 _);
+    }
+
+    private static byte ResolveNeighborMask(in PhysicsWorldSingleton physicsWorldSingleton,
+                                            DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                            float2 origin,
+                                            float cellSize,
+                                            int width,
+                                            int height,
+                                            int cellX,
+                                            int cellY,
+                                            float agentRadius,
+                                            int wallsLayerMask)
+    {
+        byte neighborMask = 0;
+        float2 currentCenter = ResolveCellCenter(origin, cellSize, cellX, cellY);
+
+        // Evaluate all eight directions once so runtime flow refreshes can reuse static connectivity.
+        for (int directionIndex = 0; directionIndex < 8; directionIndex++)
+        {
+            int2 offset = ResolveNeighborOffset(directionIndex);
+            int neighborX = cellX + offset.x;
+            int neighborY = cellY + offset.y;
+
+            if (!IsInsideGrid(neighborX, neighborY, width, height))
+                continue;
+
+            int neighborIndex = ResolveCellIndex(neighborX, neighborY, width);
+
+            if (navigationCells[neighborIndex].Walkable == 0)
+                continue;
+
+            if (IsDiagonalOffset(offset))
+            {
+                int firstCardinalIndex = ResolveCellIndex(cellX + offset.x, cellY, width);
+                int secondCardinalIndex = ResolveCellIndex(cellX, cellY + offset.y, width);
+
+                if (navigationCells[firstCardinalIndex].Walkable == 0 ||
+                    navigationCells[secondCardinalIndex].Walkable == 0)
+                {
+                    continue;
+                }
+            }
+
+            float2 neighborCenter = ResolveCellCenter(origin, cellSize, neighborX, neighborY);
+
+            if (!CanTraverseBetweenCells(in physicsWorldSingleton, currentCenter, neighborCenter, agentRadius, wallsLayerMask))
+                continue;
+
+            neighborMask |= (byte)(1 << directionIndex);
+        }
+
+        return neighborMask;
+    }
+
+    private static bool CanTraverseBetweenCells(in PhysicsWorldSingleton physicsWorldSingleton,
+                                                float2 startCenter,
+                                                float2 endCenter,
+                                                float agentRadius,
+                                                int wallsLayerMask)
+    {
+        float3 startPosition = new float3(startCenter.x, 0f, startCenter.y);
+        float3 displacement = new float3(endCenter.x - startCenter.x, 0f, endCenter.y - startCenter.y);
+        return !WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                                                        startPosition,
+                                                                        displacement,
+                                                                        agentRadius,
+                                                                        wallsLayerMask,
+                                                                        out float3 _,
+                                                                        out float3 _);
+    }
+    #endregion
+
+    #region Flow Build
+    private static void RebuildFlowField(ref DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                         in EnemyNavigationGridState navigationGridState,
+                                         int playerCellIndex)
+    {
+        int cellCount = navigationCells.Length;
+
+        if (cellCount <= 0)
+            return;
+
+        NativeArray<int> queue = new NativeArray<int>(cellCount, Allocator.Temp);
+        int queueHead = 0;
+        int queueTail = 0;
+
+        // Reset all runtime costs and flow vectors before flood-filling from the player cell.
+        for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
+        {
+            EnemyNavigationCellElement cell = navigationCells[cellIndex];
+            cell.Cost = cell.Walkable != 0 ? UnreachableCellCost : UnreachableCellCost;
+            cell.FlowDirection = float2.zero;
+            navigationCells[cellIndex] = cell;
+        }
+
+        if (playerCellIndex < 0 || playerCellIndex >= cellCount || navigationCells[playerCellIndex].Walkable == 0)
+        {
+            queue.Dispose();
+            return;
+        }
+
+        EnemyNavigationCellElement playerCell = navigationCells[playerCellIndex];
+        playerCell.Cost = 0;
+        navigationCells[playerCellIndex] = playerCell;
+        queue[queueTail] = playerCellIndex;
+        queueTail++;
+
+        // Uniform-cost flood fill is sufficient because all traversable cell edges share the same movement weight.
+        while (queueHead < queueTail)
+        {
+            int currentIndex = queue[queueHead];
+            queueHead++;
+            EnemyNavigationCellElement currentCell = navigationCells[currentIndex];
+            int2 currentCoordinates = ResolveCoordinatesFromIndex(currentIndex, navigationGridState.Width);
+
+            for (int directionIndex = 0; directionIndex < 8; directionIndex++)
+            {
+                if ((currentCell.NeighborMask & (1 << directionIndex)) == 0)
+                    continue;
+
+                int2 offset = ResolveNeighborOffset(directionIndex);
+                int neighborX = currentCoordinates.x + offset.x;
+                int neighborY = currentCoordinates.y + offset.y;
+
+                if (!IsInsideGrid(neighborX, neighborY, navigationGridState.Width, navigationGridState.Height))
+                    continue;
+
+                int neighborIndex = ResolveCellIndex(neighborX, neighborY, navigationGridState.Width);
+                EnemyNavigationCellElement neighborCell = navigationCells[neighborIndex];
+
+                if (neighborCell.Walkable == 0)
+                    continue;
+
+                int nextCost = currentCell.Cost + 1;
+
+                if (nextCost >= neighborCell.Cost)
+                    continue;
+
+                neighborCell.Cost = nextCost;
+                navigationCells[neighborIndex] = neighborCell;
+                queue[queueTail] = neighborIndex;
+                queueTail++;
+            }
+        }
+
+        // Convert the scalar cost field into one normalized planar direction per cell.
+        for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
+        {
+            EnemyNavigationCellElement currentCell = navigationCells[cellIndex];
+
+            if (currentCell.Walkable == 0 || currentCell.Cost == UnreachableCellCost)
+            {
+                currentCell.FlowDirection = float2.zero;
+                navigationCells[cellIndex] = currentCell;
+                continue;
+            }
+
+            if (currentCell.Cost == 0)
+            {
+                currentCell.FlowDirection = float2.zero;
+                navigationCells[cellIndex] = currentCell;
+                continue;
+            }
+
+            int2 currentCoordinates = ResolveCoordinatesFromIndex(cellIndex, navigationGridState.Width);
+            int bestNeighborCost = currentCell.Cost;
+            float2 currentCenter = ResolveCellCenter(navigationGridState.Origin,
+                                                     navigationGridState.CellSize,
+                                                     currentCoordinates.x,
+                                                     currentCoordinates.y);
+            float2 bestDirection = float2.zero;
+
+            for (int directionIndex = 0; directionIndex < 8; directionIndex++)
+            {
+                if ((currentCell.NeighborMask & (1 << directionIndex)) == 0)
+                    continue;
+
+                int2 offset = ResolveNeighborOffset(directionIndex);
+                int neighborX = currentCoordinates.x + offset.x;
+                int neighborY = currentCoordinates.y + offset.y;
+
+                if (!IsInsideGrid(neighborX, neighborY, navigationGridState.Width, navigationGridState.Height))
+                    continue;
+
+                int neighborIndex = ResolveCellIndex(neighborX, neighborY, navigationGridState.Width);
+                EnemyNavigationCellElement neighborCell = navigationCells[neighborIndex];
+
+                if (neighborCell.Cost >= bestNeighborCost)
+                    continue;
+
+                float2 neighborCenter = ResolveCellCenter(navigationGridState.Origin,
+                                                          navigationGridState.CellSize,
+                                                          neighborX,
+                                                          neighborY);
+                bestNeighborCost = neighborCell.Cost;
+                bestDirection = math.normalizesafe(neighborCenter - currentCenter, float2.zero);
+            }
+
+            currentCell.FlowDirection = bestDirection;
+            navigationCells[cellIndex] = currentCell;
+        }
+
+        queue.Dispose();
+    }
+    #endregion
+
+    #region Runtime Query
+    private static bool TryResolveBestCellIndex(float3 worldPosition,
+                                                in EnemyNavigationGridState navigationGridState,
+                                                DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                                out int cellIndex)
+    {
+        cellIndex = InvalidCellIndex;
+
+        if (!TryResolveCellCoordinates(worldPosition, in navigationGridState, out int cellX, out int cellY))
+            return false;
+
+        int directCellIndex = ResolveCellIndex(cellX, cellY, navigationGridState.Width);
+
+        if (navigationCells[directCellIndex].Walkable != 0)
+        {
+            cellIndex = directCellIndex;
+            return true;
+        }
+
+        return TryResolveNearbyWalkableCell(cellX,
+                                            cellY,
+                                            in navigationGridState,
+                                            navigationCells,
+                                            out cellIndex);
+    }
+
+    private static bool TryResolveNearbyWalkableCell(int sourceCellX,
+                                                     int sourceCellY,
+                                                     in EnemyNavigationGridState navigationGridState,
+                                                     DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                                     out int cellIndex)
+    {
+        cellIndex = InvalidCellIndex;
+        int bestDistanceSquared = int.MaxValue;
+
+        // Search a small local area first to recover from cells near wall boundaries without scanning the whole grid.
+        for (int radius = 1; radius <= SearchRadiusWhenCellBlocked; radius++)
+        {
+            bool foundCandidateAtCurrentRadius = false;
+
+            for (int offsetY = -radius; offsetY <= radius; offsetY++)
+            {
+                for (int offsetX = -radius; offsetX <= radius; offsetX++)
+                {
+                    int candidateX = sourceCellX + offsetX;
+                    int candidateY = sourceCellY + offsetY;
+
+                    if (!IsInsideGrid(candidateX, candidateY, navigationGridState.Width, navigationGridState.Height))
+                        continue;
+
+                    int candidateIndex = ResolveCellIndex(candidateX, candidateY, navigationGridState.Width);
+
+                    if (navigationCells[candidateIndex].Walkable == 0)
+                        continue;
+
+                    int distanceSquared = offsetX * offsetX + offsetY * offsetY;
+
+                    if (distanceSquared >= bestDistanceSquared)
+                        continue;
+
+                    bestDistanceSquared = distanceSquared;
+                    cellIndex = candidateIndex;
+                    foundCandidateAtCurrentRadius = true;
+                }
+            }
+
+            if (foundCandidateAtCurrentRadius)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryResolveCellCoordinates(float3 worldPosition,
+                                                  in EnemyNavigationGridState navigationGridState,
+                                                  out int cellX,
+                                                  out int cellY)
+    {
+        cellX = (int)math.floor((worldPosition.x - navigationGridState.Origin.x) * navigationGridState.InverseCellSize);
+        cellY = (int)math.floor((worldPosition.z - navigationGridState.Origin.y) * navigationGridState.InverseCellSize);
+        return IsInsideGrid(cellX, cellY, navigationGridState.Width, navigationGridState.Height);
+    }
+    #endregion
+
+    #region Math Helpers
+    private static int ResolveCellIndex(int cellX, int cellY, int width)
+    {
+        return cellY * width + cellX;
+    }
+
+    private static int2 ResolveCoordinatesFromIndex(int cellIndex, int width)
+    {
+        int cellY = cellIndex / width;
+        int cellX = cellIndex - cellY * width;
+        return new int2(cellX, cellY);
+    }
+
+    private static float2 ResolveCellCenter(float2 origin, float cellSize, int cellX, int cellY)
+    {
+        return origin + new float2((cellX + 0.5f) * cellSize, (cellY + 0.5f) * cellSize);
+    }
+
+    private static bool IsInsideGrid(int cellX, int cellY, int width, int height)
+    {
+        return cellX >= 0 && cellY >= 0 && cellX < width && cellY < height;
+    }
+
+    private static bool IsDiagonalOffset(int2 offset)
+    {
+        return math.abs(offset.x) == 1 && math.abs(offset.y) == 1;
+    }
+
+    private static int2 ResolveNeighborOffset(int directionIndex)
+    {
+        switch (directionIndex)
+        {
+            case 0:
+                return new int2(0, 1);
+            case 1:
+                return new int2(1, 0);
+            case 2:
+                return new int2(0, -1);
+            case 3:
+                return new int2(-1, 0);
+            case 4:
+                return new int2(1, 1);
+            case 5:
+                return new int2(-1, 1);
+            case 6:
+                return new int2(1, -1);
+            default:
+                return new int2(-1, -1);
+        }
+    }
+    #endregion
+
+    #endregion
+}

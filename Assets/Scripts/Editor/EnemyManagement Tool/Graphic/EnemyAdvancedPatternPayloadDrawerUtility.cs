@@ -219,7 +219,6 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
 
         EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("unexploredDirectionPreference"), "Unexplored Direction Preference");
         EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("towardPlayerPreference"), "Toward Player Preference");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("minimumWallDistance"), "Minimum Wall Distance");
         EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("minimumEnemyClearance"), "Minimum Enemy Clearance");
         EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("trajectoryPredictionTime"), "Trajectory Prediction Time");
         EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("freeTrajectoryPreference"), "Free Trajectory Preference");

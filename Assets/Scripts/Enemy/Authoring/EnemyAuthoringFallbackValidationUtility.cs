@@ -17,6 +17,7 @@ public static class EnemyAuthoringFallbackValidationUtility
     /// /params acceleration: Fallback acceleration value.
     /// /params deceleration: Fallback deceleration value.
     /// /params rotationSpeedDegreesPerSecond: Fallback self-rotation speed.
+    /// /params minimumWallDistance: Fallback extra distance kept from static walls.
     /// /params separationRadius: Fallback neighbor separation radius.
     /// /params separationWeight: Fallback neighbor separation weight.
     /// /params bodyRadius: Fallback body radius.
@@ -37,6 +38,7 @@ public static class EnemyAuthoringFallbackValidationUtility
                                               ref float acceleration,
                                               ref float deceleration,
                                               ref float rotationSpeedDegreesPerSecond,
+                                              ref float minimumWallDistance,
                                               ref float separationRadius,
                                               ref float separationWeight,
                                               ref float bodyRadius,
@@ -65,6 +67,9 @@ public static class EnemyAuthoringFallbackValidationUtility
 
         if (float.IsNaN(rotationSpeedDegreesPerSecond) || float.IsInfinity(rotationSpeedDegreesPerSecond))
             rotationSpeedDegreesPerSecond = 0f;
+
+        if (minimumWallDistance < 0f)
+            minimumWallDistance = 0f;
 
         if (separationRadius < 0.1f)
             separationRadius = 0.1f;

@@ -318,6 +318,7 @@ MonoBehaviour:
   acceleration: 8
   deceleration: 8
   rotationSpeedDegreesPerSecond: 0
+  minimumWallDistance: 0.25
   separationRadius: 1.1
   separationWeight: 2
   bodyRadius: 1

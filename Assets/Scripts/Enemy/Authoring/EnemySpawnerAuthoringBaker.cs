@@ -40,6 +40,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
             InitialPoolCapacityPerPrefab = math.max(0, authoring.InitialPoolCapacityPerPrefab),
             ExpandBatchPerPrefab = math.max(1, authoring.ExpandBatchPerPrefab),
             DespawnDistance = math.max(0f, authoring.DespawnDistance),
+            MaximumSpawnDistanceFromCenter = ResolveMaximumSpawnDistanceFromCenter(stagedWaveEvents, authoring.CellSize),
             TotalPlannedEnemyCount = CountTotalPlannedEnemies(plannedCountByPrefab)
         });
         AddComponent(spawnerEntity, new EnemySpawnerState
@@ -276,6 +277,34 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
             totalPlannedEnemies += math.max(0, pair.Value);
 
         return totalPlannedEnemies;
+    }
+
+    /// <summary>
+    /// Resolves the maximum planar spawn distance authored by the staged wave events.
+    /// The returned radius includes half a cell diagonal so the full painted cell area stays inside the envelope.
+    /// /params stagedWaveEvents: Fully staged exact spawn events of the spawner.
+    /// /params cellSize: Authored square cell size used by the spawn grid.
+    /// /returns Maximum planar spawn distance from the spawner center.
+    /// </summary>
+    private static float ResolveMaximumSpawnDistanceFromCenter(List<EnemySpawnerWaveEventElement> stagedWaveEvents, float cellSize)
+    {
+        if (stagedWaveEvents == null || stagedWaveEvents.Count == 0)
+            return 0f;
+
+        const float HalfCellDiagonalFactor = 0.70710677f;
+        float cellEnvelopePadding = math.max(0f, cellSize) * HalfCellDiagonalFactor;
+        float maximumDistance = 0f;
+
+        for (int eventIndex = 0; eventIndex < stagedWaveEvents.Count; eventIndex++)
+        {
+            float3 localSpawnPosition = stagedWaveEvents[eventIndex].LocalSpawnPosition;
+            float planarDistance = math.length(localSpawnPosition.xz) + cellEnvelopePadding;
+
+            if (planarDistance > maximumDistance)
+                maximumDistance = planarDistance;
+        }
+
+        return maximumDistance;
     }
     #endregion
 

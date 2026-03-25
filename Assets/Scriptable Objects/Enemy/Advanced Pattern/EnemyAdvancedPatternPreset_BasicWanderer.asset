@@ -40,7 +40,6 @@ MonoBehaviour:
           infiniteDirectionStepDegrees: 8
           unexploredDirectionPreference: 0.65
           towardPlayerPreference: 0.35
-          minimumWallDistance: 0.25
           minimumEnemyClearance: 0.2
           trajectoryPredictionTime: 0.35
           freeTrajectoryPreference: 4
@@ -131,7 +130,6 @@ MonoBehaviour:
           infiniteDirectionStepDegrees: 8
           unexploredDirectionPreference: 0.65
           towardPlayerPreference: 0.35
-          minimumWallDistance: 0.25
           minimumEnemyClearance: 0.2
           trajectoryPredictionTime: 0.35
           freeTrajectoryPreference: 4
@@ -222,7 +220,6 @@ MonoBehaviour:
           infiniteDirectionStepDegrees: 8
           unexploredDirectionPreference: 0.65
           towardPlayerPreference: 0.35
-          minimumWallDistance: 0.25
           minimumEnemyClearance: 0.2
           trajectoryPredictionTime: 0.35
           freeTrajectoryPreference: 4
@@ -313,7 +310,6 @@ MonoBehaviour:
           infiniteDirectionStepDegrees: 8
           unexploredDirectionPreference: 0.65
           towardPlayerPreference: 0.35
-          minimumWallDistance: 0.25
           minimumEnemyClearance: 0.2
           trajectoryPredictionTime: 0.35
           freeTrajectoryPreference: 4
@@ -404,7 +400,6 @@ MonoBehaviour:
           infiniteDirectionStepDegrees: 8
           unexploredDirectionPreference: 0.65
           towardPlayerPreference: 0.35
-          minimumWallDistance: 0.25
           minimumEnemyClearance: 0.2
           trajectoryPredictionTime: 0.35
           freeTrajectoryPreference: 4
@@ -506,7 +501,6 @@ MonoBehaviour:
             infiniteDirectionStepDegrees: 8
             unexploredDirectionPreference: 0.65
             towardPlayerPreference: 0.35
-            minimumWallDistance: 1.5
             minimumEnemyClearance: 1
             trajectoryPredictionTime: 0.5
             freeTrajectoryPreference: 4
@@ -596,7 +590,6 @@ MonoBehaviour:
             infiniteDirectionStepDegrees: 8
             unexploredDirectionPreference: 0.65
             towardPlayerPreference: 0.35
-            minimumWallDistance: 1.5
             minimumEnemyClearance: 1
             trajectoryPredictionTime: 0.5
             freeTrajectoryPreference: 4

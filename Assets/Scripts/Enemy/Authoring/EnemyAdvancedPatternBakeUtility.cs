@@ -105,7 +105,6 @@ public static class EnemyAdvancedPatternBakeUtility
             BasicInfiniteDirectionStepDegrees = 8f,
             BasicUnexploredDirectionPreference = 0.65f,
             BasicTowardPlayerPreference = 0.35f,
-            BasicMinimumWallDistance = 0.25f,
             BasicMinimumEnemyClearance = 0.2f,
             BasicTrajectoryPredictionTime = 0.35f,
             BasicFreeTrajectoryPreference = 4f,
@@ -224,7 +223,6 @@ public static class EnemyAdvancedPatternBakeUtility
             patternConfig.BasicInfiniteDirectionStepDegrees = math.clamp(basic.InfiniteDirectionStepDegrees, 0.5f, 90f);
             patternConfig.BasicUnexploredDirectionPreference = math.max(0f, basic.UnexploredDirectionPreference);
             patternConfig.BasicTowardPlayerPreference = math.max(0f, basic.TowardPlayerPreference);
-            patternConfig.BasicMinimumWallDistance = math.max(0f, basic.MinimumWallDistance);
             patternConfig.BasicMinimumEnemyClearance = math.max(0f, basic.MinimumEnemyClearance);
             patternConfig.BasicTrajectoryPredictionTime = math.max(0f, basic.TrajectoryPredictionTime);
             patternConfig.BasicFreeTrajectoryPreference = math.max(0f, basic.FreeTrajectoryPreference);

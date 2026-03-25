@@ -90,7 +90,7 @@ public partial struct EnemyDespawnSystem : ISystem
             return true;
 
         EnemySpawner spawner = spawnerLookup[spawnerEntity];
-        float despawnDistance = spawner.DespawnDistance;
+        float despawnDistance = EnemySpawnerRuntimeUtility.ResolveEffectiveDespawnDistance(in spawner);
 
         if (despawnDistance <= 0f)
             return false;

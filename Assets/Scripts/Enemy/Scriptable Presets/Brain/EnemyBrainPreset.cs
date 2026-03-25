@@ -32,6 +32,9 @@ public sealed class EnemyBrainMovementSettings
 
     [Tooltip("Scales steering and clearance reactivity. Higher values produce stronger side-step and avoidance corrections.")]
     [SerializeField] private float steeringAggressiveness = 1f;
+
+    [Tooltip("Extra distance in meters kept from static wall colliders by standard steering-driven enemies.")]
+    [SerializeField] private float minimumWallDistance = 0.25f;
     #endregion
 
     #endregion
@@ -92,6 +95,14 @@ public sealed class EnemyBrainMovementSettings
             return steeringAggressiveness;
         }
     }
+
+    public float MinimumWallDistance
+    {
+        get
+        {
+            return minimumWallDistance;
+        }
+    }
     #endregion
 
     #region Methods
@@ -124,6 +135,9 @@ public sealed class EnemyBrainMovementSettings
             steeringAggressiveness = 1f;
         else
             steeringAggressiveness = Mathf.Clamp(steeringAggressiveness, 0f, 2.5f);
+
+        if (minimumWallDistance < 0f)
+            minimumWallDistance = 0f;
     }
     #endregion
 

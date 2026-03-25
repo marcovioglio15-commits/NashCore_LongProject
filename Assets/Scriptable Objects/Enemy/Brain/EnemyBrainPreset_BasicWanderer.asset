@@ -24,6 +24,7 @@ MonoBehaviour:
     rotationSpeedDegreesPerSecond: 0
     priorityTier: 1
     steeringAggressiveness: 1
+    minimumWallDistance: 0.25
   steering:
     separationRadius: 1.1
     separationWeight: 2

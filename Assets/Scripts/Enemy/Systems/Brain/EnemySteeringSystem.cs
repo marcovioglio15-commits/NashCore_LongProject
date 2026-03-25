@@ -226,6 +226,15 @@ public partial struct EnemySteeringSystem : ISystem
         float deltaTime = SystemAPI.Time.DeltaTime * enemyTimeScale;
         PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
         int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
+        EnemyNavigationGridState navigationGridState = default;
+        DynamicBuffer<EnemyNavigationCellElement> navigationCells = default;
+        bool navigationReady = false;
+
+        if (SystemAPI.TryGetSingleton<EnemyNavigationGridState>(out navigationGridState) &&
+            SystemAPI.TryGetSingletonBuffer<EnemyNavigationCellElement>(out navigationCells))
+        {
+            navigationReady = true;
+        }
 
         if (SystemAPI.TryGetSingleton<PlayerWorldLayersConfig>(out PlayerWorldLayersConfig worldLayersConfig) && worldLayersConfig.WallsLayerMask != 0)
             wallsLayerMask = worldLayersConfig.WallsLayerMask;
@@ -251,6 +260,26 @@ public partial struct EnemySteeringSystem : ISystem
             {
                 float separationWeight = math.max(0f, enemyData.SeparationWeight);
                 float3 desiredVelocity = approachResults[evaluatedIndex];
+
+                if (navigationReady && wallsEnabled)
+                {
+                    float navigationDesiredSpeed = velocityMaxSpeed > 0f ? velocityMaxSpeed : math.max(0f, enemyData.MoveSpeed);
+                    float navigationCollisionRadius = math.max(0.01f, enemyData.BodyRadius + math.max(0f, enemyData.MinimumWallDistance));
+
+                    if (EnemyNavigationFlowFieldUtility.TryResolveNavigationVelocity(enemyTransform.Position,
+                                                                                    playerPosition,
+                                                                                    navigationCollisionRadius,
+                                                                                    navigationDesiredSpeed,
+                                                                                    in physicsWorldSingleton,
+                                                                                    wallsLayerMask,
+                                                                                    in navigationGridState,
+                                                                                    navigationCells,
+                                                                                    out float3 navigationVelocity))
+                    {
+                        desiredVelocity = navigationVelocity;
+                    }
+                }
+
                 float urgency = math.saturate(separationUrgencyResults[evaluatedIndex]);
                 float urgencyBoost = math.lerp(1f, EnemySteeringUtility.SeparationUrgencyMaxBoost, urgency);
                 float separationResponseScale = EnemySteeringUtility.ResolveAggressivenessScale(enemySteeringAggressiveness, 0.72f, 1.95f);
@@ -308,7 +337,7 @@ public partial struct EnemySteeringSystem : ISystem
 
             if (wallsEnabled && desiredDisplacementSquared > EnemySteeringUtility.DirectionEpsilon)
             {
-                float collisionRadius = math.max(0.01f, enemyData.BodyRadius);
+                float collisionRadius = math.max(0.01f, enemyData.BodyRadius + math.max(0f, enemyData.MinimumWallDistance));
                 bool hitWall = WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
                                                                                        position,
                                                                                        desiredDisplacement,
