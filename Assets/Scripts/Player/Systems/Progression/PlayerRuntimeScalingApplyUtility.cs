@@ -574,15 +574,46 @@ internal static class PlayerRuntimeScalingApplyUtility
                                             ref PlayerShield playerShield,
                                             in PlayerRuntimeHealthStatisticsConfig runtimeHealth)
     {
-        playerHealth.Max = math.max(1f, runtimeHealth.MaxHealth);
+        float previousHealthMax = math.max(1f, playerHealth.Max);
+        float nextHealthMax = math.max(1f, runtimeHealth.MaxHealth);
+        playerHealth.Max = nextHealthMax;
+        playerHealth.Current = ResolveAdjustedCurrentValue(playerHealth.Current,
+                                                          previousHealthMax,
+                                                          nextHealthMax,
+                                                          runtimeHealth.MaxHealthAdjustmentMode);
+        float previousShieldMax = math.max(0f, playerShield.Max);
+        float nextShieldMax = math.max(0f, runtimeHealth.MaxShield);
+        playerShield.Max = nextShieldMax;
+        playerShield.Current = ResolveAdjustedCurrentValue(playerShield.Current,
+                                                           previousShieldMax,
+                                                           nextShieldMax,
+                                                           runtimeHealth.MaxShieldAdjustmentMode);
+    }
 
-        if (playerHealth.Current > playerHealth.Max)
-            playerHealth.Current = playerHealth.Max;
+    private static float ResolveAdjustedCurrentValue(float previousCurrentValue,
+                                                     float previousMaxValue,
+                                                     float nextMaxValue,
+                                                     PlayerMaxStatAdjustmentMode adjustmentMode)
+    {
+        float sanitizedCurrentValue = math.max(0f, previousCurrentValue);
+        float sanitizedPreviousMaxValue = math.max(0f, previousMaxValue);
+        float sanitizedNextMaxValue = math.max(0f, nextMaxValue);
+        float resolvedCurrentValue = sanitizedCurrentValue;
 
-        playerShield.Max = math.max(0f, runtimeHealth.MaxShield);
+        switch (adjustmentMode)
+        {
+            case PlayerMaxStatAdjustmentMode.KeepPercentage:
+                if (sanitizedPreviousMaxValue > 0f)
+                    resolvedCurrentValue = sanitizedNextMaxValue * math.saturate(sanitizedCurrentValue / sanitizedPreviousMaxValue);
+                else
+                    resolvedCurrentValue = 0f;
+                break;
+            case PlayerMaxStatAdjustmentMode.AddDeltaToCurrent:
+                resolvedCurrentValue = sanitizedCurrentValue + (sanitizedNextMaxValue - sanitizedPreviousMaxValue);
+                break;
+        }
 
-        if (playerShield.Current > playerShield.Max)
-            playerShield.Current = playerShield.Max;
+        return math.clamp(resolvedCurrentValue, 0f, sanitizedNextMaxValue);
     }
 
     private static float ResolveReservedStatValue(DynamicBuffer<PlayerScalableStatElement> scalableStats, string statName, float fallbackValue)
@@ -659,7 +690,9 @@ internal static class PlayerRuntimeScalingApplyUtility
         return new PlayerRuntimeHealthStatisticsConfig
         {
             MaxHealth = baseHealth.MaxHealth,
+            MaxHealthAdjustmentMode = baseHealth.MaxHealthAdjustmentMode,
             MaxShield = baseHealth.MaxShield,
+            MaxShieldAdjustmentMode = baseHealth.MaxShieldAdjustmentMode,
             GraceTimeSeconds = baseHealth.GraceTimeSeconds
         };
     }

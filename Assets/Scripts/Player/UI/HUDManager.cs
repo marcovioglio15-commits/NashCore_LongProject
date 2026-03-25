@@ -154,8 +154,9 @@ public sealed class HUDManager : MonoBehaviour
             return;
         }
 
-        UpdateHealthBar(playerEntity);
-        UpdateShieldBar(playerEntity);
+        bool snapCoreBars = ShouldSnapCoreBars(playerEntity);
+        UpdateHealthBar(playerEntity, snapCoreBars);
+        UpdateShieldBar(playerEntity, snapCoreBars);
         UpdateLevelAndExperience(playerEntity);
         powerUpOverlaySection.Update(entityManager, playerEntity);
         milestoneSelectionSection.Update(entityManager, playerEntity);
@@ -244,7 +245,7 @@ public sealed class HUDManager : MonoBehaviour
     #endregion
 
     #region Bars
-    private void UpdateHealthBar(Entity playerEntity)
+    private void UpdateHealthBar(Entity playerEntity, bool snapImmediately)
     {
         if (playerHealthFillImage == null)
             return;
@@ -261,13 +262,21 @@ public sealed class HUDManager : MonoBehaviour
         if (playerHealth.Max > 0f)
             targetNormalizedValue = Mathf.Clamp01(playerHealth.Current / playerHealth.Max);
 
-        displayedHealthNormalized = SmoothNormalized(displayedHealthNormalized,
-                                                     targetNormalizedValue,
-                                                     healthBarSmoothingSeconds);
+        if (snapImmediately)
+        {
+            displayedHealthNormalized = targetNormalizedValue;
+        }
+        else
+        {
+            displayedHealthNormalized = SmoothNormalized(displayedHealthNormalized,
+                                                         targetNormalizedValue,
+                                                         healthBarSmoothingSeconds);
+        }
+
         ApplyFill(playerHealthFillImage, displayedHealthNormalized);
     }
 
-    private void UpdateShieldBar(Entity playerEntity)
+    private void UpdateShieldBar(Entity playerEntity, bool snapImmediately)
     {
         if (!TryResolveShieldFillImage(out Image shieldFillImage))
             return;
@@ -284,9 +293,17 @@ public sealed class HUDManager : MonoBehaviour
         if (playerShield.Max > 0f)
             targetNormalizedValue = Mathf.Clamp01(playerShield.Current / playerShield.Max);
 
-        displayedShieldNormalized = SmoothNormalized(displayedShieldNormalized,
-                                                     targetNormalizedValue,
-                                                     shieldBarSmoothingSeconds);
+        if (snapImmediately)
+        {
+            displayedShieldNormalized = targetNormalizedValue;
+        }
+        else
+        {
+            displayedShieldNormalized = SmoothNormalized(displayedShieldNormalized,
+                                                         targetNormalizedValue,
+                                                         shieldBarSmoothingSeconds);
+        }
+
         ApplyFill(shieldFillImage, displayedShieldNormalized);
     }
 
@@ -490,6 +507,20 @@ public sealed class HUDManager : MonoBehaviour
 
         ValidateShieldOverlayBinding();
         return false;
+    }
+
+    /// <summary>
+    /// Returns whether health and shield bars should snap to their exact runtime values.
+    /// </summary>
+    /// <param name="playerEntity">Player entity currently driving the HUD.</param>
+    /// <returns>True when the run outcome is finalized and the ending screen should bypass smoothing.</returns>
+    private bool ShouldSnapCoreBars(Entity playerEntity)
+    {
+        if (!entityManager.HasComponent<PlayerRunOutcomeState>(playerEntity))
+            return false;
+
+        PlayerRunOutcomeState runOutcomeState = entityManager.GetComponentData<PlayerRunOutcomeState>(playerEntity);
+        return runOutcomeState.IsFinalized != 0;
     }
 
     /// <summary>

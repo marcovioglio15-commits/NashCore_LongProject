@@ -250,8 +250,14 @@ public sealed class PlayerHealthStatisticsSettings
     [Tooltip("Maximum and initial health assigned to the player when initialized at runtime.")]
     [SerializeField] private float maxHealth = 100f;
 
+    [Tooltip("Chooses how current health is recomputed when Add Scaling changes Max Health at runtime.")]
+    [SerializeField] private PlayerMaxStatAdjustmentMode maxHealthAdjustmentMode;
+
     [Tooltip("Maximum and initial shield reserve assigned to the player when initialized at runtime. Shield absorbs damage before health.")]
     [SerializeField] private float maxShield;
+
+    [Tooltip("Chooses how current shield is recomputed when Add Scaling changes Max Shield at runtime.")]
+    [SerializeField] private PlayerMaxStatAdjustmentMode maxShieldAdjustmentMode;
 
     [Tooltip("Optional invulnerability window in seconds applied after the player receives valid damage. Zero disables the grace window.")]
     [SerializeField] private float graceTimeSeconds;
@@ -274,6 +280,22 @@ public sealed class PlayerHealthStatisticsSettings
         get
         {
             return maxShield;
+        }
+    }
+
+    public PlayerMaxStatAdjustmentMode MaxHealthAdjustmentMode
+    {
+        get
+        {
+            return maxHealthAdjustmentMode;
+        }
+    }
+
+    public PlayerMaxStatAdjustmentMode MaxShieldAdjustmentMode
+    {
+        get
+        {
+            return maxShieldAdjustmentMode;
         }
     }
 

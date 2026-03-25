@@ -475,7 +475,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         AddComponent(entity, new PlayerRuntimeHealthStatisticsConfig
         {
             MaxHealth = math.max(1f, controllerPreset.HealthStatistics.MaxHealth),
+            MaxHealthAdjustmentMode = controllerPreset.HealthStatistics.MaxHealthAdjustmentMode,
             MaxShield = math.max(0f, controllerPreset.HealthStatistics.MaxShield),
+            MaxShieldAdjustmentMode = controllerPreset.HealthStatistics.MaxShieldAdjustmentMode,
             GraceTimeSeconds = math.max(0f, controllerPreset.HealthStatistics.GraceTimeSeconds)
         });
         AddComponent(entity, new PlayerRuntimeScalingState());

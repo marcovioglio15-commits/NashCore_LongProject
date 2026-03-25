@@ -55,4 +55,12 @@ public enum ShootingTriggerMode
     ManualSingleShot = 1,
     ManualContinousShot = 2
 }
+
+[Serializable]
+public enum PlayerMaxStatAdjustmentMode : byte
+{
+    KeepCurrentValue = 0,
+    KeepPercentage = 1,
+    AddDeltaToCurrent = 2
+}
 #endregion

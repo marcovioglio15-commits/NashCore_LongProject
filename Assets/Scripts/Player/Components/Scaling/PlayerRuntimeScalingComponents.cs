@@ -129,7 +129,9 @@ public struct PlayerBaseShootingConfig : IComponentData
 public struct PlayerRuntimeHealthStatisticsConfig : IComponentData
 {
     public float MaxHealth;
+    public PlayerMaxStatAdjustmentMode MaxHealthAdjustmentMode;
     public float MaxShield;
+    public PlayerMaxStatAdjustmentMode MaxShieldAdjustmentMode;
     public float GraceTimeSeconds;
 }
 
@@ -141,7 +143,9 @@ public struct PlayerRuntimeHealthStatisticsConfig : IComponentData
 public struct PlayerBaseHealthStatisticsConfig : IComponentData
 {
     public float MaxHealth;
+    public PlayerMaxStatAdjustmentMode MaxHealthAdjustmentMode;
     public float MaxShield;
+    public PlayerMaxStatAdjustmentMode MaxShieldAdjustmentMode;
     public float GraceTimeSeconds;
 }
 #endregion

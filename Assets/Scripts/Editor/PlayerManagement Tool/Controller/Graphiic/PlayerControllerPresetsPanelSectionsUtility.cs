@@ -493,10 +493,16 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         }
 
         SerializedProperty maxHealthProperty = healthStatisticsProperty.FindPropertyRelative("maxHealth");
+        SerializedProperty maxHealthAdjustmentModeProperty = healthStatisticsProperty.FindPropertyRelative("maxHealthAdjustmentMode");
         SerializedProperty maxShieldProperty = healthStatisticsProperty.FindPropertyRelative("maxShield");
+        SerializedProperty maxShieldAdjustmentModeProperty = healthStatisticsProperty.FindPropertyRelative("maxShieldAdjustmentMode");
         SerializedProperty graceTimeProperty = healthStatisticsProperty.FindPropertyRelative("graceTimeSeconds");
 
-        if (maxHealthProperty == null || maxShieldProperty == null || graceTimeProperty == null)
+        if (maxHealthProperty == null ||
+            maxHealthAdjustmentModeProperty == null ||
+            maxShieldProperty == null ||
+            maxShieldAdjustmentModeProperty == null ||
+            graceTimeProperty == null)
         {
             Label missingFieldsLabel = new Label("Health statistics fields are missing on this preset.");
             missingFieldsLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -505,7 +511,13 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         }
 
         section.Add(PlayerScalingFieldElementFactory.CreateField(maxHealthProperty, scalingRulesProperty, "Max Health"));
+        section.Add(CreatePropertyField(maxHealthAdjustmentModeProperty,
+                                        "Current Health On Max Change",
+                                        "Defines how Current Health is recomputed when Add Scaling changes Max Health at runtime."));
         section.Add(PlayerScalingFieldElementFactory.CreateField(maxShieldProperty, scalingRulesProperty, "Max Shield"));
+        section.Add(CreatePropertyField(maxShieldAdjustmentModeProperty,
+                                        "Current Shield On Max Change",
+                                        "Defines how Current Shield is recomputed when Add Scaling changes Max Shield at runtime."));
         section.Add(PlayerScalingFieldElementFactory.CreateField(graceTimeProperty, scalingRulesProperty, "Grace Time Seconds"));
     }
 
@@ -601,6 +613,25 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         sectionButton.style.marginRight = 4f;
         sectionButton.style.marginBottom = 4f;
         parent.Add(sectionButton);
+    }
+
+    /// <summary>
+    /// Builds one standard property field with a custom label and tooltip.
+    /// </summary>
+    /// <param name="property">Serialized property bound to the field.</param>
+    /// <param name="label">Displayed field label.</param>
+    /// <param name="tooltip">Tooltip shown by the field in the tool UI.</param>
+    /// <returns>Returns the configured property field.</returns>
+    private static PropertyField CreatePropertyField(SerializedProperty property, string label, string tooltip)
+    {
+        PropertyField propertyField = new PropertyField(property, label);
+        propertyField.BindProperty(property);
+        propertyField.tooltip = tooltip;
+        propertyField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            PlayerManagementDraftSession.MarkDirty();
+        });
+        return propertyField;
     }
 
     /// <summary>
