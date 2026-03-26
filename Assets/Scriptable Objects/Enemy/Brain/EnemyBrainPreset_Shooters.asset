@@ -17,8 +17,8 @@ MonoBehaviour:
   description: 
   version: 1.0.0
   movement:
-    moveSpeed: 3
-    maxSpeed: 4
+    moveSpeed: 0
+    maxSpeed: 15
     acceleration: 8
     deceleration: 8
     rotationSpeedDegreesPerSecond: 0
@@ -32,7 +32,7 @@ MonoBehaviour:
   damage:
     contactDamageEnabled: 1
     contactRadius: 1.2
-    contactAmountPerTick: 5
+    contactAmountPerTick: 1
     contactTickInterval: 0.75
     areaDamageEnabled: 0
     areaRadius: 2.25
