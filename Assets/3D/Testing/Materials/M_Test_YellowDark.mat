@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_Test_Yellow
+  m_Name: M_Test_YellowDark
   m_Shader: {fileID: 4800000, guid: 9f4c6c9f31a942fca2f744f5437281cb, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -142,7 +142,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _AmbientColor: {r: 0, g: 0, b: 0, a: 1}
-    - _BaseColor: {r: 0.7987421, g: 0.5982735, b: 0, a: 1}
+    - _BaseColor: {r: 0.8805031, g: 0.47274616, b: 0, a: 1}
     - _Color: {r: 1, g: 0.74784434, b: 0, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HitFlashColor: {r: 1, g: 0.14999998, b: 0.14999998, a: 1}
