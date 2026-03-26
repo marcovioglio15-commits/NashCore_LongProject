@@ -68,83 +68,72 @@ MonoBehaviour:
   dropPools:
   - poolId: Milestone
     tierRolls:
-    - tierId: Tier0
-      selectionPercentage: 100
-  - poolId: Shop
-    tierRolls:
-    - tierId: Tier0
-      selectionPercentage: 100
+    - tierId: Milestone_Tier1-2-3
+      selectionPercentage: 80
+    - tierId: Milestone_Tier1-2-3
+      selectionPercentage: 20
   tierLevels:
-  - tierId: Tier1
+  - tierId: Milestone_Tier1-2-3
     entries:
     - entryKind: 0
-      powerUpId: ActiveShotgun
-      selectionWeight: 10
-    - entryKind: 0
-      powerUpId: ActiveChargeShot
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActiveGigaBomb
-      selectionWeight: 40
-    - entryKind: 0
       powerUpId: ActiveBasicDash
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActiveBulletTime
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveElementalTrail
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveEnemiesExplodeOnDeath
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveOrbitalProjectiles
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveBouncingProjectiles
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveSplittingProjectiles
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveBigShots
       selectionWeight: 10
-  - tierId: Tier0
-    entries:
-    - entryKind: 0
-      powerUpId: ActiveShotgun
-      selectionWeight: 6
-    - entryKind: 0
-      powerUpId: ActiveChargeShot
-      selectionWeight: 6
-    - entryKind: 0
-      powerUpId: ActiveGigaBomb
-      selectionWeight: 6
-    - entryKind: 0
-      powerUpId: ActiveBasicDash
-      selectionWeight: 17
     - entryKind: 0
       powerUpId: ActivePortableHealthPack
-      selectionWeight: 5
-    - entryKind: 0
-      powerUpId: ActiveBulletTime
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveElementalTrail
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveEnemiesExplodeOnDeath
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: PassiveOrbitalProjectiles
-      selectionWeight: 5
-    - entryKind: 1
-      powerUpId: Passive_AdditionalBarrel
       selectionWeight: 10
     - entryKind: 1
       powerUpId: Passive_HealthIncrease
-      selectionWeight: 30
+      selectionWeight: 10
+    - entryKind: 0
+      powerUpId: Active_Shotgun
+      selectionWeight: 7
+    - entryKind: 0
+      powerUpId: Active_DamageBoost
+      selectionWeight: 7
+    - entryKind: 1
+      powerUpId: Passive_MovementSpeed
+      selectionWeight: 7
+    - entryKind: 1
+      powerUpId: Passive_GatheringRadius
+      selectionWeight: 7
+    - entryKind: 1
+      powerUpId: PassiveBouncingProjectiles
+      selectionWeight: 7
+    - entryKind: 0
+      powerUpId: ActiveGigaBomb
+      selectionWeight: 7
+    - entryKind: 1
+      powerUpId: Passive_Shield
+      selectionWeight: 7
+    - entryKind: 1
+      powerUpId: Passive_DamageIncrease
+      selectionWeight: 7
+    - entryKind: 1
+      powerUpId: Passive_MegaProjectiles
+      selectionWeight: 7
+    - entryKind: 1
+      powerUpId: PassiveOrbitalProjectiles
+      selectionWeight: 7
+  - tierId: Milestone_Tier4-5
+    entries:
+    - entryKind: 0
+      powerUpId: ActiveChargeShot
+      selectionWeight: 15
+    - entryKind: 0
+      powerUpId: ActiveBulletTime
+      selectionWeight: 15
+    - entryKind: 1
+      powerUpId: Passive_AdditionalBarrel
+      selectionWeight: 25
+    - entryKind: 1
+      powerUpId: PassiveElementalTrail
+      selectionWeight: 15
+    - entryKind: 1
+      powerUpId: PassiveEnemiesExplodeOnDeath
+      selectionWeight: 15
+    - entryKind: 1
+      powerUpId: PassiveSplittingProjectiles
+      selectionWeight: 15
   dropPoolCatalog:
   - Milestone
   - Shop
