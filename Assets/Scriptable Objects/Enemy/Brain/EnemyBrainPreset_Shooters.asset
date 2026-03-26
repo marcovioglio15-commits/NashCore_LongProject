@@ -31,12 +31,12 @@ MonoBehaviour:
     bodyRadius: 0.55
   damage:
     contactDamageEnabled: 1
-    contactRadius: 1.2
+    contactRadius: 0.8
     contactAmountPerTick: 1
     contactTickInterval: 0.75
-    areaDamageEnabled: 0
-    areaRadius: 2.25
-    areaAmountPerTickPercent: 2
+    areaDamageEnabled: 1
+    areaRadius: 0
+    areaAmountPerTickPercent: 0
     areaTickInterval: 1
   healthStatistics:
     maxHealth: 30

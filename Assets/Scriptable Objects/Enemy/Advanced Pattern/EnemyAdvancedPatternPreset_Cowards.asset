@@ -405,7 +405,7 @@ MonoBehaviour:
         freeTrajectoryPreference: 0.5
         retreatDirectionPreference: 0.5
         openSpacePreference: 0.5
-        navigationRetreatPreference: 1000
+        navigationRetreatPreference: 1
         patrolRadius: 8
         patrolWaitSeconds: 0.779
         patrolSpeedMultiplier: 0.3

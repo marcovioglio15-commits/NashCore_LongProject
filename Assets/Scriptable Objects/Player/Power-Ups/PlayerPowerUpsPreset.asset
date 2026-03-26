@@ -1350,13 +1350,13 @@ MonoBehaviour:
         bounceDamping: 0.65
         linearDampingPerSecond: 1.2
         fuseSeconds: 1.25
-        radius: 7
+        radius: 3.5
         enableDamagePayload: 1
         damage: 120
         affectAllEnemiesInRadius: 1
         explosionVfxPrefab: {fileID: 1211940420721360282, guid: 28a3caab1d07a7941b99718216a0fea3, type: 3}
         scaleVfxToRadius: 1
-        vfxScaleMultiplier: 1
+        vfxScaleMultiplier: 2
       dash:
         distance: 6
         duration: 0.18
@@ -1502,7 +1502,7 @@ MonoBehaviour:
         scaleVfxToRadius: 1
         vfxScaleMultiplier: 1
       dash:
-        distance: 6
+        distance: 3
         duration: 0.18
         speedTransitionInSeconds: 0.06
         speedTransitionOutSeconds: 0.08
@@ -1802,7 +1802,7 @@ MonoBehaviour:
         transitionTimeSeconds: 0.2
       healMissingHealth:
         applyMode: 0
-        healAmount: 35
+        healAmount: 1
         durationSeconds: 0
         tickIntervalSeconds: 0.2
         stackPolicy: 0

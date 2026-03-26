@@ -24,9 +24,9 @@ MonoBehaviour:
     maxVisibleDistance: 55
     visibleDistanceHysteresis: 6
   damageFeedback:
-    flashColor: {r: 1, g: 0, b: 0.06252861, a: 1}
-    flashDurationSeconds: 0.06
-    flashMaximumBlend: 0.85
+    flashColor: {r: 1, g: 0, b: 0, a: 1}
+    flashDurationSeconds: 0.6
+    flashMaximumBlend: 0.6
   shooterWarning:
     enableAimPulse: 1
     aimPulseColor: {r: 0.35, g: 1, b: 0.95, a: 1}
