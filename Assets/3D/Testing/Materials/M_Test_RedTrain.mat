@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_Test_Yellow
+  m_Name: M_Test_RedTrain
   m_Shader: {fileID: 4800000, guid: 9f4c6c9f31a942fca2f744f5437281cb, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -142,8 +142,8 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _AmbientColor: {r: 0, g: 0, b: 0, a: 1}
-    - _BaseColor: {r: 1, g: 0.74784446, b: 0, a: 1}
-    - _Color: {r: 1, g: 0.74784434, b: 0, a: 1}
+    - _BaseColor: {r: 0.33962262, g: 0.15699533, b: 0.1735978, a: 1}
+    - _Color: {r: 0.3396226, g: 0.1569953, b: 0.17359775, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HitFlashColor: {r: 1, g: 0.14999998, b: 0.14999998, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
