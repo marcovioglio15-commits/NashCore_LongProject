@@ -67,13 +67,17 @@ public static class PlayerPowerUpBakeSharedUtility
     }
 
     /// <summary>
-    /// Resolves a modular active power-up by ID with positional fallback.
+    /// Resolves a modular active power-up by ID with optional positional fallback.
     ///  preset: Source preset.
     ///  powerUpId: Requested power-up ID.
     ///  fallbackIndex: Fallback index inside the active list.
+    ///  allowFallback: True when the fallback index can be used after ID lookup fails.
     /// returns Resolved modular active power-up or null.
     /// </summary>
-    public static ModularPowerUpDefinition ResolveLoadoutActivePowerUp(PlayerPowerUpsPreset preset, string powerUpId, int fallbackIndex)
+    public static ModularPowerUpDefinition ResolveLoadoutActivePowerUp(PlayerPowerUpsPreset preset,
+                                                                       string powerUpId,
+                                                                       int fallbackIndex,
+                                                                       bool allowFallback = true)
     {
         if (preset == null)
             return null;
@@ -104,7 +108,7 @@ public static class PlayerPowerUpBakeSharedUtility
             }
         }
 
-        if (fallbackIndex >= 0 && fallbackIndex < activePowerUps.Count)
+        if (allowFallback && fallbackIndex >= 0 && fallbackIndex < activePowerUps.Count)
             return activePowerUps[fallbackIndex];
 
         return null;

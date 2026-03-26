@@ -62,6 +62,12 @@ public sealed class HUDManager : MonoBehaviour
     [Tooltip("Secondary slot icon image. Shows the sprite assigned to the currently equipped secondary active power up.")]
     [SerializeField] private Image secondaryPowerUpIconImage;
 
+    [Tooltip("Optional root object for the primary active-slot HUD. When left empty, the icon parent is used automatically.")]
+    [SerializeField] private GameObject primaryPowerUpSlotRootObject;
+
+    [Tooltip("Optional root object for the secondary active-slot HUD. When left empty, the icon parent is used automatically.")]
+    [SerializeField] private GameObject secondaryPowerUpSlotRootObject;
+
     [Tooltip("Seconds used to smooth energy fill transitions. Set 0 for immediate updates.")]
     [SerializeField] private float energyBarSmoothingSeconds = 0.08f;
 
@@ -122,6 +128,8 @@ public sealed class HUDManager : MonoBehaviour
         ValidateShieldOverlayBinding();
         powerUpOverlaySection = new HUDPowerUpOverlaySection(primaryPowerUpIconImage,
                                                              secondaryPowerUpIconImage,
+                                                             primaryPowerUpSlotRootObject,
+                                                             secondaryPowerUpSlotRootObject,
                                                              primaryEnergyFillImage,
                                                              secondaryEnergyFillImage,
                                                              primaryChargeFillImage,

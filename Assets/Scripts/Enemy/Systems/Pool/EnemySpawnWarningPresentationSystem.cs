@@ -26,8 +26,8 @@ public partial struct EnemySpawnWarningPresentationSystem : ISystem
 
     public void OnUpdate(ref SystemState state)
     {
-        ConsumeSpawnWarningRequests(ref state);
         TickActiveViews(SystemAPI.Time.DeltaTime);
+        ConsumeSpawnWarningRequests(ref state);
     }
 
     public void OnDestroy(ref SystemState state)

@@ -77,6 +77,10 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         loadoutHeader.style.marginBottom = 2f;
         panel.sectionContentRoot.Add(loadoutHeader);
 
+        HelpBox loadoutInfoBox = new HelpBox("Select <None> to keep a startup active slot empty. Empty slots stay hidden in the HUD and are filled only after the player obtains an active power up during gameplay.", HelpBoxMessageType.Info);
+        loadoutInfoBox.style.marginBottom = 4f;
+        panel.sectionContentRoot.Add(loadoutInfoBox);
+
         List<PlayerPowerUpsPresetsPanel.LoadoutPowerUpOption> loadoutOptions = BuildLoadoutOptions(activePowerUpsProperty);
         BuildLoadoutSelector(panel, "Primary Active Power Up", primaryActivePowerUpIdProperty, loadoutOptions);
         BuildLoadoutSelector(panel, "Secondary Active Power Up", secondaryActivePowerUpIdProperty, loadoutOptions);
@@ -203,7 +207,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         }
 
         PopupField<string> selector = new PopupField<string>(label, optionLabels, selectedIndex);
-        selector.tooltip = "Select the active power up assigned to this slot.";
+        selector.tooltip = "Select the active power up assigned to this slot. Choose <None> to leave the slot empty until the player obtains one at runtime.";
         selector.RegisterValueChangedCallback(evt =>
         {
             int optionIndex = optionLabels.IndexOf(evt.newValue);

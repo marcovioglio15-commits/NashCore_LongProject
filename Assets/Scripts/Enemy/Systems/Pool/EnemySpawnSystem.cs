@@ -11,6 +11,7 @@ using Unity.Transforms;
 public partial struct EnemySpawnSystem : ISystem
 {
     #region Constants
+    private const float LateWarningFallbackDurationSeconds = 0.08f;
     private const float WarningTimeEpsilon = 0.0001f;
     private const float WarningPositionEpsilon = 0.0001f;
     private static readonly float3 DefaultUpAxis = new float3(0f, 1f, 0f);
@@ -53,12 +54,13 @@ public partial struct EnemySpawnSystem : ISystem
     {
         EntityManager entityManager = state.EntityManager;
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+        float previousElapsedTime = elapsedTime - math.max(0f, SystemAPI.Time.DeltaTime);
         NativeArray<Entity> spawnerEntities = spawnerQuery.ToEntityArray(Allocator.Temp);
 
         try
         {
             for (int spawnerIndex = 0; spawnerIndex < spawnerEntities.Length; spawnerIndex++)
-                ProcessSpawner(entityManager, spawnerEntities[spawnerIndex], elapsedTime);
+                ProcessSpawner(entityManager, spawnerEntities[spawnerIndex], elapsedTime, previousElapsedTime);
         }
         finally
         {
@@ -74,9 +76,13 @@ public partial struct EnemySpawnSystem : ISystem
     ///  entityManager: Entity manager used to access components and buffers.
     ///  spawnerEntity: Spawner entity being processed.
     ///  elapsedTime: Current elapsed world time.
+    ///  previousElapsedTime: Elapsed world time at the beginning of the current frame.
     /// returns None.
     /// </summary>
-    private static void ProcessSpawner(EntityManager entityManager, Entity spawnerEntity, float elapsedTime)
+    private static void ProcessSpawner(EntityManager entityManager,
+                                       Entity spawnerEntity,
+                                       float elapsedTime,
+                                       float previousElapsedTime)
     {
         if (!entityManager.Exists(spawnerEntity))
             return;
@@ -111,6 +117,7 @@ public partial struct EnemySpawnSystem : ISystem
                                           waveEvents,
                                           localToWorld,
                                           elapsedTime,
+                                          previousElapsedTime,
                                           definition,
                                           spawnWarningConfig,
                                           ref runtime);
@@ -204,6 +211,7 @@ public partial struct EnemySpawnSystem : ISystem
     ///  waveEvents: Full baked event buffer for this spawner.
     ///  localToWorld: Current spawner local-to-world matrix.
     ///  elapsedTime: Current elapsed world time.
+    ///  previousElapsedTime: Elapsed world time at the beginning of the current frame.
     ///  definition: Immutable definition of the wave.
     ///  spawnWarningConfig: Immutable warning settings baked from the spawner authoring component.
     ///  runtime: Mutable runtime state for the wave.
@@ -213,6 +221,7 @@ public partial struct EnemySpawnSystem : ISystem
                                                   DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents,
                                                   float4x4 localToWorld,
                                                   float elapsedTime,
+                                                  float previousElapsedTime,
                                                   EnemySpawnerWaveDefinitionElement definition,
                                                   EnemySpawnWarningConfig spawnWarningConfig,
                                                   ref EnemySpawnerWaveRuntimeElement runtime)
@@ -242,10 +251,27 @@ public partial struct EnemySpawnSystem : ISystem
 
             EnemySpawnerWaveEventElement waveEvent = waveEvents[eventIndex];
             float dueTime = runtime.SpawnStartTime + math.max(0f, waveEvent.RelativeTime);
+            float3 groupedLocalPosition = waveEvent.LocalSpawnPosition;
+            int nextWarningIndex = ResolveNextGroupedWarningIndex(waveEvents,
+                                                                  definition,
+                                                                  runtime.NextWarningEventIndex,
+                                                                  runtime.SpawnStartTime,
+                                                                  dueTime,
+                                                                  groupedLocalPosition);
 
             if (dueTime <= elapsedTime)
             {
-                runtime.NextWarningEventIndex++;
+                // Recover one minimal warning when the frame crosses the preview window and the due time together.
+                if (dueTime > previousElapsedTime)
+                {
+                    EnqueueSpawnWarningRequest(spawnWarningRequests,
+                                               localToWorld,
+                                               groupedLocalPosition,
+                                               LateWarningFallbackDurationSeconds,
+                                               spawnWarningConfig);
+                }
+
+                runtime.NextWarningEventIndex = nextWarningIndex;
                 continue;
             }
 
@@ -253,28 +279,6 @@ public partial struct EnemySpawnSystem : ISystem
 
             if (remainingSeconds > leadTimeSeconds)
                 break;
-
-            float3 groupedLocalPosition = waveEvent.LocalSpawnPosition;
-            int nextWarningIndex = runtime.NextWarningEventIndex + 1;
-
-            while (nextWarningIndex < definition.EventCount)
-            {
-                int groupedEventIndex = definition.FirstEventIndex + nextWarningIndex;
-
-                if (groupedEventIndex < 0 || groupedEventIndex >= waveEvents.Length)
-                    break;
-
-                EnemySpawnerWaveEventElement groupedEvent = waveEvents[groupedEventIndex];
-                float groupedDueTime = runtime.SpawnStartTime + math.max(0f, groupedEvent.RelativeTime);
-
-                if (math.abs(groupedDueTime - dueTime) > WarningTimeEpsilon)
-                    break;
-
-                if (math.distancesq(groupedEvent.LocalSpawnPosition, groupedLocalPosition) > WarningPositionEpsilon)
-                    break;
-
-                nextWarningIndex++;
-            }
 
             EnqueueSpawnWarningRequest(spawnWarningRequests,
                                        localToWorld,
@@ -314,6 +318,47 @@ public partial struct EnemySpawnSystem : ISystem
             MaximumAlpha = math.saturate(spawnWarningConfig.MaximumAlpha),
             Color = spawnWarningConfig.Color
         });
+    }
+
+    /// <summary>
+    /// Resolves the first warning index that does not belong to the current grouped warning cluster.
+    ///  waveEvents: Full baked event buffer for this spawner.
+    ///  definition: Immutable definition of the wave.
+    ///  startWarningIndex: Current warning index inside the wave-local event range.
+    ///  spawnStartTime: Absolute wave start time used to rebuild grouped due times.
+    ///  dueTime: Absolute due time shared by the grouped cluster.
+    ///  groupedLocalPosition: Local position shared by the grouped cluster.
+    /// returns First warning index that belongs to a different group.
+    /// </summary>
+    private static int ResolveNextGroupedWarningIndex(DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents,
+                                                      EnemySpawnerWaveDefinitionElement definition,
+                                                      int startWarningIndex,
+                                                      float spawnStartTime,
+                                                      float dueTime,
+                                                      float3 groupedLocalPosition)
+    {
+        int nextWarningIndex = startWarningIndex + 1;
+
+        while (nextWarningIndex < definition.EventCount)
+        {
+            int groupedEventIndex = definition.FirstEventIndex + nextWarningIndex;
+
+            if (groupedEventIndex < 0 || groupedEventIndex >= waveEvents.Length)
+                break;
+
+            EnemySpawnerWaveEventElement groupedEvent = waveEvents[groupedEventIndex];
+            float groupedDueTime = spawnStartTime + math.max(0f, groupedEvent.RelativeTime);
+
+            if (math.abs(groupedDueTime - dueTime) > WarningTimeEpsilon)
+                break;
+
+            if (math.distancesq(groupedEvent.LocalSpawnPosition, groupedLocalPosition) > WarningPositionEpsilon)
+                break;
+
+            nextWarningIndex++;
+        }
+
+        return nextWarningIndex;
     }
 
     /// <summary>

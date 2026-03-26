@@ -10461,6 +10461,8 @@ MonoBehaviour:
   secondaryEnergyFillImage: {fileID: 695505114}
   primaryPowerUpIconImage: {fileID: 259145678}
   secondaryPowerUpIconImage: {fileID: 695505115}
+  primaryPowerUpSlotRootObject: {fileID: 0}
+  secondaryPowerUpSlotRootObject: {fileID: 0}
   energyBarSmoothingSeconds: 0.08
   hideEnergyBarsWhenPlayerMissing: 1
   hideEnergyBarsWhenModuleMissing: 1

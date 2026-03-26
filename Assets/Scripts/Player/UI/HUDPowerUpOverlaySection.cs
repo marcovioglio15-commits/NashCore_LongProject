@@ -36,6 +36,8 @@ internal sealed class HUDPowerUpOverlaySection
     /// Creates one runtime overlay section from the HUD image references already bound on the manager.
     ///  primaryIconImage: Primary slot icon image.
     ///  secondaryIconImage: Secondary slot icon image.
+    ///  primarySlotRootObject: Optional root object for the primary slot UI.
+    ///  secondarySlotRootObject: Optional root object for the secondary slot UI.
     ///  primaryEnergyFillImage: Primary slot energy fill image.
     ///  secondaryEnergyFillImage: Secondary slot energy fill image.
     ///  primaryChargeFillImage: Primary slot charge fill image.
@@ -50,6 +52,8 @@ internal sealed class HUDPowerUpOverlaySection
     /// </summary>
     public HUDPowerUpOverlaySection(Image primaryIconImage,
                                     Image secondaryIconImage,
+                                    GameObject primarySlotRootObject,
+                                    GameObject secondarySlotRootObject,
                                     Image primaryEnergyFillImage,
                                     Image secondaryEnergyFillImage,
                                     Image primaryChargeFillImage,
@@ -61,8 +65,14 @@ internal sealed class HUDPowerUpOverlaySection
                                     bool hideChargeBarsWhenPlayerMissingValue,
                                     bool hideChargeBarsWhenModuleMissingValue)
     {
-        primarySlot = HUDPowerUpSlotVisual.Create(primaryIconImage, primaryEnergyFillImage, primaryChargeFillImage);
-        secondarySlot = HUDPowerUpSlotVisual.Create(secondaryIconImage, secondaryEnergyFillImage, secondaryChargeFillImage);
+        primarySlot = HUDPowerUpSlotVisual.Create(primaryIconImage,
+                                                  primarySlotRootObject,
+                                                  primaryEnergyFillImage,
+                                                  primaryChargeFillImage);
+        secondarySlot = HUDPowerUpSlotVisual.Create(secondaryIconImage,
+                                                    secondarySlotRootObject,
+                                                    secondaryEnergyFillImage,
+                                                    secondaryChargeFillImage);
         energyBarSmoothingSeconds = Mathf.Max(0f, energyBarSmoothingSecondsValue);
         hideEnergyBarsWhenPlayerMissing = hideEnergyBarsWhenPlayerMissingValue;
         hideEnergyBarsWhenModuleMissing = hideEnergyBarsWhenModuleMissingValue;
@@ -250,6 +260,7 @@ internal sealed class HUDPowerUpOverlaySection
 
         #region Private Fields
         private readonly Image iconImage;
+        private readonly GameObject slotRootObject;
         private readonly HUDPowerUpBarVisual energyBar;
         private readonly HUDPowerUpBarVisual chargeBar;
         private float displayedEnergyNormalized = 1f;
@@ -280,29 +291,37 @@ internal sealed class HUDPowerUpOverlaySection
         /// <summary>
         /// Builds one slot-visual descriptor from the bar fill images already bound in the HUD.
         ///  iconImage: Direct icon image reference serialized on the HUD manager.
+        ///  explicitSlotRootObject: Optional root object used to hide the entire slot when no power-up is equipped.
         ///  energyFillImage: Energy fill image for the slot.
         ///  chargeFillImage: Charge fill image for the slot.
         /// returns A slot-visual descriptor ready for runtime updates.
         /// </summary>
-        public static HUDPowerUpSlotVisual Create(Image iconImage, Image energyFillImage, Image chargeFillImage)
+        public static HUDPowerUpSlotVisual Create(Image iconImage,
+                                                  GameObject explicitSlotRootObject,
+                                                  Image energyFillImage,
+                                                  Image chargeFillImage)
         {
             HUDPowerUpBarVisual resolvedEnergyBar = HUDPowerUpBarVisual.Create(energyFillImage);
             HUDPowerUpBarVisual resolvedChargeBar = HUDPowerUpBarVisual.Create(chargeFillImage);
-            return new HUDPowerUpSlotVisual(iconImage, in resolvedEnergyBar, in resolvedChargeBar);
+            GameObject resolvedSlotRootObject = ResolveSlotRootObject(iconImage, explicitSlotRootObject);
+            return new HUDPowerUpSlotVisual(iconImage, resolvedSlotRootObject, in resolvedEnergyBar, in resolvedChargeBar);
         }
 
         /// <summary>
         /// Creates one slot visual descriptor.
         ///  iconImageValue: Optional icon image shown above the module bars.
+        ///  slotRootObjectValue: Root object toggled when the slot is undefined.
         ///  energyBarValue: Energy bar visuals owned by the slot.
         ///  chargeBarValue: Charge bar visuals owned by the slot.
         /// returns A fully initialized slot visual descriptor.
         /// </summary>
         private HUDPowerUpSlotVisual(Image iconImageValue,
+                                     GameObject slotRootObjectValue,
                                      in HUDPowerUpBarVisual energyBarValue,
                                      in HUDPowerUpBarVisual chargeBarValue)
         {
             iconImage = iconImageValue;
+            slotRootObject = slotRootObjectValue;
             energyBar = energyBarValue;
             chargeBar = chargeBarValue;
         }
@@ -316,8 +335,11 @@ internal sealed class HUDPowerUpOverlaySection
         /// </summary>
         public void ApplyInitialVisualState()
         {
-            energyBar.ApplyFill(displayedEnergyNormalized);
-            chargeBar.ApplyFill(displayedChargeNormalized);
+            displayedEnergyNormalized = 0f;
+            displayedChargeNormalized = 0f;
+            SetSlotVisible(false);
+            energyBar.ApplyMissing(displayedEnergyNormalized, true);
+            chargeBar.ApplyMissing(displayedChargeNormalized, true);
             ApplyMissingIcon();
         }
 
@@ -340,6 +362,13 @@ internal sealed class HUDPowerUpOverlaySection
                            float chargeSmoothingSeconds,
                            bool hideChargeWhenModuleMissing)
         {
+            if (slotConfig.IsDefined == 0)
+            {
+                ApplyUndefinedSlotVisualState();
+                return;
+            }
+
+            SetSlotVisible(true);
             UpdateIcon(in slotConfig);
             UpdateEnergyBar(in slotConfig, currentEnergy, energySmoothingSeconds, hideEnergyWhenModuleMissing);
             UpdateChargeBar(in slotConfig, currentEnergy, currentCharge, chargeSmoothingSeconds, hideChargeWhenModuleMissing);
@@ -467,6 +496,21 @@ internal sealed class HUDPowerUpOverlaySection
         }
 
         /// <summary>
+        /// Applies the hidden state used by startup-empty or not-yet-acquired slots.
+        ///  none.
+        /// returns void.
+        /// </summary>
+        private void ApplyUndefinedSlotVisualState()
+        {
+            displayedEnergyNormalized = 0f;
+            displayedChargeNormalized = 0f;
+            SetSlotVisible(false);
+            ApplyMissingIcon();
+            energyBar.ApplyMissing(displayedEnergyNormalized, true);
+            chargeBar.ApplyMissing(displayedChargeNormalized, true);
+        }
+
+        /// <summary>
         /// Applies the empty icon state when no power-up or runtime icon is available.
         ///  none.
         /// returns void.
@@ -478,6 +522,49 @@ internal sealed class HUDPowerUpOverlaySection
 
             iconImage.sprite = null;
             iconImage.enabled = false;
+        }
+
+        /// <summary>
+        /// Shows or hides the dedicated slot root when one explicit power-up is equipped.
+        ///  isVisible: Target slot-root visibility.
+        /// returns void.
+        /// </summary>
+        private void SetSlotVisible(bool isVisible)
+        {
+            if (slotRootObject == null)
+                return;
+
+            if (slotRootObject.activeSelf == isVisible)
+                return;
+
+            slotRootObject.SetActive(isVisible);
+        }
+
+        /// <summary>
+        /// Resolves the object used to toggle the entire slot UI.
+        ///  iconImage: Optional icon image assigned to the slot.
+        ///  explicitSlotRootObject: Explicit slot root serialized on the HUD manager.
+        /// returns Slot root object or null when no safe root can be inferred.
+        /// </summary>
+        private static GameObject ResolveSlotRootObject(Image iconImage, GameObject explicitSlotRootObject)
+        {
+            if (explicitSlotRootObject != null)
+                return explicitSlotRootObject;
+
+            if (iconImage == null)
+                return null;
+
+            Transform iconTransform = iconImage.transform;
+
+            if (iconTransform == null)
+                return null;
+
+            Transform parentTransform = iconTransform.parent;
+
+            if (parentTransform != null)
+                return parentTransform.gameObject;
+
+            return iconTransform.gameObject;
         }
         #endregion
 

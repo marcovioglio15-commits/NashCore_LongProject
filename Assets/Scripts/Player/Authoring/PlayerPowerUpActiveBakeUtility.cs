@@ -27,24 +27,21 @@ public static class PlayerPowerUpActiveBakeUtility
         if (preset == null)
             return default;
 
-        PlayerPowerUpsConfig legacyLoadoutConfig = BuildLegacyLoadoutPowerUpsConfig(authoring,
-                                                                                    preset,
-                                                                                    resolveDynamicPrefabEntity);
         IReadOnlyList<ModularPowerUpDefinition> activePowerUps = preset.ActivePowerUps;
 
         if (activePowerUps == null || activePowerUps.Count <= 0)
-            return legacyLoadoutConfig;
+            return BuildLegacyLoadoutPowerUpsConfig(authoring,
+                                                    preset,
+                                                    resolveDynamicPrefabEntity);
 
-        int secondaryFallbackIndex = activePowerUps.Count > 1 ? 1 : 0;
         ModularPowerUpDefinition primaryPowerUp = PlayerPowerUpBakeSharedUtility.ResolveLoadoutActivePowerUp(preset,
                                                                                                               preset.PrimaryActivePowerUpId,
-                                                                                                              0);
+                                                                                                              0,
+                                                                                                              false);
         ModularPowerUpDefinition secondaryPowerUp = PlayerPowerUpBakeSharedUtility.ResolveLoadoutActivePowerUp(preset,
                                                                                                                 preset.SecondaryActivePowerUpId,
-                                                                                                                secondaryFallbackIndex);
-
-        if (activePowerUps.Count > 1 && ReferenceEquals(primaryPowerUp, secondaryPowerUp))
-            secondaryPowerUp = PlayerPowerUpBakeSharedUtility.ResolveLoadoutActivePowerUp(preset, string.Empty, 1);
+                                                                                                                1,
+                                                                                                                false);
 
         PlayerPowerUpSlotConfig primaryCompiledSlot = BuildSlotConfigFromModularPowerUp(authoring,
                                                                                         preset,
@@ -55,15 +52,6 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                                           secondaryPowerUp,
                                                                                           resolveDynamicPrefabEntity);
 
-        if (primaryCompiledSlot.IsDefined == 0)
-            primaryCompiledSlot = legacyLoadoutConfig.PrimarySlot;
-
-        if (secondaryCompiledSlot.IsDefined == 0)
-            secondaryCompiledSlot = legacyLoadoutConfig.SecondarySlot;
-
-        if (primaryCompiledSlot.IsDefined == 0 && secondaryCompiledSlot.IsDefined == 0)
-            return legacyLoadoutConfig;
-
         return new PlayerPowerUpsConfig
         {
             PrimarySlot = primaryCompiledSlot,
@@ -73,7 +61,7 @@ public static class PlayerPowerUpActiveBakeUtility
 
     /// <summary>
     /// Builds the runtime active loadout config from legacy active tool definitions only.
-    /// Used as fallback when modular active power-ups are missing or incomplete.
+    /// Used as fallback when modular active power-ups are missing entirely.
     ///  authoring: Owning player authoring component.
     ///  preset: Source power-ups preset.
     ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.

@@ -52,7 +52,7 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
     }
 
     /// <summary>
-    /// Equips a newly acquired active power-up into the oldest currently occupied slot.
+    /// Equips a newly acquired active power-up into the first vacant slot, or the oldest occupied slot when both are filled.
     /// </summary>
     /// <param name="activeSlotConfig">Unlocked active-slot payload to equip.</param>
     /// <param name="powerUpsConfig">Runtime loadout config to mutate.</param>
@@ -74,7 +74,7 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
     }
 
     /// <summary>
-    /// Equips a newly acquired active power-up into the oldest currently occupied slot and snapshots the replaced one for container storage.
+    /// Equips a newly acquired active power-up into the first vacant slot, or the oldest occupied slot when both are filled, and snapshots the replaced one for container storage.
     /// </summary>
     /// <param name="activeSlotConfig">Unlocked active-slot payload to equip.</param>
     /// <param name="storedStateMode">Storage policy applied to the replaced slot before it is dropped to the world.</param>
@@ -203,7 +203,7 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
     }
 
     /// <summary>
-    /// Resolves the oldest currently equipped active slot.
+    /// Resolves which active slot should receive the next equipped power-up.
     /// </summary>
     /// <param name="powerUpsConfig">Current runtime loadout config.</param>
     /// <param name="powerUpsState">Current runtime slot state containing equip-order metadata.</param>
@@ -213,13 +213,11 @@ internal static class PlayerPowerUpLoadoutRuntimeUtility
         bool hasPrimary = powerUpsConfig.PrimarySlot.IsDefined != 0;
         bool hasSecondary = powerUpsConfig.SecondarySlot.IsDefined != 0;
 
-        if (!hasPrimary && !hasSecondary)
-            return 0;
-
-        if (hasPrimary && !hasSecondary)
-            return 0;
-
+        // Fill vacant slots first so intentionally empty startup loadout slots stay available until the player acquires something.
         if (!hasPrimary)
+            return 0;
+
+        if (!hasSecondary)
             return 1;
 
         int primaryOrder = powerUpsState.PrimaryEquipOrder > 0 ? powerUpsState.PrimaryEquipOrder : 1;

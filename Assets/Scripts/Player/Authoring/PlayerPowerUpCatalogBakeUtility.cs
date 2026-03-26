@@ -286,14 +286,14 @@ public static class PlayerPowerUpCatalogBakeUtility
         if (preset == null || activePowerUps == null || activePowerUps.Count <= 0)
             return;
 
-        int secondaryFallbackIndex = activePowerUps.Count > 1 ? 1 : 0;
-        ModularPowerUpDefinition primaryPowerUp = PlayerPowerUpBakeSharedUtility.ResolveLoadoutActivePowerUp(preset, preset.PrimaryActivePowerUpId, 0);
+        ModularPowerUpDefinition primaryPowerUp = PlayerPowerUpBakeSharedUtility.ResolveLoadoutActivePowerUp(preset,
+                                                                                                              preset.PrimaryActivePowerUpId,
+                                                                                                              0,
+                                                                                                              false);
         ModularPowerUpDefinition secondaryPowerUp = PlayerPowerUpBakeSharedUtility.ResolveLoadoutActivePowerUp(preset,
                                                                                                                 preset.SecondaryActivePowerUpId,
-                                                                                                                secondaryFallbackIndex);
-
-        if (activePowerUps.Count > 1 && ReferenceEquals(primaryPowerUp, secondaryPowerUp))
-            secondaryPowerUp = PlayerPowerUpBakeSharedUtility.ResolveLoadoutActivePowerUp(preset, string.Empty, 1);
+                                                                                                                1,
+                                                                                                                false);
 
         primaryActivePowerUpId = ResolvePowerUpId(primaryPowerUp);
         secondaryActivePowerUpId = ResolvePowerUpId(secondaryPowerUp);
