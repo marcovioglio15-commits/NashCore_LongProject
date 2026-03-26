@@ -3952,6 +3952,7 @@ MonoBehaviour:
           formulas:
           - formula: '[BulletPenetration]=[BulletPenetration]+999'
           - formula: '[BulletSizeMultiplier]=[BulletSizeMultiplier]*3'
+          - formula: '[ShotRange]=[ShotRange]+999'
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 1.2}

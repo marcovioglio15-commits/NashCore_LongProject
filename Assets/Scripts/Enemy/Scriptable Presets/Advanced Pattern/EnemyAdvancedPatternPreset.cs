@@ -14,6 +14,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
     private const string DefaultModuleIdStationary = "Module_Stationary";
     private const string DefaultModuleIdGrunt = "Module_Grunt";
     private const string DefaultModuleIdWanderer = "Module_Wanderer";
+    private const string DefaultModuleIdCoward = "Module_Coward";
     private const string DefaultModuleIdShooter = "Module_Shooter";
     private const string DefaultModuleIdDropItems = "Module_DropItems";
     #endregion
@@ -258,6 +259,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
         definitions.Add(CreateDefaultModule(DefaultModuleIdStationary, "Stationary", EnemyPatternModuleKind.Stationary, "Forces movement speed to zero."));
         definitions.Add(CreateDefaultModule(DefaultModuleIdGrunt, "Grunt", EnemyPatternModuleKind.Grunt, "Uses standard chase and separation from Brain settings."));
         definitions.Add(CreateDefaultModule(DefaultModuleIdWanderer, "Wanderer", EnemyPatternModuleKind.Wanderer, "Uses autonomous wandering behavior."));
+        definitions.Add(CreateDefaultModule(DefaultModuleIdCoward, "Coward", EnemyPatternModuleKind.Coward, "Retreats from the player while still keeping contact and area damage active."));
         definitions.Add(CreateDefaultModule(DefaultModuleIdShooter, "Shooter", EnemyPatternModuleKind.Shooter, "Shoots periodic projectiles toward the player."));
         definitions.Add(CreateDefaultModule(DefaultModuleIdDropItems, "Drop Items", EnemyPatternModuleKind.DropItems, "Spawns collectible drops (for now experience drops) at enemy death."));
         return definitions;

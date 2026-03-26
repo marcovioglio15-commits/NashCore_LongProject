@@ -117,6 +117,11 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
                     movementLabels.Add(ResolveWandererLabel(payload));
                     break;
 
+                case EnemyPatternModuleKind.Coward:
+                    baseMovementCount++;
+                    movementLabels.Add("Coward");
+                    break;
+
                 case EnemyPatternModuleKind.Shooter:
                     shooterCount++;
                     break;
@@ -131,7 +136,7 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
 
         if (baseMovementCount <= 0)
         {
-            warnings.Add(string.Format("Pattern '{0}' does not contain a supported base movement module. Runtime falls back to Grunt, so prefer one explicit base movement: Grunt, Wanderer or DVD.", patternName));
+            warnings.Add(string.Format("Pattern '{0}' does not contain a supported base movement module. Runtime falls back to Grunt, so prefer one explicit base movement: Grunt, Wanderer, DVD or Coward.", patternName));
         }
 
         if (baseMovementCount > 1)
@@ -141,7 +146,7 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
 
         if (usesStationary)
         {
-            warnings.Add(string.Format("Pattern '{0}' still uses Stationary. The current supported base movement flow is Grunt, Wanderer or DVD.", patternName));
+            warnings.Add(string.Format("Pattern '{0}' still uses Stationary. The current supported base movement flow is Grunt, Wanderer, DVD or Coward.", patternName));
         }
 
         if (shooterCount > 0 && baseMovementCount <= 0)

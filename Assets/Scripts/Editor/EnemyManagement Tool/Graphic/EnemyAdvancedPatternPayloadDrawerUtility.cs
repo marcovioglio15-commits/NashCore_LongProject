@@ -246,6 +246,94 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     }
 
     /// <summary>
+    /// Builds payload editor for Coward modules.
+    /// </summary>
+    /// <param name="payloadDataProperty">Payload data root.</param>
+    /// <param name="payloadContainer">Target UI container.</param>
+    /// <returns>Returns true when UI is built.</returns>
+    public static bool BuildCowardPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
+    {
+        SerializedProperty cowardProperty = payloadDataProperty.FindPropertyRelative("coward");
+
+        if (cowardProperty == null)
+        {
+            HelpBox missingBox = new HelpBox("Coward payload data is missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(missingBox);
+            return false;
+        }
+
+        Foldout detectionFoldout = new Foldout();
+        detectionFoldout.text = "1. Detection";
+        detectionFoldout.value = true;
+        payloadContainer.Add(detectionFoldout);
+
+        EnemyAdvancedPatternDrawerUtility.AddField(detectionFoldout, cowardProperty.FindPropertyRelative("detectionRadius"), "Detection Radius");
+        EnemyAdvancedPatternDrawerUtility.AddField(detectionFoldout, cowardProperty.FindPropertyRelative("releaseDistanceBuffer"), "Release Buffer");
+
+        Foldout retreatDistancesFoldout = new Foldout();
+        retreatDistancesFoldout.text = "2. Retreat Distances";
+        retreatDistancesFoldout.value = true;
+        payloadContainer.Add(retreatDistancesFoldout);
+
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatDistancesFoldout, cowardProperty.FindPropertyRelative("searchRadius"), "Search Radius");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatDistancesFoldout, cowardProperty.FindPropertyRelative("minimumRetreatDistance"), "Minimum Distance");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatDistancesFoldout, cowardProperty.FindPropertyRelative("maximumRetreatDistance"), "Maximum Distance");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatDistancesFoldout, cowardProperty.FindPropertyRelative("arrivalTolerance"), "Arrival Tolerance");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatDistancesFoldout, cowardProperty.FindPropertyRelative("candidateSampleCount"), "Candidate Samples");
+        SerializedProperty useInfiniteDirectionSamplingProperty = cowardProperty.FindPropertyRelative("useInfiniteDirectionSampling");
+        SerializedProperty infiniteDirectionStepDegreesProperty = cowardProperty.FindPropertyRelative("infiniteDirectionStepDegrees");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatDistancesFoldout, useInfiniteDirectionSamplingProperty, "Use Infinite Sampling");
+
+        VisualElement infiniteDirectionContainer = new VisualElement();
+        infiniteDirectionContainer.style.marginLeft = 12f;
+        retreatDistancesFoldout.Add(infiniteDirectionContainer);
+        EnemyAdvancedPatternDrawerUtility.AddField(infiniteDirectionContainer, infiniteDirectionStepDegreesProperty, "Infinite Step Degrees");
+
+        UpdateToggleContainerVisibility(useInfiniteDirectionSamplingProperty, infiniteDirectionContainer);
+        retreatDistancesFoldout.TrackPropertyValue(useInfiniteDirectionSamplingProperty, changedProperty =>
+        {
+            UpdateToggleContainerVisibility(changedProperty, infiniteDirectionContainer);
+        });
+
+        Foldout retreatSteeringFoldout = new Foldout();
+        retreatSteeringFoldout.text = "3. Retreat Steering";
+        retreatSteeringFoldout.value = true;
+        payloadContainer.Add(retreatSteeringFoldout);
+
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatSteeringFoldout, cowardProperty.FindPropertyRelative("minimumEnemyClearance"), "Enemy Clearance");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatSteeringFoldout, cowardProperty.FindPropertyRelative("trajectoryPredictionTime"), "Prediction Time");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatSteeringFoldout, cowardProperty.FindPropertyRelative("freeTrajectoryPreference"), "Trajectory Safety");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatSteeringFoldout, cowardProperty.FindPropertyRelative("retreatDirectionPreference"), "Retreat Directness");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatSteeringFoldout, cowardProperty.FindPropertyRelative("openSpacePreference"), "Open Space Bias");
+        EnemyAdvancedPatternDrawerUtility.AddField(retreatSteeringFoldout, cowardProperty.FindPropertyRelative("navigationRetreatPreference"), "Pathfinding Bias");
+
+        Foldout patrolFoldout = new Foldout();
+        patrolFoldout.text = "4. Patrol";
+        patrolFoldout.value = true;
+        payloadContainer.Add(patrolFoldout);
+
+        EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolRadius"), "Patrol Radius");
+        EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolWaitSeconds"), "Patrol Pause");
+        EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolSpeedMultiplier"), "Patrol Speed");
+
+        Foldout speedFoldout = new Foldout();
+        speedFoldout.text = "5. Speed";
+        speedFoldout.value = true;
+        payloadContainer.Add(speedFoldout);
+
+        EnemyAdvancedPatternDrawerUtility.AddField(speedFoldout, cowardProperty.FindPropertyRelative("retreatSpeedMultiplierFar"), "Retreat Speed Far");
+        EnemyAdvancedPatternDrawerUtility.AddField(speedFoldout, cowardProperty.FindPropertyRelative("retreatSpeedMultiplierNear"), "Retreat Speed Near");
+
+        Foldout recoveryFoldout = new Foldout();
+        recoveryFoldout.text = "6. Recovery";
+        recoveryFoldout.value = true;
+        payloadContainer.Add(recoveryFoldout);
+
+        EnemyAdvancedPatternDrawerUtility.AddField(recoveryFoldout, cowardProperty.FindPropertyRelative("blockedPathRetryDelay"), "Retry Delay");
+        return true;
+    }
+
+    /// <summary>
     /// Builds payload editor for Shooter modules.
     /// </summary>
     /// <param name="payloadDataProperty">Payload data root.</param>

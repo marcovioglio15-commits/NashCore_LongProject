@@ -23,6 +23,12 @@ public static class EnemyNavigationFlowFieldUtility
     private const float AgentRadiusPadding = 0.04f;
     public const float FlowRefreshIntervalSeconds = 0.12f;
     private const int SearchRadiusWhenCellBlocked = 3;
+    private const int RetreatTopologyLookAheadSteps = 5;
+    private const float RetreatCostGainNormalization = 10f;
+    private const float RetreatExitCountNormalization = 5f;
+    private const float RetreatForwardExitNormalization = 3f;
+    private const float RetreatDeadEndPenalty = 0.42f;
+    private const float RetreatBacktrackPenalty = 0.24f;
     private const uint WallHashSeed = 2166136261u;
     #endregion
 
@@ -300,6 +306,115 @@ public static class EnemyNavigationFlowFieldUtility
 
         desiredVelocity = new float3(flowDirection.x, 0f, flowDirection.y) * desiredSpeed;
         return true;
+    }
+
+    /// <summary>
+    /// Resolves one navigation-aware retreat velocity by following the opposite direction of the player-targeting flow field.
+    /// /params currentPosition: Current enemy world position.
+    /// /params desiredSpeed: Desired movement speed before acceleration integration.
+    /// /params navigationGridState: Current shared navigation-grid state.
+    /// /params navigationCells: Current shared navigation cells buffer.
+    /// /params desiredVelocity: Output navigation-aware retreat velocity.
+    /// /returns True when a valid retreat velocity is produced; otherwise false.
+    /// </summary>
+    public static bool TryResolveRetreatNavigationVelocity(float3 currentPosition,
+                                                           float desiredSpeed,
+                                                           in EnemyNavigationGridState navigationGridState,
+                                                           DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                                           out float3 desiredVelocity)
+    {
+        desiredVelocity = float3.zero;
+
+        if (navigationGridState.FlowReady == 0)
+            return false;
+
+        if (desiredSpeed <= DirectionEpsilon)
+            return false;
+
+        if (!TryResolveBestCellIndex(currentPosition, in navigationGridState, navigationCells, out int cellIndex))
+            return false;
+
+        EnemyNavigationCellElement navigationCell = navigationCells[cellIndex];
+
+        if (navigationCell.Cost == UnreachableCellCost)
+            return false;
+
+        if (TryResolveBestRetreatDirection(cellIndex,
+                                           in navigationGridState,
+                                           navigationCells,
+                                           out float2 smartRetreatDirection))
+        {
+            desiredVelocity = new float3(smartRetreatDirection.x, 0f, smartRetreatDirection.y) * desiredSpeed;
+            return true;
+        }
+
+        float2 flowDirection = navigationCell.FlowDirection;
+        float2 retreatDirection = -math.normalizesafe(flowDirection, float2.zero);
+
+        if (math.lengthsq(retreatDirection) <= DirectionEpsilon)
+            return false;
+
+        desiredVelocity = new float3(retreatDirection.x, 0f, retreatDirection.y) * desiredSpeed;
+        return true;
+    }
+
+    /// <summary>
+    /// Estimates how safe a world position is for retreat by looking ahead through the navigation topology.
+    /// /params worldPosition: World position to evaluate.
+    /// /params navigationGridState: Current shared navigation-grid state.
+    /// /params navigationCells: Current shared navigation cells buffer.
+    /// /params topologyScore: Output normalized safety score that prefers deep corridors with multiple exits.
+    /// /returns True when a valid topology score is produced; otherwise false.
+    /// </summary>
+    public static bool TryResolveRetreatTopologyScore(float3 worldPosition,
+                                                      in EnemyNavigationGridState navigationGridState,
+                                                      DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                                      out float topologyScore)
+    {
+        topologyScore = 0f;
+
+        if (navigationGridState.FlowReady == 0)
+            return false;
+
+        if (!TryResolveBestCellIndex(worldPosition, in navigationGridState, navigationCells, out int cellIndex))
+            return false;
+
+        EnemyNavigationCellElement navigationCell = navigationCells[cellIndex];
+
+        if (navigationCell.Cost == UnreachableCellCost || navigationCell.Walkable == 0)
+            return false;
+
+        topologyScore = EvaluateRetreatTopologyScore(cellIndex,
+                                                     InvalidCellIndex,
+                                                     navigationCell.Cost,
+                                                     in navigationGridState,
+                                                     navigationCells);
+        return true;
+    }
+
+    /// <summary>
+    /// Resolves the current navigation cost of one world position using the shared flow field.
+    /// /params worldPosition: World position to evaluate.
+    /// /params navigationGridState: Current shared navigation-grid state.
+    /// /params navigationCells: Current shared navigation cells buffer.
+    /// /params navigationCost: Output navigation cost in cell steps from the player.
+    /// /returns True when a valid reachable navigation cost is resolved; otherwise false.
+    /// </summary>
+    public static bool TryResolveNavigationCost(float3 worldPosition,
+                                                in EnemyNavigationGridState navigationGridState,
+                                                DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                                out int navigationCost)
+    {
+        navigationCost = UnreachableCellCost;
+
+        if (navigationGridState.FlowReady == 0)
+            return false;
+
+        if (!TryResolveBestCellIndex(worldPosition, in navigationGridState, navigationCells, out int cellIndex))
+            return false;
+
+        navigationCost = navigationCells[cellIndex].Cost;
+        return navigationCost != UnreachableCellCost;
     }
     #endregion
 
@@ -610,6 +725,228 @@ public static class EnemyNavigationFlowFieldUtility
         }
 
         return false;
+    }
+
+    private static bool TryResolveBestRetreatDirection(int currentCellIndex,
+                                                       in EnemyNavigationGridState navigationGridState,
+                                                       DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                                       out float2 retreatDirection)
+    {
+        retreatDirection = float2.zero;
+        EnemyNavigationCellElement currentCell = navigationCells[currentCellIndex];
+
+        if (currentCell.Walkable == 0 || currentCell.Cost == UnreachableCellCost)
+            return false;
+
+        int2 currentCoordinates = ResolveCoordinatesFromIndex(currentCellIndex, navigationGridState.Width);
+        float2 currentCenter = ResolveCellCenter(navigationGridState.Origin,
+                                                 navigationGridState.CellSize,
+                                                 currentCoordinates.x,
+                                                 currentCoordinates.y);
+        float bestScore = float.NegativeInfinity;
+        bool foundCandidate = false;
+
+        for (int directionIndex = 0; directionIndex < 8; directionIndex++)
+        {
+            if ((currentCell.NeighborMask & (1 << directionIndex)) == 0)
+                continue;
+
+            int2 offset = ResolveNeighborOffset(directionIndex);
+            int neighborX = currentCoordinates.x + offset.x;
+            int neighborY = currentCoordinates.y + offset.y;
+
+            if (!IsInsideGrid(neighborX, neighborY, navigationGridState.Width, navigationGridState.Height))
+                continue;
+
+            int neighborIndex = ResolveCellIndex(neighborX, neighborY, navigationGridState.Width);
+            EnemyNavigationCellElement neighborCell = navigationCells[neighborIndex];
+
+            if (neighborCell.Walkable == 0 || neighborCell.Cost == UnreachableCellCost)
+                continue;
+
+            float candidateScore = EvaluateRetreatTopologyScore(neighborIndex,
+                                                                currentCellIndex,
+                                                                currentCell.Cost,
+                                                                in navigationGridState,
+                                                                navigationCells);
+            int costDelta = neighborCell.Cost - currentCell.Cost;
+
+            if (costDelta > 0)
+                candidateScore += math.saturate(costDelta / 4f) * 0.42f;
+            else if (costDelta < 0)
+                candidateScore -= math.saturate(-costDelta / 3f) * 0.58f;
+
+            if (candidateScore <= bestScore)
+                continue;
+
+            float2 neighborCenter = ResolveCellCenter(navigationGridState.Origin,
+                                                      navigationGridState.CellSize,
+                                                      neighborX,
+                                                      neighborY);
+            retreatDirection = math.normalizesafe(neighborCenter - currentCenter, float2.zero);
+            bestScore = candidateScore;
+            foundCandidate = true;
+        }
+
+        return foundCandidate && math.lengthsq(retreatDirection) > DirectionEpsilon;
+    }
+
+    private static float EvaluateRetreatTopologyScore(int startCellIndex,
+                                                      int previousCellIndex,
+                                                      int referenceCost,
+                                                      in EnemyNavigationGridState navigationGridState,
+                                                      DynamicBuffer<EnemyNavigationCellElement> navigationCells)
+    {
+        if (startCellIndex < 0 || startCellIndex >= navigationCells.Length)
+            return 0f;
+
+        int currentCellIndex = startCellIndex;
+        int lastCellIndex = previousCellIndex;
+        float accumulatedScore = 0f;
+        int traversedStepCount = 0;
+
+        for (int stepIndex = 0; stepIndex < RetreatTopologyLookAheadSteps; stepIndex++)
+        {
+            EnemyNavigationCellElement currentCell = navigationCells[currentCellIndex];
+
+            if (currentCell.Walkable == 0 || currentCell.Cost == UnreachableCellCost)
+                break;
+
+            ResolveRetreatCellMetrics(currentCellIndex,
+                                      lastCellIndex,
+                                      in navigationGridState,
+                                      navigationCells,
+                                      out int exitCount,
+                                      out int forwardExitCount,
+                                      out int nextCellIndex,
+                                      out int nextCellCost);
+
+            float costGainScore = math.saturate((currentCell.Cost - referenceCost) / RetreatCostGainNormalization);
+            float exitScore = math.saturate((exitCount - 1f) / RetreatExitCountNormalization);
+            float forwardExitScore = math.saturate(forwardExitCount / RetreatForwardExitNormalization);
+            float localScore = costGainScore * 0.5f +
+                               exitScore * 0.24f +
+                               forwardExitScore * 0.26f;
+
+            if (exitCount <= 1)
+                localScore -= RetreatDeadEndPenalty;
+            else if (forwardExitCount <= 0)
+                localScore -= RetreatDeadEndPenalty * 0.45f;
+
+            accumulatedScore += math.saturate(localScore);
+            traversedStepCount++;
+
+            if (nextCellIndex == InvalidCellIndex)
+                break;
+
+            if (nextCellCost < currentCell.Cost && lastCellIndex != InvalidCellIndex)
+                accumulatedScore = math.max(0f, accumulatedScore - RetreatBacktrackPenalty);
+
+            lastCellIndex = currentCellIndex;
+            currentCellIndex = nextCellIndex;
+        }
+
+        if (traversedStepCount <= 0)
+            return 0f;
+
+        float depthScore = math.saturate(traversedStepCount / (float)RetreatTopologyLookAheadSteps);
+        float averageScore = accumulatedScore / traversedStepCount;
+        return math.saturate(averageScore * 0.78f + depthScore * 0.22f);
+    }
+
+    private static void ResolveRetreatCellMetrics(int cellIndex,
+                                                  int previousCellIndex,
+                                                  in EnemyNavigationGridState navigationGridState,
+                                                  DynamicBuffer<EnemyNavigationCellElement> navigationCells,
+                                                  out int exitCount,
+                                                  out int forwardExitCount,
+                                                  out int nextCellIndex,
+                                                  out int nextCellCost)
+    {
+        exitCount = 0;
+        forwardExitCount = 0;
+        nextCellIndex = InvalidCellIndex;
+        nextCellCost = UnreachableCellCost;
+        EnemyNavigationCellElement currentCell = navigationCells[cellIndex];
+        int2 currentCoordinates = ResolveCoordinatesFromIndex(cellIndex, navigationGridState.Width);
+        float bestNextScore = float.NegativeInfinity;
+
+        for (int directionIndex = 0; directionIndex < 8; directionIndex++)
+        {
+            if ((currentCell.NeighborMask & (1 << directionIndex)) == 0)
+                continue;
+
+            int2 offset = ResolveNeighborOffset(directionIndex);
+            int neighborX = currentCoordinates.x + offset.x;
+            int neighborY = currentCoordinates.y + offset.y;
+
+            if (!IsInsideGrid(neighborX, neighborY, navigationGridState.Width, navigationGridState.Height))
+                continue;
+
+            int neighborIndex = ResolveCellIndex(neighborX, neighborY, navigationGridState.Width);
+            EnemyNavigationCellElement neighborCell = navigationCells[neighborIndex];
+
+            if (neighborCell.Walkable == 0 || neighborCell.Cost == UnreachableCellCost)
+                continue;
+
+            exitCount++;
+            int costDelta = neighborCell.Cost - currentCell.Cost;
+
+            if (costDelta > 0)
+                forwardExitCount++;
+
+            int neighborExitCount = CountReachableNeighborCount(neighborIndex,
+                                                                in navigationGridState,
+                                                                navigationCells);
+            float candidateScore = costDelta * 0.55f +
+                                   math.saturate((neighborExitCount - 1f) / RetreatExitCountNormalization) * 0.35f;
+
+            if (neighborIndex == previousCellIndex)
+                candidateScore -= 0.6f;
+
+            if (candidateScore <= bestNextScore)
+                continue;
+
+            bestNextScore = candidateScore;
+            nextCellIndex = neighborIndex;
+            nextCellCost = neighborCell.Cost;
+        }
+    }
+
+    private static int CountReachableNeighborCount(int cellIndex,
+                                                   in EnemyNavigationGridState navigationGridState,
+                                                   DynamicBuffer<EnemyNavigationCellElement> navigationCells)
+    {
+        EnemyNavigationCellElement currentCell = navigationCells[cellIndex];
+
+        if (currentCell.Walkable == 0 || currentCell.Cost == UnreachableCellCost)
+            return 0;
+
+        int2 currentCoordinates = ResolveCoordinatesFromIndex(cellIndex, navigationGridState.Width);
+        int reachableNeighborCount = 0;
+
+        for (int directionIndex = 0; directionIndex < 8; directionIndex++)
+        {
+            if ((currentCell.NeighborMask & (1 << directionIndex)) == 0)
+                continue;
+
+            int2 offset = ResolveNeighborOffset(directionIndex);
+            int neighborX = currentCoordinates.x + offset.x;
+            int neighborY = currentCoordinates.y + offset.y;
+
+            if (!IsInsideGrid(neighborX, neighborY, navigationGridState.Width, navigationGridState.Height))
+                continue;
+
+            int neighborIndex = ResolveCellIndex(neighborX, neighborY, navigationGridState.Width);
+            EnemyNavigationCellElement neighborCell = navigationCells[neighborIndex];
+
+            if (neighborCell.Walkable == 0 || neighborCell.Cost == UnreachableCellCost)
+                continue;
+
+            reachableNeighborCount++;
+        }
+
+        return reachableNeighborCount;
     }
 
     private static bool TryResolveCellCoordinates(float3 worldPosition,

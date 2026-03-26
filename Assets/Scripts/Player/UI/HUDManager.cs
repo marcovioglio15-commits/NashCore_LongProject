@@ -87,6 +87,10 @@ public sealed class HUDManager : MonoBehaviour
     [Tooltip("Hide charge bars when the corresponding slot has no charge module.")]
     [SerializeField] private bool hideChargeBarsWhenModuleMissing = true;
 
+    [Header("Run Timer")]
+    [Tooltip("Serialized HUD section that configures and renders the authoritative run timer.")]
+    [SerializeField] private HUDRunTimerSection runTimerSection = new HUDRunTimerSection();
+
     [Header("Milestone Power-Up Selection")]
     [Tooltip("Serialized HUD section that renders milestone choices and sends ECS selection commands.")]
     [SerializeField] private HUDMilestoneSelectionSection milestoneSelectionSection = new HUDMilestoneSelectionSection();
@@ -128,6 +132,7 @@ public sealed class HUDManager : MonoBehaviour
                                                              chargeBarSmoothingSeconds,
                                                              hideChargeBarsWhenPlayerMissing,
                                                              hideChargeBarsWhenModuleMissing);
+        runTimerSection.Initialize();
         milestoneSelectionSection.Initialize();
         powerUpContainerInteractionSection.Initialize();
         TryInitializeEcsBindings();
@@ -159,6 +164,7 @@ public sealed class HUDManager : MonoBehaviour
         UpdateShieldBar(playerEntity, snapCoreBars);
         UpdateLevelAndExperience(playerEntity);
         powerUpOverlaySection.Update(entityManager, playerEntity);
+        runTimerSection.Update(entityManager, playerEntity);
         milestoneSelectionSection.Update(entityManager, playerEntity);
         powerUpContainerInteractionSection.Update(entityManager, playerEntity);
     }
@@ -406,8 +412,10 @@ public sealed class HUDManager : MonoBehaviour
         if (playerExperienceFillImage != null)
             ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
         powerUpOverlaySection.ApplyInitialVisualState();
+        runTimerSection.ApplyInitialVisualState();
 
         HandleMissingLevelText();
+        runTimerSection.HandleMissingPlayer();
         milestoneSelectionSection.HandleMissingPlayer();
         powerUpContainerInteractionSection.HandleMissingPlayer();
     }
@@ -419,6 +427,7 @@ public sealed class HUDManager : MonoBehaviour
         HandleMissingLevelText();
         HandleMissingExperienceBar();
         powerUpOverlaySection.HandleMissingPlayer();
+        runTimerSection.HandleMissingPlayer();
         milestoneSelectionSection.HandleMissingPlayer();
         powerUpContainerInteractionSection.HandleMissingPlayer();
     }

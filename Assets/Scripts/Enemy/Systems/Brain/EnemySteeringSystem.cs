@@ -120,7 +120,8 @@ public partial struct EnemySteeringSystem : ISystem
                 EnemyPatternConfig patternConfig = patternConfigLookup[enemyEntity];
 
                 if (patternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
-                    patternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd)
+                    patternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd ||
+                    patternConfig.MovementKind == EnemyCompiledMovementPatternKind.Coward)
                     wandererMovementFlags[index] = 1;
             }
 

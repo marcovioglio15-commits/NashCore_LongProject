@@ -89,6 +89,192 @@ public static class EnemyPatternWandererUtility
                                                       bool wallsEnabled,
                                                       in OccupancyContext occupancyContext)
     {
+        return ResolveWandererBasicVelocityInternal(enemyEntity,
+                                                    in enemyData,
+                                                    in patternConfig,
+                                                    ref patternRuntimeState,
+                                                    enemyPosition,
+                                                    playerPosition,
+                                                    minimumWallDistance,
+                                                    moveSpeed,
+                                                    maxSpeed,
+                                                    steeringAggressiveness,
+                                                    elapsedTime,
+                                                    deltaTime,
+                                                    in physicsWorldSingleton,
+                                                    wallsLayerMask,
+                                                    wallsEnabled,
+                                                    in occupancyContext,
+                                                    false,
+                                                    enemyPosition,
+                                                    0f);
+    }
+
+    /// <summary>
+    /// Resolves bounded Wanderer Basic movement inside one local area, preserving the same target, retry and yield logic.
+    /// </summary>
+    /// <param name="enemyEntity">Current enemy entity.</param>
+    /// <param name="enemyData">Enemy immutable data.</param>
+    /// <param name="patternConfig">Compiled pattern config.</param>
+    /// <param name="patternRuntimeState">Pattern runtime state to mutate.</param>
+    /// <param name="enemyPosition">Current enemy position.</param>
+    /// <param name="wanderAreaCenter">Center of the bounded wander area.</param>
+    /// <param name="wanderAreaRadius">Radius of the bounded wander area.</param>
+    /// <param name="minimumWallDistance">Extra distance kept from static walls by the active brain movement settings.</param>
+    /// <param name="moveSpeed">Resolved movement speed.</param>
+    /// <param name="maxSpeed">Resolved max speed.</param>
+    /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
+    /// <param name="elapsedTime">Elapsed world time.</param>
+    /// <param name="deltaTime">Current simulation delta time.</param>
+    /// <param name="physicsWorldSingleton">Physics world singleton.</param>
+    /// <param name="wallsLayerMask">Walls layer mask.</param>
+    /// <param name="wallsEnabled">Whether walls collisions are enabled.</param>
+    /// <param name="occupancyContext">Occupancy context used for free-trajectory scoring.</param>
+    /// <returns>Desired planar velocity for this frame.</returns>
+    public static float3 ResolveBoundedWandererBasicVelocity(Entity enemyEntity,
+                                                             in EnemyData enemyData,
+                                                             in EnemyPatternConfig patternConfig,
+                                                             ref EnemyPatternRuntimeState patternRuntimeState,
+                                                             float3 enemyPosition,
+                                                             float3 wanderAreaCenter,
+                                                             float wanderAreaRadius,
+                                                             float minimumWallDistance,
+                                                             float moveSpeed,
+                                                             float maxSpeed,
+                                                             float steeringAggressiveness,
+                                                             float elapsedTime,
+                                                             float deltaTime,
+                                                             in PhysicsWorldSingleton physicsWorldSingleton,
+                                                             int wallsLayerMask,
+                                                             bool wallsEnabled,
+                                                             in OccupancyContext occupancyContext)
+    {
+        return ResolveWandererBasicVelocityInternal(enemyEntity,
+                                                    in enemyData,
+                                                    in patternConfig,
+                                                    ref patternRuntimeState,
+                                                    enemyPosition,
+                                                    wanderAreaCenter,
+                                                    minimumWallDistance,
+                                                    moveSpeed,
+                                                    maxSpeed,
+                                                    steeringAggressiveness,
+                                                    elapsedTime,
+                                                    deltaTime,
+                                                    in physicsWorldSingleton,
+                                                    wallsLayerMask,
+                                                    wallsEnabled,
+                                                    in occupancyContext,
+                                                    true,
+                                                    wanderAreaCenter,
+                                                    wanderAreaRadius);
+    }
+
+    /// <summary>
+    /// Encodes integer grid coordinates into a stable hash-map key.
+    /// </summary>
+    /// <param name="x">Grid X coordinate.</param>
+    /// <param name="y">Grid Y coordinate.</param>
+    /// <returns>Encoded integer key.</returns>
+    public static int EncodeCell(int x, int y)
+    {
+        unchecked
+        {
+            return (x * 73856093) ^ (y * 19349663);
+        }
+    }
+
+    /// <summary>
+    /// Computes a planar clearance velocity used to reduce overlap and deadlocks with nearby enemies.
+    /// </summary>
+    /// <param name="enemyEntity">Current enemy entity.</param>
+    /// <param name="selfPriorityTier">Current enemy general priority tier.</param>
+    /// <param name="enemyPosition">Current enemy position.</param>
+    /// <param name="bodyRadius">Current enemy body radius.</param>
+    /// <param name="minimumEnemyClearance">Extra minimum clearance from neighbors.</param>
+    /// <param name="maxSpeed">Current movement speed cap.</param>
+    /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
+    /// <param name="priorityYieldUrgency">Output urgency in [0..1] when yielding to higher-priority neighbors is required.</param>
+    /// <param name="priorityYieldGapNormalized">Output normalized priority-tier gap in [0..1] for active yield pressure.</param>
+    /// <param name="occupancyContext">Occupancy context used for neighbor lookup.</param>
+    /// <returns>Planar clearance velocity contribution.</returns>
+    public static float3 ResolveLocalClearanceVelocity(Entity enemyEntity,
+                                                       int selfPriorityTier,
+                                                       float3 enemyPosition,
+                                                       float bodyRadius,
+                                                       float minimumEnemyClearance,
+                                                       float maxSpeed,
+                                                       float steeringAggressiveness,
+                                                       out float priorityYieldUrgency,
+                                                       out float priorityYieldGapNormalized,
+                                                       in OccupancyContext occupancyContext)
+    {
+        return EnemyPatternWandererMovementUtility.ResolveLocalClearanceVelocity(enemyEntity,
+                                                                                 selfPriorityTier,
+                                                                                 enemyPosition,
+                                                                                 bodyRadius,
+                                                                                 minimumEnemyClearance,
+                                                                                 maxSpeed,
+                                                                                 steeringAggressiveness,
+                                                                                 out priorityYieldUrgency,
+                                                                                 out priorityYieldGapNormalized,
+                                                                                 in occupancyContext);
+    }
+    #endregion
+
+    #region Private Methods
+    /// <summary>
+    /// Resolves shared Wanderer Basic movement, optionally constraining destinations to one bounded area.
+    /// </summary>
+    /// <param name="enemyEntity">Current enemy entity.</param>
+    /// <param name="enemyData">Enemy immutable data.</param>
+    /// <param name="patternConfig">Compiled pattern config.</param>
+    /// <param name="patternRuntimeState">Pattern runtime state to mutate.</param>
+    /// <param name="enemyPosition">Current enemy position.</param>
+    /// <param name="playerPosition">Current player position.</param>
+    /// <param name="minimumWallDistance">Extra distance kept from static walls by the active brain movement settings.</param>
+    /// <param name="moveSpeed">Resolved movement speed.</param>
+    /// <param name="maxSpeed">Resolved max speed.</param>
+    /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
+    /// <param name="elapsedTime">Elapsed world time.</param>
+    /// <param name="deltaTime">Current simulation delta time.</param>
+    /// <param name="physicsWorldSingleton">Physics world singleton.</param>
+    /// <param name="wallsLayerMask">Walls layer mask.</param>
+    /// <param name="wallsEnabled">Whether walls collisions are enabled.</param>
+    /// <param name="occupancyContext">Occupancy context used for free-trajectory scoring.</param>
+    /// <param name="constrainToArea">Whether the destination must stay inside one local bounded area.</param>
+    /// <param name="wanderAreaCenter">Center of the bounded wander area.</param>
+    /// <param name="wanderAreaRadius">Radius of the bounded wander area.</param>
+    /// <returns>Desired planar velocity for this frame.</returns>
+    private static float3 ResolveWandererBasicVelocityInternal(Entity enemyEntity,
+                                                               in EnemyData enemyData,
+                                                               in EnemyPatternConfig patternConfig,
+                                                               ref EnemyPatternRuntimeState patternRuntimeState,
+                                                               float3 enemyPosition,
+                                                               float3 playerPosition,
+                                                               float minimumWallDistance,
+                                                               float moveSpeed,
+                                                               float maxSpeed,
+                                                               float steeringAggressiveness,
+                                                               float elapsedTime,
+                                                               float deltaTime,
+                                                               in PhysicsWorldSingleton physicsWorldSingleton,
+                                                               int wallsLayerMask,
+                                                               bool wallsEnabled,
+                                                               in OccupancyContext occupancyContext,
+                                                               bool constrainToArea,
+                                                               float3 wanderAreaCenter,
+                                                               float wanderAreaRadius)
+    {
+        if (constrainToArea &&
+            patternRuntimeState.WanderHasTarget != 0 &&
+            !IsPositionInsideWanderArea(patternRuntimeState.WanderTargetPosition, wanderAreaCenter, wanderAreaRadius))
+        {
+            patternRuntimeState.WanderHasTarget = 0;
+            patternRuntimeState.WanderWaitTimer = 0f;
+            patternRuntimeState.WanderRetryTimer = 0f;
+        }
+
         if (patternRuntimeState.WanderWaitTimer > 0f)
         {
             patternRuntimeState.WanderWaitTimer = math.max(0f, patternRuntimeState.WanderWaitTimer - deltaTime);
@@ -214,6 +400,9 @@ public static class EnemyPatternWandererUtility
                                                           in physicsWorldSingleton,
                                                           wallsLayerMask,
                                                           wallsEnabled,
+                                                          constrainToArea,
+                                                          wanderAreaCenter,
+                                                          wanderAreaRadius,
                                                           in occupancyContext,
                                                           out float3 selectedTarget,
                                                           out float selectedDirectionAngle);
@@ -237,59 +426,6 @@ public static class EnemyPatternWandererUtility
     }
 
     /// <summary>
-    /// Encodes integer grid coordinates into a stable hash-map key.
-    /// </summary>
-    /// <param name="x">Grid X coordinate.</param>
-    /// <param name="y">Grid Y coordinate.</param>
-    /// <returns>Encoded integer key.</returns>
-    public static int EncodeCell(int x, int y)
-    {
-        unchecked
-        {
-            return (x * 73856093) ^ (y * 19349663);
-        }
-    }
-
-    /// <summary>
-    /// Computes a planar clearance velocity used to reduce overlap and deadlocks with nearby enemies.
-    /// </summary>
-    /// <param name="enemyEntity">Current enemy entity.</param>
-    /// <param name="selfPriorityTier">Current enemy general priority tier.</param>
-    /// <param name="enemyPosition">Current enemy position.</param>
-    /// <param name="bodyRadius">Current enemy body radius.</param>
-    /// <param name="minimumEnemyClearance">Extra minimum clearance from neighbors.</param>
-    /// <param name="maxSpeed">Current movement speed cap.</param>
-    /// <param name="steeringAggressiveness">Resolved steering aggressiveness scalar.</param>
-    /// <param name="priorityYieldUrgency">Output urgency in [0..1] when yielding to higher-priority neighbors is required.</param>
-    /// <param name="priorityYieldGapNormalized">Output normalized priority-tier gap in [0..1] for active yield pressure.</param>
-    /// <param name="occupancyContext">Occupancy context used for neighbor lookup.</param>
-    /// <returns>Planar clearance velocity contribution.</returns>
-    public static float3 ResolveLocalClearanceVelocity(Entity enemyEntity,
-                                                       int selfPriorityTier,
-                                                       float3 enemyPosition,
-                                                       float bodyRadius,
-                                                       float minimumEnemyClearance,
-                                                       float maxSpeed,
-                                                       float steeringAggressiveness,
-                                                       out float priorityYieldUrgency,
-                                                       out float priorityYieldGapNormalized,
-                                                       in OccupancyContext occupancyContext)
-    {
-        return EnemyPatternWandererMovementUtility.ResolveLocalClearanceVelocity(enemyEntity,
-                                                                                 selfPriorityTier,
-                                                                                 enemyPosition,
-                                                                                 bodyRadius,
-                                                                                 minimumEnemyClearance,
-                                                                                 maxSpeed,
-                                                                                 steeringAggressiveness,
-                                                                                 out priorityYieldUrgency,
-                                                                                 out priorityYieldGapNormalized,
-                                                                                 in occupancyContext);
-    }
-    #endregion
-
-    #region Private Methods
-    /// <summary>
     /// Picks the best Wanderer destination by prioritizing collision-safe trajectories and then designer biases.
     /// </summary>
     /// <param name="enemyEntity">Current enemy entity.</param>
@@ -305,6 +441,9 @@ public static class EnemyPatternWandererUtility
     /// <param name="physicsWorldSingleton">Physics world singleton.</param>
     /// <param name="wallsLayerMask">Walls layer mask.</param>
     /// <param name="wallsEnabled">Whether walls collisions are enabled.</param>
+    /// <param name="constrainToArea">Whether the destination must stay inside one local bounded area.</param>
+    /// <param name="wanderAreaCenter">Center of the bounded wander area.</param>
+    /// <param name="wanderAreaRadius">Radius of the bounded wander area.</param>
     /// <param name="occupancyContext">Occupancy context used for free-trajectory scoring.</param>
     /// <param name="selectedTarget">Selected target output.</param>
     /// <param name="selectedDirectionAngle">Selected direction angle output.</param>
@@ -322,6 +461,9 @@ public static class EnemyPatternWandererUtility
                                                  in PhysicsWorldSingleton physicsWorldSingleton,
                                                  int wallsLayerMask,
                                                  bool wallsEnabled,
+                                                 bool constrainToArea,
+                                                 float3 wanderAreaCenter,
+                                                 float wanderAreaRadius,
                                                  in OccupancyContext occupancyContext,
                                                  out float3 selectedTarget,
                                                  out float selectedDirectionAngle)
@@ -330,6 +472,10 @@ public static class EnemyPatternWandererUtility
         selectedDirectionAngle = 0f;
 
         float searchRadius = math.max(0.5f, patternConfig.BasicSearchRadius);
+
+        if (constrainToArea)
+            searchRadius = math.min(searchRadius, math.max(0.5f, wanderAreaRadius));
+
         float minimumDistance = math.max(0f, patternConfig.BasicMinimumTravelDistance);
         float maximumDistance = math.max(minimumDistance, patternConfig.BasicMaximumTravelDistance);
         float unexploredPreference = math.max(0f, patternConfig.BasicUnexploredDirectionPreference);
@@ -380,6 +526,9 @@ public static class EnemyPatternWandererUtility
 
             float3 candidate = enemyPosition + direction * targetDistance;
             float3 candidateDisplacement = candidate - enemyPosition;
+
+            if (constrainToArea && !IsPositionInsideWanderArea(candidate, wanderAreaCenter, wanderAreaRadius))
+                continue;
 
             if (wallsEnabled)
             {
@@ -445,6 +594,21 @@ public static class EnemyPatternWandererUtility
         }
 
         return foundCandidate;
+    }
+
+    /// <summary>
+    /// Returns whether one candidate point lies inside the bounded wander area on the XZ plane.
+    /// </summary>
+    /// <param name="position">Candidate position to test.</param>
+    /// <param name="wanderAreaCenter">Center of the bounded wander area.</param>
+    /// <param name="wanderAreaRadius">Radius of the bounded wander area.</param>
+    /// <returns>True when the point lies inside the bounded area.</returns>
+    private static bool IsPositionInsideWanderArea(float3 position, float3 wanderAreaCenter, float wanderAreaRadius)
+    {
+        float constrainedRadius = math.max(0f, wanderAreaRadius);
+        float3 delta = position - wanderAreaCenter;
+        delta.y = 0f;
+        return math.lengthsq(delta) <= constrainedRadius * constrainedRadius;
     }
 
     #endregion

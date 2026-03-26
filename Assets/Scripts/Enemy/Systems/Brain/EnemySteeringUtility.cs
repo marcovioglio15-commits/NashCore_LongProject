@@ -459,6 +459,10 @@ internal static class EnemySteeringUtility
                             weight = (influenceRadius - distance) / softDenominator;
                         }
 
+                        float hardSpacingPressure = 1f - math.saturate(distance / math.max(0.01f, hardClearanceDistance));
+                        float spacingPressure = math.saturate((influenceRadius - distance) / math.max(0.01f, influenceRadius));
+                        weight *= 1f + spacingPressure * 0.18f + hardSpacingPressure * 0.9f;
+
                         if (selfPriorityTier < neighborPriorityTier)
                         {
                             float3 toNeighborDirection = math.normalizesafe(Positions[neighborIndex] - position, float3.zero);
@@ -494,8 +498,11 @@ internal static class EnemySteeringUtility
                         if (neighborIsWanderer)
                             priorityWeight *= 1.55f;
 
-                        float sideStepWeight = math.saturate((influenceRadius - distance) / math.max(0.01f, influenceRadius));
+                        priorityWeight *= 1f + hardSpacingPressure * 0.22f;
+
+                        float sideStepWeight = spacingPressure;
                         sideStepWeight *= ResolveAggressivenessScale(selfSteeringAggressiveness, 0.35f, 1.1f);
+                        sideStepWeight *= 1f + spacingPressure * 0.18f + hardSpacingPressure * 0.45f;
 
                         if (selfPriorityTier < neighborPriorityTier)
                             sideStepWeight *= 1.25f;
@@ -511,6 +518,7 @@ internal static class EnemySteeringUtility
 
                         float urgencyDistanceGate = math.max(hardClearanceDistance, influenceRadius * 0.8f);
                         float urgency = math.saturate((urgencyDistanceGate - distance) / math.max(0.01f, urgencyDistanceGate));
+                        urgency = math.max(urgency, math.saturate(spacingPressure * 0.52f + hardSpacingPressure * 0.8f));
 
                         if (neighborIsWanderer)
                             urgency = math.max(urgency, math.saturate((influenceRadius - distance) / math.max(0.01f, influenceRadius)));
@@ -596,7 +604,7 @@ internal static class EnemySteeringUtility
                 return math.max(0.5f, 0.94f - priorityGap * 0.07f);
             }
 
-            return 1.08f;
+            return 1.14f;
         }
 
         private static float ResolvePriorityAvoidanceWeight(int selfPriorityTier, int neighborPriorityTier)
@@ -613,7 +621,7 @@ internal static class EnemySteeringUtility
                 return math.max(0.15f, 0.6f - priorityGap * 0.08f);
             }
 
-            return 1.2f;
+            return 1.32f;
         }
     }
     #endregion
