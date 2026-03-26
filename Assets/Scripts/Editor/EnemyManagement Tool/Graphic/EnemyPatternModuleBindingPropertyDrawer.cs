@@ -18,7 +18,7 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
     /// Creates the binding editor UI with module resolution and optional override payload.
     /// </summary>
     /// <param name="property">Serialized module binding property.</param>
-    /// <returns>Returns the built root visual element.</returns>
+    /// <returns>Returns the built root visual element.<returns>
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
         VisualElement root = new VisualElement();

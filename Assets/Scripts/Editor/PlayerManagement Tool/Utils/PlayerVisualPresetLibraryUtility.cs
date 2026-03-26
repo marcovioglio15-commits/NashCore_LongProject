@@ -17,8 +17,8 @@ public static class PlayerVisualPresetLibraryUtility
     #region Public Methods
     /// <summary>
     /// Loads the shared player visual preset library or creates it when missing.
-    /// /params None.
-    /// /returns Resolved PlayerVisualPresetLibrary asset.
+    ///  None.
+    /// returns Resolved PlayerVisualPresetLibrary asset.
     /// </summary>
     public static PlayerVisualPresetLibrary GetOrCreateLibrary()
     {
@@ -35,8 +35,8 @@ public static class PlayerVisualPresetLibraryUtility
 
     /// <summary>
     /// Creates one new player visual preset asset inside the default preset folder.
-    /// /params presetName: Requested asset name before normalization.
-    /// /returns Newly created PlayerVisualPreset asset.
+    ///  presetName: Requested asset name before normalization.
+    /// returns Newly created PlayerVisualPreset asset.
     /// </summary>
     public static PlayerVisualPreset CreatePresetAsset(string presetName)
     {
@@ -68,8 +68,8 @@ public static class PlayerVisualPresetLibraryUtility
     #region Private Methods
     /// <summary>
     /// Ensures that the target folder hierarchy exists inside the project.
-    /// /params folderPath: Folder path to create when missing.
-    /// /returns None.
+    ///  folderPath: Folder path to create when missing.
+    /// returns None.
     /// </summary>
     private static void EnsureFolder(string folderPath)
     {

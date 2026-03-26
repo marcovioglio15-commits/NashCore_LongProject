@@ -87,7 +87,7 @@ public sealed class PlayerScalableStatDefinition
     /// Sanitizes this stat entry to keep name data valid for formulas while preserving designer-authored numeric values.
     /// </summary>
     /// <param name="fallbackName">Name to apply when the current name is empty or invalid.</param>
-    /// <returns>True when at least one field was modified during validation, otherwise false.</returns>
+    /// <returns>True when at least one field was modified during validation, otherwise false.<returns>
     public bool Validate(string fallbackName)
     {
         bool changed = false;
@@ -105,7 +105,7 @@ public sealed class PlayerScalableStatDefinition
     /// <summary>
     /// Resolves the normalized runtime default value after clamp and integer rules are applied.
     /// </summary>
-    /// <returns>Runtime-ready scalable-stat default value.</returns>
+    /// <returns>Runtime-ready scalable-stat default value.<returns>
     public float ResolveRuntimeDefaultValue()
     {
         return PlayerScalableStatClampUtility.ResolveNormalizedValue(statType,
@@ -242,7 +242,7 @@ public sealed class PlayerStatScalingRule
     /// <summary>
     /// Returns the default color used for scaling debug logs.
     /// </summary>
-    /// <returns>Default debug color (yellow).</returns>
+    /// <returns>Default debug color (yellow).<returns>
     public static Color GetDefaultDebugColor()
     {
         return new Color(DebugColorDefaultRed,
@@ -256,7 +256,7 @@ public sealed class PlayerStatScalingRule
     /// <summary>
     /// Normalizes rule storage fields to avoid null strings and invalid disabled debug state.
     /// </summary>
-    /// <returns>True when at least one field was modified during validation, otherwise false.</returns>
+    /// <returns>True when at least one field was modified during validation, otherwise false.<returns>
     public bool Validate()
     {
         bool changed = false;
@@ -345,7 +345,7 @@ public sealed class PlayerStatScalingRule
     /// Sanitizes debug color channels and keeps legacy assets visible by forcing default yellow when alpha is zero.
     /// </summary>
     /// <param name="sourceColor">Raw serialized color.</param>
-    /// <returns>Sanitized opaque debug color.</returns>
+    /// <returns>Sanitized opaque debug color.<returns>
     private static Color SanitizeDebugColor(Color sourceColor)
     {
         if (sourceColor.a <= 0.0001f)
@@ -362,7 +362,7 @@ public sealed class PlayerStatScalingRule
     /// </summary>
     /// <param name="leftColor">First color.</param>
     /// <param name="rightColor">Second color.</param>
-    /// <returns>True when channel values are approximately equal.</returns>
+    /// <returns>True when channel values are approximately equal.<returns>
     private static bool AreColorsApproximatelyEqual(Color leftColor, Color rightColor)
     {
         if (Mathf.Abs(leftColor.r - rightColor.r) > 0.0001f)
@@ -398,7 +398,7 @@ public static class PlayerScalableStatNameUtility
     /// </summary>
     /// <param name="inputName">Raw user-entered stat name.</param>
     /// <param name="fallbackName">Name used when the input is invalid or empty.</param>
-    /// <returns>Sanitized stat name that is never null or whitespace.</returns>
+    /// <returns>Sanitized stat name that is never null or whitespace.<returns>
     public static string Sanitize(string inputName, string fallbackName)
     {
         string trimmedName = string.IsNullOrWhiteSpace(inputName) ? string.Empty : inputName.Trim();
@@ -417,7 +417,7 @@ public static class PlayerScalableStatNameUtility
     /// Checks whether a scalable stat name satisfies allowed syntax and reserved-word restrictions.
     /// </summary>
     /// <param name="name">Candidate stat name to validate.</param>
-    /// <returns>True when the name is valid, otherwise false.</returns>
+    /// <returns>True when the name is valid, otherwise false.<returns>
     public static bool IsValid(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -449,7 +449,7 @@ public static class PlayerScalableStatNameUtility
     /// Ensures scalable stat names are unique using case-insensitive comparison.
     /// </summary>
     /// <param name="definitions">Collection of scalable stats to inspect.</param>
-    /// <returns>True when all names are unique, otherwise false.</returns>
+    /// <returns>True when all names are unique, otherwise false.<returns>
     public static bool AreUnique(IReadOnlyList<PlayerScalableStatDefinition> definitions)
     {
         if (definitions == null)

@@ -4,8 +4,8 @@ using Unity.Physics;
 
 /// <summary>
 /// Selects Coward retreat destinations using wall, occupancy and navigation topology scoring.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public static class EnemyPatternCowardSelectionUtility
 {
@@ -21,24 +21,24 @@ public static class EnemyPatternCowardSelectionUtility
     #region Public Methods
     /// <summary>
     /// Picks the best retreat destination by combining free-space, wall openness, and navigation-cost gains away from the player.
-    /// /params enemyEntity Current enemy entity.
-    /// /params selfPriorityTier Current enemy priority tier.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params patternConfig Compiled pattern config.
-    /// /params enemyPosition Current enemy position.
-    /// /params playerPosition Current player position.
-    /// /params minimumWallDistance Extra distance kept from walls.
-    /// /params elapsedTime Elapsed world time.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall collision checks are enabled.
-    /// /params navigationFlowReady Whether the shared flow field is currently valid.
-    /// /params navigationGridState Shared navigation grid state.
-    /// /params navigationCells Shared navigation cells buffer.
-    /// /params occupancyContext Occupancy context used for free-trajectory scoring.
-    /// /params selectedTarget Selected target output.
-    /// /params selectedDirectionAngle Selected direction angle output.
-    /// /returns True when a valid retreat destination is found.
+    ///  enemyEntity Current enemy entity.
+    ///  selfPriorityTier Current enemy priority tier.
+    ///  bodyRadius Current enemy body radius.
+    ///  patternConfig Compiled pattern config.
+    ///  enemyPosition Current enemy position.
+    ///  playerPosition Current player position.
+    ///  minimumWallDistance Extra distance kept from walls.
+    ///  elapsedTime Elapsed world time.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall collision checks are enabled.
+    ///  navigationFlowReady Whether the shared flow field is currently valid.
+    ///  navigationGridState Shared navigation grid state.
+    ///  navigationCells Shared navigation cells buffer.
+    ///  occupancyContext Occupancy context used for free-trajectory scoring.
+    ///  selectedTarget Selected target output.
+    ///  selectedDirectionAngle Selected direction angle output.
+    /// returns True when a valid retreat destination is found.
     /// </summary>
     public static bool TryPickRetreatDestination(Entity enemyEntity,
                                                  int selfPriorityTier,
@@ -173,13 +173,13 @@ public static class EnemyPatternCowardSelectionUtility
     #region Private Methods
     /// <summary>
     /// Returns whether the candidate position and its direct segment preserve enough wall clearance.
-    /// /params origin Current enemy position.
-    /// /params candidate Candidate position being tested.
-    /// /params collisionRadius Effective collision radius including wall clearance.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall checks are enabled.
-    /// /returns True when the candidate is wall-safe enough to consider.
+    ///  origin Current enemy position.
+    ///  candidate Candidate position being tested.
+    ///  collisionRadius Effective collision radius including wall clearance.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall checks are enabled.
+    /// returns True when the candidate is wall-safe enough to consider.
     /// </summary>
     private static bool IsCandidateWallSafe(float3 origin,
                                             float3 candidate,
@@ -217,14 +217,14 @@ public static class EnemyPatternCowardSelectionUtility
 
     /// <summary>
     /// Estimates how much navigation distance and topology safety a candidate gains over the current position.
-    /// /params currentPosition Current enemy position.
-    /// /params candidate Candidate position being tested.
-    /// /params navigationFlowReady Whether the shared flow field is currently valid.
-    /// /params navigationGridState Shared navigation grid state.
-    /// /params navigationCells Shared navigation cells buffer.
-    /// /params navigationEscapeScore Output normalized navigation gain score.
-    /// /params navigationTopologyScore Output normalized topology safety score.
-    /// /returns True when the candidate has a valid reachable navigation analysis.
+    ///  currentPosition Current enemy position.
+    ///  candidate Candidate position being tested.
+    ///  navigationFlowReady Whether the shared flow field is currently valid.
+    ///  navigationGridState Shared navigation grid state.
+    ///  navigationCells Shared navigation cells buffer.
+    ///  navigationEscapeScore Output normalized navigation gain score.
+    ///  navigationTopologyScore Output normalized topology safety score.
+    /// returns True when the candidate has a valid reachable navigation analysis.
     /// </summary>
     private static bool TryResolveNavigationEscapeScore(float3 currentPosition,
                                                         float3 candidate,
@@ -261,15 +261,15 @@ public static class EnemyPatternCowardSelectionUtility
 
     /// <summary>
     /// Estimates how open a candidate position is by probing short wall-safe displacements around it.
-    /// /params candidate Candidate position being evaluated.
-    /// /params collisionRadius Collision radius used by wall probes.
-    /// /params searchRadius Current candidate search radius.
-    /// /params elapsedTime Elapsed world time.
-    /// /params enemyEntity Current enemy entity.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall checks are enabled.
-    /// /returns Normalized openness score in the [0..1] range.
+    ///  candidate Candidate position being evaluated.
+    ///  collisionRadius Collision radius used by wall probes.
+    ///  searchRadius Current candidate search radius.
+    ///  elapsedTime Elapsed world time.
+    ///  enemyEntity Current enemy entity.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall checks are enabled.
+    /// returns Normalized openness score in the [0..1] range.
     /// </summary>
     private static float EvaluateOpenSpaceScore(float3 candidate,
                                                 float collisionRadius,

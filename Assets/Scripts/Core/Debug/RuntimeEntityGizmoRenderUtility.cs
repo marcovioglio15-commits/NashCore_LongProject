@@ -6,8 +6,8 @@ using UnityEngine;
 
 /// <summary>
 /// Collects live ECS runtime data and emits a shared set of gameplay debug gizmos through an abstract primitive drawer.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public static class RuntimeEntityGizmoRenderUtility
 {
@@ -63,8 +63,8 @@ public static class RuntimeEntityGizmoRenderUtility
     #region Public Methods
     /// <summary>
     /// Renders the full runtime gizmo set through the provided primitive drawer.
-    /// /params primitiveDrawer: Active rendering backend that receives primitive draw calls.
-    /// /returns True when a valid runtime world and player context were available for rendering.
+    ///  primitiveDrawer: Active rendering backend that receives primitive draw calls.
+    /// returns True when a valid runtime world and player context were available for rendering.
     /// </summary>
     public static bool TryRender(IRuntimeGizmoPrimitiveDrawer primitiveDrawer)
     {
@@ -89,8 +89,8 @@ public static class RuntimeEntityGizmoRenderUtility
 
     /// <summary>
     /// Clears cached ECS queries so a new runtime world can be resolved after domain reloads or play mode transitions.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     public static void ResetCachedContext()
     {
@@ -157,11 +157,11 @@ public static class RuntimeEntityGizmoRenderUtility
     #region Player
     /// <summary>
     /// Draws the player gameplay gizmos derived from live movement, look and pickup ECS state.
-    /// /params primitiveDrawer: Active rendering backend receiving primitive calls.
-    /// /params entityManager: Runtime entity manager used to fetch player components.
-    /// /params playerEntity: Runtime player entity.
-    /// /params playerTransform: Runtime player transform.
-    /// /returns void.
+    ///  primitiveDrawer: Active rendering backend receiving primitive calls.
+    ///  entityManager: Runtime entity manager used to fetch player components.
+    ///  playerEntity: Runtime player entity.
+    ///  playerTransform: Runtime player transform.
+    /// returns void.
     /// </summary>
     private static void DrawPlayerGizmos(IRuntimeGizmoPrimitiveDrawer primitiveDrawer,
                                          EntityManager entityManager,
@@ -237,10 +237,10 @@ public static class RuntimeEntityGizmoRenderUtility
     #region Enemies
     /// <summary>
     /// Draws enemy combat and navigation gizmos for active enemies near the player to keep the overlay readable.
-    /// /params primitiveDrawer: Active rendering backend receiving primitive calls.
-    /// /params entityManager: Runtime entity manager used to fetch enemy components.
-    /// /params playerPosition: Runtime player position used for distance filtering.
-    /// /returns void.
+    ///  primitiveDrawer: Active rendering backend receiving primitive calls.
+    ///  entityManager: Runtime entity manager used to fetch enemy components.
+    ///  playerPosition: Runtime player position used for distance filtering.
+    /// returns void.
     /// </summary>
     private static void DrawEnemyGizmos(IRuntimeGizmoPrimitiveDrawer primitiveDrawer,
                                         EntityManager entityManager,
@@ -338,10 +338,10 @@ public static class RuntimeEntityGizmoRenderUtility
     #region Spawners
     /// <summary>
     /// Draws pooled enemy spawner radii near the player so spawn and despawn behaviour can be validated in runtime.
-    /// /params primitiveDrawer: Active rendering backend receiving primitive calls.
-    /// /params entityManager: Runtime entity manager used to fetch spawner components.
-    /// /params playerPosition: Runtime player position used for distance filtering.
-    /// /returns void.
+    ///  primitiveDrawer: Active rendering backend receiving primitive calls.
+    ///  entityManager: Runtime entity manager used to fetch spawner components.
+    ///  playerPosition: Runtime player position used for distance filtering.
+    /// returns void.
     /// </summary>
     private static void DrawSpawnerGizmos(IRuntimeGizmoPrimitiveDrawer primitiveDrawer,
                                           EntityManager entityManager,
@@ -408,10 +408,10 @@ public static class RuntimeEntityGizmoRenderUtility
     #region Bombs
     /// <summary>
     /// Draws active bomb explosion radii and motion vectors near the player.
-    /// /params primitiveDrawer: Active rendering backend receiving primitive calls.
-    /// /params entityManager: Runtime entity manager used to fetch bomb components.
-    /// /params playerPosition: Runtime player position used for distance filtering.
-    /// /returns void.
+    ///  primitiveDrawer: Active rendering backend receiving primitive calls.
+    ///  entityManager: Runtime entity manager used to fetch bomb components.
+    ///  playerPosition: Runtime player position used for distance filtering.
+    /// returns void.
     /// </summary>
     private static void DrawBombGizmos(IRuntimeGizmoPrimitiveDrawer primitiveDrawer,
                                        EntityManager entityManager,

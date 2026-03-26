@@ -4,8 +4,8 @@ using Unity.Physics;
 
 /// <summary>
 /// Orchestrates Coward retreat and bounded-wander patrol state transitions.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public static class EnemyPatternCowardUtility
 {
@@ -21,26 +21,26 @@ public static class EnemyPatternCowardUtility
     #region Public Methods
     /// <summary>
     /// Resolves Coward desired velocity and updates retreat or patrol runtime state depending on player proximity.
-    /// /params enemyEntity Current enemy entity.
-    /// /params enemyData Immutable enemy data.
-    /// /params patternConfig Compiled pattern config.
-    /// /params patternRuntimeState Mutable pattern runtime state.
-    /// /params enemyPosition Current enemy position.
-    /// /params playerPosition Current player position.
-    /// /params minimumWallDistance Extra distance kept from walls.
-    /// /params moveSpeed Resolved movement speed.
-    /// /params maxSpeed Resolved max movement speed.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /params elapsedTime Elapsed world time.
-    /// /params deltaTime Current simulation delta time.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall collision checks are enabled.
-    /// /params navigationFlowReady Whether the shared flow field is currently valid.
-    /// /params navigationGridState Shared navigation grid state.
-    /// /params navigationCells Shared navigation cells buffer.
-    /// /params occupancyContext Occupancy context used for clearance and trajectory scoring.
-    /// /returns Desired planar velocity for the current frame.
+    ///  enemyEntity Current enemy entity.
+    ///  enemyData Immutable enemy data.
+    ///  patternConfig Compiled pattern config.
+    ///  patternRuntimeState Mutable pattern runtime state.
+    ///  enemyPosition Current enemy position.
+    ///  playerPosition Current player position.
+    ///  minimumWallDistance Extra distance kept from walls.
+    ///  moveSpeed Resolved movement speed.
+    ///  maxSpeed Resolved max movement speed.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    ///  elapsedTime Elapsed world time.
+    ///  deltaTime Current simulation delta time.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall collision checks are enabled.
+    ///  navigationFlowReady Whether the shared flow field is currently valid.
+    ///  navigationGridState Shared navigation grid state.
+    ///  navigationCells Shared navigation cells buffer.
+    ///  occupancyContext Occupancy context used for clearance and trajectory scoring.
+    /// returns Desired planar velocity for the current frame.
     /// </summary>
     public static float3 ResolveCowardVelocity(Entity enemyEntity,
                                                in EnemyData enemyData,
@@ -136,25 +136,25 @@ public static class EnemyPatternCowardUtility
     #region Private Methods
     /// <summary>
     /// Resolves flee behavior while the player remains inside the Coward threat area.
-    /// /params enemyEntity Current enemy entity.
-    /// /params selfPriorityTier Current enemy priority tier.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params patternConfig Compiled pattern config.
-    /// /params patternRuntimeState Mutable pattern runtime state.
-    /// /params enemyPosition Current enemy position.
-    /// /params playerPosition Current player position.
-    /// /params minimumWallDistance Extra distance kept from walls.
-    /// /params desiredSpeed Current flee speed.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /params elapsedTime Elapsed world time.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall collision checks are enabled.
-    /// /params navigationFlowReady Whether the shared flow field is currently valid.
-    /// /params navigationGridState Shared navigation grid state.
-    /// /params navigationCells Shared navigation cells buffer.
-    /// /params occupancyContext Occupancy context used for clearance and trajectory scoring.
-    /// /returns Desired planar flee velocity.
+    ///  enemyEntity Current enemy entity.
+    ///  selfPriorityTier Current enemy priority tier.
+    ///  bodyRadius Current enemy body radius.
+    ///  patternConfig Compiled pattern config.
+    ///  patternRuntimeState Mutable pattern runtime state.
+    ///  enemyPosition Current enemy position.
+    ///  playerPosition Current player position.
+    ///  minimumWallDistance Extra distance kept from walls.
+    ///  desiredSpeed Current flee speed.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    ///  elapsedTime Elapsed world time.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall collision checks are enabled.
+    ///  navigationFlowReady Whether the shared flow field is currently valid.
+    ///  navigationGridState Shared navigation grid state.
+    ///  navigationCells Shared navigation cells buffer.
+    ///  occupancyContext Occupancy context used for clearance and trajectory scoring.
+    /// returns Desired planar flee velocity.
     /// </summary>
     private static float3 ResolveRetreatVelocity(Entity enemyEntity,
                                                  int selfPriorityTier,
@@ -342,21 +342,21 @@ public static class EnemyPatternCowardUtility
 
     /// <summary>
     /// Resolves local patrol movement outside the threat area by reusing bounded Wanderer Basic logic.
-    /// /params enemyEntity Current enemy entity.
-    /// /params enemyData Immutable enemy data.
-    /// /params patternConfig Compiled pattern config.
-    /// /params patternRuntimeState Mutable pattern runtime state.
-    /// /params enemyPosition Current enemy position.
-    /// /params minimumWallDistance Extra distance kept from walls.
-    /// /params patrolRadius Current patrol radius.
-    /// /params desiredSpeed Current patrol speed.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /params elapsedTime Elapsed world time.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall collision checks are enabled.
-    /// /params occupancyContext Occupancy context used for clearance and trajectory scoring.
-    /// /returns Desired planar patrol velocity.
+    ///  enemyEntity Current enemy entity.
+    ///  enemyData Immutable enemy data.
+    ///  patternConfig Compiled pattern config.
+    ///  patternRuntimeState Mutable pattern runtime state.
+    ///  enemyPosition Current enemy position.
+    ///  minimumWallDistance Extra distance kept from walls.
+    ///  patrolRadius Current patrol radius.
+    ///  desiredSpeed Current patrol speed.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    ///  elapsedTime Elapsed world time.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall collision checks are enabled.
+    ///  occupancyContext Occupancy context used for clearance and trajectory scoring.
+    /// returns Desired planar patrol velocity.
     /// </summary>
     private static float3 ResolvePatrolVelocity(Entity enemyEntity,
                                                 in EnemyData enemyData,
@@ -405,9 +405,9 @@ public static class EnemyPatternCowardUtility
 
     /// <summary>
     /// Ensures the patrol anchor exists for this Coward instance.
-    /// /params patternRuntimeState Mutable pattern runtime state.
-    /// /params enemyPosition Current enemy position.
-    /// /returns void.
+    ///  patternRuntimeState Mutable pattern runtime state.
+    ///  enemyPosition Current enemy position.
+    /// returns void.
     /// </summary>
     private static void EnsurePatrolAnchorInitialized(ref EnemyPatternRuntimeState patternRuntimeState, float3 enemyPosition)
     {
@@ -420,10 +420,10 @@ public static class EnemyPatternCowardUtility
 
     /// <summary>
     /// Reanchors the local patrol area when the enemy ended up far away after an extended retreat.
-    /// /params patternRuntimeState Mutable pattern runtime state.
-    /// /params enemyPosition Current enemy position.
-    /// /params patrolRadius Current patrol radius.
-    /// /returns void.
+    ///  patternRuntimeState Mutable pattern runtime state.
+    ///  enemyPosition Current enemy position.
+    ///  patrolRadius Current patrol radius.
+    /// returns void.
     /// </summary>
     private static void RefreshPatrolAnchorIfNeeded(ref EnemyPatternRuntimeState patternRuntimeState,
                                                     float3 enemyPosition,
@@ -440,8 +440,8 @@ public static class EnemyPatternCowardUtility
 
     /// <summary>
     /// Clears the transient retreat target while keeping the local patrol anchor intact.
-    /// /params patternRuntimeState Mutable pattern runtime state.
-    /// /returns void.
+    ///  patternRuntimeState Mutable pattern runtime state.
+    /// returns void.
     /// </summary>
     private static void ClearTargetState(ref EnemyPatternRuntimeState patternRuntimeState)
     {
@@ -452,9 +452,9 @@ public static class EnemyPatternCowardUtility
 
     /// <summary>
     /// Resolves the authored flee speed multiplier from player proximity.
-    /// /params patternConfig Compiled pattern config.
-    /// /params playerDistance Current distance from the player.
-    /// /returns Speed multiplier applied while retreating.
+    ///  patternConfig Compiled pattern config.
+    ///  playerDistance Current distance from the player.
+    /// returns Speed multiplier applied while retreating.
     /// </summary>
     private static float ResolveRetreatSpeedMultiplier(in EnemyPatternConfig patternConfig, float playerDistance)
     {
@@ -467,9 +467,9 @@ public static class EnemyPatternCowardUtility
 
     /// <summary>
     /// Builds one temporary patrol config that keeps Coward patrol close to basic Wanderer pacing while remaining bounded.
-    /// /params patternConfig Source Coward pattern config.
-    /// /params patrolRadius Current patrol radius.
-    /// /returns Temporary config used only while patrolling.
+    ///  patternConfig Source Coward pattern config.
+    ///  patrolRadius Current patrol radius.
+    /// returns Temporary config used only while patrolling.
     /// </summary>
     private static EnemyPatternConfig BuildPatrolPatternConfig(in EnemyPatternConfig patternConfig, float patrolRadius)
     {
@@ -490,10 +490,10 @@ public static class EnemyPatternCowardUtility
 
     /// <summary>
     /// Returns whether one position stays inside the local Coward patrol area on the XZ plane.
-    /// /params position Position to test.
-    /// /params patrolAnchor Current patrol anchor.
-    /// /params patrolRadius Current patrol radius.
-    /// /returns True when the position is inside the patrol area.
+    ///  position Position to test.
+    ///  patrolAnchor Current patrol anchor.
+    ///  patrolRadius Current patrol radius.
+    /// returns True when the position is inside the patrol area.
     /// </summary>
     private static bool IsInsidePatrolArea(float3 position, float3 patrolAnchor, float patrolRadius)
     {

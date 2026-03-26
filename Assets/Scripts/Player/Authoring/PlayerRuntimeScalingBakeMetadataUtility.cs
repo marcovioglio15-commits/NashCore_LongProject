@@ -20,7 +20,7 @@ internal static class PlayerRuntimeScalingBakeMetadataUtility
     /// <param name="tierRollIndex">Tier-roll index inside the selected drop pool.</param>
     /// <param name="baseValue">Raw numeric value stored on the source preset.</param>
     /// <param name="formula">Enabled Add Scaling formula when present.</param>
-    /// <returns>True when metadata was resolved from the source preset; otherwise false.</returns>
+    /// <returns>True when metadata was resolved from the source preset; otherwise false.<returns>
     public static bool TryResolveDropPoolTierRollScalingData(PlayerPowerUpsPreset sourcePreset,
                                                              int dropPoolIndex,
                                                              int tierRollIndex,
@@ -65,7 +65,7 @@ internal static class PlayerRuntimeScalingBakeMetadataUtility
     /// <param name="entryIndex">Entry index inside the selected tier.</param>
     /// <param name="baseValue">Raw numeric value stored on the source preset.</param>
     /// <param name="formula">Enabled Add Scaling formula when present.</param>
-    /// <returns>True when metadata was resolved from the source preset; otherwise false.</returns>
+    /// <returns>True when metadata was resolved from the source preset; otherwise false.<returns>
     public static bool TryResolveTierEntryScalingData(PlayerPowerUpsPreset sourcePreset,
                                                       int tierIndex,
                                                       int entryIndex,
@@ -111,7 +111,7 @@ internal static class PlayerRuntimeScalingBakeMetadataUtility
     /// <param name="tierRollIndex">Legacy tier-roll index inside the milestone unlock.</param>
     /// <param name="baseValue">Raw numeric value stored on the source preset.</param>
     /// <param name="formula">Enabled Add Scaling formula when present.</param>
-    /// <returns>True when metadata was resolved from the source preset; otherwise false.</returns>
+    /// <returns>True when metadata was resolved from the source preset; otherwise false.<returns>
     public static bool TryResolveLegacyMilestoneTierRollScalingData(PlayerProgressionPreset sourcePreset,
                                                                     int phaseIndex,
                                                                     int milestoneIndex,
@@ -182,7 +182,7 @@ internal static class PlayerRuntimeScalingBakeMetadataUtility
     /// <param name="sourcePreset">Unscaled source progression preset.</param>
     /// <param name="baseValue">Raw numeric value stored on the source preset.</param>
     /// <param name="formula">Enabled Add Scaling formula when present.</param>
-    /// <returns>True when metadata was resolved from the source preset; otherwise false.</returns>
+    /// <returns>True when metadata was resolved from the source preset; otherwise false.<returns>
     public static bool TryResolveExperiencePickupRadiusScalingData(PlayerProgressionPreset sourcePreset,
                                                                    out float baseValue,
                                                                    out string formula)
@@ -235,7 +235,7 @@ internal static class PlayerRuntimeScalingBakeMetadataUtility
     /// <param name="serializedObject">Serialized object that owns the target property.</param>
     /// <param name="scalingRules">Scaling rules list stored on the source preset.</param>
     /// <param name="property">Serialized property whose stat key should be resolved.</param>
-    /// <returns>Enabled formula when available; otherwise an empty string.</returns>
+    /// <returns>Enabled formula when available; otherwise an empty string.<returns>
     private static string ResolveFormula(SerializedObject serializedObject,
                                          System.Collections.Generic.IReadOnlyList<PlayerStatScalingRule> scalingRules,
                                          SerializedProperty property)

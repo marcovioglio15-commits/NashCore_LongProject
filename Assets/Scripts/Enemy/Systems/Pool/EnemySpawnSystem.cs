@@ -10,6 +10,12 @@ using Unity.Transforms;
 [UpdateAfter(typeof(EnemyPoolInitializeSystem))]
 public partial struct EnemySpawnSystem : ISystem
 {
+    #region Constants
+    private const float WarningTimeEpsilon = 0.0001f;
+    private const float WarningPositionEpsilon = 0.0001f;
+    private static readonly float3 DefaultUpAxis = new float3(0f, 1f, 0f);
+    #endregion
+
     #region Fields
     private EntityQuery spawnerQuery;
     #endregion
@@ -19,17 +25,19 @@ public partial struct EnemySpawnSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Caches the query used to iterate initialized wave spawners.
-    /// /params state: Current ECS system state.
-    /// /returns None.
+    ///  state: Current ECS system state.
+    /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
         spawnerQuery = new EntityQueryBuilder(Allocator.Temp)
             .WithAll<EnemySpawner,
+                     EnemySpawnWarningConfig,
                      EnemySpawnerState,
                      EnemySpawnerWaveDefinitionElement,
                      EnemySpawnerWaveRuntimeElement,
-                     EnemySpawnerWaveEventElement,
+                     EnemySpawnerWaveEventElement>()
+            .WithAll<EnemySpawnWarningRequestElement,
                      EnemySpawnerPrefabPoolMapElement,
                      LocalToWorld>()
             .Build(ref state);
@@ -38,8 +46,8 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Schedules wave starts, emits due events and activates pooled enemies at their baked positions.
-    /// /params state: Current ECS system state.
-    /// /returns None.
+    ///  state: Current ECS system state.
+    /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
@@ -63,10 +71,10 @@ public partial struct EnemySpawnSystem : ISystem
     #region Helpers
     /// <summary>
     /// Processes one spawner by updating wave scheduling and consuming due events.
-    /// /params entityManager: Entity manager used to access components and buffers.
-    /// /params spawnerEntity: Spawner entity being processed.
-    /// /params elapsedTime: Current elapsed world time.
-    /// /returns None.
+    ///  entityManager: Entity manager used to access components and buffers.
+    ///  spawnerEntity: Spawner entity being processed.
+    ///  elapsedTime: Current elapsed world time.
+    /// returns None.
     /// </summary>
     private static void ProcessSpawner(EntityManager entityManager, Entity spawnerEntity, float elapsedTime)
     {
@@ -81,7 +89,9 @@ public partial struct EnemySpawnSystem : ISystem
         DynamicBuffer<EnemySpawnerWaveDefinitionElement> waveDefinitions = entityManager.GetBuffer<EnemySpawnerWaveDefinitionElement>(spawnerEntity);
         DynamicBuffer<EnemySpawnerWaveRuntimeElement> waveRuntime = entityManager.GetBuffer<EnemySpawnerWaveRuntimeElement>(spawnerEntity);
         DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents = entityManager.GetBuffer<EnemySpawnerWaveEventElement>(spawnerEntity);
+        DynamicBuffer<EnemySpawnWarningRequestElement> spawnWarningRequests = entityManager.GetBuffer<EnemySpawnWarningRequestElement>(spawnerEntity);
         DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap = entityManager.GetBuffer<EnemySpawnerPrefabPoolMapElement>(spawnerEntity);
+        EnemySpawnWarningConfig spawnWarningConfig = entityManager.GetComponentData<EnemySpawnWarningConfig>(spawnerEntity);
         float4x4 localToWorld = entityManager.GetComponentData<LocalToWorld>(spawnerEntity).Value;
 
         for (int waveIndex = 0; waveIndex < waveDefinitions.Length; waveIndex++)
@@ -96,6 +106,14 @@ public partial struct EnemySpawnSystem : ISystem
             TryStartWave(elapsedTime, definition, ref runtime);
 
             if (runtime.Started != 0 && runtime.SpawnFinished == 0)
+            {
+                EmitUpcomingSpawnWarnings(spawnWarningRequests,
+                                          waveEvents,
+                                          localToWorld,
+                                          elapsedTime,
+                                          definition,
+                                          spawnWarningConfig,
+                                          ref runtime);
                 SpawnDueEvents(entityManager,
                                spawnerEntity,
                                poolMap,
@@ -105,6 +123,7 @@ public partial struct EnemySpawnSystem : ISystem
                                definition,
                                ref runtime,
                                ref spawnerState);
+            }
 
             TryFinalizeWave(elapsedTime, definition, ref runtime);
             waveRuntime[waveIndex] = runtime;
@@ -115,12 +134,12 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Assigns a deterministic scheduled start time to a wave as soon as its prerequisite state is available.
-    /// /params spawnerState: Global mutable spawner state.
-    /// /params waveDefinitions: Immutable wave definition buffer.
-    /// /params waveRuntime: Mutable wave runtime buffer.
-    /// /params waveIndex: Wave index to schedule.
-    /// /params runtime: Current wave runtime state to update.
-    /// /returns None.
+    ///  spawnerState: Global mutable spawner state.
+    ///  waveDefinitions: Immutable wave definition buffer.
+    ///  waveRuntime: Mutable wave runtime buffer.
+    ///  waveIndex: Wave index to schedule.
+    ///  runtime: Current wave runtime state to update.
+    /// returns None.
     /// </summary>
     private static void TryScheduleWaveStart(EnemySpawnerState spawnerState,
                                              DynamicBuffer<EnemySpawnerWaveDefinitionElement> waveDefinitions,
@@ -153,10 +172,10 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Starts a wave once the current world time reaches its scheduled start timestamp.
-    /// /params elapsedTime: Current elapsed world time.
-    /// /params definition: Immutable definition of the wave.
-    /// /params runtime: Current wave runtime state to update.
-    /// /returns None.
+    ///  elapsedTime: Current elapsed world time.
+    ///  definition: Immutable definition of the wave.
+    ///  runtime: Current wave runtime state to update.
+    /// returns None.
     /// </summary>
     private static void TryStartWave(float elapsedTime,
                                      EnemySpawnerWaveDefinitionElement definition,
@@ -180,17 +199,135 @@ public partial struct EnemySpawnSystem : ISystem
     }
 
     /// <summary>
+    /// Emits warning requests for upcoming spawn events that entered the authored warning lead-time window.
+    ///  spawnWarningRequests: Transient request buffer consumed later by presentation systems.
+    ///  waveEvents: Full baked event buffer for this spawner.
+    ///  localToWorld: Current spawner local-to-world matrix.
+    ///  elapsedTime: Current elapsed world time.
+    ///  definition: Immutable definition of the wave.
+    ///  spawnWarningConfig: Immutable warning settings baked from the spawner authoring component.
+    ///  runtime: Mutable runtime state for the wave.
+    /// returns None.
+    /// </summary>
+    private static void EmitUpcomingSpawnWarnings(DynamicBuffer<EnemySpawnWarningRequestElement> spawnWarningRequests,
+                                                  DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents,
+                                                  float4x4 localToWorld,
+                                                  float elapsedTime,
+                                                  EnemySpawnerWaveDefinitionElement definition,
+                                                  EnemySpawnWarningConfig spawnWarningConfig,
+                                                  ref EnemySpawnerWaveRuntimeElement runtime)
+    {
+        runtime.NextWarningEventIndex = math.max(runtime.NextWarningEventIndex, runtime.NextEventIndex);
+
+        if (spawnWarningConfig.Enabled == 0)
+            return;
+
+        float leadTimeSeconds = math.max(0f, spawnWarningConfig.LeadTimeSeconds);
+
+        if (leadTimeSeconds <= 0f)
+            return;
+
+        if (spawnWarningConfig.RadiusScale <= 0f || spawnWarningConfig.RingWidth <= 0f || spawnWarningConfig.MaximumAlpha <= 0f)
+            return;
+
+        while (runtime.NextWarningEventIndex < definition.EventCount)
+        {
+            int eventIndex = definition.FirstEventIndex + runtime.NextWarningEventIndex;
+
+            if (eventIndex < 0 || eventIndex >= waveEvents.Length)
+            {
+                runtime.NextWarningEventIndex = definition.EventCount;
+                break;
+            }
+
+            EnemySpawnerWaveEventElement waveEvent = waveEvents[eventIndex];
+            float dueTime = runtime.SpawnStartTime + math.max(0f, waveEvent.RelativeTime);
+
+            if (dueTime <= elapsedTime)
+            {
+                runtime.NextWarningEventIndex++;
+                continue;
+            }
+
+            float remainingSeconds = dueTime - elapsedTime;
+
+            if (remainingSeconds > leadTimeSeconds)
+                break;
+
+            float3 groupedLocalPosition = waveEvent.LocalSpawnPosition;
+            int nextWarningIndex = runtime.NextWarningEventIndex + 1;
+
+            while (nextWarningIndex < definition.EventCount)
+            {
+                int groupedEventIndex = definition.FirstEventIndex + nextWarningIndex;
+
+                if (groupedEventIndex < 0 || groupedEventIndex >= waveEvents.Length)
+                    break;
+
+                EnemySpawnerWaveEventElement groupedEvent = waveEvents[groupedEventIndex];
+                float groupedDueTime = runtime.SpawnStartTime + math.max(0f, groupedEvent.RelativeTime);
+
+                if (math.abs(groupedDueTime - dueTime) > WarningTimeEpsilon)
+                    break;
+
+                if (math.distancesq(groupedEvent.LocalSpawnPosition, groupedLocalPosition) > WarningPositionEpsilon)
+                    break;
+
+                nextWarningIndex++;
+            }
+
+            EnqueueSpawnWarningRequest(spawnWarningRequests,
+                                       localToWorld,
+                                       groupedLocalPosition,
+                                       remainingSeconds,
+                                       spawnWarningConfig);
+            runtime.NextWarningEventIndex = nextWarningIndex;
+        }
+    }
+
+    /// <summary>
+    /// Adds one concrete warning request to the transient spawner buffer.
+    ///  spawnWarningRequests: Buffer receiving the request.
+    ///  localToWorld: Current spawner local-to-world matrix.
+    ///  localSpawnPosition: Local spawn position resolved from the baked wave event.
+    ///  durationSeconds: Remaining warning duration before the spawn becomes active.
+    ///  spawnWarningConfig: Immutable warning settings baked from the spawner authoring component.
+    /// returns None.
+    /// </summary>
+    private static void EnqueueSpawnWarningRequest(DynamicBuffer<EnemySpawnWarningRequestElement> spawnWarningRequests,
+                                                   float4x4 localToWorld,
+                                                   float3 localSpawnPosition,
+                                                   float durationSeconds,
+                                                   EnemySpawnWarningConfig spawnWarningConfig)
+    {
+        float3 worldPosition = math.transform(localToWorld, localSpawnPosition);
+        float3 worldUp = math.normalizesafe(localToWorld.c1.xyz, DefaultUpAxis);
+        worldPosition += worldUp * math.max(0f, spawnWarningConfig.HeightOffset);
+
+        spawnWarningRequests.Add(new EnemySpawnWarningRequestElement
+        {
+            WorldPosition = worldPosition,
+            DurationSeconds = math.max(0.01f, durationSeconds),
+            FadeOutSeconds = math.max(0f, spawnWarningConfig.FadeOutSeconds),
+            Radius = math.max(0.05f, spawnWarningConfig.CellSize * math.max(0.01f, spawnWarningConfig.RadiusScale)),
+            RingWidth = math.max(0.01f, spawnWarningConfig.RingWidth),
+            MaximumAlpha = math.saturate(spawnWarningConfig.MaximumAlpha),
+            Color = spawnWarningConfig.Color
+        });
+    }
+
+    /// <summary>
     /// Emits all currently due spawn events for a started wave.
-    /// /params entityManager: Entity manager used to access pools and enemy instances.
-    /// /params spawnerEntity: Spawner that owns the wave.
-    /// /params poolMap: Prefab-to-pool map for this spawner.
-    /// /params waveEvents: Full baked event buffer for this spawner.
-    /// /params localToWorld: Current spawner local-to-world matrix.
-    /// /params elapsedTime: Current elapsed world time.
-    /// /params definition: Immutable definition of the wave.
-    /// /params runtime: Mutable runtime state for the wave.
-    /// /params spawnerState: Mutable global spawner state.
-    /// /returns None.
+    ///  entityManager: Entity manager used to access pools and enemy instances.
+    ///  spawnerEntity: Spawner that owns the wave.
+    ///  poolMap: Prefab-to-pool map for this spawner.
+    ///  waveEvents: Full baked event buffer for this spawner.
+    ///  localToWorld: Current spawner local-to-world matrix.
+    ///  elapsedTime: Current elapsed world time.
+    ///  definition: Immutable definition of the wave.
+    ///  runtime: Mutable runtime state for the wave.
+    ///  spawnerState: Mutable global spawner state.
+    /// returns None.
     /// </summary>
     private static void SpawnDueEvents(EntityManager entityManager,
                                        Entity spawnerEntity,
@@ -244,10 +381,10 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Marks a wave as spawn-finished or completed once its conditions are satisfied.
-    /// /params elapsedTime: Current elapsed world time.
-    /// /params definition: Immutable definition of the wave.
-    /// /params runtime: Mutable runtime state for the wave.
-    /// /returns None.
+    ///  elapsedTime: Current elapsed world time.
+    ///  definition: Immutable definition of the wave.
+    ///  runtime: Mutable runtime state for the wave.
+    /// returns None.
     /// </summary>
     private static void TryFinalizeWave(float elapsedTime,
                                         EnemySpawnerWaveDefinitionElement definition,
@@ -280,12 +417,12 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Resolves the prerequisite reference time that drives scheduling for a non-first wave.
-    /// /params spawnerState: Global mutable spawner state.
-    /// /params previousWaveDefinition: Immutable definition of the previous wave.
-    /// /params previousWaveRuntime: Mutable runtime state of the previous wave.
-    /// /params startMode: Requested start mode for the current wave.
-    /// /params referenceTime: Resolved reference time when the prerequisite is satisfied.
-    /// /returns True when the prerequisite is satisfied and the reference time is valid, otherwise false.
+    ///  spawnerState: Global mutable spawner state.
+    ///  previousWaveDefinition: Immutable definition of the previous wave.
+    ///  previousWaveRuntime: Mutable runtime state of the previous wave.
+    ///  startMode: Requested start mode for the current wave.
+    ///  referenceTime: Resolved reference time when the prerequisite is satisfied.
+    /// returns True when the prerequisite is satisfied and the reference time is valid, otherwise false.
     /// </summary>
     private static bool TryResolveReferenceTime(EnemySpawnerState spawnerState,
                                                 EnemySpawnerWaveDefinitionElement previousWaveDefinition,
@@ -334,10 +471,10 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Resolves the concrete pool entity associated with the provided prefab.
-    /// /params poolMap: Prefab-to-pool map buffer stored on the spawner.
-    /// /params prefabEntity: Referenced prefab to resolve.
-    /// /params poolEntity: Resolved pool entity when found.
-    /// /returns True when the mapping exists, otherwise false.
+    ///  poolMap: Prefab-to-pool map buffer stored on the spawner.
+    ///  prefabEntity: Referenced prefab to resolve.
+    ///  poolEntity: Resolved pool entity when found.
+    /// returns True when the mapping exists, otherwise false.
     /// </summary>
     private static bool TryGetPoolEntity(DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap,
                                          Entity prefabEntity,
@@ -360,12 +497,12 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Acquires one pooled enemy instance from the requested pool, expanding it on demand.
-    /// /params entityManager: Entity manager used to access the pool entity.
-    /// /params poolEntity: Concrete pool that should provide an enemy instance.
-    /// /params spawnerEntity: Spawner that owns the pool.
-    /// /params prefabEntity: Prefab associated with the pool.
-    /// /params enemyEntity: Resolved pooled enemy instance when acquisition succeeds.
-    /// /returns True when an instance was acquired, otherwise false.
+    ///  entityManager: Entity manager used to access the pool entity.
+    ///  poolEntity: Concrete pool that should provide an enemy instance.
+    ///  spawnerEntity: Spawner that owns the pool.
+    ///  prefabEntity: Prefab associated with the pool.
+    ///  enemyEntity: Resolved pooled enemy instance when acquisition succeeds.
+    /// returns True when an instance was acquired, otherwise false.
     /// </summary>
     private static bool TryAcquireEnemy(EntityManager entityManager,
                                         Entity poolEntity,

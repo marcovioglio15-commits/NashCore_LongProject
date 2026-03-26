@@ -420,7 +420,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// Builds one distinct list of assembled pattern IDs and labels from the patterns array.
     /// </summary>
     /// <param name="patternsProperty">Serialized patterns array.</param>
-    /// <returns>Returns the distinct assembled pattern options in authoring order.</returns>
+    /// <returns>Returns the distinct assembled pattern options in authoring order.<returns>
     private static List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> BuildPatternLoadoutOptions(SerializedProperty patternsProperty)
     {
         List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> options = new List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption>();
@@ -468,7 +468,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns true when the array content changes.</returns>
+    /// <returns>Returns true when the array content changes.<returns>
     private static bool NormalizePatternLoadoutArray(SerializedProperty activePatternIdsProperty,
                                                      List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
@@ -541,7 +541,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns true when the loadout is empty and at least one option exists.</returns>
+    /// <returns>Returns true when the loadout is empty and at least one option exists.<returns>
     private static bool CanAddPatternLoadoutEntry(SerializedProperty activePatternIdsProperty,
                                                   List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
@@ -570,7 +570,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns one unused pattern ID, or an empty string when none are available.</returns>
+    /// <returns>Returns one unused pattern ID, or an empty string when none are available.<returns>
     private static string ResolveNextPatternLoadoutId(SerializedProperty activePatternIdsProperty,
                                                       List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
@@ -598,7 +598,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
     /// <param name="patternId">Pattern ID to search for.</param>
-    /// <returns>Returns true when the pattern ID is already present.</returns>
+    /// <returns>Returns true when the pattern ID is already present.<returns>
     private static bool ContainsPatternLoadoutId(SerializedProperty activePatternIdsProperty, string patternId)
     {
         if (activePatternIdsProperty == null)
@@ -626,7 +626,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="selectedPatternId">Current serialized pattern ID value.</param>
     /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns one pattern ID that is guaranteed to exist in the options list when the list is not empty.</returns>
+    /// <returns>Returns one pattern ID that is guaranteed to exist in the options list when the list is not empty.<returns>
     private static string ResolveSelectedPatternId(string selectedPatternId,
                                                    List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
@@ -650,7 +650,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="options">Current distinct option list.</param>
     /// <param name="patternId">Pattern ID to search for.</param>
-    /// <returns>Returns true when the list already contains the ID.</returns>
+    /// <returns>Returns true when the list already contains the ID.<returns>
     private static bool ContainsPatternOption(List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> options, string patternId)
     {
         if (options == null)

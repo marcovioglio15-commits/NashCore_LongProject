@@ -15,11 +15,11 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
     #region Public Methods
     /// <summary>
     /// Builds the payload editor for the provided module kind.
-    /// /params payloadContainer Container that will host the payload controls.
-    /// /params payloadProperty Serialized payload property to edit.
-    /// /params moduleKind Module kind that selects the UI variant.
-    /// /params payloadLabel Optional label used by the generic payload fallback.
-    /// /returns void
+    ///  payloadContainer Container that will host the payload controls.
+    ///  payloadProperty Serialized payload property to edit.
+    ///  moduleKind Module kind that selects the UI variant.
+    ///  payloadLabel Optional label used by the generic payload fallback.
+    /// returns void
     /// </summary>
     public static void BuildPayloadEditor(VisualElement payloadContainer,
                                           SerializedProperty payloadProperty,
@@ -68,10 +68,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
 
     /// <summary>
     /// Creates a serialized field using the shared scaling-aware element factory.
-    /// /params parent Parent visual element that receives the field.
-    /// /params property Serialized property to draw.
-    /// /params label Visible label for the created field.
-    /// /returns void
+    ///  parent Parent visual element that receives the field.
+    ///  property Serialized property to draw.
+    ///  label Visible label for the created field.
+    /// returns void
     /// </summary>
     public static void AddField(VisualElement parent, SerializedProperty property, string label)
     {

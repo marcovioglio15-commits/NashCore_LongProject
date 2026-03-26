@@ -655,7 +655,8 @@ public sealed class EnemyVisualPresetsPanel
     {
         Visibility = 0,
         DamageFeedback = 1,
-        Prefabs = 2
+        Prefabs = 2,
+        ShooterWarning = 3
     }
 
     internal sealed class VisualSubSectionTabEntry

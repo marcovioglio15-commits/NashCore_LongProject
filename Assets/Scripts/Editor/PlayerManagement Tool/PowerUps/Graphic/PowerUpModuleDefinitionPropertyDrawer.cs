@@ -17,8 +17,8 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
     #region Methods
     /// <summary>
     /// Builds the inspector UI for a module definition entry.
-    /// /params property Serialized module definition property.
-    /// /returns Root visual element for the inspector drawer.
+    ///  property Serialized module definition property.
+    /// returns Root visual element for the inspector drawer.
     /// </summary>
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
@@ -112,13 +112,13 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Synchronizes module kind, stage, info box and payload UI whenever the selected kind changes.
-    /// /params moduleKindProperty Serialized module kind property.
-    /// /params stageProperty Serialized stage property updated to the recommended stage.
-    /// /params dataProperty Serialized payload container property.
-    /// /params moduleKindPopup Popup used for module kind selection.
-    /// /params moduleKindInfoBox Help box showing the selected kind description.
-    /// /params payloadContainer Visual container hosting payload fields.
-    /// /returns void
+    ///  moduleKindProperty Serialized module kind property.
+    ///  stageProperty Serialized stage property updated to the recommended stage.
+    ///  dataProperty Serialized payload container property.
+    ///  moduleKindPopup Popup used for module kind selection.
+    ///  moduleKindInfoBox Help box showing the selected kind description.
+    ///  payloadContainer Visual container hosting payload fields.
+    /// returns void
     /// </summary>
     private static void RefreshModuleUi(SerializedProperty moduleKindProperty,
                                         SerializedProperty stageProperty,
@@ -148,10 +148,10 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Rebuilds the payload area according to the currently selected module kind.
-    /// /params payloadContainer Container that hosts the payload UI.
-    /// /params dataProperty Serialized payload root property.
-    /// /params moduleKind Selected module kind.
-    /// /returns void
+    ///  payloadContainer Container that hosts the payload UI.
+    ///  dataProperty Serialized payload root property.
+    ///  moduleKind Selected module kind.
+    /// returns void
     /// </summary>
     private static void RebuildPayloadContainer(VisualElement payloadContainer, SerializedProperty dataProperty, PowerUpModuleKind moduleKind)
     {
@@ -188,11 +188,11 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Provides the shared payload entry point used by module and binding drawers.
-    /// /params payloadContainer Container that will receive the payload UI.
-    /// /params payloadProperty Serialized payload property for the selected kind.
-    /// /params moduleKind Kind that selects the payload drawer variant.
-    /// /params payloadLabel Optional label used by the generic fallback drawer.
-    /// /returns void
+    ///  payloadContainer Container that will receive the payload UI.
+    ///  payloadProperty Serialized payload property for the selected kind.
+    ///  moduleKind Kind that selects the payload drawer variant.
+    ///  payloadLabel Optional label used by the generic fallback drawer.
+    /// returns void
     /// </summary>
     public static void BuildPayloadEditor(VisualElement payloadContainer,
                                           SerializedProperty payloadProperty,
@@ -207,8 +207,8 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Builds the popup options list for module kind selection.
-    /// /params none
-    /// /returns Materialized module kind list used by the popup field.
+    ///  none
+    /// returns Materialized module kind list used by the popup field.
     /// </summary>
     private static List<PowerUpModuleKind> BuildModuleKindOptions()
     {
@@ -223,8 +223,8 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Resolves the serialized enum value to a valid module kind option.
-    /// /params moduleKindProperty Serialized module kind enum property.
-    /// /returns Valid module kind, or the first configured option when the property is invalid.
+    ///  moduleKindProperty Serialized module kind enum property.
+    /// returns Valid module kind, or the first configured option when the property is invalid.
     /// </summary>
     private static PowerUpModuleKind ResolveModuleKind(SerializedProperty moduleKindProperty)
     {

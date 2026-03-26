@@ -4,7 +4,7 @@ using Unity.Mathematics;
 
 /// <summary>
 /// Marks one enemy root after its flash render targets have received the runtime material override components.
-/// /returns None.
+/// returns None.
 /// </summary>
 public struct EnemyDamageFlashRenderTargetsInitialized : IComponentData
 {
@@ -23,8 +23,8 @@ public partial struct EnemyDamageFlashRenderTargetInitializeSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the minimum data required to run the initialization pass.
-    /// /params state: Current ECS system state.
-    /// /returns None.
+    ///  state: Current ECS system state.
+    /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
@@ -34,8 +34,8 @@ public partial struct EnemyDamageFlashRenderTargetInitializeSystem : ISystem
 
     /// <summary>
     /// Adds missing per-renderer material property components to every uninitialized enemy root.
-    /// /params state: Current ECS system state.
-    /// /returns None.
+    ///  state: Current ECS system state.
+    /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {

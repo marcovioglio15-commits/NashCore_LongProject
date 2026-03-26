@@ -14,7 +14,7 @@ public static class PlayerPassiveToolsAggregationUtility
     /// </summary>
     /// <param name="entity">Player entity being aggregated.</param>
     /// <param name="equippedPassiveToolsLookup">Buffer lookup containing equipped passive entries.</param>
-    /// <returns>Aggregated passive runtime state.</returns>
+    /// <returns>Aggregated passive runtime state.<returns>
     public static PlayerPassiveToolsState BuildPassiveToolsState(Entity entity, in BufferLookup<EquippedPassiveToolElement> equippedPassiveToolsLookup)
     {
         PlayerPassiveToolsState passiveToolsState = CreateDefaultState();
@@ -30,7 +30,7 @@ public static class PlayerPassiveToolsAggregationUtility
     /// Builds aggregated passive state from a direct equipped-passives dynamic buffer.
     /// </summary>
     /// <param name="equippedPassiveToolsBuffer">Runtime equipped passive entries.</param>
-    /// <returns>Aggregated passive runtime state.</returns>
+    /// <returns>Aggregated passive runtime state.<returns>
     public static PlayerPassiveToolsState BuildPassiveToolsState(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveToolsBuffer)
     {
         PlayerPassiveToolsState passiveToolsState = CreateDefaultState();

@@ -60,16 +60,16 @@ public static class EnemyPatternDvdCollisionUtility
     #region Public Methods
     /// <summary>
     /// Predicts the earliest DVD-to-DVD collision over the current frame and resolves the bounced velocity for the current enemy only.
-    /// /params enemyEntity: Current enemy entity.
-    /// /params currentPosition: Current enemy world position.
-    /// /params currentVelocity: Current enemy planar velocity before pair collision response.
-    /// /params collisionRadius: Current enemy collision radius.
-    /// /params bounceDamping: Current enemy configured bounce damping.
-    /// /params deltaTime: Current frame simulation delta time.
-    /// /params occupancyContext: Immutable occupancy snapshot used for neighborhood lookup.
-    /// /params bouncedVelocity: Output bounced planar velocity.
-    /// /params collisionTimeSeconds: Output time of impact in seconds from the current frame start.
-    /// /returns True when a valid DVD pair collision is found; otherwise false.
+    ///  enemyEntity: Current enemy entity.
+    ///  currentPosition: Current enemy world position.
+    ///  currentVelocity: Current enemy planar velocity before pair collision response.
+    ///  collisionRadius: Current enemy collision radius.
+    ///  bounceDamping: Current enemy configured bounce damping.
+    ///  deltaTime: Current frame simulation delta time.
+    ///  occupancyContext: Immutable occupancy snapshot used for neighborhood lookup.
+    ///  bouncedVelocity: Output bounced planar velocity.
+    ///  collisionTimeSeconds: Output time of impact in seconds from the current frame start.
+    /// returns True when a valid DVD pair collision is found; otherwise false.
     /// </summary>
     public static bool TryResolveBounceVelocity(Entity enemyEntity,
                                                 float3 currentPosition,
@@ -195,19 +195,19 @@ public static class EnemyPatternDvdCollisionUtility
     #region Private Methods
     /// <summary>
     /// Evaluates whether two moving discs collide during the current frame.
-    /// /params selfPosition: Current self position.
-    /// /params selfVelocity: Current self planar velocity.
-    /// /params selfRadius: Current self collision radius.
-    /// /params otherPosition: Current neighbor position.
-    /// /params otherVelocity: Current neighbor planar velocity.
-    /// /params otherRadius: Current neighbor collision radius.
-    /// /params deltaTime: Current frame simulation delta time.
-    /// /params selfEntity: Current self entity used for deterministic fallbacks.
-    /// /params otherEntity: Current neighbor entity used for deterministic fallbacks.
-    /// /params collisionTimeSeconds: Output time of impact in seconds from frame start.
-    /// /params approachSpeed: Output closing speed along the collision normal.
-    /// /params collisionNormal: Output collision normal from neighbor to self.
-    /// /returns True when the two discs collide while approaching one another; otherwise false.
+    ///  selfPosition: Current self position.
+    ///  selfVelocity: Current self planar velocity.
+    ///  selfRadius: Current self collision radius.
+    ///  otherPosition: Current neighbor position.
+    ///  otherVelocity: Current neighbor planar velocity.
+    ///  otherRadius: Current neighbor collision radius.
+    ///  deltaTime: Current frame simulation delta time.
+    ///  selfEntity: Current self entity used for deterministic fallbacks.
+    ///  otherEntity: Current neighbor entity used for deterministic fallbacks.
+    ///  collisionTimeSeconds: Output time of impact in seconds from frame start.
+    ///  approachSpeed: Output closing speed along the collision normal.
+    ///  collisionNormal: Output collision normal from neighbor to self.
+    /// returns True when the two discs collide while approaching one another; otherwise false.
     /// </summary>
     private static bool TryResolveCollisionCandidate(float3 selfPosition,
                                                      float3 selfVelocity,
@@ -279,11 +279,11 @@ public static class EnemyPatternDvdCollisionUtility
 
     /// <summary>
     /// Resolves the bounced self velocity for an equal-mass pair using the provided collision normal.
-    /// /params selfVelocity: Current self velocity.
-    /// /params otherVelocity: Current other velocity.
-    /// /params collisionNormal: Collision normal from other to self.
-    /// /params bounceDamping: Shared restitution coefficient in the [0..1] range.
-    /// /returns Bounced self velocity.
+    ///  selfVelocity: Current self velocity.
+    ///  otherVelocity: Current other velocity.
+    ///  collisionNormal: Collision normal from other to self.
+    ///  bounceDamping: Shared restitution coefficient in the [0..1] range.
+    /// returns Bounced self velocity.
     /// </summary>
     private static float3 ResolveEqualMassBounceVelocity(float3 selfVelocity,
                                                          float3 otherVelocity,
@@ -309,10 +309,10 @@ public static class EnemyPatternDvdCollisionUtility
 
     /// <summary>
     /// Resolves one stable collision normal from a 2D relative position, falling back to a deterministic direction when necessary.
-    /// /params relativePosition: Relative position from other to self on the XZ plane.
-    /// /params selfEntity: Current self entity.
-    /// /params otherEntity: Current other entity.
-    /// /returns Normalized collision normal from other to self.
+    ///  relativePosition: Relative position from other to self on the XZ plane.
+    ///  selfEntity: Current self entity.
+    ///  otherEntity: Current other entity.
+    /// returns Normalized collision normal from other to self.
     /// </summary>
     private static float3 ResolveCollisionNormal(float2 relativePosition, Entity selfEntity, Entity otherEntity)
     {

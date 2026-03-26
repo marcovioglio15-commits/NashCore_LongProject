@@ -282,7 +282,7 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// <param name="shooterEntity">Shooter entity to inspect.</param>
     /// <param name="shootRequestsCount">Current number of queued shoot requests.</param>
     /// <param name="poolState">Current shooter projectile pool state.</param>
-    /// <returns>True when shooter is valid and initialized for spawn processing.</returns>
+    /// <returns>True when shooter is valid and initialized for spawn processing.<returns>
     private static bool IsShooterEligibleForSpawn(EntityManager entityManager,
                                                   Entity shooterEntity,
                                                   int shootRequestsCount,
@@ -308,7 +308,7 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// </summary>
     /// <param name="entityManager">EntityManager used for existence checks.</param>
     /// <param name="prefabEntity">Candidate projectile prefab entity.</param>
-    /// <returns>True when prefab is non-null and alive in the world.</returns>
+    /// <returns>True when prefab is non-null and alive in the world.<returns>
     private static bool IsValidPrefab(EntityManager entityManager, Entity prefabEntity)
     {
         if (prefabEntity == Entity.Null)
@@ -323,7 +323,7 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// <param name="entityManager">EntityManager used for optional ProjectileBaseScale lookup.</param>
     /// <param name="projectileEntity">Projectile entity being spawned.</param>
     /// <param name="transformScale">Current LocalTransform scale fallback.</param>
-    /// <returns>Clamped base scale value used for spawn scale multiplier.</returns>
+    /// <returns>Clamped base scale value used for spawn scale multiplier.<returns>
     private static float ResolveProjectileBaseScale(EntityManager entityManager,
                                                     Entity projectileEntity,
                                                     float transformScale)

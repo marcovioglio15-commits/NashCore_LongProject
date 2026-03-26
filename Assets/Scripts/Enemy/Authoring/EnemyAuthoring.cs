@@ -5,7 +5,7 @@ using UnityEngine.Serialization;
 /// <summary>
 /// Authoring component that defines ECS enemy movement, combat and presentation settings.
 /// Main configuration is sourced from EnemyMasterPreset and its linked sub-presets.
-/// /returns None.
+/// returns None.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class EnemyAuthoring : MonoBehaviour
@@ -21,6 +21,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private static readonly Color DefaultDamageFlashColor = new Color(1f, 0.15f, 0.15f, 1f);
     private const float DefaultDamageFlashDurationSeconds = 0.06f;
     private const float DefaultDamageFlashMaximumBlend = 0.85f;
+    private static readonly Color DefaultShooterAimPulseColor = new Color(0.35f, 1f, 0.95f, 1f);
+    private const float DefaultShooterAimPulseLeadTimeSeconds = 0.3f;
+    private const float DefaultShooterAimPulseFadeOutSeconds = 0.18f;
+    private const float DefaultShooterAimPulseMaximumBlend = 0.7f;
     #endregion
 
     #region Fields
@@ -610,6 +614,71 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public bool EnableShooterAimPulse
+    {
+        get
+        {
+            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
+
+            if (settings == null)
+                return true;
+
+            return settings.EnableAimPulse;
+        }
+    }
+
+    public Color ShooterAimPulseColor
+    {
+        get
+        {
+            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
+
+            if (settings == null)
+                return DefaultShooterAimPulseColor;
+
+            return settings.AimPulseColor;
+        }
+    }
+
+    public float ShooterAimPulseMaximumBlend
+    {
+        get
+        {
+            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
+
+            if (settings == null)
+                return DefaultShooterAimPulseMaximumBlend;
+
+            return settings.AimPulseMaximumBlend;
+        }
+    }
+
+    public float ShooterAimPulseLeadTimeSeconds
+    {
+        get
+        {
+            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
+
+            if (settings == null)
+                return DefaultShooterAimPulseLeadTimeSeconds;
+
+            return settings.AimPulseLeadTimeSeconds;
+        }
+    }
+
+    public float ShooterAimPulseFadeOutSeconds
+    {
+        get
+        {
+            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
+
+            if (settings == null)
+                return DefaultShooterAimPulseFadeOutSeconds;
+
+            return settings.AimPulseFadeOutSeconds;
+        }
+    }
+
     public Animator AnimatorComponent
     {
         get
@@ -640,7 +709,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #region Unity Methods
     /// <summary>
     /// Sanitizes fallback values and validates linked presets after inspector edits.
-    /// /returns None.
+    /// returns None.
     /// </summary>
     private void OnValidate()
     {
@@ -681,7 +750,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
     #region Helpers
     /// <summary>
     /// Resolves the active movement settings source.
-    /// /returns Resolved movement settings or null when no preset source is available.
+    /// returns Resolved movement settings or null when no preset source is available.
     /// </summary>
     private EnemyBrainMovementSettings ResolveMovementSettings()
     {
@@ -690,7 +759,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     /// <summary>
     /// Resolves the active steering settings source.
-    /// /returns Resolved steering settings or null when no preset source is available.
+    /// returns Resolved steering settings or null when no preset source is available.
     /// </summary>
     private EnemyBrainSteeringSettings ResolveSteeringSettings()
     {
@@ -699,7 +768,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     /// <summary>
     /// Resolves the active damage settings source.
-    /// /returns Resolved damage settings or null when no preset source is available.
+    /// returns Resolved damage settings or null when no preset source is available.
     /// </summary>
     private EnemyBrainDamageSettings ResolveDamageSettings()
     {
@@ -708,7 +777,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     /// <summary>
     /// Resolves the active health settings source.
-    /// /returns Resolved health settings or null when no preset source is available.
+    /// returns Resolved health settings or null when no preset source is available.
     /// </summary>
     private EnemyBrainHealthStatisticsSettings ResolveHealthSettings()
     {
@@ -717,7 +786,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     /// <summary>
     /// Resolves the active visual visibility settings source.
-    /// /returns Resolved visibility settings or null when no preset source is available.
+    /// returns Resolved visibility settings or null when no preset source is available.
     /// </summary>
     private EnemyVisualVisibilitySettings ResolveVisibilitySettings()
     {
@@ -726,7 +795,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     /// <summary>
     /// Resolves the active visual prefab settings source.
-    /// /returns Resolved prefab settings or null when no preset source is available.
+    /// returns Resolved prefab settings or null when no preset source is available.
     /// </summary>
     private EnemyVisualPrefabSettings ResolveVisualPrefabSettings()
     {
@@ -735,7 +804,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     /// <summary>
     /// Resolves the active damage flash settings source.
-    /// /returns Resolved damage flash settings or null when no preset source is available.
+    /// returns Resolved damage flash settings or null when no preset source is available.
     /// </summary>
     private EnemyVisualDamageFeedbackSettings ResolveDamageFeedbackSettings()
     {
@@ -745,6 +814,20 @@ public sealed class EnemyAuthoring : MonoBehaviour
             return null;
 
         return resolvedVisualPreset.DamageFeedback;
+    }
+
+    /// <summary>
+    /// Resolves the active shooter aim warning settings source.
+    /// returns Resolved shooter warning settings or null when no preset source is available.
+    /// </summary>
+    private EnemyVisualShooterWarningSettings ResolveShooterWarningSettings()
+    {
+        EnemyVisualPreset resolvedVisualPreset = EnemyAuthoringPresetResolverUtility.ResolveVisualPreset(masterPreset, visualPreset);
+
+        if (resolvedVisualPreset == null)
+            return null;
+
+        return resolvedVisualPreset.ShooterWarning;
     }
     #endregion
 

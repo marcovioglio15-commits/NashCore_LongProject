@@ -25,8 +25,8 @@ internal static class PlayerRuntimeScalingBakeUtility
     #region Public Methods
     /// <summary>
     /// Builds the immutable baseline movement config from one authoring preset.
-    /// /params preset: Source controller preset.
-    /// /returns Sanitized runtime baseline movement config.
+    ///  preset: Source controller preset.
+    /// returns Sanitized runtime baseline movement config.
     /// </summary>
     public static PlayerBaseMovementConfig BuildBaseMovementConfig(PlayerControllerPreset preset)
     {
@@ -58,8 +58,8 @@ internal static class PlayerRuntimeScalingBakeUtility
 
     /// <summary>
     /// Builds the immutable baseline look config from one authoring preset.
-    /// /params preset: Source controller preset.
-    /// /returns Sanitized runtime baseline look config.
+    ///  preset: Source controller preset.
+    /// returns Sanitized runtime baseline look config.
     /// </summary>
     public static PlayerBaseLookConfig BuildBaseLookConfig(PlayerControllerPreset preset)
     {
@@ -116,8 +116,8 @@ internal static class PlayerRuntimeScalingBakeUtility
 
     /// <summary>
     /// Builds the immutable baseline camera config from one authoring preset.
-    /// /params preset: Source controller preset.
-    /// /returns Sanitized runtime baseline camera config.
+    ///  preset: Source controller preset.
+    /// returns Sanitized runtime baseline camera config.
     /// </summary>
     public static PlayerBaseCameraConfig BuildBaseCameraConfig(PlayerControllerPreset preset)
     {
@@ -145,8 +145,8 @@ internal static class PlayerRuntimeScalingBakeUtility
 
     /// <summary>
     /// Builds the immutable baseline shooting config from one authoring preset.
-    /// /params preset: Source controller preset.
-    /// /returns Sanitized runtime baseline shooting config.
+    ///  preset: Source controller preset.
+    /// returns Sanitized runtime baseline shooting config.
     /// </summary>
     public static PlayerBaseShootingConfig BuildBaseShootingConfig(PlayerControllerPreset preset)
     {
@@ -179,8 +179,8 @@ internal static class PlayerRuntimeScalingBakeUtility
 
     /// <summary>
     /// Builds the immutable baseline health config from one authoring preset.
-    /// /params preset: Source controller preset.
-    /// /returns Sanitized runtime baseline health config.
+    ///  preset: Source controller preset.
+    /// returns Sanitized runtime baseline health config.
     /// </summary>
     public static PlayerBaseHealthStatisticsConfig BuildBaseHealthStatisticsConfig(PlayerControllerPreset preset)
     {
@@ -201,11 +201,11 @@ internal static class PlayerRuntimeScalingBakeUtility
 
     /// <summary>
     /// Populates immutable and runtime progression phase buffers from progression presets.
-    /// /params scaledPreset: Scaled preset currently used by bake.
-    /// /params sourcePreset: Unscaled source preset used as runtime baseline.
-    /// /params basePhases: Destination immutable baseline buffer.
-    /// /params runtimePhases: Destination runtime buffer initialized from the scaled preset.
-    /// /returns void.
+    ///  scaledPreset: Scaled preset currently used by bake.
+    ///  sourcePreset: Unscaled source preset used as runtime baseline.
+    ///  basePhases: Destination immutable baseline buffer.
+    ///  runtimePhases: Destination runtime buffer initialized from the scaled preset.
+    /// returns void.
     /// </summary>
     public static void PopulateProgressionPhaseBuffers(PlayerProgressionPreset scaledPreset,
                                                        PlayerProgressionPreset sourcePreset,
@@ -246,11 +246,11 @@ internal static class PlayerRuntimeScalingBakeUtility
 
     /// <summary>
     /// Populates immutable base configs for all modular power-ups so runtime scaling can rebuild active/passive snapshots.
-    /// /params authoring: Owning player authoring component.
-    /// /params sourcePreset: Unscaled power-ups preset.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /params baseConfigs: Destination immutable base config buffer.
-    /// /returns void.
+    ///  authoring: Owning player authoring component.
+    ///  sourcePreset: Unscaled power-ups preset.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    ///  baseConfigs: Destination immutable base config buffer.
+    /// returns void.
     /// </summary>
     public static void PopulatePowerUpBaseConfigs(PlayerAuthoring authoring,
                                                   PlayerPowerUpsPreset sourcePreset,
@@ -281,9 +281,9 @@ internal static class PlayerRuntimeScalingBakeUtility
 #if UNITY_EDITOR
     /// <summary>
     /// Populates controller scaling metadata from the unscaled controller preset.
-    /// /params sourcePreset: Unscaled source controller preset.
-    /// /params scalingBuffer: Destination scaling metadata buffer.
-    /// /returns void.
+    ///  sourcePreset: Unscaled source controller preset.
+    ///  scalingBuffer: Destination scaling metadata buffer.
+    /// returns void.
     /// </summary>
     public static void PopulateControllerScalingMetadata(PlayerControllerPreset sourcePreset,
                                                          DynamicBuffer<PlayerRuntimeControllerScalingElement> scalingBuffer)
@@ -294,9 +294,9 @@ internal static class PlayerRuntimeScalingBakeUtility
 
     /// <summary>
     /// Populates progression scaling metadata from the unscaled progression preset.
-    /// /params sourcePreset: Unscaled source progression preset.
-    /// /params scalingBuffer: Destination scaling metadata buffer.
-    /// /returns void.
+    ///  sourcePreset: Unscaled source progression preset.
+    ///  scalingBuffer: Destination scaling metadata buffer.
+    /// returns void.
     /// </summary>
     public static void PopulateProgressionScalingMetadata(PlayerProgressionPreset sourcePreset,
                                                           DynamicBuffer<PlayerRuntimeProgressionScalingElement> scalingBuffer)
@@ -338,9 +338,9 @@ internal static class PlayerRuntimeScalingBakeUtility
 
     /// <summary>
     /// Populates power-up scaling metadata from the unscaled power-ups preset.
-    /// /params sourcePreset: Unscaled source power-ups preset.
-    /// /params scalingBuffer: Destination scaling metadata buffer.
-    /// /returns void.
+    ///  sourcePreset: Unscaled source power-ups preset.
+    ///  scalingBuffer: Destination scaling metadata buffer.
+    /// returns void.
     /// </summary>
     public static void PopulatePowerUpScalingMetadata(PlayerPowerUpsPreset sourcePreset,
                                                       DynamicBuffer<PlayerRuntimePowerUpScalingElement> scalingBuffer)

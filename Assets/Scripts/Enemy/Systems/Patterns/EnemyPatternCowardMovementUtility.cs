@@ -4,8 +4,8 @@ using Unity.Physics;
 
 /// <summary>
 /// Centralizes target following, fallback motion and navigation blending for Coward movement.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public static class EnemyPatternCowardMovementUtility
 {
@@ -22,26 +22,26 @@ public static class EnemyPatternCowardMovementUtility
     #region Public Methods
     /// <summary>
     /// Resolves target-following movement with yield handling and optional retreat-navigation guidance.
-    /// /params enemyEntity Current enemy entity.
-    /// /params selfPriorityTier Current enemy priority tier.
-    /// /params enemyPosition Current enemy position.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params minimumWallDistance Extra distance kept from walls.
-    /// /params desiredSpeed Current movement speed.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /params patternConfig Compiled pattern config.
-    /// /params patternRuntimeState Mutable pattern runtime state.
-    /// /params allowRetreatNavigationGuidance Whether navigation-aware retreat steering may override blocked direct segments.
-    /// /params retryFallbackVelocity Velocity used while retry cooldown is active.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall collision checks are enabled.
-    /// /params navigationFlowReady Whether the shared flow field is currently valid.
-    /// /params navigationGridState Shared navigation grid state.
-    /// /params navigationCells Shared navigation cells buffer.
-    /// /params occupancyContext Occupancy context used for clearance and trajectory scoring.
-    /// /params resolvedVelocity Output planar target velocity.
-    /// /returns True when a target-related velocity was resolved; otherwise false.
+    ///  enemyEntity Current enemy entity.
+    ///  selfPriorityTier Current enemy priority tier.
+    ///  enemyPosition Current enemy position.
+    ///  bodyRadius Current enemy body radius.
+    ///  minimumWallDistance Extra distance kept from walls.
+    ///  desiredSpeed Current movement speed.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    ///  patternConfig Compiled pattern config.
+    ///  patternRuntimeState Mutable pattern runtime state.
+    ///  allowRetreatNavigationGuidance Whether navigation-aware retreat steering may override blocked direct segments.
+    ///  retryFallbackVelocity Velocity used while retry cooldown is active.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall collision checks are enabled.
+    ///  navigationFlowReady Whether the shared flow field is currently valid.
+    ///  navigationGridState Shared navigation grid state.
+    ///  navigationCells Shared navigation cells buffer.
+    ///  occupancyContext Occupancy context used for clearance and trajectory scoring.
+    ///  resolvedVelocity Output planar target velocity.
+    /// returns True when a target-related velocity was resolved; otherwise false.
     /// </summary>
     public static bool TryResolveVelocityTowardTarget(Entity enemyEntity,
                                                       int selfPriorityTier,
@@ -174,20 +174,20 @@ public static class EnemyPatternCowardMovementUtility
 
     /// <summary>
     /// Blends a direct retreat vector with the navigation flow field when direct escape segments are blocked by walls.
-    /// /params enemyPosition Current enemy position.
-    /// /params toTarget Current target displacement.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params minimumWallDistance Extra distance kept from walls.
-    /// /params desiredSpeed Current desired speed.
-    /// /params patternConfig Compiled pattern config.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall collision checks are enabled.
-    /// /params navigationFlowReady Whether the shared flow field is currently valid.
-    /// /params navigationGridState Shared navigation grid state.
-    /// /params navigationCells Shared navigation cells buffer.
-    /// /params baseVelocity Direct retreat velocity before navigation blending.
-    /// /returns Planar velocity corrected with retreat navigation when needed.
+    ///  enemyPosition Current enemy position.
+    ///  toTarget Current target displacement.
+    ///  bodyRadius Current enemy body radius.
+    ///  minimumWallDistance Extra distance kept from walls.
+    ///  desiredSpeed Current desired speed.
+    ///  patternConfig Compiled pattern config.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall collision checks are enabled.
+    ///  navigationFlowReady Whether the shared flow field is currently valid.
+    ///  navigationGridState Shared navigation grid state.
+    ///  navigationCells Shared navigation cells buffer.
+    ///  baseVelocity Direct retreat velocity before navigation blending.
+    /// returns Planar velocity corrected with retreat navigation when needed.
     /// </summary>
     public static float3 ResolvePathAwareRetreatVelocity(float3 enemyPosition,
                                                          float3 toTarget,
@@ -269,24 +269,24 @@ public static class EnemyPatternCowardMovementUtility
 
     /// <summary>
     /// Resolves a short retreat fallback velocity used while the system waits for a better flee destination.
-    /// /params enemyEntity Current enemy entity.
-    /// /params selfPriorityTier Current enemy priority tier.
-    /// /params enemyPosition Current enemy position.
-    /// /params playerPosition Current player position.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params minimumWallDistance Extra distance kept from walls.
-    /// /params desiredSpeed Current movement speed.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /params elapsedTime Elapsed world time.
-    /// /params patternConfig Compiled pattern config.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall collision checks are enabled.
-    /// /params navigationFlowReady Whether the shared flow field is currently valid.
-    /// /params navigationGridState Shared navigation grid state.
-    /// /params navigationCells Shared navigation cells buffer.
-    /// /params occupancyContext Occupancy context used for local clearance.
-    /// /returns Planar fallback flee velocity.
+    ///  enemyEntity Current enemy entity.
+    ///  selfPriorityTier Current enemy priority tier.
+    ///  enemyPosition Current enemy position.
+    ///  playerPosition Current player position.
+    ///  bodyRadius Current enemy body radius.
+    ///  minimumWallDistance Extra distance kept from walls.
+    ///  desiredSpeed Current movement speed.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    ///  elapsedTime Elapsed world time.
+    ///  patternConfig Compiled pattern config.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall collision checks are enabled.
+    ///  navigationFlowReady Whether the shared flow field is currently valid.
+    ///  navigationGridState Shared navigation grid state.
+    ///  navigationCells Shared navigation cells buffer.
+    ///  occupancyContext Occupancy context used for local clearance.
+    /// returns Planar fallback flee velocity.
     /// </summary>
     public static float3 ResolveRetreatFallbackVelocity(Entity enemyEntity,
                                                         int selfPriorityTier,
@@ -337,16 +337,16 @@ public static class EnemyPatternCowardMovementUtility
 
     /// <summary>
     /// Applies a cheap continuous wall-avoidance correction so Cowards stop scraping along walls and escape corners earlier.
-    /// /params enemyEntity Current enemy entity.
-    /// /params enemyPosition Current enemy position.
-    /// /params desiredVelocity Base desired velocity before wall correction.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params minimumWallDistance Extra distance kept from walls.
-    /// /params desiredSpeed Current desired speed magnitude.
-    /// /params physicsWorldSingleton Physics world singleton.
-    /// /params wallsLayerMask Walls layer mask.
-    /// /params wallsEnabled Whether wall checks are enabled.
-    /// /returns Wall-aware planar velocity.
+    ///  enemyEntity Current enemy entity.
+    ///  enemyPosition Current enemy position.
+    ///  desiredVelocity Base desired velocity before wall correction.
+    ///  bodyRadius Current enemy body radius.
+    ///  minimumWallDistance Extra distance kept from walls.
+    ///  desiredSpeed Current desired speed magnitude.
+    ///  physicsWorldSingleton Physics world singleton.
+    ///  wallsLayerMask Walls layer mask.
+    ///  wallsEnabled Whether wall checks are enabled.
+    /// returns Wall-aware planar velocity.
     /// </summary>
     public static float3 ResolveWallAwareVelocity(Entity enemyEntity,
                                                   float3 enemyPosition,
@@ -426,16 +426,16 @@ public static class EnemyPatternCowardMovementUtility
     #region Private Methods
     /// <summary>
     /// Composes one fallback velocity with local clearance so nearby Cowards keep dancing instead of stacking.
-    /// /params enemyEntity Current enemy entity.
-    /// /params selfPriorityTier Current enemy priority tier.
-    /// /params enemyPosition Current enemy position.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params minimumEnemyClearance Minimum clearance from neighbors.
-    /// /params desiredSpeed Current desired speed.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /params baseVelocity Base fallback velocity before clearance.
-    /// /params occupancyContext Occupancy context used for local clearance.
-    /// /returns Clearance-aware fallback velocity.
+    ///  enemyEntity Current enemy entity.
+    ///  selfPriorityTier Current enemy priority tier.
+    ///  enemyPosition Current enemy position.
+    ///  bodyRadius Current enemy body radius.
+    ///  minimumEnemyClearance Minimum clearance from neighbors.
+    ///  desiredSpeed Current desired speed.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    ///  baseVelocity Base fallback velocity before clearance.
+    ///  occupancyContext Occupancy context used for local clearance.
+    /// returns Clearance-aware fallback velocity.
     /// </summary>
     private static float3 ComposeFallbackVelocity(Entity enemyEntity,
                                                   int selfPriorityTier,

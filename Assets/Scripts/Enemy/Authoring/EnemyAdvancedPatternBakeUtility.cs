@@ -15,7 +15,7 @@ public static class EnemyAdvancedPatternBakeUtility
     /// Compiles one advanced pattern preset into movement config and shooter module list.
     /// </summary>
     /// <param name="preset">Preset to compile. Null returns default grunt config.</param>
-    /// <returns>Compiled bake result.</returns>
+    /// <returns>Compiled bake result.<returns>
     public static EnemyCompiledPatternBakeResult Compile(EnemyAdvancedPatternPreset preset)
     {
         EnemyCompiledPatternBakeResult result = new EnemyCompiledPatternBakeResult();
@@ -344,6 +344,7 @@ public static class EnemyAdvancedPatternBakeUtility
             MovementPolicy = ResolveShooterMovementPolicy(shooterData.MovementPolicy),
             FireInterval = math.max(0.01f, shooterData.FireInterval),
             BurstCount = math.clamp(math.max(1, shooterData.BurstCount), 1, 64),
+            AimWindupSeconds = math.max(0f, shooterData.AimWindupSeconds),
             IntraBurstDelay = math.max(0f, shooterData.IntraBurstDelay),
             UseMinimumRange = shooterData.UseMinimumRange ? (byte)1 : (byte)0,
             MinimumRange = minimumRange,

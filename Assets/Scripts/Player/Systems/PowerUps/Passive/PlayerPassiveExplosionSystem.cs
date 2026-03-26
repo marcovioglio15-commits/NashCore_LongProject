@@ -124,7 +124,7 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
     /// </summary>
     /// <param name="killedEventPosition">Position captured by EnemyKilledEventsSystem for the killed target.</param>
     /// <param name="playerFloorReferenceY">Current player Y used as local floor reference in flat/near-flat arenas.</param>
-    /// <returns>Sanitized trigger position with a minimum Y floor safeguard.</returns>
+    /// <returns>Sanitized trigger position with a minimum Y floor safeguard.<returns>
     private static float3 ResolveKilledTriggerPosition(float3 killedEventPosition, float playerFloorReferenceY)
     {
         float3 resolvedPosition = killedEventPosition;

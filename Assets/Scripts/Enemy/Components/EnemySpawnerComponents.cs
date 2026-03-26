@@ -59,6 +59,7 @@ public struct EnemySpawnerWaveRuntimeElement : IBufferElementData
     public float CompletionTime;
     public float FirstKillTime;
     public int NextEventIndex;
+    public int NextWarningEventIndex;
     public int AliveCount;
     public int SpawnedCount;
     public byte StartScheduled;

@@ -37,11 +37,11 @@ public static class EnemyNavigationFlowFieldUtility
     #region Public Methods
     /// <summary>
     /// Collects one world-space AABB that encloses all static wall bodies matching the provided layer mask.
-    /// /params physicsWorldSingleton: Physics world used to enumerate static rigid bodies.
-    /// /params wallsLayerMask: Layer mask that identifies wall colliders.
-    /// /params wallBounds: Output union bounds of all detected static wall colliders.
-    /// /params layoutHash: Output hash used to detect static wall-layout changes.
-    /// /returns True when at least one matching static wall body is found; otherwise false.
+    ///  physicsWorldSingleton: Physics world used to enumerate static rigid bodies.
+    ///  wallsLayerMask: Layer mask that identifies wall colliders.
+    ///  wallBounds: Output union bounds of all detected static wall colliders.
+    ///  layoutHash: Output hash used to detect static wall-layout changes.
+    /// returns True when at least one matching static wall body is found; otherwise false.
     /// </summary>
     public static bool TryCollectStaticWallBounds(in PhysicsWorldSingleton physicsWorldSingleton,
                                                   int wallsLayerMask,
@@ -96,14 +96,14 @@ public static class EnemyNavigationFlowFieldUtility
 
     /// <summary>
     /// Rebuilds the navigation grid layout and all cell connectivity from static wall geometry.
-    /// /params navigationCells: Dynamic buffer that stores one navigation cell per grid slot.
-    /// /params navigationGridState: Mutable grid-state component rebuilt in place.
-    /// /params physicsWorldSingleton: Physics world used for wall clearance and edge traversal checks.
-    /// /params wallBounds: Union bounds of all static wall colliders.
-    /// /params wallsLayerMask: Layer mask that identifies wall colliders.
-    /// /params maximumNavigationRadius: Largest enemy body-plus-wall-distance radius used to size the shared traversal clearance.
-    /// /params staticLayoutHash: Hash of the current static wall layout.
-    /// /returns None.
+    ///  navigationCells: Dynamic buffer that stores one navigation cell per grid slot.
+    ///  navigationGridState: Mutable grid-state component rebuilt in place.
+    ///  physicsWorldSingleton: Physics world used for wall clearance and edge traversal checks.
+    ///  wallBounds: Union bounds of all static wall colliders.
+    ///  wallsLayerMask: Layer mask that identifies wall colliders.
+    ///  maximumNavigationRadius: Largest enemy body-plus-wall-distance radius used to size the shared traversal clearance.
+    ///  staticLayoutHash: Hash of the current static wall layout.
+    /// returns None.
     /// </summary>
     public static void RebuildGrid(ref DynamicBuffer<EnemyNavigationCellElement> navigationCells,
                                    ref EnemyNavigationGridState navigationGridState,
@@ -185,10 +185,10 @@ public static class EnemyNavigationFlowFieldUtility
 
     /// <summary>
     /// Resolves the walkable player cell and rebuilds the flow field when a valid target cell is available.
-    /// /params navigationCells: Dynamic buffer that stores navigation cells.
-    /// /params navigationGridState: Mutable grid-state component updated in place.
-    /// /params playerPosition: Current player world position.
-    /// /returns True when the flow field is ready for runtime navigation queries; otherwise false.
+    ///  navigationCells: Dynamic buffer that stores navigation cells.
+    ///  navigationGridState: Mutable grid-state component updated in place.
+    ///  playerPosition: Current player world position.
+    /// returns True when the flow field is ready for runtime navigation queries; otherwise false.
     /// </summary>
     public static bool TryRefreshFlowField(ref DynamicBuffer<EnemyNavigationCellElement> navigationCells,
                                            ref EnemyNavigationGridState navigationGridState,
@@ -212,10 +212,10 @@ public static class EnemyNavigationFlowFieldUtility
 
     /// <summary>
     /// Returns whether the shared flow field should be refreshed at the current time.
-    /// /params navigationGridState: Current grid-state component.
-    /// /params playerPosition: Current player world position.
-    /// /params elapsedTime: Current world elapsed time.
-    /// /returns True when the flow field should be rebuilt this frame; otherwise false.
+    ///  navigationGridState: Current grid-state component.
+    ///  playerPosition: Current player world position.
+    ///  elapsedTime: Current world elapsed time.
+    /// returns True when the flow field should be rebuilt this frame; otherwise false.
     /// </summary>
     public static bool ShouldRefreshFlowField(in EnemyNavigationGridState navigationGridState,
                                               float3 playerPosition,
@@ -239,16 +239,16 @@ public static class EnemyNavigationFlowFieldUtility
 
     /// <summary>
     /// Resolves one navigation-aware desired velocity toward the player by preferring direct line of sight and falling back to the shared flow field.
-    /// /params currentPosition: Current enemy world position.
-    /// /params targetPosition: Current player world position.
-    /// /params collisionRadius: Current enemy navigation collision radius used for direct-path wall checks.
-    /// /params desiredSpeed: Desired movement speed before acceleration integration.
-    /// /params physicsWorldSingleton: Physics world used for direct-path wall checks.
-    /// /params wallsLayerMask: Layer mask that identifies wall colliders.
-    /// /params navigationGridState: Current shared navigation-grid state.
-    /// /params navigationCells: Current shared navigation cells buffer.
-    /// /params desiredVelocity: Output navigation-aware desired velocity.
-    /// /returns True when a valid navigation velocity is produced; otherwise false.
+    ///  currentPosition: Current enemy world position.
+    ///  targetPosition: Current player world position.
+    ///  collisionRadius: Current enemy navigation collision radius used for direct-path wall checks.
+    ///  desiredSpeed: Desired movement speed before acceleration integration.
+    ///  physicsWorldSingleton: Physics world used for direct-path wall checks.
+    ///  wallsLayerMask: Layer mask that identifies wall colliders.
+    ///  navigationGridState: Current shared navigation-grid state.
+    ///  navigationCells: Current shared navigation cells buffer.
+    ///  desiredVelocity: Output navigation-aware desired velocity.
+    /// returns True when a valid navigation velocity is produced; otherwise false.
     /// </summary>
     public static bool TryResolveNavigationVelocity(float3 currentPosition,
                                                     float3 targetPosition,
@@ -310,12 +310,12 @@ public static class EnemyNavigationFlowFieldUtility
 
     /// <summary>
     /// Resolves one navigation-aware retreat velocity by following the opposite direction of the player-targeting flow field.
-    /// /params currentPosition: Current enemy world position.
-    /// /params desiredSpeed: Desired movement speed before acceleration integration.
-    /// /params navigationGridState: Current shared navigation-grid state.
-    /// /params navigationCells: Current shared navigation cells buffer.
-    /// /params desiredVelocity: Output navigation-aware retreat velocity.
-    /// /returns True when a valid retreat velocity is produced; otherwise false.
+    ///  currentPosition: Current enemy world position.
+    ///  desiredSpeed: Desired movement speed before acceleration integration.
+    ///  navigationGridState: Current shared navigation-grid state.
+    ///  navigationCells: Current shared navigation cells buffer.
+    ///  desiredVelocity: Output navigation-aware retreat velocity.
+    /// returns True when a valid retreat velocity is produced; otherwise false.
     /// </summary>
     public static bool TryResolveRetreatNavigationVelocity(float3 currentPosition,
                                                            float desiredSpeed,
@@ -360,11 +360,11 @@ public static class EnemyNavigationFlowFieldUtility
 
     /// <summary>
     /// Estimates how safe a world position is for retreat by looking ahead through the navigation topology.
-    /// /params worldPosition: World position to evaluate.
-    /// /params navigationGridState: Current shared navigation-grid state.
-    /// /params navigationCells: Current shared navigation cells buffer.
-    /// /params topologyScore: Output normalized safety score that prefers deep corridors with multiple exits.
-    /// /returns True when a valid topology score is produced; otherwise false.
+    ///  worldPosition: World position to evaluate.
+    ///  navigationGridState: Current shared navigation-grid state.
+    ///  navigationCells: Current shared navigation cells buffer.
+    ///  topologyScore: Output normalized safety score that prefers deep corridors with multiple exits.
+    /// returns True when a valid topology score is produced; otherwise false.
     /// </summary>
     public static bool TryResolveRetreatTopologyScore(float3 worldPosition,
                                                       in EnemyNavigationGridState navigationGridState,
@@ -394,11 +394,11 @@ public static class EnemyNavigationFlowFieldUtility
 
     /// <summary>
     /// Resolves the current navigation cost of one world position using the shared flow field.
-    /// /params worldPosition: World position to evaluate.
-    /// /params navigationGridState: Current shared navigation-grid state.
-    /// /params navigationCells: Current shared navigation cells buffer.
-    /// /params navigationCost: Output navigation cost in cell steps from the player.
-    /// /returns True when a valid reachable navigation cost is resolved; otherwise false.
+    ///  worldPosition: World position to evaluate.
+    ///  navigationGridState: Current shared navigation-grid state.
+    ///  navigationCells: Current shared navigation cells buffer.
+    ///  navigationCost: Output navigation cost in cell steps from the player.
+    /// returns True when a valid reachable navigation cost is resolved; otherwise false.
     /// </summary>
     public static bool TryResolveNavigationCost(float3 worldPosition,
                                                 in EnemyNavigationGridState navigationGridState,

@@ -649,9 +649,29 @@ PrefabInstance:
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
       propertyPath: wavePreset
       value: 
-      objectReference: {fileID: 11400000, guid: 5c5b92375b7411546814a8b4ccdbe2a5, type: 2}
+      objectReference: {fileID: 11400000, guid: 2df9ebf14ffa8384c8df861df51cbd3d, type: 2}
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
       propertyPath: waves.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
+      propertyPath: spawnWarningColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
+      propertyPath: spawnWarningColor.g
+      value: 0.9312867
+      objectReference: {fileID: 0}
+    - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
+      propertyPath: spawnWarningColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
+      propertyPath: spawnWarningFadeOutSeconds
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
+      propertyPath: spawnWarningLeadTimeSeconds
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}

@@ -291,7 +291,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// </summary>
     /// <param name="selectionCommands">Queued HUD selection commands.</param>
     /// <param name="resolvedCommand">Resolved command payload when found.</param>
-    /// <returns>True when one actionable command exists; otherwise false.</returns>
+    /// <returns>True when one actionable command exists; otherwise false.<returns>
     private static bool TryResolveRequestedCommand(DynamicBuffer<PlayerMilestonePowerUpSelectionCommand> selectionCommands,
                                                    out ResolvedMilestoneSelectionCommand resolvedCommand)
     {
@@ -352,7 +352,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// <param name="equippedPassiveTools">Runtime passive-tools buffer.</param>
     /// <param name="passiveToolsState">Aggregated runtime passive state.</param>
     /// <param name="applyTarget">Debug-friendly destination where the unlock was applied.</param>
-    /// <returns>True when runtime state changed; otherwise false.</returns>
+    /// <returns>True when runtime state changed; otherwise false.<returns>
     private static bool ApplySelectedUnlock(PlayerPowerUpUnlockKind unlockKind,
                                             in PlayerPowerUpUnlockCatalogElement selectedCatalogEntry,
                                             in PhysicsWorldSingleton physicsWorldSingleton,
@@ -402,7 +402,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// <param name="powerUpContainerConfigLookup">Read-only lookup of player-side dropped-container settings.</param>
     /// <param name="commandBuffer">ECB used to spawn dropped containers when one active is replaced.</param>
     /// <param name="applyTarget">Debug label of the slot where the unlock was applied.</param>
-    /// <returns>True when the active slot was applied; otherwise false.</returns>
+    /// <returns>True when the active slot was applied; otherwise false.<returns>
     private static bool TryEquipActiveUnlock(in PlayerPowerUpSlotConfig activeSlotConfig,
                                              in PhysicsWorldSingleton physicsWorldSingleton,
                                              ref PlayerPowerUpsConfig powerUpsConfig,
@@ -475,7 +475,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// <param name="equippedPassiveTools">Runtime equipped passives buffer.</param>
     /// <param name="passiveToolsState">Aggregated passive runtime state to update.</param>
     /// <param name="applyTarget">Debug label describing the passive-apply result.</param>
-    /// <returns>True when a passive tool was added; otherwise false.</returns>
+    /// <returns>True when a passive tool was added; otherwise false.<returns>
     private static bool TryEquipPassiveUnlock(in PlayerPowerUpUnlockCatalogElement selectedCatalogEntry,
                                               DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools,
                                               ref PlayerPassiveToolsState passiveToolsState,
@@ -511,7 +511,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// </summary>
     /// <param name="equippedPassiveTools">Runtime equipped passives buffer.</param>
     /// <param name="toolKind">Passive tool kind to test.</param>
-    /// <returns>True when at least one matching passive tool kind exists; otherwise false.</returns>
+    /// <returns>True when at least one matching passive tool kind exists; otherwise false.<returns>
     private static bool ContainsPassiveToolKind(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools, PassiveToolKind toolKind)
     {
         for (int passiveIndex = 0; passiveIndex < equippedPassiveTools.Length; passiveIndex++)

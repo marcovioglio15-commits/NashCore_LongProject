@@ -14,11 +14,11 @@ public static class PlayerBulletTimeRuntimeUtility
     #region Public Methods
     /// <summary>
     /// Starts or refreshes one timed Bullet Time effect on the provided state.
-    /// /params bulletTimeState Mutable runtime state updated in place.
-    /// /params durationSeconds Timed-effect duration.
-    /// /params slowPercent Target enemy slow percentage.
-    /// /params transitionTimeSeconds Blend duration used when the effect activates or expires.
-    /// /returns void.
+    ///  bulletTimeState Mutable runtime state updated in place.
+    ///  durationSeconds Timed-effect duration.
+    ///  slowPercent Target enemy slow percentage.
+    ///  transitionTimeSeconds Blend duration used when the effect activates or expires.
+    /// returns void.
     /// </summary>
     public static void ActivateTimedEffect(ref PlayerBulletTimeState bulletTimeState,
                                            float durationSeconds,
@@ -49,8 +49,8 @@ public static class PlayerBulletTimeRuntimeUtility
 
     /// <summary>
     /// Clears all Bullet Time state immediately without preserving any current transition.
-    /// /params bulletTimeState Mutable runtime state reset in place.
-    /// /returns void.
+    ///  bulletTimeState Mutable runtime state reset in place.
+    /// returns void.
     /// </summary>
     public static void Clear(ref PlayerBulletTimeState bulletTimeState)
     {
@@ -59,9 +59,9 @@ public static class PlayerBulletTimeRuntimeUtility
 
     /// <summary>
     /// Advances timed duration and transition progress, then returns the resolved current slow percentage.
-    /// /params bulletTimeState Mutable runtime state updated in place.
-    /// /params deltaTime Frame delta time.
-    /// /returns Current enemy slow percentage after this tick.
+    ///  bulletTimeState Mutable runtime state updated in place.
+    ///  deltaTime Frame delta time.
+    /// returns Current enemy slow percentage after this tick.
     /// </summary>
     public static float Tick(ref PlayerBulletTimeState bulletTimeState, float deltaTime)
     {
@@ -114,9 +114,9 @@ public static class PlayerBulletTimeRuntimeUtility
     #region Private Methods
     /// <summary>
     /// Resolves the strongest requested slow target and its associated transition duration.
-    /// /params bulletTimeState Current runtime state.
-    /// /params transitionTimeSeconds Transition duration associated with the selected target.
-    /// /returns Target slow percentage requested this frame.
+    ///  bulletTimeState Current runtime state.
+    ///  transitionTimeSeconds Transition duration associated with the selected target.
+    /// returns Target slow percentage requested this frame.
     /// </summary>
     private static float ResolveTargetSlowPercent(in PlayerBulletTimeState bulletTimeState, out float transitionTimeSeconds)
     {

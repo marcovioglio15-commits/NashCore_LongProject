@@ -5,8 +5,8 @@ using Unity.Mathematics;
 #region Controller Runtime Components
 /// <summary>
 /// Stores the current runtime movement config after scalable-stat formulas are resolved.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeMovementConfig : IComponentData
 {
@@ -19,8 +19,8 @@ public struct PlayerRuntimeMovementConfig : IComponentData
 
 /// <summary>
 /// Stores the immutable baseline movement config used to rebuild runtime-scaled values.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerBaseMovementConfig : IComponentData
 {
@@ -33,8 +33,8 @@ public struct PlayerBaseMovementConfig : IComponentData
 
 /// <summary>
 /// Stores the current runtime look config after scalable-stat formulas are resolved.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeLookConfig : IComponentData
 {
@@ -53,8 +53,8 @@ public struct PlayerRuntimeLookConfig : IComponentData
 
 /// <summary>
 /// Stores the immutable baseline look config used to rebuild runtime-scaled values.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerBaseLookConfig : IComponentData
 {
@@ -73,8 +73,8 @@ public struct PlayerBaseLookConfig : IComponentData
 
 /// <summary>
 /// Stores the current runtime camera config after scalable-stat formulas are resolved.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeCameraConfig : IComponentData
 {
@@ -85,8 +85,8 @@ public struct PlayerRuntimeCameraConfig : IComponentData
 
 /// <summary>
 /// Stores the immutable baseline camera config used to rebuild runtime-scaled values.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerBaseCameraConfig : IComponentData
 {
@@ -97,8 +97,8 @@ public struct PlayerBaseCameraConfig : IComponentData
 
 /// <summary>
 /// Stores the current runtime shooting config after scalable-stat formulas are resolved.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeShootingConfig : IComponentData
 {
@@ -110,8 +110,8 @@ public struct PlayerRuntimeShootingConfig : IComponentData
 
 /// <summary>
 /// Stores the immutable baseline shooting config used to rebuild runtime-scaled values.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerBaseShootingConfig : IComponentData
 {
@@ -123,8 +123,8 @@ public struct PlayerBaseShootingConfig : IComponentData
 
 /// <summary>
 /// Stores current runtime health/shield limits after scalable-stat formulas are resolved.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeHealthStatisticsConfig : IComponentData
 {
@@ -137,8 +137,8 @@ public struct PlayerRuntimeHealthStatisticsConfig : IComponentData
 
 /// <summary>
 /// Stores immutable baseline health/shield limits used to rebuild runtime-scaled values.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerBaseHealthStatisticsConfig : IComponentData
 {
@@ -153,8 +153,8 @@ public struct PlayerBaseHealthStatisticsConfig : IComponentData
 #region Progression Runtime Components
 /// <summary>
 /// Stores one immutable baseline phase used to rebuild runtime progression requirements.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerBaseGamePhaseElement : IBufferElementData
 {
@@ -165,8 +165,8 @@ public struct PlayerBaseGamePhaseElement : IBufferElementData
 
 /// <summary>
 /// Stores one current runtime phase after scalable-stat formulas are resolved.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeGamePhaseElement : IBufferElementData
 {
@@ -179,8 +179,8 @@ public struct PlayerRuntimeGamePhaseElement : IBufferElementData
 #region Power-Up Runtime Components
 /// <summary>
 /// Stores immutable base active/passive configs for one modular power-up entry.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerPowerUpBaseConfigElement : IBufferElementData
 {
@@ -194,8 +194,8 @@ public struct PlayerPowerUpBaseConfigElement : IBufferElementData
 #region Runtime Scaling State
 /// <summary>
 /// Tracks the last scalable-stat hash synchronized into runtime-scaled configs.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeScalingState : IComponentData
 {
@@ -207,8 +207,8 @@ public struct PlayerRuntimeScalingState : IComponentData
 #region Scaling Metadata
 /// <summary>
 /// Identifies one controller runtime field that can be rewritten from a scaling formula.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public enum PlayerRuntimeControllerFieldId : byte
 {
@@ -268,8 +268,8 @@ public enum PlayerRuntimeControllerFieldId : byte
 
 /// <summary>
 /// Stores one controller scaling entry baked from Add Scaling authoring data.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeControllerScalingElement : IBufferElementData
 {
@@ -281,8 +281,8 @@ public struct PlayerRuntimeControllerScalingElement : IBufferElementData
 
 /// <summary>
 /// Identifies one progression runtime field that can be rewritten from a scaling formula.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public enum PlayerRuntimeProgressionFieldId : byte
 {
@@ -292,8 +292,8 @@ public enum PlayerRuntimeProgressionFieldId : byte
 
 /// <summary>
 /// Stores one progression scaling entry baked from Add Scaling authoring data.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimeProgressionScalingElement : IBufferElementData
 {
@@ -306,8 +306,8 @@ public struct PlayerRuntimeProgressionScalingElement : IBufferElementData
 
 /// <summary>
 /// Stores one power-up scaling entry baked from Add Scaling authoring data.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerRuntimePowerUpScalingElement : IBufferElementData
 {

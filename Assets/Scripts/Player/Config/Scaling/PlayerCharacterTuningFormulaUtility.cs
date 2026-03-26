@@ -10,11 +10,11 @@ public static class PlayerCharacterTuningFormulaUtility
     #region Public Methods
     /// <summary>
     /// Splits one Character Tuning assignment into its target scalable stat and right-hand expression.
-    /// /params formula Raw assignment string entered by designers.
-    /// /params targetStatName Parsed left-hand scalable stat name.
-    /// /params expression Parsed right-hand mathematical expression.
-    /// /params errorMessage Failure reason when parsing fails.
-    /// /returns True when the assignment syntax is valid.
+    ///  formula Raw assignment string entered by designers.
+    ///  targetStatName Parsed left-hand scalable stat name.
+    ///  expression Parsed right-hand mathematical expression.
+    ///  errorMessage Failure reason when parsing fails.
+    /// returns True when the assignment syntax is valid.
     /// </summary>
     public static bool TryParseAssignmentFormula(string formula,
                                                  out string targetStatName,
@@ -63,10 +63,10 @@ public static class PlayerCharacterTuningFormulaUtility
 
     /// <summary>
     /// Parses one left-hand assignment token and validates that it targets a named scalable stat.
-    /// /params targetToken Raw left-hand text before '='.
-    /// /params targetStatName Parsed scalable stat name.
-    /// /params errorMessage Failure reason when parsing fails.
-    /// /returns True when the target token is valid.
+    ///  targetToken Raw left-hand text before '='.
+    ///  targetStatName Parsed scalable stat name.
+    ///  errorMessage Failure reason when parsing fails.
+    /// returns True when the target token is valid.
     /// </summary>
     public static bool TryParseAssignmentTarget(string targetToken,
                                                 out string targetStatName,

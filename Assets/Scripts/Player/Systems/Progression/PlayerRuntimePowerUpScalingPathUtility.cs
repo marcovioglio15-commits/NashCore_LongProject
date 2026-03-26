@@ -11,12 +11,12 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
     #region Public Methods
     /// <summary>
     /// Applies one resolved Add Scaling value to the runtime config field represented by the provided payload path.
-    /// /params payloadPath: Modular payload path extracted from the scaling rule stat key.
-    /// /params unlockKind: Active or passive target kind owning the runtime config.
-    /// /params resolvedValue: Formula result already evaluated against scalable-stat runtime values.
-    /// /params activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
-    /// /params passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
-    /// /returns void.
+    ///  payloadPath: Modular payload path extracted from the scaling rule stat key.
+    ///  unlockKind: Active or passive target kind owning the runtime config.
+    ///  resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    ///  activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    ///  passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
+    /// returns void.
     /// </summary>
     public static void ApplyValue(string payloadPath,
                                   PlayerPowerUpUnlockKind unlockKind,
@@ -43,10 +43,10 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
     #region Private Methods
     /// <summary>
     /// Applies one resolved Add Scaling value to an active-slot runtime config field.
-    /// /params payloadPath: Modular payload path extracted from the scaling rule stat key.
-    /// /params resolvedValue: Formula result already evaluated against scalable-stat runtime values.
-    /// /params activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
-    /// /returns void.
+    ///  payloadPath: Modular payload path extracted from the scaling rule stat key.
+    ///  resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    ///  activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    /// returns void.
     /// </summary>
     private static void ApplyActiveValue(string payloadPath,
                                          float resolvedValue,
@@ -174,10 +174,10 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
     /// <summary>
     /// Applies one resolved Add Scaling value to the embedded passive payload owned by an active toggleable power-up.
     /// This keeps runtime scaling generic for active power-ups that expose passive module payloads through TogglePassiveTool.
-    /// /params payloadPath: Modular payload path extracted from the scaling rule stat key.
-    /// /params resolvedValue: Formula result already evaluated against scalable-stat runtime values.
-    /// /params activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
-    /// /returns void.
+    ///  payloadPath: Modular payload path extracted from the scaling rule stat key.
+    ///  resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    ///  activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    /// returns void.
     /// </summary>
     private static void ApplyEmbeddedTogglePassiveValue(string payloadPath,
                                                         float resolvedValue,
@@ -196,10 +196,10 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
 
     /// <summary>
     /// Applies one resolved Add Scaling value to a passive-tool runtime config field.
-    /// /params payloadPath: Modular payload path extracted from the scaling rule stat key.
-    /// /params resolvedValue: Formula result already evaluated against scalable-stat runtime values.
-    /// /params passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
-    /// /returns void.
+    ///  payloadPath: Modular payload path extracted from the scaling rule stat key.
+    ///  resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    ///  passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
+    /// returns void.
     /// </summary>
     private static void ApplyPassiveValue(string payloadPath,
                                           float resolvedValue,

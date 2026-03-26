@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Stores the project library of enemy visual presets.
-/// /returns None.
+/// returns None.
 /// </summary>
 [CreateAssetMenu(fileName = "EnemyVisualPresetLibrary", menuName = "Enemy/Visual Preset Library", order = 12)]
 public sealed class EnemyVisualPresetLibrary : ScriptableObject
@@ -33,8 +33,8 @@ public sealed class EnemyVisualPresetLibrary : ScriptableObject
     #region Public Methods
     /// <summary>
     /// Registers a preset in the library when not already present.
-    /// /params preset Preset asset to register.
-    /// /returns None.
+    ///  preset Preset asset to register.
+    /// returns None.
     /// </summary>
     public void AddPreset(EnemyVisualPreset preset)
     {
@@ -49,8 +49,8 @@ public sealed class EnemyVisualPresetLibrary : ScriptableObject
 
     /// <summary>
     /// Removes a preset from the library when present.
-    /// /params preset Preset asset to remove.
-    /// /returns None.
+    ///  preset Preset asset to remove.
+    /// returns None.
     /// </summary>
     public void RemovePreset(EnemyVisualPreset preset)
     {

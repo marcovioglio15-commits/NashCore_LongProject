@@ -15,7 +15,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// </summary>
     /// <param name="payloadDataProperty">Payload data root.</param>
     /// <param name="payloadContainer">Target UI container.</param>
-    /// <returns>Returns true when UI is built.</returns>
+    /// <returns>Returns true when UI is built.<returns>
     public static bool BuildStationaryPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
     {
         SerializedProperty stationaryProperty = payloadDataProperty.FindPropertyRelative("stationary");
@@ -36,7 +36,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// </summary>
     /// <param name="payloadDataProperty">Payload data root.</param>
     /// <param name="payloadContainer">Target UI container.</param>
-    /// <returns>Returns true when UI is built.</returns>
+    /// <returns>Returns true when UI is built.<returns>
     public static bool BuildDropItemsPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
     {
         SerializedProperty dropItemsProperty = payloadDataProperty.FindPropertyRelative("dropItems");
@@ -166,7 +166,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// </summary>
     /// <param name="payloadDataProperty">Payload data root.</param>
     /// <param name="payloadContainer">Target UI container.</param>
-    /// <returns>Returns true when UI is built.</returns>
+    /// <returns>Returns true when UI is built.<returns>
     public static bool BuildWandererPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
     {
         SerializedProperty wandererProperty = payloadDataProperty.FindPropertyRelative("wanderer");
@@ -250,7 +250,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// </summary>
     /// <param name="payloadDataProperty">Payload data root.</param>
     /// <param name="payloadContainer">Target UI container.</param>
-    /// <returns>Returns true when UI is built.</returns>
+    /// <returns>Returns true when UI is built.<returns>
     public static bool BuildCowardPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
     {
         SerializedProperty cowardProperty = payloadDataProperty.FindPropertyRelative("coward");
@@ -338,7 +338,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// </summary>
     /// <param name="payloadDataProperty">Payload data root.</param>
     /// <param name="payloadContainer">Target UI container.</param>
-    /// <returns>Returns true when UI is built.</returns>
+    /// <returns>Returns true when UI is built.<returns>
     public static bool BuildShooterPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
     {
         SerializedProperty shooterProperty = payloadDataProperty.FindPropertyRelative("shooter");
@@ -354,6 +354,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
         SerializedProperty movementPolicyProperty = shooterProperty.FindPropertyRelative("movementPolicy");
         SerializedProperty fireIntervalProperty = shooterProperty.FindPropertyRelative("fireInterval");
         SerializedProperty burstCountProperty = shooterProperty.FindPropertyRelative("burstCount");
+        SerializedProperty aimWindupSecondsProperty = shooterProperty.FindPropertyRelative("aimWindupSeconds");
         SerializedProperty intraBurstDelayProperty = shooterProperty.FindPropertyRelative("intraBurstDelay");
         SerializedProperty useMinimumRangeProperty = shooterProperty.FindPropertyRelative("useMinimumRange");
         SerializedProperty minimumRangeProperty = shooterProperty.FindPropertyRelative("minimumRange");
@@ -367,6 +368,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
             movementPolicyProperty == null ||
             fireIntervalProperty == null ||
             burstCountProperty == null ||
+            aimWindupSecondsProperty == null ||
             intraBurstDelayProperty == null ||
             useMinimumRangeProperty == null ||
             minimumRangeProperty == null ||
@@ -390,6 +392,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
         EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, movementPolicyProperty, "Movement Policy");
         EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, fireIntervalProperty, "Fire Interval");
         EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, burstCountProperty, "Burst Count");
+        EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, aimWindupSecondsProperty, "Aim Windup Seconds");
         EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, intraBurstDelayProperty, "Intra Burst Delay");
         EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, useMinimumRangeProperty, "Use Minimum Range");
 

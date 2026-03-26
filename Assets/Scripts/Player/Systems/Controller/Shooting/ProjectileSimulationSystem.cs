@@ -357,7 +357,7 @@ public partial struct ProjectileSimulationSystem : ISystem
         /// </summary>
         /// <param name="projectile">The projectile whose inherited velocity is being resolved.</param>
         /// <param name="owner">The owner of the projectile (shooter entity).</param>
-        /// <returns>The inherited velocity vector for the projectile.</returns>
+        /// <returns>The inherited velocity vector for the projectile.<returns>
         private float3 ResolveInheritedVelocity(in Projectile projectile, in ProjectileOwner owner)
         {
             // If the shooter entity does not have a PlayerMovementState component, return zero velocity.

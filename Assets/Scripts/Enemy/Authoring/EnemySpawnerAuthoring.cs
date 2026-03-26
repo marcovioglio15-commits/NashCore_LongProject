@@ -82,8 +82,8 @@ public sealed class EnemySpawnWaveCellAuthoring
     /// <summary>
     /// Updates the authored grid coordinate.
     /// Used by validation and editor painting tools.
-    /// /params value: New grid coordinate.
-    /// /returns None.
+    ///  value: New grid coordinate.
+    /// returns None.
     /// </summary>
     internal void SetCellCoordinate(Vector2Int value)
     {
@@ -93,8 +93,8 @@ public sealed class EnemySpawnWaveCellAuthoring
     /// <summary>
     /// Updates the authored enemy count.
     /// Used by validation and dedicated cell editing UI.
-    /// /params value: New total enemy count.
-    /// /returns None.
+    ///  value: New total enemy count.
+    /// returns None.
     /// </summary>
     internal void SetEnemyCount(int value)
     {
@@ -104,8 +104,8 @@ public sealed class EnemySpawnWaveCellAuthoring
     /// <summary>
     /// Updates the authored master preset.
     /// Used by inspector painting tools.
-    /// /params value: New master preset assignment.
-    /// /returns None.
+    ///  value: New master preset assignment.
+    /// returns None.
     /// </summary>
     internal void SetMasterPreset(EnemyMasterPreset value)
     {
@@ -115,8 +115,8 @@ public sealed class EnemySpawnWaveCellAuthoring
     /// <summary>
     /// Updates the curve-usage mode for the cell.
     /// Used by inspector cell editing UI.
-    /// /params value: New flag controlling default-vs-override curve usage.
-    /// /returns None.
+    ///  value: New flag controlling default-vs-override curve usage.
+    /// returns None.
     /// </summary>
     internal void SetUseWaveDefaultDistribution(bool value)
     {
@@ -126,8 +126,8 @@ public sealed class EnemySpawnWaveCellAuthoring
     /// <summary>
     /// Updates the authored local curve override.
     /// Used by validation and dedicated cell editing UI.
-    /// /params value: New local override curve.
-    /// /returns None.
+    ///  value: New local override curve.
+    /// returns None.
     /// </summary>
     internal void SetDistributionCurveOverride(AnimationCurve value)
     {
@@ -234,8 +234,8 @@ public sealed class EnemySpawnWaveAuthoring
     #region Internal Methods
     /// <summary>
     /// Updates the preview flag used by scene gizmos.
-    /// /params value: New preview state.
-    /// /returns None.
+    ///  value: New preview state.
+    /// returns None.
     /// </summary>
     internal void SetPreviewInScene(bool value)
     {
@@ -244,8 +244,8 @@ public sealed class EnemySpawnWaveAuthoring
 
     /// <summary>
     /// Updates the authored start mode.
-    /// /params value: New start mode.
-    /// /returns None.
+    ///  value: New start mode.
+    /// returns None.
     /// </summary>
     internal void SetStartMode(EnemyWaveStartMode value)
     {
@@ -254,8 +254,8 @@ public sealed class EnemySpawnWaveAuthoring
 
     /// <summary>
     /// Updates the authored start delay.
-    /// /params value: New delay in seconds.
-    /// /returns None.
+    ///  value: New delay in seconds.
+    /// returns None.
     /// </summary>
     internal void SetStartDelaySeconds(float value)
     {
@@ -264,8 +264,8 @@ public sealed class EnemySpawnWaveAuthoring
 
     /// <summary>
     /// Updates the authored spawn duration.
-    /// /params value: New duration in seconds.
-    /// /returns None.
+    ///  value: New duration in seconds.
+    /// returns None.
     /// </summary>
     internal void SetSpawnDurationSeconds(float value)
     {
@@ -274,8 +274,8 @@ public sealed class EnemySpawnWaveAuthoring
 
     /// <summary>
     /// Updates the default wave curve.
-    /// /params value: New cumulative distribution curve.
-    /// /returns None.
+    ///  value: New cumulative distribution curve.
+    /// returns None.
     /// </summary>
     internal void SetDefaultDistributionCurve(AnimationCurve value)
     {
@@ -326,6 +326,37 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     [Header("Lifecycle")]
     [Tooltip("Distance from the player beyond which alive enemies are returned to their pool. Set to 0 to disable.")]
     [SerializeField] private float despawnDistance = 85f;
+
+    [Header("Spawn Warning")]
+    [Tooltip("When enabled, upcoming spawn events project one warning ring on the ground shortly before enemy activation.")]
+    [SerializeField] private bool enableSpawnWarning = true;
+
+    [Tooltip("Seconds of anticipation shown before one spawn event becomes active.")]
+    [Range(0f, 3f)]
+    [SerializeField] private float spawnWarningLeadTimeSeconds = 0.7f;
+
+    [Tooltip("Ring world radius resolved as Cell Size multiplied by this scale.")]
+    [Range(0.1f, 2f)]
+    [SerializeField] private float spawnWarningRadiusScale = 0.45f;
+
+    [Tooltip("World-space line width used by the spawn warning ring.")]
+    [Range(0.02f, 1f)]
+    [SerializeField] private float spawnWarningRingWidth = 0.15f;
+
+    [Tooltip("Extra vertical lift applied to the warning ring above the spawn plane.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float spawnWarningHeightOffset = 0.06f;
+
+    [Tooltip("Maximum opacity reached by the warning ring right before the spawn happens.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float spawnWarningMaximumAlpha = 0.95f;
+
+    [Tooltip("Seconds used to softly fade the ring after the enemy has spawned.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float spawnWarningFadeOutSeconds = 0.18f;
+
+    [Tooltip("Tint color used by the spawn warning ring.")]
+    [SerializeField] private Color spawnWarningColor = new Color(1f, 0.72f, 0.18f, 1f);
 
     [Header("Waves")]
     [Tooltip("Wave preset asset that contains the finite sequence of authored waves emitted by this spawner.")]
@@ -412,6 +443,70 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
         }
     }
 
+    public bool EnableSpawnWarning
+    {
+        get
+        {
+            return enableSpawnWarning;
+        }
+    }
+
+    public float SpawnWarningLeadTimeSeconds
+    {
+        get
+        {
+            return spawnWarningLeadTimeSeconds;
+        }
+    }
+
+    public float SpawnWarningRadiusScale
+    {
+        get
+        {
+            return spawnWarningRadiusScale;
+        }
+    }
+
+    public float SpawnWarningRingWidth
+    {
+        get
+        {
+            return spawnWarningRingWidth;
+        }
+    }
+
+    public float SpawnWarningHeightOffset
+    {
+        get
+        {
+            return spawnWarningHeightOffset;
+        }
+    }
+
+    public float SpawnWarningMaximumAlpha
+    {
+        get
+        {
+            return spawnWarningMaximumAlpha;
+        }
+    }
+
+    public float SpawnWarningFadeOutSeconds
+    {
+        get
+        {
+            return spawnWarningFadeOutSeconds;
+        }
+    }
+
+    public Color SpawnWarningColor
+    {
+        get
+        {
+            return spawnWarningColor;
+        }
+    }
+
     public EnemyWavePreset WavePreset
     {
         get
@@ -461,7 +556,7 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     #region Unity Methods
     /// <summary>
     /// Sanitizes serialized values and wave data after inspector edits.
-    /// /returns None.
+    /// returns None.
     /// </summary>
     private void OnValidate()
     {
@@ -483,6 +578,8 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
         if (despawnDistance < 0f)
             despawnDistance = 0f;
 
+        WarnInvalidSpawnWarningValues();
+
         if (wavePreset != null)
         {
             wavePreset.ValidateAgainstGrid(gridSizeX, gridSizeZ);
@@ -497,7 +594,7 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 
     /// <summary>
     /// Draws selected-scene gizmos for the grid and currently previewed wave.
-    /// /returns None.
+    /// returns None.
     /// </summary>
     private void OnDrawGizmosSelected()
     {
@@ -521,8 +618,8 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     /// <summary>
     /// Resolves the local-space center of one authored grid cell.
     /// Used by the baker and by scene preview drawing.
-    /// /params cellCoordinate: Authored grid coordinate to resolve.
-    /// /returns Local-space center of the requested cell.
+    ///  cellCoordinate: Authored grid coordinate to resolve.
+    /// returns Local-space center of the requested cell.
     /// </summary>
     public float3 ResolveCellLocalCenter(Vector2Int cellCoordinate)
     {
@@ -537,8 +634,8 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     /// <summary>
     /// Tries to resolve the single wave currently flagged for scene preview.
     /// Used by gizmos and by the custom editor.
-    /// /params waveIndex: Resolved preview wave index, or -1 when none is active.
-    /// /returns True when a preview wave exists, otherwise false.
+    ///  waveIndex: Resolved preview wave index, or -1 when none is active.
+    /// returns True when a preview wave exists, otherwise false.
     /// </summary>
     public bool TryGetPreviewWaveIndex(out int waveIndex)
     {
@@ -568,8 +665,36 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 
     #region Gizmos
     /// <summary>
+    /// Emits non-destructive warnings when authored spawn-warning values are inconsistent.
+    /// returns None.
+    /// </summary>
+    private void WarnInvalidSpawnWarningValues()
+    {
+        if (!enableSpawnWarning)
+            return;
+
+        if (spawnWarningLeadTimeSeconds < 0f)
+            Debug.LogWarning("[EnemySpawnerAuthoring] Spawn Warning Lead Time Seconds should be >= 0.", this);
+
+        if (spawnWarningRadiusScale <= 0f)
+            Debug.LogWarning("[EnemySpawnerAuthoring] Spawn Warning Radius Scale should be > 0.", this);
+
+        if (spawnWarningRingWidth <= 0f)
+            Debug.LogWarning("[EnemySpawnerAuthoring] Spawn Warning Ring Width should be > 0.", this);
+
+        if (spawnWarningHeightOffset < 0f)
+            Debug.LogWarning("[EnemySpawnerAuthoring] Spawn Warning Height Offset should be >= 0.", this);
+
+        if (spawnWarningMaximumAlpha < 0f || spawnWarningMaximumAlpha > 1f)
+            Debug.LogWarning("[EnemySpawnerAuthoring] Spawn Warning Maximum Alpha should stay in the [0..1] range.", this);
+
+        if (spawnWarningFadeOutSeconds < 0f)
+            Debug.LogWarning("[EnemySpawnerAuthoring] Spawn Warning Fade Out Seconds should be >= 0.", this);
+    }
+
+    /// <summary>
     /// Draws the grid wireframe in local space.
-    /// /returns None.
+    /// returns None.
     /// </summary>
     private void DrawGridGizmoLines()
     {
@@ -594,7 +719,7 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 
     /// <summary>
     /// Draws painted preview cells for the currently selected wave.
-    /// /returns None.
+    /// returns None.
     /// </summary>
     private void DrawPreviewWaveGizmos()
     {
@@ -636,7 +761,7 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 #if UNITY_EDITOR
     /// <summary>
     /// Draws screen-space overlays for grid coordinates and painted-cell counts.
-    /// /returns None.
+    /// returns None.
     /// </summary>
     private void DrawSceneOverlayLabels()
     {
@@ -660,7 +785,7 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 
     /// <summary>
     /// Draws the coordinate label of every authored grid node while the spawner is selected.
-    /// /returns None.
+    /// returns None.
     /// </summary>
     private void DrawGridCoordinateLabels()
     {
@@ -692,7 +817,7 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 
     /// <summary>
     /// Draws the optional enemy-count label for every painted preview cell.
-    /// /returns None.
+    /// returns None.
     /// </summary>
     private void DrawPreviewCellCountLabels()
     {
@@ -744,14 +869,14 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 
     /// <summary>
     /// Draws one centered screen-space badge used by scene overlays.
-    /// /params screenCenter: GUI-space center of the badge.
-    /// /params label: Text displayed inside the badge.
-    /// /params style: GUI style used to draw the text.
-    /// /params backgroundColor: Fill color of the badge.
-    /// /params borderColor: Outline color of the badge.
-    /// /params minWidth: Minimum badge width in pixels.
-    /// /params height: Badge height in pixels.
-    /// /returns None.
+    ///  screenCenter: GUI-space center of the badge.
+    ///  label: Text displayed inside the badge.
+    ///  style: GUI style used to draw the text.
+    ///  backgroundColor: Fill color of the badge.
+    ///  borderColor: Outline color of the badge.
+    ///  minWidth: Minimum badge width in pixels.
+    ///  height: Badge height in pixels.
+    /// returns None.
     /// </summary>
     private static void DrawSceneBadge(Vector2 screenCenter,
                                        string label,
@@ -781,7 +906,7 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 
     /// <summary>
     /// Returns the cached style used for scene coordinate overlays.
-    /// /returns GUI style used by grid coordinate labels.
+    /// returns GUI style used by grid coordinate labels.
     /// </summary>
     private static GUIStyle GetSceneCoordinateLabelStyle()
     {
@@ -798,7 +923,7 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
 
     /// <summary>
     /// Returns the cached style used for painted-cell enemy-count overlays.
-    /// /returns GUI style used by painted-cell count labels.
+    /// returns GUI style used by painted-cell count labels.
     /// </summary>
     private static GUIStyle GetSceneCountLabelStyle()
     {

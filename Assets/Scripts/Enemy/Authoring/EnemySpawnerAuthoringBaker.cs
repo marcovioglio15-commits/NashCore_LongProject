@@ -13,8 +13,8 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
     #region Bake
     /// <summary>
     /// Converts the authored wave grid into ECS wave definitions, events and pool requirements.
-    /// /params authoring: Spawner authoring source component.
-    /// /returns None.
+    ///  authoring: Spawner authoring source component.
+    /// returns None.
     /// </summary>
     public override void Bake(EnemySpawnerAuthoring authoring)
     {
@@ -43,6 +43,18 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
             MaximumSpawnDistanceFromCenter = ResolveMaximumSpawnDistanceFromCenter(stagedWaveEvents, authoring.CellSize),
             TotalPlannedEnemyCount = CountTotalPlannedEnemies(plannedCountByPrefab)
         });
+        AddComponent(spawnerEntity, new EnemySpawnWarningConfig
+        {
+            Enabled = authoring.EnableSpawnWarning ? (byte)1 : (byte)0,
+            LeadTimeSeconds = math.max(0f, authoring.SpawnWarningLeadTimeSeconds),
+            FadeOutSeconds = math.max(0f, authoring.SpawnWarningFadeOutSeconds),
+            RadiusScale = math.max(0.01f, authoring.SpawnWarningRadiusScale),
+            RingWidth = math.max(0.01f, authoring.SpawnWarningRingWidth),
+            HeightOffset = math.max(0f, authoring.SpawnWarningHeightOffset),
+            MaximumAlpha = math.saturate(authoring.SpawnWarningMaximumAlpha),
+            Color = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.SpawnWarningColor),
+            CellSize = math.max(0.1f, authoring.CellSize)
+        });
         AddComponent(spawnerEntity, new EnemySpawnerState
         {
             StartTime = 0f,
@@ -55,6 +67,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
         DynamicBuffer<EnemySpawnerWaveEventElement> waveEventBuffer = AddBuffer<EnemySpawnerWaveEventElement>(spawnerEntity);
         DynamicBuffer<EnemySpawnerPrefabRequirementElement> prefabRequirementBuffer = AddBuffer<EnemySpawnerPrefabRequirementElement>(spawnerEntity);
         AddBuffer<EnemySpawnerPrefabPoolMapElement>(spawnerEntity);
+        AddBuffer<EnemySpawnWarningRequestElement>(spawnerEntity);
 
         for (int definitionIndex = 0; definitionIndex < stagedWaveDefinitions.Count; definitionIndex++)
             waveDefinitionBuffer.Add(stagedWaveDefinitions[definitionIndex]);
@@ -79,12 +92,12 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
     #region Helpers
     /// <summary>
     /// Stages wave definitions, runtime defaults and exact spawn events from the authored spawner data.
-    /// /params authoring: Spawner authoring source.
-    /// /params stagedWaveDefinitions: Target wave definition list.
-    /// /params stagedWaveRuntime: Target wave runtime default list.
-    /// /params stagedWaveEvents: Target exact spawn event list.
-    /// /params plannedCountByPrefab: Target prefab usage count map.
-    /// /returns None.
+    ///  authoring: Spawner authoring source.
+    ///  stagedWaveDefinitions: Target wave definition list.
+    ///  stagedWaveRuntime: Target wave runtime default list.
+    ///  stagedWaveEvents: Target exact spawn event list.
+    ///  plannedCountByPrefab: Target prefab usage count map.
+    /// returns None.
     /// </summary>
     private void StageWaves(EnemySpawnerAuthoring authoring,
                             List<EnemySpawnerWaveDefinitionElement> stagedWaveDefinitions,
@@ -126,12 +139,12 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
     /// <summary>
     /// Stages exact spawn events for all painted cells of one wave.
-    /// /params authoring: Spawner authoring source.
-    /// /params wave: Wave being converted.
-    /// /params waveIndex: Current wave index.
-    /// /params stagedEventsForWave: Target event list for the current wave.
-    /// /params plannedCountByPrefab: Target prefab usage count map.
-    /// /returns None.
+    ///  authoring: Spawner authoring source.
+    ///  wave: Wave being converted.
+    ///  waveIndex: Current wave index.
+    ///  stagedEventsForWave: Target event list for the current wave.
+    ///  plannedCountByPrefab: Target prefab usage count map.
+    /// returns None.
     /// </summary>
     private void StageWaveCells(EnemySpawnerAuthoring authoring,
                                 EnemySpawnWaveAuthoring wave,
@@ -183,10 +196,10 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
     /// <summary>
     /// Resolves the prefab entity used by one painted cell through its master and visual presets.
-    /// /params authoring: Spawner authoring component used only for warning context.
-    /// /params masterPreset: Enemy master preset painted on the cell.
-    /// /params prefabEntity: Resolved prefab entity when successful.
-    /// /returns True when the cell references a valid enemy prefab, otherwise false.
+    ///  authoring: Spawner authoring component used only for warning context.
+    ///  masterPreset: Enemy master preset painted on the cell.
+    ///  prefabEntity: Resolved prefab entity when successful.
+    /// returns True when the cell references a valid enemy prefab, otherwise false.
     /// </summary>
     private bool TryResolveCellPrefab(EnemySpawnerAuthoring authoring,
                                       EnemyMasterPreset masterPreset,
@@ -242,7 +255,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
     /// <summary>
     /// Creates the default runtime buffer entry for one wave.
-    /// /returns Default wave runtime state.
+    /// returns Default wave runtime state.
     /// </summary>
     private static EnemySpawnerWaveRuntimeElement CreateDefaultWaveRuntime()
     {
@@ -254,6 +267,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
             CompletionTime = 0f,
             FirstKillTime = 0f,
             NextEventIndex = 0,
+            NextWarningEventIndex = 0,
             AliveCount = 0,
             SpawnedCount = 0,
             StartScheduled = 0,
@@ -266,8 +280,8 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
     /// <summary>
     /// Counts the total planned enemies across all unique prefab requirements.
-    /// /params plannedCountByPrefab: Prefab usage count map.
-    /// /returns Total planned enemy count for the spawner.
+    ///  plannedCountByPrefab: Prefab usage count map.
+    /// returns Total planned enemy count for the spawner.
     /// </summary>
     private static int CountTotalPlannedEnemies(Dictionary<Entity, int> plannedCountByPrefab)
     {
@@ -282,9 +296,9 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
     /// <summary>
     /// Resolves the maximum planar spawn distance authored by the staged wave events.
     /// The returned radius includes half a cell diagonal so the full painted cell area stays inside the envelope.
-    /// /params stagedWaveEvents: Fully staged exact spawn events of the spawner.
-    /// /params cellSize: Authored square cell size used by the spawn grid.
-    /// /returns Maximum planar spawn distance from the spawner center.
+    ///  stagedWaveEvents: Fully staged exact spawn events of the spawner.
+    ///  cellSize: Authored square cell size used by the spawn grid.
+    /// returns Maximum planar spawn distance from the spawner center.
     /// </summary>
     private static float ResolveMaximumSpawnDistanceFromCenter(List<EnemySpawnerWaveEventElement> stagedWaveEvents, float cellSize)
     {

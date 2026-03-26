@@ -274,7 +274,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     /// <summary>
     /// Retrieves the controller preset from the master preset.
     /// </summary>
-    /// <returns>The PlayerControllerPreset from the master preset, or null if the master preset is not set.</returns>
+    /// <returns>The PlayerControllerPreset from the master preset, or null if the master preset is not set.<returns>
     public PlayerControllerPreset GetControllerPreset()
     {
         if (masterPreset == null)
@@ -286,7 +286,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     /// <summary>
     /// Retrieves the progression preset from the master preset.
     /// </summary>
-    /// <returns>The PlayerProgressionPreset from the master preset, or null if the master preset is not set.</returns>
+    /// <returns>The PlayerProgressionPreset from the master preset, or null if the master preset is not set.<returns>
     public PlayerProgressionPreset GetProgressionPreset()
     {
         if (masterPreset == null)
@@ -298,7 +298,7 @@ public sealed class PlayerAuthoring : MonoBehaviour
     /// <summary>
     /// Retrieves the power-ups preset from the master preset.
     /// </summary>
-    /// <returns>The PlayerPowerUpsPreset from the master preset, or null if the master preset is not set.</returns>
+    /// <returns>The PlayerPowerUpsPreset from the master preset, or null if the master preset is not set.<returns>
     public PlayerPowerUpsPreset GetPowerUpsPreset()
     {
         if (masterPreset == null)
@@ -709,8 +709,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     #region Bake Helpers
     /// <summary>
     /// Resolves one prefab asset as a dynamic ECS prefab entity for power-up bake helpers.
-    /// /params prefab: Prefab asset to resolve.
-    /// /returns ECS prefab entity or Entity.Null when the prefab is missing.
+    ///  prefab: Prefab asset to resolve.
+    /// returns ECS prefab entity or Entity.Null when the prefab is missing.
     /// </summary>
     private Entity ResolveDynamicPrefabEntity(GameObject prefab)
     {

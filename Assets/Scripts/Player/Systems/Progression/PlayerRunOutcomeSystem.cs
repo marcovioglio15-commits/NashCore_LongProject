@@ -3,8 +3,8 @@ using Unity.Entities;
 /// <summary>
 /// Computes the authoritative terminal outcome for the current player run without reloading the gameplay scene immediately.
 /// Defeat is triggered by zero health, while victory requires every authored enemy wave to complete.
-/// /params None.
-/// /returns None.
+///  None.
+/// returns None.
 /// </summary>
 [UpdateInGroup(typeof(SimulationSystemGroup))]
 [UpdateAfter(typeof(EnemySystemGroup))]
@@ -15,8 +15,8 @@ public partial struct PlayerRunOutcomeSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the runtime state required by run-outcome evaluation.
-    /// /params state: Current ECS system state.
-    /// /returns None.
+    ///  state: Current ECS system state.
+    /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
@@ -27,8 +27,8 @@ public partial struct PlayerRunOutcomeSystem : ISystem
 
     /// <summary>
     /// Finalizes defeat or victory once the corresponding gameplay condition is satisfied.
-    /// /params state: Current ECS system state.
-    /// /returns None.
+    ///  state: Current ECS system state.
+    /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
@@ -127,9 +127,9 @@ public partial struct PlayerRunOutcomeSystem : ISystem
     #region Helpers
     /// <summary>
     /// Writes the resolved terminal run outcome once and marks the state as finalized.
-    /// /params runOutcomeState: Mutable runtime state stored on the local player entity.
-    /// /params outcome: Terminal outcome that should be exposed to UI.
-    /// /returns None.
+    ///  runOutcomeState: Mutable runtime state stored on the local player entity.
+    ///  outcome: Terminal outcome that should be exposed to UI.
+    /// returns None.
     /// </summary>
     private static void FinalizeOutcome(ref PlayerRunOutcomeState runOutcomeState, PlayerRunOutcome outcome)
     {

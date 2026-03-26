@@ -3,8 +3,8 @@ using UnityEngine.Rendering;
 
 /// <summary>
 /// Renders runtime ECS gizmos directly inside the Game view camera output.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Camera))]
@@ -13,8 +13,8 @@ public sealed class RuntimeEntityGizmoGameViewRenderer : MonoBehaviour
     #region Types
     /// <summary>
      /// Handles the Game view backend used by the shared runtime gizmo rendering utility.
-     /// /params none.
-     /// /returns none.
+     ///  none.
+     /// returns none.
      /// </summary>
     private sealed class GameViewPrimitiveDrawer : IRuntimeGizmoPrimitiveDrawer
     {
@@ -42,9 +42,9 @@ public sealed class RuntimeEntityGizmoGameViewRenderer : MonoBehaviour
         #region Public Methods
         /// <summary>
         /// Initializes one new immediate-mode draw pass for the supplied game camera.
-        /// /params camera: Camera that owns the current Game view render pass.
-        /// /params lineMaterial: Material used by the GL line pass.
-        /// /returns void.
+        ///  camera: Camera that owns the current Game view render pass.
+        ///  lineMaterial: Material used by the GL line pass.
+        /// returns void.
         /// </summary>
         public void Begin(Camera camera, Material lineMaterial)
         {
@@ -57,8 +57,8 @@ public sealed class RuntimeEntityGizmoGameViewRenderer : MonoBehaviour
 
         /// <summary>
         /// Completes the current immediate-mode draw pass.
-        /// /params none.
-        /// /returns void.
+        ///  none.
+        /// returns void.
         /// </summary>
         public void End()
         {
@@ -68,10 +68,10 @@ public sealed class RuntimeEntityGizmoGameViewRenderer : MonoBehaviour
 
         /// <summary>
         /// Draws one projected wire disc by tessellating the gameplay circle into screen-space line segments.
-        /// /params center: World-space center of the disc.
-        /// /params radius: Radius expressed in gameplay world units.
-        /// /params color: Final GL line color.
-        /// /returns void.
+        ///  center: World-space center of the disc.
+        ///  radius: Radius expressed in gameplay world units.
+        ///  color: Final GL line color.
+        /// returns void.
         /// </summary>
         public void DrawWireDisc(Vector3 center, float radius, Color color)
         {
@@ -99,11 +99,11 @@ public sealed class RuntimeEntityGizmoGameViewRenderer : MonoBehaviour
 
         /// <summary>
         /// Draws one projected direction vector with a screen-space arrow head.
-        /// /params origin: Vector origin in world space.
-        /// /params direction: Direction expected to be safely normalizable.
-        /// /params length: Vector length expressed in gameplay world units.
-        /// /params color: Final GL line color.
-        /// /returns void.
+        ///  origin: Vector origin in world space.
+        ///  direction: Direction expected to be safely normalizable.
+        ///  length: Vector length expressed in gameplay world units.
+        ///  color: Final GL line color.
+        /// returns void.
         /// </summary>
         public void DrawDirection(Vector3 origin, Vector3 direction, float length, Color color)
         {
@@ -128,10 +128,10 @@ public sealed class RuntimeEntityGizmoGameViewRenderer : MonoBehaviour
 
         /// <summary>
         /// Draws one projected straight link.
-        /// /params start: Link starting point in world space.
-        /// /params end: Link end point in world space.
-        /// /params color: Final GL line color.
-        /// /returns void.
+        ///  start: Link starting point in world space.
+        ///  end: Link end point in world space.
+        ///  color: Final GL line color.
+        /// returns void.
         /// </summary>
         public void DrawLink(Vector3 start, Vector3 end, Color color)
         {
@@ -149,10 +149,10 @@ public sealed class RuntimeEntityGizmoGameViewRenderer : MonoBehaviour
 
         /// <summary>
         /// Draws one compact projected marker using a small cross.
-        /// /params position: Marker position in world space.
-        /// /params radius: Marker size hint expressed in gameplay world units.
-        /// /params color: Final GL line color.
-        /// /returns void.
+        ///  position: Marker position in world space.
+        ///  radius: Marker size hint expressed in gameplay world units.
+        ///  color: Final GL line color.
+        /// returns void.
         /// </summary>
         public void DrawMarker(Vector3 position, float radius, Color color)
         {
@@ -172,9 +172,9 @@ public sealed class RuntimeEntityGizmoGameViewRenderer : MonoBehaviour
 
         /// <summary>
         /// Ignores labels in Game view so the gameplay HUD overlay stays unobstructed.
-        /// /params position: World-space label anchor.
-        /// /params text: Text shown in the Game view.
-        /// /returns void.
+        ///  position: World-space label anchor.
+        ///  text: Text shown in the Game view.
+        /// returns void.
         /// </summary>
         public void DrawLabel(Vector3 position, string text)
         {

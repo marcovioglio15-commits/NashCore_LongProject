@@ -15,8 +15,8 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
     #region Public Methods
     /// <summary>
     /// Builds the metadata section of the progression preset panel.
-    /// /params panel Panel instance that owns the serialized preset and target UI container.
-    /// /returns void
+    ///  panel Panel instance that owns the serialized preset and target UI container.
+    /// returns void
     /// </summary>
     public static void BuildMetadataSection(PlayerProgressionPresetsPanel panel)
     {
@@ -84,8 +84,8 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
 
     /// <summary>
     /// Builds the scalable stats section and live validation warnings.
-    /// /params panel Panel instance that owns the serialized preset and target UI container.
-    /// /returns void
+    ///  panel Panel instance that owns the serialized preset and target UI container.
+    /// returns void
     /// </summary>
     public static void BuildScalableStatsSection(PlayerProgressionPresetsPanel panel)
     {
@@ -135,9 +135,9 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
 
     /// <summary>
     /// Builds the milestones section, including all visible root properties related to phase progression.
-    /// /params panel Panel instance that owns the serialized preset and target UI container.
-    /// /params excludedRootPropertyNames Root-level property names intentionally hidden from the milestones view.
-    /// /returns void
+    ///  panel Panel instance that owns the serialized preset and target UI container.
+    ///  excludedRootPropertyNames Root-level property names intentionally hidden from the milestones view.
+    /// returns void
     /// </summary>
     public static void BuildMilestonesSection(PlayerProgressionPresetsPanel panel, HashSet<string> excludedRootPropertyNames)
     {
@@ -215,8 +215,8 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
 
     /// <summary>
     /// Builds the schedules section and the popup used to select the runtime-equipped schedule.
-    /// /params panel Panel instance that owns the serialized preset and target UI container.
-    /// /returns void
+    ///  panel Panel instance that owns the serialized preset and target UI container.
+    /// returns void
     /// </summary>
     public static void BuildSchedulesSection(PlayerProgressionPresetsPanel panel)
     {

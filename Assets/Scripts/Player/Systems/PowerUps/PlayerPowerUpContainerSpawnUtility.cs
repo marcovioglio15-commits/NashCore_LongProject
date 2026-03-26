@@ -5,8 +5,8 @@ using Unity.Transforms;
 
 /// <summary>
 /// Spawns dropped world containers that serialize one replaced active power-up payload.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 internal static class PlayerPowerUpContainerSpawnUtility
 {
@@ -22,11 +22,11 @@ internal static class PlayerPowerUpContainerSpawnUtility
     #region Public Methods
     /// <summary>
     /// Instantiates one dropped power-up container from the baked prefab and stores the provided active-slot snapshot into it.
-    /// /params playerTransform: Current player transform used to resolve the drop position.
-    /// /params interactionConfig: Player-side container interaction config containing the baked prefab entity.
-    /// /params storedPowerUp: Active-slot snapshot serialized into the dropped world entity.
-    /// /params commandBuffer: ECB used to instantiate and configure the container entity.
-    /// /returns True when a container was spawned; otherwise false.
+    ///  playerTransform: Current player transform used to resolve the drop position.
+    ///  interactionConfig: Player-side container interaction config containing the baked prefab entity.
+    ///  storedPowerUp: Active-slot snapshot serialized into the dropped world entity.
+    ///  commandBuffer: ECB used to instantiate and configure the container entity.
+    /// returns True when a container was spawned; otherwise false.
     /// </summary>
     public static bool TrySpawnDroppedContainer(in PhysicsWorldSingleton physicsWorldSingleton,
                                                 in LocalTransform playerTransform,
@@ -59,8 +59,8 @@ internal static class PlayerPowerUpContainerSpawnUtility
     #region Private Methods
     /// <summary>
     /// Resolves a grounded drop position slightly in front of the player.
-    /// /params playerTransform: Current player transform used to place the dropped container.
-    /// /returns World position used by the container entity.
+    ///  playerTransform: Current player transform used to place the dropped container.
+    /// returns World position used by the container entity.
     /// </summary>
     private static float3 ResolveDropPosition(in PhysicsWorldSingleton physicsWorldSingleton,
                                               in LocalTransform playerTransform,

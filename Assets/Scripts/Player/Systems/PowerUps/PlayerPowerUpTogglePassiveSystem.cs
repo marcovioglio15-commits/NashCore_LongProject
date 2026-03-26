@@ -15,8 +15,8 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Registers the runtime data required by toggleable passive power-ups.
-    /// /params state: Current ECS system state.
-    /// /returns void.
+    ///  state: Current ECS system state.
+    /// returns void.
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
@@ -29,8 +29,8 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
 
     /// <summary>
     /// Updates toggle startup timers, maintenance ticks, and the aggregated passive state snapshot.
-    /// /params state: Current ECS system state.
-    /// /returns void.
+    ///  state: Current ECS system state.
+    /// returns void.
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
@@ -135,22 +135,22 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
     #region Helpers
     /// <summary>
     /// Applies one slot toggle runtime step including startup timing, maintenance, and passive aggregation.
-    /// /params slotConfig: Slot configuration inspected for toggle maintenance settings.
-    /// /params deltaTime: Current frame delta time.
-    /// /params playerEntity: Player entity used for health and shield resource access.
-    /// /params slotEnergy: Mutable slot energy state.
-    /// /params cooldownRemaining: Mutable slot timer used as toggle startup lock while active.
-    /// /params isActive: Mutable toggle-active flag for the slot.
-    /// /params maintenanceTickTimer: Mutable accumulated maintenance timer.
-    /// /params passiveToolsState: Aggregated passive state updated with the slot payload when active.
-    /// /params isShootingSuppressed: Mutable shared shooting suppression flag for the current player frame.
-    /// /params healthLookup: Health lookup used for non-energy maintenance costs.
-    /// /params updatedHealth: Cached mutable health value reused within the current caller.
-    /// /params healthChanged: True when updatedHealth already contains a fetched runtime value.
-    /// /params shieldLookup: Shield lookup used for shield maintenance costs.
-    /// /params updatedShield: Cached mutable shield value reused within the current caller.
-    /// /params shieldChanged: True when updatedShield already contains a fetched runtime value.
-    /// /returns void.
+    ///  slotConfig: Slot configuration inspected for toggle maintenance settings.
+    ///  deltaTime: Current frame delta time.
+    ///  playerEntity: Player entity used for health and shield resource access.
+    ///  slotEnergy: Mutable slot energy state.
+    ///  cooldownRemaining: Mutable slot timer used as toggle startup lock while active.
+    ///  isActive: Mutable toggle-active flag for the slot.
+    ///  maintenanceTickTimer: Mutable accumulated maintenance timer.
+    ///  passiveToolsState: Aggregated passive state updated with the slot payload when active.
+    ///  isShootingSuppressed: Mutable shared shooting suppression flag for the current player frame.
+    ///  healthLookup: Health lookup used for non-energy maintenance costs.
+    ///  updatedHealth: Cached mutable health value reused within the current caller.
+    ///  healthChanged: True when updatedHealth already contains a fetched runtime value.
+    ///  shieldLookup: Shield lookup used for shield maintenance costs.
+    ///  updatedShield: Cached mutable shield value reused within the current caller.
+    ///  shieldChanged: True when updatedShield already contains a fetched runtime value.
+    /// returns void.
     /// </summary>
     private static void ProcessTogglePassiveSlot(in PlayerPowerUpSlotConfig slotConfig,
                                                  float deltaTime,
@@ -230,20 +230,20 @@ public partial struct PlayerPowerUpTogglePassiveSystem : ISystem
 
     /// <summary>
     /// Applies maintenance ticks after the startup interval has elapsed and deactivates the slot when payment fails.
-    /// /params slotConfig: Slot configuration containing maintenance settings.
-    /// /params deltaTime: Current frame delta time.
-    /// /params playerEntity: Player entity used for health and shield resource access.
-    /// /params slotEnergy: Mutable slot energy state.
-    /// /params cooldownRemaining: Mutable startup timer reset when the slot deactivates.
-    /// /params isActive: Mutable toggle-active flag for the slot.
-    /// /params maintenanceTickTimer: Mutable accumulated maintenance timer.
-    /// /params healthLookup: Health lookup used for non-energy maintenance costs.
-    /// /params updatedHealth: Cached mutable health value reused within the current caller.
-    /// /params healthChanged: True when updatedHealth already contains a fetched runtime value.
-    /// /params shieldLookup: Shield lookup used for shield maintenance costs.
-    /// /params updatedShield: Cached mutable shield value reused within the current caller.
-    /// /params shieldChanged: True when updatedShield already contains a fetched runtime value.
-    /// /returns void.
+    ///  slotConfig: Slot configuration containing maintenance settings.
+    ///  deltaTime: Current frame delta time.
+    ///  playerEntity: Player entity used for health and shield resource access.
+    ///  slotEnergy: Mutable slot energy state.
+    ///  cooldownRemaining: Mutable startup timer reset when the slot deactivates.
+    ///  isActive: Mutable toggle-active flag for the slot.
+    ///  maintenanceTickTimer: Mutable accumulated maintenance timer.
+    ///  healthLookup: Health lookup used for non-energy maintenance costs.
+    ///  updatedHealth: Cached mutable health value reused within the current caller.
+    ///  healthChanged: True when updatedHealth already contains a fetched runtime value.
+    ///  shieldLookup: Shield lookup used for shield maintenance costs.
+    ///  updatedShield: Cached mutable shield value reused within the current caller.
+    ///  shieldChanged: True when updatedShield already contains a fetched runtime value.
+    /// returns void.
     /// </summary>
     private static void ApplyMaintenanceTicks(in PlayerPowerUpSlotConfig slotConfig,
                                               float deltaTime,

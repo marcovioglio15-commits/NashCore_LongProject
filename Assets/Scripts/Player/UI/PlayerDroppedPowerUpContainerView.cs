@@ -6,8 +6,8 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Drives the world-space presentation for one dropped active power-up container companion object.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
@@ -76,8 +76,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Stores the cached references and presentation state for one world-space prompt root.
-    /// /params none.
-    /// /returns none.
+    ///  none.
+    /// returns none.
     /// </summary>
     private struct PromptPresentationState
     {
@@ -93,8 +93,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
     #region Unity Methods
     /// <summary>
     /// Resolves child references and applies the hidden prompt state when the companion object awakens.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private void Awake()
     {
@@ -108,8 +108,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Reapplies the current prompt state whenever the companion object becomes active again after ECS or pooling lifecycle changes.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private void OnEnable()
     {
@@ -120,8 +120,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Keeps the billboard root facing the active camera without rotating the sphere mesh itself.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private void LateUpdate()
     {
@@ -150,8 +150,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Stops active prompt transitions when the companion object is disabled, avoiding stale coroutine handles in pooled or destroyed instances.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private void OnDisable()
     {
@@ -162,8 +162,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 #if UNITY_EDITOR
     /// <summary>
     /// Refreshes auto-resolved references while the prefab or scene instance is edited.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private void OnValidate()
     {
@@ -172,8 +172,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Populates expected child references when the component is first added in the Editor.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private void Reset()
     {
@@ -185,8 +185,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
     #region Public Methods
     /// <summary>
     /// Updates the icon shown at the center of the dropped container.
-    /// /params icon: Sprite resolved from the dropped power-up id.
-    /// /returns void.
+    ///  icon: Sprite resolved from the dropped power-up id.
+    /// returns void.
     /// </summary>
     public void SetIcon(Sprite icon)
     {
@@ -203,10 +203,10 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Synchronizes the runtime scene object pose with the authoritative ECS container transform.
-    /// /params worldPosition: World position resolved from ECS.
-    /// /params worldRotation: World rotation resolved from ECS.
-    /// /params uniformScale: Uniform scale resolved from ECS.
-    /// /returns void.
+    ///  worldPosition: World position resolved from ECS.
+    ///  worldRotation: World rotation resolved from ECS.
+    ///  uniformScale: Uniform scale resolved from ECS.
+    /// returns void.
     /// </summary>
     public void SyncWorldPose(Vector3 worldPosition, Quaternion worldRotation, float uniformScale)
     {
@@ -225,8 +225,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Shows the overlay interaction prompt and hides the direct-replacement prompt.
-    /// /params promptText: Text displayed to tell the player which interaction key to press.
-    /// /returns void.
+    ///  promptText: Text displayed to tell the player which interaction key to press.
+    /// returns void.
     /// </summary>
     public void ShowSinglePrompt(string promptText)
     {
@@ -237,9 +237,9 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Shows the direct-replacement prompt and hides the overlay interaction prompt.
-    /// /params primaryPromptText: Binding label displayed for the primary-slot replacement action.
-    /// /params secondaryPromptText: Binding label displayed for the secondary-slot replacement action.
-    /// /returns void.
+    ///  primaryPromptText: Binding label displayed for the primary-slot replacement action.
+    ///  secondaryPromptText: Binding label displayed for the secondary-slot replacement action.
+    /// returns void.
     /// </summary>
     public void ShowSwapPrompt(string primaryPromptText, string secondaryPromptText)
     {
@@ -251,8 +251,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Hides every world-space interaction prompt owned by this dropped container.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     public void HidePrompts()
     {
@@ -264,8 +264,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
     #region Private Methods
     /// <summary>
     /// Resolves missing serialized references from the generated child hierarchy.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private void CacheReferences()
     {
@@ -318,8 +318,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Resolves the active camera transform and caches it for subsequent billboard updates.
-    /// /params none.
-    /// /returns Active camera transform when available.
+    ///  none.
+    /// returns Active camera transform when available.
     /// </summary>
     private static Transform ResolveCameraTransform()
     {
@@ -344,8 +344,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Returns whether the billboard canvas currently needs camera-facing updates.
-    /// /params none.
-    /// /returns True when icon or prompts are currently visible enough to require billboarding.
+    ///  none.
+    /// returns True when icon or prompts are currently visible enough to require billboarding.
     /// </summary>
     private bool NeedsBillboardUpdate()
     {
@@ -358,8 +358,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Ensures the world-space canvas uses explicit sorting so prompt UI renders reliably above the sphere.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private void ConfigureBillboardCanvas()
     {
@@ -374,9 +374,9 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Caches the components required to animate one prompt root.
-    /// /params promptState: Cached prompt state updated in place.
-    /// /params promptRoot: Prompt root resolved from the generated hierarchy.
-    /// /returns void.
+    ///  promptState: Cached prompt state updated in place.
+    ///  promptRoot: Prompt root resolved from the generated hierarchy.
+    /// returns void.
     /// </summary>
     private static void CachePromptState(ref PromptPresentationState promptState,
                                          GameObject promptRoot)
@@ -388,9 +388,9 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Activates one prompt root during runtime and disables any legacy Animator left on migrated prefabs.
-    /// /params promptState: Cached prompt state updated in place.
-    /// /params promptAnimator: Legacy prompt animator disabled when present.
-    /// /returns void.
+    ///  promptState: Cached prompt state updated in place.
+    ///  promptAnimator: Legacy prompt animator disabled when present.
+    /// returns void.
     /// </summary>
     private static void PreparePromptForRuntime(ref PromptPresentationState promptState, Animator promptAnimator)
     {
@@ -406,10 +406,10 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Applies one target visibility state to the prompt by starting one short transition coroutine only when the state changes.
-    /// /params promptState: Cached prompt state updated in place.
-    /// /params animationCoroutine: Running coroutine reference updated in place.
-    /// /params visible: Target prompt visibility.
-    /// /returns void.
+    ///  promptState: Cached prompt state updated in place.
+    ///  animationCoroutine: Running coroutine reference updated in place.
+    ///  visible: Target prompt visibility.
+    /// returns void.
     /// </summary>
     private void SetPromptVisible(ref PromptPresentationState promptState,
                                   ref Coroutine animationCoroutine,
@@ -446,10 +446,10 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Applies one prompt visibility state immediately, primarily for initialization, validation, and Animator fallback.
-    /// /params promptState: Cached prompt state updated in place.
-    /// /params visible: Target prompt visibility applied instantly.
-    /// /params activateRoot: True to force the prompt root active before writing UI state.
-    /// /returns void.
+    ///  promptState: Cached prompt state updated in place.
+    ///  visible: Target prompt visibility applied instantly.
+    ///  activateRoot: True to force the prompt root active before writing UI state.
+    /// returns void.
     /// </summary>
     private static void ApplyPromptStateImmediate(ref PromptPresentationState promptState, bool visible, bool activateRoot)
     {
@@ -473,12 +473,12 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Runs the short prompt transition that rises out of the sphere on show and falls back inside on hide.
-    /// /params promptRoot: Prompt root animated by the transition.
-    /// /params canvasGroup: Canvas group used to animate prompt opacity.
-    /// /params rectTransform: RectTransform used to animate position and scale.
-    /// /params visible: Target prompt visibility.
-    /// /params onCompleted: Callback invoked after the coroutine reference has to be cleared.
-    /// /returns IEnumerator used by StartCoroutine.
+    ///  promptRoot: Prompt root animated by the transition.
+    ///  canvasGroup: Canvas group used to animate prompt opacity.
+    ///  rectTransform: RectTransform used to animate position and scale.
+    ///  visible: Target prompt visibility.
+    ///  onCompleted: Callback invoked after the coroutine reference has to be cleared.
+    /// returns IEnumerator used by StartCoroutine.
     /// </summary>
     private IEnumerator AnimatePromptVisibility(GameObject promptRoot,
                                                CanvasGroup canvasGroup,
@@ -538,16 +538,16 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Interpolates one prompt transition phase using unscaled time so the prompt stays responsive while gameplay is paused.
-    /// /params canvasGroup: Canvas group used to animate prompt opacity.
-    /// /params rectTransform: RectTransform used to animate prompt position and scale.
-    /// /params startAlpha: Phase starting alpha.
-    /// /params targetAlpha: Phase target alpha.
-    /// /params startAnchoredPosition: Phase starting anchored position.
-    /// /params targetAnchoredPosition: Phase target anchored position.
-    /// /params startScale: Phase starting scale.
-    /// /params targetScale: Phase target scale.
-    /// /params durationSeconds: Unscaled duration assigned to the phase.
-    /// /returns IEnumerator used by the parent coroutine.
+    ///  canvasGroup: Canvas group used to animate prompt opacity.
+    ///  rectTransform: RectTransform used to animate prompt position and scale.
+    ///  startAlpha: Phase starting alpha.
+    ///  targetAlpha: Phase target alpha.
+    ///  startAnchoredPosition: Phase starting anchored position.
+    ///  targetAnchoredPosition: Phase target anchored position.
+    ///  startScale: Phase starting scale.
+    ///  targetScale: Phase target scale.
+    ///  durationSeconds: Unscaled duration assigned to the phase.
+    /// returns IEnumerator used by the parent coroutine.
     /// </summary>
     private static IEnumerator AnimatePromptPhase(CanvasGroup canvasGroup,
                                                   RectTransform rectTransform,
@@ -592,12 +592,12 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Writes one prompt presentation snapshot into the world-space UI components.
-    /// /params canvasGroup: Canvas group receiving the alpha.
-    /// /params rectTransform: RectTransform receiving position and scale.
-    /// /params alpha: Prompt alpha to apply.
-    /// /params anchoredPosition: Prompt anchored position to apply.
-    /// /params scale: Prompt scale to apply.
-    /// /returns void.
+    ///  canvasGroup: Canvas group receiving the alpha.
+    ///  rectTransform: RectTransform receiving position and scale.
+    ///  alpha: Prompt alpha to apply.
+    ///  anchoredPosition: Prompt anchored position to apply.
+    ///  scale: Prompt scale to apply.
+    /// returns void.
     /// </summary>
     private static void ApplyPromptPresentation(CanvasGroup canvasGroup,
                                                 RectTransform rectTransform,
@@ -617,8 +617,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Clears the coroutine handle associated with the completed prompt transition.
-    /// /params promptRoot: Prompt root whose coroutine handle must be cleared.
-    /// /returns void.
+    ///  promptRoot: Prompt root whose coroutine handle must be cleared.
+    /// returns void.
     /// </summary>
     private void ClearPromptAnimationCoroutine(GameObject promptRoot)
     {
@@ -637,8 +637,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Stops one active prompt animation coroutine and clears the cached handle.
-    /// /params animationCoroutine: Coroutine handle updated in place.
-    /// /returns void.
+    ///  animationCoroutine: Coroutine handle updated in place.
+    /// returns void.
     /// </summary>
     private void StopPromptAnimation(ref Coroutine animationCoroutine)
     {
@@ -651,9 +651,9 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Assigns text to an optional TMP label while tolerating missing references.
-    /// /params label: TMP label updated by the helper.
-    /// /params value: New string assigned to the label.
-    /// /returns void.
+    ///  label: TMP label updated by the helper.
+    ///  value: New string assigned to the label.
+    /// returns void.
     /// </summary>
     private static void SetText(TMP_Text label, string value)
     {
@@ -665,9 +665,9 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Finds one descendant transform by exact name using depth-first traversal.
-    /// /params rootTransform: Traversal root.
-    /// /params childName: Exact child object name requested.
-    /// /returns Matching descendant transform when found; otherwise null.
+    ///  rootTransform: Traversal root.
+    ///  childName: Exact child object name requested.
+    /// returns Matching descendant transform when found; otherwise null.
     /// </summary>
     private static Transform FindDescendantByName(Transform rootTransform, string childName)
     {
@@ -692,9 +692,9 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Resolves one descendant image from the generated hierarchy.
-    /// /params rootTransform: Search root used to resolve the image.
-    /// /params objectName: Exact child object name.
-    /// /returns Resolved image when found; otherwise null.
+    ///  rootTransform: Search root used to resolve the image.
+    ///  objectName: Exact child object name.
+    /// returns Resolved image when found; otherwise null.
     /// </summary>
     private static Image ResolveImage(Transform rootTransform, string objectName)
     {
@@ -708,9 +708,9 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
     /// <summary>
     /// Resolves one descendant TMP label from the generated hierarchy.
-    /// /params rootTransform: Search root used to resolve the label.
-    /// /params objectName: Exact child object name.
-    /// /returns Resolved TMP label when found; otherwise null.
+    ///  rootTransform: Search root used to resolve the label.
+    ///  objectName: Exact child object name.
+    /// returns Resolved TMP label when found; otherwise null.
     /// </summary>
     private static TMP_Text ResolveText(Transform rootTransform, string objectName)
     {
@@ -728,8 +728,8 @@ public sealed class PlayerDroppedPowerUpContainerView : MonoBehaviour
 
 /// <summary>
 /// Bakes dropped-container companion views into managed ECS component objects on their root entity.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public sealed class PlayerDroppedPowerUpContainerViewBaker : Baker<PlayerDroppedPowerUpContainerView>
 {
@@ -738,8 +738,8 @@ public sealed class PlayerDroppedPowerUpContainerViewBaker : Baker<PlayerDropped
     #region Public Methods
     /// <summary>
     /// Bakes the dropped-container companion view and keeps the generated child hierarchy available to the companion pipeline.
-    /// /params authoring: Authoring component baked on the dropped-container prefab root.
-    /// /returns void.
+    ///  authoring: Authoring component baked on the dropped-container prefab root.
+    /// returns void.
     /// </summary>
     public override void Bake(PlayerDroppedPowerUpContainerView authoring)
     {

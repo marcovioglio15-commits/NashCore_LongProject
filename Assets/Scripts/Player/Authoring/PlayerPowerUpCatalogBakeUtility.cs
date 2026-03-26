@@ -15,11 +15,11 @@ public static class PlayerPowerUpCatalogBakeUtility
     #region Public Methods
     /// <summary>
     /// Populates the equipped passive runtime buffer.
-    /// /params authoring: Owning player authoring component.
-    /// /params preset: Source power-ups preset.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /params equippedPassiveToolsBuffer: Destination ECS buffer.
-    /// /returns void.
+    ///  authoring: Owning player authoring component.
+    ///  preset: Source power-ups preset.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    ///  equippedPassiveToolsBuffer: Destination ECS buffer.
+    /// returns void.
     /// </summary>
     public static void PopulateEquippedPassiveToolsBuffer(PlayerAuthoring authoring,
                                                           PlayerPowerUpsPreset preset,
@@ -54,15 +54,15 @@ public static class PlayerPowerUpCatalogBakeUtility
 
     /// <summary>
     /// Populates unlock catalog and tier buffers used by milestone power-up rolls.
-    /// /params authoring: Owning player authoring component.
-    /// /params preset: Scaled source power-ups preset.
-    /// /params sourcePreset: Unscaled source power-ups preset used to extract runtime scaling metadata.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /params powerUpUnlockCatalogBuffer: Destination unlock catalog buffer.
-    /// /params powerUpTierDefinitionsBuffer: Destination tier definition buffer.
-    /// /params powerUpTierEntriesBuffer: Destination flattened tier entry buffer.
-    /// /params powerUpTierEntryScalingBuffer: Destination optional tier-entry scaling metadata buffer.
-    /// /returns void.
+    ///  authoring: Owning player authoring component.
+    ///  preset: Scaled source power-ups preset.
+    ///  sourcePreset: Unscaled source power-ups preset used to extract runtime scaling metadata.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    ///  powerUpUnlockCatalogBuffer: Destination unlock catalog buffer.
+    ///  powerUpTierDefinitionsBuffer: Destination tier definition buffer.
+    ///  powerUpTierEntriesBuffer: Destination flattened tier entry buffer.
+    ///  powerUpTierEntryScalingBuffer: Destination optional tier-entry scaling metadata buffer.
+    /// returns void.
     /// </summary>
     public static void PopulatePowerUpUnlockTierBuffers(PlayerAuthoring authoring,
                                                         PlayerPowerUpsPreset preset,
@@ -119,11 +119,11 @@ public static class PlayerPowerUpCatalogBakeUtility
 
     /// <summary>
     /// Bakes cheat preset snapshots used by runtime debug shortcuts.
-    /// /params authoring: Owning player authoring component.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /params cheatPresetEntriesBuffer: Destination cheat preset entry buffer.
-    /// /params cheatPresetPassivesBuffer: Destination flattened passive config buffer.
-    /// /returns void.
+    ///  authoring: Owning player authoring component.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    ///  cheatPresetEntriesBuffer: Destination cheat preset entry buffer.
+    ///  cheatPresetPassivesBuffer: Destination flattened passive config buffer.
+    /// returns void.
     /// </summary>
     public static void PopulatePowerUpCheatPresetBuffers(PlayerAuthoring authoring,
                                                          Func<GameObject, Entity> resolveDynamicPrefabEntity,

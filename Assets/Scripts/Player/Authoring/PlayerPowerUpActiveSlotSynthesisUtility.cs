@@ -373,8 +373,8 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
 
     /// <summary>
     /// Resolves the stable power-up identifier embedded in one modular active definition.
-    /// /params powerUp: Modular active power-up definition being compiled.
-    /// /returns Stable power-up identifier or an empty fixed string when unavailable.
+    ///  powerUp: Modular active power-up definition being compiled.
+    /// returns Stable power-up identifier or an empty fixed string when unavailable.
     /// </summary>
     private static FixedString64Bytes ResolvePowerUpId(ModularPowerUpDefinition powerUp)
     {

@@ -1,7 +1,7 @@
 /// <summary>
 /// Enumerates token categories used by the player stat formula parser and evaluator.
-/// /params none.
-/// /returns void.
+///  none.
+/// returns void.
 /// </summary>
 internal enum PlayerStatFormulaTokenType
 {
@@ -15,8 +15,8 @@ internal enum PlayerStatFormulaTokenType
 
 /// <summary>
 /// Represents one parsed infix token before reverse-polish conversion.
-/// /params none.
-/// /returns void.
+///  none.
+/// returns void.
 /// </summary>
 internal readonly struct PlayerStatFormulaToken
 {
@@ -31,12 +31,12 @@ internal readonly struct PlayerStatFormulaToken
     #region Constructors
     /// <summary>
     /// Creates one token value with the specified raw data.
-    /// /params type: Token category.
-    /// /params numberValue: Parsed numeric value when applicable.
-    /// /params textValue: Parsed text payload when applicable.
-    /// /params operatorSymbol: Operator character when applicable.
-    /// /params isUnary: Whether the operator acts as unary.
-    /// /returns New token instance.
+    ///  type: Token category.
+    ///  numberValue: Parsed numeric value when applicable.
+    ///  textValue: Parsed text payload when applicable.
+    ///  operatorSymbol: Operator character when applicable.
+    ///  isUnary: Whether the operator acts as unary.
+    /// returns New token instance.
     /// </summary>
     private PlayerStatFormulaToken(PlayerStatFormulaTokenType type,
                                    float numberValue,
@@ -83,8 +83,8 @@ internal readonly struct PlayerStatFormulaToken
 
 /// <summary>
 /// Represents one reverse-polish token used by the compiled formula runtime evaluator.
-/// /params none.
-/// /returns void.
+///  none.
+/// returns void.
 /// </summary>
 internal readonly struct PlayerStatFormulaRpnToken
 {
@@ -99,12 +99,12 @@ internal readonly struct PlayerStatFormulaRpnToken
     #region Constructors
     /// <summary>
     /// Creates one reverse-polish token value.
-    /// /params type: Token category.
-    /// /params numberValue: Parsed numeric value when applicable.
-    /// /params textValue: Parsed text payload when applicable.
-    /// /params operatorSymbol: Operator character when applicable.
-    /// /params isUnary: Whether the operator acts as unary.
-    /// /returns New reverse-polish token instance.
+    ///  type: Token category.
+    ///  numberValue: Parsed numeric value when applicable.
+    ///  textValue: Parsed text payload when applicable.
+    ///  operatorSymbol: Operator character when applicable.
+    ///  isUnary: Whether the operator acts as unary.
+    /// returns New reverse-polish token instance.
     /// </summary>
     private PlayerStatFormulaRpnToken(PlayerStatFormulaTokenType type,
                                       float numberValue,

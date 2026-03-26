@@ -535,12 +535,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
     #region Helpers
     /// <summary>
     /// Resolves whether one runtime-scoped Character Tuning overlay must already be active before the current slot starts processing this frame.
-    /// /params slotConfig: Slot config inspected for temporary Character Tuning semantics.
-    /// /params pressedThisFrame: True when the slot input was freshly pressed during the current frame.
-    /// /params isCharging: Current charging flag before slot processing mutates it.
-    /// /params isActive: Current toggle-active flag before slot processing mutates it.
-    /// /params cooldownRemaining: Current cooldown or startup-lock value before slot processing mutates it.
-    /// /returns True when the temporary Character Tuning overlay should be active while the current slot is processed.
+    ///  slotConfig: Slot config inspected for temporary Character Tuning semantics.
+    ///  pressedThisFrame: True when the slot input was freshly pressed during the current frame.
+    ///  isCharging: Current charging flag before slot processing mutates it.
+    ///  isActive: Current toggle-active flag before slot processing mutates it.
+    ///  cooldownRemaining: Current cooldown or startup-lock value before slot processing mutates it.
+    /// returns True when the temporary Character Tuning overlay should be active while the current slot is processed.
     /// </summary>
     private static bool ShouldScopedCharacterTuningBeActiveBeforeSlotProcessing(in PlayerPowerUpSlotConfig slotConfig,
                                                                                 bool pressedThisFrame,
@@ -576,44 +576,44 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
     /// <summary>
     /// Rebuilds runtime-scaled configs immediately after scalable-stat changes triggered inside the activation flow and refreshes cached local copies.
-    /// /params entity: Player entity being refreshed.
-    /// /params scalableStatsLookup: Runtime scalable-stat buffer lookup.
-    /// /params controllerScalingLookup: Controller scaling metadata lookup.
-    /// /params baseMovementLookup: Immutable movement baseline lookup.
-    /// /params runtimeMovementLookup: Mutable runtime movement config lookup.
-    /// /params baseLookLookup: Immutable look baseline lookup.
-    /// /params runtimeLookLookup: Mutable runtime look config lookup.
-    /// /params baseCameraLookup: Immutable camera baseline lookup.
-    /// /params runtimeCameraLookup: Mutable runtime camera config lookup.
-    /// /params baseShootingLookup: Immutable shooting baseline lookup.
-    /// /params runtimeShootingLookup: Mutable runtime shooting config lookup.
-    /// /params baseHealthLookup: Immutable health baseline lookup.
-    /// /params runtimeHealthLookup: Mutable runtime health config lookup.
-    /// /params progressionScalingLookup: Progression scaling metadata lookup.
-    /// /params baseGamePhasesLookup: Immutable runtime-phase baseline lookup.
-    /// /params runtimeGamePhasesLookup: Mutable runtime-phase buffer lookup.
-    /// /params basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
-    /// /params powerUpScalingLookup: Runtime power-up scaling metadata lookup.
-    /// /params powerUpsConfigLookup: Mutable power-up slot config lookup.
-    /// /params unlockCatalogLookup: Mutable unlock catalog lookup.
-    /// /params equippedPassiveToolsLookup: Mutable equipped-passive buffer lookup.
-    /// /params passiveToolsLookup: Mutable passive aggregate lookup.
-    /// /params healthLookup: Mutable health lookup.
-    /// /params shieldLookup: Mutable shield lookup.
-    /// /params progressionConfigLookup: Runtime progression config lookup.
-    /// /params experienceLookup: Mutable experience lookup.
-    /// /params levelLookup: Mutable level lookup.
-    /// /params experienceCollectionLookup: Mutable experience-collection lookup.
-    /// /params runtimeScalingStateLookup: Mutable runtime-scaling sync state lookup.
-    /// /params primarySlotConfig: Cached primary slot config refreshed from runtime state.
-    /// /params secondarySlotConfig: Cached secondary slot config refreshed from runtime state.
-    /// /params runtimeMovementConfig: Cached runtime movement config refreshed from runtime state.
-    /// /params runtimeShootingConfig: Cached runtime shooting config refreshed from runtime state.
-    /// /params passiveToolsState: Cached passive aggregate refreshed from runtime state.
-    /// /params playerExperience: Cached experience component refreshed from runtime state.
-    /// /params playerLevel: Cached level component refreshed from runtime state.
-    /// /params playerExperienceCollection: Cached experience-collection component refreshed from runtime state.
-    /// /returns void.
+    ///  entity: Player entity being refreshed.
+    ///  scalableStatsLookup: Runtime scalable-stat buffer lookup.
+    ///  controllerScalingLookup: Controller scaling metadata lookup.
+    ///  baseMovementLookup: Immutable movement baseline lookup.
+    ///  runtimeMovementLookup: Mutable runtime movement config lookup.
+    ///  baseLookLookup: Immutable look baseline lookup.
+    ///  runtimeLookLookup: Mutable runtime look config lookup.
+    ///  baseCameraLookup: Immutable camera baseline lookup.
+    ///  runtimeCameraLookup: Mutable runtime camera config lookup.
+    ///  baseShootingLookup: Immutable shooting baseline lookup.
+    ///  runtimeShootingLookup: Mutable runtime shooting config lookup.
+    ///  baseHealthLookup: Immutable health baseline lookup.
+    ///  runtimeHealthLookup: Mutable runtime health config lookup.
+    ///  progressionScalingLookup: Progression scaling metadata lookup.
+    ///  baseGamePhasesLookup: Immutable runtime-phase baseline lookup.
+    ///  runtimeGamePhasesLookup: Mutable runtime-phase buffer lookup.
+    ///  basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
+    ///  powerUpScalingLookup: Runtime power-up scaling metadata lookup.
+    ///  powerUpsConfigLookup: Mutable power-up slot config lookup.
+    ///  unlockCatalogLookup: Mutable unlock catalog lookup.
+    ///  equippedPassiveToolsLookup: Mutable equipped-passive buffer lookup.
+    ///  passiveToolsLookup: Mutable passive aggregate lookup.
+    ///  healthLookup: Mutable health lookup.
+    ///  shieldLookup: Mutable shield lookup.
+    ///  progressionConfigLookup: Runtime progression config lookup.
+    ///  experienceLookup: Mutable experience lookup.
+    ///  levelLookup: Mutable level lookup.
+    ///  experienceCollectionLookup: Mutable experience-collection lookup.
+    ///  runtimeScalingStateLookup: Mutable runtime-scaling sync state lookup.
+    ///  primarySlotConfig: Cached primary slot config refreshed from runtime state.
+    ///  secondarySlotConfig: Cached secondary slot config refreshed from runtime state.
+    ///  runtimeMovementConfig: Cached runtime movement config refreshed from runtime state.
+    ///  runtimeShootingConfig: Cached runtime shooting config refreshed from runtime state.
+    ///  passiveToolsState: Cached passive aggregate refreshed from runtime state.
+    ///  playerExperience: Cached experience component refreshed from runtime state.
+    ///  playerLevel: Cached level component refreshed from runtime state.
+    ///  playerExperienceCollection: Cached experience-collection component refreshed from runtime state.
+    /// returns void.
     /// </summary>
     private static void RefreshRuntimeScaledState(Entity entity,
                                                   BufferLookup<PlayerScalableStatElement> scalableStatsLookup,
@@ -712,10 +712,10 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
     /// <summary>
     /// Resolves whether one runtime-scoped Character Tuning overlay must remain applied outside the slot currently being processed.
-    /// /params slotConfig: Slot config inspected for temporary Character Tuning semantics.
-    /// /params isCharging: Current charging flag after the latest slot mutation.
-    /// /params isActive: Current toggle-active flag after the latest slot mutation.
-    /// /returns True when the temporary Character Tuning overlay should remain applied.
+    ///  slotConfig: Slot config inspected for temporary Character Tuning semantics.
+    ///  isCharging: Current charging flag after the latest slot mutation.
+    ///  isActive: Current toggle-active flag after the latest slot mutation.
+    /// returns True when the temporary Character Tuning overlay should remain applied.
     /// </summary>
     private static bool ShouldScopedCharacterTuningRemainActive(in PlayerPowerUpSlotConfig slotConfig,
                                                                 byte isCharging,

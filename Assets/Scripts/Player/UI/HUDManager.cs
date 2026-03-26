@@ -501,7 +501,7 @@ public sealed class HUDManager : MonoBehaviour
     /// Returns the configured shield fill image only when it belongs to a screen-space HUD canvas.
     /// </summary>
     /// <param name="shieldFillImage">Resolved shield image safe to update from HUDManager.</param>
-    /// <returns>True when the shield image is available and not bound to a world-space canvas; otherwise false.</returns>
+    /// <returns>True when the shield image is available and not bound to a world-space canvas; otherwise false.<returns>
     private bool TryResolveShieldFillImage(out Image shieldFillImage)
     {
         shieldFillImage = playerShieldFillImage;
@@ -522,7 +522,7 @@ public sealed class HUDManager : MonoBehaviour
     /// Returns whether health and shield bars should snap to their exact runtime values.
     /// </summary>
     /// <param name="playerEntity">Player entity currently driving the HUD.</param>
-    /// <returns>True when the run outcome is finalized and the ending screen should bypass smoothing.</returns>
+    /// <returns>True when the run outcome is finalized and the ending screen should bypass smoothing.<returns>
     private bool ShouldSnapCoreBars(Entity playerEntity)
     {
         if (!entityManager.HasComponent<PlayerRunOutcomeState>(playerEntity))

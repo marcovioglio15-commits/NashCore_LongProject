@@ -387,7 +387,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Resolves whether the Max Penetration field is relevant for the selected penetration mode.
     /// </summary>
     /// <param name="penetrationMode">Currently selected projectile penetration behavior.</param>
-    /// <returns>True when the mode requires a maximum penetration count.</returns>
+    /// <returns>True when the mode requires a maximum penetration count.<returns>
     private static bool ShouldDisplayMaxPenetrationField(ProjectilePenetrationMode penetrationMode)
     {
         switch (penetrationMode)
@@ -578,7 +578,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// Builds the section tab row.
     /// </summary>
     /// <param name="panel">Owning panel that stores section state.</param>
-    /// <returns>Returns the section tab row.</returns>
+    /// <returns>Returns the section tab row.<returns>
     private static VisualElement BuildSectionButtons(PlayerControllerPresetsPanel panel)
     {
         VisualElement buttonsRoot = new VisualElement();
@@ -621,7 +621,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// <param name="property">Serialized property bound to the field.</param>
     /// <param name="label">Displayed field label.</param>
     /// <param name="tooltip">Tooltip shown by the field in the tool UI.</param>
-    /// <returns>Returns the configured property field.</returns>
+    /// <returns>Returns the configured property field.<returns>
     private static PropertyField CreatePropertyField(SerializedProperty property, string label, string tooltip)
     {
         PropertyField propertyField = new PropertyField(property, label);
@@ -639,7 +639,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     /// </summary>
     /// <param name="panel">Owning panel that stores the detail root.</param>
     /// <param name="sectionTitle">Visible section title.</param>
-    /// <returns>Returns the created section container.</returns>
+    /// <returns>Returns the created section container.<returns>
     private static VisualElement CreateSectionContainer(PlayerControllerPresetsPanel panel, string sectionTitle)
     {
         if (panel == null || panel.SectionContentRoot == null)

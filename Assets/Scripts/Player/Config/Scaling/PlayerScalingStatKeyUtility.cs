@@ -37,7 +37,7 @@ public static class PlayerScalingStatKeyUtility
     /// Builds a normalized stat key for a serialized numeric property.
     /// </summary>
     /// <param name="property">Serialized property to convert into a stable key.</param>
-    /// <returns>Normalized key string, or empty when property is invalid.</returns>
+    /// <returns>Normalized key string, or empty when property is invalid.<returns>
     public static string BuildStatKey(SerializedProperty property)
     {
         if (property == null)
@@ -55,7 +55,7 @@ public static class PlayerScalingStatKeyUtility
     /// <param name="serializedObject">Serialized object that owns the target property.</param>
     /// <param name="statKey">Key produced by BuildStatKey.</param>
     /// <param name="property">Resolved property when found.</param>
-    /// <returns>True when a numeric property was resolved, otherwise false.</returns>
+    /// <returns>True when a numeric property was resolved, otherwise false.<returns>
     public static bool TryFindPropertyByStatKey(SerializedObject serializedObject,
                                                 string statKey,
                                                 out SerializedProperty property)
@@ -91,7 +91,7 @@ public static class PlayerScalingStatKeyUtility
     /// Checks whether a serialized property is a supported numeric type for scaling.
     /// </summary>
     /// <param name="property">Property to inspect.</param>
-    /// <returns>True when the property is integer or float, otherwise false.</returns>
+    /// <returns>True when the property is integer or float, otherwise false.<returns>
     public static bool IsNumericProperty(SerializedProperty property)
     {
         if (property == null)
@@ -108,7 +108,7 @@ public static class PlayerScalingStatKeyUtility
     /// </summary>
     /// <param name="serializedObject">Serialized object used to inspect list element IDs.</param>
     /// <param name="propertyPath">Unity raw property path.</param>
-    /// <returns>Normalized path suitable as persistent stat key.</returns>
+    /// <returns>Normalized path suitable as persistent stat key.<returns>
     public static string NormalizePropertyPath(SerializedObject serializedObject, string propertyPath)
     {
         if (serializedObject == null)
@@ -174,7 +174,7 @@ public static class PlayerScalingStatKeyUtility
     /// <param name="serializedObject">Serialized object containing candidate properties.</param>
     /// <param name="statKey">Stable key to resolve.</param>
     /// <param name="property">Resolved property when a match is found.</param>
-    /// <returns>True when a matching numeric property is found; otherwise false.</returns>
+    /// <returns>True when a matching numeric property is found; otherwise false.<returns>
     private static bool TryFindPropertyByIteratorScan(SerializedObject serializedObject,
                                                       string statKey,
                                                       out SerializedProperty property)
@@ -517,7 +517,7 @@ public static class PlayerScalingStatKeyUtility
     /// </summary>
     /// <param name="dataSegment">Original data segment in Unity format (for example data[3]).</param>
     /// <param name="stableToken">Semantic stable token in key:value form.</param>
-    /// <returns>Combined segment with index fallback when available.</returns>
+    /// <returns>Combined segment with index fallback when available.<returns>
     private static string BuildStableDataSegmentWithFallbackIndex(string dataSegment, string stableToken)
     {
         if (string.IsNullOrWhiteSpace(stableToken))

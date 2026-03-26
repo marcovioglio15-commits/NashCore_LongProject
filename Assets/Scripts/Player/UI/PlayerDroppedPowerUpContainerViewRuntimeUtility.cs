@@ -5,8 +5,8 @@ using UnityEngine;
 
 /// <summary>
 /// Resolves runtime-usable dropped-container views, creating scene clones when ECS companion objects are not directly renderable.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 {
@@ -23,10 +23,10 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
     #region Public Methods
     /// <summary>
     /// Resolves one dropped-container view that is guaranteed to be usable at runtime inside the active scene.
-    /// /params entityManager: Entity manager used to inspect runtime ECS data.
-    /// /params containerEntity: Dropped container entity whose view must be resolved.
-    /// /params containerView: Runtime-usable view returned to the caller when available.
-    /// /returns True when a usable view was resolved; otherwise false.
+    ///  entityManager: Entity manager used to inspect runtime ECS data.
+    ///  containerEntity: Dropped container entity whose view must be resolved.
+    ///  containerView: Runtime-usable view returned to the caller when available.
+    /// returns True when a usable view was resolved; otherwise false.
     /// </summary>
     public static bool TryResolveRuntimeView(EntityManager entityManager,
                                              Entity containerEntity,
@@ -67,10 +67,10 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Synchronizes one runtime-usable dropped-container view with the current ECS transform state.
-    /// /params entityManager: Entity manager used to resolve the runtime view.
-    /// /params containerEntity: Dropped container entity whose view must be synchronized.
-    /// /params containerTransform: ECS transform driving the runtime scene view.
-    /// /returns void.
+    ///  entityManager: Entity manager used to resolve the runtime view.
+    ///  containerEntity: Dropped container entity whose view must be synchronized.
+    ///  containerTransform: ECS transform driving the runtime scene view.
+    /// returns void.
     /// </summary>
     public static void SyncViewPose(EntityManager entityManager,
                                     Entity containerEntity,
@@ -84,9 +84,9 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Synchronizes one already-resolved runtime-usable dropped-container view with the current ECS transform state.
-    /// /params containerView: Runtime view already resolved for the target container.
-    /// /params containerTransform: ECS transform driving the runtime scene view.
-    /// /returns void.
+    ///  containerView: Runtime view already resolved for the target container.
+    ///  containerTransform: ECS transform driving the runtime scene view.
+    /// returns void.
     /// </summary>
     public static void SyncViewPose(PlayerDroppedPowerUpContainerView containerView,
                                     in LocalTransform containerTransform)
@@ -106,8 +106,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Releases fallback runtime clones whose owning dropped-container entities are no longer valid.
-    /// /params entityManager: Entity manager used to detect stale container entities.
-    /// /returns void.
+    ///  entityManager: Entity manager used to detect stale container entities.
+    /// returns void.
     /// </summary>
     public static void ReleaseInactiveViews(EntityManager entityManager)
     {
@@ -146,8 +146,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Destroys every pooled or active fallback runtime clone and clears cached view state.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     public static void Shutdown()
     {
@@ -165,8 +165,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
     #region Private Methods
     /// <summary>
     /// Lazily allocates the runtime caches used by the resolver utility.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     private static void EnsureCollections()
     {
@@ -185,10 +185,10 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Resolves the entity that owns the baked dropped-container view component.
-    /// /params entityManager: Entity manager used to inspect linked entities.
-    /// /params containerEntity: Root dropped-container entity.
-    /// /params viewEntity: Entity that carries the baked view component when found.
-    /// /returns True when a view entity was found; otherwise false.
+    ///  entityManager: Entity manager used to inspect linked entities.
+    ///  containerEntity: Root dropped-container entity.
+    ///  viewEntity: Entity that carries the baked view component when found.
+    /// returns True when a view entity was found; otherwise false.
     /// </summary>
     private static bool TryResolveViewEntity(EntityManager entityManager,
                                              Entity containerEntity,
@@ -229,9 +229,9 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Returns a scene-usable view, instantiating one fallback clone when the baked ECS component object is not renderable directly.
-    /// /params containerEntity: Dropped container entity owning the resolved view.
-    /// /params resolvedView: View returned by ECS component-object lookup.
-    /// /returns Scene-usable view when available; otherwise null.
+    ///  containerEntity: Dropped container entity owning the resolved view.
+    ///  resolvedView: View returned by ECS component-object lookup.
+    /// returns Scene-usable view when available; otherwise null.
     /// </summary>
     private static PlayerDroppedPowerUpContainerView ResolveRuntimeUsableView(Entity containerEntity,
                                                                               PlayerDroppedPowerUpContainerView resolvedView)
@@ -268,8 +268,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Acquires one fallback scene clone from the pool or creates a fresh instance from the baked template.
-    /// /params none.
-    /// /returns Runtime scene clone when available; otherwise null.
+    ///  none.
+    /// returns Runtime scene clone when available; otherwise null.
     /// </summary>
     private static PlayerDroppedPowerUpContainerView AcquireFallbackView()
     {
@@ -304,8 +304,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Returns whether the resolved view currently belongs to a valid scene object that can render world-space UI.
-    /// /params containerView: View instance evaluated for runtime usability.
-    /// /returns True when the view belongs to a scene object; otherwise false.
+    ///  containerView: View instance evaluated for runtime usability.
+    /// returns True when the view belongs to a scene object; otherwise false.
     /// </summary>
     private static bool IsRuntimeUsableView(PlayerDroppedPowerUpContainerView containerView)
     {
@@ -322,8 +322,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Ensures the resolved runtime scene object is active before prompt or icon updates are applied.
-    /// /params containerView: Runtime view activated when needed.
-    /// /returns void.
+    ///  containerView: Runtime view activated when needed.
+    /// returns void.
     /// </summary>
     private static void EnsureViewActive(PlayerDroppedPowerUpContainerView containerView)
     {
@@ -340,9 +340,9 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Returns whether the owning dropped-container entity still exists and still carries a valid payload component.
-    /// /params entityManager: Entity manager used to inspect ECS state.
-    /// /params containerEntity: Container entity evaluated for lifetime.
-    /// /returns True when the container is still alive; otherwise false.
+    ///  entityManager: Entity manager used to inspect ECS state.
+    ///  containerEntity: Container entity evaluated for lifetime.
+    /// returns True when the container is still alive; otherwise false.
     /// </summary>
     private static bool IsContainerEntityAlive(EntityManager entityManager, Entity containerEntity)
     {
@@ -354,8 +354,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Resets and pools one fallback scene clone for later reuse.
-    /// /params fallbackView: Runtime scene clone returned to the pool.
-    /// /returns void.
+    ///  fallbackView: Runtime scene clone returned to the pool.
+    /// returns void.
     /// </summary>
     private static void ReleaseFallbackView(PlayerDroppedPowerUpContainerView fallbackView)
     {
@@ -371,8 +371,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Removes cached entries for container entities that no longer exist, even when they were backed by authored scene views.
-    /// /params entityManager: Entity manager used to validate cached entity keys.
-    /// /returns void.
+    ///  entityManager: Entity manager used to validate cached entity keys.
+    /// returns void.
     /// </summary>
     private static void ReleaseStaleCachedViews(EntityManager entityManager)
     {
@@ -395,8 +395,8 @@ public static class PlayerDroppedPowerUpContainerViewRuntimeUtility
 
     /// <summary>
     /// Destroys every fallback view contained in the provided enumerable collection.
-    /// /params fallbackViews: Collection of fallback views that must be destroyed.
-    /// /returns void.
+    ///  fallbackViews: Collection of fallback views that must be destroyed.
+    /// returns void.
     /// </summary>
     private static void DestroyFallbackViews(IEnumerable<PlayerDroppedPowerUpContainerView> fallbackViews)
     {

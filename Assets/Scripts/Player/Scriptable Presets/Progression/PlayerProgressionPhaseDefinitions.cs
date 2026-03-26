@@ -77,8 +77,8 @@ public sealed class PlayerGamePhaseDefinition
     #region Public Methods
     /// <summary>
     /// Ensures nested authoring collections exist without changing designer-authored scalar values or Phase IDs.
-    /// /params none
-    /// /returns void
+    ///  none
+    /// returns void
     /// </summary>
     public void EnsureAuthoringCollections()
     {
@@ -304,8 +304,8 @@ public sealed class PlayerLevelUpMilestoneDefinition
     #region Public Methods
     /// <summary>
     /// Ensures nested authoring collections exist without changing designer-authored milestone thresholds or requirements.
-    /// /params none
-    /// /returns void
+    ///  none
+    /// returns void
     /// </summary>
     public void EnsureAuthoringCollections()
     {
@@ -418,7 +418,7 @@ public sealed class PlayerLevelUpMilestoneDefinition
     /// Checks whether this milestone applies to the provided player level.
     /// </summary>
     /// <param name="levelValue">Player level being resolved at runtime.</param>
-    /// <returns>True when the milestone should trigger for the level; otherwise false.</returns>
+    /// <returns>True when the milestone should trigger for the level; otherwise false.<returns>
     public bool MatchesLevel(int levelValue)
     {
         if (levelValue < milestoneLevel)

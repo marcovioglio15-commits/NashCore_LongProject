@@ -264,7 +264,7 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
     /// <param name="accelerationProperty">Serialized acceleration multiplier property.</param>
     /// <param name="toggles">Optional list that receives the created toggle.</param>
     /// <param name="angleFields">Optional list that receives the created angle field.</param>
-    /// <returns>Returns the constructed cone row.</returns>
+    /// <returns>Returns the constructed cone row.<returns>
     private static VisualElement BuildConeRow(string label,
                                               SerializedProperty enabledProperty,
                                               SerializedProperty angleProperty,

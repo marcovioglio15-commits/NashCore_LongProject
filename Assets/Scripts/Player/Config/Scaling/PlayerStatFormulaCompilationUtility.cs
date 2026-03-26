@@ -4,7 +4,7 @@ using System.Globalization;
 
 /// <summary>
 /// Provides the parser and compiler steps that transform raw player stat formulas into executable RPN programs.
-/// /params none.
+///  none.
 /// </summary>
 internal static class PlayerStatFormulaCompilationUtility
 {
@@ -14,9 +14,9 @@ internal static class PlayerStatFormulaCompilationUtility
     /// <summary>
     /// Compiles one normalized formula string into a reusable compiled formula.
     /// Used by the cached public engine wrapper after cache lookup.
-    /// /params formula: Normalized formula string to compile.
-    /// /params requireAtLeastOneVariable: Whether formulas without variables should be rejected.
-    /// /returns Compilation result containing the compiled formula or the failure reason.
+    ///  formula: Normalized formula string to compile.
+    ///  requireAtLeastOneVariable: Whether formulas without variables should be rejected.
+    /// returns Compilation result containing the compiled formula or the failure reason.
     /// </summary>
     internal static PlayerStatFormulaCompileResult Compile(string formula, bool requireAtLeastOneVariable)
     {
@@ -45,10 +45,10 @@ internal static class PlayerStatFormulaCompilationUtility
     #region Private Methods
     /// <summary>
     /// Tokenizes one raw formula string into infix tokens.
-    /// /params formula: Formula text to scan.
-    /// /params tokens: Produced infix token list.
-    /// /params errorMessage: Failure reason when tokenization stops.
-    /// /returns True when tokenization succeeded.
+    ///  formula: Formula text to scan.
+    ///  tokens: Produced infix token list.
+    ///  errorMessage: Failure reason when tokenization stops.
+    /// returns True when tokenization succeeded.
     /// </summary>
     private static bool Tokenize(string formula,
                                  out List<PlayerStatFormulaToken> tokens,
@@ -169,11 +169,11 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Converts one infix token stream into reverse-polish notation.
-    /// /params tokens: Infix token sequence produced by the tokenizer.
-    /// /params rpnTokens: Resulting RPN token list.
-    /// /params variableNames: Distinct variables discovered while compiling.
-    /// /params errorMessage: Failure reason when parsing fails.
-    /// /returns True when the conversion succeeded.
+    ///  tokens: Infix token sequence produced by the tokenizer.
+    ///  rpnTokens: Resulting RPN token list.
+    ///  variableNames: Distinct variables discovered while compiling.
+    ///  errorMessage: Failure reason when parsing fails.
+    /// returns True when the conversion succeeded.
     /// </summary>
     private static bool BuildRpn(List<PlayerStatFormulaToken> tokens,
                                  out List<PlayerStatFormulaRpnToken> rpnTokens,
@@ -260,9 +260,9 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Validates the final RPN stream by simulating stack depth changes.
-    /// /params rpnTokens: Reverse-polish token stream to validate.
-    /// /params errorMessage: Failure reason when structure is invalid.
-    /// /returns True when the RPN stream is structurally valid.
+    ///  rpnTokens: Reverse-polish token stream to validate.
+    ///  errorMessage: Failure reason when structure is invalid.
+    /// returns True when the RPN stream is structurally valid.
     /// </summary>
     private static bool ValidateRpnStructure(List<PlayerStatFormulaRpnToken> rpnTokens, out string errorMessage)
     {
@@ -321,9 +321,9 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Determines whether one formula character starts a number literal.
-    /// /params formula: Formula source text.
-    /// /params index: Character index to inspect.
-    /// /returns True when the character begins a valid numeric token.
+    ///  formula: Formula source text.
+    ///  index: Character index to inspect.
+    /// returns True when the character begins a valid numeric token.
     /// </summary>
     private static bool IsNumberStart(string formula, int index)
     {
@@ -348,10 +348,10 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Reads one numeric literal starting at the provided index.
-    /// /params formula: Formula source text.
-    /// /params index: Current parser index, advanced past the parsed literal.
-    /// /params value: Parsed float value.
-    /// /returns True when the number literal is valid.
+    ///  formula: Formula source text.
+    ///  index: Current parser index, advanced past the parsed literal.
+    ///  value: Parsed float value.
+    /// returns True when the number literal is valid.
     /// </summary>
     private static bool TryReadNumberToken(string formula, ref int index, out float value)
     {
@@ -388,8 +388,8 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Checks whether the character is one of the supported operator symbols.
-    /// /params character: Character to inspect.
-    /// /returns True when the character maps to one supported operator.
+    ///  character: Character to inspect.
+    /// returns True when the character maps to one supported operator.
     /// </summary>
     private static bool IsOperator(char character)
     {
@@ -408,9 +408,9 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Converts one raw operator token into its final unary or binary representation.
-    /// /params token: Operator token being resolved.
-    /// /params previousToken: Previous token in the infix stream.
-    /// /returns Operator token with the correct unary flag.
+    ///  token: Operator token being resolved.
+    ///  previousToken: Previous token in the infix stream.
+    /// returns Operator token with the correct unary flag.
     /// </summary>
     private static PlayerStatFormulaToken ResolveOperatorToken(PlayerStatFormulaToken token, PlayerStatFormulaToken? previousToken)
     {
@@ -436,9 +436,9 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Applies precedence and associativity rules between two operators.
-    /// /params stackToken: Operator currently on the stack.
-    /// /params currentToken: Incoming operator token.
-    /// /returns True when the stacked operator must be emitted first.
+    ///  stackToken: Operator currently on the stack.
+    ///  currentToken: Incoming operator token.
+    /// returns True when the stacked operator must be emitted first.
     /// </summary>
     private static bool ShouldPopOperator(PlayerStatFormulaToken stackToken, PlayerStatFormulaToken currentToken)
     {
@@ -468,8 +468,8 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Resolves numeric precedence for one operator token.
-    /// /params token: Operator token being inspected.
-    /// /returns Numeric precedence used by the shunting-yard algorithm.
+    ///  token: Operator token being inspected.
+    /// returns Numeric precedence used by the shunting-yard algorithm.
     /// </summary>
     private static int GetPrecedence(PlayerStatFormulaToken token)
     {
@@ -496,10 +496,10 @@ internal static class PlayerStatFormulaCompilationUtility
 
     /// <summary>
     /// Pops operators until one left parenthesis is reached.
-    /// /params operatorStack: Current shunting-yard operator stack.
-    /// /params rpnTokens: Output RPN token list.
-    /// /params errorMessage: Failure reason when no matching parenthesis exists.
-    /// /returns True when one matching left parenthesis was found.
+    ///  operatorStack: Current shunting-yard operator stack.
+    ///  rpnTokens: Output RPN token list.
+    ///  errorMessage: Failure reason when no matching parenthesis exists.
+    /// returns True when one matching left parenthesis was found.
     /// </summary>
     private static bool PopUntilLeftParenthesis(Stack<PlayerStatFormulaToken> operatorStack,
                                                 List<PlayerStatFormulaRpnToken> rpnTokens,

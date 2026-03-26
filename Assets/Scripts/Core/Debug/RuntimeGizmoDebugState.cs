@@ -2,8 +2,8 @@ using System;
 
 /// <summary>
 /// Stores live runtime visibility flags shared by the debug canvas panel and the runtime gizmo renderers.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public static class RuntimeGizmoDebugState
 {
@@ -257,8 +257,8 @@ public static class RuntimeGizmoDebugState
     #region Public Methods
     /// <summary>
     /// Restores the whole debug state to project defaults, usually on domain reload or when the user wants a clean baseline.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     public static void ResetToDefaults()
     {

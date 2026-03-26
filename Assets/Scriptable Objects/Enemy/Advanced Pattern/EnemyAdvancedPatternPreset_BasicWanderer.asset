@@ -78,6 +78,7 @@ MonoBehaviour:
         movementPolicy: 0
         fireInterval: 1
         burstCount: 1
+        aimWindupSeconds: 0.25
         intraBurstDelay: 0.08
         useMinimumRange: 0
         minimumRange: 2
@@ -190,6 +191,7 @@ MonoBehaviour:
         movementPolicy: 0
         fireInterval: 1
         burstCount: 1
+        aimWindupSeconds: 0.25
         intraBurstDelay: 0.08
         useMinimumRange: 0
         minimumRange: 2
@@ -302,6 +304,7 @@ MonoBehaviour:
         movementPolicy: 0
         fireInterval: 1
         burstCount: 1
+        aimWindupSeconds: 0.25
         intraBurstDelay: 0.08
         useMinimumRange: 0
         minimumRange: 2
@@ -414,6 +417,7 @@ MonoBehaviour:
         movementPolicy: 0
         fireInterval: 1
         burstCount: 1
+        aimWindupSeconds: 0.25
         intraBurstDelay: 0.08
         useMinimumRange: 0
         minimumRange: 2
@@ -526,6 +530,7 @@ MonoBehaviour:
         movementPolicy: 0
         fireInterval: 1
         burstCount: 1
+        aimWindupSeconds: 0.25
         intraBurstDelay: 0.08
         useMinimumRange: 0
         minimumRange: 2
@@ -649,6 +654,7 @@ MonoBehaviour:
           movementPolicy: 0
           fireInterval: 1
           burstCount: 1
+          aimWindupSeconds: 0.25
           intraBurstDelay: 0.08
           useMinimumRange: 0
           minimumRange: 2
@@ -760,6 +766,7 @@ MonoBehaviour:
           movementPolicy: 0
           fireInterval: 1
           burstCount: 1
+          aimWindupSeconds: 0.25
           intraBurstDelay: 0.08
           useMinimumRange: 0
           minimumRange: 2

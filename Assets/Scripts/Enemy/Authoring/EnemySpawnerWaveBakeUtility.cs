@@ -17,7 +17,7 @@ public static class EnemySpawnerWaveBakeUtility
     #region Public Methods
     /// <summary>
     /// Returns the default cumulative distribution curve used by new waves and cells.
-    /// /returns Default normalized cumulative distribution curve.
+    /// returns Default normalized cumulative distribution curve.
     /// </summary>
     public static AnimationCurve CreateDefaultDistributionCurve()
     {
@@ -27,10 +27,10 @@ public static class EnemySpawnerWaveBakeUtility
     /// <summary>
     /// Sanitizes spawner-wide wave data after inspector changes.
     /// Called by EnemySpawnerAuthoring.OnValidate.
-    /// /params waves: Serialized wave list owned by the spawner authoring.
-    /// /params gridSizeX: Grid width in cells.
-    /// /params gridSizeZ: Grid height in cells.
-    /// /returns None.
+    ///  waves: Serialized wave list owned by the spawner authoring.
+    ///  gridSizeX: Grid width in cells.
+    ///  gridSizeZ: Grid height in cells.
+    /// returns None.
     /// </summary>
     public static void ValidateWaves(List<EnemySpawnWaveAuthoring> waves, int gridSizeX, int gridSizeZ)
     {
@@ -63,13 +63,13 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Computes the local-space center of one grid cell using the spawner grid settings.
-    /// /params gridSizeX: Grid width in cells.
-    /// /params gridSizeZ: Grid height in cells.
-    /// /params cellSize: Square cell size in local units.
-    /// /params originOffset: Local-space offset applied to the full grid.
-    /// /params spawnHeightOffset: Local-space height offset applied to spawned enemies.
-    /// /params cellCoordinate: Authored grid coordinate.
-    /// /returns Local-space cell center position.
+    ///  gridSizeX: Grid width in cells.
+    ///  gridSizeZ: Grid height in cells.
+    ///  cellSize: Square cell size in local units.
+    ///  originOffset: Local-space offset applied to the full grid.
+    ///  spawnHeightOffset: Local-space height offset applied to spawned enemies.
+    ///  cellCoordinate: Authored grid coordinate.
+    /// returns Local-space cell center position.
     /// </summary>
     public static float3 ResolveCellLocalCenter(int gridSizeX,
                                                 int gridSizeZ,
@@ -89,14 +89,14 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Builds exact spawn events for one painted cell from authored count and cumulative distribution curve.
-    /// /params waveIndex: Owning wave index.
-    /// /params prefabEntity: Enemy prefab entity associated with the painted master preset.
-    /// /params spawnDurationSeconds: Authored wave spawn duration in seconds.
-    /// /params localSpawnPosition: Local-space cell center used by the events.
-    /// /params enemyCount: Number of enemies authored for the cell.
-    /// /params distributionCurve: Authored cumulative distribution curve.
-    /// /params outputEvents: Target list receiving the staged events.
-    /// /returns None.
+    ///  waveIndex: Owning wave index.
+    ///  prefabEntity: Enemy prefab entity associated with the painted master preset.
+    ///  spawnDurationSeconds: Authored wave spawn duration in seconds.
+    ///  localSpawnPosition: Local-space cell center used by the events.
+    ///  enemyCount: Number of enemies authored for the cell.
+    ///  distributionCurve: Authored cumulative distribution curve.
+    ///  outputEvents: Target list receiving the staged events.
+    /// returns None.
     /// </summary>
     public static void BuildCellEvents(int waveIndex,
                                        Unity.Entities.Entity prefabEntity,
@@ -136,8 +136,8 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Sorts a staged event list using deterministic time-first ordering.
-    /// /params stagedWaveEvents: Event list to sort in place.
-    /// /returns None.
+    ///  stagedWaveEvents: Event list to sort in place.
+    /// returns None.
     /// </summary>
     public static void SortWaveEvents(List<EnemySpawnerWaveEventElement> stagedWaveEvents)
     {
@@ -150,8 +150,8 @@ public static class EnemySpawnerWaveBakeUtility
     /// <summary>
     /// Resolves the paint color associated with one master preset.
     /// Used by scene gizmos and inspector previews.
-    /// /params masterPreset: Enemy master preset currently painted on a cell.
-    /// /returns Resolved paint color, or a default fallback when no visual preset is available.
+    ///  masterPreset: Enemy master preset currently painted on a cell.
+    /// returns Resolved paint color, or a default fallback when no visual preset is available.
     /// </summary>
     public static Color ResolvePaintColor(EnemyMasterPreset masterPreset)
     {
@@ -173,8 +173,8 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Resolves the prefab referenced by one master preset through its visual preset.
-    /// /params masterPreset: Enemy master preset to inspect.
-    /// /returns Resolved enemy prefab GameObject, or null when unavailable.
+    ///  masterPreset: Enemy master preset to inspect.
+    /// returns Resolved enemy prefab GameObject, or null when unavailable.
     /// </summary>
     public static GameObject ResolveEnemyPrefab(EnemyMasterPreset masterPreset)
     {
@@ -197,8 +197,8 @@ public static class EnemySpawnerWaveBakeUtility
     /// <summary>
     /// Computes the total authored enemy count of one wave.
     /// Used by inspector summaries and validation logic.
-    /// /params wave: Wave to inspect.
-    /// /returns Total authored enemy count across all painted cells.
+    ///  wave: Wave to inspect.
+    /// returns Total authored enemy count across all painted cells.
     /// </summary>
     public static int CountWaveEnemies(EnemySpawnWaveAuthoring wave)
     {
@@ -223,8 +223,8 @@ public static class EnemySpawnerWaveBakeUtility
     /// <summary>
     /// Computes the amount of distinct master presets painted inside one wave.
     /// Used by inspector summaries.
-    /// /params wave: Wave to inspect.
-    /// /returns Number of distinct enemy master presets referenced by painted cells.
+    ///  wave: Wave to inspect.
+    /// returns Number of distinct enemy master presets referenced by painted cells.
     /// </summary>
     public static int CountWaveEnemyTypes(EnemySpawnWaveAuthoring wave)
     {
@@ -253,11 +253,11 @@ public static class EnemySpawnerWaveBakeUtility
     #region Private Methods
     /// <summary>
     /// Sanitizes one authored wave and its cells.
-    /// /params wave: Wave to sanitize.
-    /// /params gridSizeX: Grid width in cells.
-    /// /params gridSizeZ: Grid height in cells.
-    /// /params isFirstWave: Indicates whether the wave is the first authored wave in the array.
-    /// /returns None.
+    ///  wave: Wave to sanitize.
+    ///  gridSizeX: Grid width in cells.
+    ///  gridSizeZ: Grid height in cells.
+    ///  isFirstWave: Indicates whether the wave is the first authored wave in the array.
+    /// returns None.
     /// </summary>
     private static void ValidateWave(EnemySpawnWaveAuthoring wave, int gridSizeX, int gridSizeZ, bool isFirstWave)
     {
@@ -306,10 +306,10 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Sanitizes one painted cell after inspector changes.
-    /// /params cell: Cell to sanitize.
-    /// /params gridSizeX: Grid width in cells.
-    /// /params gridSizeZ: Grid height in cells.
-    /// /returns None.
+    ///  cell: Cell to sanitize.
+    ///  gridSizeX: Grid width in cells.
+    ///  gridSizeZ: Grid height in cells.
+    /// returns None.
     /// </summary>
     private static void ValidateCell(EnemySpawnWaveCellAuthoring cell, int gridSizeX, int gridSizeZ)
     {
@@ -329,8 +329,8 @@ public static class EnemySpawnerWaveBakeUtility
     /// <summary>
     /// Ensures that one authored curve reference always points to a valid instance without
     /// destructively reshaping it during live inspector editing.
-    /// /params sourceCurve: Authored curve reference to validate.
-    /// /returns Original curve when valid, otherwise a default linear curve.
+    ///  sourceCurve: Authored curve reference to validate.
+    /// returns Original curve when valid, otherwise a default linear curve.
     /// </summary>
     private static AnimationCurve EnsureCurveReference(AnimationCurve sourceCurve)
     {
@@ -344,8 +344,8 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Returns a sanitized cumulative curve that stays inside the normalized domain.
-    /// /params sourceCurve: Authored curve to sanitize.
-    /// /returns Sanitized curve instance ready for sampling.
+    ///  sourceCurve: Authored curve to sanitize.
+    /// returns Sanitized curve instance ready for sampling.
     /// </summary>
     private static AnimationCurve SanitizeCurve(AnimationCurve sourceCurve)
     {
@@ -396,8 +396,8 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Builds a monotonic sampled cumulative curve used for inverse time lookup.
-    /// /params sourceCurve: Curve to sample.
-    /// /returns Sampled normalized cumulative values.
+    ///  sourceCurve: Curve to sample.
+    /// returns Sampled normalized cumulative values.
     /// </summary>
     private static float[] BuildMonotonicSamples(AnimationCurve sourceCurve)
     {
@@ -428,9 +428,9 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Resolves the normalized time whose sampled cumulative value matches the provided target quantile.
-    /// /params samples: Monotonic cumulative samples in the range [0, 1].
-    /// /params targetValue: Normalized target quantile to invert.
-    /// /returns Normalized time in the range [0, 1].
+    ///  samples: Monotonic cumulative samples in the range [0, 1].
+    ///  targetValue: Normalized target quantile to invert.
+    /// returns Normalized time in the range [0, 1].
     /// </summary>
     private static float ResolveInverseSampleTime(float[] samples, float targetValue)
     {
@@ -462,9 +462,9 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Compares two staged wave events using relative time first and prefab entity index second.
-    /// /params left: Left event.
-    /// /params right: Right event.
-    /// /returns Standard comparison result.
+    ///  left: Left event.
+    ///  right: Right event.
+    /// returns Standard comparison result.
     /// </summary>
     private static int CompareWaveEvents(EnemySpawnerWaveEventElement left, EnemySpawnerWaveEventElement right)
     {
@@ -478,9 +478,9 @@ public static class EnemySpawnerWaveBakeUtility
 
     /// <summary>
     /// Compares two curve keyframes by time.
-    /// /params left: Left keyframe.
-    /// /params right: Right keyframe.
-    /// /returns Standard comparison result.
+    ///  left: Left keyframe.
+    ///  right: Right keyframe.
+    /// returns Standard comparison result.
     /// </summary>
     private static int CompareKeyframesByTime(Keyframe left, Keyframe right)
     {

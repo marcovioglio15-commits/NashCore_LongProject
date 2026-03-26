@@ -151,7 +151,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
     /// Resolves one module definition by module ID.
     /// </summary>
     /// <param name="moduleId">Target module ID.</param>
-    /// <returns>Resolved module definition instance or null when not found.</returns>
+    /// <returns>Resolved module definition instance or null when not found.<returns>
     public EnemyPatternModuleDefinition ResolveModuleDefinitionById(string moduleId)
     {
         if (string.IsNullOrWhiteSpace(moduleId))
@@ -179,7 +179,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
     /// Resolves one assembled pattern by pattern ID.
     /// </summary>
     /// <param name="patternId">Target pattern ID.</param>
-    /// <returns>Resolved pattern definition instance or null when not found.</returns>
+    /// <returns>Resolved pattern definition instance or null when not found.<returns>
     public EnemyPatternDefinition ResolvePatternById(string patternId)
     {
         if (string.IsNullOrWhiteSpace(patternId))

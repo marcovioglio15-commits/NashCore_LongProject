@@ -16,11 +16,11 @@ public static class PlayerScalableStatClampUtility
     #region Public Methods
     /// <summary>
     /// Resolves one normalized scalable-stat value using the provided raw clamp range and stat type.
-    /// /params statType: Runtime numeric type of the scalable stat.
-    /// /params minimumValue: Raw minimum clamp value configured for the stat.
-    /// /params maximumValue: Raw maximum clamp value configured for the stat.
-    /// /params rawValue: Unnormalized value to sanitize for runtime usage.
-    /// /returns Clamped value normalized for the scalable-stat type.
+    ///  statType: Runtime numeric type of the scalable stat.
+    ///  minimumValue: Raw minimum clamp value configured for the stat.
+    ///  maximumValue: Raw maximum clamp value configured for the stat.
+    ///  rawValue: Unnormalized value to sanitize for runtime usage.
+    /// returns Clamped value normalized for the scalable-stat type.
     /// </summary>
     public static float ResolveNormalizedValue(PlayerScalableStatType statType,
                                                float minimumValue,
@@ -38,9 +38,9 @@ public static class PlayerScalableStatClampUtility
 
     /// <summary>
     /// Resolves one normalized scalable-stat value using a baked blob entry as clamp metadata source.
-    /// /params scalableStat: Baked scalable-stat metadata.
-    /// /params rawValue: Unnormalized value to sanitize for runtime usage.
-    /// /returns Clamped value normalized for the scalable-stat type.
+    ///  scalableStat: Baked scalable-stat metadata.
+    ///  rawValue: Unnormalized value to sanitize for runtime usage.
+    /// returns Clamped value normalized for the scalable-stat type.
     /// </summary>
     public static float ResolveNormalizedValue(ref PlayerScalableStatBlob scalableStat, float rawValue)
     {
@@ -52,9 +52,9 @@ public static class PlayerScalableStatClampUtility
 
     /// <summary>
     /// Resolves one normalized scalable-stat value using a runtime buffer element as clamp metadata source.
-    /// /params scalableStat: Runtime scalable-stat entry.
-    /// /params rawValue: Unnormalized value to sanitize for runtime usage.
-    /// /returns Clamped value normalized for the scalable-stat type.
+    ///  scalableStat: Runtime scalable-stat entry.
+    ///  rawValue: Unnormalized value to sanitize for runtime usage.
+    /// returns Clamped value normalized for the scalable-stat type.
     /// </summary>
     public static float ResolveNormalizedValue(in PlayerScalableStatElement scalableStat, float rawValue)
     {
@@ -66,11 +66,11 @@ public static class PlayerScalableStatClampUtility
 
     /// <summary>
     /// Resolves one ordered clamp range from raw serialized minimum and maximum values.
-    /// /params minimumValue: Raw serialized minimum value.
-    /// /params maximumValue: Raw serialized maximum value.
-    /// /params resolvedMinimumValue: Ordered lower bound used by runtime normalization.
-    /// /params resolvedMaximumValue: Ordered upper bound used by runtime normalization.
-    /// /returns void.
+    ///  minimumValue: Raw serialized minimum value.
+    ///  maximumValue: Raw serialized maximum value.
+    ///  resolvedMinimumValue: Ordered lower bound used by runtime normalization.
+    ///  resolvedMaximumValue: Ordered upper bound used by runtime normalization.
+    /// returns void.
     /// </summary>
     public static void ResolveOrderedRange(float minimumValue,
                                            float maximumValue,

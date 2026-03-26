@@ -27,6 +27,12 @@ MonoBehaviour:
     flashColor: {r: 1, g: 0.15, b: 0.15, a: 1}
     flashDurationSeconds: 0.06
     flashMaximumBlend: 0.85
+  shooterWarning:
+    enableAimPulse: 1
+    aimPulseColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+    aimPulseLeadTimeSeconds: 0.3
+    aimPulseFadeOutSeconds: 0.18
+    aimPulseMaximumBlend: 0.7
   prefabs:
     enemyPrefab: {fileID: 3091458169621715366, guid: f9051ea5f5519dd4b8d0c5b52148ce5c, type: 3}
     hitVfxPrefab: {fileID: 3021818779694104051, guid: afa1147b43317a74db598d39f92f660e, type: 3}

@@ -3,8 +3,8 @@ using Unity.Mathematics;
 
 /// <summary>
 /// Advances the authoritative player run timer and marks countdown expiry before run-outcome evaluation.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 [UpdateInGroup(typeof(SimulationSystemGroup))]
 [UpdateBefore(typeof(PlayerRunOutcomeSystem))]
@@ -15,8 +15,8 @@ public partial struct PlayerRunTimerSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the minimum runtime data required by the run timer.
-    /// /params state Current ECS system state.
-    /// /returns void.
+    ///  state Current ECS system state.
+    /// returns void.
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
@@ -28,8 +28,8 @@ public partial struct PlayerRunTimerSystem : ISystem
 
     /// <summary>
     /// Advances the local run timer using the active direction and freezes it once the run outcome is finalized.
-    /// /params state Current ECS system state.
-    /// /returns void.
+    ///  state Current ECS system state.
+    /// returns void.
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
@@ -66,9 +66,9 @@ public partial struct PlayerRunTimerSystem : ISystem
     #region Helpers
     /// <summary>
     /// Advances a forward timer.
-    /// /params deltaTime Frame delta time in seconds.
-    /// /params timerState Mutable timer state.
-    /// /returns void.
+    ///  deltaTime Frame delta time in seconds.
+    ///  timerState Mutable timer state.
+    /// returns void.
     /// </summary>
     private static void UpdateForwardTimer(float deltaTime, ref PlayerRunTimerState timerState)
     {
@@ -78,9 +78,9 @@ public partial struct PlayerRunTimerSystem : ISystem
 
     /// <summary>
     /// Advances a countdown timer and latches expiry when it reaches zero.
-    /// /params deltaTime Frame delta time in seconds.
-    /// /params timerState Mutable timer state.
-    /// /returns void.
+    ///  deltaTime Frame delta time in seconds.
+    ///  timerState Mutable timer state.
+    /// returns void.
     /// </summary>
     private static void UpdateBackwardTimer(float deltaTime, ref PlayerRunTimerState timerState)
     {

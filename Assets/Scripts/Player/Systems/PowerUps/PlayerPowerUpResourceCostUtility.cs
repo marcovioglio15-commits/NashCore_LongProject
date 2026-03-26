@@ -11,16 +11,16 @@ public static class PlayerPowerUpResourceCostUtility
     #region Public Methods
     /// <summary>
     /// Returns whether the slot can currently pay its activation cost.
-    /// /params slotConfig: Slot configuration containing resource and threshold settings.
-    /// /params slotEnergy: Current energy value stored for the slot.
-    /// /params playerEntity: Player entity used to resolve health and shield resources.
-    /// /params healthLookup: Health lookup used when the activation resource is Health.
-    /// /params updatedHealth: Cached mutable health value reused within the current caller.
-    /// /params healthChanged: True when updatedHealth already contains a fetched runtime value.
-    /// /params shieldLookup: Shield lookup used when the activation resource is Shield.
-    /// /params updatedShield: Cached mutable shield value reused within the current caller.
-    /// /params shieldChanged: True when updatedShield already contains a fetched runtime value.
-    /// /returns True when the activation resource check succeeds.
+    ///  slotConfig: Slot configuration containing resource and threshold settings.
+    ///  slotEnergy: Current energy value stored for the slot.
+    ///  playerEntity: Player entity used to resolve health and shield resources.
+    ///  healthLookup: Health lookup used when the activation resource is Health.
+    ///  updatedHealth: Cached mutable health value reused within the current caller.
+    ///  healthChanged: True when updatedHealth already contains a fetched runtime value.
+    ///  shieldLookup: Shield lookup used when the activation resource is Shield.
+    ///  updatedShield: Cached mutable shield value reused within the current caller.
+    ///  shieldChanged: True when updatedShield already contains a fetched runtime value.
+    /// returns True when the activation resource check succeeds.
     /// </summary>
     public static bool CanPayActivationCost(in PlayerPowerUpSlotConfig slotConfig,
                                             float slotEnergy,
@@ -75,16 +75,16 @@ public static class PlayerPowerUpResourceCostUtility
 
     /// <summary>
     /// Consumes the slot activation cost from the configured runtime resource.
-    /// /params slotConfig: Slot configuration containing resource and cost settings.
-    /// /params slotEnergy: Mutable energy value stored for the slot.
-    /// /params playerEntity: Player entity used to resolve health and shield resources.
-    /// /params healthLookup: Health lookup used when the activation resource is Health.
-    /// /params updatedHealth: Cached mutable health value reused within the current caller.
-    /// /params healthChanged: True when updatedHealth already contains a fetched runtime value.
-    /// /params shieldLookup: Shield lookup used when the activation resource is Shield.
-    /// /params updatedShield: Cached mutable shield value reused within the current caller.
-    /// /params shieldChanged: True when updatedShield already contains a fetched runtime value.
-    /// /returns void.
+    ///  slotConfig: Slot configuration containing resource and cost settings.
+    ///  slotEnergy: Mutable energy value stored for the slot.
+    ///  playerEntity: Player entity used to resolve health and shield resources.
+    ///  healthLookup: Health lookup used when the activation resource is Health.
+    ///  updatedHealth: Cached mutable health value reused within the current caller.
+    ///  healthChanged: True when updatedHealth already contains a fetched runtime value.
+    ///  shieldLookup: Shield lookup used when the activation resource is Shield.
+    ///  updatedShield: Cached mutable shield value reused within the current caller.
+    ///  shieldChanged: True when updatedShield already contains a fetched runtime value.
+    /// returns void.
     /// </summary>
     public static void ConsumeActivationCost(in PlayerPowerUpSlotConfig slotConfig,
                                              ref float slotEnergy,
@@ -110,17 +110,17 @@ public static class PlayerPowerUpResourceCostUtility
 
     /// <summary>
     /// Returns whether the specified flat resource cost can be paid right now.
-    /// /params resourceType: Runtime resource checked for payment.
-    /// /params cost: Cost amount that must be available.
-    /// /params slotEnergy: Current energy value stored for the slot.
-    /// /params playerEntity: Player entity used to resolve health and shield resources.
-    /// /params healthLookup: Health lookup used when the resource type is Health.
-    /// /params updatedHealth: Cached mutable health value reused within the current caller.
-    /// /params healthChanged: True when updatedHealth already contains a fetched runtime value.
-    /// /params shieldLookup: Shield lookup used when the resource type is Shield.
-    /// /params updatedShield: Cached mutable shield value reused within the current caller.
-    /// /params shieldChanged: True when updatedShield already contains a fetched runtime value.
-    /// /returns True when the requested resource can pay the flat cost.
+    ///  resourceType: Runtime resource checked for payment.
+    ///  cost: Cost amount that must be available.
+    ///  slotEnergy: Current energy value stored for the slot.
+    ///  playerEntity: Player entity used to resolve health and shield resources.
+    ///  healthLookup: Health lookup used when the resource type is Health.
+    ///  updatedHealth: Cached mutable health value reused within the current caller.
+    ///  healthChanged: True when updatedHealth already contains a fetched runtime value.
+    ///  shieldLookup: Shield lookup used when the resource type is Shield.
+    ///  updatedShield: Cached mutable shield value reused within the current caller.
+    ///  shieldChanged: True when updatedShield already contains a fetched runtime value.
+    /// returns True when the requested resource can pay the flat cost.
     /// </summary>
     public static bool CanPayFlatResourceCost(PowerUpResourceType resourceType,
                                               float cost,
@@ -182,17 +182,17 @@ public static class PlayerPowerUpResourceCostUtility
 
     /// <summary>
     /// Consumes one flat resource cost from the selected runtime resource.
-    /// /params resourceType: Runtime resource that pays the cost.
-    /// /params cost: Cost amount to consume.
-    /// /params slotEnergy: Mutable energy value stored for the slot.
-    /// /params playerEntity: Player entity used to resolve health and shield resources.
-    /// /params healthLookup: Health lookup used when the resource type is Health.
-    /// /params updatedHealth: Cached mutable health value reused within the current caller.
-    /// /params healthChanged: True when updatedHealth already contains a fetched runtime value.
-    /// /params shieldLookup: Shield lookup used when the resource type is Shield.
-    /// /params updatedShield: Cached mutable shield value reused within the current caller.
-    /// /params shieldChanged: True when updatedShield already contains a fetched runtime value.
-    /// /returns void.
+    ///  resourceType: Runtime resource that pays the cost.
+    ///  cost: Cost amount to consume.
+    ///  slotEnergy: Mutable energy value stored for the slot.
+    ///  playerEntity: Player entity used to resolve health and shield resources.
+    ///  healthLookup: Health lookup used when the resource type is Health.
+    ///  updatedHealth: Cached mutable health value reused within the current caller.
+    ///  healthChanged: True when updatedHealth already contains a fetched runtime value.
+    ///  shieldLookup: Shield lookup used when the resource type is Shield.
+    ///  updatedShield: Cached mutable shield value reused within the current caller.
+    ///  shieldChanged: True when updatedShield already contains a fetched runtime value.
+    /// returns void.
     /// </summary>
     public static void ConsumeFlatResourceCost(PowerUpResourceType resourceType,
                                                float cost,

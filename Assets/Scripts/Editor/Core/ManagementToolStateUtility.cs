@@ -21,7 +21,7 @@ public static class ManagementToolStateUtility
     /// <typeparam name="TEnum"></typeparam>
     /// <param name="stateKey"></param>
     /// <param name="fallbackValue"></param>
-    /// <returns> Returns the loaded enum value, or the fallback value if loading fails. </returns>
+    /// <returns> Returns the loaded enum value, or the fallback value if loading fails. <returns>
     public static TEnum LoadEnumValue<TEnum>(string stateKey, TEnum fallbackValue) where TEnum : struct, Enum
     {
         // Abort and return fallback when the key is invalid.
@@ -64,7 +64,7 @@ public static class ManagementToolStateUtility
     /// </summary>
     /// <typeparam name="TEnum"></typeparam>
     /// <param name="stateKey"></param>
-    /// <returns> Returns the loaded list of enum values, or an empty list if loading fails. </returns>
+    /// <returns> Returns the loaded list of enum values, or an empty list if loading fails. <returns>
     public static List<TEnum> LoadEnumList<TEnum>(string stateKey) where TEnum : struct, Enum
     {
         // Create the output list once and return it for all failure paths.
@@ -176,7 +176,7 @@ public static class ManagementToolStateUtility
     /// Takes as an argument a key to identify the state, and returns the loaded GameObject asset.
     /// </summary>
     /// <param name="stateKey"></param>
-    /// <returns> Returns the loaded GameObject asset, or null if loading fails. </returns>
+    /// <returns> Returns the loaded GameObject asset, or null if loading fails. <returns>
     public static GameObject LoadGameObjectAsset(string stateKey)
     {
         // Return null when key is invalid or missing.

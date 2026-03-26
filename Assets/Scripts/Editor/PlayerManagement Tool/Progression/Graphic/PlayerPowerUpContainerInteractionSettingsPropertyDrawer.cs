@@ -6,8 +6,8 @@ using UnityEngine.UIElements;
 
 /// <summary>
 /// Draws dropped power-up container settings with interaction-mode specific controls and binding pickers.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 [CustomPropertyDrawer(typeof(PlayerPowerUpContainerInteractionSettings))]
 public sealed class PlayerPowerUpContainerInteractionSettingsPropertyDrawer : PropertyDrawer
@@ -17,8 +17,8 @@ public sealed class PlayerPowerUpContainerInteractionSettingsPropertyDrawer : Pr
     #region Public Methods
     /// <summary>
     /// Builds the UI Toolkit inspector for dropped power-up container settings.
-    /// /params property: Serialized settings property shown in the Player Management Tool.
-    /// /returns Root visual element used by the custom drawer.
+    ///  property: Serialized settings property shown in the Player Management Tool.
+    /// returns Root visual element used by the custom drawer.
     /// </summary>
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
@@ -94,9 +94,9 @@ public sealed class PlayerPowerUpContainerInteractionSettingsPropertyDrawer : Pr
     #region Private Methods
     /// <summary>
     /// Creates one standard property field already bound to the target serialized property.
-    /// /params property: Serialized property backing the field.
-    /// /params label: Label shown in the tool.
-    /// /returns Bound property field.
+    ///  property: Serialized property backing the field.
+    ///  label: Label shown in the tool.
+    /// returns Bound property field.
     /// </summary>
     private static PropertyField CreateBoundPropertyField(SerializedProperty property, string label)
     {
@@ -111,8 +111,8 @@ public sealed class PlayerPowerUpContainerInteractionSettingsPropertyDrawer : Pr
 
     /// <summary>
     /// Creates the main foldout that groups every dropped-container setting under one compact entry point.
-    /// /params none.
-    /// /returns Foldout used as the root of the settings drawer.
+    ///  none.
+    /// returns Foldout used as the root of the settings drawer.
     /// </summary>
     private static Foldout CreateContainerFoldout()
     {
@@ -126,11 +126,11 @@ public sealed class PlayerPowerUpContainerInteractionSettingsPropertyDrawer : Pr
 
     /// <summary>
     /// Builds the field group shown only in Overlay Panel mode.
-    /// /params serializedObject: Serialized object that owns the target preset.
-    /// /params inputAsset: Input asset used by the binding picker.
-    /// /params overlayResumeDurationProperty: Resume-duration property shown for overlay mode.
-    /// /params interactActionIdProperty: Input binding property used to open the overlay.
-    /// /returns Visual element containing the overlay-only controls.
+    ///  serializedObject: Serialized object that owns the target preset.
+    ///  inputAsset: Input asset used by the binding picker.
+    ///  overlayResumeDurationProperty: Resume-duration property shown for overlay mode.
+    ///  interactActionIdProperty: Input binding property used to open the overlay.
+    /// returns Visual element containing the overlay-only controls.
     /// </summary>
     private static VisualElement CreateOverlayFields(SerializedObject serializedObject,
                                                      InputActionAsset inputAsset,
@@ -149,11 +149,11 @@ public sealed class PlayerPowerUpContainerInteractionSettingsPropertyDrawer : Pr
 
     /// <summary>
     /// Builds the field group shown only in 3D Prompt mode.
-    /// /params serializedObject: Serialized object that owns the target preset.
-    /// /params inputAsset: Input asset used by the binding pickers.
-    /// /params replacePrimaryActionIdProperty: Binding property used to replace the primary active slot.
-    /// /params replaceSecondaryActionIdProperty: Binding property used to replace the secondary active slot.
-    /// /returns Visual element containing the prompt-only controls.
+    ///  serializedObject: Serialized object that owns the target preset.
+    ///  inputAsset: Input asset used by the binding pickers.
+    ///  replacePrimaryActionIdProperty: Binding property used to replace the primary active slot.
+    ///  replaceSecondaryActionIdProperty: Binding property used to replace the secondary active slot.
+    /// returns Visual element containing the prompt-only controls.
     /// </summary>
     private static VisualElement CreatePromptFields(SerializedObject serializedObject,
                                                     InputActionAsset inputAsset,
@@ -176,8 +176,8 @@ public sealed class PlayerPowerUpContainerInteractionSettingsPropertyDrawer : Pr
 
     /// <summary>
     /// Creates a compact labeled section root used by interaction-mode specific controls.
-    /// /params title: Section title shown above the grouped controls.
-    /// /returns Visual element used as section root.
+    ///  title: Section title shown above the grouped controls.
+    /// returns Visual element used as section root.
     /// </summary>
     private static VisualElement CreateModeSectionRoot(string title)
     {
@@ -194,12 +194,12 @@ public sealed class PlayerPowerUpContainerInteractionSettingsPropertyDrawer : Pr
 
     /// <summary>
     /// Creates one labeled input binding picker with the same filtering UI used elsewhere in the Player Management Tool.
-    /// /params inputAsset: Input asset used to enumerate available actions.
-    /// /params serializedObject: Serialized object that owns the target property.
-    /// /params actionIdProperty: Property storing the selected action id or name.
-    /// /params label: Descriptive label shown above the picker.
-    /// /params tooltip: Tooltip shown on the descriptive label.
-    /// /returns Visual element containing the labeled picker or a warning when no asset is available.
+    ///  inputAsset: Input asset used to enumerate available actions.
+    ///  serializedObject: Serialized object that owns the target property.
+    ///  actionIdProperty: Property storing the selected action id or name.
+    ///  label: Descriptive label shown above the picker.
+    ///  tooltip: Tooltip shown on the descriptive label.
+    /// returns Visual element containing the labeled picker or a warning when no asset is available.
     /// </summary>
     private static VisualElement CreateBindingPicker(InputActionAsset inputAsset,
                                                      SerializedObject serializedObject,

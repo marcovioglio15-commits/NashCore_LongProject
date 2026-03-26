@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Stores runtime bridge, damage feedback and player-facing power-up VFX settings shared by one visual setup.
-/// /returns None.
+/// returns None.
 /// </summary>
 [CreateAssetMenu(fileName = "PlayerVisualPreset", menuName = "Player/Visual Preset", order = 10)]
 public sealed class PlayerVisualPreset : ScriptableObject
@@ -223,8 +223,8 @@ public sealed class PlayerVisualPreset : ScriptableObject
     #region Unity Methods
     /// <summary>
     /// Ensures the preset keeps a stable ID after edits and duplications.
-    /// /params None.
-    /// /returns None.
+    ///  None.
+    /// returns None.
     /// </summary>
     private void OnValidate()
     {

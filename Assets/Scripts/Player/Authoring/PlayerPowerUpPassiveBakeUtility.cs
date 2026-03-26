@@ -15,11 +15,11 @@ public static class PlayerPowerUpPassiveBakeUtility
     #region Public Methods
     /// <summary>
     /// Resolves equipped passive entries from the preset into runtime configs.
-    /// /params authoring: Owning player authoring component.
-    /// /params preset: Source power-ups preset.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /params outputPassiveToolConfigs: Destination list receiving compiled passive configs.
-    /// /returns void.
+    ///  authoring: Owning player authoring component.
+    ///  preset: Source power-ups preset.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    ///  outputPassiveToolConfigs: Destination list receiving compiled passive configs.
+    /// returns void.
     /// </summary>
     public static void CollectEquippedPassiveToolConfigs(PlayerAuthoring authoring,
                                                          PlayerPowerUpsPreset preset,
@@ -114,11 +114,11 @@ public static class PlayerPowerUpPassiveBakeUtility
 
     /// <summary>
     /// Compiles one modular passive power-up into a runtime passive config.
-    /// /params authoring: Owning player authoring component.
-    /// /params preset: Source power-ups preset.
-    /// /params powerUp: Modular passive power-up definition.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /returns Runtime passive config or default.
+    ///  authoring: Owning player authoring component.
+    ///  preset: Source power-ups preset.
+    ///  powerUp: Modular passive power-up definition.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// returns Runtime passive config or default.
     /// </summary>
     public static PlayerPassiveToolConfig BuildPassiveToolConfigFromModularPowerUp(PlayerAuthoring authoring,
                                                                                    PlayerPowerUpsPreset preset,
@@ -468,10 +468,10 @@ public static class PlayerPowerUpPassiveBakeUtility
 
     /// <summary>
     /// Compiles a legacy passive tool into a runtime passive config.
-    /// /params authoring: Owning player authoring component.
-    /// /params passiveTool: Legacy passive tool definition.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /returns Runtime passive config or default.
+    ///  authoring: Owning player authoring component.
+    ///  passiveTool: Legacy passive tool definition.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// returns Runtime passive config or default.
     /// </summary>
     public static PlayerPassiveToolConfig BuildPassiveToolConfig(PlayerAuthoring authoring,
                                                                  PassiveToolDefinition passiveTool,

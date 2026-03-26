@@ -239,7 +239,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
     /// <param name="triggerMode"></param>
     /// <param name="isShootPressed"></param>
     /// <param name="shootPressedThisFrame"></param>
-    /// <returns></returns>
+    /// <returns><returns>
     private static bool ResolveShootingTrigger(ref PlayerShootingState shootingState,
                                                ShootingTriggerMode triggerMode,
                                                bool isShootPressed,
@@ -273,7 +273,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
     /// <param name="triggerMode"></param>
     /// <param name="elapsedTime"></param>
     /// <param name="shotInterval"></param>
-    /// <returns></returns>
+    /// <returns><returns>
     private static int ComputeShotsToFire(ref PlayerShootingState shootingState, ShootingTriggerMode triggerMode, float elapsedTime, float shotInterval)
     {
         float nextShotTime = shootingState.NextShotTime;
@@ -315,9 +315,9 @@ public partial struct PlayerShootingIntentSystem : ISystem
     /// <summary>
     /// Resets the next-shot schedule to the current frame so idle or temporarily disabled fire does not accumulate
     /// deferred automatic shots.
-    /// /params shootingState: Mutable firing state that stores the next scheduled shot time.
-    /// /params elapsedTime: Current world elapsed time used as the new schedule anchor.
-    /// /returns None.
+    ///  shootingState: Mutable firing state that stores the next scheduled shot time.
+    ///  elapsedTime: Current world elapsed time used as the new schedule anchor.
+    /// returns None.
     /// </summary>
     private static void ResetShotSchedule(ref PlayerShootingState shootingState,
                                           float elapsedTime)

@@ -17,20 +17,20 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
     #region Public Methods
     /// <summary>
     /// Activates, refreshes, or restores temporary Character Tuning overlays based on the current runtime-scoped ownership state.
-    /// /params primarySlotConfig: Primary active-slot config inspected for runtime-scoped Character Tuning.
-    /// /params secondarySlotConfig: Secondary active-slot config inspected for runtime-scoped Character Tuning.
-    /// /params primaryShouldBeActive: True when the primary slot should keep its temporary Character Tuning applied.
-    /// /params secondaryShouldBeActive: True when the secondary slot should keep its temporary Character Tuning applied.
-    /// /params unlockCatalog: Runtime unlock catalog used to resolve Character Tuning formulas by PowerUpId.
-    /// /params characterTuningFormulas: Flattened Character Tuning formula buffer referenced by the unlock catalog.
-    /// /params scalableStats: Mutable scalable-stat buffer receiving temporary runtime-scoped overrides.
-    /// /params progressionConfig: Runtime progression config used to resynchronize dependent progression state.
-    /// /params chargeCharacterTuningState: Mutable slot-ownership state for temporary Character Tuning.
-    /// /params baseStats: Mutable snapshot buffer storing baseline values for stats touched by temporary runtime-scoped overrides.
-    /// /params playerExperience: Mutable runtime experience component synchronized after reconciliation.
-    /// /params playerLevel: Mutable runtime level component synchronized after reconciliation.
-    /// /params playerExperienceCollection: Mutable runtime pickup-radius component synchronized after reconciliation.
-    /// /returns True when the reconciliation changed at least one scalable stat; otherwise false.
+    ///  primarySlotConfig: Primary active-slot config inspected for runtime-scoped Character Tuning.
+    ///  secondarySlotConfig: Secondary active-slot config inspected for runtime-scoped Character Tuning.
+    ///  primaryShouldBeActive: True when the primary slot should keep its temporary Character Tuning applied.
+    ///  secondaryShouldBeActive: True when the secondary slot should keep its temporary Character Tuning applied.
+    ///  unlockCatalog: Runtime unlock catalog used to resolve Character Tuning formulas by PowerUpId.
+    ///  characterTuningFormulas: Flattened Character Tuning formula buffer referenced by the unlock catalog.
+    ///  scalableStats: Mutable scalable-stat buffer receiving temporary runtime-scoped overrides.
+    ///  progressionConfig: Runtime progression config used to resynchronize dependent progression state.
+    ///  chargeCharacterTuningState: Mutable slot-ownership state for temporary Character Tuning.
+    ///  baseStats: Mutable snapshot buffer storing baseline values for stats touched by temporary runtime-scoped overrides.
+    ///  playerExperience: Mutable runtime experience component synchronized after reconciliation.
+    ///  playerLevel: Mutable runtime level component synchronized after reconciliation.
+    ///  playerExperienceCollection: Mutable runtime pickup-radius component synchronized after reconciliation.
+    /// returns True when the reconciliation changed at least one scalable stat; otherwise false.
     /// </summary>
     public static bool ReconcileScopedCharacterTuning(in PlayerPowerUpSlotConfig primarySlotConfig,
                                                       in PlayerPowerUpSlotConfig secondarySlotConfig,
@@ -154,10 +154,10 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
     #region Private Methods
     /// <summary>
     /// Resolves the unlock-catalog entry backing one runtime-scoped active slot when it owns temporary Character Tuning.
-    /// /params slotConfig: Active-slot config inspected by PowerUpId.
-    /// /params unlockCatalog: Runtime unlock catalog scanned for the matching entry.
-    /// /params catalogEntry: Matching runtime-scoped Character Tuning entry when found.
-    /// /returns True when the slot maps to a runtime-scoped Character Tuning entry.
+    ///  slotConfig: Active-slot config inspected by PowerUpId.
+    ///  unlockCatalog: Runtime unlock catalog scanned for the matching entry.
+    ///  catalogEntry: Matching runtime-scoped Character Tuning entry when found.
+    /// returns True when the slot maps to a runtime-scoped Character Tuning entry.
     /// </summary>
     private static bool TryResolveScopedCatalogEntry(in PlayerPowerUpSlotConfig slotConfig,
                                                      DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
@@ -190,11 +190,11 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Captures baseline values for every target stat touched by one runtime-scoped Character Tuning entry.
-    /// /params catalogEntry: Runtime-scoped Character Tuning entry whose target stats need a baseline snapshot.
-    /// /params characterTuningFormulas: Flattened Character Tuning formula buffer.
-    /// /params scalableStats: Current scalable-stat buffer used as snapshot source.
-    /// /params baseStats: Snapshot buffer that receives any still-missing target stat values.
-    /// /returns void.
+    ///  catalogEntry: Runtime-scoped Character Tuning entry whose target stats need a baseline snapshot.
+    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
+    ///  scalableStats: Current scalable-stat buffer used as snapshot source.
+    ///  baseStats: Snapshot buffer that receives any still-missing target stat values.
+    /// returns void.
     /// </summary>
     private static void CaptureMissingBaseStats(in PlayerPowerUpUnlockCatalogElement catalogEntry,
                                                 DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
@@ -231,11 +231,11 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Captures baseline values for every stat targeted by currently owned passive Character Tuning entries.
-    /// /params unlockCatalog: Runtime unlock catalog scanned for owned passive Character Tuning entries.
-    /// /params characterTuningFormulas: Flattened Character Tuning formula buffer.
-    /// /params scalableStats: Current scalable-stat buffer used as snapshot source.
-    /// /params baseStats: Snapshot buffer that receives any still-missing target stat values.
-    /// /returns void.
+    ///  unlockCatalog: Runtime unlock catalog scanned for owned passive Character Tuning entries.
+    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
+    ///  scalableStats: Current scalable-stat buffer used as snapshot source.
+    ///  baseStats: Snapshot buffer that receives any still-missing target stat values.
+    /// returns void.
     /// </summary>
     private static void CaptureMissingPassiveBaseStats(DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
                                                        DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
@@ -258,9 +258,9 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Restores every captured baseline stat value before active runtime-scoped Character Tuning overlays are reapplied.
-    /// /params baseStats: Snapshot buffer storing baseline values.
-    /// /params scalableStats: Mutable scalable-stat buffer restored in place.
-    /// /returns True when at least one scalable stat is restored.
+    ///  baseStats: Snapshot buffer storing baseline values.
+    ///  scalableStats: Mutable scalable-stat buffer restored in place.
+    /// returns True when at least one scalable stat is restored.
     /// </summary>
     private static bool RestoreBaseStats(DynamicBuffer<PlayerChargeCharacterTuningBaseStatElement> baseStats,
                                          DynamicBuffer<PlayerScalableStatElement> scalableStats)
@@ -293,13 +293,13 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Removes baseline snapshots that are no longer needed by any still-active runtime-scoped Character Tuning overlay.
-    /// /params baseStats: Snapshot buffer pruned in place.
-    /// /params primaryCatalogEntry: Primary runtime-scoped Character Tuning entry when active.
-    /// /params primaryIsActive: True when the primary runtime-scoped Character Tuning overlay remains active.
-    /// /params secondaryCatalogEntry: Secondary runtime-scoped Character Tuning entry when active.
-    /// /params secondaryIsActive: True when the secondary runtime-scoped Character Tuning overlay remains active.
-    /// /params characterTuningFormulas: Flattened Character Tuning formula buffer.
-    /// /returns void.
+    ///  baseStats: Snapshot buffer pruned in place.
+    ///  primaryCatalogEntry: Primary runtime-scoped Character Tuning entry when active.
+    ///  primaryIsActive: True when the primary runtime-scoped Character Tuning overlay remains active.
+    ///  secondaryCatalogEntry: Secondary runtime-scoped Character Tuning entry when active.
+    ///  secondaryIsActive: True when the secondary runtime-scoped Character Tuning overlay remains active.
+    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
+    /// returns void.
     /// </summary>
     private static void PruneUnusedBaseStats(DynamicBuffer<PlayerChargeCharacterTuningBaseStatElement> baseStats,
                                              in PlayerPowerUpUnlockCatalogElement primaryCatalogEntry,
@@ -333,9 +333,9 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Checks whether one stat name already has a captured baseline snapshot.
-    /// /params baseStats: Snapshot buffer inspected for the requested stat.
-    /// /params statName: Scalable-stat name to resolve.
-    /// /returns True when a snapshot already exists for the stat.
+    ///  baseStats: Snapshot buffer inspected for the requested stat.
+    ///  statName: Scalable-stat name to resolve.
+    /// returns True when a snapshot already exists for the stat.
     /// </summary>
     private static bool HasBaseStatSnapshot(DynamicBuffer<PlayerChargeCharacterTuningBaseStatElement> baseStats, string statName)
     {
@@ -352,9 +352,9 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Resolves one stable signature describing the currently applied runtime-scoped active Character Tuning ownership.
-    /// /params canBeApplied: True when the active runtime-scoped Character Tuning is currently active.
-    /// /params catalogEntry: Unlock catalog entry backing the active runtime-scoped Character Tuning.
-    /// /returns Stable non-zero signature while active, or zero when the scoped Character Tuning is inactive.
+    ///  canBeApplied: True when the active runtime-scoped Character Tuning is currently active.
+    ///  catalogEntry: Unlock catalog entry backing the active runtime-scoped Character Tuning.
+    /// returns Stable non-zero signature while active, or zero when the scoped Character Tuning is inactive.
     /// </summary>
     private static uint BuildScopedOwnershipSignature(bool canBeApplied, in PlayerPowerUpUnlockCatalogElement catalogEntry)
     {
@@ -373,8 +373,8 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Resolves the ownership signature of all passive Character Tuning entries currently applied through unlock counts.
-    /// /params unlockCatalog: Runtime unlock catalog scanned for owned passive Character Tuning entries.
-    /// /returns Stable signature for the currently owned passive Character Tuning set, or zero when none are owned.
+    ///  unlockCatalog: Runtime unlock catalog scanned for owned passive Character Tuning entries.
+    /// returns Stable signature for the currently owned passive Character Tuning set, or zero when none are owned.
     /// </summary>
     private static uint BuildPassiveOwnershipSignature(DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog)
     {
@@ -404,10 +404,10 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Applies currently owned passive Character Tuning entries as many times as their unlock count indicates.
-    /// /params unlockCatalog: Runtime unlock catalog scanned for owned passive Character Tuning entries.
-    /// /params characterTuningFormulas: Flattened Character Tuning formula buffer.
-    /// /params scalableStats: Mutable scalable-stat buffer receiving passive Character Tuning overlays.
-    /// /returns True when at least one passive Character Tuning formula changed runtime scalable stats.
+    ///  unlockCatalog: Runtime unlock catalog scanned for owned passive Character Tuning entries.
+    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
+    ///  scalableStats: Mutable scalable-stat buffer receiving passive Character Tuning overlays.
+    /// returns True when at least one passive Character Tuning formula changed runtime scalable stats.
     /// </summary>
     private static bool ApplyOwnedPassiveCharacterTuning(DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
                                                          DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
@@ -446,11 +446,11 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Applies one runtime-scoped active Character Tuning entry as many times as its current unlock count indicates.
-    /// /params catalogEntry: Runtime-scoped active Character Tuning entry currently applied.
-    /// /params canBeApplied: True when the runtime-scoped Character Tuning is currently active.
-    /// /params characterTuningFormulas: Flattened Character Tuning formula buffer.
-    /// /params scalableStats: Mutable scalable-stat buffer receiving the scoped runtime overlay.
-    /// /returns True when at least one formula changed runtime scalable stats.
+    ///  catalogEntry: Runtime-scoped active Character Tuning entry currently applied.
+    ///  canBeApplied: True when the runtime-scoped Character Tuning is currently active.
+    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
+    ///  scalableStats: Mutable scalable-stat buffer receiving the scoped runtime overlay.
+    /// returns True when at least one formula changed runtime scalable stats.
     /// </summary>
     private static bool ApplyScopedCharacterTuning(in PlayerPowerUpUnlockCatalogElement catalogEntry,
                                                    bool canBeApplied,
@@ -481,8 +481,8 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Resolves how many times one runtime-scoped active Character Tuning entry must be applied while active.
-    /// /params catalogEntry: Runtime-scoped active Character Tuning entry inspected for stack count.
-    /// /returns Positive application count matching current ownership.
+    ///  catalogEntry: Runtime-scoped active Character Tuning entry inspected for stack count.
+    /// returns Positive application count matching current ownership.
     /// </summary>
     private static int ResolveScopedApplicationCount(in PlayerPowerUpUnlockCatalogElement catalogEntry)
     {
@@ -491,8 +491,8 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Resolves whether one unlock-catalog entry represents an owned passive Character Tuning application.
-    /// /params catalogEntry: Unlock catalog entry inspected for passive Character Tuning ownership.
-    /// /returns True when the passive entry currently contributes runtime Character Tuning; otherwise false.
+    ///  catalogEntry: Unlock catalog entry inspected for passive Character Tuning ownership.
+    /// returns True when the passive entry currently contributes runtime Character Tuning; otherwise false.
     /// </summary>
     private static bool IsPassiveScopedCharacterTuningOwned(in PlayerPowerUpUnlockCatalogElement catalogEntry)
     {
@@ -507,10 +507,10 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Checks whether one stat is still targeted by any currently owned passive Character Tuning entry.
-    /// /params statName: Requested scalable-stat name.
-    /// /params unlockCatalog: Runtime unlock catalog scanned for owned passive Character Tuning entries.
-    /// /params characterTuningFormulas: Flattened Character Tuning formula buffer.
-    /// /returns True when at least one owned passive Character Tuning entry targets the stat.
+    ///  statName: Requested scalable-stat name.
+    ///  unlockCatalog: Runtime unlock catalog scanned for owned passive Character Tuning entries.
+    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
+    /// returns True when at least one owned passive Character Tuning entry targets the stat.
     /// </summary>
     private static bool IsStatTargetedByOwnedPassiveEntries(string statName,
                                                             DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
@@ -537,10 +537,10 @@ internal static class PlayerPowerUpChargeCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Checks whether one stat is targeted by any assignment inside the provided Character Tuning entry.
-    /// /params statName: Requested scalable-stat name.
-    /// /params catalogEntry: Character Tuning catalog entry whose assignments are scanned.
-    /// /params characterTuningFormulas: Flattened Character Tuning formula buffer.
-    /// /returns True when the stat is targeted by at least one assignment.
+    ///  statName: Requested scalable-stat name.
+    ///  catalogEntry: Character Tuning catalog entry whose assignments are scanned.
+    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
+    /// returns True when the stat is targeted by at least one assignment.
     /// </summary>
     private static bool IsStatTargetedByEntry(string statName,
                                               in PlayerPowerUpUnlockCatalogElement catalogEntry,

@@ -310,6 +310,9 @@ public sealed class EnemyShooterModuleData
     [Tooltip("Projectiles groups fired for each activation. 1 means single shot.")]
     [SerializeField] private int burstCount = 1;
 
+    [Tooltip("Extra aim windup in seconds applied before the first shot of each burst. 0 fires immediately.")]
+    [SerializeField] private float aimWindupSeconds = 0.25f;
+
     [Tooltip("Seconds between shots inside the same burst.")]
     [SerializeField] private float intraBurstDelay = 0.08f;
 
@@ -367,6 +370,14 @@ public sealed class EnemyShooterModuleData
         get
         {
             return burstCount;
+        }
+    }
+
+    public float AimWindupSeconds
+    {
+        get
+        {
+            return aimWindupSeconds;
         }
     }
 

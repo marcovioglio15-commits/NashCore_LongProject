@@ -20,7 +20,7 @@ public static class EnemyAdvancedPatternDrawerUtility
     /// <param name="parent">Parent visual element that receives the field.</param>
     /// <param name="property">Serialized property to bind.</param>
     /// <param name="label">UI label text.</param>
-    /// <returns>Returns true when the field is successfully added.</returns>
+    /// <returns>Returns true when the field is successfully added.<returns>
     public static bool AddField(VisualElement parent, SerializedProperty property, string label)
     {
         if (parent == null)
@@ -39,7 +39,7 @@ public static class EnemyAdvancedPatternDrawerUtility
     /// Resolves module kind enum from serialized property with fallback.
     /// </summary>
     /// <param name="moduleKindProperty">Serialized enum property.</param>
-    /// <returns>Returns a valid module kind value.</returns>
+    /// <returns>Returns a valid module kind value.<returns>
     public static EnemyPatternModuleKind ResolveModuleKind(SerializedProperty moduleKindProperty)
     {
         if (moduleKindProperty == null)
@@ -62,7 +62,7 @@ public static class EnemyAdvancedPatternDrawerUtility
     /// <param name="payloadDataProperty">Serialized payload data root.</param>
     /// <param name="moduleKind">Target module kind.</param>
     /// <param name="payloadContainer">Container to rebuild.</param>
-    /// <returns>Returns true when payload UI is built.</returns>
+    /// <returns>Returns true when payload UI is built.<returns>
     public static bool RefreshPayloadEditor(SerializedProperty payloadDataProperty,
                                             EnemyPatternModuleKind moduleKind,
                                             VisualElement payloadContainer)
@@ -112,7 +112,7 @@ public static class EnemyAdvancedPatternDrawerUtility
     /// Builds module ID options from the current preset module catalog.
     /// </summary>
     /// <param name="serializedObject">Serialized object containing moduleDefinitions.</param>
-    /// <returns>Returns distinct module IDs preserving list order.</returns>
+    /// <returns>Returns distinct module IDs preserving list order.<returns>
     public static List<string> BuildModuleIdOptions(SerializedObject serializedObject)
     {
         List<string> options = new List<string>();
@@ -156,7 +156,7 @@ public static class EnemyAdvancedPatternDrawerUtility
     /// </summary>
     /// <param name="currentModuleId">Current module ID string value.</param>
     /// <param name="options">Available module options.</param>
-    /// <returns>Returns selected module ID guaranteed to be in options when options are present.</returns>
+    /// <returns>Returns selected module ID guaranteed to be in options when options are present.<returns>
     public static string ResolveInitialModuleId(string currentModuleId, List<string> options)
     {
         if (options == null || options.Count == 0)
@@ -180,7 +180,7 @@ public static class EnemyAdvancedPatternDrawerUtility
     /// <param name="moduleId">Module ID to resolve.</param>
     /// <param name="moduleKind">Resolved module kind.</param>
     /// <param name="displayName">Resolved module display name.</param>
-    /// <returns>Returns true when module definition is found.</returns>
+    /// <returns>Returns true when module definition is found.<returns>
     public static bool TryResolveModuleInfo(SerializedObject serializedObject,
                                             string moduleId,
                                             out EnemyPatternModuleKind moduleKind,
@@ -234,7 +234,7 @@ public static class EnemyAdvancedPatternDrawerUtility
     /// </summary>
     /// <param name="options">Current options list.</param>
     /// <param name="value">Value to test.</param>
-    /// <returns>Returns true when the value exists in the list.</returns>
+    /// <returns>Returns true when the value exists in the list.<returns>
     private static bool ContainsOption(List<string> options, string value)
     {
         if (options == null)

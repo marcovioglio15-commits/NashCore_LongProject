@@ -10,9 +10,9 @@ public static class EnemyDamageUtility
     #region Public Methods
     /// <summary>
     /// Applies incoming flat damage to enemy shield and health and reports whether any survivability value changed.
-    /// /params enemyHealth: Mutable enemy health and shield state that receives the damage.
-    /// /params incomingDamage: Raw incoming damage value. Negative values are treated as zero.
-    /// /returns True when shield or health changed after the hit.
+    ///  enemyHealth: Mutable enemy health and shield state that receives the damage.
+    ///  incomingDamage: Raw incoming damage value. Negative values are treated as zero.
+    /// returns True when shield or health changed after the hit.
     /// </summary>
     public static bool TryApplyFlatShieldDamage(ref EnemyHealth enemyHealth, float incomingDamage)
     {
@@ -24,9 +24,9 @@ public static class EnemyDamageUtility
 
     /// <summary>
     /// Applies incoming flat damage to enemy shield first and then to health.
-    /// /params enemyHealth: Mutable enemy health and shield state that receives the damage.
-    /// /params incomingDamage: Raw incoming damage value. Negative values are treated as zero.
-    /// /returns None.
+    ///  enemyHealth: Mutable enemy health and shield state that receives the damage.
+    ///  incomingDamage: Raw incoming damage value. Negative values are treated as zero.
+    /// returns None.
     /// </summary>
     public static void ApplyFlatShieldDamage(ref EnemyHealth enemyHealth, float incomingDamage)
     {
@@ -35,9 +35,9 @@ public static class EnemyDamageUtility
 
     /// <summary>
     /// Consumes incoming damage against enemy shield and health and returns any unapplied remainder.
-    /// /params enemyHealth: Mutable enemy health and shield state that receives the damage.
-    /// /params incomingDamage: Raw incoming damage value. Negative values are treated as zero.
-    /// /returns Damage remainder left after shield and health were fully consumed.
+    ///  enemyHealth: Mutable enemy health and shield state that receives the damage.
+    ///  incomingDamage: Raw incoming damage value. Negative values are treated as zero.
+    /// returns Damage remainder left after shield and health were fully consumed.
     /// </summary>
     public static float ConsumeFlatShieldDamage(ref EnemyHealth enemyHealth, float incomingDamage)
     {

@@ -114,10 +114,13 @@ public partial struct EnemyShooterRequestSystem : ISystem
 
                 runtime.NextBurstTimer = math.max(0f, runtime.NextBurstTimer - deltaTime);
                 runtime.NextShotInBurstTimer = math.max(0f, runtime.NextShotInBurstTimer - deltaTime);
+                runtime.IsPlayerInRange = IsInRange(playerDistance, in shooterConfig) ? (byte)1 : (byte)0;
 
-                if (!IsInRange(playerDistance, in shooterConfig))
+                if (runtime.IsPlayerInRange == 0)
                 {
                     runtime.RemainingBurstShots = 0;
+                    runtime.ShotsFiredInCurrentBurst = 0;
+                    runtime.BurstWindupDurationSeconds = 0f;
                     runtime.NextShotInBurstTimer = 0f;
                     runtime.HasLockedAimDirection = 0;
                     mutableShooterRuntime[shooterIndex] = runtime;
@@ -127,7 +130,9 @@ public partial struct EnemyShooterRequestSystem : ISystem
                 if (runtime.RemainingBurstShots <= 0 && runtime.NextBurstTimer <= 0f)
                 {
                     runtime.RemainingBurstShots = math.max(1, shooterConfig.BurstCount);
-                    runtime.NextShotInBurstTimer = 0f;
+                    runtime.ShotsFiredInCurrentBurst = 0;
+                    runtime.BurstWindupDurationSeconds = math.max(0f, shooterConfig.AimWindupSeconds);
+                    runtime.NextShotInBurstTimer = runtime.BurstWindupDurationSeconds;
                     runtime.NextBurstTimer = math.max(0.01f, shooterConfig.FireInterval);
 
                     if (shooterConfig.AimPolicy == EnemyShooterAimPolicy.LockOnFireStart)
@@ -169,6 +174,7 @@ public partial struct EnemyShooterRequestSystem : ISystem
                                         in shooterConfig);
 
                     runtime.RemainingBurstShots -= 1;
+                    runtime.ShotsFiredInCurrentBurst += 1;
 
                     if (runtime.RemainingBurstShots > 0)
                     {
@@ -177,6 +183,8 @@ public partial struct EnemyShooterRequestSystem : ISystem
                     else
                     {
                         runtime.NextShotInBurstTimer = 0f;
+                        runtime.ShotsFiredInCurrentBurst = 0;
+                        runtime.BurstWindupDurationSeconds = 0f;
                         runtime.HasLockedAimDirection = 0;
                     }
                 }
@@ -206,6 +214,9 @@ public partial struct EnemyShooterRequestSystem : ISystem
                 NextBurstTimer = 0f,
                 NextShotInBurstTimer = 0f,
                 RemainingBurstShots = 0,
+                ShotsFiredInCurrentBurst = 0,
+                BurstWindupDurationSeconds = 0f,
+                IsPlayerInRange = 0,
                 LockedAimDirection = float3.zero,
                 HasLockedAimDirection = 0
             });
@@ -258,7 +269,7 @@ public partial struct EnemyShooterRequestSystem : ISystem
     /// <param name="resolvedAimDirection">Best resolved aim direction retained across modules.</param>
     /// <param name="hasResolvedAimDirection">Whether a valid aim direction has already been captured.</param>
     /// <param name="aimPriority">Priority of the currently captured aim direction.</param>
-    /// <returns>None.</returns>
+    /// <returns>None.<returns>
     private static void TryCaptureAimDirection(float3 candidateDirection,
                                                EnemyShooterMovementPolicy movementPolicy,
                                                ref float3 resolvedAimDirection,

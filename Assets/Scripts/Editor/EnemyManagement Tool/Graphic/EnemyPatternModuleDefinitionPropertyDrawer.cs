@@ -16,7 +16,7 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
     /// Creates the module definition editor UI with smart payload visibility.
     /// </summary>
     /// <param name="property">Serialized module definition property.</param>
-    /// <returns>Returns the built root visual element.</returns>
+    /// <returns>Returns the built root visual element.<returns>
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
         VisualElement root = new VisualElement();
@@ -91,7 +91,7 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
     /// Resolves a short description for the selected module kind.
     /// </summary>
     /// <param name="moduleKind">Module kind value.</param>
-    /// <returns>Returns human-readable module kind description.</returns>
+    /// <returns>Returns human-readable module kind description.<returns>
     private static string ResolveModuleKindDescription(EnemyPatternModuleKind moduleKind)
     {
         switch (moduleKind)

@@ -22,8 +22,8 @@ public partial struct EnemyPoolInitializeSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Caches the query used to find spawners that still need pool setup.
-    /// /params state: Current ECS system state.
-    /// /returns None.
+    ///  state: Current ECS system state.
+    /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
@@ -35,8 +35,8 @@ public partial struct EnemyPoolInitializeSystem : ISystem
 
     /// <summary>
     /// Creates missing pool entities and progressively prewarms them within a fixed frame budget.
-    /// /params state: Current ECS system state.
-    /// /returns None.
+    ///  state: Current ECS system state.
+    /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
@@ -166,11 +166,11 @@ public partial struct EnemyPoolInitializeSystem : ISystem
     #region Helpers
     /// <summary>
     /// Creates missing runtime pool entities for each unique prefab requirement of the spawner.
-    /// /params entityManager: Entity manager used to create pool entities.
-    /// /params spawnerEntity: Spawner that owns the requirements.
-    /// /params spawner: Spawner configuration containing generic pool settings.
-    /// /params requirementCount: Stable requirement count snapshot used while structural changes are occurring.
-    /// /returns None.
+    ///  entityManager: Entity manager used to create pool entities.
+    ///  spawnerEntity: Spawner that owns the requirements.
+    ///  spawner: Spawner configuration containing generic pool settings.
+    ///  requirementCount: Stable requirement count snapshot used while structural changes are occurring.
+    /// returns None.
     /// </summary>
     private static void EnsurePoolEntities(EntityManager entityManager,
                                            Entity spawnerEntity,
@@ -216,10 +216,10 @@ public partial struct EnemyPoolInitializeSystem : ISystem
 
     /// <summary>
     /// Resolves the pool entity associated with one prefab in the spawner map buffer.
-    /// /params poolMap: Prefab-to-pool map buffer stored on the spawner.
-    /// /params prefabEntity: Referenced prefab to resolve.
-    /// /params poolEntity: Resolved pool entity when found.
-    /// /returns True when a mapping exists, otherwise false.
+    ///  poolMap: Prefab-to-pool map buffer stored on the spawner.
+    ///  prefabEntity: Referenced prefab to resolve.
+    ///  poolEntity: Resolved pool entity when found.
+    /// returns True when a mapping exists, otherwise false.
     /// </summary>
     private static bool TryGetPoolEntity(DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap,
                                          Entity prefabEntity,
@@ -242,11 +242,11 @@ public partial struct EnemyPoolInitializeSystem : ISystem
 
     /// <summary>
     /// Marks one spawner as fully initialized and records the logical spawner start time.
-    /// /params entityManager: Entity manager used to write the state.
-    /// /params spawnerEntity: Spawner whose initialization is complete.
-    /// /params spawnerState: Current mutable spawner state.
-    /// /params elapsedTime: Current elapsed world time.
-    /// /returns None.
+    ///  entityManager: Entity manager used to write the state.
+    ///  spawnerEntity: Spawner whose initialization is complete.
+    ///  spawnerState: Current mutable spawner state.
+    ///  elapsedTime: Current elapsed world time.
+    /// returns None.
     /// </summary>
     private static void FinalizeSpawnerInitialization(EntityManager entityManager,
                                                       Entity spawnerEntity,

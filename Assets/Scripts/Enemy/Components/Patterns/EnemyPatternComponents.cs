@@ -77,6 +77,7 @@ public struct EnemyShooterConfigElement : IBufferElementData
     public EnemyShooterMovementPolicy MovementPolicy;
     public float FireInterval;
     public int BurstCount;
+    public float AimWindupSeconds;
     public float IntraBurstDelay;
     public byte UseMinimumRange;
     public float MinimumRange;
@@ -106,6 +107,9 @@ public struct EnemyShooterRuntimeElement : IBufferElementData
     public float NextBurstTimer;
     public float NextShotInBurstTimer;
     public int RemainingBurstShots;
+    public int ShotsFiredInCurrentBurst;
+    public float BurstWindupDurationSeconds;
+    public byte IsPlayerInRange;
     public float3 LockedAimDirection;
     public byte HasLockedAimDirection;
 }

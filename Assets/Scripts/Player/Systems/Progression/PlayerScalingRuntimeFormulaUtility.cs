@@ -50,7 +50,7 @@ internal static class PlayerScalingRuntimeFormulaUtility
     /// <param name="variableContext">Current scalable-stat dictionary.</param>
     /// <param name="evaluatedValue">Resolved value when evaluation succeeds.</param>
     /// <param name="errorMessage">Failure reason when evaluation fails.</param>
-    /// <returns>True when evaluation succeeded; otherwise false.</returns>
+    /// <returns>True when evaluation succeeded; otherwise false.<returns>
     public static bool TryEvaluateFormula(string formula,
                                           float thisValue,
                                           IReadOnlyDictionary<string, float> variableContext,
@@ -77,7 +77,7 @@ internal static class PlayerScalingRuntimeFormulaUtility
     /// <param name="formula">Raw formula string.</param>
     /// <param name="variableContext">Current scalable-stat dictionary.</param>
     /// <param name="thisValue">Base value mapped to [this].</param>
-    /// <returns>Readable translated expression suitable for logs.</returns>
+    /// <returns>Readable translated expression suitable for logs.<returns>
     public static string TranslateFormula(string formula,
                                           IReadOnlyDictionary<string, float> variableContext,
                                           float thisValue)
@@ -138,7 +138,7 @@ internal static class PlayerScalingRuntimeFormulaUtility
     /// Formats numeric values for concise debug output.
     /// </summary>
     /// <param name="value">Value to format.</param>
-    /// <returns>Compact invariant string representation.</returns>
+    /// <returns>Compact invariant string representation.<returns>
     public static string FormatNumber(float value)
     {
         float roundedInteger = Mathf.Round(value);
@@ -157,7 +157,7 @@ internal static class PlayerScalingRuntimeFormulaUtility
     /// <param name="variableContext">Current scalable-stat dictionary.</param>
     /// <param name="variableName">Variable to resolve.</param>
     /// <param name="resolvedValue">Resolved variable value when found.</param>
-    /// <returns>True when the variable exists; otherwise false.</returns>
+    /// <returns>True when the variable exists; otherwise false.<returns>
     private static bool TryResolveVariableValue(IReadOnlyDictionary<string, float> variableContext,
                                                 string variableName,
                                                 out float resolvedValue)

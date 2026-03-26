@@ -2,7 +2,7 @@ using Unity.Mathematics;
 
 /// <summary>
 /// Centralizes fallback-value sanitization for enemy authoring data.
-/// /returns None.
+/// returns None.
 /// </summary>
 public static class EnemyAuthoringFallbackValidationUtility
 {
@@ -12,26 +12,26 @@ public static class EnemyAuthoringFallbackValidationUtility
     /// <summary>
     /// Sanitizes fallback values used only when no preset source is assigned on EnemyAuthoring.
     /// Called by EnemyAuthoring.OnValidate to keep hidden fallback data in a safe range.
-    /// /params moveSpeed: Fallback movement speed value.
-    /// /params maxSpeed: Fallback maximum movement speed value.
-    /// /params acceleration: Fallback acceleration value.
-    /// /params deceleration: Fallback deceleration value.
-    /// /params rotationSpeedDegreesPerSecond: Fallback self-rotation speed.
-    /// /params minimumWallDistance: Fallback extra distance kept from static walls.
-    /// /params separationRadius: Fallback neighbor separation radius.
-    /// /params separationWeight: Fallback neighbor separation weight.
-    /// /params bodyRadius: Fallback body radius.
-    /// /params contactRadius: Fallback contact damage radius.
-    /// /params contactAmountPerTick: Fallback contact damage amount.
-    /// /params contactTickInterval: Fallback contact damage interval.
-    /// /params areaRadius: Fallback area damage radius.
-    /// /params areaAmountPerTickPercent: Fallback area damage percentage amount.
-    /// /params areaTickInterval: Fallback area damage interval.
-    /// /params maxHealth: Fallback maximum health.
-    /// /params maxShield: Fallback maximum shield.
-    /// /params priorityTier: Fallback priority tier.
-    /// /params steeringAggressiveness: Fallback steering aggressiveness.
-    /// /returns None.
+    ///  moveSpeed: Fallback movement speed value.
+    ///  maxSpeed: Fallback maximum movement speed value.
+    ///  acceleration: Fallback acceleration value.
+    ///  deceleration: Fallback deceleration value.
+    ///  rotationSpeedDegreesPerSecond: Fallback self-rotation speed.
+    ///  minimumWallDistance: Fallback extra distance kept from static walls.
+    ///  separationRadius: Fallback neighbor separation radius.
+    ///  separationWeight: Fallback neighbor separation weight.
+    ///  bodyRadius: Fallback body radius.
+    ///  contactRadius: Fallback contact damage radius.
+    ///  contactAmountPerTick: Fallback contact damage amount.
+    ///  contactTickInterval: Fallback contact damage interval.
+    ///  areaRadius: Fallback area damage radius.
+    ///  areaAmountPerTickPercent: Fallback area damage percentage amount.
+    ///  areaTickInterval: Fallback area damage interval.
+    ///  maxHealth: Fallback maximum health.
+    ///  maxShield: Fallback maximum shield.
+    ///  priorityTier: Fallback priority tier.
+    ///  steeringAggressiveness: Fallback steering aggressiveness.
+    /// returns None.
     /// </summary>
     public static void ValidateFallbackValues(ref float moveSpeed,
                                               ref float maxSpeed,

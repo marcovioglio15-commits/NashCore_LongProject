@@ -15,10 +15,10 @@ public static class PlayerPowerUpActiveBakeUtility
     #region Public Methods
     /// <summary>
     /// Builds the runtime active loadout config from one power-ups preset.
-    /// /params authoring: Owning player authoring component.
-    /// /params preset: Source power-ups preset.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /returns Primary and secondary active slot config.
+    ///  authoring: Owning player authoring component.
+    ///  preset: Source power-ups preset.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// returns Primary and secondary active slot config.
     /// </summary>
     public static PlayerPowerUpsConfig BuildPowerUpsConfig(PlayerAuthoring authoring,
                                                            PlayerPowerUpsPreset preset,
@@ -74,10 +74,10 @@ public static class PlayerPowerUpActiveBakeUtility
     /// <summary>
     /// Builds the runtime active loadout config from legacy active tool definitions only.
     /// Used as fallback when modular active power-ups are missing or incomplete.
-    /// /params authoring: Owning player authoring component.
-    /// /params preset: Source power-ups preset.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /returns Primary and secondary legacy slot config.
+    ///  authoring: Owning player authoring component.
+    ///  preset: Source power-ups preset.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// returns Primary and secondary legacy slot config.
     /// </summary>
     public static PlayerPowerUpsConfig BuildLegacyLoadoutPowerUpsConfig(PlayerAuthoring authoring,
                                                                         PlayerPowerUpsPreset preset,
@@ -109,11 +109,11 @@ public static class PlayerPowerUpActiveBakeUtility
 
     /// <summary>
     /// Compiles one modular active power-up into a runtime slot config.
-    /// /params authoring: Owning player authoring component.
-    /// /params preset: Source power-ups preset.
-    /// /params powerUp: Modular active power-up definition.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /returns Runtime slot config or default.
+    ///  authoring: Owning player authoring component.
+    ///  preset: Source power-ups preset.
+    ///  powerUp: Modular active power-up definition.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// returns Runtime slot config or default.
     /// </summary>
     public static PlayerPowerUpSlotConfig BuildSlotConfigFromModularPowerUp(PlayerAuthoring authoring,
                                                                             PlayerPowerUpsPreset preset,
@@ -514,10 +514,10 @@ public static class PlayerPowerUpActiveBakeUtility
 
     /// <summary>
     /// Compiles a legacy active tool definition into a runtime slot config.
-    /// /params authoring: Owning player authoring component.
-    /// /params activeTool: Legacy active tool definition.
-    /// /params resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    /// /returns Runtime slot config or default.
+    ///  authoring: Owning player authoring component.
+    ///  activeTool: Legacy active tool definition.
+    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// returns Runtime slot config or default.
     /// </summary>
     public static PlayerPowerUpSlotConfig BuildSlotConfig(PlayerAuthoring authoring,
                                                           ActiveToolDefinition activeTool,
@@ -616,8 +616,8 @@ public static class PlayerPowerUpActiveBakeUtility
 
     /// <summary>
     /// Resolves the stable identifier stored by one legacy active tool definition.
-    /// /params activeTool: Legacy active tool definition being compiled.
-    /// /returns Stable power-up identifier or an empty fixed string when unavailable.
+    ///  activeTool: Legacy active tool definition being compiled.
+    /// returns Stable power-up identifier or an empty fixed string when unavailable.
     /// </summary>
     private static FixedString64Bytes ResolveLegacyPowerUpId(ActiveToolDefinition activeTool)
     {

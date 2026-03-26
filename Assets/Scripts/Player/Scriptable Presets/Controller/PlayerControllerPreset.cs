@@ -232,7 +232,7 @@ public sealed class PlayerControllerPreset : ScriptableObject
     /// Applies legacy progression health to this controller preset one time.
     /// </summary>
     /// <param name="legacyMaxHealth">Legacy max-health value extracted from old progression preset data.</param>
-    /// <returns>True when this preset was modified, otherwise false.</returns>
+    /// <returns>True when this preset was modified, otherwise false.<returns>
     public bool TryApplyLegacyMaxHealth(float legacyMaxHealth)
     {
         if (healthStatistics == null)
@@ -327,7 +327,7 @@ public sealed class PlayerHealthStatisticsSettings
     /// Imports legacy max-health value from old progression presets when not already migrated.
     /// </summary>
     /// <param name="legacyMaxHealth">Legacy max-health value to apply.</param>
-    /// <returns>True when this instance was modified, otherwise false.</returns>
+    /// <returns>True when this instance was modified, otherwise false.<returns>
     public bool TryApplyLegacyMaxHealth(float legacyMaxHealth)
     {
         if (legacyHealthMigrated)

@@ -563,7 +563,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
     /// Resolves whether current movement pattern ignores steering and priority interactions.
     /// </summary>
     /// <param name="patternConfig">Current compiled pattern configuration.</param>
-    /// <returns>True when DVD movement requests steering and priority bypass.</returns>
+    /// <returns>True when DVD movement requests steering and priority bypass.<returns>
     private static bool ShouldIgnoreSteeringAndPriority(in EnemyPatternConfig patternConfig)
     {
         if (patternConfig.MovementKind != EnemyCompiledMovementPatternKind.WandererDvd)
@@ -579,7 +579,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
     /// <param name="clearanceVelocity">Planar clearance contribution.</param>
     /// <param name="clearanceBlend">Clearance blend scalar.</param>
     /// <param name="minimumForwardSpeedRatio">Minimum retained forward speed ratio in [0..1].</param>
-    /// <returns>Blended desired velocity.</returns>
+    /// <returns>Blended desired velocity.<returns>
     private static float3 ComposeDesiredVelocityWithClearance(float3 baseVelocity,
                                                               float3 clearanceVelocity,
                                                               float clearanceBlend,
@@ -612,7 +612,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
     /// <param name="desiredVelocity">Target planar velocity.</param>
     /// <param name="acceleration">Configured acceleration.</param>
     /// <param name="deceleration">Configured deceleration.</param>
-    /// <returns>Velocity delta rate in units per second.</returns>
+    /// <returns>Velocity delta rate in units per second.<returns>
     private static float ResolveVelocityChangeRate(float3 currentVelocity,
                                                    float3 desiredVelocity,
                                                    float acceleration,
@@ -634,7 +634,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
     /// Resolves one steering aggressiveness value with safe defaults and clamps.
     /// </summary>
     /// <param name="rawAggressiveness">Serialized aggressiveness value.</param>
-    /// <returns>Resolved aggressiveness value ready for runtime use.</returns>
+    /// <returns>Resolved aggressiveness value ready for runtime use.<returns>
     private static float ResolveSteeringAggressiveness(float rawAggressiveness)
     {
         if (rawAggressiveness < 0f)
@@ -649,7 +649,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
     /// <param name="aggressiveness">Resolved aggressiveness value.</param>
     /// <param name="minimumScale">Output scale at minimum aggressiveness.</param>
     /// <param name="maximumScale">Output scale at maximum aggressiveness.</param>
-    /// <returns>Interpolated scalar in the requested range.</returns>
+    /// <returns>Interpolated scalar in the requested range.<returns>
     private static float ResolveAggressivenessScale(float aggressiveness, float minimumScale, float maximumScale)
     {
         float normalizedAggressiveness = math.saturate((aggressiveness - MinimumSteeringAggressiveness) /
@@ -663,7 +663,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
     /// <param name="yieldUrgency">Yield urgency in [0..1].</param>
     /// <param name="priorityGapNormalized">Normalized priority-tier gap in [0..1].</param>
     /// <param name="aggressiveness">Resolved steering aggressiveness.</param>
-    /// <returns>Additional speed ratio in [0..+].</returns>
+    /// <returns>Additional speed ratio in [0..+].<returns>
     private static float ResolvePriorityYieldSpeedBoost(float yieldUrgency, float priorityGapNormalized, float aggressiveness)
     {
         float normalizedUrgency = math.saturate(yieldUrgency);
@@ -684,7 +684,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
     /// <param name="yieldUrgency">Yield urgency in [0..1].</param>
     /// <param name="priorityGapNormalized">Normalized priority-tier gap in [0..1].</param>
     /// <param name="aggressiveness">Resolved steering aggressiveness.</param>
-    /// <returns>Additional acceleration ratio in [0..+].</returns>
+    /// <returns>Additional acceleration ratio in [0..+].<returns>
     private static float ResolvePriorityYieldAccelerationBoost(float yieldUrgency, float priorityGapNormalized, float aggressiveness)
     {
         float normalizedUrgency = math.saturate(yieldUrgency);

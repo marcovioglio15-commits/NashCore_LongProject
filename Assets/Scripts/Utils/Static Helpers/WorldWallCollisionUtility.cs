@@ -99,7 +99,7 @@ public static class WorldWallCollisionUtility
     /// <param name="contactSkinWidth"></param>
     /// <param name="allowedDisplacement"></param>
     /// <param name="hitNormal"></param>
-    /// <returns></returns>
+    /// <returns><returns>
     public static bool TryResolveBlockedDisplacement(in PhysicsWorldSingleton physicsWorldSingleton,
                                                      float3 startPosition,
                                                      float3 desiredDisplacement,
@@ -198,7 +198,7 @@ public static class WorldWallCollisionUtility
     /// <param name="wallsLayerMask"></param>
     /// <param name="correctionDisplacement"></param>
     /// <param name="hitNormal"></param>
-    /// <returns></returns>
+    /// <returns><returns>
     public static bool TryResolveMinimumClearance(in PhysicsWorldSingleton physicsWorldSingleton,
                                                   float3 position,
                                                   float minimumClearanceDistance,
@@ -251,7 +251,7 @@ public static class WorldWallCollisionUtility
     /// </summary>
     /// <param name="velocity"></param>
     /// <param name="surfaceNormal"></param>
-    /// <returns></returns>
+    /// <returns><returns>
     public static float3 RemoveVelocityIntoSurface(float3 velocity, float3 surfaceNormal)
     {
         float normalLengthSquared = math.lengthsq(surfaceNormal);
@@ -275,7 +275,7 @@ public static class WorldWallCollisionUtility
     /// <param name="velocity"></param>
     /// <param name="surfaceNormal"></param>
     /// <param name="bounceCoefficient"></param>
-    /// <returns></returns>
+    /// <returns><returns>
     public static float3 ComputeBounceVelocity(float3 velocity, float3 surfaceNormal, float bounceCoefficient)
     {
         float normalLengthSquared = math.lengthsq(surfaceNormal);
@@ -306,7 +306,7 @@ public static class WorldWallCollisionUtility
     /// queries based on the provided walls layer mask (from PlayerWorldLayersConfig or resolved default).
     /// </summary>
     /// <param name="wallsLayerMask"></param>
-    /// <returns></returns>
+    /// <returns><returns>
     public static CollisionFilter BuildWallsCollisionFilter(int wallsLayerMask)
     {
         uint collidesWithMask = wallsLayerMask > 0 ? (uint)wallsLayerMask : 0u;

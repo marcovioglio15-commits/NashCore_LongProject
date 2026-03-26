@@ -29,8 +29,8 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the runtime data required to rebuild scaled controller, progression, and power-up configs.
-    /// /params state: Current ECS system state.
-    /// /returns void.
+    ///  state: Current ECS system state.
+    /// returns void.
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
@@ -69,8 +69,8 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
 
     /// <summary>
     /// Rebuilds runtime-scaled configs only when the scalable-stat hash changed since the previous applied sample.
-    /// /params state: Current ECS system state.
-    /// /returns void.
+    ///  state: Current ECS system state.
+    /// returns void.
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {

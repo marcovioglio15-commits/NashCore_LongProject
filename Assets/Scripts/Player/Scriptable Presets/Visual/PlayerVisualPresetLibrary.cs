@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Stores the project library of player visual presets.
-/// /returns None.
+/// returns None.
 /// </summary>
 [CreateAssetMenu(fileName = "PlayerVisualPresetLibrary", menuName = "Player/Visual Preset Library", order = 11)]
 public sealed class PlayerVisualPresetLibrary : ScriptableObject
@@ -33,8 +33,8 @@ public sealed class PlayerVisualPresetLibrary : ScriptableObject
     #region Public Methods
     /// <summary>
     /// Registers a visual preset in the library when not already present.
-    /// /params preset: Preset asset to register.
-    /// /returns None.
+    ///  preset: Preset asset to register.
+    /// returns None.
     /// </summary>
     public void AddPreset(PlayerVisualPreset preset)
     {
@@ -49,8 +49,8 @@ public sealed class PlayerVisualPresetLibrary : ScriptableObject
 
     /// <summary>
     /// Removes a visual preset from the library when present.
-    /// /params preset: Preset asset to remove.
-    /// /returns None.
+    ///  preset: Preset asset to remove.
+    /// returns None.
     /// </summary>
     public void RemovePreset(PlayerVisualPreset preset)
     {

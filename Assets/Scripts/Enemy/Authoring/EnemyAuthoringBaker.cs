@@ -96,6 +96,9 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
                 NextBurstTimer = 0f,
                 NextShotInBurstTimer = 0f,
                 RemainingBurstShots = 0,
+                ShotsFiredInCurrentBurst = 0,
+                BurstWindupDurationSeconds = 0f,
+                IsPlayerInRange = 0,
                 LockedAimDirection = float3.zero,
                 HasLockedAimDirection = 0
             });
@@ -137,6 +140,20 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         {
             RemainingSeconds = 0f,
             AppliedBlend = 0f
+        });
+        AddComponent(entity, new EnemyShooterAimPulseVisualConfig
+        {
+            Enabled = authoring.EnableShooterAimPulse ? (byte)1 : (byte)0,
+            Color = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.ShooterAimPulseColor),
+            LeadTimeSeconds = math.max(0f, authoring.ShooterAimPulseLeadTimeSeconds),
+            FadeOutSeconds = math.max(0f, authoring.ShooterAimPulseFadeOutSeconds),
+            MaximumBlend = math.saturate(authoring.ShooterAimPulseMaximumBlend)
+        });
+        AddComponent(entity, new EnemyVisualFlashPresentationState
+        {
+            AppliedBlend = 0f,
+            AppliedColor = damageFlashColor,
+            ShooterPulseBlend = 0f
         });
         BakeDamageFlashRenderTargets(authoring, entity);
 
@@ -494,9 +511,9 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
     /// <summary>
     /// Registers all renderer entities that must react to enemy hit flash feedback.
-    /// /params authoring: Source enemy authoring component used to enumerate renderers.
-    /// /params rootEntity: Root enemy entity that owns the flash config and render target buffer.
-    /// /returns None.
+    ///  authoring: Source enemy authoring component used to enumerate renderers.
+    ///  rootEntity: Root enemy entity that owns the flash config and render target buffer.
+    /// returns None.
     /// </summary>
     private void BakeDamageFlashRenderTargets(EnemyAuthoring authoring, Entity rootEntity)
     {
@@ -538,8 +555,8 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
     /// <summary>
     /// Resolves the first valid base color exposed by one authored renderer.
-    /// /params renderer: Renderer inspected for compatible material color properties.
-    /// /returns Resolved base color or white when the renderer has no supported color property.
+    ///  renderer: Renderer inspected for compatible material color properties.
+    /// returns Resolved base color or white when the renderer has no supported color property.
     /// </summary>
     private static float4 ResolveRendererBaseColor(Renderer renderer)
     {

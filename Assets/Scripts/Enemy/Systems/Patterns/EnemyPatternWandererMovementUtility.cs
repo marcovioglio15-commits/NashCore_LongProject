@@ -21,17 +21,17 @@ public static class EnemyPatternWandererMovementUtility
     #region Public Methods
     /// <summary>
     /// Computes a planar clearance velocity used to reduce overlap and deadlocks with nearby enemies.
-    /// /params enemyEntity Current enemy entity.
-    /// /params selfPriorityTier Current enemy general priority tier.
-    /// /params enemyPosition Current enemy position.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params minimumEnemyClearance Extra minimum clearance from neighbors.
-    /// /params maxSpeed Current movement speed cap.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /params priorityYieldUrgency Output urgency in [0..1] when yielding is required.
-    /// /params priorityYieldGapNormalized Output normalized priority-tier gap in [0..1].
-    /// /params occupancyContext Occupancy context used for neighbor lookup.
-    /// /returns Planar clearance velocity contribution.
+    ///  enemyEntity Current enemy entity.
+    ///  selfPriorityTier Current enemy general priority tier.
+    ///  enemyPosition Current enemy position.
+    ///  bodyRadius Current enemy body radius.
+    ///  minimumEnemyClearance Extra minimum clearance from neighbors.
+    ///  maxSpeed Current movement speed cap.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    ///  priorityYieldUrgency Output urgency in [0..1] when yielding is required.
+    ///  priorityYieldGapNormalized Output normalized priority-tier gap in [0..1].
+    ///  occupancyContext Occupancy context used for neighbor lookup.
+    /// returns Planar clearance velocity contribution.
     /// </summary>
     public static float3 ResolveLocalClearanceVelocity(Entity enemyEntity,
                                                        int selfPriorityTier,
@@ -173,17 +173,17 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Evaluates whether a candidate destination and its segment are clear enough from neighboring enemies.
-    /// /params enemyEntity Current enemy entity.
-    /// /params selfPriorityTier Current enemy general priority tier.
-    /// /params origin Current enemy origin.
-    /// /params candidate Candidate destination.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params minimumEnemyClearance Extra clearance from neighbors.
-    /// /params trajectoryPredictionTime Prediction horizon for neighbor movement.
-    /// /params occupancyContext Occupancy context used for neighbor lookup.
-    /// /params freeTrajectoryScore Output free-trajectory score.
-    /// /params freeSpaceScore Output free-space score.
-    /// /returns True when candidate and path are valid.
+    ///  enemyEntity Current enemy entity.
+    ///  selfPriorityTier Current enemy general priority tier.
+    ///  origin Current enemy origin.
+    ///  candidate Candidate destination.
+    ///  bodyRadius Current enemy body radius.
+    ///  minimumEnemyClearance Extra clearance from neighbors.
+    ///  trajectoryPredictionTime Prediction horizon for neighbor movement.
+    ///  occupancyContext Occupancy context used for neighbor lookup.
+    ///  freeTrajectoryScore Output free-trajectory score.
+    ///  freeSpaceScore Output free-space score.
+    /// returns True when candidate and path are valid.
     /// </summary>
     public static bool TryEvaluateTrajectoryFreedom(Entity enemyEntity,
                                                     int selfPriorityTier,
@@ -288,17 +288,17 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Evaluates imminent movement conflicts and resolves deterministic right-of-way for Wanderer agents.
-    /// /params enemyEntity Current enemy entity.
-    /// /params selfPriorityTier Current enemy general priority tier.
-    /// /params enemyPosition Current enemy position.
-    /// /params desiredVelocity Current desired velocity toward target.
-    /// /params distanceToTarget Distance to the current Wanderer target.
-    /// /params bodyRadius Current enemy body radius.
-    /// /params minimumEnemyClearance Extra clearance from neighbors.
-    /// /params predictionTime Prediction horizon in seconds.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /params occupancyContext Occupancy context used for neighbor lookup.
-    /// /returns True when current enemy should yield and repath.
+    ///  enemyEntity Current enemy entity.
+    ///  selfPriorityTier Current enemy general priority tier.
+    ///  enemyPosition Current enemy position.
+    ///  desiredVelocity Current desired velocity toward target.
+    ///  distanceToTarget Distance to the current Wanderer target.
+    ///  bodyRadius Current enemy body radius.
+    ///  minimumEnemyClearance Extra clearance from neighbors.
+    ///  predictionTime Prediction horizon in seconds.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    ///  occupancyContext Occupancy context used for neighbor lookup.
+    /// returns True when current enemy should yield and repath.
     /// </summary>
     public static bool ShouldYieldToNeighbor(Entity enemyEntity,
                                              int selfPriorityTier,
@@ -450,10 +450,10 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Composes a corrective side-step velocity used when Wanderer Basic must yield near higher-priority traffic.
-    /// /params desiredVelocity Current forward desired velocity.
-    /// /params clearanceVelocity Clearance contribution from nearby occupancies.
-    /// /params steeringAggressiveness Resolved steering aggressiveness scalar.
-    /// /returns Corrective side-step velocity or zero when no correction is available.
+    ///  desiredVelocity Current forward desired velocity.
+    ///  clearanceVelocity Clearance contribution from nearby occupancies.
+    ///  steeringAggressiveness Resolved steering aggressiveness scalar.
+    /// returns Corrective side-step velocity or zero when no correction is available.
     /// </summary>
     public static float3 ComposeYieldCorrectionVelocity(float3 desiredVelocity, float3 clearanceVelocity, float steeringAggressiveness)
     {
@@ -479,8 +479,8 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Resolves one steering aggressiveness value with safe defaults and clamps.
-    /// /params rawAggressiveness Serialized aggressiveness value.
-    /// /returns Resolved aggressiveness value ready for runtime use.
+    ///  rawAggressiveness Serialized aggressiveness value.
+    /// returns Resolved aggressiveness value ready for runtime use.
     /// </summary>
     public static float ResolveSteeringAggressiveness(float rawAggressiveness)
     {
@@ -492,10 +492,10 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Maps steering aggressiveness to a configurable scalar range.
-    /// /params aggressiveness Resolved aggressiveness value.
-    /// /params minimumScale Output scale at minimum aggressiveness.
-    /// /params maximumScale Output scale at maximum aggressiveness.
-    /// /returns Interpolated scalar in the requested range.
+    ///  aggressiveness Resolved aggressiveness value.
+    ///  minimumScale Output scale at minimum aggressiveness.
+    ///  maximumScale Output scale at maximum aggressiveness.
+    /// returns Interpolated scalar in the requested range.
     /// </summary>
     public static float ResolveAggressivenessScale(float aggressiveness, float minimumScale, float maximumScale)
     {
@@ -506,8 +506,8 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Converts hash bits to normalized range [0..1].
-    /// /params hashValue Input hash value.
-    /// /returns Normalized value in [0..1].
+    ///  hashValue Input hash value.
+    /// returns Normalized value in [0..1].
     /// </summary>
     public static float ResolveHash01(uint hashValue)
     {
@@ -518,9 +518,9 @@ public static class EnemyPatternWandererMovementUtility
     #region Private Methods
     /// <summary>
     /// Resolves stable deterministic tie-break ordering between two entities.
-    /// /params currentEntity Current entity.
-    /// /params otherEntity Neighbor entity.
-    /// /returns True when current entity should yield.
+    ///  currentEntity Current entity.
+    ///  otherEntity Neighbor entity.
+    /// returns True when current entity should yield.
     /// </summary>
     private static bool ShouldYieldByStablePriority(Entity currentEntity, Entity otherEntity)
     {
@@ -535,10 +535,10 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Resolves deterministic lateral direction used to keep side-step traffic ordered across crowds.
-    /// /params awayDirection Current away-from-neighbor direction.
-    /// /params currentEntity Current entity.
-    /// /params otherEntity Neighbor entity.
-    /// /returns Planar lateral direction.
+    ///  awayDirection Current away-from-neighbor direction.
+    ///  currentEntity Current entity.
+    ///  otherEntity Neighbor entity.
+    /// returns Planar lateral direction.
     /// </summary>
     private static float3 ResolveLateralDirection(float3 awayDirection, Entity currentEntity, Entity otherEntity)
     {
@@ -563,9 +563,9 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Resolves clearance inflation based on current and neighbor priority tiers.
-    /// /params selfPriorityTier Current enemy priority tier.
-    /// /params neighborPriorityTier Neighbor priority tier.
-    /// /returns Clearance multiplier used by local avoidance and path scoring.
+    ///  selfPriorityTier Current enemy priority tier.
+    ///  neighborPriorityTier Neighbor priority tier.
+    /// returns Clearance multiplier used by local avoidance and path scoring.
     /// </summary>
     private static float ResolvePriorityClearanceMultiplier(int selfPriorityTier, int neighborPriorityTier)
     {
@@ -586,9 +586,9 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Resolves avoidance weight based on current and neighbor priority tiers.
-    /// /params selfPriorityTier Current enemy priority tier.
-    /// /params neighborPriorityTier Neighbor priority tier.
-    /// /returns Weight multiplier applied to the avoidance contribution.
+    ///  selfPriorityTier Current enemy priority tier.
+    ///  neighborPriorityTier Neighbor priority tier.
+    /// returns Weight multiplier applied to the avoidance contribution.
     /// </summary>
     private static float ResolvePriorityAvoidanceWeight(int selfPriorityTier, int neighborPriorityTier)
     {
@@ -609,9 +609,9 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Resolves a deterministic planar fallback direction for zero-distance overlap cases.
-    /// /params currentEntity Current entity.
-    /// /params otherEntity Neighbor entity.
-    /// /returns Normalized planar direction.
+    ///  currentEntity Current entity.
+    ///  otherEntity Neighbor entity.
+    /// returns Normalized planar direction.
     /// </summary>
     private static float3 ResolveDeterministicDirection(Entity currentEntity, Entity otherEntity)
     {
@@ -622,10 +622,10 @@ public static class EnemyPatternWandererMovementUtility
 
     /// <summary>
     /// Computes squared planar distance between a point and a segment on the XZ plane.
-    /// /params point Point to project.
-    /// /params segmentStart Segment start.
-    /// /params segmentEnd Segment end.
-    /// /returns Squared planar distance from point to segment.
+    ///  point Point to project.
+    ///  segmentStart Segment start.
+    ///  segmentEnd Segment end.
+    /// returns Squared planar distance from point to segment.
     /// </summary>
     private static float DistancePointToSegmentSquaredXZ(float3 point, float3 segmentStart, float3 segmentEnd)
     {

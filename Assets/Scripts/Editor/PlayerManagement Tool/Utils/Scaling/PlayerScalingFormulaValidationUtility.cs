@@ -28,7 +28,7 @@ public static class PlayerScalingFormulaValidationUtility
     /// <param name="formula">Formula text entered by designers.</param>
     /// <param name="allowedVariables">Optional variable whitelist (case-insensitive). Null skips unknown-variable checks.</param>
     /// <param name="warningMessage">Validation warning text when formula is invalid.</param>
-    /// <returns>True when formula is valid, otherwise false.</returns>
+    /// <returns>True when formula is valid, otherwise false.<returns>
     public static bool TryValidateFormula(string formula,
                                           ISet<string> allowedVariables,
                                           out string warningMessage)
@@ -73,7 +73,7 @@ public static class PlayerScalingFormulaValidationUtility
     /// Collects scalable stat names from progression serialized list into a case-insensitive set.
     /// </summary>
     /// <param name="scalableStatsProperty">Serialized List&lt;PlayerScalableStatDefinition&gt; property.</param>
-    /// <returns>Case-insensitive set of scalable stat names.</returns>
+    /// <returns>Case-insensitive set of scalable stat names.<returns>
     public static HashSet<string> BuildVariableSet(SerializedProperty scalableStatsProperty)
     {
         HashSet<string> variableSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -117,7 +117,7 @@ public static class PlayerScalingFormulaValidationUtility
     /// Builds a scalable variable scope for the current edited preset, constrained by the active master preset context.
     /// </summary>
     /// <param name="serializedObject">Serialized object that owns the currently edited scaling rules.</param>
-    /// <returns>Case-insensitive set of scoped scalable stat names valid for this preset context.</returns>
+    /// <returns>Case-insensitive set of scoped scalable stat names valid for this preset context.<returns>
     public static HashSet<string> BuildScopedVariableSet(SerializedObject serializedObject)
     {
         HashSet<string> variableSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -150,7 +150,7 @@ public static class PlayerScalingFormulaValidationUtility
     /// Formats the helper label that lists the variables available to one scaling or assignment formula.
     /// </summary>
     /// <param name="allowedVariables">Case-insensitive variable set available in the current editor scope.</param>
-    /// <returns>User-facing label text describing the available variables.</returns>
+    /// <returns>User-facing label text describing the available variables.<returns>
     public static string BuildAvailableVariablesLabelText(ISet<string> allowedVariables)
     {
         if (allowedVariables == null || allowedVariables.Count == 0)

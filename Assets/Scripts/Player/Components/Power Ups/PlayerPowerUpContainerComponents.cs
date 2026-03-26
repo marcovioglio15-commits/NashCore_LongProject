@@ -2,8 +2,8 @@ using Unity.Entities;
 
 /// <summary>
 /// Stores baked player-side settings used to spawn and interact with dropped active power-up containers.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerPowerUpContainerInteractionConfig : IComponentData
 {
@@ -17,8 +17,8 @@ public struct PlayerPowerUpContainerInteractionConfig : IComponentData
 
 /// <summary>
 /// Stores one active-slot payload serialized into a dropped world container.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerStoredActivePowerUpData
 {
@@ -29,8 +29,8 @@ public struct PlayerStoredActivePowerUpData
 
 /// <summary>
 /// Marks one dropped world entity and stores the active power-up currently available inside it.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerDroppedPowerUpContainerContent : IComponentData
 {
@@ -39,8 +39,8 @@ public struct PlayerDroppedPowerUpContainerContent : IComponentData
 
 /// <summary>
 /// Queues one authoritative request to swap a dropped power-up container with one player active slot.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerPowerUpContainerSwapCommand : IBufferElementData
 {
@@ -50,8 +50,8 @@ public struct PlayerPowerUpContainerSwapCommand : IBufferElementData
 
 /// <summary>
 /// Stores the nearest dropped power-up container currently available to one player.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public struct PlayerPowerUpContainerProximityState : IComponentData
 {

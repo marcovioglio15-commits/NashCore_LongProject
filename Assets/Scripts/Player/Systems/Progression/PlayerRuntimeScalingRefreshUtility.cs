@@ -10,37 +10,37 @@ internal static class PlayerRuntimeScalingRefreshUtility
     #region Public Methods
     /// <summary>
     /// Rebuilds runtime-scaled controller, progression, and power-up configs for one player entity when all required data is available.
-    /// /params entity: Player entity being refreshed.
-    /// /params scalableStatsLookup: Runtime scalable-stat buffer lookup.
-    /// /params controllerScalingLookup: Controller scaling metadata lookup.
-    /// /params baseMovementLookup: Immutable movement baseline lookup.
-    /// /params runtimeMovementLookup: Mutable runtime movement config lookup.
-    /// /params baseLookLookup: Immutable look baseline lookup.
-    /// /params runtimeLookLookup: Mutable runtime look config lookup.
-    /// /params baseCameraLookup: Immutable camera baseline lookup.
-    /// /params runtimeCameraLookup: Mutable runtime camera config lookup.
-    /// /params baseShootingLookup: Immutable shooting baseline lookup.
-    /// /params runtimeShootingLookup: Mutable runtime shooting config lookup.
-    /// /params baseHealthLookup: Immutable health baseline lookup.
-    /// /params runtimeHealthLookup: Mutable runtime health config lookup.
-    /// /params progressionScalingLookup: Progression scaling metadata lookup.
-    /// /params baseGamePhasesLookup: Immutable progression-phase baseline lookup.
-    /// /params runtimeGamePhasesLookup: Mutable runtime progression-phase lookup.
-    /// /params basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
-    /// /params powerUpScalingLookup: Runtime power-up scaling metadata lookup.
-    /// /params powerUpsConfigLookup: Mutable active-slot config lookup.
-    /// /params unlockCatalogLookup: Mutable unlock catalog lookup.
-    /// /params equippedPassiveToolsLookup: Mutable equipped-passive buffer lookup.
-    /// /params passiveToolsStateLookup: Mutable aggregated passive-state lookup.
-    /// /params healthLookup: Mutable health component lookup.
-    /// /params shieldLookup: Mutable shield component lookup.
-    /// /params progressionConfigLookup: Runtime progression config lookup.
-    /// /params experienceLookup: Mutable player experience lookup.
-    /// /params levelLookup: Mutable player level lookup.
-    /// /params experienceCollectionLookup: Mutable pickup-radius runtime lookup.
-    /// /params runtimeScalingStateLookup: Mutable runtime-scaling sync state lookup.
-    /// /params forceApply: True to bypass the scalable-stat hash short-circuit.
-    /// /returns True when runtime-scaled data was rebuilt; otherwise false.
+    ///  entity: Player entity being refreshed.
+    ///  scalableStatsLookup: Runtime scalable-stat buffer lookup.
+    ///  controllerScalingLookup: Controller scaling metadata lookup.
+    ///  baseMovementLookup: Immutable movement baseline lookup.
+    ///  runtimeMovementLookup: Mutable runtime movement config lookup.
+    ///  baseLookLookup: Immutable look baseline lookup.
+    ///  runtimeLookLookup: Mutable runtime look config lookup.
+    ///  baseCameraLookup: Immutable camera baseline lookup.
+    ///  runtimeCameraLookup: Mutable runtime camera config lookup.
+    ///  baseShootingLookup: Immutable shooting baseline lookup.
+    ///  runtimeShootingLookup: Mutable runtime shooting config lookup.
+    ///  baseHealthLookup: Immutable health baseline lookup.
+    ///  runtimeHealthLookup: Mutable runtime health config lookup.
+    ///  progressionScalingLookup: Progression scaling metadata lookup.
+    ///  baseGamePhasesLookup: Immutable progression-phase baseline lookup.
+    ///  runtimeGamePhasesLookup: Mutable runtime progression-phase lookup.
+    ///  basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
+    ///  powerUpScalingLookup: Runtime power-up scaling metadata lookup.
+    ///  powerUpsConfigLookup: Mutable active-slot config lookup.
+    ///  unlockCatalogLookup: Mutable unlock catalog lookup.
+    ///  equippedPassiveToolsLookup: Mutable equipped-passive buffer lookup.
+    ///  passiveToolsStateLookup: Mutable aggregated passive-state lookup.
+    ///  healthLookup: Mutable health component lookup.
+    ///  shieldLookup: Mutable shield component lookup.
+    ///  progressionConfigLookup: Runtime progression config lookup.
+    ///  experienceLookup: Mutable player experience lookup.
+    ///  levelLookup: Mutable player level lookup.
+    ///  experienceCollectionLookup: Mutable pickup-radius runtime lookup.
+    ///  runtimeScalingStateLookup: Mutable runtime-scaling sync state lookup.
+    ///  forceApply: True to bypass the scalable-stat hash short-circuit.
+    /// returns True when runtime-scaled data was rebuilt; otherwise false.
     /// </summary>
     public static bool TryApplyForEntity(Entity entity,
                                          BufferLookup<PlayerScalableStatElement> scalableStatsLookup,

@@ -4,8 +4,8 @@ using UnityEngine.InputSystem.Utilities;
 
 /// <summary>
 /// Tracks the most recently used input family and resolves context-aware binding labels for player prompts.
-/// /params none.
-/// /returns none.
+///  none.
+/// returns none.
 /// </summary>
 public static class PlayerInputBindingDisplayRuntime
 {
@@ -20,8 +20,8 @@ public static class PlayerInputBindingDisplayRuntime
     #region Public Methods
     /// <summary>
     /// Initializes recent-device tracking for the current runtime input actions.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     public static void Initialize()
     {
@@ -42,8 +42,8 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Unregisters recent-device tracking callbacks and clears cached state.
-    /// /params none.
-    /// /returns void.
+    ///  none.
+    /// returns void.
     /// </summary>
     public static void Shutdown()
     {
@@ -64,9 +64,9 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Resolves one binding display string that matches the currently active input device family whenever possible.
-    /// /params action: Input action whose binding label must be displayed.
-    /// /params fallback: Fallback string used when no matching binding can be resolved.
-    /// /returns Context-aware binding label for prompts and HUD text.
+    ///  action: Input action whose binding label must be displayed.
+    ///  fallback: Fallback string used when no matching binding can be resolved.
+    /// returns Context-aware binding label for prompts and HUD text.
     /// </summary>
     public static string ResolveBindingDisplayString(InputAction action, string fallback)
     {
@@ -102,8 +102,8 @@ public static class PlayerInputBindingDisplayRuntime
     #region Private Methods
     /// <summary>
     /// Registers one input action for recent-device tracking.
-    /// /params action: Input action subscribed to activity callbacks.
-    /// /returns void.
+    ///  action: Input action subscribed to activity callbacks.
+    /// returns void.
     /// </summary>
     private static void RegisterActionActivityCallback(InputAction action)
     {
@@ -116,8 +116,8 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Unregisters one input action from recent-device tracking.
-    /// /params action: Input action unsubscribed from activity callbacks.
-    /// /returns void.
+    ///  action: Input action unsubscribed from activity callbacks.
+    /// returns void.
     /// </summary>
     private static void UnregisterActionActivityCallback(InputAction action)
     {
@@ -130,8 +130,8 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Records the device family that produced the most recent meaningful input activity.
-    /// /params context: Input callback context raised by the active runtime action.
-    /// /returns void.
+    ///  context: Input callback context raised by the active runtime action.
+    /// returns void.
     /// </summary>
     private static void HandleActionActivity(InputAction.CallbackContext context)
     {
@@ -150,8 +150,8 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Resolves the currently preferred device family used to select prompt binding labels.
-    /// /params none.
-    /// /returns Preferred device family when available; otherwise Unknown.
+    ///  none.
+    /// returns Preferred device family when available; otherwise Unknown.
     /// </summary>
     private static BindingDisplayDeviceFamily ResolveCurrentBindingDisplayDeviceFamily()
     {
@@ -172,8 +172,8 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Returns whether at least one keyboard or mouse device is currently available.
-    /// /params none.
-    /// /returns True when keyboard or mouse devices are present.
+    ///  none.
+    /// returns True when keyboard or mouse devices are present.
     /// </summary>
     private static bool HasKeyboardMouseDevices()
     {
@@ -182,8 +182,8 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Returns whether at least one controller-like device is currently available.
-    /// /params none.
-    /// /returns True when gamepad or joystick devices are present.
+    ///  none.
+    /// returns True when gamepad or joystick devices are present.
     /// </summary>
     private static bool HasControllerDevices()
     {
@@ -195,10 +195,10 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Resolves the binding display string that best matches the requested device family.
-    /// /params action: Input action whose bindings are inspected.
-    /// /params deviceFamily: Preferred device family for the displayed binding.
-    /// /params bindingDisplayString: Resolved display string when found.
-    /// /returns True when a matching binding display string was found.
+    ///  action: Input action whose bindings are inspected.
+    ///  deviceFamily: Preferred device family for the displayed binding.
+    ///  bindingDisplayString: Resolved display string when found.
+    /// returns True when a matching binding display string was found.
     /// </summary>
     private static bool TryResolveBindingDisplayString(InputAction action,
                                                        BindingDisplayDeviceFamily deviceFamily,
@@ -235,10 +235,10 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Returns whether one action binding belongs to the requested device family, including composite roots.
-    /// /params action: Input action that owns the inspected binding.
-    /// /params bindingIndex: Binding index inspected inside the action.
-    /// /params deviceFamily: Device family used as the filter.
-    /// /returns True when the binding belongs to the requested family.
+    ///  action: Input action that owns the inspected binding.
+    ///  bindingIndex: Binding index inspected inside the action.
+    ///  deviceFamily: Device family used as the filter.
+    /// returns True when the binding belongs to the requested family.
     /// </summary>
     private static bool BindingMatchesDeviceFamily(InputAction action, int bindingIndex, BindingDisplayDeviceFamily deviceFamily)
     {
@@ -258,10 +258,10 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Returns whether at least one part of a composite binding belongs to the requested device family.
-    /// /params action: Input action that owns the composite binding.
-    /// /params compositeBindingIndex: Composite root binding index.
-    /// /params deviceFamily: Device family used as the filter.
-    /// /returns True when one composite part belongs to the requested family.
+    ///  action: Input action that owns the composite binding.
+    ///  compositeBindingIndex: Composite root binding index.
+    ///  deviceFamily: Device family used as the filter.
+    /// returns True when one composite part belongs to the requested family.
     /// </summary>
     private static bool CompositeMatchesDeviceFamily(InputAction action,
                                                      int compositeBindingIndex,
@@ -285,9 +285,9 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Returns whether one non-composite binding belongs to the requested device family.
-    /// /params binding: Binding inspected for group and path matching.
-    /// /params deviceFamily: Device family used as the filter.
-    /// /returns True when the binding belongs to the requested family.
+    ///  binding: Binding inspected for group and path matching.
+    ///  deviceFamily: Device family used as the filter.
+    /// returns True when the binding belongs to the requested family.
     /// </summary>
     private static bool NonCompositeBindingMatchesDeviceFamily(InputBinding binding, BindingDisplayDeviceFamily deviceFamily)
     {
@@ -300,9 +300,9 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Returns whether one binding-group string references the requested device family.
-    /// /params groups: Binding groups string stored on the binding.
-    /// /params deviceFamily: Device family used as the filter.
-    /// /returns True when the groups string contains the requested family.
+    ///  groups: Binding groups string stored on the binding.
+    ///  deviceFamily: Device family used as the filter.
+    /// returns True when the groups string contains the requested family.
     /// </summary>
     private static bool GroupsMatchDeviceFamily(string groups, BindingDisplayDeviceFamily deviceFamily)
     {
@@ -323,9 +323,9 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Returns whether one binding path references the requested device family.
-    /// /params bindingPath: Effective or authored binding path inspected for device layouts.
-    /// /params deviceFamily: Device family used as the filter.
-    /// /returns True when the path references the requested family.
+    ///  bindingPath: Effective or authored binding path inspected for device layouts.
+    ///  deviceFamily: Device family used as the filter.
+    /// returns True when the path references the requested family.
     /// </summary>
     private static bool PathMatchesDeviceFamily(string bindingPath, BindingDisplayDeviceFamily deviceFamily)
     {
@@ -347,8 +347,8 @@ public static class PlayerInputBindingDisplayRuntime
 
     /// <summary>
     /// Resolves the prompt-binding device family represented by the provided runtime device.
-    /// /params device: Runtime input device inspected for family classification.
-    /// /returns Resolved device family used by prompt binding selection.
+    ///  device: Runtime input device inspected for family classification.
+    /// returns Resolved device family used by prompt binding selection.
     /// </summary>
     private static BindingDisplayDeviceFamily ResolveBindingDisplayDeviceFamily(InputDevice device)
     {
@@ -368,8 +368,8 @@ public static class PlayerInputBindingDisplayRuntime
     #region Nested Types
     /// <summary>
     /// Identifies the high-level device family used to select context-aware prompt binding labels.
-    /// /params none.
-    /// /returns none.
+    ///  none.
+    /// returns none.
     /// </summary>
     private enum BindingDisplayDeviceFamily : byte
     {

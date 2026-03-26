@@ -4,8 +4,8 @@ using Unity.Mathematics;
 #region Enemy Navigation Components
 /// <summary>
 /// Tags the singleton entity that stores shared enemy navigation flow-field data.
-/// /params None.
-/// /returns None.
+///  None.
+/// returns None.
 /// </summary>
 public struct EnemyNavigationGridTag : IComponentData
 {
@@ -13,8 +13,8 @@ public struct EnemyNavigationGridTag : IComponentData
 
 /// <summary>
 /// Stores the shared navigation-grid layout derived from static wall colliders.
-/// /params None.
-/// /returns None.
+///  None.
+/// returns None.
 /// </summary>
 public struct EnemyNavigationGridState : IComponentData
 {
@@ -33,8 +33,8 @@ public struct EnemyNavigationGridState : IComponentData
 
 /// <summary>
 /// Stores one navigation cell with baked walkability, neighbor links, and runtime flow direction.
-/// /params None.
-/// /returns None.
+///  None.
+/// returns None.
 /// </summary>
 public struct EnemyNavigationCellElement : IBufferElementData
 {

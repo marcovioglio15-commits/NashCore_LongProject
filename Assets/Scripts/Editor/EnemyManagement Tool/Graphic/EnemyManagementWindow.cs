@@ -145,7 +145,7 @@ public sealed class EnemyManagementWindow : EditorWindow
     /// Creates toolbar with panel toggle, session actions and status label.
     /// Called by BuildWindowLayout.
     /// </summary>
-    /// <returns>Returns the toolbar visual element attached to the window root.</returns>
+    /// <returns>Returns the toolbar visual element attached to the window root.<returns>
     private VisualElement BuildToolbar()
     {
         // Create toolbar container and top-level panel toggle.
@@ -197,7 +197,7 @@ public sealed class EnemyManagementWindow : EditorWindow
     /// <param name="label">UI label shown on toggle.</param>
     /// <param name="panelType">Panel to activate when toggle becomes true.</param>
     /// <param name="isDefault">Initial toggle state.</param>
-    /// <returns>Returns configured toolbar toggle instance.</returns>
+    /// <returns>Returns configured toolbar toggle instance.<returns>
     private ToolbarToggle CreatePanelToggle(string label, PanelType panelType, bool isDefault)
     {
         // Wire toggle value change to panel switching.
@@ -286,7 +286,7 @@ public sealed class EnemyManagementWindow : EditorWindow
     /// Takes in a panel enum value.
     /// </summary>
     /// <param name="panelType">Panel enum value to map.</param>
-    /// <returns>Returns the matching toolbar label string.</returns>
+    /// <returns>Returns the matching toolbar label string.<returns>
     private string GetPanelLabel(PanelType panelType)
     {
         if (panelType == PanelType.EnemyMasterPresets)
