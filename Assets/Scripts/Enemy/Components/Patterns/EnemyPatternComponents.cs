@@ -23,6 +23,16 @@ public struct EnemyPatternConfig : IComponentData
     public float BasicTrajectoryPredictionTime;
     public float BasicFreeTrajectoryPreference;
     public float BasicBlockedPathRetryDelay;
+    public float CowardDetectionRadius;
+    public float CowardReleaseDistanceBuffer;
+    public float CowardRetreatDirectionPreference;
+    public float CowardOpenSpacePreference;
+    public float CowardNavigationPreference;
+    public float CowardPatrolRadius;
+    public float CowardPatrolWaitSeconds;
+    public float CowardPatrolSpeedMultiplier;
+    public float CowardRetreatSpeedMultiplierFar;
+    public float CowardRetreatSpeedMultiplierNear;
     public float DvdSpeedMultiplier;
     public float DvdBounceDamping;
     public byte DvdRandomizeInitialDirection;
@@ -42,6 +52,8 @@ public struct EnemyPatternRuntimeState : IComponentData
     public float LastWanderDirectionAngle;
     public byte WanderHasTarget;
     public byte WanderInitialized;
+    public float3 CowardPatrolAnchorPosition;
+    public byte CowardPatrolAnchorInitialized;
     public float3 DvdDirection;
     public byte DvdInitialized;
 }

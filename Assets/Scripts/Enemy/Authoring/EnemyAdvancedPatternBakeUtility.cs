@@ -66,6 +66,7 @@ public static class EnemyAdvancedPatternBakeUtility
                     case EnemyPatternModuleKind.Stationary:
                     case EnemyPatternModuleKind.Grunt:
                     case EnemyPatternModuleKind.Wanderer:
+                    case EnemyPatternModuleKind.Coward:
                         TryApplyMovementModule(resolvedModuleKind,
                                                resolvedPayload,
                                                ref result.PatternConfig,
@@ -107,8 +108,18 @@ public static class EnemyAdvancedPatternBakeUtility
             BasicTowardPlayerPreference = 0.35f,
             BasicMinimumEnemyClearance = 0.2f,
             BasicTrajectoryPredictionTime = 0.35f,
-            BasicFreeTrajectoryPreference = 4f,
+            BasicFreeTrajectoryPreference = 4.4f,
             BasicBlockedPathRetryDelay = 0.25f,
+            CowardDetectionRadius = 8f,
+            CowardReleaseDistanceBuffer = 1.5f,
+            CowardRetreatDirectionPreference = 0.65f,
+            CowardOpenSpacePreference = 0.55f,
+            CowardNavigationPreference = 0.6f,
+            CowardPatrolRadius = 3.5f,
+            CowardPatrolWaitSeconds = 0.55f,
+            CowardPatrolSpeedMultiplier = 0.82f,
+            CowardRetreatSpeedMultiplierFar = 1f,
+            CowardRetreatSpeedMultiplierNear = 1.4f,
             DvdSpeedMultiplier = 1.05f,
             DvdBounceDamping = 1f,
             DvdRandomizeInitialDirection = 1,
@@ -173,6 +184,11 @@ public static class EnemyAdvancedPatternBakeUtility
                 hasCustomMovement = true;
                 return;
 
+            case EnemyPatternModuleKind.Coward:
+                ApplyCowardPayload(payload, ref patternConfig);
+                hasCustomMovement = true;
+                return;
+
             default:
                 patternConfig.MovementKind = EnemyCompiledMovementPatternKind.Grunt;
                 hasCustomMovement = false;
@@ -188,6 +204,7 @@ public static class EnemyAdvancedPatternBakeUtility
                 return 3;
 
             case EnemyPatternModuleKind.Wanderer:
+            case EnemyPatternModuleKind.Coward:
                 return 2;
 
             case EnemyPatternModuleKind.Grunt:
@@ -260,6 +277,42 @@ public static class EnemyAdvancedPatternBakeUtility
             return;
 
         patternConfig.StationaryFreezeRotation = payload.Stationary.FreezeRotation ? (byte)1 : (byte)0;
+    }
+
+    private static void ApplyCowardPayload(EnemyPatternModulePayloadData payload, ref EnemyPatternConfig patternConfig)
+    {
+        patternConfig.MovementKind = EnemyCompiledMovementPatternKind.Coward;
+
+        if (payload == null || payload.Coward == null)
+            return;
+
+        EnemyCowardModuleData coward = payload.Coward;
+        patternConfig.BasicSearchRadius = math.max(0.5f, coward.SearchRadius);
+        patternConfig.BasicMinimumTravelDistance = math.max(0f, coward.MinimumRetreatDistance);
+        patternConfig.BasicMaximumTravelDistance = math.max(patternConfig.BasicMinimumTravelDistance, coward.MaximumRetreatDistance);
+        patternConfig.BasicArrivalTolerance = math.max(0.05f, coward.ArrivalTolerance);
+        patternConfig.BasicWaitCooldownSeconds = 0f;
+        patternConfig.BasicCandidateSampleCount = math.clamp(math.max(1, coward.CandidateSampleCount), 1, 64);
+        patternConfig.BasicUseInfiniteDirectionSampling = coward.UseInfiniteDirectionSampling ? (byte)1 : (byte)0;
+        patternConfig.BasicInfiniteDirectionStepDegrees = math.clamp(coward.InfiniteDirectionStepDegrees, 0.5f, 90f);
+        patternConfig.BasicUnexploredDirectionPreference = 0f;
+        patternConfig.BasicTowardPlayerPreference = 0f;
+        patternConfig.BasicMinimumEnemyClearance = math.max(0f, coward.MinimumEnemyClearance);
+        patternConfig.BasicTrajectoryPredictionTime = math.max(0f, coward.TrajectoryPredictionTime);
+        patternConfig.BasicFreeTrajectoryPreference = math.lerp(1f, 5f, math.saturate(coward.FreeTrajectoryPreference));
+        patternConfig.BasicWaitCooldownSeconds = 0f;
+        patternConfig.BasicBlockedPathRetryDelay = math.max(0f, coward.BlockedPathRetryDelay);
+        patternConfig.CowardDetectionRadius = math.max(0f, coward.DetectionRadius);
+        patternConfig.CowardReleaseDistanceBuffer = math.max(0f, coward.ReleaseDistanceBuffer);
+        patternConfig.CowardRetreatDirectionPreference = math.saturate(coward.RetreatDirectionPreference);
+        patternConfig.CowardOpenSpacePreference = math.saturate(coward.OpenSpacePreference);
+        patternConfig.CowardNavigationPreference = math.saturate(coward.NavigationRetreatPreference);
+        patternConfig.CowardPatrolRadius = math.max(0f, coward.PatrolRadius);
+        patternConfig.CowardPatrolWaitSeconds = math.max(0f, coward.PatrolWaitSeconds);
+        patternConfig.CowardPatrolSpeedMultiplier = math.max(0f, coward.PatrolSpeedMultiplier);
+        patternConfig.CowardRetreatSpeedMultiplierFar = math.max(0f, coward.RetreatSpeedMultiplierFar);
+        patternConfig.CowardRetreatSpeedMultiplierNear = math.max(patternConfig.CowardRetreatSpeedMultiplierFar,
+                                                                  coward.RetreatSpeedMultiplierNear);
     }
 
     private static void TryAddShooterModule(EnemyPatternModulePayloadData payload,
@@ -442,6 +495,7 @@ public static class EnemyAdvancedPatternBakeUtility
             case EnemyPatternModuleKind.Stationary:
             case EnemyPatternModuleKind.Grunt:
             case EnemyPatternModuleKind.Wanderer:
+            case EnemyPatternModuleKind.Coward:
             case EnemyPatternModuleKind.Shooter:
             case EnemyPatternModuleKind.DropItems:
                 return moduleKind;

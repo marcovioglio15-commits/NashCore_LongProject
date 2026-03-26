@@ -51,6 +51,28 @@ MonoBehaviour:
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
           ignoreSteeringAndPriority: 0
+      coward:
+        detectionRadius: 8
+        releaseDistanceBuffer: 1.5
+        searchRadius: 10
+        minimumRetreatDistance: 2.5
+        maximumRetreatDistance: 8.5
+        arrivalTolerance: 0.35
+        candidateSampleCount: 12
+        useInfiniteDirectionSampling: 1
+        infiniteDirectionStepDegrees: 8
+        minimumEnemyClearance: 0.25
+        trajectoryPredictionTime: 0.35
+        freeTrajectoryPreference: 4.5
+        retreatDirectionPreference: 1.25
+        openSpacePreference: 1
+        navigationRetreatPreference: 1.35
+        patrolRadius: 3.5
+        patrolWaitSeconds: 0.55
+        patrolSpeedMultiplier: 0.82
+        retreatSpeedMultiplierFar: 1
+        retreatSpeedMultiplierNear: 1.4
+        blockedPathRetryDelay: 0.2
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -141,6 +163,28 @@ MonoBehaviour:
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
           ignoreSteeringAndPriority: 0
+      coward:
+        detectionRadius: 8
+        releaseDistanceBuffer: 1.5
+        searchRadius: 10
+        minimumRetreatDistance: 2.5
+        maximumRetreatDistance: 8.5
+        arrivalTolerance: 0.35
+        candidateSampleCount: 12
+        useInfiniteDirectionSampling: 1
+        infiniteDirectionStepDegrees: 8
+        minimumEnemyClearance: 0.25
+        trajectoryPredictionTime: 0.35
+        freeTrajectoryPreference: 4.5
+        retreatDirectionPreference: 1.25
+        openSpacePreference: 1
+        navigationRetreatPreference: 1.35
+        patrolRadius: 3.5
+        patrolWaitSeconds: 0.55
+        patrolSpeedMultiplier: 0.82
+        retreatSpeedMultiplierFar: 1
+        retreatSpeedMultiplierNear: 1.4
+        blockedPathRetryDelay: 0.2
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -231,6 +275,28 @@ MonoBehaviour:
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
           ignoreSteeringAndPriority: 0
+      coward:
+        detectionRadius: 8
+        releaseDistanceBuffer: 1.5
+        searchRadius: 10
+        minimumRetreatDistance: 2.5
+        maximumRetreatDistance: 8.5
+        arrivalTolerance: 0.35
+        candidateSampleCount: 12
+        useInfiniteDirectionSampling: 1
+        infiniteDirectionStepDegrees: 8
+        minimumEnemyClearance: 0.25
+        trajectoryPredictionTime: 0.35
+        freeTrajectoryPreference: 4.5
+        retreatDirectionPreference: 1.25
+        openSpacePreference: 1
+        navigationRetreatPreference: 1.35
+        patrolRadius: 3.5
+        patrolWaitSeconds: 0.55
+        patrolSpeedMultiplier: 0.82
+        retreatSpeedMultiplierFar: 1
+        retreatSpeedMultiplierNear: 1.4
+        blockedPathRetryDelay: 0.2
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -321,6 +387,28 @@ MonoBehaviour:
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
           ignoreSteeringAndPriority: 0
+      coward:
+        detectionRadius: 8
+        releaseDistanceBuffer: 1.5
+        searchRadius: 10
+        minimumRetreatDistance: 2.5
+        maximumRetreatDistance: 8.5
+        arrivalTolerance: 0.35
+        candidateSampleCount: 12
+        useInfiniteDirectionSampling: 1
+        infiniteDirectionStepDegrees: 8
+        minimumEnemyClearance: 0.25
+        trajectoryPredictionTime: 0.35
+        freeTrajectoryPreference: 4.5
+        retreatDirectionPreference: 1.25
+        openSpacePreference: 1
+        navigationRetreatPreference: 1.35
+        patrolRadius: 3.5
+        patrolWaitSeconds: 0.55
+        patrolSpeedMultiplier: 0.82
+        retreatSpeedMultiplierFar: 1
+        retreatSpeedMultiplierNear: 1.4
+        blockedPathRetryDelay: 0.2
       shooter:
         aimPolicy: 0
         movementPolicy: 1
@@ -411,6 +499,28 @@ MonoBehaviour:
           fixedInitialDirectionDegrees: 45
           cornerNudgeDistance: 0.08
           ignoreSteeringAndPriority: 0
+      coward:
+        detectionRadius: 8
+        releaseDistanceBuffer: 1.5
+        searchRadius: 10
+        minimumRetreatDistance: 2.5
+        maximumRetreatDistance: 8.5
+        arrivalTolerance: 0.35
+        candidateSampleCount: 12
+        useInfiniteDirectionSampling: 1
+        infiniteDirectionStepDegrees: 8
+        minimumEnemyClearance: 0.25
+        trajectoryPredictionTime: 0.35
+        freeTrajectoryPreference: 4.5
+        retreatDirectionPreference: 1.25
+        openSpacePreference: 1
+        navigationRetreatPreference: 1.35
+        patrolRadius: 3.5
+        patrolWaitSeconds: 0.55
+        patrolSpeedMultiplier: 0.82
+        retreatSpeedMultiplierFar: 1
+        retreatSpeedMultiplierNear: 1.4
+        blockedPathRetryDelay: 0.2
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -513,6 +623,28 @@ MonoBehaviour:
             fixedInitialDirectionDegrees: 45
             cornerNudgeDistance: 0.08
             ignoreSteeringAndPriority: 0
+        coward:
+          detectionRadius: 8
+          releaseDistanceBuffer: 1.5
+          searchRadius: 10
+          minimumRetreatDistance: 2.5
+          maximumRetreatDistance: 8.5
+          arrivalTolerance: 0.35
+          candidateSampleCount: 12
+          useInfiniteDirectionSampling: 1
+          infiniteDirectionStepDegrees: 8
+          minimumEnemyClearance: 0.25
+          trajectoryPredictionTime: 0.35
+          freeTrajectoryPreference: 4.5
+          retreatDirectionPreference: 1.25
+          openSpacePreference: 1
+          navigationRetreatPreference: 1.35
+          patrolRadius: 3.5
+          patrolWaitSeconds: 0.55
+          patrolSpeedMultiplier: 0.82
+          retreatSpeedMultiplierFar: 1
+          retreatSpeedMultiplierNear: 1.4
+          blockedPathRetryDelay: 0.2
         shooter:
           aimPolicy: 0
           movementPolicy: 0
@@ -602,6 +734,28 @@ MonoBehaviour:
             fixedInitialDirectionDegrees: 45
             cornerNudgeDistance: 0.08
             ignoreSteeringAndPriority: 0
+        coward:
+          detectionRadius: 8
+          releaseDistanceBuffer: 1.5
+          searchRadius: 10
+          minimumRetreatDistance: 2.5
+          maximumRetreatDistance: 8.5
+          arrivalTolerance: 0.35
+          candidateSampleCount: 12
+          useInfiniteDirectionSampling: 1
+          infiniteDirectionStepDegrees: 8
+          minimumEnemyClearance: 0.25
+          trajectoryPredictionTime: 0.35
+          freeTrajectoryPreference: 4.5
+          retreatDirectionPreference: 1.25
+          openSpacePreference: 1
+          navigationRetreatPreference: 1.35
+          patrolRadius: 3.5
+          patrolWaitSeconds: 0.55
+          patrolSpeedMultiplier: 0.82
+          retreatSpeedMultiplierFar: 1
+          retreatSpeedMultiplierNear: 1.4
+          blockedPathRetryDelay: 0.2
         shooter:
           aimPolicy: 0
           movementPolicy: 0
@@ -691,6 +845,28 @@ MonoBehaviour:
             fixedInitialDirectionDegrees: 45
             cornerNudgeDistance: 0.08
             ignoreSteeringAndPriority: 0
+        coward:
+          detectionRadius: 8
+          releaseDistanceBuffer: 1.5
+          searchRadius: 10
+          minimumRetreatDistance: 2.5
+          maximumRetreatDistance: 8.5
+          arrivalTolerance: 0.35
+          candidateSampleCount: 12
+          useInfiniteDirectionSampling: 1
+          infiniteDirectionStepDegrees: 8
+          minimumEnemyClearance: 0.25
+          trajectoryPredictionTime: 0.35
+          freeTrajectoryPreference: 4.5
+          retreatDirectionPreference: 1.25
+          openSpacePreference: 1
+          navigationRetreatPreference: 1.35
+          patrolRadius: 3.5
+          patrolWaitSeconds: 0.55
+          patrolSpeedMultiplier: 0.82
+          retreatSpeedMultiplierFar: 1
+          retreatSpeedMultiplierNear: 1.4
+          blockedPathRetryDelay: 0.2
         shooter:
           aimPolicy: 0
           movementPolicy: 0

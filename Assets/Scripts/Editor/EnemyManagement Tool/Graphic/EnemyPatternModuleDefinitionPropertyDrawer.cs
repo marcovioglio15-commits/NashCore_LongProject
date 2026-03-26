@@ -105,6 +105,9 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
             case EnemyPatternModuleKind.Wanderer:
                 return "Wanderer: autonomous roaming behavior with Basic or DVD mode.";
 
+            case EnemyPatternModuleKind.Coward:
+                return "Coward: retreats from the player while scoring open-space escape routes and respecting wall clearance.";
+
             case EnemyPatternModuleKind.Shooter:
                 return "Shooter: emits periodic projectiles with burst and elemental options.";
 

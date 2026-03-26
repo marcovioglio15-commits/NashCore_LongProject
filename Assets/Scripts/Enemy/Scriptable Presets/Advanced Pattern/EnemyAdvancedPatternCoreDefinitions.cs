@@ -17,6 +17,9 @@ public sealed class EnemyPatternModulePayloadData
     [Tooltip("Wanderer payload used when module kind is Wanderer.")]
     [SerializeField] private EnemyWandererModuleData wanderer = new EnemyWandererModuleData();
 
+    [Tooltip("Coward payload used when module kind is Coward.")]
+    [SerializeField] private EnemyCowardModuleData coward = new EnemyCowardModuleData();
+
     [Tooltip("Shooter payload used when module kind is Shooter.")]
     [SerializeField] private EnemyShooterModuleData shooter = new EnemyShooterModuleData();
 
@@ -40,6 +43,14 @@ public sealed class EnemyPatternModulePayloadData
         get
         {
             return wanderer;
+        }
+    }
+
+    public EnemyCowardModuleData Coward
+    {
+        get
+        {
+            return coward;
         }
     }
 
@@ -74,6 +85,9 @@ public sealed class EnemyPatternModulePayloadData
         if (wanderer == null)
             wanderer = new EnemyWandererModuleData();
 
+        if (coward == null)
+            coward = new EnemyCowardModuleData();
+
         if (shooter == null)
             shooter = new EnemyShooterModuleData();
 
@@ -82,6 +96,7 @@ public sealed class EnemyPatternModulePayloadData
 
         stationary.Validate();
         wanderer.Validate();
+        coward.Validate();
         shooter.Validate();
         dropItems.Validate();
     }

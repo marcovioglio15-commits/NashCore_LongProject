@@ -112,9 +112,14 @@ public static class EnemyPatternWandererMovementUtility
                     float penetration = math.max(0f, requiredClearance - distance);
                     float softWeight = math.saturate((softClearance - distance) / math.max(0.01f, softClearance));
                     float penetrationWeight = penetration / math.max(0.01f, requiredClearance);
-                    float weight = softWeight + penetrationWeight * 1.5f;
-                    float priorityWeight = ResolvePriorityAvoidanceWeight(selfPriorityTier, neighborPriorityTier);
-                    float sideStepWeight = softWeight * ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.28f, 0.95f);
+                    float spacingPressure = math.saturate(math.max(softWeight, penetrationWeight));
+                    float weight = softWeight * 1.18f +
+                                   penetrationWeight * 1.9f +
+                                   spacingPressure * 0.35f;
+                    float priorityWeight = ResolvePriorityAvoidanceWeight(selfPriorityTier, neighborPriorityTier) *
+                                           (1f + spacingPressure * 0.24f);
+                    float sideStepWeight = softWeight * ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.28f, 0.95f) *
+                                           (1f + spacingPressure * 0.32f);
 
                     if (selfPriorityTier < neighborPriorityTier)
                     {
@@ -158,8 +163,9 @@ public static class EnemyPatternWandererMovementUtility
 
         float referenceClearance = math.max(0.05f, normalizedBodyRadius + requiredPadding);
         float penetrationFactor = math.saturate(maximumPenetration / referenceClearance);
-        float clearanceMaxSpeed = clearanceSpeedCap * ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.85f, 1.6f);
-        float clearanceSpeed = math.lerp(clearanceSpeedCap * 0.35f, clearanceMaxSpeed, penetrationFactor);
+        float clearancePressure = math.saturate(math.max(penetrationFactor, priorityYieldUrgency));
+        float clearanceMaxSpeed = clearanceSpeedCap * ResolveAggressivenessScale(resolvedSteeringAggressiveness, 0.92f, 1.72f);
+        float clearanceSpeed = math.lerp(clearanceSpeedCap * 0.42f, clearanceMaxSpeed, clearancePressure);
         priorityYieldUrgency = math.saturate(priorityYieldUrgency);
         priorityYieldGapNormalized = math.saturate(priorityYieldGapNormalized);
         return normalizedDirection * clearanceSpeed * resolvedSteeringAggressiveness;
@@ -575,7 +581,7 @@ public static class EnemyPatternWandererMovementUtility
             return math.max(0.55f, 0.96f - priorityGap * 0.06f);
         }
 
-        return 1.08f;
+        return 1.14f;
     }
 
     /// <summary>
@@ -598,7 +604,7 @@ public static class EnemyPatternWandererMovementUtility
             return math.max(0.2f, 0.7f - priorityGap * 0.08f);
         }
 
-        return 1.2f;
+        return 1.32f;
     }
 
     /// <summary>

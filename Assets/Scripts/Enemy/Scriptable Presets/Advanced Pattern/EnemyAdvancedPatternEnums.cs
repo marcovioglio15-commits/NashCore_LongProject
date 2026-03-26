@@ -7,7 +7,8 @@ public enum EnemyPatternModuleKind
     Grunt = 1,
     Wanderer = 2,
     Shooter = 3,
-    DropItems = 4
+    DropItems = 4,
+    Coward = 5
 }
 
 /// <summary>
@@ -45,7 +46,8 @@ public enum EnemyCompiledMovementPatternKind : byte
     Grunt = 0,
     Stationary = 1,
     WandererBasic = 2,
-    WandererDvd = 3
+    WandererDvd = 3,
+    Coward = 4
 }
 
 /// <summary>

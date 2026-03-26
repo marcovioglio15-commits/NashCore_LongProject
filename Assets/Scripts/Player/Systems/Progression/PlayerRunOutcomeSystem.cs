@@ -32,14 +32,31 @@ public partial struct PlayerRunOutcomeSystem : ISystem
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
+        EntityManager entityManager = state.EntityManager;
+
         foreach ((RefRW<PlayerRunOutcomeState> runOutcomeState,
-                  RefRO<PlayerHealth> playerHealth)
+                  RefRO<PlayerHealth> playerHealth,
+                  Entity playerEntity)
                  in SystemAPI.Query<RefRW<PlayerRunOutcomeState>,
                                     RefRO<PlayerHealth>>()
-                             .WithAll<PlayerControllerConfig>())
+                             .WithAll<PlayerControllerConfig>()
+                             .WithEntityAccess())
         {
             if (runOutcomeState.ValueRO.IsFinalized != 0)
                 continue;
+
+            if (entityManager.HasComponent<PlayerRunTimerConfig>(playerEntity) &&
+                entityManager.HasComponent<PlayerRunTimerState>(playerEntity))
+            {
+                PlayerRunTimerConfig timerConfig = entityManager.GetComponentData<PlayerRunTimerConfig>(playerEntity);
+                PlayerRunTimerState timerState = entityManager.GetComponentData<PlayerRunTimerState>(playerEntity);
+
+                if (timerConfig.Direction == PlayerRunTimerDirection.Backward && timerState.Expired != 0)
+                {
+                    FinalizeOutcome(ref runOutcomeState.ValueRW, PlayerRunOutcome.Defeat);
+                    continue;
+                }
+            }
 
             if (playerHealth.ValueRO.Current <= 0f)
             {

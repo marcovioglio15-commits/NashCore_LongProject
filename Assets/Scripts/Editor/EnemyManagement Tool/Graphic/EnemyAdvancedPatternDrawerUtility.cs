@@ -87,6 +87,9 @@ public static class EnemyAdvancedPatternDrawerUtility
             case EnemyPatternModuleKind.Wanderer:
                 return EnemyAdvancedPatternPayloadDrawerUtility.BuildWandererPayloadEditor(payloadDataProperty, payloadContainer);
 
+            case EnemyPatternModuleKind.Coward:
+                return EnemyAdvancedPatternPayloadDrawerUtility.BuildCowardPayloadEditor(payloadDataProperty, payloadContainer);
+
             case EnemyPatternModuleKind.Shooter:
                 return EnemyAdvancedPatternPayloadDrawerUtility.BuildShooterPayloadEditor(payloadDataProperty, payloadContainer);
 
