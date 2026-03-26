@@ -649,7 +649,7 @@ PrefabInstance:
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
       propertyPath: wavePreset
       value: 
-      objectReference: {fileID: 11400000, guid: 8c2e3310ef9dd3a41a2640e5ada9482b, type: 2}
+      objectReference: {fileID: 11400000, guid: 5c5b92375b7411546814a8b4ccdbe2a5, type: 2}
     - target: {fileID: 8575402114385844121, guid: 781d2582b36eb1048b0a3b1a4fdc34a3, type: 3}
       propertyPath: waves.Array.size
       value: 1

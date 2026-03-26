@@ -26,7 +26,7 @@ MonoBehaviour:
   damageFeedback:
     flashColor: {r: 1, g: 0.15, b: 0.15, a: 1}
     flashDurationSeconds: 0.6
-    flashMaximumBlend: 0.85
+    flashMaximumBlend: 0.6
   prefabs:
     enemyPrefab: {fileID: 3091458169621715366, guid: f3f98af1cee6db041942c48b1be7625a, type: 3}
     hitVfxPrefab: {fileID: 3021818779694104051, guid: afa1147b43317a74db598d39f92f660e, type: 3}

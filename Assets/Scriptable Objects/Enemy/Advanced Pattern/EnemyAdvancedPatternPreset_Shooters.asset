@@ -254,10 +254,10 @@ MonoBehaviour:
       wanderer:
         mode: 0
         basic:
-          searchRadius: 9
+          searchRadius: 25
           minimumTravelDistance: 2
           maximumTravelDistance: 8
-          arrivalTolerance: 0.35
+          arrivalTolerance: 0
           waitCooldownSeconds: 0.7
           candidateSampleCount: 9
           useInfiniteDirectionSampling: 1
@@ -410,23 +410,23 @@ MonoBehaviour:
         retreatSpeedMultiplierNear: 1.4
         blockedPathRetryDelay: 0.2
       shooter:
-        aimPolicy: 0
+        aimPolicy: 1
         movementPolicy: 1
-        fireInterval: 1
+        fireInterval: 1.5
         burstCount: 2
-        intraBurstDelay: 0.08
+        intraBurstDelay: 0.3
         useMinimumRange: 1
         minimumRange: 2
         useMaximumRange: 1
-        maximumRange: 10
+        maximumRange: 15
         projectile:
           projectilesPerShot: 1
           spreadAngleDegrees: 0
-          projectileSpeed: 14
-          projectileDamage: 6
+          projectileSpeed: 8
+          projectileDamage: 1
           projectileRange: 28
           projectileLifetime: 4
-          projectileExplosionRadius: 1
+          projectileExplosionRadius: 0.5
           projectileScaleMultiplier: 1
           penetrationMode: 0
           maxPenetrations: 0
@@ -593,7 +593,7 @@ MonoBehaviour:
       projectiles.
     unreplaceable: 0
     moduleBindings:
-    - moduleId: Module_Grunt
+    - moduleId: Module_Wanderer
       isEnabled: 1
       useOverridePayload: 0
       overridePayload:
