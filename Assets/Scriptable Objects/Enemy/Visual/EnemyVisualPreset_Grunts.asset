@@ -25,7 +25,7 @@ MonoBehaviour:
     visibleDistanceHysteresis: 6
   damageFeedback:
     flashColor: {r: 1, g: 0.15, b: 0.15, a: 1}
-    flashDurationSeconds: 0.06
+    flashDurationSeconds: 0.6
     flashMaximumBlend: 0.85
   prefabs:
     enemyPrefab: {fileID: 3091458169621715366, guid: f3f98af1cee6db041942c48b1be7625a, type: 3}

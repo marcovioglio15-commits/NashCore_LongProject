@@ -21,8 +21,8 @@ MonoBehaviour:
   runtimeVisualBridgeSyncRotation: 1
   runtimeVisualBridgeOffset: {x: 0, y: 0, z: 0}
   damageFlashColor: {r: 1, g: 0.15, b: 0.15, a: 1}
-  damageFlashDurationSeconds: 0.06
-  damageFlashMaximumBlend: 0.85
+  damageFlashDurationSeconds: 0.6
+  damageFlashMaximumBlend: 0.25
   elementalTrailAttachedVfxPrefab: {fileID: 5679156216372977872, guid: 92d93d035892fff40a63205dfd234520, type: 3}
   elementalTrailAttachedVfxScaleMultiplier: 1
   maxIdenticalOneShotVfxPerCell: 1

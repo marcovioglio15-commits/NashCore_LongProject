@@ -16,7 +16,7 @@ MonoBehaviour:
   - waveLabel: PF_EnemySpawner_Grunts
     previewInScene: 1
     startMode: 0
-    startDelaySeconds: 0
+    startDelaySeconds: 3
     spawnDurationSeconds: 1
     defaultDistributionCurve:
       serializedVersion: 2

@@ -44,7 +44,7 @@ MonoBehaviour:
     maximumValue: 8
   - statName: ShotRange
     statType: 0
-    defaultValue: 1
+    defaultValue: 0.35
     minimumValue: -1000000
     maximumValue: 1000000
   - statName: GatheringRadius
