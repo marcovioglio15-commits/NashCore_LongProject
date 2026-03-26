@@ -22,6 +22,9 @@ public static class RuntimeGizmoDebugState
     private const bool DefaultSpawnerDespawnRadiusEnabled = false;
     private const bool DefaultBombRadiusEnabled = false;
     private const bool DefaultBombVelocityEnabled = false;
+    private const bool DefaultProjectileImpactRadiusEnabled = false;
+    private const bool DefaultProjectileVelocityEnabled = false;
+    private const bool DefaultProjectileRemainingRangeEnabled = false;
     #endregion
 
     #region Fields
@@ -39,6 +42,9 @@ public static class RuntimeGizmoDebugState
     private static bool spawnerDespawnRadiusEnabled;
     private static bool bombRadiusEnabled;
     private static bool bombVelocityEnabled;
+    private static bool projectileImpactRadiusEnabled;
+    private static bool projectileVelocityEnabled;
+    private static bool projectileRemainingRangeEnabled;
     #endregion
 
     #region Events
@@ -221,6 +227,42 @@ public static class RuntimeGizmoDebugState
         }
     }
 
+    public static bool ProjectileImpactRadiusEnabled
+    {
+        get
+        {
+            return projectileImpactRadiusEnabled;
+        }
+        set
+        {
+            SetFlag(ref projectileImpactRadiusEnabled, value);
+        }
+    }
+
+    public static bool ProjectileVelocityEnabled
+    {
+        get
+        {
+            return projectileVelocityEnabled;
+        }
+        set
+        {
+            SetFlag(ref projectileVelocityEnabled, value);
+        }
+    }
+
+    public static bool ProjectileRemainingRangeEnabled
+    {
+        get
+        {
+            return projectileRemainingRangeEnabled;
+        }
+        set
+        {
+            SetFlag(ref projectileRemainingRangeEnabled, value);
+        }
+    }
+
     public static bool AnyRuntimeGizmoEnabled
     {
         get
@@ -246,6 +288,13 @@ public static class RuntimeGizmoDebugState
 
             if (bombRadiusEnabled || bombVelocityEnabled)
                 return true;
+
+            if (projectileImpactRadiusEnabled ||
+                projectileVelocityEnabled ||
+                projectileRemainingRangeEnabled)
+            {
+                return true;
+            }
 
             return false;
         }
@@ -284,6 +333,9 @@ public static class RuntimeGizmoDebugState
         spawnerDespawnRadiusEnabled = DefaultSpawnerDespawnRadiusEnabled;
         bombRadiusEnabled = DefaultBombRadiusEnabled;
         bombVelocityEnabled = DefaultBombVelocityEnabled;
+        projectileImpactRadiusEnabled = DefaultProjectileImpactRadiusEnabled;
+        projectileVelocityEnabled = DefaultProjectileVelocityEnabled;
+        projectileRemainingRangeEnabled = DefaultProjectileRemainingRangeEnabled;
     }
 
     private static void SetFlag(ref bool target, bool value)

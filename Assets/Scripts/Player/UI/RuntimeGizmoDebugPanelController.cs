@@ -71,6 +71,16 @@ public sealed class RuntimeGizmoDebugPanelController : MonoBehaviour
 
     [Tooltip("Toggle used to show or hide bomb velocity gizmos.")]
     [SerializeField] private Toggle bombVelocityToggle;
+
+    [Header("Projectile Toggles")]
+    [Tooltip("Toggle used to show or hide projectile impact radius gizmos.")]
+    [SerializeField] private Toggle projectileImpactRadiusToggle;
+
+    [Tooltip("Toggle used to show or hide projectile velocity gizmos.")]
+    [SerializeField] private Toggle projectileVelocityToggle;
+
+    [Tooltip("Toggle used to show or hide projectile remaining range gizmos.")]
+    [SerializeField] private Toggle projectileRemainingRangeToggle;
     #endregion
 
     private InputAction boundPanelToggleAction;
@@ -137,6 +147,9 @@ public sealed class RuntimeGizmoDebugPanelController : MonoBehaviour
         BindToggle(spawnerDespawnRadiusToggle, RuntimeGizmoDebugState.SpawnerDespawnRadiusEnabled, HandleSpawnerDespawnRadiusChanged);
         BindToggle(bombRadiusToggle, RuntimeGizmoDebugState.BombRadiusEnabled, HandleBombRadiusChanged);
         BindToggle(bombVelocityToggle, RuntimeGizmoDebugState.BombVelocityEnabled, HandleBombVelocityChanged);
+        BindToggle(projectileImpactRadiusToggle, RuntimeGizmoDebugState.ProjectileImpactRadiusEnabled, HandleProjectileImpactRadiusChanged);
+        BindToggle(projectileVelocityToggle, RuntimeGizmoDebugState.ProjectileVelocityEnabled, HandleProjectileVelocityChanged);
+        BindToggle(projectileRemainingRangeToggle, RuntimeGizmoDebugState.ProjectileRemainingRangeEnabled, HandleProjectileRemainingRangeChanged);
     }
 
     /// <summary>
@@ -281,6 +294,9 @@ public sealed class RuntimeGizmoDebugPanelController : MonoBehaviour
         SetToggleValue(spawnerDespawnRadiusToggle, RuntimeGizmoDebugState.SpawnerDespawnRadiusEnabled);
         SetToggleValue(bombRadiusToggle, RuntimeGizmoDebugState.BombRadiusEnabled);
         SetToggleValue(bombVelocityToggle, RuntimeGizmoDebugState.BombVelocityEnabled);
+        SetToggleValue(projectileImpactRadiusToggle, RuntimeGizmoDebugState.ProjectileImpactRadiusEnabled);
+        SetToggleValue(projectileVelocityToggle, RuntimeGizmoDebugState.ProjectileVelocityEnabled);
+        SetToggleValue(projectileRemainingRangeToggle, RuntimeGizmoDebugState.ProjectileRemainingRangeEnabled);
     }
 
     private void RefreshPanelTitle()
@@ -366,6 +382,21 @@ public sealed class RuntimeGizmoDebugPanelController : MonoBehaviour
     private static void HandleBombVelocityChanged(bool isEnabled)
     {
         RuntimeGizmoDebugState.BombVelocityEnabled = isEnabled;
+    }
+
+    private static void HandleProjectileImpactRadiusChanged(bool isEnabled)
+    {
+        RuntimeGizmoDebugState.ProjectileImpactRadiusEnabled = isEnabled;
+    }
+
+    private static void HandleProjectileVelocityChanged(bool isEnabled)
+    {
+        RuntimeGizmoDebugState.ProjectileVelocityEnabled = isEnabled;
+    }
+
+    private static void HandleProjectileRemainingRangeChanged(bool isEnabled)
+    {
+        RuntimeGizmoDebugState.ProjectileRemainingRangeEnabled = isEnabled;
     }
     #endregion
 
