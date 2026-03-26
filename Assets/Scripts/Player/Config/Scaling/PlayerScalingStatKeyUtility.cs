@@ -295,7 +295,10 @@ public static class PlayerScalingStatKeyUtility
         if (arrayProperty == null || arrayProperty.isArray == false)
             return false;
 
-        int resolvedIndex = FindArrayElementIndexByStableId(arrayProperty, idPropertyName, idPropertyValue);
+        int resolvedIndex = FindArrayElementIndexByStableId(arrayProperty,
+                                                            idPropertyName,
+                                                            idPropertyValue,
+                                                            fallbackIndex);
 
         if (resolvedIndex >= 0)
         {
@@ -377,8 +380,9 @@ public static class PlayerScalingStatKeyUtility
     }
 
     private static int FindArrayElementIndexByStableId(SerializedProperty arrayProperty,
-                                                        string idPropertyName,
-                                                        string idPropertyValue)
+                                                       string idPropertyName,
+                                                       string idPropertyValue,
+                                                       int preferredIndex)
     {
         if (arrayProperty == null || arrayProperty.isArray == false)
             return -1;
@@ -386,25 +390,85 @@ public static class PlayerScalingStatKeyUtility
         if (string.IsNullOrWhiteSpace(idPropertyName) || string.IsNullOrWhiteSpace(idPropertyValue))
             return -1;
 
+        if (preferredIndex >= 0 &&
+            preferredIndex < arrayProperty.arraySize &&
+            IsArrayElementMatchingStableId(arrayProperty.GetArrayElementAtIndex(preferredIndex),
+                                          idPropertyName,
+                                          idPropertyValue))
+        {
+            return preferredIndex;
+        }
+
         for (int elementIndex = 0; elementIndex < arrayProperty.arraySize; elementIndex++)
         {
-            SerializedProperty arrayElement = arrayProperty.GetArrayElementAtIndex(elementIndex);
-
-            if (arrayElement == null)
+            if (!IsArrayElementMatchingStableId(arrayProperty.GetArrayElementAtIndex(elementIndex),
+                                               idPropertyName,
+                                               idPropertyValue))
+            {
                 continue;
-
-            SerializedProperty idProperty = arrayElement.FindPropertyRelative(idPropertyName);
-
-            if (idProperty == null)
-                continue;
-
-            if (IsMatchingStableIdProperty(idProperty, idPropertyValue) == false)
-                continue;
+            }
 
             return elementIndex;
         }
 
         return -1;
+    }
+
+    private static bool IsArrayElementMatchingStableId(SerializedProperty arrayElement,
+                                                       string idPropertyName,
+                                                       string idPropertyValue)
+    {
+        if (arrayElement == null)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(idPropertyName))
+            return false;
+
+        SerializedProperty idProperty = ResolveStableIdProperty(arrayElement, idPropertyName);
+
+        if (idProperty == null)
+            return false;
+
+        return IsMatchingStableIdProperty(idProperty, idPropertyValue);
+    }
+
+    /// <summary>
+    /// Resolves the serialized property used as stable identifier for one array element.
+    /// Supports both direct fields and flattened token names emitted from nested stable ID paths.
+    /// </summary>
+    /// <param name="arrayElement">Array element that owns the identifier field.</param>
+    /// <param name="idPropertyName">Stable token name stored inside the stat key.</param>
+    /// <returns>Matching serialized identifier property when found; otherwise null.<returns>
+    private static SerializedProperty ResolveStableIdProperty(SerializedProperty arrayElement, string idPropertyName)
+    {
+        if (arrayElement == null)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(idPropertyName))
+            return null;
+
+        // Check the direct relative field first because most stable IDs are stored at the array-element root.
+        SerializedProperty directProperty = arrayElement.FindPropertyRelative(idPropertyName);
+
+        if (directProperty != null)
+            return directProperty;
+
+        // Nested stable IDs are flattened to their terminal token when the stat key is generated.
+        for (int candidateIndex = 0; candidateIndex < StableNestedStringIdPropertyPaths.Length; candidateIndex++)
+        {
+            string candidatePath = StableNestedStringIdPropertyPaths[candidateIndex];
+            string candidateTokenName = ResolveStableTokenName(candidatePath);
+
+            if (!string.Equals(candidateTokenName, idPropertyName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            SerializedProperty nestedProperty = arrayElement.FindPropertyRelative(candidatePath);
+
+            if (nestedProperty != null)
+                return nestedProperty;
+        }
+
+        return null;
     }
 
     private static bool IsMatchingStableIdProperty(SerializedProperty idProperty, string tokenValue)

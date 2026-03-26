@@ -64,7 +64,10 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
 
         Button addModuleButton = new Button(() =>
         {
-            AddModuleDefinition(panel);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                AddModuleDefinition(panel);
+            });
         });
         addModuleButton.text = "Add Module";
         addModuleButton.tooltip = "Create a new module definition entry.";
@@ -262,7 +265,10 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
 
         Button duplicateButton = new Button(() =>
         {
-            DuplicateModuleDefinition(panel, moduleIndex);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                DuplicateModuleDefinition(panel, moduleIndex);
+            });
         });
         duplicateButton.text = "Duplicate";
         duplicateButton.tooltip = "Duplicate this module definition.";
@@ -270,7 +276,10 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
 
         Button moveUpButton = new Button(() =>
         {
-            MoveModuleDefinition(panel, moduleIndex, moduleIndex - 1);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                MoveModuleDefinition(panel, moduleIndex, moduleIndex - 1);
+            });
         });
         moveUpButton.text = "Up";
         moveUpButton.tooltip = "Move this module one position up.";
@@ -280,7 +289,10 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
 
         Button moveDownButton = new Button(() =>
         {
-            MoveModuleDefinition(panel, moduleIndex, moduleIndex + 1);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                MoveModuleDefinition(panel, moduleIndex, moduleIndex + 1);
+            });
         });
         moveDownButton.text = "Down";
         moveDownButton.tooltip = "Move this module one position down.";
@@ -290,7 +302,10 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
 
         Button deleteButton = new Button(() =>
         {
-            DeleteModuleDefinition(panel, moduleIndex);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                DeleteModuleDefinition(panel, moduleIndex);
+            });
         });
         deleteButton.text = "Delete";
         deleteButton.tooltip = "Delete this module definition.";
@@ -356,19 +371,26 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
 
     private static void MoveModuleDefinition(PlayerPowerUpsPresetsPanel panel, int fromIndex, int toIndex)
     {
-        ApplyModuleDefinitionsMutation(panel, "Move Module Definition", moduleDefinitionsProperty =>
+        if (panel == null || panel.selectedPreset == null)
+            return;
+
+        Undo.RecordObject(panel.selectedPreset, "Move Module Definition");
+
+        if (!PlayerPowerUpsPresetReorderUtility.MoveModuleDefinition(panel.selectedPreset, fromIndex, toIndex))
+            return;
+
+        EditorUtility.SetDirty(panel.selectedPreset);
+
+        if (panel.presetSerializedObject != null)
         {
-            if (fromIndex < 0 || fromIndex >= moduleDefinitionsProperty.arraySize)
-                return;
+            panel.presetSerializedObject.Update();
 
-            if (toIndex < 0 || toIndex >= moduleDefinitionsProperty.arraySize)
-                return;
+            if (PlayerScalingRuleStatKeyRefreshUtility.RefreshStatKeys(panel.presetSerializedObject))
+                panel.presetSerializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
 
-            if (fromIndex == toIndex)
-                return;
-
-            moduleDefinitionsProperty.MoveArrayElement(fromIndex, toIndex);
-        });
+        PlayerManagementDraftSession.MarkDirty();
+        panel.ScheduleActiveSectionRebuild();
     }
 
     private static void SetAllModuleFoldoutStates(PlayerPowerUpsPresetsPanel panel, bool expanded)
@@ -421,6 +443,7 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
 
         panel.presetSerializedObject.Update();
         mutation(moduleDefinitionsProperty);
+        PlayerScalingRuleStatKeyRefreshUtility.RefreshStatKeys(panel.presetSerializedObject);
         panel.presetSerializedObject.ApplyModifiedProperties();
         PlayerManagementDraftSession.MarkDirty();
         panel.ScheduleActiveSectionRebuild();

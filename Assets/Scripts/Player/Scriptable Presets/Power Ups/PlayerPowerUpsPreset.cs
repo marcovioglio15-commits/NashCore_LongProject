@@ -619,6 +619,65 @@ public sealed class PlayerPowerUpsPreset : ScriptableObject
         PlayerPowerUpsPresetValidationUtility.ValidateEntries(this);
         return true;
     }
+
+    /// <summary>
+    /// Reorders one modular power-up entry inside the active or passive catalog owned by this preset.
+    /// Used by editor tooling to avoid fragile serialized-array moves on large nested payload graphs.
+    /// </summary>
+    /// <param name="isActiveSection">True when the active power-up list should be reordered, false for the passive list.</param>
+    /// <param name="fromIndex">Current index of the entry to move.</param>
+    /// <param name="toIndex">Destination index after the move.</param>
+    /// <returns>True when the reorder was applied, otherwise false.</returns>
+    public bool MovePowerUpDefinition(bool isActiveSection, int fromIndex, int toIndex)
+    {
+        List<ModularPowerUpDefinition> powerUpDefinitions = isActiveSection
+            ? activePowerUps
+            : passivePowerUps;
+
+        return MoveListElement(powerUpDefinitions, fromIndex, toIndex);
+    }
+
+    /// <summary>
+    /// Reorders one reusable module definition inside this preset module catalog.
+    /// Used by editor tooling while keeping existing module instances intact.
+    /// </summary>
+    /// <param name="fromIndex">Current index of the module definition to move.</param>
+    /// <param name="toIndex">Destination index after the move.</param>
+    /// <returns>True when the reorder was applied, otherwise false.</returns>
+    public bool MoveModuleDefinition(int fromIndex, int toIndex)
+    {
+        return MoveListElement(moduleDefinitions, fromIndex, toIndex);
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Moves one list element to a new index without cloning or recreating the referenced payload graph.
+    /// </summary>
+    /// <typeparam name="T">Element type stored by the list.</typeparam>
+    /// <param name="elements">List that owns the element to move.</param>
+    /// <param name="fromIndex">Current element index.</param>
+    /// <param name="toIndex">Destination element index.</param>
+    /// <returns>True when the move was applied, otherwise false.</returns>
+    private static bool MoveListElement<T>(List<T> elements, int fromIndex, int toIndex)
+    {
+        if (elements == null)
+            return false;
+
+        if (fromIndex < 0 || fromIndex >= elements.Count)
+            return false;
+
+        if (toIndex < 0 || toIndex >= elements.Count)
+            return false;
+
+        if (fromIndex == toIndex)
+            return false;
+
+        T movedElement = elements[fromIndex];
+        elements.RemoveAt(fromIndex);
+        elements.Insert(toIndex, movedElement);
+        return true;
+    }
     #endregion
 
     #region Unity Methods

@@ -76,19 +76,26 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
     {
         string undoLabel = isActiveSection ? "Move Active Power Up" : "Move Passive Power Up";
 
-        ApplyPowerUpDefinitionsMutation(panel, undoLabel, isActiveSection, powerUpsProperty =>
+        if (panel == null || panel.selectedPreset == null)
+            return;
+
+        Undo.RecordObject(panel.selectedPreset, undoLabel);
+
+        if (!PlayerPowerUpsPresetReorderUtility.MovePowerUpDefinition(panel.selectedPreset, isActiveSection, fromIndex, toIndex))
+            return;
+
+        EditorUtility.SetDirty(panel.selectedPreset);
+
+        if (panel.presetSerializedObject != null)
         {
-            if (fromIndex < 0 || fromIndex >= powerUpsProperty.arraySize)
-                return;
+            panel.presetSerializedObject.Update();
 
-            if (toIndex < 0 || toIndex >= powerUpsProperty.arraySize)
-                return;
+            if (PlayerScalingRuleStatKeyRefreshUtility.RefreshStatKeys(panel.presetSerializedObject))
+                panel.presetSerializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
 
-            if (fromIndex == toIndex)
-                return;
-
-            powerUpsProperty.MoveArrayElement(fromIndex, toIndex);
-        });
+        PlayerManagementDraftSession.MarkDirty();
+        panel.ScheduleActiveSectionRebuild();
     }
 
     public static void SetAllPowerUpFoldoutStates(PlayerPowerUpsPresetsPanel panel, bool isActiveSection, bool expanded)
@@ -147,6 +154,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
 
         panel.presetSerializedObject.Update();
         mutation(powerUpsProperty);
+        PlayerScalingRuleStatKeyRefreshUtility.RefreshStatKeys(panel.presetSerializedObject);
         panel.presetSerializedObject.ApplyModifiedProperties();
         PlayerManagementDraftSession.MarkDirty();
         panel.ScheduleActiveSectionRebuild();

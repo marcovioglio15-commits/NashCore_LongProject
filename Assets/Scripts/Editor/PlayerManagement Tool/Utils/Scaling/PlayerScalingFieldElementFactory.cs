@@ -230,7 +230,7 @@ public static class PlayerScalingFieldElementFactory
             SerializedProperty ruleProperty = FindRuleProperty(scalingRulesProperty,
                                                                targetProperty,
                                                                statKey,
-                                                               true);
+                                                               false);
             bool addScaling = false;
             string formulaValue = string.Empty;
             bool debugInConsole = false;

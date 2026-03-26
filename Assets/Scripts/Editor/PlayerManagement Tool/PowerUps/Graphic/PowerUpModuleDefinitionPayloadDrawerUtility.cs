@@ -429,12 +429,11 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         payloadContainer.Add(warningBox);
         RefreshCharacterTuningAvailableVariables(characterTuningPayloadProperty.serializedObject, availableVariablesLabel);
         RefreshCharacterTuningWarnings(characterTuningPayloadProperty.serializedObject, formulasProperty, warningBox);
-
-        payloadContainer.TrackSerializedObjectValue(characterTuningPayloadProperty.serializedObject, changedObject =>
-        {
-            RefreshCharacterTuningAvailableVariables(changedObject, availableVariablesLabel);
-            RefreshCharacterTuningWarnings(changedObject, formulasProperty, warningBox);
-        });
+        RegisterCharacterTuningFormulaRefresh(payloadContainer,
+                                              characterTuningPayloadProperty.serializedObject,
+                                              formulasProperty.propertyPath,
+                                              availableVariablesLabel,
+                                              warningBox);
     }
 
     private static void BuildStackablePayloadUi(VisualElement payloadContainer, SerializedProperty stackablePayloadProperty)
@@ -682,6 +681,53 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         availableVariablesLabel.text = PlayerScalingFormulaValidationUtility.BuildAvailableVariablesLabelText(allowedVariables);
+    }
+
+    /// <summary>
+    /// Refreshes Character Tuning helper UI only when the local formulas payload changes, avoiding global serialized-object watchers on reorderable cards.
+    /// /params payloadContainer Parent element that receives bubbled serialized change events.
+    /// /params serializedObject Serialized object that owns the formulas payload.
+    /// /params formulasPropertyPath Property path of the formulas array to re-resolve after local edits.
+    /// /params availableVariablesLabel Label that shows currently valid variables.
+    /// /params warningBox Help box that shows validation warnings for assignment formulas.
+    /// /returns void
+    /// </summary>
+    private static void RegisterCharacterTuningFormulaRefresh(VisualElement payloadContainer,
+                                                              SerializedObject serializedObject,
+                                                              string formulasPropertyPath,
+                                                              Label availableVariablesLabel,
+                                                              HelpBox warningBox)
+    {
+        if (payloadContainer == null)
+            return;
+
+        if (serializedObject == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(formulasPropertyPath))
+            return;
+
+        payloadContainer.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            if (evt == null || evt.changedProperty == null)
+                return;
+
+            string changedPath = evt.changedProperty.propertyPath;
+
+            if (string.IsNullOrWhiteSpace(changedPath))
+                return;
+
+            if (!string.Equals(changedPath, formulasPropertyPath, StringComparison.Ordinal) &&
+                !changedPath.StartsWith(formulasPropertyPath + ".Array.data[", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty reboundFormulasProperty = serializedObject.FindProperty(formulasPropertyPath);
+            RefreshCharacterTuningAvailableVariables(serializedObject, availableVariablesLabel);
+            RefreshCharacterTuningWarnings(serializedObject, reboundFormulasProperty, warningBox);
+        });
     }
 
     private static void UpdateOrbitPathModeContainers(SerializedProperty pathModeProperty,

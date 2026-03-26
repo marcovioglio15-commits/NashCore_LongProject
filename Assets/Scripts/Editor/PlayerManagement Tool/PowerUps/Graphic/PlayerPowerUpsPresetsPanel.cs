@@ -43,6 +43,10 @@ public sealed class PlayerPowerUpsPresetsPanel
     internal string passivePowerUpIdFilterText = string.Empty;
     internal string passivePowerUpDisplayNameFilterText = string.Empty;
     private bool activeSectionRebuildScheduled;
+    private bool presetSerializedChangeRefreshScheduled;
+    private int presetSerializedChangeHandlingSuspendCounter;
+    private readonly Queue<Action> deferredStructuralActions = new Queue<Action>();
+    private bool deferredStructuralActionsScheduled;
     #endregion
 
     #region Properties
@@ -592,6 +596,28 @@ public sealed class PlayerPowerUpsPresetsPanel
         });
     }
 
+    internal void ScheduleDeferredStructuralAction(Action action)
+    {
+        if (action == null)
+            return;
+
+        deferredStructuralActions.Enqueue(action);
+
+        if (deferredStructuralActionsScheduled)
+            return;
+
+        deferredStructuralActionsScheduled = true;
+        VisualElement scheduleTarget = sectionContentRoot ?? root;
+
+        if (scheduleTarget == null)
+        {
+            PrepareDeferredStructuralActions();
+            return;
+        }
+
+        scheduleTarget.schedule.Execute(PrepareDeferredStructuralActions);
+    }
+
     internal void RegeneratePresetId()
     {
         if (selectedPreset == null)
@@ -617,9 +643,11 @@ public sealed class PlayerPowerUpsPresetsPanel
         if (changedObject == null)
             return;
 
+        if (presetSerializedChangeHandlingSuspendCounter > 0)
+            return;
+
         PlayerManagementDraftSession.MarkDirty();
-        RefreshPresetList();
-        PlayerManagementSelectionContext.NotifyPowerUpsPresetContentChanged();
+        SchedulePresetSerializedChangeRefresh();
     }
 
     private string GetPresetDisplayName(PlayerPowerUpsPreset preset)
@@ -634,6 +662,137 @@ public sealed class PlayerPowerUpsPresetsPanel
             return currentName;
 
         return currentName + " v. " + currentVersion;
+    }
+
+    /// <summary>
+    /// Detaches the active section UI before structural preset mutations so nested property trackers cannot react to moving array paths.
+    /// /params none
+    /// /returns void
+    /// </summary>
+    private void PrepareDeferredStructuralActions()
+    {
+        if (deferredStructuralActions.Count <= 0)
+        {
+            deferredStructuralActionsScheduled = false;
+            return;
+        }
+
+        SuspendPresetSerializedChangeHandling();
+
+        if (sectionContentRoot != null)
+        {
+            sectionContentRoot.SetEnabled(false);
+            sectionContentRoot.Clear();
+        }
+
+        VisualElement scheduleTarget = sectionContentRoot ?? root;
+
+        if (scheduleTarget == null)
+        {
+            ProcessDeferredStructuralActions();
+            return;
+        }
+
+        scheduleTarget.schedule.Execute(ProcessDeferredStructuralActions);
+    }
+
+    /// <summary>
+    /// Executes queued structural actions after the current section UI has been torn down, then rebuilds dependent views once.
+    /// /params none
+    /// /returns void
+    /// </summary>
+    private void ProcessDeferredStructuralActions()
+    {
+        deferredStructuralActionsScheduled = false;
+        bool processedStructuralAction = false;
+
+        try
+        {
+            while (deferredStructuralActions.Count > 0)
+            {
+                Action deferredAction = deferredStructuralActions.Dequeue();
+
+                if (deferredAction == null)
+                    continue;
+
+                processedStructuralAction = true;
+                deferredAction.Invoke();
+            }
+        }
+        finally
+        {
+            if (sectionContentRoot != null)
+                sectionContentRoot.SetEnabled(true);
+
+            ResumePresetSerializedChangeHandling();
+
+            if (processedStructuralAction)
+            {
+                ScheduleActiveSectionRebuild();
+                SchedulePresetSerializedChangeRefresh();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Queues a single preset-level refresh for the list pane and cross-panel dependents even if many serialized callbacks arrive in the same frame.
+    /// /params none
+    /// /returns void
+    /// </summary>
+    private void SchedulePresetSerializedChangeRefresh()
+    {
+        if (presetSerializedChangeRefreshScheduled)
+            return;
+
+        presetSerializedChangeRefreshScheduled = true;
+        VisualElement scheduleTarget = sectionContentRoot ?? root;
+
+        if (scheduleTarget == null)
+        {
+            RefreshPresetSerializedChangeDependents();
+            return;
+        }
+
+        scheduleTarget.schedule.Execute(RefreshPresetSerializedChangeDependents);
+    }
+
+    /// <summary>
+    /// Refreshes the left preset list and dependent panels after the current batch of serialized mutations settles.
+    /// /params none
+    /// /returns void
+    /// </summary>
+    private void RefreshPresetSerializedChangeDependents()
+    {
+        presetSerializedChangeRefreshScheduled = false;
+
+        if (selectedPreset == null)
+            return;
+
+        RefreshPresetList();
+        PlayerManagementSelectionContext.NotifyPowerUpsPresetContentChanged();
+    }
+
+    /// <summary>
+    /// Temporarily suppresses preset change callbacks while the section is being structurally rebuilt.
+    /// /params none
+    /// /returns void
+    /// </summary>
+    private void SuspendPresetSerializedChangeHandling()
+    {
+        presetSerializedChangeHandlingSuspendCounter += 1;
+    }
+
+    /// <summary>
+    /// Re-enables preset change callbacks after a structural mutation batch completes.
+    /// /params none
+    /// /returns void
+    /// </summary>
+    private void ResumePresetSerializedChangeHandling()
+    {
+        if (presetSerializedChangeHandlingSuspendCounter <= 0)
+            return;
+
+        presetSerializedChangeHandlingSuspendCounter -= 1;
     }
     #endregion
 

@@ -83,7 +83,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
 
         Button addButton = new Button(() =>
         {
-            PlayerPowerUpsPresetsPanelEntriesSupportUtility.AddPowerUpDefinition(panel, isActiveSection);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                PlayerPowerUpsPresetsPanelEntriesSupportUtility.AddPowerUpDefinition(panel, isActiveSection);
+            });
         });
         addButton.text = addButtonLabel;
         addButton.tooltip = addButtonTooltip;
@@ -297,7 +300,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
 
         Button duplicateButton = new Button(() =>
         {
-            PlayerPowerUpsPresetsPanelEntriesSupportUtility.DuplicatePowerUpDefinition(panel, isActiveSection, powerUpIndex);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                PlayerPowerUpsPresetsPanelEntriesSupportUtility.DuplicatePowerUpDefinition(panel, isActiveSection, powerUpIndex);
+            });
         });
         duplicateButton.text = "Duplicate";
         duplicateButton.tooltip = "Duplicate this power up entry.";
@@ -305,7 +311,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
 
         Button moveUpButton = new Button(() =>
         {
-            PlayerPowerUpsPresetsPanelEntriesSupportUtility.MovePowerUpDefinition(panel, isActiveSection, powerUpIndex, powerUpIndex - 1);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                PlayerPowerUpsPresetsPanelEntriesSupportUtility.MovePowerUpDefinition(panel, isActiveSection, powerUpIndex, powerUpIndex - 1);
+            });
         });
         moveUpButton.text = "Up";
         moveUpButton.tooltip = "Move this power up one position up.";
@@ -315,7 +324,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
 
         Button moveDownButton = new Button(() =>
         {
-            PlayerPowerUpsPresetsPanelEntriesSupportUtility.MovePowerUpDefinition(panel, isActiveSection, powerUpIndex, powerUpIndex + 1);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                PlayerPowerUpsPresetsPanelEntriesSupportUtility.MovePowerUpDefinition(panel, isActiveSection, powerUpIndex, powerUpIndex + 1);
+            });
         });
         moveDownButton.text = "Down";
         moveDownButton.tooltip = "Move this power up one position down.";
@@ -325,7 +337,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
 
         Button deleteButton = new Button(() =>
         {
-            PlayerPowerUpsPresetsPanelEntriesSupportUtility.DeletePowerUpDefinition(panel, isActiveSection, powerUpIndex);
+            panel.ScheduleDeferredStructuralAction(() =>
+            {
+                PlayerPowerUpsPresetsPanelEntriesSupportUtility.DeletePowerUpDefinition(panel, isActiveSection, powerUpIndex);
+            });
         });
         deleteButton.text = "Delete";
         deleteButton.tooltip = "Delete this power up entry.";
@@ -343,20 +358,6 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
                                                                                       foldout,
                                                                                       coverageWarningBox,
                                                                                       moduleCatalogById);
-
-        card.TrackSerializedObjectValue(powerUpProperty.serializedObject, changedObject =>
-        {
-            if (changedObject == null)
-                return;
-
-            Dictionary<string, PowerUpModuleCatalogEntry> updatedModuleCatalogById = PowerUpModuleCatalogUtility.BuildCatalogById(changedObject);
-            PlayerPowerUpsPresetsPanelEntriesSupportUtility.UpdatePowerUpCardPresentation(powerUpProperty,
-                                                                                          powerUpIndex,
-                                                                                          isActiveSection,
-                                                                                          foldout,
-                                                                                          coverageWarningBox,
-                                                                                          updatedModuleCatalogById);
-        });
 
         PropertyField powerUpField = new PropertyField(powerUpProperty);
         powerUpField.BindProperty(powerUpProperty);

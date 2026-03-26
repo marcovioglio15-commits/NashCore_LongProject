@@ -122,7 +122,10 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
 
         Button addButton = new Button(() =>
         {
-            AddBinding(powerUpProperty, cardsContainer, countLabel);
+            ScheduleBindingMutation(cardsContainer, () =>
+            {
+                AddBinding(powerUpProperty, cardsContainer, countLabel);
+            });
         });
         addButton.text = "Add Binding";
         addButton.tooltip = "Create a new binding in this power up.";
@@ -296,7 +299,10 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
 
         Button duplicateButton = new Button(() =>
         {
-            DuplicateBinding(powerUpProperty, bindingIndex, cardsContainer, countLabel);
+            ScheduleBindingMutation(cardsContainer, () =>
+            {
+                DuplicateBinding(powerUpProperty, bindingIndex, cardsContainer, countLabel);
+            });
         });
         duplicateButton.text = "Duplicate";
         duplicateButton.tooltip = "Duplicate this module binding.";
@@ -304,7 +310,10 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
 
         Button moveUpButton = new Button(() =>
         {
-            MoveBinding(powerUpProperty, bindingIndex, bindingIndex - 1, cardsContainer, countLabel);
+            ScheduleBindingMutation(cardsContainer, () =>
+            {
+                MoveBinding(powerUpProperty, bindingIndex, bindingIndex - 1, cardsContainer, countLabel);
+            });
         });
         moveUpButton.text = "Up";
         moveUpButton.tooltip = "Move this binding one position up.";
@@ -314,7 +323,10 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
 
         Button moveDownButton = new Button(() =>
         {
-            MoveBinding(powerUpProperty, bindingIndex, bindingIndex + 1, cardsContainer, countLabel);
+            ScheduleBindingMutation(cardsContainer, () =>
+            {
+                MoveBinding(powerUpProperty, bindingIndex, bindingIndex + 1, cardsContainer, countLabel);
+            });
         });
         moveDownButton.text = "Down";
         moveDownButton.tooltip = "Move this binding one position down.";
@@ -324,7 +336,10 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
 
         Button deleteButton = new Button(() =>
         {
-            DeleteBinding(powerUpProperty, bindingIndex, cardsContainer, countLabel);
+            ScheduleBindingMutation(cardsContainer, () =>
+            {
+                DeleteBinding(powerUpProperty, bindingIndex, cardsContainer, countLabel);
+            });
         });
         deleteButton.text = "Delete";
         deleteButton.tooltip = "Delete this module binding.";
@@ -456,6 +471,7 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
 
         serializedObject.Update();
         mutation(moduleBindingsProperty);
+        PlayerScalingRuleStatKeyRefreshUtility.RefreshStatKeys(serializedObject);
         serializedObject.ApplyModifiedProperties();
 
         if (targetObject != null)
@@ -670,6 +686,23 @@ public sealed class ModularPowerUpDefinitionPropertyDrawer : PropertyDrawer
                 return;
 
             RebuildBindingsCards(reboundPowerUpProperty, cardsContainer, countLabel);
+        });
+    }
+
+    private static void ScheduleBindingMutation(VisualElement scheduleTarget, Action mutation)
+    {
+        if (mutation == null)
+            return;
+
+        if (scheduleTarget == null)
+        {
+            mutation.Invoke();
+            return;
+        }
+
+        scheduleTarget.schedule.Execute(() =>
+        {
+            mutation.Invoke();
         });
     }
 
