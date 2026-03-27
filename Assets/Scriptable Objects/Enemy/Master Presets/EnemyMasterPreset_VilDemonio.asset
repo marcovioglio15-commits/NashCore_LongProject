@@ -18,7 +18,7 @@ MonoBehaviour:
   version: 1.0.0
   brainPreset: {fileID: 11400000, guid: 4d446369bc011c94f8168d6b18174f9d, type: 2}
   visualPreset: {fileID: 11400000, guid: 26f44b59526a83f40a82bb2cbd9deed4, type: 2}
-  advancedPatternPreset: {fileID: 11400000, guid: 37ef67cfccac8484bbb893d906de4bc9, type: 2}
+  advancedPatternPreset: {fileID: 11400000, guid: 412dcb19d6a261a4cb6ab2d114739bda, type: 2}
   testUiSettings:
     worldOffset: {x: 0, y: 1.8, z: 0}
     rootWidthPixels: 120
