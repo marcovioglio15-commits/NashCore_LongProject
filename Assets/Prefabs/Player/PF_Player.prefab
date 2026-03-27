@@ -53,6 +53,9 @@ MonoBehaviour:
   spawnRuntimeVisualBridgeWhenAnimatorMissing: 1
   runtimeVisualBridgeSyncRotation: 1
   runtimeVisualBridgeOffset: {x: 0, y: 0, z: 0}
+  damageFlashColor: {r: 1, g: 0.15, b: 0.15, a: 1}
+  damageFlashDurationSeconds: 0.06
+  damageFlashMaximumBlend: 0.85
   bakeElementalTrailAttachedVfxReference: 1
   bakePowerUpVfxEntityPrefabs: 1
   elementalTrailAttachedVfxPrefab: {fileID: 5679156216372977872, guid: 92d93d035892fff40a63205dfd234520, type: 3}
@@ -97,6 +100,18 @@ PrefabInstance:
     - target: {fileID: 777199183421789987, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
       propertyPath: m_LocalRotation.z
       value: -0.027550265
+      objectReference: {fileID: 0}
+    - target: {fileID: 1350668956772026819, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.486
+      objectReference: {fileID: 0}
+    - target: {fileID: 1350668956772026819, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.374
+      objectReference: {fileID: 0}
+    - target: {fileID: 1350668956772026819, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.434
       objectReference: {fileID: 0}
     - target: {fileID: 1917377410754265397, guid: 116e2f926e66f6d478c1459c0950628b, type: 3}
       propertyPath: m_LocalPosition.x
