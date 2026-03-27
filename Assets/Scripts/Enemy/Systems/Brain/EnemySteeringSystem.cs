@@ -78,6 +78,7 @@ public partial struct EnemySteeringSystem : ISystem
         NativeArray<float3> planarVelocities = new NativeArray<float3>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<byte> wandererMovementFlags = new NativeArray<byte>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<byte> customPatternMovementFlags = new NativeArray<byte>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<byte> spawnInactivityLockFlags = new NativeArray<byte>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<byte> shooterMovementLockedFlags = new NativeArray<byte>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> separationRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<int2> cellCoordinates = default;
@@ -86,6 +87,7 @@ public partial struct EnemySteeringSystem : ISystem
         NativeList<int> evaluatedEnemyIndices = new NativeList<int>(enemyCount, Allocator.TempJob);
         ComponentLookup<EnemyCustomPatternMovementTag> customPatternMovementTagLookup = SystemAPI.GetComponentLookup<EnemyCustomPatternMovementTag>(true);
         ComponentLookup<EnemyPatternConfig> patternConfigLookup = SystemAPI.GetComponentLookup<EnemyPatternConfig>(true);
+        ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup = SystemAPI.GetComponentLookup<EnemySpawnInactivityLock>(true);
 
         float maxSeparationRadius = 0.25f;
         float maxBodyRadius = 0.05f;
@@ -112,6 +114,9 @@ public partial struct EnemySteeringSystem : ISystem
             planarVelocity.y = 0f;
             planarVelocities[index] = planarVelocity;
             wandererMovementFlags[index] = 0;
+            spawnInactivityLockFlags[index] = spawnInactivityLockLookup.HasComponent(enemyEntity) && spawnInactivityLockLookup.IsComponentEnabled(enemyEntity)
+                ? (byte)1
+                : (byte)0;
             bool hasCustomPatternMovementTag = customPatternMovementTagLookup.HasComponent(enemyEntity);
             customPatternMovementFlags[index] = hasCustomPatternMovementTag ? (byte)1 : (byte)0;
 
@@ -147,7 +152,7 @@ public partial struct EnemySteeringSystem : ISystem
             // LOD gating reduces per-frame steering cost for far enemies while keeping a stable cadence.
             EnemySteeringUtility.SteeringLodLevel lodLevel = EnemySteeringUtility.EvaluateLod(playerPosition, enemyTransform.Position);
             bool shouldEvaluate = EnemySteeringUtility.ShouldEvaluateLod(lodLevel, frameCount, enemyEntity.Index);
-            if (shouldEvaluate && !hasCustomPatternMovementTag)
+            if (shouldEvaluate && !hasCustomPatternMovementTag && spawnInactivityLockFlags[index] == 0)
             {
                 int evaluatedIndex = evaluatedEnemyIndices.Length;
                 enemyToEvaluatedIndex[index] = evaluatedIndex;
@@ -248,6 +253,14 @@ public partial struct EnemySteeringSystem : ISystem
 
             if (customPatternMovementFlags[enemyIndex] != 0)
                 continue;
+
+            if (spawnInactivityLockFlags[enemyIndex] != 0)
+            {
+                EnemyRuntimeState lockedRuntimeState = enemyRuntimeArray[enemyIndex];
+                lockedRuntimeState.Velocity = float3.zero;
+                enemyRuntimeArray[enemyIndex] = lockedRuntimeState;
+                continue;
+            }
 
             EnemyData enemyData = enemyDataArray[enemyIndex];
             EnemyRuntimeState runtimeState = enemyRuntimeArray[enemyIndex];
@@ -423,6 +436,7 @@ public partial struct EnemySteeringSystem : ISystem
         planarVelocities.Dispose();
         wandererMovementFlags.Dispose();
         customPatternMovementFlags.Dispose();
+        spawnInactivityLockFlags.Dispose();
         shooterMovementLockedFlags.Dispose();
         separationRadii.Dispose();
         enemyToEvaluatedIndex.Dispose();

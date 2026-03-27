@@ -59,6 +59,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [SerializeField]
     [HideInInspector] private float deceleration = 8f;
 
+    [Tooltip("Fallback post-spawn inactivity duration used when MasterPreset and BrainPreset are missing.")]
+    [SerializeField]
+    [HideInInspector] private float inactivityTime;
+
     [Tooltip("Fallback self-rotation speed in degrees per second used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float rotationSpeedDegreesPerSecond;
@@ -224,6 +228,19 @@ public sealed class EnemyAuthoring : MonoBehaviour
                 return deceleration;
 
             return settings.Deceleration;
+        }
+    }
+
+    public float InactivityTime
+    {
+        get
+        {
+            EnemyBrainMovementSettings settings = ResolveMovementSettings();
+
+            if (settings == null)
+                return math.max(0f, inactivityTime);
+
+            return math.max(0f, settings.InactivityTime);
         }
     }
 
@@ -717,6 +734,7 @@ public sealed class EnemyAuthoring : MonoBehaviour
                                                                       ref maxSpeed,
                                                                       ref acceleration,
                                                                       ref deceleration,
+                                                                      ref inactivityTime,
                                                                       ref rotationSpeedDegreesPerSecond,
                                                                       ref minimumWallDistance,
                                                                       ref separationRadius,

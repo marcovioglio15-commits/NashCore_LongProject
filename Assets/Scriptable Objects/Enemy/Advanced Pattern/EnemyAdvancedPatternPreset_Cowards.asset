@@ -705,8 +705,8 @@ MonoBehaviour:
             spawnAnimationMinDuration: 0.1
             spawnAnimationMaxDuration: 0.2
   patterns:
-  - patternId: Pattern_Coward
-    displayName: Coward
+  - patternId: Pattern_Cowards
+    displayName: Cowards
     description: Baseline pattern with Coward movement.
     unreplaceable: 0
     moduleBindings:
@@ -935,4 +935,4 @@ MonoBehaviour:
               spawnAnimationMinDuration: 0.08
               spawnAnimationMaxDuration: 0.16
   activePatternIds:
-  - Pattern_Coward
+  - Pattern_Cowards

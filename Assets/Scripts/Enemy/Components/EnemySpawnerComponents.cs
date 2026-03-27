@@ -78,6 +78,7 @@ public struct EnemySpawnerWaveEventElement : IBufferElementData
     public float RelativeTime;
     public float3 LocalSpawnPosition;
     public Entity PrefabEntity;
+    public Entity ReservedEnemyEntity;
 }
 
 /// <summary>

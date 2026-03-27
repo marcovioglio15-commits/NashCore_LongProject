@@ -24,6 +24,9 @@ public sealed class EnemyBrainMovementSettings
     [Tooltip("Reserved deceleration value for future braking behaviors. Currently unused at runtime.")]
     [SerializeField] private float deceleration = 8f;
 
+    [Tooltip("Seconds after spawn during which the enemy stays fully idle while still remaining damageable.")]
+    [SerializeField] private float inactivityTime;
+
     [Tooltip("Self-rotation speed in degrees per second. Positive rotates clockwise around Y, negative counter-clockwise.")]
     [SerializeField] private float rotationSpeedDegreesPerSecond;
 
@@ -69,6 +72,14 @@ public sealed class EnemyBrainMovementSettings
         get
         {
             return deceleration;
+        }
+    }
+
+    public float InactivityTime
+    {
+        get
+        {
+            return inactivityTime;
         }
     }
 
@@ -125,6 +136,9 @@ public sealed class EnemyBrainMovementSettings
 
         if (deceleration < 0f)
             deceleration = 0f;
+
+        if (inactivityTime < 0f)
+            inactivityTime = 0f;
 
         if (float.IsNaN(rotationSpeedDegreesPerSecond) || float.IsInfinity(rotationSpeedDegreesPerSecond))
             rotationSpeedDegreesPerSecond = 0f;

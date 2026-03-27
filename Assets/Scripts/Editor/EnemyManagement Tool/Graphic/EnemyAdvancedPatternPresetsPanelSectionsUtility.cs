@@ -38,12 +38,31 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
         SerializedProperty descriptionProperty = presetSerializedObject.FindProperty("description");
         SerializedProperty versionProperty = presetSerializedObject.FindProperty("version");
 
-        EnemyAdvancedPatternPresetsPanelElementUtility.AddTrackedPropertyField(panel, sectionContainer, nameProperty, "Preset Name");
-        EnemyAdvancedPatternPresetsPanelElementUtility.AddTrackedPropertyField(panel, sectionContainer, versionProperty, "Version");
+        TextField nameField = new TextField("Preset Name");
+        nameField.isDelayed = true;
+        nameField.BindProperty(nameProperty);
+        nameField.RegisterValueChangedCallback(evt =>
+        {
+            panel.HandlePresetNameChanged(evt.newValue);
+        });
+        sectionContainer.Add(nameField);
 
-        PropertyField descriptionField = new PropertyField(descriptionProperty, "Description");
+        TextField versionField = new TextField("Version");
+        versionField.isDelayed = true;
+        versionField.BindProperty(versionProperty);
+        versionField.RegisterValueChangedCallback(evt =>
+        {
+            EnemyManagementDraftSession.MarkDirty();
+            panel.RefreshPresetList();
+        });
+        sectionContainer.Add(versionField);
+
+        TextField descriptionField = new TextField("Description");
+        descriptionField.multiline = true;
+        descriptionField.isDelayed = true;
+        descriptionField.style.height = 60f;
         descriptionField.BindProperty(descriptionProperty);
-        descriptionField.RegisterValueChangeCallback(evt =>
+        descriptionField.RegisterValueChangedCallback(evt =>
         {
             EnemyManagementDraftSession.MarkDirty();
             panel.RefreshPresetList();

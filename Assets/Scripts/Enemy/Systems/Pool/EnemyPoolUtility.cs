@@ -189,6 +189,12 @@ public static class EnemyPoolUtility
         if (!entityManager.HasComponent<EnemyActive>(enemyEntity))
             entityManager.AddComponent<EnemyActive>(enemyEntity);
 
+        if (!entityManager.HasComponent<EnemySpawnInactivityLock>(enemyEntity))
+            entityManager.AddComponent<EnemySpawnInactivityLock>(enemyEntity);
+
+        if (!entityManager.HasComponent<EnemySpawnWarningState>(enemyEntity))
+            entityManager.AddComponent<EnemySpawnWarningState>(enemyEntity);
+
         EnsureCustomMovementTag(entityManager, enemyEntity);
         EnsureVisualModeTags(entityManager, enemyEntity);
     }
@@ -216,6 +222,8 @@ public static class EnemyPoolUtility
         SetEnemyTransformPosition(entityManager, enemyEntity, worldPosition);
         SetEnemyOwnership(entityManager, enemyEntity, spawnerEntity, poolEntity, waveIndex);
         ResetVisualRuntimeState(entityManager, enemyEntity, 1);
+        ApplySpawnInactivityState(entityManager, enemyEntity);
+        ClearSpawnWarningState(entityManager, enemyEntity);
 
         if (entityManager.HasComponent<EnemyDespawnRequest>(enemyEntity))
             entityManager.RemoveComponent<EnemyDespawnRequest>(enemyEntity);
@@ -242,7 +250,67 @@ public static class EnemyPoolUtility
         SetEnemyOwnership(entityManager, enemyEntity, spawnerEntity, poolEntity, -1);
         ParkEnemy(entityManager, enemyEntity);
         ResetVisualRuntimeState(entityManager, enemyEntity, 0);
+        ClearSpawnWarningState(entityManager, enemyEntity);
+        SetSpawnInactivityLock(entityManager, enemyEntity, false);
         entityManager.SetComponentEnabled<EnemyActive>(enemyEntity, false);
+    }
+
+    /// <summary>
+    /// Reserves one pooled enemy at its exact future spawn position before activation time is reached.
+    /// Called by EnemySpawnSystem as soon as the warning lead window opens for one wave event.
+    ///  entityManager: Entity manager used to mutate runtime state.
+    ///  enemyEntity: Enemy instance being reserved for an upcoming spawn.
+    ///  spawnerEntity: Spawner that owns the enemy.
+    ///  poolEntity: Pool that provided the enemy instance.
+    ///  waveIndex: Wave index that will own the enemy once activated.
+    ///  worldPosition: Final world-space spawn position that must match the warning ring.
+    ///  warningState: Fully resolved warning state used by presentation until fade-out completion.
+    /// returns None.
+    /// </summary>
+    public static void ReserveEnemyForSpawn(EntityManager entityManager,
+                                            Entity enemyEntity,
+                                            Entity spawnerEntity,
+                                            Entity poolEntity,
+                                            int waveIndex,
+                                            float3 worldPosition,
+                                            EnemySpawnWarningState warningState)
+    {
+        EnsureEnemyComponents(entityManager, enemyEntity);
+        ResetEnemySimulationState(entityManager, enemyEntity);
+        SetEnemyOwnership(entityManager, enemyEntity, spawnerEntity, poolEntity, waveIndex);
+        ParkEnemy(entityManager, enemyEntity);
+        ResetVisualRuntimeState(entityManager, enemyEntity, 0);
+        SetSpawnInactivityLock(entityManager, enemyEntity, false);
+        ArmSpawnWarningState(entityManager, enemyEntity, warningState);
+
+        if (entityManager.HasComponent<EnemyDespawnRequest>(enemyEntity))
+            entityManager.RemoveComponent<EnemyDespawnRequest>(enemyEntity);
+
+        entityManager.SetComponentEnabled<EnemyActive>(enemyEntity, false);
+    }
+
+    /// <summary>
+    /// Activates an enemy that was already reserved at its exact spawn point during the warning phase.
+    /// Called by EnemySpawnSystem when the reserved spawn time becomes due.
+    ///  entityManager: Entity manager used to mutate runtime state.
+    ///  enemyEntity: Reserved enemy instance being activated.
+    ///  worldPosition: Final world-space spawn position enforced again at activation time.
+    /// returns None.
+    /// </summary>
+    public static void ActivateReservedEnemy(EntityManager entityManager,
+                                             Entity enemyEntity,
+                                             float3 worldPosition)
+    {
+        EnsureEnemyComponents(entityManager, enemyEntity);
+        ResetEnemySimulationState(entityManager, enemyEntity);
+        SetEnemyTransformPosition(entityManager, enemyEntity, worldPosition);
+        ResetVisualRuntimeState(entityManager, enemyEntity, 1);
+        ApplySpawnInactivityState(entityManager, enemyEntity);
+
+        if (entityManager.HasComponent<EnemyDespawnRequest>(enemyEntity))
+            entityManager.RemoveComponent<EnemyDespawnRequest>(enemyEntity);
+
+        entityManager.SetComponentEnabled<EnemyActive>(enemyEntity, true);
     }
 
     /// <summary>
@@ -404,6 +472,7 @@ public static class EnemyPoolUtility
             runtimeState.Velocity = float3.zero;
             runtimeState.ContactDamageCooldown = 0f;
             runtimeState.AreaDamageCooldown = 0f;
+            runtimeState.SpawnInactivityTimer = 0f;
 
             unchecked
             {
@@ -596,6 +665,78 @@ public static class EnemyPoolUtility
         LocalTransform enemyTransform = entityManager.GetComponentData<LocalTransform>(enemyEntity);
         enemyTransform.Position = worldPosition;
         entityManager.SetComponentData(enemyEntity, enemyTransform);
+    }
+
+    /// <summary>
+    /// Applies the authored inactivity timer and corresponding runtime lock after a spawn becomes active.
+    ///  entityManager: Entity manager used to mutate EnemyRuntimeState and EnemySpawnInactivityLock.
+    ///  enemyEntity: Enemy instance that has just become active.
+    /// returns None.
+    /// </summary>
+    private static void ApplySpawnInactivityState(EntityManager entityManager, Entity enemyEntity)
+    {
+        if (!entityManager.HasComponent<EnemyRuntimeState>(enemyEntity))
+            return;
+
+        float inactivityTime = 0f;
+
+        if (entityManager.HasComponent<EnemyData>(enemyEntity))
+            inactivityTime = math.max(0f, entityManager.GetComponentData<EnemyData>(enemyEntity).SpawnInactivityTime);
+
+        EnemyRuntimeState runtimeState = entityManager.GetComponentData<EnemyRuntimeState>(enemyEntity);
+        runtimeState.SpawnInactivityTimer = inactivityTime;
+        entityManager.SetComponentData(enemyEntity, runtimeState);
+        SetSpawnInactivityLock(entityManager, enemyEntity, inactivityTime > 0f);
+    }
+
+    /// <summary>
+    /// Enables or disables the spawn inactivity lock without assuming the component already exists.
+    ///  entityManager: Entity manager used to mutate the enableable component state.
+    ///  enemyEntity: Enemy instance whose post-spawn lock must be updated.
+    ///  enabled: True to lock behaviour modules, false to release them.
+    /// returns None.
+    /// </summary>
+    private static void SetSpawnInactivityLock(EntityManager entityManager,
+                                               Entity enemyEntity,
+                                               bool enabled)
+    {
+        if (!entityManager.HasComponent<EnemySpawnInactivityLock>(enemyEntity))
+            return;
+
+        entityManager.SetComponentEnabled<EnemySpawnInactivityLock>(enemyEntity, enabled);
+    }
+
+    /// <summary>
+    /// Writes the active warning state used by presentation for one reserved enemy.
+    ///  entityManager: Entity manager used to mutate EnemySpawnWarningState.
+    ///  enemyEntity: Enemy instance that owns the warning.
+    ///  warningState: Fully resolved warning payload.
+    /// returns None.
+    /// </summary>
+    private static void ArmSpawnWarningState(EntityManager entityManager,
+                                             Entity enemyEntity,
+                                             EnemySpawnWarningState warningState)
+    {
+        if (!entityManager.HasComponent<EnemySpawnWarningState>(enemyEntity))
+            return;
+
+        entityManager.SetComponentData(enemyEntity, warningState);
+        entityManager.SetComponentEnabled<EnemySpawnWarningState>(enemyEntity, true);
+    }
+
+    /// <summary>
+    /// Clears the warning state so pooled enemies never keep stale ring data across reuses.
+    ///  entityManager: Entity manager used to mutate EnemySpawnWarningState.
+    ///  enemyEntity: Enemy instance whose warning state must be cleared.
+    /// returns None.
+    /// </summary>
+    private static void ClearSpawnWarningState(EntityManager entityManager, Entity enemyEntity)
+    {
+        if (!entityManager.HasComponent<EnemySpawnWarningState>(enemyEntity))
+            return;
+
+        entityManager.SetComponentData(enemyEntity, default(EnemySpawnWarningState));
+        entityManager.SetComponentEnabled<EnemySpawnWarningState>(enemyEntity, false);
     }
     #endregion
 

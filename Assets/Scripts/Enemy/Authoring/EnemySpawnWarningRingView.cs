@@ -8,17 +8,13 @@ public sealed class EnemySpawnWarningRingView : MonoBehaviour
 {
     #region Constants
     private const int CircleSegmentCount = 40;
+    private const float RadiusRebuildEpsilon = 0.001f;
+    private const int SortingOrder = 5000;
     #endregion
 
     #region Fields
     private LineRenderer lineRenderer;
-    private float warningDurationSeconds;
-    private float fadeOutSeconds;
-    private float remainingWarningSeconds;
-    private float remainingFadeOutSeconds;
-    private float ringWidth;
-    private float maximumAlpha;
-    private Color ringColor;
+    private float currentRadius = -1f;
     #endregion
 
     #region Methods
@@ -38,68 +34,32 @@ public sealed class EnemySpawnWarningRingView : MonoBehaviour
     }
 
     /// <summary>
-    /// Arms the pooled view with one new warning payload and makes it visible.
-    /// /params worldPosition: World position where the warning ring should appear.
-    /// /params durationSecondsValue: Remaining warning lifetime in seconds before the spawn happens.
-    /// /params fadeOutSecondsValue: Extra fade-out duration applied after the spawn happens.
-    /// /params radius: Ring radius in world units.
-    /// /params ringWidthValue: Ring width in world units.
-    /// /params ringColorValue: Linear-space tint color used by the ring.
-    /// /params maximumAlphaValue: Maximum opacity reached near the end of the warning.
+    /// Renders the warning ring using externally resolved position, scale and opacity.
+    /// /params worldPosition: World position where the warning ring should be displayed.
+    /// /params radius: Target ring radius in world units.
+    /// /params ringWidth: Base ring width in world units.
+    /// /params ringColor: Base ring tint without the final opacity applied.
+    /// /params opacity: Final alpha applied during this frame.
+    /// /params widthScale: Additional width multiplier applied during this frame.
     /// /returns None.
     /// </summary>
-    public void Play(Vector3 worldPosition,
-                     float durationSecondsValue,
-                     float fadeOutSecondsValue,
-                     float radius,
-                     float ringWidthValue,
-                     Color ringColorValue,
-                     float maximumAlphaValue)
+    public void Render(Vector3 worldPosition,
+                       float radius,
+                       float ringWidth,
+                       Color ringColor,
+                       float opacity,
+                       float widthScale)
     {
         EnsureLineRenderer();
         transform.position = worldPosition;
-        warningDurationSeconds = Mathf.Max(0.01f, durationSecondsValue);
-        fadeOutSeconds = Mathf.Max(0f, fadeOutSecondsValue);
-        remainingWarningSeconds = warningDurationSeconds;
-        remainingFadeOutSeconds = fadeOutSeconds;
-        ringWidth = Mathf.Max(0.01f, ringWidthValue);
-        maximumAlpha = Mathf.Clamp01(maximumAlphaValue);
-        ringColor = ringColorValue;
-        RebuildCircle(Mathf.Max(0.05f, radius));
-        ApplyWarningState(0f);
+        UpdateCircleGeometry(Mathf.Max(0.05f, radius));
+        ApplyVisualState(Mathf.Max(0.01f, ringWidth),
+                         ringColor,
+                         Mathf.Clamp01(opacity),
+                         Mathf.Max(0.01f, widthScale));
 
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);
-    }
-
-    /// <summary>
-    /// Advances one active warning instance and updates its visible intensity.
-    /// /params deltaTime: Current frame delta time in seconds.
-    /// /returns True while the warning should stay alive, otherwise false.
-    /// </summary>
-    public bool Tick(float deltaTime)
-    {
-        float clampedDeltaTime = Mathf.Max(0f, deltaTime);
-
-        if (remainingWarningSeconds > 0f)
-        {
-            remainingWarningSeconds = Mathf.Max(0f, remainingWarningSeconds - clampedDeltaTime);
-            float normalizedProgress = 1f - remainingWarningSeconds / warningDurationSeconds;
-            ApplyWarningState(normalizedProgress);
-
-            if (remainingWarningSeconds > 0f)
-                return true;
-
-            if (fadeOutSeconds <= 0f)
-                return false;
-        }
-
-        if (remainingFadeOutSeconds <= 0f)
-            return false;
-
-        remainingFadeOutSeconds = Mathf.Max(0f, remainingFadeOutSeconds - clampedDeltaTime);
-        ApplyFadeOutState();
-        return remainingFadeOutSeconds > 0f;
     }
 
     /// <summary>
@@ -108,9 +68,6 @@ public sealed class EnemySpawnWarningRingView : MonoBehaviour
     /// </summary>
     public void Deactivate()
     {
-        remainingWarningSeconds = 0f;
-        remainingFadeOutSeconds = 0f;
-
         if (gameObject.activeSelf)
             gameObject.SetActive(false);
     }
@@ -136,6 +93,8 @@ public sealed class EnemySpawnWarningRingView : MonoBehaviour
         lineRenderer.textureMode = LineTextureMode.Stretch;
         lineRenderer.numCapVertices = 0;
         lineRenderer.numCornerVertices = 3;
+        lineRenderer.sortingLayerName = "Default";
+        lineRenderer.sortingOrder = SortingOrder;
         lineRenderer.shadowCastingMode = ShadowCastingMode.Off;
         lineRenderer.receiveShadows = false;
         lineRenderer.lightProbeUsage = LightProbeUsage.Off;
@@ -145,12 +104,16 @@ public sealed class EnemySpawnWarningRingView : MonoBehaviour
     }
 
     /// <summary>
-    /// Rebuilds one flat XZ circle used by the warning ring.
+    /// Rebuilds the ring geometry only when the target radius actually changes.
     /// /params radius: Target circle radius in world units.
     /// /returns None.
     /// </summary>
-    private void RebuildCircle(float radius)
+    private void UpdateCircleGeometry(float radius)
     {
+        if (Mathf.Abs(currentRadius - radius) <= RadiusRebuildEpsilon)
+            return;
+
+        currentRadius = radius;
         float stepRadians = Mathf.PI * 2f / CircleSegmentCount;
 
         for (int segmentIndex = 0; segmentIndex < CircleSegmentCount; segmentIndex++)
@@ -163,36 +126,21 @@ public sealed class EnemySpawnWarningRingView : MonoBehaviour
     }
 
     /// <summary>
-    /// Applies width and opacity based on the current normalized warning progress.
-    /// /params normalizedProgress: Current warning progress in the [0..1] range.
+    /// Applies the final width and opacity for the current frame.
+    /// /params ringWidth: Base ring width in world units.
+    /// /params ringColor: Base ring tint without the final opacity applied.
+    /// /params opacity: Final alpha applied during this frame.
+    /// /params widthScale: Additional width multiplier applied during this frame.
     /// /returns None.
     /// </summary>
-    private void ApplyWarningState(float normalizedProgress)
+    private void ApplyVisualState(float ringWidth,
+                                  Color ringColor,
+                                  float opacity,
+                                  float widthScale)
     {
-        float clampedProgress = Mathf.Clamp01(normalizedProgress);
-        float smoothedProgress = clampedProgress * clampedProgress * (3f - 2f * clampedProgress);
-        float currentWidth = ringWidth * Mathf.Lerp(0.8f, 1.18f, smoothedProgress);
         Color currentColor = ringColor;
-        currentColor.a = maximumAlpha * Mathf.Lerp(0.18f, 1f, smoothedProgress);
-        lineRenderer.widthMultiplier = currentWidth;
-        lineRenderer.startColor = currentColor;
-        lineRenderer.endColor = currentColor;
-    }
-
-    /// <summary>
-    /// Applies a smooth fade-out once the spawn has already happened.
-    /// /returns None.
-    /// </summary>
-    private void ApplyFadeOutState()
-    {
-        if (fadeOutSeconds <= 0f)
-            return;
-
-        float normalizedFade = Mathf.Clamp01(remainingFadeOutSeconds / fadeOutSeconds);
-        float currentWidth = ringWidth * Mathf.Lerp(1.18f, 0.82f, 1f - normalizedFade);
-        Color currentColor = ringColor;
-        currentColor.a = maximumAlpha * normalizedFade;
-        lineRenderer.widthMultiplier = currentWidth;
+        currentColor.a = opacity;
+        lineRenderer.widthMultiplier = ringWidth * widthScale;
         lineRenderer.startColor = currentColor;
         lineRenderer.endColor = currentColor;
     }

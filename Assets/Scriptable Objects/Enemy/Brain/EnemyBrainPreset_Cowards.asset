@@ -21,6 +21,7 @@ MonoBehaviour:
     maxSpeed: 20
     acceleration: 20
     deceleration: 20
+    inactivityTime: 0.08
     rotationSpeedDegreesPerSecond: 0
     priorityTier: 0
     steeringAggressiveness: 1

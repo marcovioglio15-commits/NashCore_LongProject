@@ -11,6 +11,7 @@ public struct EnemyData : IComponentData
     public float MaxSpeed;
     public float Acceleration;
     public float Deceleration;
+    public float SpawnInactivityTime;
     public float RotationSpeedDegreesPerSecond;
     public float SeparationRadius;
     public float SeparationWeight;
@@ -47,6 +48,7 @@ public struct EnemyRuntimeState : IComponentData
     public float3 Velocity;
     public float ContactDamageCooldown;
     public float AreaDamageCooldown;
+    public float SpawnInactivityTimer;
     public uint SpawnVersion;
 }
 

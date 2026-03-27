@@ -67,7 +67,6 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
         DynamicBuffer<EnemySpawnerWaveEventElement> waveEventBuffer = AddBuffer<EnemySpawnerWaveEventElement>(spawnerEntity);
         DynamicBuffer<EnemySpawnerPrefabRequirementElement> prefabRequirementBuffer = AddBuffer<EnemySpawnerPrefabRequirementElement>(spawnerEntity);
         AddBuffer<EnemySpawnerPrefabPoolMapElement>(spawnerEntity);
-        AddBuffer<EnemySpawnWarningRequestElement>(spawnerEntity);
 
         for (int definitionIndex = 0; definitionIndex < stagedWaveDefinitions.Count; definitionIndex++)
             waveDefinitionBuffer.Add(stagedWaveDefinitions[definitionIndex]);
@@ -181,6 +180,8 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
                                                        prefabEntity,
                                                        wave.SpawnDurationSeconds,
                                                        localSpawnPosition,
+                                                       authoring.CellSize,
+                                                       cell.CellCoordinate,
                                                        enemyCount,
                                                        distributionCurve,
                                                        stagedEventsForWave);

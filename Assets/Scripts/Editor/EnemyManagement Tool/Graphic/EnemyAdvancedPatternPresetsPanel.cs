@@ -565,6 +565,16 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         EnemyManagementDraftSession.MarkDirty();
     }
 
+    /// <summary>
+    /// Applies a committed preset-name edit coming from the metadata UI.
+    ///  newName: New preset name confirmed by the delayed text field.
+    /// returns None.
+    /// </summary>
+    internal void HandlePresetNameChanged(string newName)
+    {
+        RenamePreset(selectedPreset, newName);
+    }
+
     private void RenamePreset(EnemyAdvancedPatternPreset preset, string newName)
     {
         if (preset == null)
