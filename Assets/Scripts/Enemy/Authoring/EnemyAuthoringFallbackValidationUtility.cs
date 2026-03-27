@@ -16,6 +16,7 @@ public static class EnemyAuthoringFallbackValidationUtility
     ///  maxSpeed: Fallback maximum movement speed value.
     ///  acceleration: Fallback acceleration value.
     ///  deceleration: Fallback deceleration value.
+    ///  inactivityTime: Fallback post-spawn inactivity duration.
     ///  rotationSpeedDegreesPerSecond: Fallback self-rotation speed.
     ///  minimumWallDistance: Fallback extra distance kept from static walls.
     ///  separationRadius: Fallback neighbor separation radius.
@@ -37,6 +38,7 @@ public static class EnemyAuthoringFallbackValidationUtility
                                               ref float maxSpeed,
                                               ref float acceleration,
                                               ref float deceleration,
+                                              ref float inactivityTime,
                                               ref float rotationSpeedDegreesPerSecond,
                                               ref float minimumWallDistance,
                                               ref float separationRadius,
@@ -64,6 +66,9 @@ public static class EnemyAuthoringFallbackValidationUtility
 
         if (deceleration < 0f)
             deceleration = 0f;
+
+        if (inactivityTime < 0f)
+            inactivityTime = 0f;
 
         if (float.IsNaN(rotationSpeedDegreesPerSecond) || float.IsInfinity(rotationSpeedDegreesPerSecond))
             rotationSpeedDegreesPerSecond = 0f;

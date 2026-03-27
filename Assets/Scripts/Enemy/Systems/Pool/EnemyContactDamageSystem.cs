@@ -100,7 +100,7 @@ public partial struct EnemyContactDamageSystem : ISystem
                   RefRW<EnemyRuntimeState> runtimeState,
                   RefRO<LocalTransform> enemyTransform) in SystemAPI.Query<RefRO<EnemyData>, RefRW<EnemyRuntimeState>, RefRO<LocalTransform>>()
                                                                       .WithAll<EnemyActive>()
-                                                                      .WithNone<EnemyDespawnRequest>())
+                                                                      .WithNone<EnemyDespawnRequest, EnemySpawnInactivityLock>())
         {
             EnemyRuntimeState nextState = runtimeState.ValueRO;
             nextState.ContactDamageCooldown -= deltaTime;

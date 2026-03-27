@@ -81,7 +81,7 @@ public partial struct EnemyShooterRequestSystem : ISystem
                                     RefRW<EnemyShooterControlState>,
                                     RefRO<LocalTransform>>()
                              .WithAll<EnemyActive>()
-                             .WithNone<EnemyDespawnRequest>())
+                             .WithNone<EnemyDespawnRequest, EnemySpawnInactivityLock>())
         {
             DynamicBuffer<EnemyShooterRuntimeElement> mutableShooterRuntime = shooterRuntime;
             DynamicBuffer<ShootRequest> mutableShootRequests = shootRequests;

@@ -9,6 +9,8 @@ public static class EnemySpawnerWaveBakeUtility
 {
     #region Constants
     private const int CurveSampleCount = 128;
+    private const float EventPlacementRadiusScale = 0.31f;
+    private const float GoldenAngleRadians = 2.39996323f;
     private static readonly Color DefaultPaintColor = new Color(1f, 0.35f, 0.35f, 1f);
     #endregion
 
@@ -92,7 +94,9 @@ public static class EnemySpawnerWaveBakeUtility
     ///  waveIndex: Owning wave index.
     ///  prefabEntity: Enemy prefab entity associated with the painted master preset.
     ///  spawnDurationSeconds: Authored wave spawn duration in seconds.
-    ///  localSpawnPosition: Local-space cell center used by the events.
+    ///  localSpawnPosition: Local-space cell center used as anchor for the events.
+    ///  cellSize: Authored cell size used to spread multiple events inside the same cell.
+    ///  cellCoordinate: Grid coordinate used to seed deterministic per-cell placement.
     ///  enemyCount: Number of enemies authored for the cell.
     ///  distributionCurve: Authored cumulative distribution curve.
     ///  outputEvents: Target list receiving the staged events.
@@ -102,6 +106,8 @@ public static class EnemySpawnerWaveBakeUtility
                                        Unity.Entities.Entity prefabEntity,
                                        float spawnDurationSeconds,
                                        float3 localSpawnPosition,
+                                       float cellSize,
+                                       Vector2Int cellCoordinate,
                                        int enemyCount,
                                        AnimationCurve distributionCurve,
                                        List<EnemySpawnerWaveEventElement> outputEvents)
@@ -119,17 +125,24 @@ public static class EnemySpawnerWaveBakeUtility
 
         float sanitizedDuration = math.max(0f, spawnDurationSeconds);
         float[] samples = BuildMonotonicSamples(distributionCurve);
+        uint placementSeed = ResolveEventPlacementSeed(waveIndex, cellCoordinate, prefabEntity.Index);
 
         for (int spawnIndex = 0; spawnIndex < sanitizedEnemyCount; spawnIndex++)
         {
             float quantile = ((float)spawnIndex + 0.5f) / sanitizedEnemyCount;
             float normalizedTime = ResolveInverseSampleTime(samples, quantile);
+            float3 resolvedLocalSpawnPosition = ResolveEventLocalSpawnPosition(localSpawnPosition,
+                                                                              cellSize,
+                                                                              sanitizedEnemyCount,
+                                                                              spawnIndex,
+                                                                              placementSeed);
             outputEvents.Add(new EnemySpawnerWaveEventElement
             {
                 WaveIndex = waveIndex,
                 RelativeTime = sanitizedDuration * normalizedTime,
-                LocalSpawnPosition = localSpawnPosition,
-                PrefabEntity = prefabEntity
+                LocalSpawnPosition = resolvedLocalSpawnPosition,
+                PrefabEntity = prefabEntity,
+                ReservedEnemyEntity = Unity.Entities.Entity.Null
             });
         }
     }
@@ -324,6 +337,82 @@ public static class EnemySpawnerWaveBakeUtility
         cell.SetCellCoordinate(cellCoordinate);
         cell.SetEnemyCount(math.max(1, cell.EnemyCount));
         cell.SetDistributionCurveOverride(EnsureCurveReference(cell.DistributionCurveOverride));
+    }
+
+    /// <summary>
+    /// Resolves the exact local-space spawn position used by one staged enemy event.
+    ///  cellCenterPosition: Local-space center of the authored grid cell.
+    ///  cellSize: Authored square cell size.
+    ///  enemyCount: Amount of enemies emitted by the painted cell.
+    ///  spawnIndex: Zero-based index of the current staged event inside the cell.
+    ///  placementSeed: Deterministic seed derived from wave, cell and prefab identity.
+    /// returns Local-space event position used by both warning telegraphs and final enemy activation.
+    /// </summary>
+    private static float3 ResolveEventLocalSpawnPosition(float3 cellCenterPosition,
+                                                         float cellSize,
+                                                         int enemyCount,
+                                                         int spawnIndex,
+                                                         uint placementSeed)
+    {
+        if (enemyCount <= 1)
+            return cellCenterPosition;
+
+        float2 planarOffset = ResolveEventPlanarOffset(cellSize, enemyCount, spawnIndex, placementSeed);
+        return cellCenterPosition + new float3(planarOffset.x, 0f, planarOffset.y);
+    }
+
+    /// <summary>
+    /// Resolves a deterministic planar offset so multiple enemies authored in one cell do not collapse on the same point.
+    ///  cellSize: Authored square cell size.
+    ///  enemyCount: Amount of enemies emitted by the painted cell.
+    ///  spawnIndex: Zero-based index of the current staged event inside the cell.
+    ///  placementSeed: Deterministic seed derived from wave, cell and prefab identity.
+    /// returns XZ offset applied around the cell center.
+    /// </summary>
+    private static float2 ResolveEventPlanarOffset(float cellSize,
+                                                   int enemyCount,
+                                                   int spawnIndex,
+                                                   uint placementSeed)
+    {
+        float maximumOffset = math.max(0f, cellSize) * EventPlacementRadiusScale;
+
+        if (maximumOffset <= 0f)
+            return float2.zero;
+
+        float normalizedIndex = ((float)spawnIndex + 0.5f) / math.max(1, enemyCount);
+        float radius = maximumOffset * math.sqrt(normalizedIndex);
+        float baseAngle = ResolvePlacementBaseAngleRadians(placementSeed);
+        float angle = baseAngle + GoldenAngleRadians * spawnIndex;
+        float sine = math.sin(angle);
+        float cosine = math.cos(angle);
+        return new float2(cosine * radius, sine * radius);
+    }
+
+    /// <summary>
+    /// Resolves the deterministic angle offset used by one cell to avoid identical radial layouts across the whole grid.
+    ///  placementSeed: Deterministic seed derived from wave, cell and prefab identity.
+    /// returns Base angle in radians.
+    /// </summary>
+    private static float ResolvePlacementBaseAngleRadians(uint placementSeed)
+    {
+        float normalizedSeed = placementSeed / (float)uint.MaxValue;
+        return normalizedSeed * (math.PI * 2f);
+    }
+
+    /// <summary>
+    /// Builds the deterministic seed used to distribute staged events inside one cell.
+    ///  waveIndex: Owning wave index.
+    ///  cellCoordinate: Authored grid coordinate of the painted cell.
+    ///  prefabIndex: Entity index of the resolved enemy prefab.
+    /// returns Stable hash used for per-cell event placement.
+    /// </summary>
+    private static uint ResolveEventPlacementSeed(int waveIndex, Vector2Int cellCoordinate, int prefabIndex)
+    {
+        uint4 hashInput = new uint4((uint)math.max(0, waveIndex + 1),
+                                    (uint)math.max(0, cellCoordinate.x + 1),
+                                    (uint)math.max(0, cellCoordinate.y + 1),
+                                    (uint)math.max(0, prefabIndex + 1));
+        return math.hash(hashInput);
     }
 
     /// <summary>

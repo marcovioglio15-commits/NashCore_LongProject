@@ -17,18 +17,4 @@ public struct EnemySpawnWarningConfig : IComponentData
     public float4 Color;
     public float CellSize;
 }
-
-/// <summary>
-/// Stores one transient spawn-warning request emitted shortly before a spawn event becomes active.
-/// </summary>
-public struct EnemySpawnWarningRequestElement : IBufferElementData
-{
-    public float3 WorldPosition;
-    public float DurationSeconds;
-    public float FadeOutSeconds;
-    public float Radius;
-    public float RingWidth;
-    public float MaximumAlpha;
-    public float4 Color;
-}
 #endregion

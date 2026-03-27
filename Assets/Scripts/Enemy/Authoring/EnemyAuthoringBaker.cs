@@ -25,6 +25,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             MaxSpeed = math.max(0f, authoring.MaxSpeed),
             Acceleration = math.max(0f, authoring.Acceleration),
             Deceleration = math.max(0f, authoring.Deceleration),
+            SpawnInactivityTime = math.max(0f, authoring.InactivityTime),
             RotationSpeedDegreesPerSecond = authoring.RotationSpeedDegreesPerSecond,
             SeparationRadius = math.max(0.1f, authoring.SeparationRadius),
             SeparationWeight = math.max(0f, authoring.SeparationWeight),
@@ -58,8 +59,13 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             Velocity = float3.zero,
             ContactDamageCooldown = 0f,
             AreaDamageCooldown = 0f,
+            SpawnInactivityTimer = 0f,
             SpawnVersion = 0u
         });
+        AddComponent<EnemySpawnInactivityLock>(entity);
+        SetComponentEnabled<EnemySpawnInactivityLock>(entity, false);
+        AddComponent<EnemySpawnWarningState>(entity);
+        SetComponentEnabled<EnemySpawnWarningState>(entity, false);
 
         EnemyCompiledPatternBakeResult compiledPattern = EnemyAdvancedPatternBakeUtility.Compile(authoring.AdvancedPatternPreset);
 

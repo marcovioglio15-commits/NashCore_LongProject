@@ -198,7 +198,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                     RefRW<EnemyRuntimeState>,
                                     RefRW<LocalTransform>>()
                              .WithAll<EnemyActive, EnemyCustomPatternMovementTag>()
-                             .WithNone<EnemyDespawnRequest>()
+                             .WithNone<EnemyDespawnRequest, EnemySpawnInactivityLock>()
                              .WithEntityAccess())
         {
             EnemyData currentEnemyData = enemyData.ValueRO;

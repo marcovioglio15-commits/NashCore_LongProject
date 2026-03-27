@@ -349,6 +349,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
         AddPropertyField(panel, container, movementProperty, "maxSpeed", "Max Speed", "Hard cap applied to the enemy velocity magnitude.");
         AddPropertyField(panel, container, movementProperty, "acceleration", "Acceleration", "Meters per second squared used to accelerate toward desired velocity.");
         AddPropertyField(panel, container, movementProperty, "deceleration", "Deceleration", "Reserved deceleration value for future braking behaviors. Currently unused at runtime.");
+        AddPropertyField(panel, container, movementProperty, "inactivityTime", "Inactivity Time", "Seconds after spawn during which the enemy stays fully idle while still remaining damageable.");
         AddPropertyField(panel, container, movementProperty, "rotationSpeedDegreesPerSecond", "Rotation Speed (Deg/Sec)", "Self-rotation speed around Y in degrees per second. Positive rotates clockwise, negative counter-clockwise.");
         AddPropertyField(panel, container, movementProperty, "priorityTier", "Priority Tier", "General enemy priority tier used by steering and visual overlap rules. Higher values keep right-of-way over lower tiers.");
         AddPropertyField(panel, container, movementProperty, "steeringAggressiveness", "Steering Aggressiveness", "Scales steering and clearance reactivity. Higher values produce stronger side-step and avoidance corrections.");
