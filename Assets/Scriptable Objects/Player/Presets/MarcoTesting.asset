@@ -122,9 +122,9 @@ MonoBehaviour:
     poolExpandBatch: 1500
   healthStatistics:
     maxHealth: 1
-    maxHealthAdjustmentMode: 1
+    maxHealthAdjustmentMode: 2
     maxShield: 0
-    maxShieldAdjustmentMode: 1
+    maxShieldAdjustmentMode: 2
     graceTimeSeconds: 0.75
     legacyHealthMigrated: 1
   scalingRules:
