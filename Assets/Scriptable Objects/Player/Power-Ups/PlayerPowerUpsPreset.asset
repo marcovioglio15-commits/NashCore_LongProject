@@ -7381,7 +7381,7 @@ MonoBehaviour:
           coneAngleDegrees: 0
         characterTuning:
           formulas:
-          - formula: '[Health]=[Health]+10'
+          - formula: '[Health]=[Health]+1'
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 0}
@@ -9287,7 +9287,7 @@ MonoBehaviour:
           coneAngleDegrees: 0
         characterTuning:
           formulas:
-          - formula: '[Shield]=[Shield]+10'
+          - formula: '[Shield]=[Shield]+1'
         bomb:
           bombPrefab: {fileID: 0}
           spawnOffset: {x: 0, y: 0, z: 0}
