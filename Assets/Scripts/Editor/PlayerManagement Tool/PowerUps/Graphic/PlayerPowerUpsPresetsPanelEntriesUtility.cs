@@ -214,7 +214,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
 
             string powerUpId = PlayerPowerUpsPresetsPanelEntriesSupportUtility.ResolvePowerUpDefinitionId(powerUpProperty);
             string displayName = PlayerPowerUpsPresetsPanelEntriesSupportUtility.ResolvePowerUpDefinitionDisplayName(powerUpProperty);
-            string foldoutStateKey = PlayerPowerUpsPresetsPanelEntriesSupportUtility.BuildPowerUpFoldoutStateKey(isActiveSection, powerUpId, powerUpIndex);
+            string foldoutStateKey = PlayerPowerUpsPresetsPanelEntriesSupportUtility.BuildPowerUpFoldoutStateKey(isActiveSection, powerUpProperty);
             validFoldoutStateKeys.Add(foldoutStateKey);
 
             if (!PlayerPowerUpsPresetsPanelEntriesSupportUtility.IsMatchingPowerUpFilters(powerUpId,
@@ -275,20 +275,15 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
         string displayName = PlayerPowerUpsPresetsPanelEntriesSupportUtility.ResolvePowerUpDefinitionDisplayName(powerUpProperty);
         int bindingCount = PlayerPowerUpsPresetsPanelEntriesSupportUtility.ResolvePowerUpDefinitionBindingCount(powerUpProperty);
         bool unreplaceable = PlayerPowerUpsPresetsPanelEntriesSupportUtility.ResolvePowerUpDefinitionUnreplaceable(powerUpProperty);
-        string foldoutStateKey = PlayerPowerUpsPresetsPanelEntriesSupportUtility.BuildPowerUpFoldoutStateKey(isActiveSection, powerUpId, powerUpIndex);
-        Foldout foldout = new Foldout();
-        foldout.text = PlayerPowerUpsPresetsPanelEntriesSupportUtility.BuildPowerUpCardTitle(powerUpIndex, powerUpId, displayName, bindingCount, unreplaceable);
-        foldout.value = PlayerPowerUpsPresetsPanelEntriesSupportUtility.ResolvePowerUpFoldoutState(foldoutStateByKey, foldoutStateKey);
-        foldout.RegisterValueChangedCallback(evt =>
-        {
-            if (evt.newValue)
-            {
-                foldoutStateByKey[foldoutStateKey] = true;
-                return;
-            }
-
-            foldoutStateByKey.Remove(foldoutStateKey);
-        });
+        string foldoutStateKey = PlayerPowerUpsPresetsPanelEntriesSupportUtility.BuildPowerUpFoldoutStateKey(isActiveSection, powerUpProperty);
+        Foldout foldout = PlayerManagementFoldoutStateUtility.CreateFoldout(PlayerPowerUpsPresetsPanelEntriesSupportUtility.BuildPowerUpCardTitle(powerUpIndex,
+                                                                                                                                                    powerUpId,
+                                                                                                                                                    displayName,
+                                                                                                                                                    bindingCount,
+                                                                                                                                                    unreplaceable),
+                                                                            foldoutStateKey,
+                                                                            PlayerPowerUpsPresetsPanelEntriesSupportUtility.ResolvePowerUpFoldoutState(foldoutStateByKey,
+                                                                                                                                                       foldoutStateKey));
         card.Add(foldout);
 
         VisualElement actionsRow = new VisualElement();

@@ -172,7 +172,7 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
             string moduleId = ResolveModuleDefinitionId(moduleProperty);
             string displayName = ResolveModuleDefinitionDisplayName(moduleProperty);
             PowerUpModuleKind moduleKind = ResolveModuleDefinitionKind(moduleProperty);
-            string foldoutStateKey = BuildModuleFoldoutStateKey(moduleId, moduleIndex);
+            string foldoutStateKey = BuildModuleFoldoutStateKey(moduleProperty);
             validFoldoutStateKeys.Add(foldoutStateKey);
 
             if (!IsMatchingModuleFilters(panel, moduleId, displayName))
@@ -225,20 +225,13 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
         card.style.borderLeftColor = new Color(1f, 1f, 1f, 0.14f);
         card.style.borderRightColor = new Color(1f, 1f, 1f, 0.14f);
 
-        string foldoutStateKey = BuildModuleFoldoutStateKey(moduleId, moduleIndex);
-        Foldout foldout = new Foldout();
-        foldout.text = BuildModuleCardTitle(moduleIndex, moduleId, displayName, moduleKind);
-        foldout.value = ResolveModuleFoldoutState(panel, foldoutStateKey);
-        foldout.RegisterValueChangedCallback(evt =>
-        {
-            if (evt.newValue)
-            {
-                panel.moduleDefinitionFoldoutStateByKey[foldoutStateKey] = true;
-                return;
-            }
-
-            panel.moduleDefinitionFoldoutStateByKey.Remove(foldoutStateKey);
-        });
+        string foldoutStateKey = BuildModuleFoldoutStateKey(moduleProperty);
+        Foldout foldout = PlayerManagementFoldoutStateUtility.CreateFoldout(BuildModuleCardTitle(moduleIndex,
+                                                                                                moduleId,
+                                                                                                displayName,
+                                                                                                moduleKind),
+                                                                            foldoutStateKey,
+                                                                            ResolveModuleFoldoutState(panel, foldoutStateKey));
         card.Add(foldout);
 
         VisualElement actionsRow = new VisualElement();
@@ -315,7 +308,7 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
             SerializedProperty moduleProperty = moduleDefinitionsProperty.GetArrayElementAtIndex(insertIndex);
             string uniqueModuleId = GenerateUniqueModuleId(moduleDefinitionsProperty, "ModuleCustom", insertIndex);
             InitializeNewModuleDefinition(moduleProperty, uniqueModuleId, "New Module");
-            panel.moduleDefinitionFoldoutStateByKey[BuildModuleFoldoutStateKey(uniqueModuleId, insertIndex)] = true;
+            panel.moduleDefinitionFoldoutStateByKey[BuildModuleFoldoutStateKey(moduleProperty)] = true;
         });
     }
 
@@ -339,7 +332,7 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
                 copiedDisplayName = "New Module";
 
             SetModuleDefinitionDisplayName(duplicatedProperty, copiedDisplayName + " Copy");
-            panel.moduleDefinitionFoldoutStateByKey[BuildModuleFoldoutStateKey(uniqueModuleId, duplicatedIndex)] = true;
+            panel.moduleDefinitionFoldoutStateByKey[BuildModuleFoldoutStateKey(duplicatedProperty)] = true;
         });
     }
 
@@ -401,15 +394,8 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
             if (!IsMatchingModuleFilters(panel, moduleId, displayName))
                 continue;
 
-            string stateKey = BuildModuleFoldoutStateKey(moduleId, moduleIndex);
-
-            if (expanded)
-            {
-                panel.moduleDefinitionFoldoutStateByKey[stateKey] = true;
-                continue;
-            }
-
-            panel.moduleDefinitionFoldoutStateByKey.Remove(stateKey);
+            string stateKey = BuildModuleFoldoutStateKey(moduleProperty);
+            PlayerManagementFoldoutStateUtility.SetFoldoutState(stateKey, expanded);
         }
     }
 
@@ -466,21 +452,12 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
 
     private static bool ResolveModuleFoldoutState(PlayerPowerUpsPresetsPanel panel, string foldoutStateKey)
     {
-        if (string.IsNullOrWhiteSpace(foldoutStateKey))
-            return false;
-
-        bool isExpanded;
-
-        if (panel.moduleDefinitionFoldoutStateByKey.TryGetValue(foldoutStateKey, out isExpanded))
-            return isExpanded;
-
-        return false;
+        return PlayerManagementFoldoutStateUtility.ResolveFoldoutState(foldoutStateKey, false);
     }
 
-    private static string BuildModuleFoldoutStateKey(string moduleId, int moduleIndex)
+    private static string BuildModuleFoldoutStateKey(SerializedProperty moduleProperty)
     {
-        string normalizedModuleId = string.IsNullOrWhiteSpace(moduleId) ? "<NoId>" : moduleId.Trim();
-        return string.Format("Module:Index_{0}:Id_{1}", moduleIndex, normalizedModuleId);
+        return PlayerManagementFoldoutStateUtility.BuildPropertyStateKey(moduleProperty, "ModuleDefinitionCard");
     }
 
     private static string ResolveModuleDefinitionId(SerializedProperty moduleProperty)

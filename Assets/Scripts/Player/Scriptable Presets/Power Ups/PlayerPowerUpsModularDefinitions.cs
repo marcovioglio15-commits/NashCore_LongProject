@@ -427,6 +427,10 @@ public sealed class PowerUpModuleBinding
     #region Fields
 
     #region Serialized Fields
+    [Tooltip("Stable identifier of this module binding instance.")]
+    [HideInInspector]
+    [SerializeField] private string bindingId;
+
     [Tooltip("Referenced ModuleId inside Modules Management.")]
     [SerializeField] private string moduleId;
 
@@ -452,6 +456,14 @@ public sealed class PowerUpModuleBinding
         get
         {
             return moduleId;
+        }
+    }
+
+    public string BindingId
+    {
+        get
+        {
+            return bindingId;
         }
     }
 
@@ -493,6 +505,9 @@ public sealed class PowerUpModuleBinding
     #region Setup
     public void Configure(string moduleIdValue, bool isEnabledValue)
     {
+        if (string.IsNullOrWhiteSpace(bindingId))
+            bindingId = Guid.NewGuid().ToString("N");
+
         moduleId = moduleIdValue;
         stage = PowerUpModuleStage.Execute;
         isEnabled = isEnabledValue;
@@ -500,6 +515,9 @@ public sealed class PowerUpModuleBinding
 
     public void Configure(string moduleIdValue, PowerUpModuleStage stageValue, bool isEnabledValue)
     {
+        if (string.IsNullOrWhiteSpace(bindingId))
+            bindingId = Guid.NewGuid().ToString("N");
+
         moduleId = moduleIdValue;
         stage = stageValue;
         isEnabled = isEnabledValue;
@@ -509,6 +527,11 @@ public sealed class PowerUpModuleBinding
     {
         useOverridePayload = useOverridePayloadValue;
         overridePayload = overridePayloadValue;
+    }
+
+    public void RegenerateBindingId()
+    {
+        bindingId = Guid.NewGuid().ToString("N");
     }
     #endregion
 
@@ -528,6 +551,9 @@ public sealed class PowerUpModuleBinding
     #region Validation
     public void Validate()
     {
+        if (string.IsNullOrWhiteSpace(bindingId))
+            bindingId = Guid.NewGuid().ToString("N");
+
         if (overridePayload == null)
             overridePayload = new PowerUpModuleData();
 
@@ -625,6 +651,8 @@ public sealed class ModularPowerUpDefinition
         if (moduleBindings == null)
             moduleBindings = new List<PowerUpModuleBinding>();
 
+        HashSet<string> visitedBindingIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         for (int index = 0; index < moduleBindings.Count; index++)
         {
             PowerUpModuleBinding binding = moduleBindings[index];
@@ -633,6 +661,9 @@ public sealed class ModularPowerUpDefinition
                 continue;
 
             binding.Validate();
+
+            while (!visitedBindingIds.Add(binding.BindingId))
+                binding.RegenerateBindingId();
         }
     }
     #endregion

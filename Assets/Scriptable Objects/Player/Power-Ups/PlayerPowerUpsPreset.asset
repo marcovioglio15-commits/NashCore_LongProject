@@ -2894,7 +2894,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 90
     moduleBindings:
-    - moduleId: Module_TriggerPress
+    - bindingId: 09813de0cd7e4fed8a0a3c913a574be8
+      moduleId: Module_TriggerPress
       stage: 0
       isEnabled: 1
       useOverridePayload: 0
@@ -3037,7 +3038,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_GateResource
+    - bindingId: 41bec5fc07d2433abd55e3dbc46035fe
+      moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
       useOverridePayload: 1
@@ -3180,7 +3182,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_ProjectilesPatternCone
+    - bindingId: 9927be07851c4662bcb5eea415b6db8f
+      moduleId: Module_ProjectilesPatternCone
       stage: 4
       isEnabled: 1
       useOverridePayload: 1
@@ -3336,7 +3339,8 @@ MonoBehaviour:
       dropTier: 2
       purchaseCost: 120
     moduleBindings:
-    - moduleId: Module_TriggerPress
+    - bindingId: 9af41efa351a4420b0cf74b5fcb4c295
+      moduleId: Module_TriggerPress
       stage: 0
       isEnabled: 1
       useOverridePayload: 0
@@ -3479,7 +3483,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_TriggerHoldCharge
+    - bindingId: 7fa6f2878b5b47ce9724d6fb8919f7a6
+      moduleId: Module_TriggerHoldCharge
       stage: 0
       isEnabled: 1
       useOverridePayload: 1
@@ -3622,7 +3627,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_GateResource
+    - bindingId: ed4e5d1ca8b147e8932ae0a59d403712
+      moduleId: Module_GateResource
       stage: 2
       isEnabled: 0
       useOverridePayload: 1
@@ -3765,7 +3771,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_StateSuppressShooting
+    - bindingId: 3bbc5dff74864d2a9e91f4b3f49c51fc
+      moduleId: Module_StateSuppressShooting
       stage: 3
       isEnabled: 1
       useOverridePayload: 1
@@ -3908,7 +3915,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_Character Tuning
+    - bindingId: 2d9f06a8f5054a05897592eaaaca90ca
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -4067,7 +4075,8 @@ MonoBehaviour:
       dropTier: 3
       purchaseCost: 160
     moduleBindings:
-    - moduleId: Module_TriggerPress
+    - bindingId: 23c7fe4a4c4b4d49919af295e31abca5
+      moduleId: Module_TriggerPress
       stage: 0
       isEnabled: 1
       useOverridePayload: 0
@@ -4210,7 +4219,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_GateResource
+    - bindingId: 43395d02b2b842c8bf2983d13829001e
+      moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
       useOverridePayload: 1
@@ -4353,7 +4363,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_SpawnObject
+    - bindingId: c211a8799ab443deb5600f602185ff66
+      moduleId: Module_SpawnObject
       stage: 4
       isEnabled: 1
       useOverridePayload: 0
@@ -4509,7 +4520,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 100
     moduleBindings:
-    - moduleId: Module_TriggerPress
+    - bindingId: 69bae3a7751d4e1baf16dd551ed1dbda
+      moduleId: Module_TriggerPress
       stage: 0
       isEnabled: 1
       useOverridePayload: 0
@@ -4652,7 +4664,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_GateResource
+    - bindingId: d5655b9710fc4421af5850d74ec77131
+      moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
       useOverridePayload: 1
@@ -4795,7 +4808,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_Dash
+    - bindingId: 59eaa21275db478e914a7bc0731f2ff9
+      moduleId: Module_Dash
       stage: 4
       isEnabled: 1
       useOverridePayload: 1
@@ -4951,7 +4965,8 @@ MonoBehaviour:
       dropTier: 2
       purchaseCost: 130
     moduleBindings:
-    - moduleId: Module_TriggerPress
+    - bindingId: 9a0b2ec2f47f44cb8ba63c45842eeee9
+      moduleId: Module_TriggerPress
       stage: 0
       isEnabled: 1
       useOverridePayload: 0
@@ -5094,7 +5109,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_GateResource
+    - bindingId: 916ff01cefc3441fa71fb44e76b9fea3
+      moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
       useOverridePayload: 1
@@ -5237,7 +5253,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_Heal
+    - bindingId: 8e12b93e16d14f4daa9ec194156c40ad
+      moduleId: Module_Heal
       stage: 4
       isEnabled: 1
       useOverridePayload: 1
@@ -5393,7 +5410,8 @@ MonoBehaviour:
       dropTier: 3
       purchaseCost: 170
     moduleBindings:
-    - moduleId: Module_TriggerPress
+    - bindingId: 0b6a7f8c5b4840378498a3bfd72eb4e5
+      moduleId: Module_TriggerPress
       stage: 0
       isEnabled: 1
       useOverridePayload: 0
@@ -5536,7 +5554,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_GateResource
+    - bindingId: d153947860da490995050bbf1660ce7b
+      moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
       useOverridePayload: 1
@@ -5679,7 +5698,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_TimeDilationEnemies
+    - bindingId: 1922a958259c4433ab7342c0bda45691
+      moduleId: Module_TimeDilationEnemies
       stage: 4
       isEnabled: 1
       useOverridePayload: 1
@@ -5832,7 +5852,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_TriggerPress
+    - bindingId: bb750982c486483cadf89f92c6a68cdf
+      moduleId: Module_TriggerPress
       stage: 0
       isEnabled: 1
       useOverridePayload: 0
@@ -5975,7 +5996,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_GateResource
+    - bindingId: 7d64fb4cd6f04efa88cfea83c7865c2f
+      moduleId: Module_GateResource
       stage: 2
       isEnabled: 1
       useOverridePayload: 1
@@ -6118,7 +6140,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_Character Tuning
+    - bindingId: c8ee613c95544e4e92bbf71ca4194559
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -6276,7 +6299,8 @@ MonoBehaviour:
       dropTier: 2
       purchaseCost: 140
     moduleBindings:
-    - moduleId: Module_SpawnTrailSegment
+    - bindingId: 5c52bf7e42d54e7fa9e8c39724c5c25a
+      moduleId: Module_SpawnTrailSegment
       stage: 7
       isEnabled: 1
       useOverridePayload: 0
@@ -6419,7 +6443,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_AreaTickApplyElement
+    - bindingId: d70e2eb148e7441c87388dfab66f7db3
+      moduleId: Module_AreaTickApplyElement
       stage: 7
       isEnabled: 1
       useOverridePayload: 0
@@ -6575,7 +6600,8 @@ MonoBehaviour:
       dropTier: 3
       purchaseCost: 160
     moduleBindings:
-    - moduleId: Module_DeathExplosion
+    - bindingId: be98b5908c994f65b01c9b2786424e19
+      moduleId: Module_DeathExplosion
       stage: 7
       isEnabled: 1
       useOverridePayload: 0
@@ -6731,7 +6757,8 @@ MonoBehaviour:
       dropTier: 2
       purchaseCost: 150
     moduleBindings:
-    - moduleId: Module_OrbitalProjectiles
+    - bindingId: 2373dbe594c74b45b3e4a7b489414993
+      moduleId: Module_OrbitalProjectiles
       stage: 7
       isEnabled: 1
       useOverridePayload: 0
@@ -6874,7 +6901,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.2
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_Character Tuning
+    - bindingId: 8b56a26686a54b8fa90936d0587107c7
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -7031,7 +7059,8 @@ MonoBehaviour:
       dropTier: 2
       purchaseCost: 140
     moduleBindings:
-    - moduleId: Module_BouncingProjectiles
+    - bindingId: 8695e41cc86543849808af7852d2bad1
+      moduleId: Module_BouncingProjectiles
       stage: 7
       isEnabled: 1
       useOverridePayload: 0
@@ -7187,7 +7216,8 @@ MonoBehaviour:
       dropTier: 3
       purchaseCost: 180
     moduleBindings:
-    - moduleId: Module_ProjectileSplit
+    - bindingId: b9b752a963c44472a6ef7a16600867f7
+      moduleId: Module_ProjectileSplit
       stage: 7
       isEnabled: 1
       useOverridePayload: 0
@@ -7340,7 +7370,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: ede2a6ac660a43278f25f1f78f716e43
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -7494,7 +7525,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: 076313148a1b47978162e5f460f887fd
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -7636,7 +7668,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
         stackable:
           maxAcquisitions: 2
-    - moduleId: ModuleStackable
+    - bindingId: b6a760e6ee54428ebb214d2fd86351ed
+      moduleId: ModuleStackable
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -7788,7 +7821,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: 38988d3998d943679bd225a610cb078e
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -7930,7 +7964,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
         stackable:
           maxAcquisitions: 2
-    - moduleId: Module_ProjectilesPatternCone
+    - bindingId: 56e82668c3d0474bb09a57be0d63fe53
+      moduleId: Module_ProjectilesPatternCone
       stage: 4
       isEnabled: 1
       useOverridePayload: 1
@@ -8072,7 +8107,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
         stackable:
           maxAcquisitions: 2
-    - moduleId: ModuleStackable
+    - bindingId: c154f9eedb544afcb0ac833da6e302f7
+      moduleId: ModuleStackable
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -8224,7 +8260,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: 5b5de2dabc0548e0bdb8c9aefa40ee9c
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -8366,7 +8403,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
         stackable:
           maxAcquisitions: 2
-    - moduleId: ModuleStackable
+    - bindingId: e38f0d57c03d44c88131f4c72745dd5c
+      moduleId: ModuleStackable
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -8518,7 +8556,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: 61ab5c4e3976460ca2b3a0b8fa721f5d
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -8660,7 +8699,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
         stackable:
           maxAcquisitions: 2
-    - moduleId: ModuleStackable
+    - bindingId: 3a8ecf3b41ba43ec91009c91ac2a4364
+      moduleId: ModuleStackable
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -8812,7 +8852,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: 4f24546be00f4baabc80ca472267f713
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -8954,7 +8995,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
         stackable:
           maxAcquisitions: 2
-    - moduleId: ModuleStackable
+    - bindingId: 068639a1334a4d2b8c1ce6f0c802b0ee
+      moduleId: ModuleStackable
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -9106,7 +9148,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: 47312312ed58433fac24cac8abe9ee74
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -9248,7 +9291,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
         stackable:
           maxAcquisitions: 2
-    - moduleId: ModuleStackable
+    - bindingId: ef912adb394149d188043fd2c0c59de5
+      moduleId: ModuleStackable
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -9400,7 +9444,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: c57dc45ecb5c49c3bc21d226073bca2b
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -9542,7 +9587,8 @@ MonoBehaviour:
           applyIntervalSeconds: 0.01
         stackable:
           maxAcquisitions: 2
-    - moduleId: ModuleStackable
+    - bindingId: 350384026dd9467c8926057fc672352c
+      moduleId: ModuleStackable
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -9695,7 +9741,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: 51ccdb12ad0042a9aa7b92a7146b8480
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1
@@ -9848,7 +9895,8 @@ MonoBehaviour:
       dropTier: 1
       purchaseCost: 0
     moduleBindings:
-    - moduleId: Module_Character Tuning
+    - bindingId: 7bbe152c3ef1401889305f6c38edd785
+      moduleId: Module_Character Tuning
       stage: 6
       isEnabled: 1
       useOverridePayload: 1

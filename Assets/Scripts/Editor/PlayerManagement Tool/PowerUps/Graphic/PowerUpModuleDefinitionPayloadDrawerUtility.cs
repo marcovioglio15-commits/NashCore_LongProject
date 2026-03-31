@@ -108,9 +108,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             return;
 
         string resolvedLabel = string.IsNullOrWhiteSpace(payloadLabel) ? payloadProperty.displayName : payloadLabel;
-        Foldout payloadFoldout = new Foldout();
-        payloadFoldout.text = resolvedLabel;
-        payloadFoldout.value = true;
+        Foldout payloadFoldout = PlayerManagementFoldoutStateUtility.CreatePropertyFoldout(payloadProperty,
+                                                                                           resolvedLabel,
+                                                                                           string.Format("Payload:{0}", resolvedLabel),
+                                                                                           true);
         payloadContainer.Add(payloadFoldout);
 
         if (!payloadProperty.hasVisibleChildren)
@@ -304,9 +305,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             return;
         }
 
-        Foldout spawnFoldout = new Foldout();
-        spawnFoldout.text = "Spawn";
-        spawnFoldout.value = true;
+        Foldout spawnFoldout = PlayerManagementFoldoutStateUtility.CreatePropertyFoldout(spawnPayloadProperty,
+                                                                                         "Spawn",
+                                                                                         "SpawnPayload",
+                                                                                         true);
         payloadContainer.Add(spawnFoldout);
         AddField(spawnFoldout, prefabProperty, "Spawn Prefab");
         AddField(spawnFoldout, spawnOffsetProperty, "Spawn Offset");
@@ -318,9 +320,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         AddField(spawnFoldout, linearDampingPerSecondProperty, "Linear Damping Per Second");
         AddField(spawnFoldout, fuseSecondsProperty, "Fuse Seconds");
 
-        Foldout damageFoldout = new Foldout();
-        damageFoldout.text = "Damage (Optional)";
-        damageFoldout.value = true;
+        Foldout damageFoldout = PlayerManagementFoldoutStateUtility.CreatePropertyFoldout(spawnPayloadProperty,
+                                                                                          "Damage (Optional)",
+                                                                                          "SpawnPayloadDamage",
+                                                                                          true);
         spawnFoldout.Add(damageFoldout);
         AddField(damageFoldout, enableDamagePayloadProperty, "Enable Damage Payload");
 

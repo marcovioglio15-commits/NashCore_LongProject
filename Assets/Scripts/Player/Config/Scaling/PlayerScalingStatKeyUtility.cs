@@ -14,6 +14,7 @@ public static class PlayerScalingStatKeyUtility
     {
         "powerUpId",
         "moduleId",
+        "bindingId",
         "presetId",
         "statName",
         "phaseID"

@@ -7,6 +7,34 @@ public static class ModularPowerUpBindingDrawerUtility
     #region Methods
 
     #region Binding Info
+    public static string ResolveBindingStableId(SerializedProperty bindingProperty)
+    {
+        if (bindingProperty == null)
+            return string.Empty;
+
+        SerializedProperty bindingIdProperty = bindingProperty.FindPropertyRelative("bindingId");
+
+        if (bindingIdProperty == null)
+            return string.Empty;
+
+        return string.IsNullOrWhiteSpace(bindingIdProperty.stringValue)
+            ? string.Empty
+            : bindingIdProperty.stringValue.Trim();
+    }
+
+    public static void AssignNewBindingStableId(SerializedProperty bindingProperty)
+    {
+        if (bindingProperty == null)
+            return;
+
+        SerializedProperty bindingIdProperty = bindingProperty.FindPropertyRelative("bindingId");
+
+        if (bindingIdProperty == null)
+            return;
+
+        bindingIdProperty.stringValue = Guid.NewGuid().ToString("N");
+    }
+
     public static string ResolveBindingModuleId(SerializedProperty bindingProperty)
     {
         if (bindingProperty == null)
@@ -67,6 +95,7 @@ public static class ModularPowerUpBindingDrawerUtility
         if (bindingProperty == null)
             return;
 
+        AssignNewBindingStableId(bindingProperty);
         SetString(bindingProperty.FindPropertyRelative("moduleId"), moduleId);
         SetEnum(bindingProperty.FindPropertyRelative("stage"), (int)stage);
         SetBool(bindingProperty.FindPropertyRelative("isEnabled"), enabled);

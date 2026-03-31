@@ -471,6 +471,7 @@ public sealed class PlayerPowerUpsPresetsPanel
         if (detailsRoot == null)
             return;
 
+        PlayerManagementFoldoutStateUtility.CaptureFoldoutStates(detailsRoot);
         detailsRoot.Clear();
 
         if (selectedPreset == null)
@@ -552,6 +553,7 @@ public sealed class PlayerPowerUpsPresetsPanel
         if (sectionContentRoot == null)
             return;
 
+        PlayerManagementFoldoutStateUtility.CaptureFoldoutStates(sectionContentRoot);
         sectionContentRoot.Clear();
 
         switch (activeSection)
@@ -681,6 +683,7 @@ public sealed class PlayerPowerUpsPresetsPanel
 
         if (sectionContentRoot != null)
         {
+            PlayerManagementFoldoutStateUtility.CaptureFoldoutStates(sectionContentRoot);
             sectionContentRoot.SetEnabled(false);
             sectionContentRoot.Clear();
         }

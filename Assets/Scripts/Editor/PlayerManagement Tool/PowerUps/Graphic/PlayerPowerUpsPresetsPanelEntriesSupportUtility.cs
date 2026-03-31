@@ -26,7 +26,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
             string defaultDisplayName = isActiveSection ? "New Active Power Up" : "New Passive Power Up";
             PlayerPowerUpsPresetsPanelEntriesInitializationUtility.InitializeNewPowerUpDefinition(panel, insertedProperty, uniquePowerUpId, defaultDisplayName);
             Dictionary<string, bool> foldoutStateByKey = ResolvePowerUpFoldoutStateMap(panel, isActiveSection);
-            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, uniquePowerUpId, insertIndex);
+            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, insertedProperty);
             foldoutStateByKey[foldoutKey] = true;
         });
     }
@@ -54,7 +54,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
 
             PlayerPowerUpsPresetsPanelEntriesInitializationUtility.SetPowerUpDefinitionDisplayName(duplicatedProperty, copiedDisplayName + " Copy");
             Dictionary<string, bool> foldoutStateByKey = ResolvePowerUpFoldoutStateMap(panel, isActiveSection);
-            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, uniquePowerUpId, duplicatedIndex);
+            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, duplicatedProperty);
             foldoutStateByKey[foldoutKey] = true;
         });
     }
@@ -109,7 +109,6 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         if (powerUpsProperty == null)
             return;
 
-        Dictionary<string, bool> foldoutStateByKey = ResolvePowerUpFoldoutStateMap(panel, isActiveSection);
         string powerUpIdFilterValue = isActiveSection ? panel.activePowerUpIdFilterText : panel.passivePowerUpIdFilterText;
         string displayNameFilterValue = isActiveSection ? panel.activePowerUpDisplayNameFilterText : panel.passivePowerUpDisplayNameFilterText;
 
@@ -126,15 +125,8 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
             if (!IsMatchingPowerUpFilters(powerUpId, displayName, powerUpIdFilterValue, displayNameFilterValue))
                 continue;
 
-            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, powerUpId, powerUpIndex);
-
-            if (expanded)
-            {
-                foldoutStateByKey[foldoutKey] = true;
-                continue;
-            }
-
-            foldoutStateByKey.Remove(foldoutKey);
+            string foldoutKey = BuildPowerUpFoldoutStateKey(isActiveSection, powerUpProperty);
+            PlayerManagementFoldoutStateUtility.SetFoldoutState(foldoutKey, expanded);
         }
     }
 
@@ -193,15 +185,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
 
     public static bool ResolvePowerUpFoldoutState(Dictionary<string, bool> foldoutStateByKey, string foldoutStateKey)
     {
-        if (foldoutStateByKey == null || string.IsNullOrWhiteSpace(foldoutStateKey))
-            return false;
-
-        bool isExpanded;
-
-        if (foldoutStateByKey.TryGetValue(foldoutStateKey, out isExpanded))
-            return isExpanded;
-
-        return false;
+        return PlayerManagementFoldoutStateUtility.ResolveFoldoutState(foldoutStateKey, false);
     }
 
     public static bool IsMatchingPowerUpFilters(string powerUpId, string displayName, string powerUpIdFilterValue, string displayNameFilterValue)
@@ -238,11 +222,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
                              lockTag);
     }
 
-    public static string BuildPowerUpFoldoutStateKey(bool isActiveSection, string powerUpId, int powerUpIndex)
+    public static string BuildPowerUpFoldoutStateKey(bool isActiveSection, SerializedProperty powerUpProperty)
     {
-        string prefix = isActiveSection ? "Active:" : "Passive:";
-        string normalizedPowerUpId = string.IsNullOrWhiteSpace(powerUpId) ? "<NoId>" : powerUpId.Trim();
-        return string.Format("{0}Index_{1}:Id_{2}", prefix, powerUpIndex, normalizedPowerUpId);
+        string suffix = isActiveSection ? "ActivePowerUpCard" : "PassivePowerUpCard";
+        return PlayerManagementFoldoutStateUtility.BuildPropertyStateKey(powerUpProperty, suffix);
     }
 
     public static string ResolvePowerUpDefinitionId(SerializedProperty powerUpProperty)
