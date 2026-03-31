@@ -34,21 +34,78 @@ public static class PlayerStatFormulaEngine
     }
 
     /// <summary>
-    /// Evaluates a raw formula string directly, compiling it on first use.
+    /// Evaluates a raw formula string directly, compiling it on first use, using the typed formula context.
     /// </summary>
     /// <param name="formula">Formula expression to evaluate.</param>
-    /// <param name="thisValue">Value mapped to [this].</param>
-    /// <param name="variableValues">Variable dictionary for named scalable stats.</param>
-    /// <param name="result">Computed result when evaluation succeeds.</param>
+    /// <param name="thisValue">Typed value mapped to [this].</param>
+    /// <param name="variableValues">Typed variable dictionary for named scalable stats.</param>
+    /// <param name="result">Computed typed result when evaluation succeeds.</param>
+    /// <param name="errorMessage">Failure reason when evaluation fails.</param>
+    /// <returns>True when evaluation succeeded, otherwise false.<returns>
+    public static bool TryEvaluate(string formula,
+                                   PlayerFormulaValue thisValue,
+                                   IReadOnlyDictionary<string, PlayerFormulaValue> variableValues,
+                                   out PlayerFormulaValue result,
+                                   out string errorMessage,
+                                   bool requireAtLeastOneVariable = true)
+    {
+        PlayerStatFormulaCompileResult compileResult = Compile(formula, requireAtLeastOneVariable);
+
+        if (!compileResult.IsValid || compileResult.CompiledFormula == null)
+        {
+            result = thisValue;
+            errorMessage = compileResult.ErrorMessage;
+            return false;
+        }
+
+        return compileResult.CompiledFormula.TryEvaluate(thisValue, variableValues, out result, out errorMessage);
+    }
+
+    /// <summary>
+    /// Evaluates a raw formula string directly, compiling it on first use, expecting a numeric result.
+    /// </summary>
+    /// <param name="formula">Formula expression to evaluate.</param>
+    /// <param name="thisValue">Numeric value mapped to [this].</param>
+    /// <param name="variableValues">Typed variable dictionary for named scalable stats.</param>
+    /// <param name="result">Computed numeric result when evaluation succeeds.</param>
+    /// <param name="errorMessage">Failure reason when evaluation fails.</param>
+    /// <returns>True when evaluation succeeded, otherwise false.<returns>
+    public static bool TryEvaluate(string formula,
+                                   float thisValue,
+                                   IReadOnlyDictionary<string, PlayerFormulaValue> variableValues,
+                                   out float result,
+                                   out string errorMessage,
+                                   bool requireAtLeastOneVariable = true)
+    {
+        PlayerStatFormulaCompileResult compileResult = Compile(formula, requireAtLeastOneVariable);
+
+        if (!compileResult.IsValid || compileResult.CompiledFormula == null)
+        {
+            result = thisValue;
+            errorMessage = compileResult.ErrorMessage;
+            return false;
+        }
+
+        return compileResult.CompiledFormula.TryEvaluate(thisValue, variableValues, out result, out errorMessage);
+    }
+
+    /// <summary>
+    /// Evaluates a raw formula string directly against the legacy numeric-only variable dictionary.
+    /// </summary>
+    /// <param name="formula">Formula expression to evaluate.</param>
+    /// <param name="thisValue">Numeric value mapped to [this].</param>
+    /// <param name="variableValues">Legacy numeric variable dictionary.</param>
+    /// <param name="result">Computed numeric result when evaluation succeeds.</param>
     /// <param name="errorMessage">Failure reason when evaluation fails.</param>
     /// <returns>True when evaluation succeeded, otherwise false.<returns>
     public static bool TryEvaluate(string formula,
                                    float thisValue,
                                    IReadOnlyDictionary<string, float> variableValues,
                                    out float result,
-                                   out string errorMessage)
+                                   out string errorMessage,
+                                   bool requireAtLeastOneVariable = true)
     {
-        PlayerStatFormulaCompileResult compileResult = Compile(formula, true);
+        PlayerStatFormulaCompileResult compileResult = Compile(formula, requireAtLeastOneVariable);
 
         if (!compileResult.IsValid || compileResult.CompiledFormula == null)
         {

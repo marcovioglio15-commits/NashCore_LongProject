@@ -3,7 +3,7 @@ using UnityEditor;
 
 /// <summary>
 /// Centralizes the canonical asset path used by EnemyWavePreset authoring tools.
-///  None.
+/// None.
 /// returns None.
 /// </summary>
 public static class EnemyWavePresetAssetUtility
@@ -17,7 +17,7 @@ public static class EnemyWavePresetAssetUtility
     #region Public Methods
     /// <summary>
     /// Resolves a unique asset path inside the canonical EnemyWavePreset folder.
-    ///  presetName: Desired asset name before uniqueness suffixes are applied.
+    /// presetName: Desired asset name before uniqueness suffixes are applied.
     /// returns Unique asset path inside the canonical EnemyWavePreset folder.
     /// </summary>
     public static string CreateUniquePresetAssetPath(string presetName)
@@ -39,7 +39,7 @@ public static class EnemyWavePresetAssetUtility
     #region Private Methods
     /// <summary>
     /// Creates the requested folder path recursively when any segment is still missing.
-    ///  folderPath: Unity project-relative folder path that must exist.
+    /// folderPath: Unity project-relative folder path that must exist.
     /// returns None.
     /// </summary>
     private static void EnsureFolder(string folderPath)

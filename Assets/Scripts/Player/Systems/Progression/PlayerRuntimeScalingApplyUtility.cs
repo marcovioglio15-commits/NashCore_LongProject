@@ -9,7 +9,7 @@ using Unity.Mathematics;
 internal static class PlayerRuntimeScalingApplyUtility
 {
     #region Fields
-    private static readonly Dictionary<string, float> variableContext = new Dictionary<string, float>(64, System.StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, PlayerFormulaValue> variableContext = new Dictionary<string, PlayerFormulaValue>(64, System.StringComparer.OrdinalIgnoreCase);
     #endregion
 
     #region Methods
@@ -17,35 +17,37 @@ internal static class PlayerRuntimeScalingApplyUtility
     #region Public Methods
     /// <summary>
     /// Reapplies controller, progression, and power-up scaling against the current scalable-stat values.
-    ///  scalableStats: Runtime scalable-stat buffer used as formula variable context.
-    ///  controllerScaling: Controller scaling metadata baked from Add Scaling rules.
-    ///  baseMovement: Immutable movement baseline.
-    ///  runtimeMovement: Mutable runtime movement config rebuilt in place.
-    ///  baseLook: Immutable look baseline.
-    ///  runtimeLook: Mutable runtime look config rebuilt in place.
-    ///  baseCamera: Immutable camera baseline.
-    ///  runtimeCamera: Mutable runtime camera config rebuilt in place.
-    ///  baseShooting: Immutable shooting baseline.
-    ///  runtimeShooting: Mutable runtime shooting config rebuilt in place.
-    ///  baseHealth: Immutable health baseline.
-    ///  runtimeHealth: Mutable runtime health config rebuilt in place.
-    ///  progressionScaling: Progression scaling metadata baked from Add Scaling rules.
-    ///  baseGamePhases: Immutable progression-phase baselines.
-    ///  runtimeGamePhases: Mutable runtime progression phases rebuilt in place.
-    ///  basePowerUpConfigs: Immutable modular power-up baselines keyed by PowerUpId.
-    ///  powerUpScaling: Power-up scaling metadata baked from Add Scaling rules.
-    ///  powerUpsConfig: Mutable active-slot config rebuilt in place.
-    ///  unlockCatalog: Mutable unlock catalog rebuilt in place for active/passive runtime configs.
-    ///  equippedPassiveTools: Mutable equipped-passives buffer rebuilt in place.
-    ///  passiveToolsState: Mutable aggregated passive runtime state.
-    ///  playerHealth: Mutable runtime health component clamped to the new max.
-    ///  playerShield: Mutable runtime shield component clamped to the new max.
-    ///  progressionConfig: Runtime progression config used to update required experience and pickup radius.
-    ///  playerExperience: Mutable runtime experience component kept aligned with current scalable stats.
-    ///  playerLevel: Mutable runtime level component updated against current runtime phases.
-    ///  playerExperienceCollection: Mutable pickup-radius runtime component synchronized after formulas.
-    ///  runtimeScalingState: Mutable sync state storing the last applied scalable-stat hash.
-    ///  forceApply: True to rebuild even when the scalable-stat hash did not change.
+    /// scalableStats: Runtime scalable-stat buffer used as formula variable context.
+    /// controllerScaling: Controller scaling metadata baked from Add Scaling rules.
+    /// baseMovement: Immutable movement baseline.
+    /// runtimeMovement: Mutable runtime movement config rebuilt in place.
+    /// baseLook: Immutable look baseline.
+    /// runtimeLook: Mutable runtime look config rebuilt in place.
+    /// baseCamera: Immutable camera baseline.
+    /// runtimeCamera: Mutable runtime camera config rebuilt in place.
+    /// baseShooting: Immutable shooting baseline.
+    /// runtimeShooting: Mutable runtime shooting config rebuilt in place.
+    /// baseAppliedElementSlots: Immutable applied-element slot baseline.
+    /// runtimeAppliedElementSlots: Mutable applied-element slot buffer rebuilt in place.
+    /// baseHealth: Immutable health baseline.
+    /// runtimeHealth: Mutable runtime health config rebuilt in place.
+    /// progressionScaling: Progression scaling metadata baked from Add Scaling rules.
+    /// baseGamePhases: Immutable progression-phase baselines.
+    /// runtimeGamePhases: Mutable runtime progression phases rebuilt in place.
+    /// basePowerUpConfigs: Immutable modular power-up baselines keyed by PowerUpId.
+    /// powerUpScaling: Power-up scaling metadata baked from Add Scaling rules.
+    /// powerUpsConfig: Mutable active-slot config rebuilt in place.
+    /// unlockCatalog: Mutable unlock catalog rebuilt in place for active/passive runtime configs.
+    /// equippedPassiveTools: Mutable equipped-passives buffer rebuilt in place.
+    /// passiveToolsState: Mutable aggregated passive runtime state.
+    /// playerHealth: Mutable runtime health component clamped to the new max.
+    /// playerShield: Mutable runtime shield component clamped to the new max.
+    /// progressionConfig: Runtime progression config used to update required experience and pickup radius.
+    /// playerExperience: Mutable runtime experience component kept aligned with current scalable stats.
+    /// playerLevel: Mutable runtime level component updated against current runtime phases.
+    /// playerExperienceCollection: Mutable pickup-radius runtime component synchronized after formulas.
+    /// runtimeScalingState: Mutable sync state storing the last applied scalable-stat hash.
+    /// forceApply: True to rebuild even when the scalable-stat hash did not change.
     /// returns True when the runtime-scaled state was rebuilt; otherwise false.
     /// </summary>
     public static bool TryApply(DynamicBuffer<PlayerScalableStatElement> scalableStats,
@@ -58,6 +60,8 @@ internal static class PlayerRuntimeScalingApplyUtility
                                 ref PlayerRuntimeCameraConfig runtimeCamera,
                                 in PlayerBaseShootingConfig baseShooting,
                                 ref PlayerRuntimeShootingConfig runtimeShooting,
+                                DynamicBuffer<PlayerBaseShootingAppliedElementSlot> baseAppliedElementSlots,
+                                DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlots,
                                 in PlayerBaseHealthStatisticsConfig baseHealth,
                                 ref PlayerRuntimeHealthStatisticsConfig runtimeHealth,
                                 DynamicBuffer<PlayerRuntimeProgressionScalingElement> progressionScaling,
@@ -90,16 +94,18 @@ internal static class PlayerRuntimeScalingApplyUtility
         runtimeScalingState.Initialized = 1;
         runtimeScalingState.LastScalableStatsHash = currentHash;
         PlayerScalingRuntimeFormulaUtility.FillVariableContext(scalableStats, variableContext);
-        runtimeMovement = CopyMovement(in baseMovement);
-        runtimeLook = CopyLook(in baseLook);
-        runtimeCamera = CopyCamera(in baseCamera);
-        runtimeShooting = CopyShooting(in baseShooting);
-        runtimeHealth = CopyHealth(in baseHealth);
+        runtimeMovement = PlayerRuntimeScalingControllerFieldApplyUtility.CopyMovement(in baseMovement);
+        runtimeLook = PlayerRuntimeScalingControllerFieldApplyUtility.CopyLook(in baseLook);
+        runtimeCamera = PlayerRuntimeScalingControllerFieldApplyUtility.CopyCamera(in baseCamera);
+        runtimeShooting = PlayerRuntimeScalingControllerFieldApplyUtility.CopyShooting(in baseShooting);
+        PlayerElementBulletSettingsUtility.CopyBaseAppliedElementsToRuntime(baseAppliedElementSlots, runtimeAppliedElementSlots);
+        runtimeHealth = PlayerRuntimeScalingControllerFieldApplyUtility.CopyHealth(in baseHealth);
         ApplyControllerScaling(controllerScaling,
                                ref runtimeMovement,
                                ref runtimeLook,
                                ref runtimeCamera,
                                ref runtimeShooting,
+                               runtimeAppliedElementSlots,
                                ref runtimeHealth);
         RebuildRuntimeGamePhases(baseGamePhases, runtimeGamePhases, progressionScaling);
         SyncPowerUpConfigs(basePowerUpConfigs, powerUpScaling, ref powerUpsConfig, unlockCatalog, equippedPassiveTools);
@@ -116,12 +122,12 @@ internal static class PlayerRuntimeScalingApplyUtility
 
     /// <summary>
     /// Synchronizes runtime level requirement and pickup radius using the already rebuilt runtime phases.
-    ///  scalableStats: Current scalable-stat buffer.
-    ///  progressionConfig: Runtime progression config.
-    ///  runtimeGamePhases: Current rebuilt runtime phases.
-    ///  playerExperience: Mutable runtime experience component.
-    ///  playerLevel: Mutable runtime level component.
-    ///  playerExperienceCollection: Mutable pickup-radius runtime component.
+    /// scalableStats: Current scalable-stat buffer.
+    /// progressionConfig: Runtime progression config.
+    /// runtimeGamePhases: Current rebuilt runtime phases.
+    /// playerExperience: Mutable runtime experience component.
+    /// playerLevel: Mutable runtime level component.
+    /// playerExperienceCollection: Mutable pickup-radius runtime component.
     /// returns void.
     /// </summary>
     public static void SyncProgressionRuntimeState(DynamicBuffer<PlayerScalableStatElement> scalableStats,
@@ -169,6 +175,7 @@ internal static class PlayerRuntimeScalingApplyUtility
                                                ref PlayerRuntimeLookConfig runtimeLook,
                                                ref PlayerRuntimeCameraConfig runtimeCamera,
                                                ref PlayerRuntimeShootingConfig runtimeShooting,
+                                               DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlots,
                                                ref PlayerRuntimeHealthStatisticsConfig runtimeHealth)
     {
         if (!controllerScaling.IsCreated)
@@ -178,6 +185,25 @@ internal static class PlayerRuntimeScalingApplyUtility
         {
             PlayerRuntimeControllerScalingElement scalingElement = controllerScaling[scalingIndex];
 
+            if ((PlayerFormulaValueType)scalingElement.ValueType == PlayerFormulaValueType.Boolean)
+            {
+                if (!TryEvaluateBooleanValue(scalingElement.Formula.ToString(),
+                                             scalingElement.BaseBooleanValue != 0,
+                                             out bool resolvedBoolean))
+                {
+                    continue;
+                }
+
+                PlayerRuntimeScalingControllerFieldApplyUtility.ApplyBooleanValue(scalingElement.FieldId,
+                                                                                  resolvedBoolean,
+                                                                                  ref runtimeMovement,
+                                                                                  ref runtimeLook,
+                                                                                  ref runtimeCamera,
+                                                                                  ref runtimeShooting,
+                                                                                  ref runtimeHealth);
+                continue;
+            }
+
             if (!TryEvaluateValue(scalingElement.Formula.ToString(),
                                   scalingElement.BaseValue,
                                   scalingElement.IsInteger != 0,
@@ -186,182 +212,15 @@ internal static class PlayerRuntimeScalingApplyUtility
                 continue;
             }
 
-            ApplyControllerValue(scalingElement.FieldId,
-                                 resolvedValue,
-                                 ref runtimeMovement,
-                                 ref runtimeLook,
-                                 ref runtimeCamera,
-                                 ref runtimeShooting,
-                                 ref runtimeHealth);
-        }
-    }
-
-    private static void ApplyControllerValue(PlayerRuntimeControllerFieldId fieldId,
-                                             float resolvedValue,
-                                             ref PlayerRuntimeMovementConfig runtimeMovement,
-                                             ref PlayerRuntimeLookConfig runtimeLook,
-                                             ref PlayerRuntimeCameraConfig runtimeCamera,
-                                             ref PlayerRuntimeShootingConfig runtimeShooting,
-                                             ref PlayerRuntimeHealthStatisticsConfig runtimeHealth)
-    {
-        switch (fieldId)
-        {
-            case PlayerRuntimeControllerFieldId.MovementDiscreteDirectionCount:
-                runtimeMovement.DiscreteDirectionCount = math.max(1, (int)resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.MovementDirectionOffsetDegrees:
-                runtimeMovement.DirectionOffsetDegrees = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementBaseSpeed:
-                runtimeMovement.Values.BaseSpeed = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementMaxSpeed:
-                runtimeMovement.Values.MaxSpeed = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementAcceleration:
-                runtimeMovement.Values.Acceleration = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementDeceleration:
-                runtimeMovement.Values.Deceleration = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementOppositeDirectionBrakeMultiplier:
-                runtimeMovement.Values.OppositeDirectionBrakeMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementWallBounceCoefficient:
-                runtimeMovement.Values.WallBounceCoefficient = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementWallCollisionSkinWidth:
-                runtimeMovement.Values.WallCollisionSkinWidth = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementInputDeadZone:
-                runtimeMovement.Values.InputDeadZone = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.MovementDigitalReleaseGraceSeconds:
-                runtimeMovement.Values.DigitalReleaseGraceSeconds = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookDiscreteDirectionCount:
-                runtimeLook.DiscreteDirectionCount = math.max(1, (int)resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.LookDirectionOffsetDegrees:
-                runtimeLook.DirectionOffsetDegrees = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookRotationSpeed:
-                runtimeLook.RotationSpeed = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookFrontConeAngleDegrees:
-                runtimeLook.FrontCone.AngleDegrees = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookFrontConeMaxSpeedMultiplier:
-                runtimeLook.FrontCone.MaxSpeedMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookFrontConeAccelerationMultiplier:
-                runtimeLook.FrontCone.AccelerationMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookBackConeAngleDegrees:
-                runtimeLook.BackCone.AngleDegrees = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookBackConeMaxSpeedMultiplier:
-                runtimeLook.BackCone.MaxSpeedMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookBackConeAccelerationMultiplier:
-                runtimeLook.BackCone.AccelerationMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookLeftConeAngleDegrees:
-                runtimeLook.LeftCone.AngleDegrees = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookLeftConeMaxSpeedMultiplier:
-                runtimeLook.LeftCone.MaxSpeedMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookLeftConeAccelerationMultiplier:
-                runtimeLook.LeftCone.AccelerationMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookRightConeAngleDegrees:
-                runtimeLook.RightCone.AngleDegrees = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookRightConeMaxSpeedMultiplier:
-                runtimeLook.RightCone.MaxSpeedMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookRightConeAccelerationMultiplier:
-                runtimeLook.RightCone.AccelerationMultiplier = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookRotationDamping:
-                runtimeLook.Values.RotationDamping = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookRotationMaxSpeed:
-                runtimeLook.Values.RotationMaxSpeed = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookRotationDeadZone:
-                runtimeLook.Values.RotationDeadZone = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.LookDigitalReleaseGraceSeconds:
-                runtimeLook.Values.DigitalReleaseGraceSeconds = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.CameraFollowOffsetX:
-                runtimeCamera.FollowOffset.x = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.CameraFollowOffsetY:
-                runtimeCamera.FollowOffset.y = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.CameraFollowOffsetZ:
-                runtimeCamera.FollowOffset.z = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.CameraFollowSpeed:
-                runtimeCamera.Values.FollowSpeed = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.CameraLag:
-                runtimeCamera.Values.CameraLag = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.CameraDamping:
-                runtimeCamera.Values.Damping = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.CameraMaxFollowDistance:
-                runtimeCamera.Values.MaxFollowDistance = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.CameraDeadZoneRadius:
-                runtimeCamera.Values.DeadZoneRadius = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingShootOffsetX:
-                runtimeShooting.ShootOffset.x = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingShootOffsetY:
-                runtimeShooting.ShootOffset.y = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingShootOffsetZ:
-                runtimeShooting.ShootOffset.z = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingShootSpeed:
-                runtimeShooting.Values.ShootSpeed = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingRateOfFire:
-                runtimeShooting.Values.RateOfFire = resolvedValue;
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingProjectileSizeMultiplier:
-                runtimeShooting.Values.ProjectileSizeMultiplier = math.max(0.01f, resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingExplosionRadius:
-                runtimeShooting.Values.ExplosionRadius = math.max(0f, resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingRange:
-                runtimeShooting.Values.Range = math.max(0f, resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingLifetime:
-                runtimeShooting.Values.Lifetime = math.max(0f, resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingDamage:
-                runtimeShooting.Values.Damage = math.max(0f, resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.ShootingMaxPenetrations:
-                runtimeShooting.Values.MaxPenetrations = math.max(0, (int)resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.HealthMaxHealth:
-                runtimeHealth.MaxHealth = math.max(1f, resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.HealthMaxShield:
-                runtimeHealth.MaxShield = math.max(0f, resolvedValue);
-                return;
-            case PlayerRuntimeControllerFieldId.HealthGraceTimeSeconds:
-                runtimeHealth.GraceTimeSeconds = math.max(0f, resolvedValue);
-                return;
+            PlayerRuntimeScalingControllerFieldApplyUtility.ApplyValue(scalingElement.FieldId,
+                                                                       scalingElement.SlotIndex,
+                                                                       resolvedValue,
+                                                                       ref runtimeMovement,
+                                                                       ref runtimeLook,
+                                                                       ref runtimeCamera,
+                                                                       ref runtimeShooting,
+                                                                       runtimeAppliedElementSlots,
+                                                                       ref runtimeHealth);
         }
     }
     #endregion
@@ -508,6 +367,23 @@ internal static class PlayerRuntimeScalingApplyUtility
             if (scalingElement.PowerUpId != powerUpId)
                 continue;
 
+            if ((PlayerFormulaValueType)scalingElement.ValueType == PlayerFormulaValueType.Boolean)
+            {
+                if (!TryEvaluateBooleanValue(scalingElement.Formula.ToString(),
+                                             scalingElement.BaseBooleanValue != 0,
+                                             out bool resolvedBoolean))
+                {
+                    continue;
+                }
+
+                PlayerRuntimePowerUpScalingPathUtility.ApplyBooleanValue(scalingElement.PayloadPath.ToString(),
+                                                                         unlockKind,
+                                                                         resolvedBoolean,
+                                                                         ref activeSlotConfig,
+                                                                         ref passiveToolConfig);
+                continue;
+            }
+
             if (!TryEvaluateValue(scalingElement.Formula.ToString(),
                                   scalingElement.BaseValue,
                                   scalingElement.IsInteger != 0,
@@ -570,6 +446,26 @@ internal static class PlayerRuntimeScalingApplyUtility
         return true;
     }
 
+    private static bool TryEvaluateBooleanValue(string formula, bool baseValue, out bool resolvedValue)
+    {
+        resolvedValue = baseValue;
+
+        if (!PlayerScalingRuntimeFormulaUtility.TryEvaluateFormula(formula,
+                                                                   PlayerFormulaValue.CreateBoolean(baseValue),
+                                                                   variableContext,
+                                                                   out PlayerFormulaValue evaluatedValue,
+                                                                   out string _))
+        {
+            return false;
+        }
+
+        if (evaluatedValue.Type != PlayerFormulaValueType.Boolean)
+            return false;
+
+        resolvedValue = evaluatedValue.BooleanValue;
+        return true;
+    }
+
     private static void SyncHealthAndShield(ref PlayerHealth playerHealth,
                                             ref PlayerShield playerShield,
                                             in PlayerRuntimeHealthStatisticsConfig runtimeHealth)
@@ -628,74 +524,12 @@ internal static class PlayerRuntimeScalingApplyUtility
             if (!string.Equals(scalableStat.Name.ToString(), statName, System.StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            return scalableStat.Value;
+            return PlayerScalableStatClampUtility.ResolveNumericProjection(in scalableStat);
         }
 
         return fallbackValue;
     }
 
-    private static PlayerRuntimeMovementConfig CopyMovement(in PlayerBaseMovementConfig baseMovement)
-    {
-        return new PlayerRuntimeMovementConfig
-        {
-            DirectionsMode = baseMovement.DirectionsMode,
-            DiscreteDirectionCount = baseMovement.DiscreteDirectionCount,
-            DirectionOffsetDegrees = baseMovement.DirectionOffsetDegrees,
-            MovementReference = baseMovement.MovementReference,
-            Values = baseMovement.Values
-        };
-    }
-
-    private static PlayerRuntimeLookConfig CopyLook(in PlayerBaseLookConfig baseLook)
-    {
-        return new PlayerRuntimeLookConfig
-        {
-            DirectionsMode = baseLook.DirectionsMode,
-            DiscreteDirectionCount = baseLook.DiscreteDirectionCount,
-            DirectionOffsetDegrees = baseLook.DirectionOffsetDegrees,
-            RotationMode = baseLook.RotationMode,
-            RotationSpeed = baseLook.RotationSpeed,
-            MultiplierSampling = baseLook.MultiplierSampling,
-            FrontCone = baseLook.FrontCone,
-            BackCone = baseLook.BackCone,
-            LeftCone = baseLook.LeftCone,
-            RightCone = baseLook.RightCone,
-            Values = baseLook.Values
-        };
-    }
-
-    private static PlayerRuntimeCameraConfig CopyCamera(in PlayerBaseCameraConfig baseCamera)
-    {
-        return new PlayerRuntimeCameraConfig
-        {
-            Behavior = baseCamera.Behavior,
-            FollowOffset = baseCamera.FollowOffset,
-            Values = baseCamera.Values
-        };
-    }
-
-    private static PlayerRuntimeShootingConfig CopyShooting(in PlayerBaseShootingConfig baseShooting)
-    {
-        return new PlayerRuntimeShootingConfig
-        {
-            TriggerMode = baseShooting.TriggerMode,
-            ProjectilesInheritPlayerSpeed = baseShooting.ProjectilesInheritPlayerSpeed,
-            ShootOffset = baseShooting.ShootOffset,
-            Values = baseShooting.Values
-        };
-    }
-
-    private static PlayerRuntimeHealthStatisticsConfig CopyHealth(in PlayerBaseHealthStatisticsConfig baseHealth)
-    {
-        return new PlayerRuntimeHealthStatisticsConfig
-        {
-            MaxHealth = baseHealth.MaxHealth,
-            MaxHealthAdjustmentMode = baseHealth.MaxHealthAdjustmentMode,
-            MaxShield = baseHealth.MaxShield,
-            MaxShieldAdjustmentMode = baseHealth.MaxShieldAdjustmentMode,
-            GraceTimeSeconds = baseHealth.GraceTimeSeconds
-        };
-    }
     #endregion
 
     #endregion

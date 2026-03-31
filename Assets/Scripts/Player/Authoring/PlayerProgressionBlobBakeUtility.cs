@@ -294,10 +294,12 @@ internal static class PlayerProgressionBlobBakeUtility
         {
             PlayerScalableStatDefinition scalableStat = scalableStats[statIndex];
             string statName = scalableStat != null ? scalableStat.StatName : string.Format("stat{0}", statIndex + 1);
-            float defaultValue = scalableStat != null ? scalableStat.ResolveRuntimeDefaultValue() : 0f;
             PlayerScalableStatType statType = scalableStat != null ? scalableStat.StatType : PlayerScalableStatType.Float;
+            float defaultValue = scalableStat != null ? scalableStat.ResolveRuntimeDefaultValue() : 0f;
             float minimumValue = scalableStat != null ? scalableStat.MinimumValue : PlayerScalableStatClampUtility.DefaultMinimumValue;
             float maximumValue = scalableStat != null ? scalableStat.MaximumValue : PlayerScalableStatClampUtility.DefaultMaximumValue;
+            bool defaultBooleanValue = scalableStat != null && scalableStat.DefaultBooleanValue;
+            string defaultTokenValue = scalableStat != null ? scalableStat.DefaultTokenValue : string.Empty;
 
             if (string.IsNullOrWhiteSpace(statName))
                 statName = string.Format("stat{0}", statIndex + 1);
@@ -307,9 +309,12 @@ internal static class PlayerProgressionBlobBakeUtility
                 Type = (byte)statType,
                 DefaultValue = defaultValue,
                 MinimumValue = minimumValue,
-                MaximumValue = maximumValue
+                MaximumValue = maximumValue,
+                DefaultBooleanValue = defaultBooleanValue ? (byte)1 : (byte)0
             };
             builder.AllocateString(ref scalableStatsArray[statIndex].Name, statName);
+            builder.AllocateString(ref scalableStatsArray[statIndex].DefaultTokenValue,
+                                   string.IsNullOrWhiteSpace(defaultTokenValue) ? string.Empty : defaultTokenValue.Trim());
         }
     }
 

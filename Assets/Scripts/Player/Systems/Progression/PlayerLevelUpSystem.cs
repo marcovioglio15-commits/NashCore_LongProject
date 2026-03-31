@@ -56,6 +56,8 @@ public partial struct PlayerLevelUpSystem : ISystem
         state.RequireForUpdate<PlayerRuntimeCameraConfig>();
         state.RequireForUpdate<PlayerBaseShootingConfig>();
         state.RequireForUpdate<PlayerRuntimeShootingConfig>();
+        state.RequireForUpdate<PlayerBaseShootingAppliedElementSlot>();
+        state.RequireForUpdate<PlayerRuntimeShootingAppliedElementSlot>();
         state.RequireForUpdate<PlayerBaseHealthStatisticsConfig>();
         state.RequireForUpdate<PlayerRuntimeHealthStatisticsConfig>();
         state.RequireForUpdate<PlayerRuntimeProgressionScalingElement>();
@@ -81,6 +83,8 @@ public partial struct PlayerLevelUpSystem : ISystem
         ComponentLookup<PlayerRuntimeCameraConfig> runtimeCameraLookup = SystemAPI.GetComponentLookup<PlayerRuntimeCameraConfig>(false);
         ComponentLookup<PlayerBaseShootingConfig> baseShootingLookup = SystemAPI.GetComponentLookup<PlayerBaseShootingConfig>(true);
         ComponentLookup<PlayerRuntimeShootingConfig> runtimeShootingLookup = SystemAPI.GetComponentLookup<PlayerRuntimeShootingConfig>(false);
+        BufferLookup<PlayerBaseShootingAppliedElementSlot> baseAppliedElementSlotsLookup = SystemAPI.GetBufferLookup<PlayerBaseShootingAppliedElementSlot>(true);
+        BufferLookup<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlotsLookup = SystemAPI.GetBufferLookup<PlayerRuntimeShootingAppliedElementSlot>(false);
         ComponentLookup<PlayerBaseHealthStatisticsConfig> baseHealthLookup = SystemAPI.GetComponentLookup<PlayerBaseHealthStatisticsConfig>(true);
         ComponentLookup<PlayerRuntimeHealthStatisticsConfig> runtimeHealthLookup = SystemAPI.GetComponentLookup<PlayerRuntimeHealthStatisticsConfig>(false);
         ComponentLookup<PlayerPowerUpsConfig> powerUpsConfigLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsConfig>(false);
@@ -137,6 +141,8 @@ public partial struct PlayerLevelUpSystem : ISystem
                                                                                                  runtimeCameraLookup,
                                                                                                  baseShootingLookup,
                                                                                                  runtimeShootingLookup,
+                                                                                                 baseAppliedElementSlotsLookup,
+                                                                                                 runtimeAppliedElementSlotsLookup,
                                                                                                  baseHealthLookup,
                                                                                                  runtimeHealthLookup,
                                                                                                  progressionScalingLookup,
@@ -268,6 +274,8 @@ public partial struct PlayerLevelUpSystem : ISystem
                                                                                                runtimeCameraLookup,
                                                                                                baseShootingLookup,
                                                                                                runtimeShootingLookup,
+                                                                                               baseAppliedElementSlotsLookup,
+                                                                                               runtimeAppliedElementSlotsLookup,
                                                                                                baseHealthLookup,
                                                                                                runtimeHealthLookup,
                                                                                                progressionScalingLookup,
@@ -474,7 +482,7 @@ public partial struct PlayerLevelUpSystem : ISystem
             return false;
 
         PlayerScalableStatElement scalableStat = scalableStats[statBufferIndex];
-        float previousValue = scalableStat.Value;
+        float previousValue = PlayerScalableStatClampUtility.ResolveNumericProjection(in scalableStat);
         PlayerLevelUpScheduleApplyMode applyMode = step.ApplyMode == (byte)PlayerLevelUpScheduleApplyMode.Percent
             ? PlayerLevelUpScheduleApplyMode.Percent
             : PlayerLevelUpScheduleApplyMode.Flat;
@@ -483,9 +491,14 @@ public partial struct PlayerLevelUpSystem : ISystem
             ? previousValue + (previousValue * (deltaValue * 0.01f))
             : previousValue + deltaValue;
 
-        newValue = PlayerScalableStatClampUtility.ResolveNormalizedValue(in scalableStat, newValue);
+        if (!PlayerScalableStatValueUtility.TryWriteRuntimeValue(ref scalableStat,
+                                                                 PlayerFormulaValue.CreateNumber(newValue),
+                                                                 out string _))
+        {
+            return false;
+        }
 
-        scalableStat.Value = newValue;
+        newValue = PlayerScalableStatClampUtility.ResolveNumericProjection(in scalableStat);
         scalableStats[statBufferIndex] = scalableStat;
         scheduleDebugInfo = new ScheduleApplyDebugInfo
         {
@@ -543,15 +556,26 @@ public partial struct PlayerLevelUpSystem : ISystem
 
             if (string.Equals(statName, "experience", StringComparison.OrdinalIgnoreCase))
             {
-                statElement.Value = PlayerScalableStatClampUtility.ResolveNormalizedValue(in statElement, experienceValue);
-                scalableStats[statIndex] = statElement;
+                if (PlayerScalableStatValueUtility.TryWriteRuntimeValue(ref statElement,
+                                                                        PlayerFormulaValue.CreateNumber(experienceValue),
+                                                                        out string _))
+                {
+                    scalableStats[statIndex] = statElement;
+                }
+
                 continue;
             }
 
             if (!string.Equals(statName, "level", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            statElement.Value = PlayerScalableStatClampUtility.ResolveNormalizedValue(in statElement, levelValue);
+            if (!PlayerScalableStatValueUtility.TryWriteRuntimeValue(ref statElement,
+                                                                     PlayerFormulaValue.CreateNumber(levelValue),
+                                                                     out string _))
+            {
+                continue;
+            }
+
             scalableStats[statIndex] = statElement;
         }
     }

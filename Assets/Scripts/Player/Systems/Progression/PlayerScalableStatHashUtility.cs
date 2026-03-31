@@ -16,7 +16,7 @@ internal static class PlayerScalableStatHashUtility
     #region Public Methods
     /// <summary>
     /// Computes one FNV-1a hash from all current scalable-stat names and values.
-    ///  scalableStats: Runtime scalable-stat buffer to hash.
+    /// scalableStats: Runtime scalable-stat buffer to hash.
     /// returns Stable hash representing the current variable context.
     /// </summary>
     public static uint ComputeHash(DynamicBuffer<PlayerScalableStatElement> scalableStats)
@@ -34,7 +34,20 @@ internal static class PlayerScalableStatHashUtility
                 continue;
 
             rollingHash = (rollingHash ^ (uint)scalableStat.Name.GetHashCode()) * FnvPrime;
-            rollingHash = (rollingHash ^ math.asuint(scalableStat.Value)) * FnvPrime;
+            rollingHash = (rollingHash ^ scalableStat.Type) * FnvPrime;
+
+            switch ((PlayerScalableStatType)scalableStat.Type)
+            {
+                case PlayerScalableStatType.Boolean:
+                    rollingHash = (rollingHash ^ scalableStat.BooleanValue) * FnvPrime;
+                    break;
+                case PlayerScalableStatType.Token:
+                    rollingHash = (rollingHash ^ (uint)scalableStat.TokenValue.GetHashCode()) * FnvPrime;
+                    break;
+                default:
+                    rollingHash = (rollingHash ^ math.asuint(scalableStat.Value)) * FnvPrime;
+                    break;
+            }
         }
 
         rollingHash = (rollingHash ^ (uint)scalableStats.Length) * FnvPrime;

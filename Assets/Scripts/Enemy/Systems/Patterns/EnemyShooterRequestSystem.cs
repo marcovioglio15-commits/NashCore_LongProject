@@ -352,9 +352,10 @@ public partial struct EnemyShooterRequestSystem : ISystem
             MaxPenetrations = math.max(0, shooterConfig.MaxPenetrations),
             InheritPlayerSpeed = shooterConfig.InheritShooterSpeed,
             IsSplitChild = 0,
-            HasElementalPayloadOverride = shooterConfig.HasElementalPayload,
-            ElementalEffectOverride = shooterConfig.ElementalEffect,
-            ElementalStacksPerHitOverride = math.max(0f, shooterConfig.ElementalStacksPerHit)
+            ElementalPayloadOverride = shooterConfig.HasElementalPayload != 0
+                ? ProjectileElementalPayloadUtility.BuildSingle(in shooterConfig.ElementalEffect,
+                                                                math.max(0f, shooterConfig.ElementalStacksPerHit))
+                : default
         });
     }
     #endregion

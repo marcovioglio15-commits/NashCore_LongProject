@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Stores the authored wave list shared by one or more enemy spawners.
 /// The preset is validated against the owning spawner grid whenever that spawner changes.
-///  None.
+/// None.
 /// returns None.
 /// </summary>
 [CreateAssetMenu(fileName = "EnemyWavePreset", menuName = "NashCore/Enemy/Enemy Wave Preset")]
@@ -43,8 +43,8 @@ public sealed class EnemyWavePreset : ScriptableObject
     /// <summary>
     /// Validates all contained waves against one spawner grid definition.
     /// Called from EnemySpawnerAuthoring.OnValidate so the preset stays bake-safe.
-    ///  gridSizeX: Grid width in cells of the owning spawner.
-    ///  gridSizeZ: Grid depth in cells of the owning spawner.
+    /// gridSizeX: Grid width in cells of the owning spawner.
+    /// gridSizeZ: Grid depth in cells of the owning spawner.
     /// returns None.
     /// </summary>
     public void ValidateAgainstGrid(int gridSizeX, int gridSizeZ)
@@ -57,7 +57,7 @@ public sealed class EnemyWavePreset : ScriptableObject
     #region Helpers
     /// <summary>
     /// Recreates the serialized wave list when Unity deserializes a missing reference as null.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void EnsureWaveList()

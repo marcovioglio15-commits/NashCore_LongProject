@@ -78,7 +78,7 @@ public struct ShootingConfig
 
 /// <summary>
 /// Holds shooting-related values such as shoot speed, 
-/// rate of fire, explosion radius, range, lifetime, damage, and default penetration for projectiles.
+/// rate of fire, explosion radius, range, lifetime, damage, default penetration and base elemental payload tuning for projectiles.
 /// </summary>
 public struct ShootingValuesBlob
 {
@@ -89,8 +89,55 @@ public struct ShootingValuesBlob
     public float Range;
     public float Lifetime;
     public float Damage;
+    public ElementBulletSettingsByElementBlob ElementBehaviours;
     public ProjectilePenetrationMode PenetrationMode;
     public int MaxPenetrations;
+    public ProjectileKnockbackSettingsBlob Knockback;
+}
+
+/// <summary>
+/// Holds the default knockback payload emitted by base player projectiles.
+/// </summary>
+public struct ProjectileKnockbackSettingsBlob
+{
+    public byte Enabled;
+    public float Strength;
+    public float DurationSeconds;
+    public ProjectileKnockbackDirectionMode DirectionMode;
+    public ProjectileKnockbackStackingMode StackingMode;
+}
+
+/// <summary>
+/// Holds the detailed gameplay behaviour emitted by one elemental payload entry.
+/// </summary>
+public struct ElementBulletSettingsBlob
+{
+    public ElementalEffectKind EffectKind;
+    public ElementalProcMode ProcMode;
+    public ElementalProcReapplyMode ReapplyMode;
+    public float StacksPerHit;
+    public float ProcThresholdStacks;
+    public float MaximumStacks;
+    public float StackDecayPerSecond;
+    public byte ConsumeStacksOnProc;
+    public float DotDamagePerTick;
+    public float DotTickInterval;
+    public float DotDurationSeconds;
+    public float ImpedimentSlowPercentPerStack;
+    public float ImpedimentProcSlowPercent;
+    public float ImpedimentMaxSlowPercent;
+    public float ImpedimentDurationSeconds;
+}
+
+/// <summary>
+/// Holds the per-element gameplay behaviour blocks referenced by stacked default projectile elements.
+/// </summary>
+public struct ElementBulletSettingsByElementBlob
+{
+    public ElementBulletSettingsBlob Fire;
+    public ElementBulletSettingsBlob Ice;
+    public ElementBulletSettingsBlob Poison;
+    public ElementBulletSettingsBlob Custom;
 }
 #endregion
 

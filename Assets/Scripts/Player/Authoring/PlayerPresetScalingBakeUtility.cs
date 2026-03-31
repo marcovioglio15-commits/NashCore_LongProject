@@ -168,7 +168,7 @@ public static class PlayerPresetScalingBakeUtility
         if (progressionHasScaling)
             resolvedProgressionPreset = CreateClone(progressionPreset, instantiatedPresets);
 
-        Dictionary<string, float> variableContext = BuildScalableVariableContext(resolvedProgressionPreset);
+        Dictionary<string, PlayerFormulaValue> variableContext = BuildScalableVariableContext(resolvedProgressionPreset);
         HashSet<string> allowedVariables = new HashSet<string>(variableContext.Keys, StringComparer.OrdinalIgnoreCase);
 
         if (progressionHasScaling && resolvedProgressionPreset != null)
@@ -230,7 +230,7 @@ public static class PlayerPresetScalingBakeUtility
     #region Scaling
     private static void ApplyScalingRules(UnityEngine.Object presetObject,
                                           IReadOnlyList<PlayerStatScalingRule> scalingRules,
-                                          IReadOnlyDictionary<string, float> variableContext,
+                                          IReadOnlyDictionary<string, PlayerFormulaValue> variableContext,
                                           ISet<string> allowedVariables,
                                           string presetTypeLabel,
                                           List<PlayerScalingDebugRuleSnapshot> debugRuleSnapshots)
@@ -258,13 +258,16 @@ public static class PlayerPresetScalingBakeUtility
                 continue;
             }
 
-            if (PlayerScalingStatKeyUtility.IsNumericProperty(targetProperty) == false)
+            if (!PlayerScalingFormulaEditorUtility.SupportsScalingTarget(targetProperty))
             {
-                LogScalingWarning(presetObject, presetTypeLabel, scalingRule, "Target stat is not numeric.");
+                LogScalingWarning(presetObject, presetTypeLabel, scalingRule, "Target stat type is not supported by Add Scaling.");
                 continue;
             }
 
-            PlayerStatFormulaCompileResult compileResult = PlayerStatFormulaEngine.Compile(scalingRule.Formula, true);
+            string normalizedFormula = PlayerScalingFormulaEditorUtility.NormalizeFormulaForTarget(scalingRule.Formula,
+                                                                                                   targetProperty,
+                                                                                                   allowedVariables);
+            PlayerStatFormulaCompileResult compileResult = PlayerStatFormulaEngine.Compile(normalizedFormula, true);
 
             if (compileResult.IsValid == false || compileResult.CompiledFormula == null)
             {
@@ -279,25 +282,36 @@ public static class PlayerPresetScalingBakeUtility
                 continue;
             }
 
-            float currentRawValue = targetProperty.propertyType == SerializedPropertyType.Integer
-                ? targetProperty.intValue
-                : targetProperty.floatValue;
+            if (!PlayerScalingSerializedPropertyUtility.TryReadFormulaInput(targetProperty,
+                                                                           out PlayerFormulaValue currentValue,
+                                                                           out bool isIntegerLike))
+            {
+                LogScalingWarning(presetObject, presetTypeLabel, scalingRule, "Target stat type is not supported by Add Scaling.");
+                continue;
+            }
 
-            if (compileResult.CompiledFormula.TryEvaluate(currentRawValue, variableContext, out float scaledValue, out string evaluationError) == false)
+            if (!compileResult.CompiledFormula.TryEvaluate(currentValue,
+                                                           variableContext,
+                                                           out PlayerFormulaValue scaledValue,
+                                                           out string evaluationError))
             {
                 LogScalingWarning(presetObject, presetTypeLabel, scalingRule, evaluationError);
                 continue;
             }
 
-            float finalAppliedValue = targetProperty.propertyType == SerializedPropertyType.Integer
-                ? Mathf.RoundToInt(scaledValue)
-                : scaledValue;
-
-            if (scalingRule.DebugInConsole && debugRuleSnapshots != null)
+            if (scalingRule.DebugInConsole &&
+                debugRuleSnapshots != null &&
+                (targetProperty.propertyType == SerializedPropertyType.Integer || targetProperty.propertyType == SerializedPropertyType.Float))
             {
                 string targetDisplayName = string.IsNullOrWhiteSpace(targetProperty.displayName)
                     ? scalingRule.StatKey
                     : targetProperty.displayName;
+                float currentRawValue = currentValue.Type == PlayerFormulaValueType.Number
+                    ? currentValue.NumberValue
+                    : currentValue.BooleanValue ? 1f : 0f;
+                float finalAppliedValue = scaledValue.Type == PlayerFormulaValueType.Number
+                    ? isIntegerLike ? Mathf.RoundToInt(scaledValue.NumberValue) : scaledValue.NumberValue
+                    : scaledValue.BooleanValue ? 1f : 0f;
                 debugRuleSnapshots.Add(new PlayerScalingDebugRuleSnapshot(presetTypeLabel,
                                                                           targetDisplayName,
                                                                           scalingRule.StatKey,
@@ -307,23 +321,17 @@ public static class PlayerPresetScalingBakeUtility
                                                                           scalingRule.DebugColor));
             }
 
-            if (targetProperty.propertyType == SerializedPropertyType.Integer)
+            if (!PlayerScalingSerializedPropertyUtility.TryApplyFormulaResult(targetProperty,
+                                                                              scaledValue,
+                                                                              out bool changed,
+                                                                              out string applyError))
             {
-                int integerScaledValue = Mathf.RoundToInt(finalAppliedValue);
-
-                if (targetProperty.intValue == integerScaledValue)
-                    continue;
-
-                targetProperty.intValue = integerScaledValue;
-                hasAppliedAtLeastOneRule = true;
+                LogScalingWarning(presetObject, presetTypeLabel, scalingRule, applyError);
                 continue;
             }
 
-            if (Mathf.Approximately(targetProperty.floatValue, finalAppliedValue))
-                continue;
-
-            targetProperty.floatValue = finalAppliedValue;
-            hasAppliedAtLeastOneRule = true;
+            if (changed)
+                hasAppliedAtLeastOneRule = true;
         }
 
         if (hasAppliedAtLeastOneRule)
@@ -375,9 +383,9 @@ public static class PlayerPresetScalingBakeUtility
     #endregion
 
     #region Helpers
-    private static Dictionary<string, float> BuildScalableVariableContext(PlayerProgressionPreset progressionPreset)
+    private static Dictionary<string, PlayerFormulaValue> BuildScalableVariableContext(PlayerProgressionPreset progressionPreset)
     {
-        Dictionary<string, float> variableContext = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, PlayerFormulaValue> variableContext = new Dictionary<string, PlayerFormulaValue>(StringComparer.OrdinalIgnoreCase);
 
         if (progressionPreset == null)
             return variableContext;
@@ -397,8 +405,7 @@ public static class PlayerPresetScalingBakeUtility
             if (string.IsNullOrWhiteSpace(scalableStat.StatName))
                 continue;
 
-            float value = scalableStat.ResolveRuntimeDefaultValue();
-
+            PlayerFormulaValue value = scalableStat.ResolveRuntimeDefaultFormulaValue();
             variableContext[scalableStat.StatName] = value;
         }
 

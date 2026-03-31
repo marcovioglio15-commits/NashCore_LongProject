@@ -97,7 +97,7 @@ public static class PlayerMilestonePowerUpRollUtility
             return false;
 
         selectionOffers.Clear();
-        Dictionary<string, float> variableContext = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, PlayerFormulaValue> variableContext = new Dictionary<string, PlayerFormulaValue>(StringComparer.OrdinalIgnoreCase);
         PlayerScalingRuntimeFormulaUtility.FillVariableContext(scalableStats, variableContext);
         HashSet<int> rolledCatalogIndices = new HashSet<int>();
         HashSet<PassiveToolKind> blockedPassiveKinds = BuildBlockedPassiveKinds(equippedPassiveTools);
@@ -188,7 +188,7 @@ public static class PlayerMilestonePowerUpRollUtility
     /// <param name="selectedEntryWeight">Weight of the selected power-up entry inside the selected tier.</param>
     /// <returns>True when an entry is successfully rolled; otherwise false.<returns>
     private static bool TryRollMilestoneOffer(ref PlayerMilestonePowerUpUnlockBlob powerUpUnlockBlob,
-                                              IReadOnlyDictionary<string, float> variableContext,
+                                              IReadOnlyDictionary<string, PlayerFormulaValue> variableContext,
                                               DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
                                               DynamicBuffer<PlayerPowerUpTierDefinitionElement> tierDefinitions,
                                               DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries,
@@ -304,7 +304,7 @@ public static class PlayerMilestonePowerUpRollUtility
     private static bool HasAnyRollableEntry(in PlayerPowerUpTierDefinitionElement tierDefinition,
                                             DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries,
                                             DynamicBuffer<PlayerPowerUpTierEntryScalingElement> tierEntryScaling,
-                                            IReadOnlyDictionary<string, float> variableContext,
+                                            IReadOnlyDictionary<string, PlayerFormulaValue> variableContext,
                                             DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
                                             HashSet<int> rolledCatalogIndices,
                                             HashSet<PassiveToolKind> blockedPassiveKinds)
@@ -360,7 +360,7 @@ public static class PlayerMilestonePowerUpRollUtility
     private static bool TryRollCatalogFromTier(in PlayerPowerUpTierDefinitionElement tierDefinition,
                                                DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries,
                                                DynamicBuffer<PlayerPowerUpTierEntryScalingElement> tierEntryScaling,
-                                               IReadOnlyDictionary<string, float> variableContext,
+                                               IReadOnlyDictionary<string, PlayerFormulaValue> variableContext,
                                                DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog,
                                                HashSet<int> rolledCatalogIndices,
                                                HashSet<PassiveToolKind> blockedPassiveKinds,
@@ -459,7 +459,7 @@ public static class PlayerMilestonePowerUpRollUtility
     }
 
     private static float ResolveTierRollPercentage(ref PlayerMilestoneTierRollBlob tierRoll,
-                                                   IReadOnlyDictionary<string, float> variableContext)
+                                                   IReadOnlyDictionary<string, PlayerFormulaValue> variableContext)
     {
         float selectionPercentage = mathMax(0f, tierRoll.SelectionPercentage);
         string scalingFormula = tierRoll.ScalingFormula.ToString();
@@ -482,7 +482,7 @@ public static class PlayerMilestonePowerUpRollUtility
     private static float ResolveTierEntryWeight(DynamicBuffer<PlayerPowerUpTierEntryElement> tierEntries,
                                                 DynamicBuffer<PlayerPowerUpTierEntryScalingElement> tierEntryScaling,
                                                 int tierEntryIndex,
-                                                IReadOnlyDictionary<string, float> variableContext)
+                                                IReadOnlyDictionary<string, PlayerFormulaValue> variableContext)
     {
         if (tierEntryIndex < 0 || tierEntryIndex >= tierEntries.Length)
             return 0f;

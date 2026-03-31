@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Builds ECS interaction settings for dropped active power-up containers from progression authoring data.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 internal static class PlayerPowerUpContainerBakeUtility
@@ -14,8 +14,8 @@ internal static class PlayerPowerUpContainerBakeUtility
     #region Public Methods
     /// <summary>
     /// Builds the player-side interaction config baked from the current progression preset.
-    ///  progressionPreset: Progression preset that owns the dropped-container settings.
-    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// progressionPreset: Progression preset that owns the dropped-container settings.
+    /// resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
     /// returns Baked ECS interaction config.
     /// </summary>
     public static PlayerPowerUpContainerInteractionConfig BuildInteractionConfig(PlayerProgressionPreset progressionPreset,
@@ -50,7 +50,7 @@ internal static class PlayerPowerUpContainerBakeUtility
     #region Private Methods
     /// <summary>
     /// Estimates the distance between the prefab pivot and the lowest rendered point so spawned containers can rest on the ground.
-    ///  containerPrefab: Prefab asset used to spawn dropped containers.
+    /// containerPrefab: Prefab asset used to spawn dropped containers.
     /// returns Ground-clearance offset measured from the prefab pivot to the lowest renderer bound.
     /// </summary>
     private static float ResolveContainerGroundClearanceOffset(GameObject containerPrefab)

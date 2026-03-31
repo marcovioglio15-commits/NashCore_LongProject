@@ -33,7 +33,7 @@ public sealed class EnemyVisualPresetLibrary : ScriptableObject
     #region Public Methods
     /// <summary>
     /// Registers a preset in the library when not already present.
-    ///  preset Preset asset to register.
+    /// preset Preset asset to register.
     /// returns None.
     /// </summary>
     public void AddPreset(EnemyVisualPreset preset)
@@ -49,7 +49,7 @@ public sealed class EnemyVisualPresetLibrary : ScriptableObject
 
     /// <summary>
     /// Removes a preset from the library when present.
-    ///  preset Preset asset to remove.
+    /// preset Preset asset to remove.
     /// returns None.
     /// </summary>
     public void RemovePreset(EnemyVisualPreset preset)

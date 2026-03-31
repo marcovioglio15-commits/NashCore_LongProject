@@ -12,7 +12,7 @@ public static class DamageFlashRuntimeUtility
     #region Public Methods
     /// <summary>
     /// Converts a Unity color into a linear float4 suitable for ECS material and presentation paths.
-    ///  color: Source color authored in inspector space.
+    /// color: Source color authored in inspector space.
     /// returns Linear-space float4 color.
     /// </summary>
     public static float4 ToLinearFloat4(Color color)
@@ -23,7 +23,7 @@ public static class DamageFlashRuntimeUtility
 
     /// <summary>
     /// Converts a float4 color produced by ECS runtime data into a Unity Color for managed renderer APIs.
-    ///  color: Linear-space float4 color.
+    /// color: Linear-space float4 color.
     /// returns Unity Color with matching component values.
     /// </summary>
     public static Color ToManagedColor(float4 color)
@@ -33,8 +33,8 @@ public static class DamageFlashRuntimeUtility
 
     /// <summary>
     /// Refreshes the flash timer of one entity when it receives valid damage.
-    ///  entityManager: Entity manager used to access flash components.
-    ///  entity: Damaged entity that should restart the flash feedback.
+    /// entityManager: Entity manager used to access flash components.
+    /// entity: Damaged entity that should restart the flash feedback.
     /// returns None.
     /// </summary>
     public static void Trigger(EntityManager entityManager, Entity entity)
@@ -60,9 +60,9 @@ public static class DamageFlashRuntimeUtility
 
     /// <summary>
     /// Advances one flash state and returns the blend value that should be rendered this frame.
-    ///  state: Mutable runtime flash state to advance.
-    ///  config: Immutable flash config used to clamp duration and intensity.
-    ///  deltaTime: Current frame delta time in seconds.
+    /// state: Mutable runtime flash state to advance.
+    /// config: Immutable flash config used to clamp duration and intensity.
+    /// deltaTime: Current frame delta time in seconds.
     /// returns Blend factor in the [0..1] range to render this frame.
     /// </summary>
     public static float Advance(ref DamageFlashState state,
@@ -87,9 +87,9 @@ public static class DamageFlashRuntimeUtility
 
     /// <summary>
     /// Resolves the per-instance material color used by standard URP materials during a hit flash.
-    ///  baseColor: Original material color stored for restoration.
-    ///  config: Immutable flash config providing the target flash tint.
-    ///  blend: Current flash blend in the [0..1] range.
+    /// baseColor: Original material color stored for restoration.
+    /// config: Immutable flash config providing the target flash tint.
+    /// blend: Current flash blend in the [0..1] range.
     /// returns Blended color to write into per-instance material overrides.
     /// </summary>
     public static float4 ResolveBaseColor(in DamageFlashBaseColor baseColor,
@@ -101,9 +101,9 @@ public static class DamageFlashRuntimeUtility
 
     /// <summary>
     /// Resolves the per-instance material color used by standard URP materials during any enemy flash overlay.
-    ///  baseColor: Original material color stored for restoration.
-    ///  flashColor: Target overlay color selected for the current frame.
-    ///  blend: Current overlay blend in the [0..1] range.
+    /// baseColor: Original material color stored for restoration.
+    /// flashColor: Target overlay color selected for the current frame.
+    /// blend: Current overlay blend in the [0..1] range.
     /// returns Blended color to write into per-instance material overrides.
     /// </summary>
     public static float4 ResolveBaseColor(in DamageFlashBaseColor baseColor,

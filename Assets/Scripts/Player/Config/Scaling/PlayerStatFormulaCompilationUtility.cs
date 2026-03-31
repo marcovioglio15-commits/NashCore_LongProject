@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 
 /// <summary>
-/// Provides the parser and compiler steps that transform raw player stat formulas into executable RPN programs.
-///  none.
+/// Provides tokenization and recursive-descent parsing for unified player formulas.
 /// </summary>
 internal static class PlayerStatFormulaCompilationUtility
 {
@@ -12,12 +12,11 @@ internal static class PlayerStatFormulaCompilationUtility
 
     #region Public Methods
     /// <summary>
-    /// Compiles one normalized formula string into a reusable compiled formula.
-    /// Used by the cached public engine wrapper after cache lookup.
-    ///  formula: Normalized formula string to compile.
-    ///  requireAtLeastOneVariable: Whether formulas without variables should be rejected.
-    /// returns Compilation result containing the compiled formula or the failure reason.
+    /// Compiles one raw formula string into a reusable typed expression tree.
     /// </summary>
+    /// <param name="formula">Raw expression string.</param>
+    /// <param name="requireAtLeastOneVariable">True when formulas without [this] or named variables must be rejected.</param>
+    /// <returns>Compilation result containing either a compiled formula or a failure reason.<returns>
     internal static PlayerStatFormulaCompileResult Compile(string formula, bool requireAtLeastOneVariable)
     {
         if (string.IsNullOrWhiteSpace(formula))
@@ -26,35 +25,39 @@ internal static class PlayerStatFormulaCompilationUtility
         if (!Tokenize(formula, out List<PlayerStatFormulaToken> tokens, out string tokenizationError))
             return new PlayerStatFormulaCompileResult(false, null, tokenizationError);
 
-        if (!BuildRpn(tokens, out List<PlayerStatFormulaRpnToken> rpnTokens, out HashSet<string> variableNames, out string parseError))
+        PlayerFormulaParser parser = new PlayerFormulaParser(tokens);
+
+        if (!parser.TryParse(out PlayerFormulaNode rootNode, out string parseError))
             return new PlayerStatFormulaCompileResult(false, null, parseError);
 
-        if (requireAtLeastOneVariable && variableNames.Count == 0)
-            return new PlayerStatFormulaCompileResult(false, null, "Formula must reference at least one variable ([this] or [StatName]).");
+        if (requireAtLeastOneVariable && parser.VariableNames.Count == 0)
+        {
+            return new PlayerStatFormulaCompileResult(false,
+                                                      null,
+                                                      "Formula must reference at least one variable ([this] or [StatName]).");
+        }
 
-        if (!ValidateRpnStructure(rpnTokens, out string structureError))
-            return new PlayerStatFormulaCompileResult(false, null, structureError);
-
-        string[] variableNamesArray = new string[variableNames.Count];
-        variableNames.CopyTo(variableNamesArray);
-        PlayerCompiledStatFormula compiledFormula = new PlayerCompiledStatFormula(rpnTokens.ToArray(), variableNamesArray);
+        string[] variableNames = new string[parser.VariableNames.Count];
+        parser.VariableNames.CopyTo(variableNames);
+        Array.Sort(variableNames, StringComparer.OrdinalIgnoreCase);
+        PlayerCompiledStatFormula compiledFormula = new PlayerCompiledStatFormula(rootNode, variableNames);
         return new PlayerStatFormulaCompileResult(true, compiledFormula, string.Empty);
     }
     #endregion
 
-    #region Private Methods
+    #region Tokenization
     /// <summary>
-    /// Tokenizes one raw formula string into infix tokens.
-    ///  formula: Formula text to scan.
-    ///  tokens: Produced infix token list.
-    ///  errorMessage: Failure reason when tokenization stops.
-    /// returns True when tokenization succeeded.
+    /// Converts one raw formula string into lexical tokens.
     /// </summary>
+    /// <param name="formula">Source expression string.</param>
+    /// <param name="tokens">Produced token list.</param>
+    /// <param name="errorMessage">Failure reason when tokenization fails.</param>
+    /// <returns>True when tokenization succeeds.<returns>
     private static bool Tokenize(string formula,
                                  out List<PlayerStatFormulaToken> tokens,
                                  out string errorMessage)
     {
-        tokens = new List<PlayerStatFormulaToken>();
+        tokens = new List<PlayerStatFormulaToken>(16);
         errorMessage = string.Empty;
         int index = 0;
 
@@ -70,261 +73,326 @@ internal static class PlayerStatFormulaCompilationUtility
 
             if (currentCharacter == '[')
             {
-                int closingBracketIndex = formula.IndexOf(']', index + 1);
-
-                if (closingBracketIndex < 0)
-                {
-                    errorMessage = "Variable token is missing closing ']'.";
+                if (!TryReadVariableToken(formula, ref index, tokens, out errorMessage))
                     return false;
-                }
 
-                string variableName = formula.Substring(index + 1, closingBracketIndex - index - 1).Trim();
+                continue;
+            }
 
-                if (string.IsNullOrWhiteSpace(variableName))
-                {
-                    errorMessage = "Variable token cannot be empty.";
+            if (currentCharacter == '"')
+            {
+                if (!TryReadStringLiteralToken(formula, ref index, tokens, out errorMessage))
                     return false;
-                }
 
-                tokens.Add(PlayerStatFormulaToken.CreateVariable(variableName));
-                index = closingBracketIndex + 1;
                 continue;
             }
 
             if (IsNumberStart(formula, index))
             {
+                int tokenStartIndex = index;
+
                 if (!TryReadNumberToken(formula, ref index, out float numberValue))
                 {
                     errorMessage = "Invalid number literal in formula.";
                     return false;
                 }
 
-                tokens.Add(PlayerStatFormulaToken.CreateNumber(numberValue));
+                tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.Number,
+                                                      string.Empty,
+                                                      numberValue,
+                                                      false,
+                                                      tokenStartIndex));
                 continue;
             }
 
-            if (IsOperator(currentCharacter))
+            if (IsIdentifierStart(currentCharacter))
             {
-                tokens.Add(PlayerStatFormulaToken.CreateOperator(currentCharacter, false));
-                index += 1;
+                TryReadIdentifierToken(formula, ref index, tokens);
                 continue;
             }
 
-            if (currentCharacter == '(')
-            {
-                tokens.Add(PlayerStatFormulaToken.CreateParenthesis(true));
-                index += 1;
+            if (TryReadOperatorOrPunctuationToken(formula, ref index, tokens))
                 continue;
-            }
 
-            if (currentCharacter == ')')
-            {
-                tokens.Add(PlayerStatFormulaToken.CreateParenthesis(false));
-                index += 1;
-                continue;
-            }
-
-            if (char.IsLetter(currentCharacter))
-            {
-                int identifierStartIndex = index;
-
-                while (index < formula.Length && char.IsLetter(formula[index]))
-                    index += 1;
-
-                string identifier = formula.Substring(identifierStartIndex, index - identifierStartIndex);
-
-                if (!string.Equals(identifier, "log", StringComparison.OrdinalIgnoreCase))
-                {
-                    errorMessage = string.Format(CultureInfo.InvariantCulture, "Unsupported identifier '{0}'.", identifier);
-                    return false;
-                }
-
-                int lookAheadIndex = index;
-
-                while (lookAheadIndex < formula.Length && char.IsWhiteSpace(formula[lookAheadIndex]))
-                    lookAheadIndex += 1;
-
-                if (lookAheadIndex >= formula.Length || formula[lookAheadIndex] != '(')
-                {
-                    errorMessage = "Function log must be followed by parentheses.";
-                    return false;
-                }
-
-                tokens.Add(PlayerStatFormulaToken.CreateFunction("log"));
-                continue;
-            }
-
-            errorMessage = string.Format(CultureInfo.InvariantCulture, "Unsupported character '{0}' in formula.", currentCharacter);
+            errorMessage = string.Format(CultureInfo.InvariantCulture,
+                                         "Unsupported character '{0}' in formula.",
+                                         currentCharacter);
             return false;
         }
 
-        if (tokens.Count == 0)
-        {
-            errorMessage = "Formula produced no tokens.";
-            return false;
-        }
-
+        tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.End,
+                                              string.Empty,
+                                              0f,
+                                              false,
+                                              formula.Length));
         return true;
     }
 
     /// <summary>
-    /// Converts one infix token stream into reverse-polish notation.
-    ///  tokens: Infix token sequence produced by the tokenizer.
-    ///  rpnTokens: Resulting RPN token list.
-    ///  variableNames: Distinct variables discovered while compiling.
-    ///  errorMessage: Failure reason when parsing fails.
-    /// returns True when the conversion succeeded.
+    /// Reads one bracketed variable token.
     /// </summary>
-    private static bool BuildRpn(List<PlayerStatFormulaToken> tokens,
-                                 out List<PlayerStatFormulaRpnToken> rpnTokens,
-                                 out HashSet<string> variableNames,
-                                 out string errorMessage)
+    /// <param name="formula">Source expression string.</param>
+    /// <param name="index">Current lexer index, advanced after the token.</param>
+    /// <param name="tokens">Destination token list.</param>
+    /// <param name="errorMessage">Failure reason when tokenization fails.</param>
+    /// <returns>True when the variable token is valid.<returns>
+    private static bool TryReadVariableToken(string formula,
+                                             ref int index,
+                                             List<PlayerStatFormulaToken> tokens,
+                                             out string errorMessage)
     {
-        rpnTokens = new List<PlayerStatFormulaRpnToken>(tokens.Count);
-        variableNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         errorMessage = string.Empty;
-        Stack<PlayerStatFormulaToken> operatorStack = new Stack<PlayerStatFormulaToken>();
-        PlayerStatFormulaToken? previousToken = null;
+        int startIndex = index;
+        int closingBracketIndex = formula.IndexOf(']', index + 1);
 
-        for (int tokenIndex = 0; tokenIndex < tokens.Count; tokenIndex++)
+        if (closingBracketIndex < 0)
         {
-            PlayerStatFormulaToken currentToken = tokens[tokenIndex];
+            errorMessage = "Variable token is missing closing ']'.";
+            return false;
+        }
 
-            switch (currentToken.Type)
+        string variableName = formula.Substring(index + 1, closingBracketIndex - index - 1).Trim();
+
+        if (string.IsNullOrWhiteSpace(variableName))
+        {
+            errorMessage = "Variable token cannot be empty.";
+            return false;
+        }
+
+        tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.Variable,
+                                              variableName,
+                                              0f,
+                                              false,
+                                              startIndex));
+        index = closingBracketIndex + 1;
+        return true;
+    }
+
+    /// <summary>
+    /// Reads one string literal token using double quotes and basic escape sequences.
+    /// </summary>
+    /// <param name="formula">Source expression string.</param>
+    /// <param name="index">Current lexer index, advanced after the token.</param>
+    /// <param name="tokens">Destination token list.</param>
+    /// <param name="errorMessage">Failure reason when tokenization fails.</param>
+    /// <returns>True when the string literal is valid.<returns>
+    private static bool TryReadStringLiteralToken(string formula,
+                                                  ref int index,
+                                                  List<PlayerStatFormulaToken> tokens,
+                                                  out string errorMessage)
+    {
+        errorMessage = string.Empty;
+        int startIndex = index;
+        index += 1;
+        StringBuilder literalBuilder = new StringBuilder();
+
+        while (index < formula.Length)
+        {
+            char currentCharacter = formula[index];
+
+            if (currentCharacter == '"')
             {
-                case PlayerStatFormulaTokenType.Number:
-                    rpnTokens.Add(PlayerStatFormulaRpnToken.CreateNumber(currentToken.NumberValue));
-                    previousToken = currentToken;
-                    continue;
-                case PlayerStatFormulaTokenType.Variable:
-                    variableNames.Add(currentToken.TextValue);
-                    rpnTokens.Add(PlayerStatFormulaRpnToken.CreateVariable(currentToken.TextValue));
-                    previousToken = currentToken;
-                    continue;
-                case PlayerStatFormulaTokenType.Function:
-                    operatorStack.Push(currentToken);
-                    previousToken = currentToken;
-                    continue;
-                case PlayerStatFormulaTokenType.LeftParenthesis:
-                    operatorStack.Push(currentToken);
-                    previousToken = currentToken;
-                    continue;
-                case PlayerStatFormulaTokenType.RightParenthesis:
-                    if (!PopUntilLeftParenthesis(operatorStack, rpnTokens, out errorMessage))
+                tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.StringLiteral,
+                                                      literalBuilder.ToString(),
+                                                      0f,
+                                                      false,
+                                                      startIndex));
+                index += 1;
+                return true;
+            }
+
+            if (currentCharacter == '\\')
+            {
+                index += 1;
+
+                if (index >= formula.Length)
+                {
+                    errorMessage = "String literal ends with an incomplete escape sequence.";
+                    return false;
+                }
+
+                char escapedCharacter = formula[index];
+
+                switch (escapedCharacter)
+                {
+                    case '\\':
+                        literalBuilder.Append('\\');
+                        break;
+                    case '"':
+                        literalBuilder.Append('"');
+                        break;
+                    case 'n':
+                        literalBuilder.Append('\n');
+                        break;
+                    case 't':
+                        literalBuilder.Append('\t');
+                        break;
+                    default:
+                        errorMessage = string.Format(CultureInfo.InvariantCulture,
+                                                     "Unsupported escape sequence '\\{0}'.",
+                                                     escapedCharacter);
                         return false;
+                }
 
-                    if (operatorStack.Count > 0 && operatorStack.Peek().Type == PlayerStatFormulaTokenType.Function)
-                    {
-                        PlayerStatFormulaToken functionToken = operatorStack.Pop();
-                        rpnTokens.Add(PlayerStatFormulaRpnToken.CreateFunction(functionToken.TextValue));
-                    }
+                index += 1;
+                continue;
+            }
 
-                    previousToken = currentToken;
-                    continue;
-                case PlayerStatFormulaTokenType.Operator:
-                    PlayerStatFormulaToken resolvedOperator = ResolveOperatorToken(currentToken, previousToken);
+            literalBuilder.Append(currentCharacter);
+            index += 1;
+        }
 
-                    while (operatorStack.Count > 0 && ShouldPopOperator(operatorStack.Peek(), resolvedOperator))
-                    {
-                        PlayerStatFormulaToken poppedOperator = operatorStack.Pop();
-                        rpnTokens.Add(PlayerStatFormulaRpnToken.FromOperatorToken(poppedOperator));
-                    }
+        errorMessage = "String literal is missing its closing quote.";
+        return false;
+    }
 
-                    operatorStack.Push(resolvedOperator);
-                    previousToken = resolvedOperator;
-                    continue;
+    /// <summary>
+    /// Reads one identifier or boolean literal token.
+    /// </summary>
+    /// <param name="formula">Source expression string.</param>
+    /// <param name="index">Current lexer index, advanced after the token.</param>
+    /// <param name="tokens">Destination token list.</param>
+    /// <returns>Void.<returns>
+    private static void TryReadIdentifierToken(string formula, ref int index, List<PlayerStatFormulaToken> tokens)
+    {
+        int startIndex = index;
+
+        while (index < formula.Length && IsIdentifierPart(formula[index]))
+            index += 1;
+
+        string identifier = formula.Substring(startIndex, index - startIndex);
+
+        if (string.Equals(identifier, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.BooleanLiteral,
+                                                  string.Empty,
+                                                  0f,
+                                                  true,
+                                                  startIndex));
+            return;
+        }
+
+        if (string.Equals(identifier, "false", StringComparison.OrdinalIgnoreCase))
+        {
+            tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.BooleanLiteral,
+                                                  string.Empty,
+                                                  0f,
+                                                  false,
+                                                  startIndex));
+            return;
+        }
+
+        tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.Identifier,
+                                              identifier,
+                                              0f,
+                                              false,
+                                              startIndex));
+    }
+
+    /// <summary>
+    /// Reads one operator or punctuation token.
+    /// </summary>
+    /// <param name="formula">Source expression string.</param>
+    /// <param name="index">Current lexer index, advanced after the token.</param>
+    /// <param name="tokens">Destination token list.</param>
+    /// <returns>True when a token was read from the current position.<returns>
+    private static bool TryReadOperatorOrPunctuationToken(string formula,
+                                                          ref int index,
+                                                          List<PlayerStatFormulaToken> tokens)
+    {
+        int startIndex = index;
+        char currentCharacter = formula[index];
+
+        if (index + 1 < formula.Length)
+        {
+            string pair = formula.Substring(index, 2);
+
+            switch (pair)
+            {
+                case "&&":
+                case "||":
+                case "==":
+                case "!=":
+                case "<=":
+                case ">=":
+                    tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.Operator,
+                                                          pair,
+                                                          0f,
+                                                          false,
+                                                          startIndex));
+                    index += 2;
+                    return true;
             }
         }
 
-        while (operatorStack.Count > 0)
+        switch (currentCharacter)
         {
-            PlayerStatFormulaToken stackToken = operatorStack.Pop();
-
-            if (stackToken.Type == PlayerStatFormulaTokenType.LeftParenthesis || stackToken.Type == PlayerStatFormulaTokenType.RightParenthesis)
-            {
-                errorMessage = "Mismatched parentheses in formula.";
+            case '(':
+                tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.LeftParenthesis,
+                                                      string.Empty,
+                                                      0f,
+                                                      false,
+                                                      startIndex));
+                index += 1;
+                return true;
+            case ')':
+                tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.RightParenthesis,
+                                                      string.Empty,
+                                                      0f,
+                                                      false,
+                                                      startIndex));
+                index += 1;
+                return true;
+            case ',':
+                tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.Comma,
+                                                      string.Empty,
+                                                      0f,
+                                                      false,
+                                                      startIndex));
+                index += 1;
+                return true;
+            case '?':
+                tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.Question,
+                                                      string.Empty,
+                                                      0f,
+                                                      false,
+                                                      startIndex));
+                index += 1;
+                return true;
+            case ':':
+                tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.Colon,
+                                                      string.Empty,
+                                                      0f,
+                                                      false,
+                                                      startIndex));
+                index += 1;
+                return true;
+            case '+':
+            case '-':
+            case '*':
+            case '/':
+            case '^':
+            case '<':
+            case '>':
+            case '!':
+                tokens.Add(new PlayerStatFormulaToken(PlayerStatFormulaTokenType.Operator,
+                                                      currentCharacter.ToString(),
+                                                      0f,
+                                                      false,
+                                                      startIndex));
+                index += 1;
+                return true;
+            default:
                 return false;
-            }
-
-            if (stackToken.Type == PlayerStatFormulaTokenType.Function)
-            {
-                rpnTokens.Add(PlayerStatFormulaRpnToken.CreateFunction(stackToken.TextValue));
-                continue;
-            }
-
-            rpnTokens.Add(PlayerStatFormulaRpnToken.FromOperatorToken(stackToken));
         }
-
-        return true;
     }
 
     /// <summary>
-    /// Validates the final RPN stream by simulating stack depth changes.
-    ///  rpnTokens: Reverse-polish token stream to validate.
-    ///  errorMessage: Failure reason when structure is invalid.
-    /// returns True when the RPN stream is structurally valid.
+    /// Checks whether the current position starts a number literal.
     /// </summary>
-    private static bool ValidateRpnStructure(List<PlayerStatFormulaRpnToken> rpnTokens, out string errorMessage)
-    {
-        errorMessage = string.Empty;
-        int depth = 0;
-
-        for (int index = 0; index < rpnTokens.Count; index++)
-        {
-            PlayerStatFormulaRpnToken token = rpnTokens[index];
-
-            switch (token.Type)
-            {
-                case PlayerStatFormulaTokenType.Number:
-                case PlayerStatFormulaTokenType.Variable:
-                    depth += 1;
-                    continue;
-                case PlayerStatFormulaTokenType.Function:
-                    if (depth < 1)
-                    {
-                        errorMessage = "Function has no operand.";
-                        return false;
-                    }
-
-                    continue;
-                case PlayerStatFormulaTokenType.Operator:
-                    if (token.IsUnary)
-                    {
-                        if (depth < 1)
-                        {
-                            errorMessage = "Unary operator has no operand.";
-                            return false;
-                        }
-
-                        continue;
-                    }
-
-                    if (depth < 2)
-                    {
-                        errorMessage = "Binary operator has insufficient operands.";
-                        return false;
-                    }
-
-                    depth -= 1;
-                    continue;
-            }
-        }
-
-        if (depth != 1)
-        {
-            errorMessage = "Formula expression is incomplete.";
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Determines whether one formula character starts a number literal.
-    ///  formula: Formula source text.
-    ///  index: Character index to inspect.
-    /// returns True when the character begins a valid numeric token.
-    /// </summary>
+    /// <param name="formula">Source expression string.</param>
+    /// <param name="index">Character index being inspected.</param>
+    /// <returns>True when the current position starts a number literal.<returns>
     private static bool IsNumberStart(string formula, int index)
     {
         if (index < 0 || index >= formula.Length)
@@ -338,24 +406,22 @@ internal static class PlayerStatFormulaCompilationUtility
         if (currentCharacter == '.')
         {
             int nextIndex = index + 1;
-
-            if (nextIndex < formula.Length && char.IsDigit(formula[nextIndex]))
-                return true;
+            return nextIndex < formula.Length && char.IsDigit(formula[nextIndex]);
         }
 
         return false;
     }
 
     /// <summary>
-    /// Reads one numeric literal starting at the provided index.
-    ///  formula: Formula source text.
-    ///  index: Current parser index, advanced past the parsed literal.
-    ///  value: Parsed float value.
-    /// returns True when the number literal is valid.
+    /// Reads one number literal.
     /// </summary>
-    private static bool TryReadNumberToken(string formula, ref int index, out float value)
+    /// <param name="formula">Source expression string.</param>
+    /// <param name="index">Current lexer index, advanced after the token.</param>
+    /// <param name="numberValue">Parsed numeric value.</param>
+    /// <returns>True when the literal is valid.<returns>
+    private static bool TryReadNumberToken(string formula, ref int index, out float numberValue)
     {
-        value = 0f;
+        numberValue = 0f;
         int startIndex = index;
         bool hasDecimalSeparator = false;
 
@@ -383,148 +449,695 @@ internal static class PlayerStatFormulaCompilationUtility
         }
 
         string numberToken = formula.Substring(startIndex, index - startIndex);
-        return float.TryParse(numberToken, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        return float.TryParse(numberToken,
+                              NumberStyles.Float,
+                              CultureInfo.InvariantCulture,
+                              out numberValue);
     }
 
     /// <summary>
-    /// Checks whether the character is one of the supported operator symbols.
-    ///  character: Character to inspect.
-    /// returns True when the character maps to one supported operator.
+    /// Checks whether the character can start an identifier.
     /// </summary>
-    private static bool IsOperator(char character)
+    /// <param name="character">Character to inspect.</param>
+    /// <returns>True when the character starts an identifier.<returns>
+    private static bool IsIdentifierStart(char character)
     {
-        switch (character)
-        {
-            case '+':
-            case '-':
-            case '*':
-            case '/':
-            case '^':
-                return true;
-        }
+        return char.IsLetter(character) || character == '_';
+    }
 
+    /// <summary>
+    /// Checks whether the character can continue an identifier.
+    /// </summary>
+    /// <param name="character">Character to inspect.</param>
+    /// <returns>True when the character continues an identifier.<returns>
+    private static bool IsIdentifierPart(char character)
+    {
+        return char.IsLetterOrDigit(character) || character == '_';
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Recursive-descent parser for unified player formulas.
+/// </summary>
+internal sealed class PlayerFormulaParser
+{
+    #region Fields
+    private readonly List<PlayerStatFormulaToken> tokens;
+    private int currentIndex;
+    #endregion
+
+    #region Properties
+    public HashSet<string> VariableNames { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    #endregion
+
+    #region Constructors
+    /// <summary>
+    /// Creates one parser instance for the provided token list.
+    /// </summary>
+    /// <param name="tokensValue">Lexical token list.</param>
+    /// <returns>Initialized parser.<returns>
+    public PlayerFormulaParser(List<PlayerStatFormulaToken> tokensValue)
+    {
+        tokens = tokensValue ?? new List<PlayerStatFormulaToken>();
+        currentIndex = 0;
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Parses the full expression and validates that no trailing tokens remain.
+    /// </summary>
+    /// <param name="rootNode">Parsed root node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    public bool TryParse(out PlayerFormulaNode rootNode, out string errorMessage)
+    {
+        rootNode = null;
+        errorMessage = string.Empty;
+
+        if (!TryParseConditional(out rootNode, out errorMessage))
+            return false;
+
+        if (CurrentToken.Type == PlayerStatFormulaTokenType.End)
+            return true;
+
+        errorMessage = string.Format(CultureInfo.InvariantCulture,
+                                     "Unexpected token '{0}' at position {1}.",
+                                     DescribeToken(CurrentToken),
+                                     CurrentToken.StartIndex);
         return false;
     }
+    #endregion
 
+    #region Grammar
     /// <summary>
-    /// Converts one raw operator token into its final unary or binary representation.
-    ///  token: Operator token being resolved.
-    ///  previousToken: Previous token in the infix stream.
-    /// returns Operator token with the correct unary flag.
+    /// Parses the ternary conditional production.
     /// </summary>
-    private static PlayerStatFormulaToken ResolveOperatorToken(PlayerStatFormulaToken token, PlayerStatFormulaToken? previousToken)
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseConditional(out PlayerFormulaNode node, out string errorMessage)
     {
-        if (token.OperatorSymbol != '-')
-            return token;
+        node = null;
+        errorMessage = string.Empty;
 
-        if (!previousToken.HasValue)
-            return PlayerStatFormulaToken.CreateOperator('-', true);
+        if (!TryParseLogicalOr(out node, out errorMessage))
+            return false;
 
-        PlayerStatFormulaTokenType previousType = previousToken.Value.Type;
+        if (!Match(PlayerStatFormulaTokenType.Question))
+            return true;
 
-        if (previousType == PlayerStatFormulaTokenType.Operator)
-            return PlayerStatFormulaToken.CreateOperator('-', true);
+        if (!TryParseConditional(out PlayerFormulaNode whenTrueNode, out errorMessage))
+            return false;
 
-        if (previousType == PlayerStatFormulaTokenType.LeftParenthesis)
-            return PlayerStatFormulaToken.CreateOperator('-', true);
+        if (!Consume(PlayerStatFormulaTokenType.Colon, "Conditional operator is missing ':' after the true branch.", out errorMessage))
+            return false;
 
-        if (previousType == PlayerStatFormulaTokenType.Function)
-            return PlayerStatFormulaToken.CreateOperator('-', true);
+        if (!TryParseConditional(out PlayerFormulaNode whenFalseNode, out errorMessage))
+            return false;
 
-        return token;
+        node = new PlayerFormulaConditionalNode(node, whenTrueNode, whenFalseNode);
+        return true;
     }
 
     /// <summary>
-    /// Applies precedence and associativity rules between two operators.
-    ///  stackToken: Operator currently on the stack.
-    ///  currentToken: Incoming operator token.
-    /// returns True when the stacked operator must be emitted first.
+    /// Parses logical-or expressions.
     /// </summary>
-    private static bool ShouldPopOperator(PlayerStatFormulaToken stackToken, PlayerStatFormulaToken currentToken)
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseLogicalOr(out PlayerFormulaNode node, out string errorMessage)
     {
-        if (stackToken.Type == PlayerStatFormulaTokenType.Function)
-            return true;
+        node = null;
+        errorMessage = string.Empty;
 
-        if (stackToken.Type != PlayerStatFormulaTokenType.Operator)
+        if (!TryParseLogicalAnd(out node, out errorMessage))
             return false;
 
-        int stackPrecedence = GetPrecedence(stackToken);
-        int currentPrecedence = GetPrecedence(currentToken);
+        while (MatchOperator("||"))
+        {
+            string operatorText = PreviousToken.TextValue;
 
-        if (stackPrecedence > currentPrecedence)
-            return true;
+            if (!TryParseLogicalAnd(out PlayerFormulaNode rightNode, out errorMessage))
+                return false;
 
-        if (stackPrecedence < currentPrecedence)
-            return false;
-
-        if (currentToken.IsUnary)
-            return false;
-
-        if (currentToken.OperatorSymbol == '^')
-            return false;
+            node = new PlayerFormulaBinaryNode(operatorText, node, rightNode);
+        }
 
         return true;
     }
 
     /// <summary>
-    /// Resolves numeric precedence for one operator token.
-    ///  token: Operator token being inspected.
-    /// returns Numeric precedence used by the shunting-yard algorithm.
+    /// Parses logical-and expressions.
     /// </summary>
-    private static int GetPrecedence(PlayerStatFormulaToken token)
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseLogicalAnd(out PlayerFormulaNode node, out string errorMessage)
     {
-        if (token.Type != PlayerStatFormulaTokenType.Operator)
-            return 0;
+        node = null;
+        errorMessage = string.Empty;
 
-        if (token.IsUnary)
-            return 4;
+        if (!TryParseEquality(out node, out errorMessage))
+            return false;
 
-        switch (token.OperatorSymbol)
+        while (MatchOperator("&&"))
         {
-            case '^':
-                return 3;
-            case '*':
-            case '/':
-                return 2;
-            case '+':
-            case '-':
-                return 1;
+            string operatorText = PreviousToken.TextValue;
+
+            if (!TryParseEquality(out PlayerFormulaNode rightNode, out errorMessage))
+                return false;
+
+            node = new PlayerFormulaBinaryNode(operatorText, node, rightNode);
         }
 
-        return 0;
+        return true;
     }
 
     /// <summary>
-    /// Pops operators until one left parenthesis is reached.
-    ///  operatorStack: Current shunting-yard operator stack.
-    ///  rpnTokens: Output RPN token list.
-    ///  errorMessage: Failure reason when no matching parenthesis exists.
-    /// returns True when one matching left parenthesis was found.
+    /// Parses equality expressions.
     /// </summary>
-    private static bool PopUntilLeftParenthesis(Stack<PlayerStatFormulaToken> operatorStack,
-                                                List<PlayerStatFormulaRpnToken> rpnTokens,
-                                                out string errorMessage)
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseEquality(out PlayerFormulaNode node, out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (!TryParseComparison(out node, out errorMessage))
+            return false;
+
+        while (MatchOperator("==") || MatchOperator("!="))
+        {
+            string operatorText = PreviousToken.TextValue;
+
+            if (!TryParseComparison(out PlayerFormulaNode rightNode, out errorMessage))
+                return false;
+
+            node = new PlayerFormulaBinaryNode(operatorText, node, rightNode);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Parses comparison expressions.
+    /// </summary>
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseComparison(out PlayerFormulaNode node, out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (!TryParseAddition(out node, out errorMessage))
+            return false;
+
+        while (MatchOperator("<") || MatchOperator("<=") || MatchOperator(">") || MatchOperator(">="))
+        {
+            string operatorText = PreviousToken.TextValue;
+
+            if (!TryParseAddition(out PlayerFormulaNode rightNode, out errorMessage))
+                return false;
+
+            node = new PlayerFormulaBinaryNode(operatorText, node, rightNode);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Parses additive expressions.
+    /// </summary>
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseAddition(out PlayerFormulaNode node, out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (!TryParseMultiplication(out node, out errorMessage))
+            return false;
+
+        while (MatchOperator("+") || MatchOperator("-"))
+        {
+            string operatorText = PreviousToken.TextValue;
+
+            if (!TryParseMultiplication(out PlayerFormulaNode rightNode, out errorMessage))
+                return false;
+
+            node = new PlayerFormulaBinaryNode(operatorText, node, rightNode);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Parses multiplicative expressions.
+    /// </summary>
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseMultiplication(out PlayerFormulaNode node, out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (!TryParsePower(out node, out errorMessage))
+            return false;
+
+        while (MatchOperator("*") || MatchOperator("/"))
+        {
+            string operatorText = PreviousToken.TextValue;
+
+            if (!TryParsePower(out PlayerFormulaNode rightNode, out errorMessage))
+                return false;
+
+            node = new PlayerFormulaBinaryNode(operatorText, node, rightNode);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Parses right-associative exponentiation expressions.
+    /// </summary>
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParsePower(out PlayerFormulaNode node, out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (!TryParseUnary(out node, out errorMessage))
+            return false;
+
+        if (!MatchOperator("^"))
+            return true;
+
+        string operatorText = PreviousToken.TextValue;
+
+        if (!TryParsePower(out PlayerFormulaNode rightNode, out errorMessage))
+            return false;
+
+        node = new PlayerFormulaBinaryNode(operatorText, node, rightNode);
+        return true;
+    }
+
+    /// <summary>
+    /// Parses unary expressions.
+    /// </summary>
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseUnary(out PlayerFormulaNode node, out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (MatchOperator("+") || MatchOperator("-") || MatchOperator("!"))
+        {
+            string operatorText = PreviousToken.TextValue;
+
+            if (!TryParseUnary(out PlayerFormulaNode operandNode, out errorMessage))
+                return false;
+
+            node = new PlayerFormulaUnaryNode(operatorText, operandNode);
+            return true;
+        }
+
+        return TryParsePrimary(out node, out errorMessage);
+    }
+
+    /// <summary>
+    /// Parses primary expressions and function calls.
+    /// </summary>
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParsePrimary(out PlayerFormulaNode node, out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (Match(PlayerStatFormulaTokenType.Number))
+        {
+            node = new PlayerFormulaLiteralNode(PlayerFormulaValue.CreateNumber(PreviousToken.NumberValue));
+            return true;
+        }
+
+        if (Match(PlayerStatFormulaTokenType.BooleanLiteral))
+        {
+            node = new PlayerFormulaLiteralNode(PlayerFormulaValue.CreateBoolean(PreviousToken.BooleanValue));
+            return true;
+        }
+
+        if (Match(PlayerStatFormulaTokenType.StringLiteral))
+        {
+            node = new PlayerFormulaLiteralNode(PlayerFormulaValue.CreateToken(PreviousToken.TextValue));
+            return true;
+        }
+
+        if (Match(PlayerStatFormulaTokenType.Variable))
+        {
+            string variableName = PreviousToken.TextValue;
+            VariableNames.Add(variableName);
+            node = new PlayerFormulaVariableNode(variableName);
+            return true;
+        }
+
+        if (Match(PlayerStatFormulaTokenType.Identifier))
+            return TryParseFunctionCall(PreviousToken.TextValue, out node, out errorMessage);
+
+        if (Match(PlayerStatFormulaTokenType.LeftParenthesis))
+        {
+            if (!TryParseConditional(out node, out errorMessage))
+                return false;
+
+            return Consume(PlayerStatFormulaTokenType.RightParenthesis,
+                           "Missing closing ')' in formula.",
+                           out errorMessage);
+        }
+
+        errorMessage = string.Format(CultureInfo.InvariantCulture,
+                                     "Unexpected token '{0}' at position {1}.",
+                                     DescribeToken(CurrentToken),
+                                     CurrentToken.StartIndex);
+        return false;
+    }
+
+    /// <summary>
+    /// Parses one function call.
+    /// </summary>
+    /// <param name="functionName">Function identifier.</param>
+    /// <param name="node">Parsed node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseFunctionCall(string functionName,
+                                      out PlayerFormulaNode node,
+                                      out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (string.Equals(functionName, "switch", StringComparison.OrdinalIgnoreCase))
+            return TryParseSwitchFunctionCall(functionName, out node, out errorMessage);
+
+        if (!Consume(PlayerStatFormulaTokenType.LeftParenthesis,
+                     string.Format(CultureInfo.InvariantCulture,
+                                   "Function '{0}' must be followed by parentheses.",
+                                   functionName),
+                     out errorMessage))
+        {
+            return false;
+        }
+
+        List<PlayerFormulaNode> arguments = new List<PlayerFormulaNode>();
+
+        if (!Check(PlayerStatFormulaTokenType.RightParenthesis))
+        {
+            do
+            {
+                if (!TryParseConditional(out PlayerFormulaNode argumentNode, out errorMessage))
+                    return false;
+
+                arguments.Add(argumentNode);
+            }
+            while (Match(PlayerStatFormulaTokenType.Comma));
+        }
+
+        if (!Consume(PlayerStatFormulaTokenType.RightParenthesis,
+                     string.Format(CultureInfo.InvariantCulture,
+                                   "Function '{0}' is missing its closing ')'.",
+                                   functionName),
+                     out errorMessage))
+        {
+            return false;
+        }
+
+        node = new PlayerFormulaFunctionNode(functionName, arguments.ToArray());
+        return true;
+    }
+
+    /// <summary>
+    /// Parses one lazy switch() call using switch(condition, case:value, ..., fallback) syntax.
+    /// </summary>
+    /// <param name="functionName">Function identifier.</param>
+    /// <param name="node">Parsed switch node when successful.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when parsing succeeds.<returns>
+    private bool TryParseSwitchFunctionCall(string functionName,
+                                            out PlayerFormulaNode node,
+                                            out string errorMessage)
+    {
+        node = null;
+        errorMessage = string.Empty;
+
+        if (!Consume(PlayerStatFormulaTokenType.LeftParenthesis,
+                     string.Format(CultureInfo.InvariantCulture,
+                                   "Function '{0}' must be followed by parentheses.",
+                                   functionName),
+                     out errorMessage))
+        {
+            return false;
+        }
+
+        if (!TryParseConditional(out PlayerFormulaNode conditionNode, out errorMessage))
+            return false;
+
+        if (!Consume(PlayerStatFormulaTokenType.Comma,
+                     "switch() requires at least one case:value branch after the condition.",
+                     out errorMessage))
+        {
+            return false;
+        }
+
+        List<PlayerFormulaNode> caseNodes = new List<PlayerFormulaNode>();
+        List<PlayerFormulaNode> resultNodes = new List<PlayerFormulaNode>();
+        PlayerFormulaNode fallbackNode = null;
+
+        while (!Check(PlayerStatFormulaTokenType.RightParenthesis))
+        {
+            if (!TryParseConditional(out PlayerFormulaNode branchSelectorNode, out errorMessage))
+                return false;
+
+            if (Match(PlayerStatFormulaTokenType.Colon))
+            {
+                if (!TryParseConditional(out PlayerFormulaNode branchResultNode, out errorMessage))
+                    return false;
+
+                caseNodes.Add(branchSelectorNode);
+                resultNodes.Add(branchResultNode);
+            }
+            else
+            {
+                if (fallbackNode != null)
+                {
+                    errorMessage = "switch() can contain only one fallback branch and it must be last.";
+                    return false;
+                }
+
+                fallbackNode = branchSelectorNode;
+
+                if (Match(PlayerStatFormulaTokenType.Comma))
+                {
+                    errorMessage = "switch() fallback branch must be the last argument.";
+                    return false;
+                }
+
+                break;
+            }
+
+            if (!Match(PlayerStatFormulaTokenType.Comma))
+                break;
+
+            if (Check(PlayerStatFormulaTokenType.RightParenthesis))
+            {
+                errorMessage = "switch() is missing a branch after the trailing comma.";
+                return false;
+            }
+        }
+
+        if (caseNodes.Count <= 0)
+        {
+            errorMessage = "switch() requires at least one case:value branch.";
+            return false;
+        }
+
+        if (!Consume(PlayerStatFormulaTokenType.RightParenthesis,
+                     string.Format(CultureInfo.InvariantCulture,
+                                   "Function '{0}' is missing its closing ')'.",
+                                   functionName),
+                     out errorMessage))
+        {
+            return false;
+        }
+
+        node = new PlayerFormulaSwitchNode(conditionNode,
+                                           caseNodes.ToArray(),
+                                           resultNodes.ToArray(),
+                                           fallbackNode);
+        return true;
+    }
+    #endregion
+
+    #region Token Helpers
+    /// <summary>
+    /// Checks whether the current token matches the requested type.
+    /// </summary>
+    /// <param name="tokenType">Requested token type.</param>
+    /// <returns>True when the current token matches.<returns>
+    private bool Check(PlayerStatFormulaTokenType tokenType)
+    {
+        return CurrentToken.Type == tokenType;
+    }
+
+    /// <summary>
+    /// Consumes one token of the requested type.
+    /// </summary>
+    /// <param name="tokenType">Requested token type.</param>
+    /// <returns>True when the current token matches and is consumed.<returns>
+    private bool Match(PlayerStatFormulaTokenType tokenType)
+    {
+        if (!Check(tokenType))
+            return false;
+
+        Advance();
+        return true;
+    }
+
+    /// <summary>
+    /// Consumes one operator token with the requested text.
+    /// </summary>
+    /// <param name="operatorText">Requested operator text.</param>
+    /// <returns>True when the current operator matches and is consumed.<returns>
+    private bool MatchOperator(string operatorText)
+    {
+        if (CurrentToken.Type != PlayerStatFormulaTokenType.Operator)
+            return false;
+
+        if (!string.Equals(CurrentToken.TextValue, operatorText, StringComparison.Ordinal))
+            return false;
+
+        Advance();
+        return true;
+    }
+
+    /// <summary>
+    /// Consumes the requested token type or emits the provided parser error.
+    /// </summary>
+    /// <param name="tokenType">Requested token type.</param>
+    /// <param name="failureMessage">Failure reason when the token is missing.</param>
+    /// <param name="errorMessage">Failure reason when parsing fails.</param>
+    /// <returns>True when the token is consumed.<returns>
+    private bool Consume(PlayerStatFormulaTokenType tokenType,
+                         string failureMessage,
+                         out string errorMessage)
     {
         errorMessage = string.Empty;
 
-        while (operatorStack.Count > 0)
+        if (Match(tokenType))
+            return true;
+
+        errorMessage = failureMessage;
+        return false;
+    }
+
+    /// <summary>
+    /// Advances the parser by one token.
+    /// </summary>
+    /// <returns>Consumed token.<returns>
+    private PlayerStatFormulaToken Advance()
+    {
+        if (currentIndex < tokens.Count - 1)
+            currentIndex += 1;
+
+        return PreviousToken;
+    }
+
+    /// <summary>
+    /// Formats one token for user-facing error messages.
+    /// </summary>
+    /// <param name="token">Token to describe.</param>
+    /// <returns>Readable token label.<returns>
+    private static string DescribeToken(PlayerStatFormulaToken token)
+    {
+        switch (token.Type)
         {
-            PlayerStatFormulaToken stackToken = operatorStack.Pop();
+            case PlayerStatFormulaTokenType.End:
+                return "<end>";
+            case PlayerStatFormulaTokenType.Number:
+                return token.NumberValue.ToString(CultureInfo.InvariantCulture);
+            case PlayerStatFormulaTokenType.Variable:
+            case PlayerStatFormulaTokenType.Identifier:
+            case PlayerStatFormulaTokenType.Operator:
+            case PlayerStatFormulaTokenType.StringLiteral:
+                return token.TextValue;
+            case PlayerStatFormulaTokenType.BooleanLiteral:
+                return token.BooleanValue ? "true" : "false";
+            case PlayerStatFormulaTokenType.LeftParenthesis:
+                return "(";
+            case PlayerStatFormulaTokenType.RightParenthesis:
+                return ")";
+            case PlayerStatFormulaTokenType.Comma:
+                return ",";
+            case PlayerStatFormulaTokenType.Question:
+                return "?";
+            case PlayerStatFormulaTokenType.Colon:
+                return ":";
+            default:
+                return token.Type.ToString();
+        }
+    }
+    #endregion
 
-            if (stackToken.Type == PlayerStatFormulaTokenType.LeftParenthesis)
-                return true;
-
-            if (stackToken.Type == PlayerStatFormulaTokenType.Function)
+    #region Accessors
+    private PlayerStatFormulaToken CurrentToken
+    {
+        get
+        {
+            if (tokens == null || tokens.Count == 0)
             {
-                rpnTokens.Add(PlayerStatFormulaRpnToken.CreateFunction(stackToken.TextValue));
-                continue;
+                return new PlayerStatFormulaToken(PlayerStatFormulaTokenType.End,
+                                                  string.Empty,
+                                                  0f,
+                                                  false,
+                                                  0);
             }
 
-            rpnTokens.Add(PlayerStatFormulaRpnToken.FromOperatorToken(stackToken));
+            return tokens[currentIndex];
         }
+    }
 
-        errorMessage = "Mismatched parentheses in formula.";
-        return false;
+    private PlayerStatFormulaToken PreviousToken
+    {
+        get
+        {
+            if (tokens == null || tokens.Count == 0)
+            {
+                return new PlayerStatFormulaToken(PlayerStatFormulaTokenType.End,
+                                                  string.Empty,
+                                                  0f,
+                                                  false,
+                                                  0);
+            }
+
+            int previousIndex = currentIndex - 1;
+
+            if (previousIndex < 0)
+                previousIndex = 0;
+
+            return tokens[previousIndex];
+        }
     }
     #endregion
 

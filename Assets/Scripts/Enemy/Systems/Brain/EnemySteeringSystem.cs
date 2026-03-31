@@ -27,6 +27,7 @@ public partial struct EnemySteeringSystem : ISystem
         activeEnemiesQuery = SystemAPI.QueryBuilder()
             .WithAll<EnemyData,
                      EnemyRuntimeState,
+                     EnemyKnockbackState,
                      LocalTransform,
                      EnemyActive,
                      EnemyElementalRuntimeState,
@@ -66,6 +67,7 @@ public partial struct EnemySteeringSystem : ISystem
         NativeArray<LocalTransform> enemyTransforms = activeEnemiesQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
         NativeArray<EnemyData> enemyDataArray = activeEnemiesQuery.ToComponentDataArray<EnemyData>(Allocator.TempJob);
         NativeArray<EnemyRuntimeState> enemyRuntimeArray = activeEnemiesQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.TempJob);
+        NativeArray<EnemyKnockbackState> enemyKnockbackArray = activeEnemiesQuery.ToComponentDataArray<EnemyKnockbackState>(Allocator.TempJob);
         NativeArray<EnemyElementalRuntimeState> enemyElementalRuntimeArray = activeEnemiesQuery.ToComponentDataArray<EnemyElementalRuntimeState>(Allocator.TempJob);
         NativeArray<EnemyShooterControlState> enemyShooterControlArray = activeEnemiesQuery.ToComponentDataArray<EnemyShooterControlState>(Allocator.TempJob);
 
@@ -102,6 +104,7 @@ public partial struct EnemySteeringSystem : ISystem
             positions[index] = enemyTransform.Position;
             Entity enemyEntity = enemyEntities[index];
             float elementalSlowPercent = math.clamp(enemyElementalRuntimeArray[index].SlowPercent, 0f, 100f);
+            EnemyKnockbackState currentKnockbackState = enemyKnockbackArray[index];
 
             float slowMultiplier = math.saturate(1f - elementalSlowPercent * 0.01f);
             speedData[index] = new float2(math.max(0f, enemyData.MoveSpeed) * slowMultiplier, math.max(0f, enemyData.MaxSpeed) * slowMultiplier);
@@ -110,7 +113,8 @@ public partial struct EnemySteeringSystem : ISystem
             priorityTiers[index] = math.clamp(enemyData.PriorityTier, -128, 128);
             float enemySteeringAggressiveness = EnemySteeringUtility.ResolveSteeringAggressiveness(enemyData.SteeringAggressiveness);
             steeringAggressiveness[index] = enemySteeringAggressiveness;
-            float3 planarVelocity = enemyRuntimeArray[index].Velocity;
+            float3 planarVelocity = EnemyKnockbackRuntimeUtility.ResolveCombinedVelocity(enemyRuntimeArray[index].Velocity,
+                                                                                        in currentKnockbackState);
             planarVelocity.y = 0f;
             planarVelocities[index] = planarVelocity;
             wandererMovementFlags[index] = 0;
@@ -264,6 +268,7 @@ public partial struct EnemySteeringSystem : ISystem
 
             EnemyData enemyData = enemyDataArray[enemyIndex];
             EnemyRuntimeState runtimeState = enemyRuntimeArray[enemyIndex];
+            EnemyKnockbackState knockbackState = enemyKnockbackArray[enemyIndex];
             LocalTransform enemyTransform = enemyTransforms[enemyIndex];
             float velocityMaxSpeed = math.max(0f, speedData[enemyIndex].y);
             float enemySteeringAggressiveness = steeringAggressiveness[enemyIndex];
@@ -391,6 +396,14 @@ public partial struct EnemySteeringSystem : ISystem
 
             position += resolvedDisplacement;
             runtimeState.Velocity = resolvedVelocity;
+            float knockbackCollisionRadius = math.max(0.01f, enemyData.BodyRadius + math.max(0f, enemyData.MinimumWallDistance));
+            EnemyKnockbackRuntimeUtility.ApplyDisplacement(ref knockbackState,
+                                                           ref position,
+                                                           knockbackCollisionRadius,
+                                                           in physicsWorldSingleton,
+                                                           wallsLayerMask,
+                                                           wallsEnabled,
+                                                           deltaTime);
             position.y = enemyTransform.Position.y;
             enemyTransform.Position = position;
 
@@ -406,25 +419,29 @@ public partial struct EnemySteeringSystem : ISystem
             else
             {
                 EnemyShooterControlState shooterControlState = enemyShooterControlArray[enemyIndex];
+                float3 facingVelocity = EnemyKnockbackRuntimeUtility.ResolveCombinedVelocity(runtimeState.Velocity, in knockbackState);
                 enemyTransform.Rotation = EnemySteeringUtility.ResolveDynamicLookRotation(enemyTransform.Rotation,
-                                                                                          runtimeState.Velocity,
-                                                                                          velocityMaxSpeed,
+                                                                                          facingVelocity,
+                                                                                          math.max(velocityMaxSpeed, math.length(facingVelocity)),
                                                                                           in shooterControlState,
                                                                                           enemySteeringAggressiveness,
                                                                                           deltaTime);
             }
 
             enemyRuntimeArray[enemyIndex] = runtimeState;
+            enemyKnockbackArray[enemyIndex] = knockbackState;
             enemyTransforms[enemyIndex] = enemyTransform;
         }
 
         activeEnemiesQuery.CopyFromComponentDataArray(enemyRuntimeArray);
+        activeEnemiesQuery.CopyFromComponentDataArray(enemyKnockbackArray);
         activeEnemiesQuery.CopyFromComponentDataArray(enemyTransforms);
 
         enemyEntities.Dispose();
         enemyTransforms.Dispose();
         enemyDataArray.Dispose();
         enemyRuntimeArray.Dispose();
+        enemyKnockbackArray.Dispose();
         enemyElementalRuntimeArray.Dispose();
         enemyShooterControlArray.Dispose();
         positions.Dispose();

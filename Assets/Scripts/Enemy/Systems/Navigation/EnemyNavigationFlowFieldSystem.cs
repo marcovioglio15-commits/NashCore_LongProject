@@ -24,7 +24,7 @@ public partial struct EnemyNavigationFlowFieldSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Creates the shared navigation singleton and required queries.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -62,7 +62,7 @@ public partial struct EnemyNavigationFlowFieldSystem : ISystem
 
     /// <summary>
     /// Rebuilds the static navigation grid when wall geometry changes and refreshes the flow field as the player moves across cells.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)

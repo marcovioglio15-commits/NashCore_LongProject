@@ -10,12 +10,12 @@ internal static class HUDPowerUpContainerTimeScaleUtility
     #region Public Methods
     /// <summary>
     /// Starts the unscaled Time.timeScale resume state for the overlay.
-    ///  isResuming: Mutable flag tracking whether a resume is currently active.
-    ///  startTimeScale: Mutable cached start Time.timeScale used for interpolation.
-    ///  targetTimeScale: Mutable cached target Time.timeScale used for interpolation.
-    ///  durationSeconds: Mutable total resume duration in seconds.
-    ///  elapsedSeconds: Mutable elapsed unscaled time since the resume started.
-    ///  configuredDurationSeconds: Resume duration requested by the runtime interaction config.
+    /// isResuming: Mutable flag tracking whether a resume is currently active.
+    /// startTimeScale: Mutable cached start Time.timeScale used for interpolation.
+    /// targetTimeScale: Mutable cached target Time.timeScale used for interpolation.
+    /// durationSeconds: Mutable total resume duration in seconds.
+    /// elapsedSeconds: Mutable elapsed unscaled time since the resume started.
+    /// configuredDurationSeconds: Resume duration requested by the runtime interaction config.
     /// returns void.
     /// </summary>
     public static void BeginResume(ref bool isResuming,
@@ -46,12 +46,12 @@ internal static class HUDPowerUpContainerTimeScaleUtility
 
     /// <summary>
     /// Advances the active Time.timeScale resume and reports whether the interpolation completed.
-    ///  isResuming: Mutable flag tracking whether a resume is currently active.
-    ///  startTimeScale: Mutable cached start Time.timeScale used for interpolation.
-    ///  targetTimeScale: Mutable cached target Time.timeScale used for interpolation.
-    ///  durationSeconds: Mutable total resume duration in seconds.
-    ///  elapsedSeconds: Mutable elapsed unscaled time since the resume started.
-    ///  milestoneSelectionActive: True when another HUD flow must keep the game paused.
+    /// isResuming: Mutable flag tracking whether a resume is currently active.
+    /// startTimeScale: Mutable cached start Time.timeScale used for interpolation.
+    /// targetTimeScale: Mutable cached target Time.timeScale used for interpolation.
+    /// durationSeconds: Mutable total resume duration in seconds.
+    /// elapsedSeconds: Mutable elapsed unscaled time since the resume started.
+    /// milestoneSelectionActive: True when another HUD flow must keep the game paused.
     /// returns True when the resume has fully completed or was already inactive.
     /// </summary>
     public static bool UpdateResume(ref bool isResuming,
@@ -93,11 +93,11 @@ internal static class HUDPowerUpContainerTimeScaleUtility
 
     /// <summary>
     /// Clears the active Time.timeScale resume state.
-    ///  isResuming: Mutable flag tracking whether a resume is currently active.
-    ///  startTimeScale: Mutable cached start Time.timeScale used for interpolation.
-    ///  targetTimeScale: Mutable cached target Time.timeScale used for interpolation.
-    ///  durationSeconds: Mutable total resume duration in seconds.
-    ///  elapsedSeconds: Mutable elapsed unscaled time since the resume started.
+    /// isResuming: Mutable flag tracking whether a resume is currently active.
+    /// startTimeScale: Mutable cached start Time.timeScale used for interpolation.
+    /// targetTimeScale: Mutable cached target Time.timeScale used for interpolation.
+    /// durationSeconds: Mutable total resume duration in seconds.
+    /// elapsedSeconds: Mutable elapsed unscaled time since the resume started.
     /// returns void.
     /// </summary>
     public static void StopResume(ref bool isResuming,

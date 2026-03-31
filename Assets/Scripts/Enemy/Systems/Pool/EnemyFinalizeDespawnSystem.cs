@@ -13,7 +13,7 @@ public partial struct EnemyFinalizeDespawnSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the minimum runtime dependencies required by the system.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -23,7 +23,7 @@ public partial struct EnemyFinalizeDespawnSystem : ISystem
 
     /// <summary>
     /// Returns despawned enemies to their pool and removes the pending despawn request component.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)

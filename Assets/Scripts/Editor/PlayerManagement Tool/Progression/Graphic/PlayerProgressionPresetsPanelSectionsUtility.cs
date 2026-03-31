@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -15,7 +16,7 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
     #region Public Methods
     /// <summary>
     /// Builds the metadata section of the progression preset panel.
-    ///  panel Panel instance that owns the serialized preset and target UI container.
+    /// panel Panel instance that owns the serialized preset and target UI container.
     /// returns void
     /// </summary>
     public static void BuildMetadataSection(PlayerProgressionPresetsPanel panel)
@@ -84,7 +85,7 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
 
     /// <summary>
     /// Builds the scalable stats section and live validation warnings.
-    ///  panel Panel instance that owns the serialized preset and target UI container.
+    /// panel Panel instance that owns the serialized preset and target UI container.
     /// returns void
     /// </summary>
     public static void BuildScalableStatsSection(PlayerProgressionPresetsPanel panel)
@@ -135,8 +136,8 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
 
     /// <summary>
     /// Builds the milestones section, including all visible root properties related to phase progression.
-    ///  panel Panel instance that owns the serialized preset and target UI container.
-    ///  excludedRootPropertyNames Root-level property names intentionally hidden from the milestones view.
+    /// panel Panel instance that owns the serialized preset and target UI container.
+    /// excludedRootPropertyNames Root-level property names intentionally hidden from the milestones view.
     /// returns void
     /// </summary>
     public static void BuildMilestonesSection(PlayerProgressionPresetsPanel panel, HashSet<string> excludedRootPropertyNames)
@@ -215,7 +216,7 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
 
     /// <summary>
     /// Builds the schedules section and the popup used to select the runtime-equipped schedule.
-    ///  panel Panel instance that owns the serialized preset and target UI container.
+    /// panel Panel instance that owns the serialized preset and target UI container.
     /// returns void
     /// </summary>
     public static void BuildSchedulesSection(PlayerProgressionPresetsPanel panel)
@@ -386,8 +387,16 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
         SerializedProperty defaultValueProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("defaultValue") : null;
         SerializedProperty minimumValueProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("minimumValue") : null;
         SerializedProperty maximumValueProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("maximumValue") : null;
+        SerializedProperty defaultTokenValueProperty = statElementProperty != null ? statElementProperty.FindPropertyRelative("defaultTokenValue") : null;
+        PlayerScalableStatType statType = statTypeProperty != null
+            ? (PlayerScalableStatType)statTypeProperty.enumValueIndex
+            : PlayerScalableStatType.Float;
 
-        if (minimumValueProperty != null && maximumValueProperty != null)
+        if ((statType == PlayerScalableStatType.Float ||
+             statType == PlayerScalableStatType.Integer ||
+             statType == PlayerScalableStatType.Unsigned) &&
+            minimumValueProperty != null &&
+            maximumValueProperty != null)
         {
             float minimumValue = minimumValueProperty.floatValue;
             float maximumValue = maximumValueProperty.floatValue;
@@ -412,8 +421,7 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
             }
         }
 
-        if (statTypeProperty != null &&
-            statTypeProperty.enumValueIndex == (int)PlayerScalableStatType.Integer)
+        if (statType == PlayerScalableStatType.Integer)
         {
             if (defaultValueProperty != null && HasFractionalPart(defaultValueProperty.floatValue))
                 warnings.Add("Default Value has decimals on an Integer stat and will be rounded only at runtime.");
@@ -423,6 +431,37 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
 
             if (maximumValueProperty != null && HasFractionalPart(maximumValueProperty.floatValue))
                 warnings.Add("Max has decimals on an Integer stat and may produce ambiguous runtime bounds.");
+        }
+
+        if (statType == PlayerScalableStatType.Unsigned)
+        {
+            if (defaultValueProperty != null && defaultValueProperty.floatValue < 0f)
+                warnings.Add("Default Value is negative on an Unsigned stat and will be clamped only at runtime.");
+
+            if (minimumValueProperty != null && minimumValueProperty.floatValue < 0f)
+                warnings.Add("Min is negative on an Unsigned stat. Runtime will still enforce a zero lower bound.");
+
+            if (maximumValueProperty != null && maximumValueProperty.floatValue < 0f)
+                warnings.Add("Max is negative on an Unsigned stat and will collapse to zero at runtime.");
+
+            if (defaultValueProperty != null && HasFractionalPart(defaultValueProperty.floatValue))
+                warnings.Add("Default Value has decimals on an Unsigned stat and will be rounded only at runtime.");
+
+            if (minimumValueProperty != null && HasFractionalPart(minimumValueProperty.floatValue))
+                warnings.Add("Min has decimals on an Unsigned stat and may produce ambiguous runtime bounds.");
+
+            if (maximumValueProperty != null && HasFractionalPart(maximumValueProperty.floatValue))
+                warnings.Add("Max has decimals on an Unsigned stat and may produce ambiguous runtime bounds.");
+        }
+
+        if (statType == PlayerScalableStatType.Token && defaultTokenValueProperty != null)
+        {
+            string tokenValue = string.IsNullOrWhiteSpace(defaultTokenValueProperty.stringValue)
+                ? string.Empty
+                : defaultTokenValueProperty.stringValue.Trim();
+
+            if (Encoding.UTF8.GetByteCount(tokenValue) > 61)
+                warnings.Add("Default token value exceeds runtime FixedString64Bytes capacity and will not be writable at runtime.");
         }
 
         for (int index = 0; index < scalableStatsProperty.arraySize; index++)

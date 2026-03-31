@@ -34,7 +34,7 @@ public static class EnemyVisualPresetLibraryUtility
 
     /// <summary>
     /// Creates one new visual preset asset inside the default preset folder.
-    ///  presetName: Requested asset name before normalization.
+    /// presetName: Requested asset name before normalization.
     /// returns Newly created EnemyVisualPreset asset.
     /// </summary>
     public static EnemyVisualPreset CreatePresetAsset(string presetName)
@@ -67,7 +67,7 @@ public static class EnemyVisualPresetLibraryUtility
     #region Private Methods
     /// <summary>
     /// Ensures that the target folder hierarchy exists inside the project.
-    ///  folderPath: Folder path to create when missing.
+    /// folderPath: Folder path to create when missing.
     /// returns None.
     /// </summary>
     private static void EnsureFolder(string folderPath)

@@ -129,21 +129,6 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
         });
 
         RebuildModuleDefinitionCards(panel, moduleCardsContainer, moduleCountLabel);
-
-        SerializedProperty elementalVfxByElementProperty = panel.presetSerializedObject.FindProperty("elementalVfxByElement");
-
-        if (elementalVfxByElementProperty == null)
-            return;
-
-        Label elementalVfxHeader = new Label("Elemental VFX Assignments");
-        elementalVfxHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
-        elementalVfxHeader.style.marginTop = 8f;
-        elementalVfxHeader.style.marginBottom = 2f;
-        panel.sectionContentRoot.Add(elementalVfxHeader);
-
-        PropertyField elementalVfxField = new PropertyField(elementalVfxByElementProperty);
-        elementalVfxField.BindProperty(elementalVfxByElementProperty);
-        panel.sectionContentRoot.Add(elementalVfxField);
     }
 
     private static void RebuildModuleDefinitionCards(PlayerPowerUpsPresetsPanel panel, VisualElement moduleCardsContainer, Label moduleCountLabel)

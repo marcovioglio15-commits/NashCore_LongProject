@@ -39,6 +39,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         state.RequireForUpdate<PlayerRuntimeCameraConfig>();
         state.RequireForUpdate<PlayerBaseShootingConfig>();
         state.RequireForUpdate<PlayerRuntimeShootingConfig>();
+        state.RequireForUpdate<PlayerBaseShootingAppliedElementSlot>();
+        state.RequireForUpdate<PlayerRuntimeShootingAppliedElementSlot>();
         state.RequireForUpdate<PlayerBaseHealthStatisticsConfig>();
         state.RequireForUpdate<PlayerRuntimeHealthStatisticsConfig>();
         state.RequireForUpdate<PlayerProgressionConfig>();
@@ -81,6 +83,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         ComponentLookup<PlayerRuntimeCameraConfig> runtimeCameraLookup = SystemAPI.GetComponentLookup<PlayerRuntimeCameraConfig>(false);
         ComponentLookup<PlayerBaseShootingConfig> baseShootingLookup = SystemAPI.GetComponentLookup<PlayerBaseShootingConfig>(true);
         ComponentLookup<PlayerRuntimeShootingConfig> runtimeShootingLookup = SystemAPI.GetComponentLookup<PlayerRuntimeShootingConfig>(false);
+        BufferLookup<PlayerBaseShootingAppliedElementSlot> baseAppliedElementSlotsLookup = SystemAPI.GetBufferLookup<PlayerBaseShootingAppliedElementSlot>(true);
+        BufferLookup<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlotsLookup = SystemAPI.GetBufferLookup<PlayerRuntimeShootingAppliedElementSlot>(false);
         ComponentLookup<PlayerBaseHealthStatisticsConfig> baseHealthLookup = SystemAPI.GetComponentLookup<PlayerBaseHealthStatisticsConfig>(true);
         ComponentLookup<PlayerRuntimeHealthStatisticsConfig> runtimeHealthLookup = SystemAPI.GetComponentLookup<PlayerRuntimeHealthStatisticsConfig>(false);
         ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(false);
@@ -189,6 +193,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             PlayerLevel playerLevel = playerLevelLookup[entity];
             PlayerExperienceCollection playerExperienceCollection = playerExperienceCollectionLookup[entity];
             DynamicBuffer<PlayerChargeCharacterTuningBaseStatElement> chargeCharacterTuningBaseStats = chargeCharacterTuningBaseStatsLookup[entity];
+            DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlots = runtimeAppliedElementSlotsLookup[entity];
             DynamicBuffer<PlayerPowerUpUnlockCatalogElement> unlockCatalog = unlockCatalogLookup[entity];
             DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas = characterTuningFormulaLookup[entity];
             DynamicBuffer<PlayerScalableStatElement> scalableStats = scalableStatsLookup[entity];
@@ -263,6 +268,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                           runtimeCameraLookup,
                                           baseShootingLookup,
                                           runtimeShootingLookup,
+                                          baseAppliedElementSlotsLookup,
+                                          runtimeAppliedElementSlotsLookup,
                                           baseHealthLookup,
                                           runtimeHealthLookup,
                                           progressionScalingLookup,
@@ -298,12 +305,13 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 primaryReleasedThisFrame,
                                                                 deltaTime,
                                                                 in localTransform,
-                                                                in lookState,
-                                                                in movementState,
-                                                                in runtimeMovementConfig,
-                                                                in runtimeShootingConfig,
-                                                                in passiveToolsState,
-                                                                in muzzleLookup,
+                                                       in lookState,
+                                                       in movementState,
+                                                       in runtimeMovementConfig,
+                                                       in runtimeShootingConfig,
+                                                       runtimeAppliedElementSlots,
+                                                       in passiveToolsState,
+                                                       in muzzleLookup,
                                                                 in transformLookup,
                                                                 in localToWorldLookup,
                                                                 inputState.ValueRO.Move,
@@ -370,6 +378,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                           runtimeCameraLookup,
                                           baseShootingLookup,
                                           runtimeShootingLookup,
+                                          baseAppliedElementSlotsLookup,
+                                          runtimeAppliedElementSlotsLookup,
                                           baseHealthLookup,
                                           runtimeHealthLookup,
                                           progressionScalingLookup,
@@ -405,12 +415,13 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 secondaryReleasedThisFrame,
                                                                 deltaTime,
                                                                 in localTransform,
-                                                                in lookState,
-                                                                in movementState,
-                                                                in runtimeMovementConfig,
-                                                                in runtimeShootingConfig,
-                                                                in passiveToolsState,
-                                                                in muzzleLookup,
+                                                       in lookState,
+                                                       in movementState,
+                                                       in runtimeMovementConfig,
+                                                       in runtimeShootingConfig,
+                                                       runtimeAppliedElementSlots,
+                                                       in passiveToolsState,
+                                                       in muzzleLookup,
                                                                 in transformLookup,
                                                                 in localToWorldLookup,
                                                                 inputState.ValueRO.Move,
@@ -475,6 +486,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                           runtimeCameraLookup,
                                           baseShootingLookup,
                                           runtimeShootingLookup,
+                                          baseAppliedElementSlotsLookup,
+                                          runtimeAppliedElementSlotsLookup,
                                           baseHealthLookup,
                                           runtimeHealthLookup,
                                           progressionScalingLookup,
@@ -535,11 +548,11 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
     #region Helpers
     /// <summary>
     /// Resolves whether one runtime-scoped Character Tuning overlay must already be active before the current slot starts processing this frame.
-    ///  slotConfig: Slot config inspected for temporary Character Tuning semantics.
-    ///  pressedThisFrame: True when the slot input was freshly pressed during the current frame.
-    ///  isCharging: Current charging flag before slot processing mutates it.
-    ///  isActive: Current toggle-active flag before slot processing mutates it.
-    ///  cooldownRemaining: Current cooldown or startup-lock value before slot processing mutates it.
+    /// slotConfig: Slot config inspected for temporary Character Tuning semantics.
+    /// pressedThisFrame: True when the slot input was freshly pressed during the current frame.
+    /// isCharging: Current charging flag before slot processing mutates it.
+    /// isActive: Current toggle-active flag before slot processing mutates it.
+    /// cooldownRemaining: Current cooldown or startup-lock value before slot processing mutates it.
     /// returns True when the temporary Character Tuning overlay should be active while the current slot is processed.
     /// </summary>
     private static bool ShouldScopedCharacterTuningBeActiveBeforeSlotProcessing(in PlayerPowerUpSlotConfig slotConfig,
@@ -576,43 +589,43 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
     /// <summary>
     /// Rebuilds runtime-scaled configs immediately after scalable-stat changes triggered inside the activation flow and refreshes cached local copies.
-    ///  entity: Player entity being refreshed.
-    ///  scalableStatsLookup: Runtime scalable-stat buffer lookup.
-    ///  controllerScalingLookup: Controller scaling metadata lookup.
-    ///  baseMovementLookup: Immutable movement baseline lookup.
-    ///  runtimeMovementLookup: Mutable runtime movement config lookup.
-    ///  baseLookLookup: Immutable look baseline lookup.
-    ///  runtimeLookLookup: Mutable runtime look config lookup.
-    ///  baseCameraLookup: Immutable camera baseline lookup.
-    ///  runtimeCameraLookup: Mutable runtime camera config lookup.
-    ///  baseShootingLookup: Immutable shooting baseline lookup.
-    ///  runtimeShootingLookup: Mutable runtime shooting config lookup.
-    ///  baseHealthLookup: Immutable health baseline lookup.
-    ///  runtimeHealthLookup: Mutable runtime health config lookup.
-    ///  progressionScalingLookup: Progression scaling metadata lookup.
-    ///  baseGamePhasesLookup: Immutable runtime-phase baseline lookup.
-    ///  runtimeGamePhasesLookup: Mutable runtime-phase buffer lookup.
-    ///  basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
-    ///  powerUpScalingLookup: Runtime power-up scaling metadata lookup.
-    ///  powerUpsConfigLookup: Mutable power-up slot config lookup.
-    ///  unlockCatalogLookup: Mutable unlock catalog lookup.
-    ///  equippedPassiveToolsLookup: Mutable equipped-passive buffer lookup.
-    ///  passiveToolsLookup: Mutable passive aggregate lookup.
-    ///  healthLookup: Mutable health lookup.
-    ///  shieldLookup: Mutable shield lookup.
-    ///  progressionConfigLookup: Runtime progression config lookup.
-    ///  experienceLookup: Mutable experience lookup.
-    ///  levelLookup: Mutable level lookup.
-    ///  experienceCollectionLookup: Mutable experience-collection lookup.
-    ///  runtimeScalingStateLookup: Mutable runtime-scaling sync state lookup.
-    ///  primarySlotConfig: Cached primary slot config refreshed from runtime state.
-    ///  secondarySlotConfig: Cached secondary slot config refreshed from runtime state.
-    ///  runtimeMovementConfig: Cached runtime movement config refreshed from runtime state.
-    ///  runtimeShootingConfig: Cached runtime shooting config refreshed from runtime state.
-    ///  passiveToolsState: Cached passive aggregate refreshed from runtime state.
-    ///  playerExperience: Cached experience component refreshed from runtime state.
-    ///  playerLevel: Cached level component refreshed from runtime state.
-    ///  playerExperienceCollection: Cached experience-collection component refreshed from runtime state.
+    /// entity: Player entity being refreshed.
+    /// scalableStatsLookup: Runtime scalable-stat buffer lookup.
+    /// controllerScalingLookup: Controller scaling metadata lookup.
+    /// baseMovementLookup: Immutable movement baseline lookup.
+    /// runtimeMovementLookup: Mutable runtime movement config lookup.
+    /// baseLookLookup: Immutable look baseline lookup.
+    /// runtimeLookLookup: Mutable runtime look config lookup.
+    /// baseCameraLookup: Immutable camera baseline lookup.
+    /// runtimeCameraLookup: Mutable runtime camera config lookup.
+    /// baseShootingLookup: Immutable shooting baseline lookup.
+    /// runtimeShootingLookup: Mutable runtime shooting config lookup.
+    /// baseHealthLookup: Immutable health baseline lookup.
+    /// runtimeHealthLookup: Mutable runtime health config lookup.
+    /// progressionScalingLookup: Progression scaling metadata lookup.
+    /// baseGamePhasesLookup: Immutable runtime-phase baseline lookup.
+    /// runtimeGamePhasesLookup: Mutable runtime-phase buffer lookup.
+    /// basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
+    /// powerUpScalingLookup: Runtime power-up scaling metadata lookup.
+    /// powerUpsConfigLookup: Mutable power-up slot config lookup.
+    /// unlockCatalogLookup: Mutable unlock catalog lookup.
+    /// equippedPassiveToolsLookup: Mutable equipped-passive buffer lookup.
+    /// passiveToolsLookup: Mutable passive aggregate lookup.
+    /// healthLookup: Mutable health lookup.
+    /// shieldLookup: Mutable shield lookup.
+    /// progressionConfigLookup: Runtime progression config lookup.
+    /// experienceLookup: Mutable experience lookup.
+    /// levelLookup: Mutable level lookup.
+    /// experienceCollectionLookup: Mutable experience-collection lookup.
+    /// runtimeScalingStateLookup: Mutable runtime-scaling sync state lookup.
+    /// primarySlotConfig: Cached primary slot config refreshed from runtime state.
+    /// secondarySlotConfig: Cached secondary slot config refreshed from runtime state.
+    /// runtimeMovementConfig: Cached runtime movement config refreshed from runtime state.
+    /// runtimeShootingConfig: Cached runtime shooting config refreshed from runtime state.
+    /// passiveToolsState: Cached passive aggregate refreshed from runtime state.
+    /// playerExperience: Cached experience component refreshed from runtime state.
+    /// playerLevel: Cached level component refreshed from runtime state.
+    /// playerExperienceCollection: Cached experience-collection component refreshed from runtime state.
     /// returns void.
     /// </summary>
     private static void RefreshRuntimeScaledState(Entity entity,
@@ -626,6 +639,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                   ComponentLookup<PlayerRuntimeCameraConfig> runtimeCameraLookup,
                                                   ComponentLookup<PlayerBaseShootingConfig> baseShootingLookup,
                                                   ComponentLookup<PlayerRuntimeShootingConfig> runtimeShootingLookup,
+                                                  BufferLookup<PlayerBaseShootingAppliedElementSlot> baseAppliedElementSlotsLookup,
+                                                  BufferLookup<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlotsLookup,
                                                   ComponentLookup<PlayerBaseHealthStatisticsConfig> baseHealthLookup,
                                                   ComponentLookup<PlayerRuntimeHealthStatisticsConfig> runtimeHealthLookup,
                                                   BufferLookup<PlayerRuntimeProgressionScalingElement> progressionScalingLookup,
@@ -664,6 +679,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                              runtimeCameraLookup,
                                                              baseShootingLookup,
                                                              runtimeShootingLookup,
+                                                             baseAppliedElementSlotsLookup,
+                                                             runtimeAppliedElementSlotsLookup,
                                                              baseHealthLookup,
                                                              runtimeHealthLookup,
                                                              progressionScalingLookup,
@@ -712,9 +729,9 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
     /// <summary>
     /// Resolves whether one runtime-scoped Character Tuning overlay must remain applied outside the slot currently being processed.
-    ///  slotConfig: Slot config inspected for temporary Character Tuning semantics.
-    ///  isCharging: Current charging flag after the latest slot mutation.
-    ///  isActive: Current toggle-active flag after the latest slot mutation.
+    /// slotConfig: Slot config inspected for temporary Character Tuning semantics.
+    /// isCharging: Current charging flag after the latest slot mutation.
+    /// isActive: Current toggle-active flag after the latest slot mutation.
     /// returns True when the temporary Character Tuning overlay should remain applied.
     /// </summary>
     private static bool ShouldScopedCharacterTuningRemainActive(in PlayerPowerUpSlotConfig slotConfig,

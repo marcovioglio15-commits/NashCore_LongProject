@@ -36,6 +36,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
         state.RequireForUpdate<PlayerLookState>();
         state.RequireForUpdate<PlayerShootingState>();
         state.RequireForUpdate<PlayerRuntimeShootingConfig>();
+        state.RequireForUpdate<PlayerRuntimeShootingAppliedElementSlot>();
         state.RequireForUpdate<ShooterProjectilePrefab>();
         state.RequireForUpdate<ShootRequest>();
     }
@@ -61,12 +62,14 @@ public partial struct PlayerShootingIntentSystem : ISystem
         foreach ((RefRO<PlayerInputState> inputState,
                   RefRO<PlayerLookState> lookState,
                   RefRO<PlayerRuntimeShootingConfig> runtimeShootingConfig,
+                  DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
                   RefRO<LocalTransform> localTransform,
                   RefRW<PlayerShootingState> shootingState,
                   DynamicBuffer<ShootRequest> shootRequests,
                   Entity entity) in SystemAPI.Query<RefRO<PlayerInputState>,
                                                    RefRO<PlayerLookState>,
                                                    RefRO<PlayerRuntimeShootingConfig>,
+                                                   DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot>,
                                                    RefRO<LocalTransform>,
                                                    RefRW<PlayerShootingState>,
                                                    DynamicBuffer<ShootRequest>>().WithEntityAccess())
@@ -88,11 +91,15 @@ public partial struct PlayerShootingIntentSystem : ISystem
             float projectileExplosionRadius = math.max(0f, values.ExplosionRadius);
             float projectileLifetime = ApplyLifetimeMultiplier(values.Lifetime, passiveToolsState.ProjectileLifetimeSecondsMultiplier);
             float projectileRange = ApplyLifetimeMultiplier(values.Range, passiveToolsState.ProjectileLifetimeRangeMultiplier);
+            ProjectileKnockbackSettingsBlob projectileKnockback = values.Knockback;
             bool hasPassiveShotgunPayload = passiveToolsState.HasShotgun != 0;
             int passiveShotgunProjectileCount = hasPassiveShotgunPayload ? math.max(1, passiveToolsState.Shotgun.ProjectileCount) : 1;
             float passiveShotgunConeAngle = hasPassiveShotgunPayload ? math.max(0f, passiveToolsState.Shotgun.ConeAngleDegrees) : 0f;
             ProjectilePenetrationMode basePenetrationMode = values.PenetrationMode;
             int baseMaxPenetrations = math.max(0, values.MaxPenetrations);
+            bool hasDefaultElementalPayload = PlayerProjectileElementUtility.TryBuildDefaultPayload(appliedElementSlots,
+                                                                                                    in values,
+                                                                                                    out ProjectileElementalPayload defaultElementalPayload);
             bool isShootPressed = inputState.ValueRO.Shoot > 0.5f;
             bool usesAutomaticLatch = shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle;
 
@@ -192,9 +199,12 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                     projectileLifetime,
                                     projectileDamage,
                                     projectileScaleMultiplier,
+                                    in projectileKnockback,
                                     inheritPlayerSpeed,
                                     basePenetrationMode,
-                                    baseMaxPenetrations);
+                                    baseMaxPenetrations,
+                                    hasDefaultElementalPayload,
+                                    in defaultElementalPayload);
                     continue;
                 }
 
@@ -219,9 +229,12 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                     projectileLifetime,
                                     projectileDamage,
                                     projectileScaleMultiplier,
+                                    in projectileKnockback,
                                     inheritPlayerSpeed,
                                     basePenetrationMode,
-                                    baseMaxPenetrations);
+                                    baseMaxPenetrations,
+                                    hasDefaultElementalPayload,
+                                    in defaultElementalPayload);
                 }
             }
         }
@@ -315,8 +328,8 @@ public partial struct PlayerShootingIntentSystem : ISystem
     /// <summary>
     /// Resets the next-shot schedule to the current frame so idle or temporarily disabled fire does not accumulate
     /// deferred automatic shots.
-    ///  shootingState: Mutable firing state that stores the next scheduled shot time.
-    ///  elapsedTime: Current world elapsed time used as the new schedule anchor.
+    /// shootingState: Mutable firing state that stores the next scheduled shot time.
+    /// elapsedTime: Current world elapsed time used as the new schedule anchor.
     /// returns None.
     /// </summary>
     private static void ResetShotSchedule(ref PlayerShootingState shootingState,
@@ -360,9 +373,12 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                         float projectileLifetime,
                                         float projectileDamage,
                                         float projectileScaleMultiplier,
+                                        in ProjectileKnockbackSettingsBlob projectileKnockback,
                                         byte inheritPlayerSpeed,
                                         ProjectilePenetrationMode penetrationMode,
-                                        int maxPenetrations)
+                                        int maxPenetrations,
+                                        bool hasElementalPayloadOverride,
+                                        in ProjectileElementalPayload elementalPayloadOverride)
     {
         ShootRequest request = new ShootRequest
         {
@@ -376,11 +392,14 @@ public partial struct PlayerShootingIntentSystem : ISystem
             ProjectileScaleMultiplier = projectileScaleMultiplier,
             PenetrationMode = penetrationMode,
             MaxPenetrations = maxPenetrations,
+            KnockbackEnabled = projectileKnockback.Enabled,
+            KnockbackStrength = math.max(0f, projectileKnockback.Strength),
+            KnockbackDurationSeconds = math.max(0f, projectileKnockback.DurationSeconds),
+            KnockbackDirectionMode = projectileKnockback.DirectionMode,
+            KnockbackStackingMode = projectileKnockback.StackingMode,
             InheritPlayerSpeed = inheritPlayerSpeed,
             IsSplitChild = 0,
-            HasElementalPayloadOverride = 0,
-            ElementalEffectOverride = default,
-            ElementalStacksPerHitOverride = 0f
+            ElementalPayloadOverride = hasElementalPayloadOverride ? elementalPayloadOverride : default
         };
         shootRequests.Add(request);
     }

@@ -37,7 +37,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         enemyQuery = SystemAPI.QueryBuilder()
-            .WithAll<EnemyData, EnemyHealth, EnemyRuntimeState, LocalTransform, EnemyActive>()
+            .WithAll<EnemyData, EnemyHealth, EnemyRuntimeState, EnemyKnockbackState, LocalTransform, EnemyActive>()
             .WithNone<EnemyDespawnRequest>()
             .Build();
 
@@ -67,6 +67,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         NativeArray<EnemyHealth> enemyHealthArray = new NativeArray<EnemyHealth>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<LocalTransform> enemyTransforms = new NativeArray<LocalTransform>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<EnemyRuntimeState> enemyRuntimeArray = new NativeArray<EnemyRuntimeState>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<EnemyKnockbackState> enemyKnockbackArray = new NativeArray<EnemyKnockbackState>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         int enemyWriteIndex = 0;
 
         // Snapshot query data into contiguous arrays so Burst jobs can run over stable memory.
@@ -74,10 +75,12 @@ public partial struct EnemyProjectileHitSystem : ISystem
                   RefRO<EnemyHealth> enemyHealth,
                   RefRO<LocalTransform> enemyTransform,
                   RefRO<EnemyRuntimeState> enemyRuntimeState,
+                  RefRO<EnemyKnockbackState> enemyKnockbackState,
                   Entity enemyEntity) in SystemAPI.Query<RefRO<EnemyData>,
                                                          RefRO<EnemyHealth>,
                                                          RefRO<LocalTransform>,
-                                                         RefRO<EnemyRuntimeState>>()
+                                                         RefRO<EnemyRuntimeState>,
+                                                         RefRO<EnemyKnockbackState>>()
                                                  .WithAll<EnemyActive>()
                                                  .WithNone<EnemyDespawnRequest>()
                                                  .WithEntityAccess())
@@ -90,6 +93,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             enemyHealthArray[enemyWriteIndex] = enemyHealth.ValueRO;
             enemyTransforms[enemyWriteIndex] = enemyTransform.ValueRO;
             enemyRuntimeArray[enemyWriteIndex] = enemyRuntimeState.ValueRO;
+            enemyKnockbackArray[enemyWriteIndex] = enemyKnockbackState.ValueRO;
             enemyWriteIndex++;
         }
 
@@ -102,6 +106,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             enemyHealthArray.Dispose();
             enemyTransforms.Dispose();
             enemyRuntimeArray.Dispose();
+            enemyKnockbackArray.Dispose();
             return;
         }
 
@@ -153,6 +158,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             enemyHealthArray.Dispose();
             enemyTransforms.Dispose();
             enemyRuntimeArray.Dispose();
+            enemyKnockbackArray.Dispose();
             projectileEntities.Dispose();
             projectileDataArray.Dispose();
             projectileOwnerArray.Dispose();
@@ -213,6 +219,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         hitCollectHandle.Complete();
 
         NativeArray<EnemyHealth> projectedEnemyHealth = new NativeArray<EnemyHealth>(enemyHealthArray, Allocator.Temp);
+        NativeArray<EnemyKnockbackState> projectedEnemyKnockback = new NativeArray<EnemyKnockbackState>(enemyKnockbackArray, Allocator.Temp);
         BufferLookup<ProjectilePoolElement> projectilePoolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
         BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
@@ -221,6 +228,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup = SystemAPI.GetComponentLookup<EnemyElementalVfxAnchor>(true);
         ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup = SystemAPI.GetComponentLookup<PlayerElementalVfxConfig>(true);
         ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup = SystemAPI.GetComponentLookup<EnemyHitVfxConfig>(true);
+        ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup = SystemAPI.GetComponentLookup<EnemySpawnInactivityLock>(true);
         NativeStream.Reader projectileHitReader = projectileHitStream.AsReader();
         NativeList<ProjectileHitCandidate> hitCandidates = new NativeList<ProjectileHitCandidate>(16, Allocator.Temp);
 
@@ -246,19 +254,11 @@ public partial struct EnemyProjectileHitSystem : ISystem
             bool hasValidHit = false;
             bool canProjectileContinue = false;
             bool enemyKilledByProjectile = false;
-            ElementalVfxDefinitionConfig elementalVfxConfig = default;
             bool canEnqueueShooterVfxRequests = vfxRequestLookup.HasBuffer(projectileOwner.ShooterEntity);
             DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests = default;
 
             if (canEnqueueShooterVfxRequests)
                 shooterVfxRequests = vfxRequestLookup[projectileOwner.ShooterEntity];
-
-            if (canEnqueueShooterVfxRequests && elementalPayload.Enabled != 0 && elementalPayload.StacksPerHit > 0f)
-            {
-                elementalVfxConfig = ResolveElementalVfxDefinition(projectileOwner.ShooterEntity,
-                                                                   elementalPayload.Effect.ElementType,
-                                                                   in elementalVfxConfigLookup);
-            }
 
             hitCandidates.Clear();
 
@@ -292,13 +292,18 @@ public partial struct EnemyProjectileHitSystem : ISystem
                         hasValidHit = true;
                         enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
                         ApplyHitPayloads(enemyIndex,
+                                         projectileOwner.ShooterEntity,
+                                         in projectileData,
+                                         in projectileTransform,
                                          in elementalPayload,
-                                         in elementalVfxConfig,
                                          enemyEntities,
                                          enemyPositions,
                                          enemyRuntimeArray,
+                                         ref projectedEnemyKnockback,
+                                         in elementalVfxConfigLookup,
                                          in elementalVfxAnchorLookup,
                                          in enemyHitVfxConfigLookup,
+                                         in spawnInactivityLockLookup,
                                          canEnqueueShooterVfxRequests,
                                          ref shooterVfxRequests,
                                          ref elementalStackLookup);
@@ -322,13 +327,18 @@ public partial struct EnemyProjectileHitSystem : ISystem
                         appliedHitCount++;
                         enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
                         ApplyHitPayloads(enemyIndex,
+                                         projectileOwner.ShooterEntity,
+                                         in projectileData,
+                                         in projectileTransform,
                                          in elementalPayload,
-                                         in elementalVfxConfig,
                                          enemyEntities,
                                          enemyPositions,
                                          enemyRuntimeArray,
+                                         ref projectedEnemyKnockback,
+                                         in elementalVfxConfigLookup,
                                          in elementalVfxAnchorLookup,
                                          in enemyHitVfxConfigLookup,
+                                         in spawnInactivityLockLookup,
                                          canEnqueueShooterVfxRequests,
                                          ref shooterVfxRequests,
                                          ref elementalStackLookup);
@@ -361,13 +371,18 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
                         enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
                         ApplyHitPayloads(enemyIndex,
+                                         projectileOwner.ShooterEntity,
+                                         in projectileData,
+                                         in projectileTransform,
                                          in elementalPayload,
-                                         in elementalVfxConfig,
                                          enemyEntities,
                                          enemyPositions,
                                          enemyRuntimeArray,
+                                         ref projectedEnemyKnockback,
+                                         in elementalVfxConfigLookup,
                                          in elementalVfxAnchorLookup,
                                          in enemyHitVfxConfigLookup,
+                                         in spawnInactivityLockLookup,
                                          canEnqueueShooterVfxRequests,
                                          ref shooterVfxRequests,
                                          ref elementalStackLookup);
@@ -403,13 +418,18 @@ public partial struct EnemyProjectileHitSystem : ISystem
                         hasValidHit = true;
                         enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
                         ApplyHitPayloads(enemyIndex,
+                                         projectileOwner.ShooterEntity,
+                                         in projectileData,
+                                         in projectileTransform,
                                          in elementalPayload,
-                                         in elementalVfxConfig,
                                          enemyEntities,
                                          enemyPositions,
                                          enemyRuntimeArray,
+                                         ref projectedEnemyKnockback,
+                                         in elementalVfxConfigLookup,
                                          in elementalVfxAnchorLookup,
                                          in enemyHitVfxConfigLookup,
+                                         in spawnInactivityLockLookup,
                                          canEnqueueShooterVfxRequests,
                                          ref shooterVfxRequests,
                                          ref elementalStackLookup);
@@ -470,15 +490,22 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
         for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
         {
-            if (projectedEnemyHealth[enemyIndex].Current == enemyHealthArray[enemyIndex].Current &&
-                projectedEnemyHealth[enemyIndex].CurrentShield == enemyHealthArray[enemyIndex].CurrentShield)
-            {
-                continue;
-            }
-
             Entity enemyEntity = enemyEntities[enemyIndex];
 
             if (!entityManager.Exists(enemyEntity))
+                continue;
+
+            bool healthChanged = projectedEnemyHealth[enemyIndex].Current != enemyHealthArray[enemyIndex].Current ||
+                                 projectedEnemyHealth[enemyIndex].CurrentShield != enemyHealthArray[enemyIndex].CurrentShield;
+            bool knockbackChanged = DidKnockbackStateChange(projectedEnemyKnockback[enemyIndex], enemyKnockbackArray[enemyIndex]);
+
+            if (!healthChanged && !knockbackChanged)
+                continue;
+
+            if (knockbackChanged)
+                entityManager.SetComponentData(enemyEntity, projectedEnemyKnockback[enemyIndex]);
+
+            if (!healthChanged)
                 continue;
 
             EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
@@ -505,6 +532,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         enemyHealthArray.Dispose();
         enemyTransforms.Dispose();
         enemyRuntimeArray.Dispose();
+        enemyKnockbackArray.Dispose();
 
         projectileEntities.Dispose();
         projectileDataArray.Dispose();
@@ -520,6 +548,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         projectileHitStream.Dispose();
         enemyCellMap.Dispose();
         projectedEnemyHealth.Dispose();
+        projectedEnemyKnockback.Dispose();
         hitCandidates.Dispose();
     }
     #endregion
@@ -591,13 +620,18 @@ public partial struct EnemyProjectileHitSystem : ISystem
     }
 
     private static void ApplyHitPayloads(int enemyIndex,
+                                         Entity shooterEntity,
+                                         in Projectile projectileData,
+                                         in LocalTransform projectileTransform,
                                          in ProjectileElementalPayload elementalPayload,
-                                         in ElementalVfxDefinitionConfig elementalVfxConfig,
                                          NativeArray<Entity> enemyEntities,
                                          NativeArray<float3> enemyPositions,
                                          NativeArray<EnemyRuntimeState> enemyRuntimeArray,
+                                         ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
+                                         in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
                                          in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
                                          in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
+                                         in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup,
                                          bool canEnqueueShooterVfxRequests,
                                          ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
                                          ref BufferLookup<EnemyElementStackElement> elementalStackLookup)
@@ -605,15 +639,23 @@ public partial struct EnemyProjectileHitSystem : ISystem
         Entity enemyEntity = enemyEntities[enemyIndex];
         float3 enemyPosition = enemyPositions[enemyIndex];
         EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
-        TryApplyElementalPayload(enemyEntity,
+        TryApplyElementalPayloads(enemyEntity,
+                                  enemyPosition,
+                                  shooterEntity,
+                                  in elementalPayload,
+                                  in enemyRuntimeState,
+                                  in elementalVfxConfigLookup,
+                                  in elementalVfxAnchorLookup,
+                                  canEnqueueShooterVfxRequests,
+                                  ref shooterVfxRequests,
+                                  ref elementalStackLookup);
+        TryApplyKnockbackPayload(enemyIndex,
+                                 enemyEntity,
                                  enemyPosition,
-                                 in elementalPayload,
-                                 in enemyRuntimeState,
-                                 in elementalVfxConfig,
-                                 in elementalVfxAnchorLookup,
-                                 canEnqueueShooterVfxRequests,
-                                 ref shooterVfxRequests,
-                                 ref elementalStackLookup);
+                                 in projectileData,
+                                 in projectileTransform,
+                                 ref projectedEnemyKnockback,
+                                 in spawnInactivityLockLookup);
         TryEnqueueEnemyHitVfx(enemyEntity,
                               enemyPosition,
                               in enemyRuntimeState,
@@ -633,39 +675,21 @@ public partial struct EnemyProjectileHitSystem : ISystem
         return math.max(0.01f, currentScale / baseScale);
     }
 
-    private static void TryApplyElementalPayload(Entity enemyEntity,
-                                                 float3 enemyPosition,
-                                                 in ProjectileElementalPayload elementalPayload,
-                                                 in EnemyRuntimeState enemyRuntimeState,
-                                                 in ElementalVfxDefinitionConfig elementalVfxConfig,
-                                                 in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
-                                                 bool canEnqueueVfxRequests,
-                                                 ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
-                                                 ref BufferLookup<EnemyElementStackElement> elementalStackLookup)
+    private static void TryApplyElementalPayloads(Entity enemyEntity,
+                                                  float3 enemyPosition,
+                                                  Entity shooterEntity,
+                                                  in ProjectileElementalPayload elementalPayload,
+                                                  in EnemyRuntimeState enemyRuntimeState,
+                                                  in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
+                                                  in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
+                                                  bool canEnqueueVfxRequests,
+                                                  ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
+                                                  ref BufferLookup<EnemyElementStackElement> elementalStackLookup)
     {
-        if (elementalPayload.Enabled == 0)
+        if (!ProjectileElementalPayloadUtility.HasAnyPayload(in elementalPayload))
             return;
 
-        if (elementalPayload.StacksPerHit <= 0f)
-            return;
-
-        bool procTriggered;
-        bool applied = EnemyElementalStackUtility.TryApplyStacks(enemyEntity,
-                                                                 math.max(0f, elementalPayload.StacksPerHit),
-                                                                 elementalPayload.Effect,
-                                                                 ref elementalStackLookup,
-                                                                 out procTriggered);
-
-        if (!applied)
-            return;
-
-        if (!canEnqueueVfxRequests)
-            return;
-
-        float3 vfxPosition = enemyPosition;
         Entity followTargetEntity = enemyEntity;
-        float stackVfxLifetimeSeconds = 0.35f;
-        float procVfxLifetimeSeconds = ResolveProcVfxLifetimeSeconds(in elementalPayload.Effect);
 
         if (elementalVfxAnchorLookup.HasComponent(enemyEntity))
         {
@@ -675,25 +699,91 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 followTargetEntity = anchorEntity;
         }
 
-        if (elementalVfxConfig.SpawnStackVfx != 0)
-            EnqueueElementalVfx(ref vfxRequests,
-                                elementalVfxConfig.StackVfxPrefabEntity,
-                                vfxPosition,
-                                elementalVfxConfig.StackVfxScaleMultiplier,
-                                followTargetEntity,
-                                enemyEntity,
-                                enemyRuntimeState.SpawnVersion,
-                                stackVfxLifetimeSeconds);
+        for (int payloadIndex = 0; payloadIndex < elementalPayload.Entries.Length; payloadIndex++)
+        {
+            ProjectileElementalPayloadEntry payloadEntry = elementalPayload.Entries[payloadIndex];
 
-        if (procTriggered && elementalVfxConfig.SpawnProcVfx != 0)
+            if (payloadEntry.StacksPerHit <= 0f)
+                continue;
+
+            bool procTriggered;
+            bool applied = EnemyElementalStackUtility.TryApplyStacks(enemyEntity,
+                                                                     math.max(0f, payloadEntry.StacksPerHit),
+                                                                     payloadEntry.Effect,
+                                                                     ref elementalStackLookup,
+                                                                     out procTriggered);
+
+            if (!applied)
+                continue;
+
+            if (!canEnqueueVfxRequests)
+                continue;
+
+            ElementalVfxDefinitionConfig elementalVfxConfig = ResolveElementalVfxDefinition(shooterEntity,
+                                                                                            payloadEntry.Effect.ElementType,
+                                                                                            in elementalVfxConfigLookup);
+
+            if (elementalVfxConfig.SpawnStackVfx != 0)
+                EnqueueElementalVfx(ref vfxRequests,
+                                    elementalVfxConfig.StackVfxPrefabEntity,
+                                    enemyPosition,
+                                    elementalVfxConfig.StackVfxScaleMultiplier,
+                                    followTargetEntity,
+                                    enemyEntity,
+                                    enemyRuntimeState.SpawnVersion,
+                                    0.35f);
+
+            if (!procTriggered || elementalVfxConfig.SpawnProcVfx == 0)
+                continue;
+
+            float procVfxLifetimeSeconds = ResolveProcVfxLifetimeSeconds(in payloadEntry.Effect);
             EnqueueElementalVfx(ref vfxRequests,
                                 elementalVfxConfig.ProcVfxPrefabEntity,
-                                vfxPosition,
+                                enemyPosition,
                                 elementalVfxConfig.ProcVfxScaleMultiplier,
                                 followTargetEntity,
                                 enemyEntity,
                                 enemyRuntimeState.SpawnVersion,
                                 procVfxLifetimeSeconds);
+        }
+    }
+
+    private static void TryApplyKnockbackPayload(int enemyIndex,
+                                                 Entity enemyEntity,
+                                                 float3 enemyPosition,
+                                                 in Projectile projectileData,
+                                                 in LocalTransform projectileTransform,
+                                                 ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
+                                                 in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup)
+    {
+        if (enemyIndex < 0 || enemyIndex >= projectedEnemyKnockback.Length)
+            return;
+
+        if (spawnInactivityLockLookup.HasComponent(enemyEntity) &&
+            spawnInactivityLockLookup.IsComponentEnabled(enemyEntity))
+        {
+            return;
+        }
+
+        EnemyKnockbackState knockbackState = projectedEnemyKnockback[enemyIndex];
+
+        if (!EnemyKnockbackRuntimeUtility.TryApplyFromProjectile(in projectileData,
+                                                                 in projectileTransform,
+                                                                 enemyPosition,
+                                                                 ref knockbackState))
+        {
+            return;
+        }
+
+        projectedEnemyKnockback[enemyIndex] = knockbackState;
+    }
+
+    private static bool DidKnockbackStateChange(EnemyKnockbackState leftValue, EnemyKnockbackState rightValue)
+    {
+        return leftValue.RemainingTime != rightValue.RemainingTime ||
+               leftValue.Velocity.x != rightValue.Velocity.x ||
+               leftValue.Velocity.y != rightValue.Velocity.y ||
+               leftValue.Velocity.z != rightValue.Velocity.z;
     }
 
     /// <summary>

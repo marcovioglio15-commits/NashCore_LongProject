@@ -5,7 +5,7 @@ using System.Collections.Generic;
 /// <summary>
 /// Resolves one PlayerVisualMuzzleAnchor from the current managed Animator hierarchy and keeps it attached to the player entity.
 /// This bridge works for both companion animators and runtime-spawned visual prefabs.
-///  None.
+/// None.
 /// returns None.
 /// </summary>
 [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -21,7 +21,7 @@ public partial struct PlayerVisualMuzzleAssignmentSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the minimum runtime requirements for the muzzle bridge.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -33,7 +33,7 @@ public partial struct PlayerVisualMuzzleAssignmentSystem : ISystem
 
     /// <summary>
     /// Clears cached pending assignments when the system is destroyed.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnDestroy(ref SystemState state)
@@ -43,7 +43,7 @@ public partial struct PlayerVisualMuzzleAssignmentSystem : ISystem
 
     /// <summary>
     /// Resolves the current muzzle anchor from the player's managed visual hierarchy and assigns it as a managed component object.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)
@@ -82,8 +82,8 @@ public partial struct PlayerVisualMuzzleAssignmentSystem : ISystem
     #region Helpers
     /// <summary>
     /// Enqueues one pending muzzle-anchor assignment or removal to be applied after query iteration finishes.
-    ///  entity: Player entity receiving the assignment.
-    ///  resolvedAnchor: Resolved managed muzzle anchor, or null to remove the current assignment.
+    /// entity: Player entity receiving the assignment.
+    /// resolvedAnchor: Resolved managed muzzle anchor, or null to remove the current assignment.
     /// returns None.
     /// </summary>
     private static void QueueAssignment(Entity entity, PlayerVisualMuzzleAnchor resolvedAnchor)
@@ -109,7 +109,7 @@ public partial struct PlayerVisualMuzzleAssignmentSystem : ISystem
 
     /// <summary>
     /// Applies all queued muzzle-anchor structural changes once entity iteration has completed.
-    ///  entityManager: EntityManager used to mutate managed component assignments safely.
+    /// entityManager: EntityManager used to mutate managed component assignments safely.
     /// returns None.
     /// </summary>
     private static void ApplyQueuedAssignments(EntityManager entityManager)
@@ -142,8 +142,8 @@ public partial struct PlayerVisualMuzzleAssignmentSystem : ISystem
 
     /// <summary>
     /// Resolves the muzzle anchor component that belongs to the current Animator hierarchy of one player entity.
-    ///  entityManager: EntityManager used to read the managed Animator component.
-    ///  entity: Player entity whose visual hierarchy should be inspected.
+    /// entityManager: EntityManager used to read the managed Animator component.
+    /// entity: Player entity whose visual hierarchy should be inspected.
     /// returns Resolved muzzle anchor component, or null when none is available.
     /// </summary>
     private static PlayerVisualMuzzleAnchor ResolveVisualMuzzleAnchor(EntityManager entityManager, Entity entity)

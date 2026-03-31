@@ -3,7 +3,7 @@ using Unity.Transforms;
 
 /// <summary>
 /// Synchronizes dropped-container world-space icons from cached power-up presentation metadata.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -14,7 +14,7 @@ public partial struct PlayerDroppedPowerUpContainerIconSyncSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Registers the runtime components required to update dropped-container companion views.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -24,7 +24,7 @@ public partial struct PlayerDroppedPowerUpContainerIconSyncSystem : ISystem
 
     /// <summary>
     /// Releases pooled runtime fallback views when the world is destroyed.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnDestroy(ref SystemState state)
@@ -34,7 +34,7 @@ public partial struct PlayerDroppedPowerUpContainerIconSyncSystem : ISystem
 
     /// <summary>
     /// Pushes the current icon sprite and transform pose into each dropped-container runtime view when available.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnUpdate(ref SystemState state)

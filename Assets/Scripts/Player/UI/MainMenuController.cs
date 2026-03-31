@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Handles the simple front-end scene flow for the authored main menu.
-///  None.
+/// None.
 /// returns None.
 /// </summary>
 [DisallowMultipleComponent]
@@ -62,7 +62,7 @@ public sealed class MainMenuController : MonoBehaviour
     #region Wiring
     /// <summary>
     /// Registers click handlers for the authored menu buttons.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void RegisterButtons()
@@ -76,7 +76,7 @@ public sealed class MainMenuController : MonoBehaviour
 
     /// <summary>
     /// Removes click handlers from the authored menu buttons.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void UnregisterButtons()
@@ -92,7 +92,7 @@ public sealed class MainMenuController : MonoBehaviour
     #region Callbacks
     /// <summary>
     /// Loads the configured gameplay scene.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandlePlayPressed()
@@ -107,7 +107,7 @@ public sealed class MainMenuController : MonoBehaviour
 
     /// <summary>
     /// Requests application shutdown through the shared helper.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleQuitPressed()
@@ -119,7 +119,7 @@ public sealed class MainMenuController : MonoBehaviour
     #region Helpers
     /// <summary>
     /// Selects the first non-null authored menu button so keyboard and controller navigation work immediately.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void SelectDefaultButton()

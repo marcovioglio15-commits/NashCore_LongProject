@@ -16,7 +16,7 @@ public partial struct EnemySpawnInactivitySystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Requires the inactivity lock and runtime state before the system starts ticking.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -27,7 +27,7 @@ public partial struct EnemySpawnInactivitySystem : ISystem
 
     /// <summary>
     /// Decrements the spawn inactivity timer and releases the lock when the authored delay expires.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)

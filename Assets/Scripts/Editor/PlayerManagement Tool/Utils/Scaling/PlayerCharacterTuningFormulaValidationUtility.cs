@@ -10,13 +10,14 @@ public static class PlayerCharacterTuningFormulaValidationUtility
     #region Public Methods
     /// <summary>
     /// Validates one Character Tuning assignment formula using the scalable-stat parser and formula engine.
-    ///  assignmentFormula Assignment string entered by designers.
-    ///  allowedVariables Optional scalable-stat whitelist for the current preset scope.
-    ///  warningMessage Failure reason when validation fails.
+    /// assignmentFormula Assignment string entered by designers.
+    /// allowedVariables Optional scalable-stat whitelist for the current preset scope.
+    /// warningMessage Failure reason when validation fails.
     /// returns True when the assignment is valid.
     /// </summary>
     public static bool TryValidateAssignmentFormula(string assignmentFormula,
                                                     ISet<string> allowedVariables,
+                                                    IReadOnlyDictionary<string, PlayerFormulaValueType> variableTypes,
                                                     out string warningMessage)
     {
         warningMessage = string.Empty;
@@ -35,9 +36,24 @@ public static class PlayerCharacterTuningFormulaValidationUtility
             return false;
         }
 
+        PlayerFormulaValueType targetType = PlayerFormulaValueType.Invalid;
+
+        if (variableTypes != null && variableTypes.TryGetValue(targetStatName, out PlayerFormulaValueType resolvedTargetType))
+            targetType = resolvedTargetType;
+
+        if (targetType == PlayerFormulaValueType.Invalid)
+        {
+            warningMessage = string.Format("Unknown assignment target type for scalable stat [{0}].", targetStatName);
+            return false;
+        }
+
         return PlayerScalingFormulaValidationUtility.TryValidateFormula(expression,
                                                                         allowedVariables,
-                                                                        out warningMessage);
+                                                                        variableTypes,
+                                                                        targetType,
+                                                                        targetType,
+                                                                        out warningMessage,
+                                                                        false);
     }
     #endregion
 

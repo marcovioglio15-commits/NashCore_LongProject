@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Text;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
@@ -18,8 +17,6 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
     #region Constants
     private const float ValueChangeEpsilon = 0.0001f;
     private const double MinimumLogIntervalSeconds = 0.25d;
-    private const uint FnvOffsetBasis = 2166136261u;
-    private const uint FnvPrime = 16777619u;
     #endregion
 
     #region Fields
@@ -98,7 +95,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
 
         nextAllowedLogTime = elapsedTime + MinimumLogIntervalSeconds;
 
-        Dictionary<string, float> variableContext = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, PlayerFormulaValue> variableContext = new Dictionary<string, PlayerFormulaValue>(StringComparer.OrdinalIgnoreCase);
         StringBuilder batchedLogBuilder = new StringBuilder(1024);
         int batchedRuleCount = 0;
 
@@ -112,7 +109,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
                 continue;
 
             ulong entityKey = ComposeEntityKey(entity);
-            uint variableContextHash = ComputeVariableContextHash(scalableStats);
+            uint variableContextHash = PlayerScalableStatHashUtility.ComputeHash(scalableStats);
 
             if (!HasEntityVariableHashChanged(entityKey, variableContextHash))
                 continue;
@@ -126,7 +123,7 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
                 string formulaText = debugRule.Formula.ToString();
                 string translatedFormula = PlayerScalingRuntimeFormulaUtility.TranslateFormula(formulaText,
                                                                                                variableContext,
-                                                                                               debugRule.ThisValue);
+                                                                                               PlayerFormulaValue.CreateNumber(debugRule.ThisValue));
                 float evaluatedValue = debugRule.FinalValue;
                 Color debugColor = ResolveDebugColor(debugRule);
                 string debugColorHex = ColorUtility.ToHtmlStringRGBA(debugColor);
@@ -192,33 +189,6 @@ public partial struct PlayerScalingDebugConsoleSystem : ISystem
         return (entityKey * 1099511628211UL) ^ rulePart;
     }
 
-    /// <summary>
-    /// Computes an FNV-1a hash from all scalable stat names and values to detect entity-level variable changes.
-    /// </summary>
-    /// <param name="scalableStats">Runtime scalable stat buffer.</param>
-    /// <returns>Hash representing current variable-context snapshot.<returns>
-    private static uint ComputeVariableContextHash(DynamicBuffer<PlayerScalableStatElement> scalableStats)
-    {
-        uint rollingHash = FnvOffsetBasis;
-
-        for (int statIndex = 0; statIndex < scalableStats.Length; statIndex++)
-        {
-            PlayerScalableStatElement scalableStat = scalableStats[statIndex];
-
-            if (scalableStat.Name.Length == 0)
-                continue;
-
-            uint nameHash = (uint)scalableStat.Name.GetHashCode();
-            uint valueHash = math.asuint(scalableStat.Value);
-            rollingHash = (rollingHash ^ nameHash) * FnvPrime;
-            rollingHash = (rollingHash ^ valueHash) * FnvPrime;
-        }
-
-        rollingHash = (rollingHash ^ (uint)scalableStats.Length) * FnvPrime;
-        return rollingHash;
-    }
-
-    /// <summary>
     /// Updates the entity-variable hash cache and reports whether the context changed since the previous logged sample.
     /// </summary>
     /// <param name="entityKey">Packed entity key.</param>

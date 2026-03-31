@@ -59,11 +59,14 @@ public struct ShootRequest : IBufferElementData
     public float ProjectileScaleMultiplier;
     public ProjectilePenetrationMode PenetrationMode;
     public int MaxPenetrations;
+    public byte KnockbackEnabled;
+    public float KnockbackStrength;
+    public float KnockbackDurationSeconds;
+    public ProjectileKnockbackDirectionMode KnockbackDirectionMode;
+    public ProjectileKnockbackStackingMode KnockbackStackingMode;
     public byte InheritPlayerSpeed;
     public byte IsSplitChild;
-    public byte HasElementalPayloadOverride;
-    public ElementalEffectConfig ElementalEffectOverride;
-    public float ElementalStacksPerHitOverride;
+    public ProjectileElementalPayload ElementalPayloadOverride;
 }
 
 public struct ProjectilePoolElement : IBufferElementData
@@ -85,6 +88,11 @@ public struct Projectile : IComponentData
     public float MaxLifetime;
     public ProjectilePenetrationMode PenetrationMode;
     public int RemainingPenetrations;
+    public byte KnockbackEnabled;
+    public float KnockbackStrength;
+    public float KnockbackDurationSeconds;
+    public ProjectileKnockbackDirectionMode KnockbackDirectionMode;
+    public ProjectileKnockbackStackingMode KnockbackStackingMode;
     public byte InheritPlayerSpeed;
 }
 
@@ -174,9 +182,16 @@ public struct ProjectileSplitState : IComponentData
 /// <summary>
 /// Runtime elemental payload carried by projectiles.
 /// </summary>
-public struct ProjectileElementalPayload : IComponentData
+public struct ProjectileElementalPayloadEntry
 {
-    public byte Enabled;
     public ElementalEffectConfig Effect;
     public float StacksPerHit;
+}
+
+/// <summary>
+/// Runtime elemental payload carried by projectiles.
+/// </summary>
+public struct ProjectileElementalPayload : IComponentData
+{
+    public FixedList512Bytes<ProjectileElementalPayloadEntry> Entries;
 }

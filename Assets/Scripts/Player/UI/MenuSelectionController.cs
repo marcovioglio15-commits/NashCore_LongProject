@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Centralizes default menu selection and pointer-hover takeover for authored UI menus.
 /// It keeps keyboard/controller navigation stable while letting hovered buttons temporarily own submit input.
-///  None.
+/// None.
 /// returns None.
 /// </summary>
 [DisallowMultipleComponent]
@@ -81,7 +81,7 @@ public sealed class MenuSelectionController : MonoBehaviour
     #region Public Methods
     /// <summary>
     /// Replaces the fallback selectable used by future default-selection restores.
-    ///  selectable: Selectable that should become the new fallback target.
+    /// selectable: Selectable that should become the new fallback target.
     /// returns None.
     /// </summary>
     public void SetDefaultSelectable(Selectable selectable)
@@ -94,8 +94,8 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Selects one authored button immediately and optionally stores it as the fallback target.
-    ///  selectable: Selectable that should own navigation and submit input.
-    ///  rememberAsDefault: True when this selectable should become the new fallback target.
+    /// selectable: Selectable that should own navigation and submit input.
+    /// rememberAsDefault: True when this selectable should become the new fallback target.
     /// returns None.
     /// </summary>
     public void SelectSelectable(Selectable selectable, bool rememberAsDefault)
@@ -113,7 +113,7 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Handles pointer-entry takeover so the hovered button becomes the active submit target.
-    ///  selectable: Hovered selectable reported by one menu button relay.
+    /// selectable: Hovered selectable reported by one menu button relay.
     /// returns None.
     /// </summary>
     public void RegisterPointerEnter(Selectable selectable)
@@ -137,7 +137,7 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Handles pointer-exit restore so keyboard/controller selection returns to its previous button.
-    ///  selectable: Selectable whose hover ownership has just ended.
+    /// selectable: Selectable whose hover ownership has just ended.
     /// returns None.
     /// </summary>
     public void RegisterPointerExit(Selectable selectable)
@@ -154,7 +154,7 @@ public sealed class MenuSelectionController : MonoBehaviour
     #region Selection Helpers
     /// <summary>
     /// Queues one end-of-frame fallback selection pass so menu highlight is restored reliably after activation.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void QueueDeferredDefaultSelection()
@@ -170,7 +170,7 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Applies the fallback selection on the next frame after layout and EventSystem startup have settled.
-    ///  None.
+    /// None.
     /// returns Enumerator used by Unity coroutine scheduling.
     /// </summary>
     private IEnumerator DeferredDefaultSelectionCoroutine()
@@ -188,7 +188,7 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Restores either the pre-hover selection or the configured fallback selectable after hover ends.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void RestoreSelectionAfterHover()
@@ -209,7 +209,7 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Applies one selection to the resolved EventSystem using both Button.Select and SetSelectedGameObject.
-    ///  selectable: Selectable that should own the current UI focus.
+    /// selectable: Selectable that should own the current UI focus.
     /// returns None.
     /// </summary>
     private void ApplySelection(Selectable selectable)
@@ -228,7 +228,7 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Resolves the usable EventSystem instance for this menu.
-    ///  None.
+    /// None.
     /// returns EventSystem used by this menu, or null when none is available.
     /// </summary>
     private EventSystem ResolveEventSystem()
@@ -241,7 +241,7 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Resolves one Selectable component from the provided GameObject when present.
-    ///  targetObject: GameObject that may carry a Selectable component.
+    /// targetObject: GameObject that may carry a Selectable component.
     /// returns Resolved selectable or null when none is available.
     /// </summary>
     private static Selectable ResolveSelectable(GameObject targetObject)
@@ -254,7 +254,7 @@ public sealed class MenuSelectionController : MonoBehaviour
 
     /// <summary>
     /// Checks whether a selectable can safely receive focus at the current moment.
-    ///  selectable: Selectable to validate.
+    /// selectable: Selectable to validate.
     /// returns True when the selectable is active, interactable and usable, otherwise false.
     /// </summary>
     private static bool IsSelectionCandidateValid(Selectable selectable)

@@ -31,7 +31,35 @@ public static class PlayerScalingFormulaValidationUtility
     /// <returns>True when formula is valid, otherwise false.<returns>
     public static bool TryValidateFormula(string formula,
                                           ISet<string> allowedVariables,
-                                          out string warningMessage)
+                                          out string warningMessage,
+                                          bool requireAtLeastOneVariable = true)
+    {
+        return TryValidateFormula(formula,
+                                  allowedVariables,
+                                  null,
+                                  PlayerFormulaValueType.Number,
+                                  PlayerFormulaValueType.Number,
+                                  out warningMessage,
+                                  requireAtLeastOneVariable);
+    }
+
+    /// <summary>
+    /// Validates one formula using parser rules, variable types, and the expected result type for the current field.
+    /// </summary>
+    /// <param name="formula">Formula text entered by designers.</param>
+    /// <param name="allowedVariables">Optional variable whitelist (case-insensitive). Null skips unknown-variable checks.</param>
+    /// <param name="variableTypes">Known typed variables available in the current authoring scope.</param>
+    /// <param name="thisType">Type bound to the reserved [this] token.</param>
+    /// <param name="requiredResultType">Expected formula result type for the current authoring context.</param>
+    /// <param name="warningMessage">Validation warning text when formula is invalid.</param>
+    /// <returns>True when formula is valid, otherwise false.<returns>
+    public static bool TryValidateFormula(string formula,
+                                          ISet<string> allowedVariables,
+                                          IReadOnlyDictionary<string, PlayerFormulaValueType> variableTypes,
+                                          PlayerFormulaValueType thisType,
+                                          PlayerFormulaValueType requiredResultType,
+                                          out string warningMessage,
+                                          bool requireAtLeastOneVariable = true)
     {
         warningMessage = string.Empty;
 
@@ -40,7 +68,7 @@ public static class PlayerScalingFormulaValidationUtility
         if (!TryValidateBracketVariables(formula, resolvedAllowedVariables, out warningMessage))
             return false;
 
-        PlayerStatFormulaCompileResult compileResult = PlayerStatFormulaEngine.Compile(formula, true);
+        PlayerStatFormulaCompileResult compileResult = PlayerStatFormulaEngine.Compile(formula, requireAtLeastOneVariable);
 
         if (!compileResult.IsValid || compileResult.CompiledFormula == null)
         {
@@ -63,6 +91,22 @@ public static class PlayerScalingFormulaValidationUtility
                 continue;
 
             warningMessage = string.Format("Unknown scalable stat variable [{0}].", variableName);
+            return false;
+        }
+
+        if (!compileResult.CompiledFormula.TryInferResultType(thisType,
+                                                              variableTypes,
+                                                              out PlayerFormulaValueType resultType,
+                                                              out warningMessage))
+        {
+            return false;
+        }
+
+        if (requiredResultType != PlayerFormulaValueType.Invalid && resultType != requiredResultType)
+        {
+            warningMessage = string.Format("Formula resolves to {0} but {1} is required here.",
+                                           BuildTypeLabel(resultType),
+                                           BuildTypeLabel(requiredResultType));
             return false;
         }
 
@@ -114,6 +158,101 @@ public static class PlayerScalingFormulaValidationUtility
     }
 
     /// <summary>
+    /// Collects scalable stat names and types from progression serialized list into a case-insensitive dictionary.
+    /// </summary>
+    /// <param name="scalableStatsProperty">Serialized List&lt;PlayerScalableStatDefinition&gt; property.</param>
+    /// <returns>Case-insensitive dictionary of scalable stat types keyed by stat name.<returns>
+    public static Dictionary<string, PlayerFormulaValueType> BuildVariableTypeMap(SerializedProperty scalableStatsProperty)
+    {
+        Dictionary<string, PlayerFormulaValueType> variableTypes = new Dictionary<string, PlayerFormulaValueType>(StringComparer.OrdinalIgnoreCase);
+
+        if (scalableStatsProperty == null)
+            return variableTypes;
+
+        if (!scalableStatsProperty.isArray)
+            return variableTypes;
+
+        for (int index = 0; index < scalableStatsProperty.arraySize; index++)
+        {
+            SerializedProperty scalableStatElement = scalableStatsProperty.GetArrayElementAtIndex(index);
+
+            if (scalableStatElement == null)
+                continue;
+
+            SerializedProperty statNameProperty = scalableStatElement.FindPropertyRelative("statName");
+            SerializedProperty statTypeProperty = scalableStatElement.FindPropertyRelative("statType");
+
+            if (statNameProperty == null || statTypeProperty == null)
+                continue;
+
+            if (statNameProperty.propertyType != SerializedPropertyType.String ||
+                statTypeProperty.propertyType != SerializedPropertyType.Enum)
+            {
+                continue;
+            }
+
+            string statName = string.IsNullOrWhiteSpace(statNameProperty.stringValue)
+                ? string.Empty
+                : statNameProperty.stringValue.Trim();
+
+            if (!PlayerScalableStatNameUtility.IsValid(statName))
+                continue;
+
+            PlayerScalableStatType statType = (PlayerScalableStatType)statTypeProperty.enumValueIndex;
+            variableTypes[statName] = PlayerScalableStatTypeUtility.ToFormulaValueType(statType);
+        }
+
+        return variableTypes;
+    }
+
+    /// <summary>
+    /// Collects scalable stat names and authoring types from progression serialized list into a case-insensitive dictionary.
+    /// </summary>
+    /// <param name="scalableStatsProperty">Serialized List&lt;PlayerScalableStatDefinition&gt; property.</param>
+    /// <returns>Case-insensitive dictionary of scalable-stat types keyed by stat name.<returns>
+    public static Dictionary<string, PlayerScalableStatType> BuildScalableStatTypeMap(SerializedProperty scalableStatsProperty)
+    {
+        Dictionary<string, PlayerScalableStatType> variableTypes = new Dictionary<string, PlayerScalableStatType>(StringComparer.OrdinalIgnoreCase);
+
+        if (scalableStatsProperty == null)
+            return variableTypes;
+
+        if (!scalableStatsProperty.isArray)
+            return variableTypes;
+
+        for (int index = 0; index < scalableStatsProperty.arraySize; index++)
+        {
+            SerializedProperty scalableStatElement = scalableStatsProperty.GetArrayElementAtIndex(index);
+
+            if (scalableStatElement == null)
+                continue;
+
+            SerializedProperty statNameProperty = scalableStatElement.FindPropertyRelative("statName");
+            SerializedProperty statTypeProperty = scalableStatElement.FindPropertyRelative("statType");
+
+            if (statNameProperty == null || statTypeProperty == null)
+                continue;
+
+            if (statNameProperty.propertyType != SerializedPropertyType.String ||
+                statTypeProperty.propertyType != SerializedPropertyType.Enum)
+            {
+                continue;
+            }
+
+            string statName = string.IsNullOrWhiteSpace(statNameProperty.stringValue)
+                ? string.Empty
+                : statNameProperty.stringValue.Trim();
+
+            if (!PlayerScalableStatNameUtility.IsValid(statName))
+                continue;
+
+            variableTypes[statName] = (PlayerScalableStatType)statTypeProperty.enumValueIndex;
+        }
+
+        return variableTypes;
+    }
+
+    /// <summary>
     /// Builds a scalable variable scope for the current edited preset, constrained by the active master preset context.
     /// </summary>
     /// <param name="serializedObject">Serialized object that owns the currently edited scaling rules.</param>
@@ -147,11 +286,68 @@ public static class PlayerScalingFormulaValidationUtility
     }
 
     /// <summary>
+    /// Builds a typed scalable variable scope for the current edited preset, constrained by the active master preset context.
+    /// </summary>
+    /// <param name="serializedObject">Serialized object that owns the currently edited scaling rules.</param>
+    /// <returns>Case-insensitive dictionary of typed scalable stat names valid for this preset context.<returns>
+    public static Dictionary<string, PlayerFormulaValueType> BuildScopedVariableTypeMap(SerializedObject serializedObject)
+    {
+        Dictionary<string, PlayerFormulaValueType> variableTypes = new Dictionary<string, PlayerFormulaValueType>(StringComparer.OrdinalIgnoreCase);
+
+        if (serializedObject == null)
+            return variableTypes;
+
+        UnityEngine.Object targetObject = serializedObject.targetObject;
+
+        if (targetObject == null)
+            return variableTypes;
+
+        if (TryCollectVariableTypesFromActiveMasterScope(targetObject, variableTypes))
+            return variableTypes;
+
+        PlayerProgressionPreset progressionPreset = targetObject as PlayerProgressionPreset;
+
+        if (progressionPreset != null)
+            CollectVariableTypesFromPreset(progressionPreset, variableTypes);
+
+        return variableTypes;
+    }
+
+    /// <summary>
+    /// Builds a scalable-stat-type scope for the current edited preset, constrained by the active master preset context.
+    /// </summary>
+    /// <param name="serializedObject">Serialized object that owns the currently edited scaling rules.</param>
+    /// <returns>Case-insensitive dictionary of scalable-stat types keyed by stat name.<returns>
+    public static Dictionary<string, PlayerScalableStatType> BuildScopedScalableStatTypeMap(SerializedObject serializedObject)
+    {
+        Dictionary<string, PlayerScalableStatType> variableTypes = new Dictionary<string, PlayerScalableStatType>(StringComparer.OrdinalIgnoreCase);
+
+        if (serializedObject == null)
+            return variableTypes;
+
+        UnityEngine.Object targetObject = serializedObject.targetObject;
+
+        if (targetObject == null)
+            return variableTypes;
+
+        if (TryCollectScalableTypesFromActiveMasterScope(targetObject, variableTypes))
+            return variableTypes;
+
+        PlayerProgressionPreset progressionPreset = targetObject as PlayerProgressionPreset;
+
+        if (progressionPreset != null)
+            CollectScalableTypesFromPreset(progressionPreset, variableTypes);
+
+        return variableTypes;
+    }
+
+    /// <summary>
     /// Formats the helper label that lists the variables available to one scaling or assignment formula.
     /// </summary>
     /// <param name="allowedVariables">Case-insensitive variable set available in the current editor scope.</param>
     /// <returns>User-facing label text describing the available variables.<returns>
-    public static string BuildAvailableVariablesLabelText(ISet<string> allowedVariables)
+    public static string BuildAvailableVariablesLabelText(ISet<string> allowedVariables,
+                                                          IReadOnlyDictionary<string, PlayerFormulaValueType> variableTypes = null)
     {
         if (allowedVariables == null || allowedVariables.Count == 0)
             return "Available Variables: [this]";
@@ -160,7 +356,18 @@ public static class PlayerScalingFormulaValidationUtility
         sortedVariables.Sort(StringComparer.OrdinalIgnoreCase);
 
         if (sortedVariables.Count == 1)
-            return string.Format("Available Variables: [this], [{0}]", sortedVariables[0]);
+        {
+            string singleVariableName = sortedVariables[0];
+
+            if (variableTypes != null && variableTypes.TryGetValue(singleVariableName, out PlayerFormulaValueType singleVariableType))
+            {
+                return string.Format("Available Variables: [this], [{0}:{1}]",
+                                     singleVariableName,
+                                     BuildTypeLabel(singleVariableType));
+            }
+
+            return string.Format("Available Variables: [this], [{0}]", singleVariableName);
+        }
 
         string joinedVariables = string.Empty;
 
@@ -169,7 +376,65 @@ public static class PlayerScalingFormulaValidationUtility
             if (index > 0)
                 joinedVariables += ", ";
 
-            joinedVariables += string.Format("[{0}]", sortedVariables[index]);
+            string variableName = sortedVariables[index];
+
+            if (variableTypes != null && variableTypes.TryGetValue(variableName, out PlayerFormulaValueType variableType))
+                joinedVariables += string.Format("[{0}:{1}]", variableName, BuildTypeLabel(variableType));
+            else
+                joinedVariables += string.Format("[{0}]", variableName);
+        }
+
+        return string.Format("Available Variables: [this], {0}", joinedVariables);
+    }
+
+    /// <summary>
+    /// Formats the helper label that lists available scalable stats using the authoring-facing stat subtypes.
+    /// </summary>
+    /// <param name="allowedVariables">Case-insensitive variable set available in the current editor scope.</param>
+    /// <param name="variableTypes">Optional scalable-stat type map used to print precise subtype labels.</param>
+    /// <returns>User-facing label text describing the available variables.<returns>
+    public static string BuildAvailableVariablesLabelText(ISet<string> allowedVariables,
+                                                          IReadOnlyDictionary<string, PlayerScalableStatType> variableTypes)
+    {
+        if (allowedVariables == null || allowedVariables.Count == 0)
+            return "Available Variables: [this]";
+
+        List<string> sortedVariables = new List<string>(allowedVariables);
+        sortedVariables.Sort(StringComparer.OrdinalIgnoreCase);
+
+        if (sortedVariables.Count == 1)
+        {
+            string singleVariableName = sortedVariables[0];
+
+            if (variableTypes != null && variableTypes.TryGetValue(singleVariableName, out PlayerScalableStatType singleVariableType))
+            {
+                return string.Format("Available Variables: [this], [{0}:{1}]",
+                                     singleVariableName,
+                                     PlayerScalableStatTypeUtility.BuildDisplayLabel(singleVariableType));
+            }
+
+            return string.Format("Available Variables: [this], [{0}]", singleVariableName);
+        }
+
+        string joinedVariables = string.Empty;
+
+        for (int index = 0; index < sortedVariables.Count; index++)
+        {
+            if (index > 0)
+                joinedVariables += ", ";
+
+            string variableName = sortedVariables[index];
+
+            if (variableTypes != null && variableTypes.TryGetValue(variableName, out PlayerScalableStatType variableType))
+            {
+                joinedVariables += string.Format("[{0}:{1}]",
+                                                variableName,
+                                                PlayerScalableStatTypeUtility.BuildDisplayLabel(variableType));
+            }
+            else
+            {
+                joinedVariables += string.Format("[{0}]", variableName);
+            }
         }
 
         return string.Format("Available Variables: [this], {0}", joinedVariables);
@@ -391,6 +656,139 @@ public static class PlayerScalingFormulaValidationUtility
                 continue;
 
             variables.Add(statName);
+        }
+    }
+
+    private static void CollectVariableTypesFromPreset(PlayerProgressionPreset preset,
+                                                       Dictionary<string, PlayerFormulaValueType> variableTypes)
+    {
+        if (preset == null || variableTypes == null)
+            return;
+
+        IReadOnlyList<PlayerScalableStatDefinition> scalableStats = preset.ScalableStats;
+
+        if (scalableStats == null)
+            return;
+
+        for (int statIndex = 0; statIndex < scalableStats.Count; statIndex++)
+        {
+            PlayerScalableStatDefinition statDefinition = scalableStats[statIndex];
+
+            if (statDefinition == null)
+                continue;
+
+            string statName = statDefinition.StatName;
+
+            if (string.IsNullOrWhiteSpace(statName))
+                continue;
+
+            statName = statName.Trim();
+
+            if (!PlayerScalableStatNameUtility.IsValid(statName))
+                continue;
+
+            variableTypes[statName] = PlayerScalableStatTypeUtility.ToFormulaValueType(statDefinition.StatType);
+        }
+    }
+
+    private static void CollectScalableTypesFromPreset(PlayerProgressionPreset preset,
+                                                       Dictionary<string, PlayerScalableStatType> variableTypes)
+    {
+        if (preset == null || variableTypes == null)
+            return;
+
+        IReadOnlyList<PlayerScalableStatDefinition> scalableStats = preset.ScalableStats;
+
+        if (scalableStats == null)
+            return;
+
+        for (int statIndex = 0; statIndex < scalableStats.Count; statIndex++)
+        {
+            PlayerScalableStatDefinition statDefinition = scalableStats[statIndex];
+
+            if (statDefinition == null)
+                continue;
+
+            string statName = statDefinition.StatName;
+
+            if (string.IsNullOrWhiteSpace(statName))
+                continue;
+
+            statName = statName.Trim();
+
+            if (!PlayerScalableStatNameUtility.IsValid(statName))
+                continue;
+
+            variableTypes[statName] = statDefinition.StatType;
+        }
+    }
+
+    private static bool TryCollectVariableTypesFromActiveMasterScope(UnityEngine.Object targetObject,
+                                                                     Dictionary<string, PlayerFormulaValueType> variableTypes)
+    {
+        if (variableTypes == null)
+            return false;
+
+        PlayerMasterPreset activeMasterPreset = PlayerManagementSelectionContext.ActiveMasterPreset;
+
+        if (activeMasterPreset == null)
+            return false;
+
+        if (!DoesMasterReferenceTarget(activeMasterPreset, targetObject))
+            return false;
+
+        PlayerProgressionPreset progressionPreset = activeMasterPreset.ProgressionPreset;
+
+        if (progressionPreset == null)
+            return false;
+
+        CollectVariableTypesFromPreset(progressionPreset, variableTypes);
+
+        if (targetObject is PlayerProgressionPreset)
+            CollectVariableTypesFromPreset((PlayerProgressionPreset)targetObject, variableTypes);
+
+        return variableTypes.Count > 0;
+    }
+
+    private static bool TryCollectScalableTypesFromActiveMasterScope(UnityEngine.Object targetObject,
+                                                                     Dictionary<string, PlayerScalableStatType> variableTypes)
+    {
+        if (variableTypes == null)
+            return false;
+
+        PlayerMasterPreset activeMasterPreset = PlayerManagementSelectionContext.ActiveMasterPreset;
+
+        if (activeMasterPreset == null)
+            return false;
+
+        if (!DoesMasterReferenceTarget(activeMasterPreset, targetObject))
+            return false;
+
+        PlayerProgressionPreset progressionPreset = activeMasterPreset.ProgressionPreset;
+
+        if (progressionPreset == null)
+            return false;
+
+        CollectScalableTypesFromPreset(progressionPreset, variableTypes);
+
+        if (targetObject is PlayerProgressionPreset)
+            CollectScalableTypesFromPreset((PlayerProgressionPreset)targetObject, variableTypes);
+
+        return variableTypes.Count > 0;
+    }
+
+    private static string BuildTypeLabel(PlayerFormulaValueType type)
+    {
+        switch (type)
+        {
+            case PlayerFormulaValueType.Number:
+                return "Number";
+            case PlayerFormulaValueType.Boolean:
+                return "Boolean";
+            case PlayerFormulaValueType.Token:
+                return "Token";
+            default:
+                return "Invalid";
         }
     }
 

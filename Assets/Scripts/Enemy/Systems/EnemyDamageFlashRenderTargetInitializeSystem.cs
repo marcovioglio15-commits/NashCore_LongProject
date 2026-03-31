@@ -23,7 +23,7 @@ public partial struct EnemyDamageFlashRenderTargetInitializeSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the minimum data required to run the initialization pass.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -34,7 +34,7 @@ public partial struct EnemyDamageFlashRenderTargetInitializeSystem : ISystem
 
     /// <summary>
     /// Adds missing per-renderer material property components to every uninitialized enemy root.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)

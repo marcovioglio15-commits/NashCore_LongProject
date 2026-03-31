@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Provides shared helpers for configuring and formatting the managed HUD run timer.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 public static class HUDRunTimerRuntimeUtility
@@ -17,8 +17,8 @@ public static class HUDRunTimerRuntimeUtility
     #region Public Methods
     /// <summary>
     /// Builds one run timer config component from HUD-authored values.
-    ///  direction Authored timer direction.
-    ///  initialSeconds Authored initial seconds.
+    /// direction Authored timer direction.
+    /// initialSeconds Authored initial seconds.
     /// returns New timer config component.
     /// </summary>
     public static PlayerRunTimerConfig CreateConfig(PlayerRunTimerDirection direction, float initialSeconds)
@@ -32,8 +32,8 @@ public static class HUDRunTimerRuntimeUtility
 
     /// <summary>
     /// Builds the initial timer state that matches the authored HUD configuration.
-    ///  direction Authored timer direction.
-    ///  initialSeconds Authored initial seconds.
+    /// direction Authored timer direction.
+    /// initialSeconds Authored initial seconds.
     /// returns New timer state component.
     /// </summary>
     public static PlayerRunTimerState CreateState(PlayerRunTimerDirection direction, float initialSeconds)
@@ -50,8 +50,8 @@ public static class HUDRunTimerRuntimeUtility
 
     /// <summary>
     /// Resolves the integer value displayed by the HUD for the current authoritative timer state.
-    ///  timerConfig Current timer config.
-    ///  timerState Current timer state.
+    /// timerConfig Current timer config.
+    /// timerState Current timer state.
     /// returns Whole seconds value used by the clock label.
     /// </summary>
     public static int ResolveDisplaySeconds(in PlayerRunTimerConfig timerConfig, in PlayerRunTimerState timerState)
@@ -73,8 +73,8 @@ public static class HUDRunTimerRuntimeUtility
 
     /// <summary>
     /// Resolves the authored initial display value before ECS runtime data is available.
-    ///  direction Authored timer direction.
-    ///  initialSeconds Authored initial seconds.
+    /// direction Authored timer direction.
+    /// initialSeconds Authored initial seconds.
     /// returns Whole seconds value used by the initial clock label.
     /// </summary>
     public static int ResolveInitialDisplaySeconds(PlayerRunTimerDirection direction, float initialSeconds)
@@ -86,8 +86,8 @@ public static class HUDRunTimerRuntimeUtility
 
     /// <summary>
     /// Applies a `00:00` formatted value to the target TMP text.
-    ///  timerText Target TMP text.
-    ///  totalSeconds Whole seconds value to format.
+    /// timerText Target TMP text.
+    /// totalSeconds Whole seconds value to format.
     /// returns void.
     /// </summary>
     public static void ApplyClockText(TMP_Text timerText, int totalSeconds)

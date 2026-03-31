@@ -121,6 +121,8 @@ public struct PlayerChargeCharacterTuningBaseStatElement : IBufferElementData
     public FixedString64Bytes Name;
     public byte Type;
     public float Value;
+    public byte BooleanValue;
+    public FixedString64Bytes TokenValue;
 }
 
 /// <summary>

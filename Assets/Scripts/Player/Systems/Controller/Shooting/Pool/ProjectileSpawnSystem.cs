@@ -234,6 +234,11 @@ public partial struct ProjectileSpawnSystem : ISystem
                     MaxLifetime = request.Lifetime,
                     PenetrationMode = request.PenetrationMode,
                     RemainingPenetrations = math.max(0, request.MaxPenetrations),
+                    KnockbackEnabled = request.KnockbackEnabled,
+                    KnockbackStrength = math.max(0f, request.KnockbackStrength),
+                    KnockbackDurationSeconds = math.max(0f, request.KnockbackDurationSeconds),
+                    KnockbackDirectionMode = request.KnockbackDirectionMode,
+                    KnockbackStackingMode = request.KnockbackStackingMode,
                     InheritPlayerSpeed = request.InheritPlayerSpeed
                 };
 
@@ -419,25 +424,15 @@ public partial struct ProjectileSpawnSystem : ISystem
                                                                       in ElementalProjectilesPassiveConfig passiveElementalProjectilesConfig,
                                                                       bool hasPassiveElementalPayload)
     {
-        ProjectileElementalPayload requestPayload = BuildElementalPayloadFromRequest(in request);
-
-        if (requestPayload.Enabled != 0)
-            return requestPayload;
-
-        return BuildElementalPayloadFromPassive(in passiveElementalProjectilesConfig, hasPassiveElementalPayload);
+        ProjectileElementalPayload resolvedPayload = BuildElementalPayloadFromRequest(in request);
+        ProjectileElementalPayload passivePayload = BuildElementalPayloadFromPassive(in passiveElementalProjectilesConfig, hasPassiveElementalPayload);
+        ProjectileElementalPayloadUtility.MergePayload(ref resolvedPayload, in passivePayload);
+        return resolvedPayload;
     }
 
     private static ProjectileElementalPayload BuildElementalPayloadFromRequest(in ShootRequest request)
     {
-        if (request.HasElementalPayloadOverride == 0 || request.ElementalStacksPerHitOverride <= 0f)
-            return default;
-
-        return new ProjectileElementalPayload
-        {
-            Enabled = 1,
-            Effect = request.ElementalEffectOverride,
-            StacksPerHit = math.max(0f, request.ElementalStacksPerHitOverride)
-        };
+        return request.ElementalPayloadOverride;
     }
 
     private static ProjectileElementalPayload BuildElementalPayloadFromPassive(in ElementalProjectilesPassiveConfig elementalProjectilesConfig, bool isEnabled)
@@ -445,12 +440,8 @@ public partial struct ProjectileSpawnSystem : ISystem
         if (isEnabled == false || elementalProjectilesConfig.StacksPerHit <= 0f)
             return default;
 
-        return new ProjectileElementalPayload
-        {
-            Enabled = 1,
-            Effect = elementalProjectilesConfig.Effect,
-            StacksPerHit = math.max(0f, elementalProjectilesConfig.StacksPerHit)
-        };
+        return ProjectileElementalPayloadUtility.BuildSingle(in elementalProjectilesConfig.Effect,
+                                                             math.max(0f, elementalProjectilesConfig.StacksPerHit));
     }
 
     #endregion

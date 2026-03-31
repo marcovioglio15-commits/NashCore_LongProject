@@ -12,8 +12,8 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
     #region Public Methods
     /// <summary>
     /// Appends composition warnings for the selected preset to the provided container.
-    ///  panel: Owning panel that provides the selected preset.
-    ///  container: Target UI container that receives generated warning boxes.
+    /// panel: Owning panel that provides the selected preset.
+    /// container: Target UI container that receives generated warning boxes.
     /// returns None.
     /// </summary>
     public static void AddWarnings(EnemyAdvancedPatternPresetsPanel panel, VisualElement container)

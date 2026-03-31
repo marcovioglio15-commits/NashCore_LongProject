@@ -64,5 +64,7 @@ public struct PlayerScalableStatElement : IBufferElementData
     public float MinimumValue;
     public float MaximumValue;
     public float Value;
+    public byte BooleanValue;
+    public FixedString64Bytes TokenValue;
 }
 #endregion

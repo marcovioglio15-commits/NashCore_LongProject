@@ -5,7 +5,7 @@ using UnityEngine;
 
 /// <summary>
 /// Copies the managed muzzle transform pose into ECS and caches a player-local offset so shooting can reconstruct a stable current-frame origin.
-///  None.
+/// None.
 /// returns None.
 /// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
@@ -17,7 +17,7 @@ public partial struct PlayerMuzzlePoseSyncSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the runtime data required by the muzzle pose sync.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -28,7 +28,7 @@ public partial struct PlayerMuzzlePoseSyncSystem : ISystem
 
     /// <summary>
     /// Reads the current managed muzzle transform and stores a runtime-safe world pose on each player entity.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)
@@ -87,8 +87,8 @@ public partial struct PlayerMuzzlePoseSyncSystem : ISystem
     #region Helpers
     /// <summary>
     /// Clears the animated muzzle pose while preserving a stable fallback from the current player transform.
-    ///  muzzleWorldPose: Mutable runtime muzzle pose to reset.
-    ///  localTransform: Current player transform used to seed the fallback pose.
+    /// muzzleWorldPose: Mutable runtime muzzle pose to reset.
+    /// localTransform: Current player transform used to seed the fallback pose.
     /// returns None.
     /// </summary>
     private static void ClearPose(ref PlayerAnimatedMuzzleWorldPose muzzleWorldPose, in LocalTransform localTransform)

@@ -4,7 +4,7 @@ using Unity.Transforms;
 
 /// <summary>
 /// Resolves the nearest dropped power-up container within interaction range for each player.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
@@ -16,7 +16,7 @@ public partial struct PlayerPowerUpContainerProximitySystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Registers the runtime components required to track dropped-container proximity.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -28,7 +28,7 @@ public partial struct PlayerPowerUpContainerProximitySystem : ISystem
 
     /// <summary>
     /// Updates the nearest dropped container for each player using squared-distance comparisons only.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnUpdate(ref SystemState state)

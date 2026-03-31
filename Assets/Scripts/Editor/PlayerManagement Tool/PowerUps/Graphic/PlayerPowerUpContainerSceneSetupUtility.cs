@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Generates the dropped power-up container prefab, prompt animation assets, and testing-scene HUD wiring.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 public static class PlayerPowerUpContainerSceneSetupUtility
@@ -37,7 +37,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
     #region Menu
     /// <summary>
     /// Builds or refreshes all generated dropped-container assets and wires the testing scene from a manual editor command.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     //[MenuItem("Tools/Player/Setup Dropped Power-Up Container")]
@@ -48,7 +48,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Builds or refreshes all generated dropped-container assets and wires the testing scene from Unity batch mode.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     public static void ExecuteBatchSetup()
@@ -60,7 +60,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
     #region Methods
     /// <summary>
     /// Runs the full setup pipeline for generated dropped-container assets and scene wiring.
-    ///  logToConsole: True to write a final status message into the Console.
+    /// logToConsole: True to write a final status message into the Console.
     /// returns void.
     /// </summary>
     private static void ExecuteSetup(bool logToConsole)
@@ -88,7 +88,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes the semi-transparent sphere material used by the dropped container prefab.
-    ///  none.
+    /// none.
     /// returns Material asset assigned to the generated prefab.
     /// </summary>
     private static Material CreateOrUpdateContainerMaterial()
@@ -142,7 +142,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes the shared pop-up animator controller used by dropped-container prompts.
-    ///  none.
+    /// none.
     /// returns Animator controller assigned to generated prompt roots.
     /// </summary>
     private static AnimatorController CreateOrUpdatePromptAnimatorController()
@@ -201,7 +201,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes the constant hidden-state animation clip for prompt roots.
-    ///  none.
+    /// none.
     /// returns Hidden-state animation clip asset.
     /// </summary>
     private static AnimationClip CreateOrUpdateHiddenPromptClip()
@@ -226,7 +226,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes the pop-up animation clip used when prompts become visible.
-    ///  none.
+    /// none.
     /// returns Visible-state animation clip asset.
     /// </summary>
     private static AnimationClip CreateOrUpdateVisiblePromptClip()
@@ -263,8 +263,8 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes the dropped power-up container prefab and returns the saved asset.
-    ///  containerMaterial: Generated semi-transparent sphere material.
-    ///  promptAnimatorController: Generated animator controller used by the prompt roots.
+    /// containerMaterial: Generated semi-transparent sphere material.
+    /// promptAnimatorController: Generated animator controller used by the prompt roots.
     /// returns Prefab asset ready to be assigned to progression presets.
     /// </summary>
     private static GameObject CreateOrUpdateContainerPrefab(Material containerMaterial, RuntimeAnimatorController promptAnimatorController)
@@ -370,7 +370,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Opens the testing scene, builds the overlay panel, wires HUD references, and assigns the generated prefab to the active progression preset.
-    ///  containerPrefab: Generated dropped-container prefab asset.
+    /// containerPrefab: Generated dropped-container prefab asset.
     /// returns Result flags describing which scene-side references were updated.
     /// </summary>
     private static SceneSetupResult SetupTestingScene(GameObject containerPrefab)
@@ -424,7 +424,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Resolves or creates the overlay canvas used to host the dropped-container full-screen panel.
-    ///  none.
+    /// none.
     /// returns Screen-space overlay canvas used by the generated panel.
     /// </summary>
     private static Canvas ResolveOverlayCanvas()
@@ -459,7 +459,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
     /// <summary>
     /// Resolves the progression preset currently used by the testing workflow.
     /// It first checks the opened testing scene, then falls back to the PF_Player prefab authoring setup.
-    ///  none.
+    /// none.
     /// returns Progression preset currently used by the player workflow when it can be resolved.
     /// </summary>
     private static PlayerProgressionPreset ResolveTargetProgressionPreset()
@@ -496,7 +496,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes the overlay panel hierarchy under the provided overlay canvas.
-    ///  canvasTransform: Overlay canvas transform receiving the generated panel hierarchy.
+    /// canvasTransform: Overlay canvas transform receiving the generated panel hierarchy.
     /// returns References used to wire the HUD section serialized fields.
     /// </summary>
     private static OverlayPanelReferences CreateOrUpdateOverlayPanel(Transform canvasTransform)
@@ -587,8 +587,8 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Writes generated overlay references into the HUDManager serialized dropped-container section.
-    ///  hudManager: HUD manager updated in the testing scene.
-    ///  overlayPanelReferences: Generated overlay hierarchy references assigned into the serialized section.
+    /// hudManager: HUD manager updated in the testing scene.
+    /// overlayPanelReferences: Generated overlay hierarchy references assigned into the serialized section.
     /// returns void.
     /// </summary>
     private static void WireHudSection(HUDManager hudManager, OverlayPanelReferences overlayPanelReferences)
@@ -616,16 +616,16 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Assigns generated child references to the dropped-container view component through serialization.
-    ///  containerView: Generated view component written with its child references.
-    ///  billboardRoot: Billboard root transform.
-    ///  iconImage: Center icon image.
-    ///  singlePromptRoot: Overlay prompt root.
-    ///  singlePromptText: Overlay prompt text.
-    ///  singlePromptAnimator: Overlay prompt animator.
-    ///  swapPromptRoot: Direct-swap prompt root.
-    ///  swapPrimaryPromptText: Direct-swap primary binding label.
-    ///  swapSecondaryPromptText: Direct-swap secondary binding label.
-    ///  swapPromptAnimator: Direct-swap prompt animator.
+    /// containerView: Generated view component written with its child references.
+    /// billboardRoot: Billboard root transform.
+    /// iconImage: Center icon image.
+    /// singlePromptRoot: Overlay prompt root.
+    /// singlePromptText: Overlay prompt text.
+    /// singlePromptAnimator: Overlay prompt animator.
+    /// swapPromptRoot: Direct-swap prompt root.
+    /// swapPrimaryPromptText: Direct-swap primary binding label.
+    /// swapSecondaryPromptText: Direct-swap secondary binding label.
+    /// swapPromptAnimator: Direct-swap prompt animator.
     /// returns void.
     /// </summary>
     private static void AssignContainerViewReferences(PlayerDroppedPowerUpContainerView containerView,
@@ -655,12 +655,12 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates one reusable world-space prompt root with image background, canvas group, and animator.
-    ///  objectName: Name assigned to the generated prompt root.
-    ///  parent: Parent transform receiving the prompt root.
-    ///  uiSprite: Default sliced UI sprite used by the prompt background.
-    ///  animatorController: Shared prompt animator controller.
-    ///  sizeDelta: Prompt size in canvas units.
-    ///  anchorPosition: Normalized anchor position inside the world-space canvas.
+    /// objectName: Name assigned to the generated prompt root.
+    /// parent: Parent transform receiving the prompt root.
+    /// uiSprite: Default sliced UI sprite used by the prompt background.
+    /// animatorController: Shared prompt animator controller.
+    /// sizeDelta: Prompt size in canvas units.
+    /// anchorPosition: Normalized anchor position inside the world-space canvas.
     /// returns Generated prompt root object.
     /// </summary>
     private static GameObject CreatePromptRoot(string objectName,
@@ -694,12 +694,12 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates one prompt label under the provided world-space prompt root.
-    ///  objectName: Name assigned to the generated label.
-    ///  parent: Parent transform receiving the label.
-    ///  fontAsset: TMP font asset used by the label.
-    ///  fontSize: Font size assigned to the label.
-    ///  textValue: Initial preview text.
-    ///  alignment: TMP alignment used by the label.
+    /// objectName: Name assigned to the generated label.
+    /// parent: Parent transform receiving the label.
+    /// fontAsset: TMP font asset used by the label.
+    /// fontSize: Font size assigned to the label.
+    /// textValue: Initial preview text.
+    /// alignment: TMP alignment used by the label.
     /// returns Generated TMP label.
     /// </summary>
     private static TMP_Text CreatePromptLabel(string objectName,
@@ -729,12 +729,12 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates one centered image under the provided parent transform.
-    ///  objectName: Name assigned to the generated image.
-    ///  parent: Parent transform receiving the image.
-    ///  sprite: Sprite assigned to the image.
-    ///  color: Tint color assigned to the image.
-    ///  sizeDelta: Image size in UI units.
-    ///  anchorPosition: Normalized anchor position inside the parent rect.
+    /// objectName: Name assigned to the generated image.
+    /// parent: Parent transform receiving the image.
+    /// sprite: Sprite assigned to the image.
+    /// color: Tint color assigned to the image.
+    /// sizeDelta: Image size in UI units.
+    /// anchorPosition: Normalized anchor position inside the parent rect.
     /// returns Generated image component.
     /// </summary>
     private static Image CreateImage(string objectName,
@@ -761,11 +761,11 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes one centered overlay image inside the overlay card.
-    ///  parent: Parent transform receiving the image.
-    ///  objectName: Name assigned to the image object.
-    ///  sprite: Default UI sprite assigned to the image.
-    ///  anchorPosition: Normalized anchor position inside the overlay card.
-    ///  sizeDelta: Image size in UI units.
+    /// parent: Parent transform receiving the image.
+    /// objectName: Name assigned to the image object.
+    /// sprite: Default UI sprite assigned to the image.
+    /// anchorPosition: Normalized anchor position inside the overlay card.
+    /// sizeDelta: Image size in UI units.
     /// returns Generated or updated image component.
     /// </summary>
     private static Image CreateOrUpdateOverlayImage(Transform parent,
@@ -790,14 +790,14 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes one overlay text label inside the overlay card.
-    ///  parent: Parent transform receiving the text object.
-    ///  objectName: Name assigned to the text object.
-    ///  fontAsset: TMP font asset used by the label.
-    ///  fontSize: Font size assigned to the label.
-    ///  anchorPosition: Normalized anchor position inside the overlay card.
-    ///  sizeDelta: Label size in UI units.
-    ///  textValue: Preview text written into the label.
-    ///  alignment: TMP alignment used by the label.
+    /// parent: Parent transform receiving the text object.
+    /// objectName: Name assigned to the text object.
+    /// fontAsset: TMP font asset used by the label.
+    /// fontSize: Font size assigned to the label.
+    /// anchorPosition: Normalized anchor position inside the overlay card.
+    /// sizeDelta: Label size in UI units.
+    /// textValue: Preview text written into the label.
+    /// alignment: TMP alignment used by the label.
     /// returns Generated or updated TMP label.
     /// </summary>
     private static TMP_Text CreateOrUpdateOverlayText(Transform parent,
@@ -829,11 +829,11 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates or refreshes one overlay action button with a nested TMP label.
-    ///  parent: Parent transform receiving the button.
-    ///  objectName: Name assigned to the button object.
-    ///  fontAsset: TMP font asset used by the nested label.
-    ///  sprite: Default UI sprite assigned to the button background.
-    ///  textValue: Initial label text.
+    /// parent: Parent transform receiving the button.
+    /// objectName: Name assigned to the button object.
+    /// fontAsset: TMP font asset used by the nested label.
+    /// sprite: Default UI sprite assigned to the button background.
+    /// textValue: Initial label text.
     /// returns Generated or updated button component.
     /// </summary>
     private static Button CreateOrUpdateOverlayButton(Transform parent,
@@ -873,7 +873,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Resolves one TMP font asset suitable for generated world-space and overlay UI.
-    ///  none.
+    /// none.
     /// returns TMP font asset used by generated labels.
     /// </summary>
     private static TMP_FontAsset ResolveFontAsset()
@@ -897,7 +897,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Resolves the default built-in sliced sprite used by generated UI images and buttons.
-    ///  none.
+    /// none.
     /// returns Built-in UI sprite when available.
     /// </summary>
     private static Sprite ResolveDefaultUiSprite()
@@ -907,7 +907,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Ensures one project folder exists, creating its missing parents recursively when needed.
-    ///  folderPath: Unity project-relative folder path.
+    /// folderPath: Unity project-relative folder path.
     /// returns void.
     /// </summary>
     private static void EnsureFolder(string folderPath)
@@ -929,7 +929,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Configures one rect transform to fully stretch across its parent.
-    ///  rectTransform: Rect transform updated in place.
+    /// rectTransform: Rect transform updated in place.
     /// returns void.
     /// </summary>
     private static void ConfigureStretchRect(RectTransform rectTransform)
@@ -943,7 +943,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Configures prompt labels to cooperate with layout groups used by the generated swap prompt.
-    ///  text: Prompt label updated in place.
+    /// text: Prompt label updated in place.
     /// returns void.
     /// </summary>
     private static void ConfigurePromptLabelLayout(TMP_Text text)
@@ -958,7 +958,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Creates one constant animation curve.
-    ///  value: Constant curve value.
+    /// value: Constant curve value.
     /// returns Animation curve that keeps the same value for the whole clip duration.
     /// </summary>
     private static AnimationCurve CreateConstantCurve(float value)
@@ -968,11 +968,11 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Writes one float curve into the provided animation clip.
-    ///  clip: Animation clip receiving the curve.
-    ///  relativePath: Relative hierarchy path targeted by the curve.
-    ///  componentType: Component type containing the animated property.
-    ///  propertyName: Serialized property path animated by the curve.
-    ///  curve: Animation curve assigned to the clip.
+    /// clip: Animation clip receiving the curve.
+    /// relativePath: Relative hierarchy path targeted by the curve.
+    /// componentType: Component type containing the animated property.
+    /// propertyName: Serialized property path animated by the curve.
+    /// curve: Animation curve assigned to the clip.
     /// returns void.
     /// </summary>
     private static void SetFloatCurve(AnimationClip clip,
@@ -987,7 +987,7 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Removes all state-machine transitions before the generated prompt states are rebuilt.
-    ///  stateMachine: Animator state machine cleared in place.
+    /// stateMachine: Animator state machine cleared in place.
     /// returns void.
     /// </summary>
     private static void ClearStateMachineTransitions(AnimatorStateMachine stateMachine)
@@ -1006,9 +1006,9 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Resolves one child by exact name or creates it with the requested components.
-    ///  parent: Parent transform receiving the child object.
-    ///  objectName: Exact child name.
-    ///  componentTypes: Optional component types ensured on the child object.
+    /// parent: Parent transform receiving the child object.
+    /// objectName: Exact child name.
+    /// componentTypes: Optional component types ensured on the child object.
     /// returns Existing or newly created child object.
     /// </summary>
     private static GameObject GetOrCreateChild(Transform parent, string objectName, params System.Type[] componentTypes)
@@ -1039,8 +1039,8 @@ public static class PlayerPowerUpContainerSceneSetupUtility
 
     /// <summary>
     /// Returns one existing component from the target object or adds it when missing.
-    ///  targetObject: GameObject receiving the requested component.
-    ///  none.
+    /// targetObject: GameObject receiving the requested component.
+    /// none.
     /// returns Existing or newly added component.
     /// </summary>
     private static T GetOrAddComponent<T>(GameObject targetObject) where T : Component

@@ -369,7 +369,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         //  Add player controller config component to entity
         AddComponent(entity, config);
-        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseMovementConfig(sourceControllerPreset));
+        AddComponent(entity, PlayerRuntimeScalingControllerBakeUtility.BuildBaseMovementConfig(sourceControllerPreset));
         AddComponent(entity, new PlayerRuntimeMovementConfig
         {
             DirectionsMode = controllerPreset.MovementSettings.DirectionsMode,
@@ -389,7 +389,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 DigitalReleaseGraceSeconds = controllerPreset.MovementSettings.Values.DigitalReleaseGraceSeconds
             }
         });
-        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseLookConfig(sourceControllerPreset));
+        AddComponent(entity, PlayerRuntimeScalingControllerBakeUtility.BuildBaseLookConfig(sourceControllerPreset));
         AddComponent(entity, new PlayerRuntimeLookConfig
         {
             DirectionsMode = controllerPreset.LookSettings.DirectionsMode,
@@ -434,7 +434,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 DigitalReleaseGraceSeconds = controllerPreset.LookSettings.Values.DigitalReleaseGraceSeconds
             }
         });
-        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseCameraConfig(sourceControllerPreset));
+        AddComponent(entity, PlayerRuntimeScalingControllerBakeUtility.BuildBaseCameraConfig(sourceControllerPreset));
         AddComponent(entity, new PlayerRuntimeCameraConfig
         {
             Behavior = controllerPreset.CameraSettings.Behavior,
@@ -450,7 +450,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                 DeadZoneRadius = controllerPreset.CameraSettings.Values.DeadZoneRadius
             }
         });
-        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseShootingConfig(sourceControllerPreset));
+        AddComponent(entity, PlayerRuntimeScalingControllerBakeUtility.BuildBaseShootingConfig(sourceControllerPreset));
         AddComponent(entity, new PlayerRuntimeShootingConfig
         {
             TriggerMode = controllerPreset.ShootingSettings.TriggerMode,
@@ -458,20 +458,13 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             ShootOffset = new float3(controllerPreset.ShootingSettings.ShootOffset.x,
                                      controllerPreset.ShootingSettings.ShootOffset.y,
                                      controllerPreset.ShootingSettings.ShootOffset.z),
-            Values = new ShootingValuesBlob
-            {
-                ShootSpeed = controllerPreset.ShootingSettings.Values.ShootSpeed,
-                RateOfFire = controllerPreset.ShootingSettings.Values.RateOfFire,
-                ProjectileSizeMultiplier = controllerPreset.ShootingSettings.Values.ProjectileSizeMultiplier,
-                ExplosionRadius = controllerPreset.ShootingSettings.Values.ExplosionRadius,
-                Range = controllerPreset.ShootingSettings.Values.Range,
-                Lifetime = controllerPreset.ShootingSettings.Values.Lifetime,
-                Damage = controllerPreset.ShootingSettings.Values.Damage,
-                PenetrationMode = controllerPreset.ShootingSettings.Values.PenetrationMode,
-                MaxPenetrations = math.max(0, controllerPreset.ShootingSettings.Values.MaxPenetrations)
-            }
+            Values = PlayerShootingConfigRuntimeUtility.BuildRuntimeValues(controllerPreset.ShootingSettings.Values)
         });
-        AddComponent(entity, PlayerRuntimeScalingBakeUtility.BuildBaseHealthStatisticsConfig(sourceControllerPreset));
+        DynamicBuffer<PlayerBaseShootingAppliedElementSlot> baseAppliedElementSlotsBuffer = AddBuffer<PlayerBaseShootingAppliedElementSlot>(entity);
+        DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlotsBuffer = AddBuffer<PlayerRuntimeShootingAppliedElementSlot>(entity);
+        PlayerRuntimeScalingControllerBakeUtility.PopulateBaseAppliedElementSlots(sourceControllerPreset, baseAppliedElementSlotsBuffer);
+        PlayerRuntimeScalingControllerBakeUtility.PopulateRuntimeAppliedElementSlots(controllerPreset, runtimeAppliedElementSlotsBuffer);
+        AddComponent(entity, PlayerRuntimeScalingControllerBakeUtility.BuildBaseHealthStatisticsConfig(sourceControllerPreset));
         AddComponent(entity, new PlayerRuntimeHealthStatisticsConfig
         {
             MaxHealth = math.max(1f, controllerPreset.HealthStatistics.MaxHealth),
@@ -483,7 +476,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         AddComponent(entity, new PlayerRuntimeScalingState());
         DynamicBuffer<PlayerRuntimeControllerScalingElement> controllerScalingBuffer = AddBuffer<PlayerRuntimeControllerScalingElement>(entity);
 #if UNITY_EDITOR
-        PlayerRuntimeScalingBakeUtility.PopulateControllerScalingMetadata(sourceControllerPreset, controllerScalingBuffer);
+        PlayerRuntimeScalingControllerBakeUtility.PopulateControllerScalingMetadata(sourceControllerPreset, controllerScalingBuffer);
 #endif
 
         PlayerWorldLayersConfig worldLayersConfig = PlayerControllerConfigBakeUtility.BuildWorldLayersConfig(authoring.MasterPreset);
@@ -559,7 +552,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                            baseGamePhasesBuffer,
                                                                            runtimeGamePhasesBuffer);
 #if UNITY_EDITOR
-            PlayerRuntimeScalingBakeUtility.PopulateProgressionScalingMetadata(sourceProgressionPreset, progressionScalingBuffer);
+            PlayerRuntimeScalingProgressionBakeUtility.PopulateProgressionScalingMetadata(sourceProgressionPreset, progressionScalingBuffer);
 #endif
             AddComponent(entity, PlayerPowerUpContainerBakeUtility.BuildInteractionConfig(progressionPreset,
                                                                                          ResolveDynamicPrefabEntity));
@@ -582,8 +575,10 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             AddBuffer<PlayerChargeCharacterTuningBaseStatElement>(entity);
             PlayerPowerUpVfxCapConfig powerUpVfxCapConfig = PlayerPowerUpBakeSharedUtility.BuildPowerUpVfxCapConfig(authoring);
             AddComponent(entity, powerUpVfxCapConfig);
+            IReadOnlyList<ElementalVfxByElementData> elementalEnemyVfxAssignments = PlayerAuthoringVisualPresetResolverUtility.ResolveElementalEnemyVfxAssignments(authoring.MasterPreset,
+                                                                                                                                                                  powerUpsPreset);
             PlayerElementalVfxConfig elementalVfxConfig = PlayerPowerUpBakeSharedUtility.BuildElementalVfxConfig(authoring,
-                                                                                                                 powerUpsPreset,
+                                                                                                                 elementalEnemyVfxAssignments,
                                                                                                                  ResolveDynamicPrefabEntity);
             AddComponent(entity, elementalVfxConfig);
 
@@ -709,7 +704,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     #region Bake Helpers
     /// <summary>
     /// Resolves one prefab asset as a dynamic ECS prefab entity for power-up bake helpers.
-    ///  prefab: Prefab asset to resolve.
+    /// prefab: Prefab asset to resolve.
     /// returns ECS prefab entity or Entity.Null when the prefab is missing.
     /// </summary>
     private Entity ResolveDynamicPrefabEntity(GameObject prefab)

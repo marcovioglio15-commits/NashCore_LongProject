@@ -87,7 +87,7 @@ public static class PlayerProgressionPhaseUtility
 
     /// <summary>
     /// Resolves the configured runtime level cap using a safe fallback when progression data is missing.
-    ///  progressionConfig Runtime progression configuration component.
+    /// progressionConfig Runtime progression configuration component.
     /// returns Maximum reachable player level for this configuration.
     /// </summary>
     public static int ResolveLevelCap(PlayerProgressionConfig progressionConfig)
@@ -103,8 +103,8 @@ public static class PlayerProgressionPhaseUtility
 
     /// <summary>
     /// Checks whether the specified player level has already reached or exceeded the configured level cap.
-    ///  progressionConfig Runtime progression configuration component.
-    ///  levelValue Current player level to evaluate.
+    /// progressionConfig Runtime progression configuration component.
+    /// levelValue Current player level to evaluate.
     /// returns True when the level is capped and should stop receiving more experience.
     /// </summary>
     public static bool HasReachedLevelCap(PlayerProgressionConfig progressionConfig, int levelValue)
@@ -119,9 +119,9 @@ public static class PlayerProgressionPhaseUtility
 
     /// <summary>
     /// Resolves how much additional experience the player can still receive before reaching the configured level cap.
-    ///  progressionConfig Runtime progression configuration component.
-    ///  levelValue Current player level.
-    ///  currentExperience Current stored progress toward the next level-up.
+    /// progressionConfig Runtime progression configuration component.
+    /// levelValue Current player level.
+    /// currentExperience Current stored progress toward the next level-up.
     /// returns Remaining experience capacity until the level cap is reached.
     /// </summary>
     public static float ResolveRemainingExperienceUntilLevelCap(PlayerProgressionConfig progressionConfig,
@@ -173,10 +173,10 @@ public static class PlayerProgressionPhaseUtility
 
     /// <summary>
     /// Resolves how much additional experience the player can still receive before reaching the configured level cap using runtime-scaled phase values.
-    ///  progressionConfig Runtime progression configuration component.
-    ///  runtimeGamePhases Runtime-scaled phase buffer.
-    ///  levelValue Current player level.
-    ///  currentExperience Current stored progress toward the next level-up.
+    /// progressionConfig Runtime progression configuration component.
+    /// runtimeGamePhases Runtime-scaled phase buffer.
+    /// levelValue Current player level.
+    /// currentExperience Current stored progress toward the next level-up.
     /// returns Remaining experience capacity until the level cap is reached.
     /// </summary>
     public static float ResolveRemainingExperienceUntilLevelCap(PlayerProgressionConfig progressionConfig,

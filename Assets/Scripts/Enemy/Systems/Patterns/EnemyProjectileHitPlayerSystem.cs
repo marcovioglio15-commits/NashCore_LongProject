@@ -121,12 +121,17 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
 
             accumulatedDamage += math.max(0f, projectile.ValueRO.Damage);
 
-            if (elementalPayload.ValueRO.Enabled != 0 && elementalPayload.ValueRO.StacksPerHit > 0f)
+            for (int payloadIndex = 0; payloadIndex < elementalPayload.ValueRO.Entries.Length; payloadIndex++)
             {
+                ProjectileElementalPayloadEntry payloadEntry = elementalPayload.ValueRO.Entries[payloadIndex];
+
+                if (payloadEntry.StacksPerHit <= 0f)
+                    continue;
+
                 bool thresholdTriggered;
                 PlayerElementalStackUtility.TryApplyStacks(playerEntity,
-                                                           math.max(0f, elementalPayload.ValueRO.StacksPerHit),
-                                                           in elementalPayload.ValueRO.Effect,
+                                                           math.max(0f, payloadEntry.StacksPerHit),
+                                                           in payloadEntry.Effect,
                                                            ref playerElementStackLookup,
                                                            out thresholdTriggered);
             }

@@ -11,11 +11,11 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
     #region Public Methods
     /// <summary>
     /// Applies one resolved Add Scaling value to the runtime config field represented by the provided payload path.
-    ///  payloadPath: Modular payload path extracted from the scaling rule stat key.
-    ///  unlockKind: Active or passive target kind owning the runtime config.
-    ///  resolvedValue: Formula result already evaluated against scalable-stat runtime values.
-    ///  activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
-    ///  passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
+    /// payloadPath: Modular payload path extracted from the scaling rule stat key.
+    /// unlockKind: Active or passive target kind owning the runtime config.
+    /// resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    /// activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    /// passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
     /// returns void.
     /// </summary>
     public static void ApplyValue(string payloadPath,
@@ -38,14 +38,44 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
                 return;
         }
     }
+
+    /// <summary>
+    /// Applies one resolved boolean Add Scaling value to the runtime config field represented by the provided payload path.
+    /// payloadPath: Modular payload path extracted from the scaling rule stat key.
+    /// unlockKind: Active or passive target kind owning the runtime config.
+    /// resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    /// activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    /// passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
+    /// returns void.
+    /// </summary>
+    public static void ApplyBooleanValue(string payloadPath,
+                                         PlayerPowerUpUnlockKind unlockKind,
+                                         bool resolvedValue,
+                                         ref PlayerPowerUpSlotConfig activeSlotConfig,
+                                         ref PlayerPassiveToolConfig passiveToolConfig)
+    {
+        if (string.IsNullOrWhiteSpace(payloadPath))
+            return;
+
+        switch (unlockKind)
+        {
+            case PlayerPowerUpUnlockKind.Active:
+                ApplyActiveBooleanValue(payloadPath, resolvedValue, ref activeSlotConfig);
+                ApplyEmbeddedTogglePassiveBooleanValue(payloadPath, resolvedValue, ref activeSlotConfig);
+                return;
+            case PlayerPowerUpUnlockKind.Passive:
+                ApplyPassiveBooleanValue(payloadPath, resolvedValue, ref passiveToolConfig);
+                return;
+        }
+    }
     #endregion
 
     #region Private Methods
     /// <summary>
     /// Applies one resolved Add Scaling value to an active-slot runtime config field.
-    ///  payloadPath: Modular payload path extracted from the scaling rule stat key.
-    ///  resolvedValue: Formula result already evaluated against scalable-stat runtime values.
-    ///  activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    /// payloadPath: Modular payload path extracted from the scaling rule stat key.
+    /// resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    /// activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
     /// returns void.
     /// </summary>
     private static void ApplyActiveValue(string payloadPath,
@@ -54,6 +84,12 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
     {
         switch (payloadPath)
         {
+            case "resourceGate.activationResource":
+                activeSlotConfig.ActivationResource = PlayerRuntimeScalingEnumUtility.ResolvePowerUpResourceType(resolvedValue);
+                return;
+            case "resourceGate.maintenanceResource":
+                activeSlotConfig.MaintenanceResource = PlayerRuntimeScalingEnumUtility.ResolvePowerUpResourceType(resolvedValue);
+                return;
             case "resourceGate.maximumEnergy":
                 activeSlotConfig.MaximumEnergy = math.max(0f, resolvedValue);
                 return;
@@ -74,6 +110,9 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
                 return;
             case "resourceGate.minimumActivationEnergyPercent":
                 activeSlotConfig.MinimumActivationEnergyPercent = math.clamp(resolvedValue, 0f, 100f);
+                return;
+            case "resourceGate.chargeType":
+                activeSlotConfig.ChargeType = PlayerRuntimeScalingEnumUtility.ResolvePowerUpChargeType(resolvedValue);
                 return;
             case "holdCharge.requiredCharge":
                 activeSlotConfig.ChargeShot.RequiredCharge = math.max(0f, resolvedValue);
@@ -108,6 +147,9 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
                 return;
             case "bomb.spawnOffset.z":
                 activeSlotConfig.Bomb.SpawnOffset.z = resolvedValue;
+                return;
+            case "bomb.spawnOffsetOrientation":
+                activeSlotConfig.Bomb.SpawnOffsetOrientation = PlayerRuntimeScalingEnumUtility.ResolveSpawnOffsetOrientationMode(resolvedValue);
                 return;
             case "bomb.deploySpeed":
                 activeSlotConfig.Bomb.DeploySpeed = math.max(0f, resolvedValue);
@@ -168,15 +210,18 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
             case "healMissingHealth.tickIntervalSeconds":
                 activeSlotConfig.PortableHealthPack.TickIntervalSeconds = math.max(0.01f, resolvedValue);
                 return;
+            case "healMissingHealth.applyMode":
+                activeSlotConfig.PortableHealthPack.ApplyMode = PlayerRuntimeScalingEnumUtility.ResolvePowerUpHealApplicationMode(resolvedValue);
+                return;
         }
     }
 
     /// <summary>
     /// Applies one resolved Add Scaling value to the embedded passive payload owned by an active toggleable power-up.
     /// This keeps runtime scaling generic for active power-ups that expose passive module payloads through TogglePassiveTool.
-    ///  payloadPath: Modular payload path extracted from the scaling rule stat key.
-    ///  resolvedValue: Formula result already evaluated against scalable-stat runtime values.
-    ///  activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    /// payloadPath: Modular payload path extracted from the scaling rule stat key.
+    /// resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    /// activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
     /// returns void.
     /// </summary>
     private static void ApplyEmbeddedTogglePassiveValue(string payloadPath,
@@ -195,10 +240,32 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
     }
 
     /// <summary>
+    /// Applies one resolved boolean Add Scaling value to the embedded passive payload owned by an active toggleable power-up.
+    /// payloadPath: Modular payload path extracted from the scaling rule stat key.
+    /// resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    /// activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    /// returns void.
+    /// </summary>
+    private static void ApplyEmbeddedTogglePassiveBooleanValue(string payloadPath,
+                                                               bool resolvedValue,
+                                                               ref PlayerPowerUpSlotConfig activeSlotConfig)
+    {
+        if (activeSlotConfig.ToolKind != ActiveToolKind.PassiveToggle)
+            return;
+
+        if (activeSlotConfig.TogglePassiveTool.IsDefined == 0)
+            return;
+
+        PlayerPassiveToolConfig togglePassiveTool = activeSlotConfig.TogglePassiveTool;
+        ApplyPassiveBooleanValue(payloadPath, resolvedValue, ref togglePassiveTool);
+        activeSlotConfig.TogglePassiveTool = togglePassiveTool;
+    }
+
+    /// <summary>
     /// Applies one resolved Add Scaling value to a passive-tool runtime config field.
-    ///  payloadPath: Modular payload path extracted from the scaling rule stat key.
-    ///  resolvedValue: Formula result already evaluated against scalable-stat runtime values.
-    ///  passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
+    /// payloadPath: Modular payload path extracted from the scaling rule stat key.
+    /// resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    /// passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
     /// returns void.
     /// </summary>
     private static void ApplyPassiveValue(string payloadPath,
@@ -207,6 +274,9 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
     {
         switch (payloadPath)
         {
+            case "projectileOrbitOverride.pathMode":
+                passiveToolConfig.PerfectCircle.PathMode = PlayerRuntimeScalingEnumUtility.ResolveProjectileOrbitPathMode(resolvedValue);
+                return;
             case "resourceGate.cooldownSeconds":
                 passiveToolConfig.Heal.CooldownSeconds = math.max(0f, resolvedValue);
                 passiveToolConfig.BulletTime.CooldownSeconds = math.max(0f, resolvedValue);
@@ -357,6 +427,71 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
                 return;
             case "bulletTime.transitionTimeSeconds":
                 passiveToolConfig.BulletTime.TransitionTimeSeconds = math.max(0f, resolvedValue);
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Applies one resolved boolean Add Scaling value to an active-slot runtime config field.
+    /// payloadPath: Modular payload path extracted from the scaling rule stat key.
+    /// resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    /// activeSlotConfig: Mutable active slot config rebuilt from immutable baselines.
+    /// returns void.
+    /// </summary>
+    private static void ApplyActiveBooleanValue(string payloadPath,
+                                                bool resolvedValue,
+                                                ref PlayerPowerUpSlotConfig activeSlotConfig)
+    {
+        switch (payloadPath)
+        {
+            case "resourceGate.isToggleable":
+                activeSlotConfig.Toggleable = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "resourceGate.allowRechargeDuringToggleStartupLock":
+                activeSlotConfig.AllowRechargeDuringToggleStartupLock = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "holdCharge.decayAfterRelease":
+                activeSlotConfig.ChargeShot.DecayAfterRelease = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "holdCharge.passiveChargeGainWhileReleased":
+                activeSlotConfig.ChargeShot.PassiveChargeGainWhileReleased = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "bomb.bounceOnWalls":
+                activeSlotConfig.Bomb.BounceOnWalls = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "bomb.affectAllEnemiesInRadius":
+                activeSlotConfig.Bomb.AffectAllEnemiesInRadius = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "bomb.scaleVfxToRadius":
+                activeSlotConfig.Bomb.ScaleVfxToRadius = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "suppressShooting.suppressBaseShootingWhileActive":
+                activeSlotConfig.SuppressBaseShootingWhileActive = resolvedValue ? (byte)1 : (byte)0;
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Applies one resolved boolean Add Scaling value to a passive-tool runtime config field.
+    /// payloadPath: Modular payload path extracted from the scaling rule stat key.
+    /// resolvedValue: Formula result already evaluated against scalable-stat runtime values.
+    /// passiveToolConfig: Mutable passive tool config rebuilt from immutable baselines.
+    /// returns void.
+    /// </summary>
+    private static void ApplyPassiveBooleanValue(string payloadPath,
+                                                 bool resolvedValue,
+                                                 ref PlayerPassiveToolConfig passiveToolConfig)
+    {
+        switch (payloadPath)
+        {
+            case "projectileOrbitOverride.spiralClockwise":
+                passiveToolConfig.PerfectCircle.SpiralClockwise = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "deathExplosion.affectAllEnemiesInRadius":
+                passiveToolConfig.Explosion.AffectAllEnemiesInRadius = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "deathExplosion.scaleVfxToRadius":
+                passiveToolConfig.Explosion.ScaleVfxToRadius = resolvedValue ? (byte)1 : (byte)0;
                 return;
         }
     }

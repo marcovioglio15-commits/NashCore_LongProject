@@ -32,7 +32,7 @@ public partial struct EnemySpawnWarningPresentationSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Requires at least one active warning state before the presentation system starts ticking.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -42,7 +42,7 @@ public partial struct EnemySpawnWarningPresentationSystem : ISystem
 
     /// <summary>
     /// Renders each currently active spawn-warning ring and recycles views once their warning state expires.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)
@@ -99,7 +99,7 @@ public partial struct EnemySpawnWarningPresentationSystem : ISystem
 
     /// <summary>
     /// Releases all pooled runtime objects allocated by the warning presentation system.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns None.
     /// </summary>
     public void OnDestroy(ref SystemState state)
@@ -113,8 +113,8 @@ public partial struct EnemySpawnWarningPresentationSystem : ISystem
     #region Rendering
     /// <summary>
     /// Resolves whether one warning state should be disabled because it can no longer produce visible output.
-    ///  warningState: Current warning payload stored on the enemy.
-    ///  elapsedTime: Current elapsed world time.
+    /// warningState: Current warning payload stored on the enemy.
+    /// elapsedTime: Current elapsed world time.
     /// returns True when the warning state should be disabled immediately, otherwise false.
     /// </summary>
     private static bool ShouldDisableWarningState(in EnemySpawnWarningState warningState, float elapsedTime)
@@ -133,10 +133,10 @@ public partial struct EnemySpawnWarningPresentationSystem : ISystem
 
     /// <summary>
     /// Resolves the live opacity and width scale of one warning at the current frame.
-    ///  warningState: Current warning payload stored on the enemy.
-    ///  elapsedTime: Current elapsed world time.
-    ///  opacity: Resolved output opacity for the current frame.
-    ///  widthScale: Resolved output width multiplier for the current frame.
+    /// warningState: Current warning payload stored on the enemy.
+    /// elapsedTime: Current elapsed world time.
+    /// opacity: Resolved output opacity for the current frame.
+    /// widthScale: Resolved output width multiplier for the current frame.
     /// returns True when the warning should be visible during this frame, otherwise false.
     /// </summary>
     private static bool TryResolveWarningVisualState(in EnemySpawnWarningState warningState,
@@ -179,7 +179,7 @@ public partial struct EnemySpawnWarningPresentationSystem : ISystem
     #region View Pool
     /// <summary>
     /// Resolves an existing warning view for the enemy or creates a new pooled one when needed.
-    ///  enemyEntity: Enemy that currently owns the warning state.
+    /// enemyEntity: Enemy that currently owns the warning state.
     /// returns Runtime ring view associated with the provided enemy.
     /// </summary>
     private static EnemySpawnWarningRingView GetOrCreateView(Entity enemyEntity)

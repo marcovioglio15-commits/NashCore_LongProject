@@ -116,15 +116,6 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
 
         commandBuffer.Playback(state.EntityManager);
         commandBuffer.Dispose();
-
-        bool hasRemainingMissingHealth = !missingHealthQuery.IsEmptyIgnoreFilter;
-        bool hasRemainingMissingShield = !missingShieldQuery.IsEmptyIgnoreFilter;
-        bool hasRemainingMissingDamageGraceState = !missingDamageGraceStateQuery.IsEmptyIgnoreFilter;
-        bool hasRemainingMissingExperience = !missingExperienceQuery.IsEmptyIgnoreFilter;
-        bool hasRemainingMissingLevel = !missingLevelQuery.IsEmptyIgnoreFilter;
-        bool hasRemainingMissingExperienceCollection = !missingExperienceCollectionQuery.IsEmptyIgnoreFilter;
-        bool hasRemainingMissingScalableStatsBuffer = !missingScalableStatsBufferQuery.IsEmptyIgnoreFilter;
-
     }
     #endregion
 
@@ -325,16 +316,19 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
                 ref PlayerScalableStatBlob scalableStat = ref scalableStats[statIndex];
                 string statNameString = scalableStat.Name.ToString();
                 FixedString64Bytes statName = new FixedString64Bytes(statNameString);
-                float resolvedValue = PlayerScalableStatClampUtility.ResolveNormalizedValue(ref scalableStat, scalableStat.DefaultValue);
-
-                scalableStatsBuffer.Add(new PlayerScalableStatElement
+                PlayerFormulaValue defaultValue = PlayerScalableStatValueUtility.ResolveDefaultValue(ref scalableStat);
+                PlayerScalableStatElement scalableStatElement = new PlayerScalableStatElement
                 {
                     Name = statName,
                     Type = scalableStat.Type,
                     MinimumValue = scalableStat.MinimumValue,
-                    MaximumValue = scalableStat.MaximumValue,
-                    Value = resolvedValue
-                });
+                    MaximumValue = scalableStat.MaximumValue
+                };
+
+                if (!PlayerScalableStatValueUtility.TryWriteRuntimeValue(ref scalableStatElement, defaultValue, out string _))
+                    PlayerScalableStatValueUtility.TryWriteRuntimeValue(ref scalableStatElement, PlayerFormulaValue.CreateToken(string.Empty), out string _);
+
+                scalableStatsBuffer.Add(scalableStatElement);
             }
         }
 
@@ -357,7 +351,8 @@ public partial struct PlayerProgressionInitializeSystem : ISystem
             if (!string.Equals(scalableStatName, statName, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            return PlayerScalableStatClampUtility.ResolveNormalizedValue(ref scalableStat, scalableStat.DefaultValue);
+            PlayerFormulaValue defaultValue = PlayerScalableStatValueUtility.ResolveDefaultValue(ref scalableStat);
+            return PlayerScalableStatTypeUtility.ResolveNumericProjection((PlayerScalableStatType)scalableStat.Type, defaultValue);
         }
 
         return fallbackValue;

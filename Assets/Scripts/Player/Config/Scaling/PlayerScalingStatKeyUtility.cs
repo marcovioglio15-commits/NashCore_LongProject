@@ -5,7 +5,7 @@ using System.Text;
 using UnityEditor;
 
 /// <summary>
-/// Provides stable key generation and lookup helpers for numeric serialized properties used by scaling rules.
+/// Provides stable key generation and lookup helpers for serialized properties used by scaling rules.
 /// </summary>
 public static class PlayerScalingStatKeyUtility
 {
@@ -34,7 +34,7 @@ public static class PlayerScalingStatKeyUtility
 
     #region Public Methods
     /// <summary>
-    /// Builds a normalized stat key for a serialized numeric property.
+    /// Builds a normalized stat key for a serialized property supported by Add Scaling.
     /// </summary>
     /// <param name="property">Serialized property to convert into a stable key.</param>
     /// <returns>Normalized key string, or empty when property is invalid.<returns>
@@ -55,7 +55,7 @@ public static class PlayerScalingStatKeyUtility
     /// <param name="serializedObject">Serialized object that owns the target property.</param>
     /// <param name="statKey">Key produced by BuildStatKey.</param>
     /// <param name="property">Resolved property when found.</param>
-    /// <returns>True when a numeric property was resolved, otherwise false.<returns>
+    /// <returns>True when a scaling-supported property was resolved, otherwise false.<returns>
     public static bool TryFindPropertyByStatKey(SerializedObject serializedObject,
                                                 string statKey,
                                                 out SerializedProperty property)
@@ -70,7 +70,7 @@ public static class PlayerScalingStatKeyUtility
 
         SerializedProperty directProperty = serializedObject.FindProperty(statKey);
 
-        if (directProperty != null && IsNumericProperty(directProperty))
+        if (directProperty != null && IsScalingSupportedProperty(directProperty))
         {
             property = directProperty;
             return true;
@@ -78,7 +78,7 @@ public static class PlayerScalingStatKeyUtility
 
         if (TryResolveStablePathToProperty(serializedObject, statKey, out SerializedProperty stableProperty) &&
             stableProperty != null &&
-            IsNumericProperty(stableProperty))
+            IsScalingSupportedProperty(stableProperty))
         {
             property = stableProperty;
             return true;
@@ -101,6 +101,28 @@ public static class PlayerScalingStatKeyUtility
             return true;
 
         return property.propertyType == SerializedPropertyType.Float;
+    }
+
+    /// <summary>
+    /// Checks whether a serialized property is supported by Add Scaling.
+    /// </summary>
+    /// <param name="property">Property to inspect.</param>
+    /// <returns>True when the property is numeric, boolean or enum-backed.<returns>
+    public static bool IsScalingSupportedProperty(SerializedProperty property)
+    {
+        if (property == null)
+            return false;
+
+        switch (property.propertyType)
+        {
+            case SerializedPropertyType.Integer:
+            case SerializedPropertyType.Float:
+            case SerializedPropertyType.Boolean:
+            case SerializedPropertyType.Enum:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>
@@ -150,12 +172,36 @@ public static class PlayerScalingStatKeyUtility
                 continue;
             }
 
-            AppendSegment(outputBuilder, currentSegment);
+            AppendSegment(outputBuilder, NormalizeOutputSegment(currentSegment));
             AppendSegment(currentPathBuilder, currentSegment);
             segmentIndex += 1;
         }
 
         return outputBuilder.ToString();
+    }
+
+    /// <summary>
+    /// Normalizes one stat key so private Unity-style backing segments such as m_Field become field.
+    /// </summary>
+    /// <param name="statKey">Stat key to normalize.</param>
+    /// <returns>Normalized stat key preserving array and stable-token syntax.<returns>
+    public static string NormalizeStatKey(string statKey)
+    {
+        if (string.IsNullOrWhiteSpace(statKey))
+            return string.Empty;
+
+        string[] segments = statKey.Split('.');
+        StringBuilder builder = new StringBuilder(statKey.Length);
+
+        for (int segmentIndex = 0; segmentIndex < segments.Length; segmentIndex++)
+        {
+            if (segmentIndex > 0)
+                builder.Append('.');
+
+            builder.Append(NormalizeOutputSegment(segments[segmentIndex]));
+        }
+
+        return builder.ToString();
     }
     #endregion
 
@@ -168,13 +214,29 @@ public static class PlayerScalingStatKeyUtility
         builder.Append(segment);
     }
 
+    private static string NormalizeOutputSegment(string segment)
+    {
+        if (string.IsNullOrWhiteSpace(segment))
+            return string.Empty;
+
+        if (!segment.StartsWith("m_", StringComparison.Ordinal) || segment.Length <= 2)
+            return segment;
+
+        string strippedSegment = segment.Substring(2);
+
+        if (strippedSegment.Length == 1)
+            return strippedSegment.ToLowerInvariant();
+
+        return char.ToLowerInvariant(strippedSegment[0]) + strippedSegment.Substring(1);
+    }
+
     /// <summary>
     /// Scans all serialized properties, including non-visible ones, to resolve stat keys emitted from custom drawers.
     /// </summary>
     /// <param name="serializedObject">Serialized object containing candidate properties.</param>
     /// <param name="statKey">Stable key to resolve.</param>
     /// <param name="property">Resolved property when a match is found.</param>
-    /// <returns>True when a matching numeric property is found; otherwise false.<returns>
+    /// <returns>True when a matching scaling-supported property is found; otherwise false.<returns>
     private static bool TryFindPropertyByIteratorScan(SerializedObject serializedObject,
                                                       string statKey,
                                                       out SerializedProperty property)
@@ -198,7 +260,7 @@ public static class PlayerScalingStatKeyUtility
         {
             enterChildren = true;
 
-            if (IsNumericProperty(iterator) == false)
+            if (IsScalingSupportedProperty(iterator) == false)
                 continue;
 
             string iteratorKey = BuildStatKey(iterator);

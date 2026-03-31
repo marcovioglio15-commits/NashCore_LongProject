@@ -10,15 +10,24 @@ using UnityEngine.UIElements;
 /// </summary>
 public static class PowerUpModuleDefinitionPayloadDrawerUtility
 {
+    #region Constants
+    private const float AvailableVariablesBoxHeight = 46f;
+    #endregion
+
+    #region Fields
+    private static readonly Dictionary<string, Action> characterTuningRefreshByKey = new Dictionary<string, Action>(StringComparer.Ordinal);
+    private static string activeCharacterTuningFormulaKey = string.Empty;
+    #endregion
+
     #region Methods
 
     #region Public Methods
     /// <summary>
     /// Builds the payload editor for the provided module kind.
-    ///  payloadContainer Container that will host the payload controls.
-    ///  payloadProperty Serialized payload property to edit.
-    ///  moduleKind Module kind that selects the UI variant.
-    ///  payloadLabel Optional label used by the generic payload fallback.
+    /// payloadContainer Container that will host the payload controls.
+    /// payloadProperty Serialized payload property to edit.
+    /// moduleKind Module kind that selects the UI variant.
+    /// payloadLabel Optional label used by the generic payload fallback.
     /// returns void
     /// </summary>
     public static void BuildPayloadEditor(VisualElement payloadContainer,
@@ -68,24 +77,25 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
 
     /// <summary>
     /// Creates a serialized field using the shared scaling-aware element factory.
-    ///  parent Parent visual element that receives the field.
-    ///  property Serialized property to draw.
-    ///  label Visible label for the created field.
-    /// returns void
+    /// parent Parent visual element that receives the field.
+    /// property Serialized property to draw.
+    /// label Visible label for the created field.
+    /// returns Created field root, or null when the input is invalid.
     /// </summary>
-    public static void AddField(VisualElement parent, SerializedProperty property, string label)
+    public static VisualElement AddField(VisualElement parent, SerializedProperty property, string label)
     {
         if (parent == null)
-            return;
+            return null;
 
         if (property == null)
-            return;
+            return null;
 
         SerializedProperty scalingRulesProperty = property.serializedObject != null
             ? property.serializedObject.FindProperty("scalingRules")
             : null;
         VisualElement field = PlayerScalingFieldElementFactory.CreateField(property, scalingRulesProperty, label);
         parent.Add(field);
+        return field;
     }
     #endregion
 
@@ -408,6 +418,7 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         if (payloadContainer == null || characterTuningPayloadProperty == null)
             return;
 
+        SerializedObject serializedObject = characterTuningPayloadProperty.serializedObject;
         SerializedProperty formulasProperty = characterTuningPayloadProperty.FindPropertyRelative("formulas");
 
         if (formulasProperty == null)
@@ -417,23 +428,69 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             return;
         }
 
-        HelpBox infoBox = new HelpBox("Each entry uses [TargetStat] = expression syntax. The right-hand expression supports the same operators available in Add Scaling formulas.", HelpBoxMessageType.Info);
+        HelpBox infoBox = new HelpBox("Each entry uses [TargetStat] = expression syntax. The right-hand expression supports the same operators and functions available in Add Scaling formulas, including switch(condition, case:value, ..., fallback).", HelpBoxMessageType.Info);
         payloadContainer.Add(infoBox);
-        AddField(payloadContainer, formulasProperty, "Acquisition Formulas");
+        VisualElement formulasField = AddField(payloadContainer, formulasProperty, "Acquisition Formulas");
+        ScrollView availableVariablesScrollView = new ScrollView(ScrollViewMode.Vertical);
+        availableVariablesScrollView.style.marginTop = 2f;
+        availableVariablesScrollView.style.height = AvailableVariablesBoxHeight;
+        availableVariablesScrollView.style.maxHeight = AvailableVariablesBoxHeight;
+        availableVariablesScrollView.style.flexShrink = 0f;
+        payloadContainer.Add(availableVariablesScrollView);
+
         Label availableVariablesLabel = new Label(string.Empty);
-        availableVariablesLabel.style.marginTop = 2f;
         availableVariablesLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-        payloadContainer.Add(availableVariablesLabel);
+        availableVariablesLabel.style.whiteSpace = WhiteSpace.Normal;
+        availableVariablesLabel.style.flexShrink = 0f;
+        availableVariablesScrollView.Add(availableVariablesLabel);
 
         HelpBox warningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
         payloadContainer.Add(warningBox);
-        RefreshCharacterTuningAvailableVariables(characterTuningPayloadProperty.serializedObject, availableVariablesLabel);
-        RefreshCharacterTuningWarnings(characterTuningPayloadProperty.serializedObject, formulasProperty, warningBox);
+        string formulasPropertyPath = formulasProperty.propertyPath;
+        string formulaKey = BuildCharacterTuningFormulaKey(serializedObject, formulasPropertyPath);
+        RegisterCharacterTuningRefresher(formulaKey, RefreshCharacterTuningUi);
+        payloadContainer.RegisterCallback<DetachFromPanelEvent>(evt => UnregisterCharacterTuningRefresher(formulaKey));
+        payloadContainer.RegisterCallback<MouseDownEvent>(evt =>
+        {
+            SetActiveCharacterTuningFormula(formulaKey);
+        });
+        payloadContainer.RegisterCallback<FocusOutEvent>(evt =>
+        {
+            if (evt.relatedTarget is VisualElement nextFocusedElement && payloadContainer.Contains(nextFocusedElement))
+                return;
+
+            ClearActiveCharacterTuningFormula(formulaKey);
+        });
+
+        if (formulasField != null)
+        {
+            formulasField.RegisterCallback<FocusInEvent>(evt =>
+            {
+                SetActiveCharacterTuningFormula(formulaKey);
+            });
+            formulasField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+            {
+                SetActiveCharacterTuningFormula(formulaKey);
+            });
+        }
+
+        RefreshCharacterTuningUi();
         RegisterCharacterTuningFormulaRefresh(payloadContainer,
-                                              characterTuningPayloadProperty.serializedObject,
-                                              formulasProperty.propertyPath,
-                                              availableVariablesLabel,
-                                              warningBox);
+                                              serializedObject,
+                                              formulasPropertyPath,
+                                              RefreshCharacterTuningUi);
+
+        void RefreshCharacterTuningUi()
+        {
+            SerializedProperty reboundFormulasProperty = serializedObject != null
+                ? serializedObject.FindProperty(formulasPropertyPath)
+                : null;
+            RefreshCharacterTuningAvailableVariables(serializedObject, availableVariablesLabel);
+            RefreshCharacterTuningWarnings(serializedObject, reboundFormulasProperty, warningBox);
+            availableVariablesScrollView.style.display = IsActiveCharacterTuningFormula(formulaKey)
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
     }
 
     private static void BuildStackablePayloadUi(VisualElement payloadContainer, SerializedProperty stackablePayloadProperty)
@@ -620,6 +677,7 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
 
         List<string> warningLines = new List<string>();
         HashSet<string> allowedVariables = PlayerScalingFormulaValidationUtility.BuildScopedVariableSet(serializedObject);
+        Dictionary<string, PlayerFormulaValueType> variableTypes = PlayerScalingFormulaValidationUtility.BuildScopedVariableTypeMap(serializedObject);
 
         if (formulasProperty.arraySize <= 0)
             warningLines.Add("No acquisition formula configured. Character Tuning currently has no effect.");
@@ -652,6 +710,7 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
 
             if (PlayerCharacterTuningFormulaValidationUtility.TryValidateAssignmentFormula(formulaValue,
                                                                                           allowedVariables,
+                                                                                          variableTypes,
                                                                                           out string warningMessage))
             {
                 continue;
@@ -679,24 +738,25 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         HashSet<string> allowedVariables = serializedObject != null
             ? PlayerScalingFormulaValidationUtility.BuildScopedVariableSet(serializedObject)
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, PlayerScalableStatType> variableTypes = serializedObject != null
+            ? PlayerScalingFormulaValidationUtility.BuildScopedScalableStatTypeMap(serializedObject)
+            : new Dictionary<string, PlayerScalableStatType>(StringComparer.OrdinalIgnoreCase);
 
-        availableVariablesLabel.text = PlayerScalingFormulaValidationUtility.BuildAvailableVariablesLabelText(allowedVariables);
+        availableVariablesLabel.text = PlayerScalingFormulaValidationUtility.BuildAvailableVariablesLabelText(allowedVariables, variableTypes);
     }
 
     /// <summary>
     /// Refreshes Character Tuning helper UI only when the local formulas payload changes, avoiding global serialized-object watchers on reorderable cards.
-    /// /params payloadContainer Parent element that receives bubbled serialized change events.
-    /// /params serializedObject Serialized object that owns the formulas payload.
-    /// /params formulasPropertyPath Property path of the formulas array to re-resolve after local edits.
-    /// /params availableVariablesLabel Label that shows currently valid variables.
-    /// /params warningBox Help box that shows validation warnings for assignment formulas.
-    /// /returns void
+    /// payloadContainer Parent element that receives bubbled serialized change events.
+    /// serializedObject Serialized object that owns the formulas payload.
+    /// formulasPropertyPath Property path of the formulas array to re-resolve after local edits.
+    /// refreshUi Callback that rebinds helper text and warnings after a local formulas edit.
+    /// returns void
     /// </summary>
     private static void RegisterCharacterTuningFormulaRefresh(VisualElement payloadContainer,
                                                               SerializedObject serializedObject,
                                                               string formulasPropertyPath,
-                                                              Label availableVariablesLabel,
-                                                              HelpBox warningBox)
+                                                              Action refreshUi)
     {
         if (payloadContainer == null)
             return;
@@ -724,10 +784,68 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             }
 
             serializedObject.UpdateIfRequiredOrScript();
-            SerializedProperty reboundFormulasProperty = serializedObject.FindProperty(formulasPropertyPath);
-            RefreshCharacterTuningAvailableVariables(serializedObject, availableVariablesLabel);
-            RefreshCharacterTuningWarnings(serializedObject, reboundFormulasProperty, warningBox);
+            refreshUi?.Invoke();
         });
+    }
+
+    private static string BuildCharacterTuningFormulaKey(SerializedObject serializedObject, string formulasPropertyPath)
+    {
+        if (serializedObject == null || serializedObject.targetObject == null)
+            return formulasPropertyPath ?? string.Empty;
+
+        return string.Format("{0}:{1}",
+                             serializedObject.targetObject.GetInstanceID(),
+                             formulasPropertyPath ?? string.Empty);
+    }
+
+    private static bool IsActiveCharacterTuningFormula(string formulaKey)
+    {
+        return !string.IsNullOrWhiteSpace(formulaKey) &&
+               string.Equals(activeCharacterTuningFormulaKey, formulaKey, StringComparison.Ordinal);
+    }
+
+    private static void SetActiveCharacterTuningFormula(string formulaKey)
+    {
+        if (string.IsNullOrWhiteSpace(formulaKey))
+            return;
+
+        activeCharacterTuningFormulaKey = formulaKey;
+        RefreshRegisteredCharacterTuningFormulas();
+    }
+
+    private static void ClearActiveCharacterTuningFormula(string formulaKey)
+    {
+        if (string.IsNullOrWhiteSpace(formulaKey))
+            return;
+
+        if (!string.Equals(activeCharacterTuningFormulaKey, formulaKey, StringComparison.Ordinal))
+            return;
+
+        activeCharacterTuningFormulaKey = string.Empty;
+        RefreshRegisteredCharacterTuningFormulas();
+    }
+
+    private static void RegisterCharacterTuningRefresher(string formulaKey, Action refreshUi)
+    {
+        if (string.IsNullOrWhiteSpace(formulaKey) || refreshUi == null)
+            return;
+
+        characterTuningRefreshByKey[formulaKey] = refreshUi;
+    }
+
+    private static void UnregisterCharacterTuningRefresher(string formulaKey)
+    {
+        if (string.IsNullOrWhiteSpace(formulaKey))
+            return;
+
+        characterTuningRefreshByKey.Remove(formulaKey);
+        ClearActiveCharacterTuningFormula(formulaKey);
+    }
+
+    private static void RefreshRegisteredCharacterTuningFormulas()
+    {
+        foreach (Action refreshUi in characterTuningRefreshByKey.Values)
+            refreshUi?.Invoke();
     }
 
     private static void UpdateOrbitPathModeContainers(SerializedProperty pathModeProperty,

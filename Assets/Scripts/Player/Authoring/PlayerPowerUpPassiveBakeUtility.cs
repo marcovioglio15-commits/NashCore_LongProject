@@ -15,10 +15,10 @@ public static class PlayerPowerUpPassiveBakeUtility
     #region Public Methods
     /// <summary>
     /// Resolves equipped passive entries from the preset into runtime configs.
-    ///  authoring: Owning player authoring component.
-    ///  preset: Source power-ups preset.
-    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
-    ///  outputPassiveToolConfigs: Destination list receiving compiled passive configs.
+    /// authoring: Owning player authoring component.
+    /// preset: Source power-ups preset.
+    /// resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// outputPassiveToolConfigs: Destination list receiving compiled passive configs.
     /// returns void.
     /// </summary>
     public static void CollectEquippedPassiveToolConfigs(PlayerAuthoring authoring,
@@ -114,10 +114,10 @@ public static class PlayerPowerUpPassiveBakeUtility
 
     /// <summary>
     /// Compiles one modular passive power-up into a runtime passive config.
-    ///  authoring: Owning player authoring component.
-    ///  preset: Source power-ups preset.
-    ///  powerUp: Modular passive power-up definition.
-    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// authoring: Owning player authoring component.
+    /// preset: Source power-ups preset.
+    /// powerUp: Modular passive power-up definition.
+    /// resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
     /// returns Runtime passive config or default.
     /// </summary>
     public static PlayerPassiveToolConfig BuildPassiveToolConfigFromModularPowerUp(PlayerAuthoring authoring,
@@ -468,9 +468,9 @@ public static class PlayerPowerUpPassiveBakeUtility
 
     /// <summary>
     /// Compiles a legacy passive tool into a runtime passive config.
-    ///  authoring: Owning player authoring component.
-    ///  passiveTool: Legacy passive tool definition.
-    ///  resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
+    /// authoring: Owning player authoring component.
+    /// passiveTool: Legacy passive tool definition.
+    /// resolveDynamicPrefabEntity: Prefab-to-entity resolver provided by the baker.
     /// returns Runtime passive config or default.
     /// </summary>
     public static PlayerPassiveToolConfig BuildPassiveToolConfig(PlayerAuthoring authoring,

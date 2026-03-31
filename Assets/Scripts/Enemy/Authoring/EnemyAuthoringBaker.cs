@@ -62,6 +62,11 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             SpawnInactivityTimer = 0f,
             SpawnVersion = 0u
         });
+        AddComponent(entity, new EnemyKnockbackState
+        {
+            Velocity = float3.zero,
+            RemainingTime = 0f
+        });
         AddComponent<EnemySpawnInactivityLock>(entity);
         SetComponentEnabled<EnemySpawnInactivityLock>(entity, false);
         AddComponent<EnemySpawnWarningState>(entity);
@@ -517,8 +522,8 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
     /// <summary>
     /// Registers all renderer entities that must react to enemy hit flash feedback.
-    ///  authoring: Source enemy authoring component used to enumerate renderers.
-    ///  rootEntity: Root enemy entity that owns the flash config and render target buffer.
+    /// authoring: Source enemy authoring component used to enumerate renderers.
+    /// rootEntity: Root enemy entity that owns the flash config and render target buffer.
     /// returns None.
     /// </summary>
     private void BakeDamageFlashRenderTargets(EnemyAuthoring authoring, Entity rootEntity)
@@ -561,7 +566,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
     /// <summary>
     /// Resolves the first valid base color exposed by one authored renderer.
-    ///  renderer: Renderer inspected for compatible material color properties.
+    /// renderer: Renderer inspected for compatible material color properties.
     /// returns Resolved base color or white when the renderer has no supported color property.
     /// </summary>
     private static float4 ResolveRendererBaseColor(Renderer renderer)

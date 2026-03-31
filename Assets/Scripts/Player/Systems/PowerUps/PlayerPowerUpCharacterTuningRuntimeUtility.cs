@@ -9,7 +9,7 @@ using Unity.Mathematics;
 public static class PlayerPowerUpCharacterTuningRuntimeUtility
 {
     #region Fields
-    private static readonly Dictionary<string, float> variableContext = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, PlayerFormulaValue> variableContext = new Dictionary<string, PlayerFormulaValue>(StringComparer.OrdinalIgnoreCase);
     #endregion
 
     #region Methods
@@ -17,7 +17,7 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
     #region Public Methods
     /// <summary>
     /// Resolves whether the provided Character Tuning entry should be applied permanently on acquisition.
-    ///  unlockCatalogEntry: Unlock catalog entry inspected for runtime-scoped application rules.
+    /// unlockCatalogEntry: Unlock catalog entry inspected for runtime-scoped application rules.
     /// returns True when acquisition should apply the formulas immediately; otherwise false.
     /// </summary>
     public static bool ShouldApplyOnAcquisition(in PlayerPowerUpUnlockCatalogElement unlockCatalogEntry)
@@ -30,7 +30,7 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Resolves whether the provided Character Tuning entry belongs to an active that must apply formulas only while its runtime state remains active.
-    ///  unlockCatalogEntry: Unlock catalog entry inspected for temporary active-state application rules.
+    /// unlockCatalogEntry: Unlock catalog entry inspected for temporary active-state application rules.
     /// returns True when the entry is runtime-scoped; otherwise false.
     /// </summary>
     public static bool IsRuntimeScopedCharacterTuning(in PlayerPowerUpUnlockCatalogElement unlockCatalogEntry)
@@ -55,14 +55,14 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Applies all Character Tuning formulas referenced by one unlock catalog entry and synchronizes progression state.
-    ///  unlockCatalogEntry: Catalog entry containing the flattened formula range.
-    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
-    ///  scalableStats: Mutable scalable-stat buffer updated in place.
-    ///  progressionConfig: Runtime progression config used to synchronize level requirements and pickup radius.
-    ///  playerExperience: Mutable runtime experience component synchronized after formula execution.
-    ///  playerLevel: Mutable runtime level component synchronized after formula execution.
-    ///  playerExperienceCollection: Mutable runtime experience-collection component synchronized after formula execution.
-    ///  appliedFormulaCount: Number of formulas successfully applied.
+    /// unlockCatalogEntry: Catalog entry containing the flattened formula range.
+    /// characterTuningFormulas: Flattened Character Tuning formula buffer.
+    /// scalableStats: Mutable scalable-stat buffer updated in place.
+    /// progressionConfig: Runtime progression config used to synchronize level requirements and pickup radius.
+    /// playerExperience: Mutable runtime experience component synchronized after formula execution.
+    /// playerLevel: Mutable runtime level component synchronized after formula execution.
+    /// playerExperienceCollection: Mutable runtime experience-collection component synchronized after formula execution.
+    /// appliedFormulaCount: Number of formulas successfully applied.
     /// returns True when at least one formula changed runtime scalable stats; otherwise false.
     /// </summary>
     public static bool TryApplyCharacterTuning(in PlayerPowerUpUnlockCatalogElement unlockCatalogEntry,
@@ -94,10 +94,10 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Applies all Character Tuning formulas referenced by one unlock catalog entry without synchronizing dependent progression state.
-    ///  unlockCatalogEntry: Catalog entry containing the flattened formula range.
-    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
-    ///  scalableStats: Mutable scalable-stat buffer updated in place.
-    ///  appliedFormulaCount: Number of formulas successfully applied.
+    /// unlockCatalogEntry: Catalog entry containing the flattened formula range.
+    /// characterTuningFormulas: Flattened Character Tuning formula buffer.
+    /// scalableStats: Mutable scalable-stat buffer updated in place.
+    /// appliedFormulaCount: Number of formulas successfully applied.
     /// returns True when at least one formula changed runtime scalable stats; otherwise false.
     /// </summary>
     public static bool TryApplyCharacterTuningFormulas(in PlayerPowerUpUnlockCatalogElement unlockCatalogEntry,
@@ -114,11 +114,11 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Synchronizes progression runtime components and reserved scalable stats after Character Tuning changes.
-    ///  scalableStats: Mutable scalable-stat buffer containing the latest values.
-    ///  progressionConfig: Runtime progression config used to resolve the current level requirement and pickup radius.
-    ///  playerExperience: Mutable runtime experience component.
-    ///  playerLevel: Mutable runtime level component.
-    ///  playerExperienceCollection: Mutable runtime experience-collection component.
+    /// scalableStats: Mutable scalable-stat buffer containing the latest values.
+    /// progressionConfig: Runtime progression config used to resolve the current level requirement and pickup radius.
+    /// playerExperience: Mutable runtime experience component.
+    /// playerLevel: Mutable runtime level component.
+    /// playerExperienceCollection: Mutable runtime experience-collection component.
     /// returns void.
     /// </summary>
     public static void SyncProgressionRuntimeState(DynamicBuffer<PlayerScalableStatElement> scalableStats,
@@ -167,8 +167,8 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Resolves one Character Tuning assignment target stat name from the raw formula string.
-    ///  formula: Raw Character Tuning formula string.
-    ///  targetStatName: Parsed target scalable-stat name when successful.
+    /// formula: Raw Character Tuning formula string.
+    /// targetStatName: Parsed target scalable-stat name when successful.
     /// returns True when the assignment target is valid; otherwise false.
     /// </summary>
     public static bool TryResolveTargetStatName(string formula, out string targetStatName)
@@ -188,8 +188,8 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Resolves one scalable-stat buffer index by name using case-insensitive lookup semantics.
-    ///  scalableStats: Runtime scalable-stat buffer to scan.
-    ///  statName: Requested scalable-stat identifier.
+    /// scalableStats: Runtime scalable-stat buffer to scan.
+    /// statName: Requested scalable-stat identifier.
     /// returns Buffer index when found; otherwise -1.
     /// </summary>
     public static int FindScalableStatIndex(DynamicBuffer<PlayerScalableStatElement> scalableStats, string statName)
@@ -209,8 +209,8 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
 
     /// <summary>
     /// Normalizes one evaluated formula result according to the target scalable-stat type.
-    ///  scalableStat: Target scalable-stat metadata.
-    ///  evaluatedValue: Raw evaluated formula result.
+    /// scalableStat: Target scalable-stat metadata.
+    /// evaluatedValue: Raw evaluated formula result.
     /// returns Stored runtime value after type normalization.
     /// </summary>
     public static float ResolveStatValue(in PlayerScalableStatElement scalableStat, float evaluatedValue)
@@ -222,11 +222,11 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
     #region Private Methods
     /// <summary>
     /// Applies one flattened Character Tuning formula range without synchronizing dependent progression state.
-    ///  startIndex: Inclusive start index inside the flattened formula buffer.
-    ///  formulaCount: Number of formulas to evaluate from startIndex.
-    ///  characterTuningFormulas: Flattened Character Tuning formula buffer.
-    ///  scalableStats: Mutable scalable-stat buffer updated in place.
-    ///  appliedFormulaCount: Number of formulas successfully applied.
+    /// startIndex: Inclusive start index inside the flattened formula buffer.
+    /// formulaCount: Number of formulas to evaluate from startIndex.
+    /// characterTuningFormulas: Flattened Character Tuning formula buffer.
+    /// scalableStats: Mutable scalable-stat buffer updated in place.
+    /// appliedFormulaCount: Number of formulas successfully applied.
     /// returns True when at least one formula changed runtime scalable stats; otherwise false.
     /// </summary>
     private static bool TryApplyCharacterTuningRange(int startIndex,
@@ -272,33 +272,38 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
                 continue;
 
             PlayerScalableStatElement scalableStat = scalableStats[scalableStatIndex];
-            float currentValue = scalableStat.Value;
+            PlayerFormulaValue currentValue = PlayerScalableStatValueUtility.ResolveRuntimeValue(in scalableStat);
 
             if (!PlayerScalingRuntimeFormulaUtility.TryEvaluateFormula(expression,
                                                                        currentValue,
                                                                        variableContext,
-                                                                       out float evaluatedValue,
-                                                                       out string _))
+                                                                       out PlayerFormulaValue evaluatedValue,
+                                                                       out string _,
+                                                                       false))
             {
                 continue;
             }
 
-            float resolvedValue = ResolveStatValue(in scalableStat, evaluatedValue);
-            scalableStat.Value = resolvedValue;
+            if (PlayerFormulaValue.AreEqual(in currentValue, in evaluatedValue))
+                continue;
+
+            if (!PlayerScalableStatValueUtility.TryWriteRuntimeValue(ref scalableStat, evaluatedValue, out string _))
+                continue;
+
             scalableStats[scalableStatIndex] = scalableStat;
-            variableContext[targetStatName] = resolvedValue;
-            appliedFormulaCount++;
+            variableContext[targetStatName] = PlayerScalableStatValueUtility.ResolveRuntimeValue(in scalableStat);
+            appliedFormulaCount += 1;
         }
 
         return appliedFormulaCount > 0;
     }
 
     /// <summary>
-    /// Resolves one scalable-stat value or returns a fallback when the stat is not present.
-    ///  scalableStats: Runtime scalable-stat buffer to scan.
-    ///  statName: Requested scalable-stat identifier.
-    ///  fallbackValue: Fallback value returned when the stat does not exist.
-    /// returns Resolved scalable-stat value or the provided fallback.
+    /// Resolves one scalable-stat numeric projection or returns a fallback when the stat is not present.
+    /// scalableStats: Runtime scalable-stat buffer to scan.
+    /// statName: Requested scalable-stat identifier.
+    /// fallbackValue: Fallback value returned when the stat does not exist.
+    /// returns Resolved numeric projection or the provided fallback.
     /// </summary>
     private static float ResolveScalableStatValue(DynamicBuffer<PlayerScalableStatElement> scalableStats,
                                                   string statName,
@@ -309,14 +314,15 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
         if (scalableStatIndex < 0)
             return fallbackValue;
 
-        return scalableStats[scalableStatIndex].Value;
+        PlayerScalableStatElement scalableStat = scalableStats[scalableStatIndex];
+        return PlayerScalableStatClampUtility.ResolveNumericProjection(in scalableStat);
     }
 
     /// <summary>
-    /// Writes one reserved scalable-stat value back to the runtime buffer when the stat exists.
-    ///  scalableStats: Mutable scalable-stat buffer updated in place.
-    ///  statName: Reserved scalable-stat identifier to update.
-    ///  value: New runtime value written to the buffer.
+    /// Writes one reserved scalable-stat numeric value back to the runtime buffer when the stat exists.
+    /// scalableStats: Mutable scalable-stat buffer updated in place.
+    /// statName: Reserved scalable-stat identifier to update.
+    /// value: New runtime value written to the buffer.
     /// returns void.
     /// </summary>
     private static void TryWriteReservedStatValue(DynamicBuffer<PlayerScalableStatElement> scalableStats,
@@ -329,7 +335,14 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
             return;
 
         PlayerScalableStatElement scalableStat = scalableStats[scalableStatIndex];
-        scalableStat.Value = ResolveStatValue(in scalableStat, value);
+
+        if (!PlayerScalableStatValueUtility.TryWriteRuntimeValue(ref scalableStat,
+                                                                 PlayerFormulaValue.CreateNumber(value),
+                                                                 out string _))
+        {
+            return;
+        }
+
         scalableStats[scalableStatIndex] = scalableStat;
     }
     #endregion

@@ -7,7 +7,7 @@ using UnityEngine;
 /// <summary>
 /// Builds and refreshes the authored player visual assets required by gameplay integration.
 /// This includes the animated muzzle wrapper prefab, the player prefab references, the shoot clip binding, and the upper-body shoot state.
-///  None.
+/// None.
 /// returns None.
 /// </summary>
 public static class PlayerGameplayVisualSetupUtility
@@ -35,7 +35,7 @@ public static class PlayerGameplayVisualSetupUtility
     #region Public Methods
     /// <summary>
     /// Runs the full authoring setup for the player visual wrapper, player prefab, animation bindings preset, and animator controller.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     public static void ExecuteSetup()
@@ -52,7 +52,7 @@ public static class PlayerGameplayVisualSetupUtility
     #region Prefabs
     /// <summary>
     /// Creates or refreshes the generated player-visual wrapper prefab that carries the animated muzzle anchor.
-    ///  None.
+    /// None.
     /// returns Generated player visual prefab asset.
     /// </summary>
     private static GameObject EnsurePlayerVisualPrefab()
@@ -130,7 +130,7 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Updates the authored player prefab so all gameplay shooting references point to the generated animated muzzle wrapper.
-    ///  playerVisualPrefab: Generated visual wrapper prefab that should be nested under the player prefab.
+    /// playerVisualPrefab: Generated visual wrapper prefab that should be nested under the player prefab.
     /// returns None.
     /// </summary>
     private static void EnsurePlayerPrefab(GameObject playerVisualPrefab)
@@ -192,9 +192,9 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Ensures the player prefab contains exactly one generated visual wrapper instance and returns it.
-    ///  prefabContentsRoot: Loaded player prefab root.
-    ///  playerVisualPrefab: Generated visual wrapper prefab asset.
-    ///  previousWeaponTransform: Previously authored weapon transform that must not be mistaken for the visual root.
+    /// prefabContentsRoot: Loaded player prefab root.
+    /// playerVisualPrefab: Generated visual wrapper prefab asset.
+    /// previousWeaponTransform: Previously authored weapon transform that must not be mistaken for the visual root.
     /// returns Scene instance of the generated player visual wrapper.
     /// </summary>
     private static GameObject EnsurePlayerVisualInstance(GameObject prefabContentsRoot,
@@ -230,8 +230,8 @@ public static class PlayerGameplayVisualSetupUtility
     #region Visual Preset Synchronization
     /// <summary>
     /// Synchronizes the generated player visual prefab with the visual preset referenced by the active master preset.
-    ///  masterPreset: Master preset that may own the visual preset to update.
-    ///  playerVisualPrefab: Generated visual wrapper prefab asset.
+    /// masterPreset: Master preset that may own the visual preset to update.
+    /// playerVisualPrefab: Generated visual wrapper prefab asset.
     /// returns None.
     /// </summary>
     private static void TryAssignGeneratedVisualPrefabToMasterVisualPreset(PlayerMasterPreset masterPreset, GameObject playerVisualPrefab)
@@ -260,7 +260,7 @@ public static class PlayerGameplayVisualSetupUtility
     #region Animation Assets
     /// <summary>
     /// Assigns the dedicated shoot clip into the authored animation bindings preset so tooling reflects the real setup.
-    ///  shootClip: Clip used by the upper-body shoot state.
+    /// shootClip: Clip used by the upper-body shoot state.
     /// returns None.
     /// </summary>
     private static void EnsureAnimationBindingsPreset(AnimationClip shootClip)
@@ -279,7 +279,7 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Adds or refreshes the upper-body shoot state and its transitions on the player animator controller.
-    ///  shootClip: Clip used by the upper-body shoot state.
+    /// shootClip: Clip used by the upper-body shoot state.
     /// returns None.
     /// </summary>
     private static void EnsureAnimatorController(AnimationClip shootClip)
@@ -337,7 +337,7 @@ public static class PlayerGameplayVisualSetupUtility
     #region Helpers
     /// <summary>
     /// Loads the primary authored animation clip stored inside one imported FBX asset.
-    ///  clipAssetPath: Path of the imported FBX animation asset.
+    /// clipAssetPath: Path of the imported FBX animation asset.
     /// returns Primary non-preview animation clip.
     /// </summary>
     private static AnimationClip LoadPrimaryAnimationClip(string clipAssetPath)
@@ -369,7 +369,7 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Recursively creates a folder chain inside the Unity project when one or more path segments are missing.
-    ///  folderPath: Project-relative folder path that must exist.
+    /// folderPath: Project-relative folder path that must exist.
     /// returns None.
     /// </summary>
     private static void EnsureFolder(string folderPath)
@@ -394,8 +394,8 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Finds one child transform anywhere in the hierarchy by exact name.
-    ///  root: Root transform used to start the search.
-    ///  targetName: Exact child-object name to resolve.
+    /// root: Root transform used to start the search.
+    /// targetName: Exact child-object name to resolve.
     /// returns Matching transform or null when not found.
     /// </summary>
     private static Transform FindChildRecursive(Transform root, string targetName)
@@ -419,8 +419,8 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Finds the direct child under the player prefab root that represents the visual hierarchy.
-    ///  root: Player prefab root transform.
-    ///  previousWeaponTransform: Current authored weapon transform that must be ignored.
+    /// root: Player prefab root transform.
+    /// previousWeaponTransform: Current authored weapon transform that must be ignored.
     /// returns Direct-child visual root or null when no visual hierarchy is present.
     /// </summary>
     private static Transform FindPlayerVisualRoot(Transform root, Transform previousWeaponTransform)
@@ -443,8 +443,8 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Recursively applies the same layer value to one object hierarchy.
-    ///  targetObject: Root object whose hierarchy should receive the layer.
-    ///  layer: Layer value applied to the full hierarchy.
+    /// targetObject: Root object whose hierarchy should receive the layer.
+    /// layer: Layer value applied to the full hierarchy.
     /// returns None.
     /// </summary>
     private static void SetLayerRecursively(GameObject targetObject, int layer)
@@ -460,7 +460,7 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Removes all direct children under one transform.
-    ///  parent: Parent transform whose full child list should be cleared.
+    /// parent: Parent transform whose full child list should be cleared.
     /// returns None.
     /// </summary>
     private static void DestroyAllChildren(Transform parent)
@@ -471,7 +471,7 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Resolves a stable local muzzle anchor position from the gun mesh bounds so spawned shots align with the weapon instead of the mesh pivot.
-    ///  gunMeshTransform: Gun hierarchy transform used as the animated local-space reference.
+    /// gunMeshTransform: Gun hierarchy transform used as the animated local-space reference.
     /// returns Local-space muzzle position relative to the gun transform.
     /// </summary>
     private static Vector3 ResolveMuzzleAnchorLocalPosition(Transform gunMeshTransform)
@@ -489,7 +489,7 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Returns the existing component on one GameObject or adds it when missing.
-    ///  targetObject: GameObject receiving the requested component.
+    /// targetObject: GameObject receiving the requested component.
     /// returns Existing or newly added component instance.
     /// </summary>
     private static TComponent GetOrAddComponent<TComponent>(GameObject targetObject) where TComponent : Component
@@ -504,7 +504,7 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Resolves local-space bounds for the authored gun mesh using the most accurate renderer or mesh source available.
-    ///  gunMeshTransform: Gun transform whose mesh bounds should be read.
+    /// gunMeshTransform: Gun transform whose mesh bounds should be read.
     /// returns True when local bounds were resolved successfully, otherwise false.
     /// </summary>
     private static bool TryResolveLocalGunBounds(Transform gunMeshTransform, out Bounds localBounds)
@@ -535,8 +535,8 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Finds one animator state by exact name inside one state machine.
-    ///  stateMachine: State machine that owns the state list.
-    ///  stateName: Exact state name to resolve.
+    /// stateMachine: State machine that owns the state list.
+    /// stateName: Exact state name to resolve.
     /// returns Matching animator state or null when not found.
     /// </summary>
     private static AnimatorState FindState(AnimatorStateMachine stateMachine, string stateName)
@@ -556,8 +556,8 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Finds the index of one animator layer by exact name.
-    ///  animatorController: Controller that owns the layer list.
-    ///  layerName: Exact layer name to resolve.
+    /// animatorController: Controller that owns the layer list.
+    /// layerName: Exact layer name to resolve.
     /// returns Layer index or -1 when not found.
     /// </summary>
     private static int FindLayerIndex(AnimatorController animatorController, string layerName)
@@ -575,8 +575,8 @@ public static class PlayerGameplayVisualSetupUtility
 
     /// <summary>
     /// Removes all transitions between one source state and one destination state.
-    ///  sourceState: Source state whose transition list should be filtered.
-    ///  destinationState: Destination state to remove from the transition list.
+    /// sourceState: Source state whose transition list should be filtered.
+    /// destinationState: Destination state to remove from the transition list.
     /// returns None.
     /// </summary>
     private static void RemoveTransitions(AnimatorState sourceState, AnimatorState destinationState)

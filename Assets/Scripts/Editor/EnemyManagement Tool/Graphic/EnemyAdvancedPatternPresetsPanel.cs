@@ -567,7 +567,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
 
     /// <summary>
     /// Applies a committed preset-name edit coming from the metadata UI.
-    ///  newName: New preset name confirmed by the delayed text field.
+    /// newName: New preset name confirmed by the delayed text field.
     /// returns None.
     /// </summary>
     internal void HandlePresetNameChanged(string newName)

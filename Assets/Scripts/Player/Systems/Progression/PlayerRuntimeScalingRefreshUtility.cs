@@ -10,36 +10,38 @@ internal static class PlayerRuntimeScalingRefreshUtility
     #region Public Methods
     /// <summary>
     /// Rebuilds runtime-scaled controller, progression, and power-up configs for one player entity when all required data is available.
-    ///  entity: Player entity being refreshed.
-    ///  scalableStatsLookup: Runtime scalable-stat buffer lookup.
-    ///  controllerScalingLookup: Controller scaling metadata lookup.
-    ///  baseMovementLookup: Immutable movement baseline lookup.
-    ///  runtimeMovementLookup: Mutable runtime movement config lookup.
-    ///  baseLookLookup: Immutable look baseline lookup.
-    ///  runtimeLookLookup: Mutable runtime look config lookup.
-    ///  baseCameraLookup: Immutable camera baseline lookup.
-    ///  runtimeCameraLookup: Mutable runtime camera config lookup.
-    ///  baseShootingLookup: Immutable shooting baseline lookup.
-    ///  runtimeShootingLookup: Mutable runtime shooting config lookup.
-    ///  baseHealthLookup: Immutable health baseline lookup.
-    ///  runtimeHealthLookup: Mutable runtime health config lookup.
-    ///  progressionScalingLookup: Progression scaling metadata lookup.
-    ///  baseGamePhasesLookup: Immutable progression-phase baseline lookup.
-    ///  runtimeGamePhasesLookup: Mutable runtime progression-phase lookup.
-    ///  basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
-    ///  powerUpScalingLookup: Runtime power-up scaling metadata lookup.
-    ///  powerUpsConfigLookup: Mutable active-slot config lookup.
-    ///  unlockCatalogLookup: Mutable unlock catalog lookup.
-    ///  equippedPassiveToolsLookup: Mutable equipped-passive buffer lookup.
-    ///  passiveToolsStateLookup: Mutable aggregated passive-state lookup.
-    ///  healthLookup: Mutable health component lookup.
-    ///  shieldLookup: Mutable shield component lookup.
-    ///  progressionConfigLookup: Runtime progression config lookup.
-    ///  experienceLookup: Mutable player experience lookup.
-    ///  levelLookup: Mutable player level lookup.
-    ///  experienceCollectionLookup: Mutable pickup-radius runtime lookup.
-    ///  runtimeScalingStateLookup: Mutable runtime-scaling sync state lookup.
-    ///  forceApply: True to bypass the scalable-stat hash short-circuit.
+    /// entity: Player entity being refreshed.
+    /// scalableStatsLookup: Runtime scalable-stat buffer lookup.
+    /// controllerScalingLookup: Controller scaling metadata lookup.
+    /// baseMovementLookup: Immutable movement baseline lookup.
+    /// runtimeMovementLookup: Mutable runtime movement config lookup.
+    /// baseLookLookup: Immutable look baseline lookup.
+    /// runtimeLookLookup: Mutable runtime look config lookup.
+    /// baseCameraLookup: Immutable camera baseline lookup.
+    /// runtimeCameraLookup: Mutable runtime camera config lookup.
+    /// baseShootingLookup: Immutable shooting baseline lookup.
+    /// runtimeShootingLookup: Mutable runtime shooting config lookup.
+    /// baseAppliedElementSlotsLookup: Immutable shooting applied-element slot baseline lookup.
+    /// runtimeAppliedElementSlotsLookup: Mutable runtime shooting applied-element slot lookup.
+    /// baseHealthLookup: Immutable health baseline lookup.
+    /// runtimeHealthLookup: Mutable runtime health config lookup.
+    /// progressionScalingLookup: Progression scaling metadata lookup.
+    /// baseGamePhasesLookup: Immutable progression-phase baseline lookup.
+    /// runtimeGamePhasesLookup: Mutable runtime progression-phase lookup.
+    /// basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
+    /// powerUpScalingLookup: Runtime power-up scaling metadata lookup.
+    /// powerUpsConfigLookup: Mutable active-slot config lookup.
+    /// unlockCatalogLookup: Mutable unlock catalog lookup.
+    /// equippedPassiveToolsLookup: Mutable equipped-passive buffer lookup.
+    /// passiveToolsStateLookup: Mutable aggregated passive-state lookup.
+    /// healthLookup: Mutable health component lookup.
+    /// shieldLookup: Mutable shield component lookup.
+    /// progressionConfigLookup: Runtime progression config lookup.
+    /// experienceLookup: Mutable player experience lookup.
+    /// levelLookup: Mutable player level lookup.
+    /// experienceCollectionLookup: Mutable pickup-radius runtime lookup.
+    /// runtimeScalingStateLookup: Mutable runtime-scaling sync state lookup.
+    /// forceApply: True to bypass the scalable-stat hash short-circuit.
     /// returns True when runtime-scaled data was rebuilt; otherwise false.
     /// </summary>
     public static bool TryApplyForEntity(Entity entity,
@@ -53,6 +55,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
                                          ComponentLookup<PlayerRuntimeCameraConfig> runtimeCameraLookup,
                                          ComponentLookup<PlayerBaseShootingConfig> baseShootingLookup,
                                          ComponentLookup<PlayerRuntimeShootingConfig> runtimeShootingLookup,
+                                         BufferLookup<PlayerBaseShootingAppliedElementSlot> baseAppliedElementSlotsLookup,
+                                         BufferLookup<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlotsLookup,
                                          ComponentLookup<PlayerBaseHealthStatisticsConfig> baseHealthLookup,
                                          ComponentLookup<PlayerRuntimeHealthStatisticsConfig> runtimeHealthLookup,
                                          BufferLookup<PlayerRuntimeProgressionScalingElement> progressionScalingLookup,
@@ -83,6 +87,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
             !runtimeCameraLookup.HasComponent(entity) ||
             !baseShootingLookup.HasComponent(entity) ||
             !runtimeShootingLookup.HasComponent(entity) ||
+            !baseAppliedElementSlotsLookup.HasBuffer(entity) ||
+            !runtimeAppliedElementSlotsLookup.HasBuffer(entity) ||
             !baseHealthLookup.HasComponent(entity) ||
             !runtimeHealthLookup.HasComponent(entity) ||
             !progressionScalingLookup.HasBuffer(entity) ||
@@ -115,6 +121,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
         PlayerRuntimeCameraConfig runtimeCamera = runtimeCameraLookup[entity];
         PlayerBaseShootingConfig baseShooting = baseShootingLookup[entity];
         PlayerRuntimeShootingConfig runtimeShooting = runtimeShootingLookup[entity];
+        DynamicBuffer<PlayerBaseShootingAppliedElementSlot> baseAppliedElementSlots = baseAppliedElementSlotsLookup[entity];
+        DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlots = runtimeAppliedElementSlotsLookup[entity];
         PlayerBaseHealthStatisticsConfig baseHealth = baseHealthLookup[entity];
         PlayerRuntimeHealthStatisticsConfig runtimeHealth = runtimeHealthLookup[entity];
         DynamicBuffer<PlayerRuntimeProgressionScalingElement> progressionScaling = progressionScalingLookup[entity];
@@ -143,6 +151,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
                                                                  ref runtimeCamera,
                                                                  in baseShooting,
                                                                  ref runtimeShooting,
+                                                                 baseAppliedElementSlots,
+                                                                 runtimeAppliedElementSlots,
                                                                  in baseHealth,
                                                                  ref runtimeHealth,
                                                                  progressionScaling,

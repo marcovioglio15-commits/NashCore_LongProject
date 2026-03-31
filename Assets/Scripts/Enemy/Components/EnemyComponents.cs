@@ -53,6 +53,15 @@ public struct EnemyRuntimeState : IComponentData
 }
 
 /// <summary>
+/// Stores temporary projectile-driven knockback currently applied to the enemy.
+/// </summary>
+public struct EnemyKnockbackState : IComponentData
+{
+    public float3 Velocity;
+    public float RemainingTime;
+}
+
+/// <summary>
 /// Selects which visual runtime path an enemy should use.
 /// </summary>
 public enum EnemyVisualMode : byte

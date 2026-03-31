@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Drives the runtime gizmo debug panel embedded in the gameplay HUD canvas.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 [DisallowMultipleComponent]
@@ -155,7 +155,7 @@ public sealed class RuntimeGizmoDebugPanelController : MonoBehaviour
     /// <summary>
     /// Replaces unsupported checkmark glyphs used by toggle graphics with an ASCII fallback so the panel stays warning-free
     /// even when the assigned TMP font asset lacks the original symbol.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     private void SanitizeToggleGlyphs()

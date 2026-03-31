@@ -37,6 +37,12 @@ public static class PlayerFormulaOperatorSmokeTest
         // Function precedence and nested grouping.
         Validate("log([FireRate]^2)", 0f, variables, Mathf.Log(64f));
         Validate("[this] + log([FireRate]) * [Speed]", 2f, variables, 2f + Mathf.Log(8f) * 3f);
+        Validate("saturate([this] - 0.25)", 0.25f, variables, 0f);
+        Validate("saturate([this] + 1.5)", 0f, variables, 1f);
+        Validate("inverseLerp(2, 10, [FireRate])", 0f, variables, 0.75f);
+        Validate("remap(0, 10, 100, 200, [Speed])", 0f, variables, 130f);
+        Validate("switch([Speed], 1:10, 3:20, 99)", 0f, variables, 20f);
+        Validate("switch([Speed], 1:10, 2:20, 99)", 0f, variables, 99f);
 
         Debug.Log("[PlayerFormulaOperatorSmokeTest] All operator checks passed.");
     }
@@ -53,11 +59,11 @@ public static class PlayerFormulaOperatorSmokeTest
                                  IReadOnlyDictionary<string, float> variables,
                                  float expected)
     {
-        if (PlayerStatFormulaEngine.TryEvaluate(formula,
-                                                thisValue,
-                                                variables,
-                                                out float result,
-                                                out string errorMessage) == false)
+        if (!PlayerStatFormulaEngine.TryEvaluate(formula,
+                                                 thisValue,
+                                                 variables,
+                                                 out float result,
+                                                 out string errorMessage))
         {
             throw new Exception(string.Format(CultureInfo.InvariantCulture,
                                               "Formula failed: '{0}'. Error: {1}",

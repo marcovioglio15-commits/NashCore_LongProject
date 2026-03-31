@@ -122,11 +122,13 @@ public partial struct EnemyPatternMovementSystem : ISystem
         foreach ((RefRO<EnemyData> occupancyEnemyData,
                   RefRO<EnemyPatternConfig> occupancyPatternConfig,
                   RefRO<EnemyRuntimeState> occupancyEnemyRuntimeState,
+                  RefRO<EnemyKnockbackState> occupancyEnemyKnockbackState,
                   RefRO<LocalTransform> occupancyEnemyTransform,
                   Entity occupancyEnemyEntity)
                  in SystemAPI.Query<RefRO<EnemyData>,
                                     RefRO<EnemyPatternConfig>,
                                     RefRO<EnemyRuntimeState>,
+                                    RefRO<EnemyKnockbackState>,
                                     RefRO<LocalTransform>>()
                              .WithAll<EnemyActive>()
                              .WithNone<EnemyDespawnRequest>()
@@ -135,7 +137,8 @@ public partial struct EnemyPatternMovementSystem : ISystem
             occupancyEntities.Add(occupancyEnemyEntity);
             occupancyPositions.Add(occupancyEnemyTransform.ValueRO.Position);
 
-            float3 planarVelocity = occupancyEnemyRuntimeState.ValueRO.Velocity;
+            float3 planarVelocity = EnemyKnockbackRuntimeUtility.ResolveCombinedVelocity(occupancyEnemyRuntimeState.ValueRO.Velocity,
+                                                                                        in occupancyEnemyKnockbackState.ValueRO);
             planarVelocity.y = 0f;
             occupancyVelocities.Add(planarVelocity);
             occupancyDvdFlags.Add(occupancyPatternConfig.ValueRO.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd ? (byte)1 : (byte)0);
@@ -190,12 +193,14 @@ public partial struct EnemyPatternMovementSystem : ISystem
                   RefRO<EnemyPatternConfig> patternConfig,
                   RefRW<EnemyPatternRuntimeState> patternRuntimeState,
                   RefRW<EnemyRuntimeState> enemyRuntimeState,
+                  RefRW<EnemyKnockbackState> enemyKnockbackState,
                   RefRW<LocalTransform> enemyTransform,
                   Entity enemyEntity)
                  in SystemAPI.Query<RefRO<EnemyData>,
                                     RefRO<EnemyPatternConfig>,
                                     RefRW<EnemyPatternRuntimeState>,
                                     RefRW<EnemyRuntimeState>,
+                                    RefRW<EnemyKnockbackState>,
                                     RefRW<LocalTransform>>()
                              .WithAll<EnemyActive, EnemyCustomPatternMovementTag>()
                              .WithNone<EnemyDespawnRequest, EnemySpawnInactivityLock>()
@@ -205,6 +210,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             EnemyPatternConfig currentPatternConfig = patternConfig.ValueRO;
             EnemyPatternRuntimeState currentPatternRuntimeState = patternRuntimeState.ValueRO;
             EnemyRuntimeState currentEnemyRuntimeState = enemyRuntimeState.ValueRO;
+            EnemyKnockbackState currentEnemyKnockbackState = enemyKnockbackState.ValueRO;
             LocalTransform currentEnemyTransform = enemyTransform.ValueRO;
 
             float elementalSlowPercent = 0f;
@@ -514,6 +520,13 @@ public partial struct EnemyPatternMovementSystem : ISystem
                 nextPosition += desiredDisplacement;
             }
 
+            EnemyKnockbackRuntimeUtility.ApplyDisplacement(ref currentEnemyKnockbackState,
+                                                           ref nextPosition,
+                                                           wallCollisionRadius,
+                                                           in physicsWorldSingleton,
+                                                           wallsLayerMask,
+                                                           wallsEnabled,
+                                                           deltaTime);
             nextPosition.y = currentEnemyTransform.Position.y;
             currentEnemyTransform.Position = nextPosition;
 
@@ -533,9 +546,11 @@ public partial struct EnemyPatternMovementSystem : ISystem
                 }
                 else
                 {
+                    float3 facingVelocity = EnemyKnockbackRuntimeUtility.ResolveCombinedVelocity(currentEnemyRuntimeState.Velocity,
+                                                                                                in currentEnemyKnockbackState);
                     currentEnemyTransform.Rotation = EnemySteeringUtility.ResolveDynamicLookRotation(currentEnemyTransform.Rotation,
-                                                                                                      currentEnemyRuntimeState.Velocity,
-                                                                                                      math.max(moveSpeed, effectiveMaxSpeed),
+                                                                                                      facingVelocity,
+                                                                                                      math.max(math.max(moveSpeed, effectiveMaxSpeed), math.length(facingVelocity)),
                                                                                                       in shooterControlState,
                                                                                                       steeringAggressiveness,
                                                                                                       deltaTime);
@@ -543,6 +558,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             }
 
             enemyRuntimeState.ValueRW = currentEnemyRuntimeState;
+            enemyKnockbackState.ValueRW = currentEnemyKnockbackState;
             patternRuntimeState.ValueRW = currentPatternRuntimeState;
             enemyTransform.ValueRW = currentEnemyTransform;
         }

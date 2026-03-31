@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 /// <summary>
 /// Draws the run timer HUD section and conditionally exposes countdown-only settings.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 [CustomPropertyDrawer(typeof(HUDRunTimerSection))]
@@ -15,7 +15,7 @@ public sealed class HUDRunTimerSectionPropertyDrawer : PropertyDrawer
     #region Public Methods
     /// <summary>
     /// Builds the UI Toolkit inspector for the run timer HUD section.
-    ///  property Serialized run timer HUD section property.
+    /// property Serialized run timer HUD section property.
     /// returns Root UI element used by the inspector.
     /// </summary>
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
@@ -76,8 +76,8 @@ public sealed class HUDRunTimerSectionPropertyDrawer : PropertyDrawer
     #region Private Methods
     /// <summary>
     /// Creates one bound property field with the requested display label.
-    ///  property Serialized property bound to the field.
-    ///  label Inspector label shown for the bound field.
+    /// property Serialized property bound to the field.
+    /// label Inspector label shown for the bound field.
     /// returns Configured property field bound to the serialized property.
     /// </summary>
     private static PropertyField CreateBoundField(SerializedProperty property, string label)
@@ -89,7 +89,7 @@ public sealed class HUDRunTimerSectionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Resolves the serialized timer direction with a safe fallback.
-    ///  directionProperty Serialized direction property.
+    /// directionProperty Serialized direction property.
     /// returns Resolved timer direction.
     /// </summary>
     private static PlayerRunTimerDirection ResolveDirection(SerializedProperty directionProperty)

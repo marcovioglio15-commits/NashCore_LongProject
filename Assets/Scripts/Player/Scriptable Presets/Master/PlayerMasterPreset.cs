@@ -134,6 +134,7 @@ public sealed class PlayerMasterPreset : ScriptableObject
             wallsLayerName = "Walls";
 
         TryMigrateLegacyProgressionHealth();
+        TryMigrateLegacyElementalEnemyVfx();
     }
     #endregion
 
@@ -156,6 +157,25 @@ public sealed class PlayerMasterPreset : ScriptableObject
             EditorUtility.SetDirty(m_ControllerPreset);
 #else
         _ = changed;
+#endif
+    }
+
+    private void TryMigrateLegacyElementalEnemyVfx()
+    {
+        if (visualPreset == null)
+            return;
+
+        if (m_PowerUpsPreset == null)
+            return;
+
+        if (PlayerElementalVfxAssignmentUtility.HasAnyConfiguredVfx(m_PowerUpsPreset.ElementalVfxByElement) == false)
+            return;
+
+        if (!visualPreset.ImportElementalEnemyVfxAssignments(m_PowerUpsPreset.ElementalVfxByElement))
+            return;
+
+#if UNITY_EDITOR
+        EditorUtility.SetDirty(visualPreset);
 #endif
     }
     #endregion

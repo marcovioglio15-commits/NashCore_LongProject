@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Handles authored HUD timer configuration, ECS component setup, and TMP clock rendering.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 [System.Serializable]
@@ -40,7 +40,7 @@ public sealed class HUDRunTimerSection
     #region Public Methods
     /// <summary>
     /// Applies the initial visual state before runtime ECS data becomes available.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     public void Initialize()
@@ -50,7 +50,7 @@ public sealed class HUDRunTimerSection
 
     /// <summary>
     /// Applies the initial authored timer text or hides it when the section is not visible without a player.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     public void ApplyInitialVisualState()
@@ -74,7 +74,7 @@ public sealed class HUDRunTimerSection
 
     /// <summary>
     /// Clears cached runtime bindings and applies the missing-player visual state.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     public void HandleMissingPlayer()
@@ -99,8 +99,8 @@ public sealed class HUDRunTimerSection
 
     /// <summary>
     /// Ensures ECS timer components exist on the current player and refreshes the managed TMP clock.
-    ///  runtimeEntityManager Entity manager used to read and write timer components.
-    ///  playerEntity Player entity currently driving the HUD.
+    /// runtimeEntityManager Entity manager used to read and write timer components.
+    /// playerEntity Player entity currently driving the HUD.
     /// returns void.
     /// </summary>
     public void Update(EntityManager runtimeEntityManager, Entity playerEntity)
@@ -135,8 +135,8 @@ public sealed class HUDRunTimerSection
     #region Setup
     /// <summary>
     /// Ensures the current player entity exposes the timer components that match the authored HUD configuration.
-    ///  runtimeEntityManager Entity manager used to add or update timer components.
-    ///  playerEntity Player entity currently driven by this HUD section.
+    /// runtimeEntityManager Entity manager used to add or update timer components.
+    /// playerEntity Player entity currently driven by this HUD section.
     /// returns void.
     /// </summary>
     private void EnsureTimerComponents(EntityManager runtimeEntityManager, Entity playerEntity)
@@ -171,7 +171,7 @@ public sealed class HUDRunTimerSection
     #region Presentation
     /// <summary>
     /// Applies one display value to the target TMP text only when it changed from the previous frame.
-    ///  totalSeconds Whole seconds value to display.
+    /// totalSeconds Whole seconds value to display.
     /// returns void.
     /// </summary>
     private void ApplyDisplaySeconds(int totalSeconds)
@@ -188,7 +188,7 @@ public sealed class HUDRunTimerSection
 
     /// <summary>
     /// Hides the timer text immediately.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     private void HideTimerImmediate()

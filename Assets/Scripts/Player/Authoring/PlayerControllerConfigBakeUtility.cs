@@ -15,7 +15,7 @@ public static class PlayerControllerConfigBakeUtility
     /// <summary>
     /// Creates the player controller blob from one preset at bake time.
     /// Used by PlayerAuthoringBaker before the blob is attached to the player entity.
-    ///  preset: Source controller preset that contains movement, look, camera, shooting and health data.
+    /// preset: Source controller preset that contains movement, look, camera, shooting and health data.
     /// returns Persistent blob asset reference ready to be added to the baked entity.
     /// </summary>
     public static BlobAssetReference<PlayerControllerConfigBlob> BuildConfigBlob(PlayerControllerPreset preset)
@@ -37,7 +37,7 @@ public static class PlayerControllerConfigBakeUtility
     /// <summary>
     /// Builds the world collision layer config resolved from the master preset.
     /// Used during baking so runtime systems do not need to resolve layer names every frame.
-    ///  masterPreset: Master preset that may override the default walls layer name.
+    /// masterPreset: Master preset that may override the default walls layer name.
     /// returns Runtime-safe world layers config with a resolved walls layer mask.
     /// </summary>
     public static PlayerWorldLayersConfig BuildWorldLayersConfig(PlayerMasterPreset masterPreset)
@@ -57,7 +57,7 @@ public static class PlayerControllerConfigBakeUtility
     /// <summary>
     /// Builds the animator parameter hash config from the selected animation bindings preset.
     /// Called by PlayerAuthoringBaker before ECS animation runtime state is added.
-    ///  preset: Optional animation bindings preset. Null falls back to default parameter names.
+    /// preset: Optional animation bindings preset. Null falls back to default parameter names.
     /// returns Hash-based animator parameter config used by runtime animator sync systems.
     /// </summary>
     public static PlayerAnimatorParameterConfig BuildAnimatorParameterConfig(PlayerAnimationBindingsPreset preset)
@@ -131,7 +131,7 @@ public static class PlayerControllerConfigBakeUtility
     #region Private Methods
     /// <summary>
     /// Resolves the walls layer name configured by the master preset.
-    ///  masterPreset: Optional master preset that may override the default walls layer.
+    /// masterPreset: Optional master preset that may override the default walls layer.
     /// returns Trimmed layer name or the project default when not configured.
     /// </summary>
     private static string ResolveWallsLayerName(PlayerMasterPreset masterPreset)
@@ -149,7 +149,7 @@ public static class PlayerControllerConfigBakeUtility
 
     /// <summary>
     /// Resolves a layer name to a bitmask value.
-    ///  layerName: Unity layer name to convert.
+    /// layerName: Unity layer name to convert.
     /// returns Bitmask for the resolved layer or zero when the layer does not exist.
     /// </summary>
     private static int ResolveLayerMaskByName(string layerName)
@@ -167,7 +167,7 @@ public static class PlayerControllerConfigBakeUtility
 
     /// <summary>
     /// Hashes one animator parameter name while also reporting whether the parameter is defined.
-    ///  parameterName: Animator parameter name to hash.
+    /// parameterName: Animator parameter name to hash.
     /// returns Hash of the trimmed parameter name, or zero when the parameter is missing.
     /// </summary>
     private static int ResolveParameterHash(string parameterName, out byte hasParameter)
@@ -184,7 +184,7 @@ public static class PlayerControllerConfigBakeUtility
 
     /// <summary>
     /// Writes movement settings into the controller blob.
-    ///  root: Controller blob root being populated.
+    /// root: Controller blob root being populated.
     /// returns void.
     /// </summary>
     private static void FillMovementConfig(ref PlayerControllerConfigBlob root, MovementSettings movementSettings)
@@ -215,7 +215,7 @@ public static class PlayerControllerConfigBakeUtility
 
     /// <summary>
     /// Writes look settings and discrete direction multipliers into the controller blob.
-    ///  root: Controller blob root being populated.
+    /// root: Controller blob root being populated.
     /// returns void.
     /// </summary>
     private static void FillLookConfig(ref PlayerControllerConfigBlob root, LookSettings lookSettings, ref BlobBuilder builder)
@@ -284,7 +284,7 @@ public static class PlayerControllerConfigBakeUtility
 
     /// <summary>
     /// Writes camera follow settings into the controller blob.
-    ///  root: Controller blob root being populated.
+    /// root: Controller blob root being populated.
     /// returns void.
     /// </summary>
     private static void FillCameraConfig(ref PlayerControllerConfigBlob root, CameraSettings cameraSettings)
@@ -308,7 +308,7 @@ public static class PlayerControllerConfigBakeUtility
 
     /// <summary>
     /// Writes shooting settings into the controller blob.
-    ///  root: Controller blob root being populated.
+    /// root: Controller blob root being populated.
     /// returns void.
     /// </summary>
     private static void FillShootingConfig(ref PlayerControllerConfigBlob root, ShootingSettings shootingSettings)
@@ -324,18 +324,7 @@ public static class PlayerControllerConfigBakeUtility
             TriggerMode = shootingSettings.TriggerMode,
             ProjectilesInheritPlayerSpeed = shootingSettings.ProjectilesInheritPlayerSpeed ? (byte)1 : (byte)0,
             ShootOffset = new float3(shootingSettings.ShootOffset.x, shootingSettings.ShootOffset.y, shootingSettings.ShootOffset.z),
-            Values = new ShootingValuesBlob
-            {
-                ShootSpeed = shootingSettings.Values.ShootSpeed,
-                RateOfFire = shootingSettings.Values.RateOfFire,
-                ProjectileSizeMultiplier = math.max(0.01f, shootingSettings.Values.ProjectileSizeMultiplier),
-                ExplosionRadius = shootingSettings.Values.ExplosionRadius,
-                Range = shootingSettings.Values.Range,
-                Lifetime = shootingSettings.Values.Lifetime,
-                Damage = shootingSettings.Values.Damage,
-                PenetrationMode = shootingSettings.Values.PenetrationMode,
-                MaxPenetrations = math.max(0, shootingSettings.Values.MaxPenetrations)
-            }
+            Values = PlayerShootingConfigRuntimeUtility.BuildRuntimeValues(shootingSettings.Values)
         };
 
         root.Shooting = shootingConfig;
@@ -343,7 +332,7 @@ public static class PlayerControllerConfigBakeUtility
 
     /// <summary>
     /// Writes health and shield values into the controller blob.
-    ///  root: Controller blob root being populated.
+    /// root: Controller blob root being populated.
     /// returns void.
     /// </summary>
     private static void FillHealthStatisticsConfig(ref PlayerControllerConfigBlob root, PlayerHealthStatisticsSettings healthStatistics)

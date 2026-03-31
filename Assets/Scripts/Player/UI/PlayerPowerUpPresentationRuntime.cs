@@ -16,7 +16,7 @@ public static class PlayerPowerUpPresentationRuntime
     #region Lifecycle
     /// <summary>
     /// Rebuilds the runtime presentation cache from the resolved power-ups preset used by the current player.
-    ///  preset: Power-ups preset whose icons and display names will drive HUD and world-space prompts.
+    /// preset: Power-ups preset whose icons and display names will drive HUD and world-space prompts.
     /// returns void.
     /// </summary>
     public static void Initialize(PlayerPowerUpsPreset preset)
@@ -34,7 +34,7 @@ public static class PlayerPowerUpPresentationRuntime
 
     /// <summary>
     /// Clears the currently cached runtime presentation data.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     public static void Shutdown()
@@ -46,8 +46,8 @@ public static class PlayerPowerUpPresentationRuntime
     #region Lookup
     /// <summary>
     /// Resolves one cached power-up display name with a caller-provided fallback when the cache has no matching entry.
-    ///  powerUpId: Stable power-up identifier requested by HUD or world-space prompts.
-    ///  fallbackDisplayName: Fallback label used when no cached entry exists.
+    /// powerUpId: Stable power-up identifier requested by HUD or world-space prompts.
+    /// fallbackDisplayName: Fallback label used when no cached entry exists.
     /// returns Resolved display name.
     /// </summary>
     public static string ResolveDisplayName(string powerUpId, string fallbackDisplayName)
@@ -66,8 +66,8 @@ public static class PlayerPowerUpPresentationRuntime
 
     /// <summary>
     /// Resolves one cached sprite icon by power-up identifier.
-    ///  powerUpId: Stable power-up identifier requested by HUD or world-space prompts.
-    ///  icon: Resolved sprite icon when present.
+    /// powerUpId: Stable power-up identifier requested by HUD or world-space prompts.
+    /// icon: Resolved sprite icon when present.
     /// returns True when a non-null icon is available; otherwise false.
     /// </summary>
     public static bool TryResolveIcon(string powerUpId, out Sprite icon)
@@ -86,8 +86,8 @@ public static class PlayerPowerUpPresentationRuntime
 
     /// <summary>
     /// Resolves one cached presentation entry by power-up identifier.
-    ///  powerUpId: Stable power-up identifier requested by HUD or world-space prompts.
-    ///  entry: Resolved cached presentation entry when present.
+    /// powerUpId: Stable power-up identifier requested by HUD or world-space prompts.
+    /// entry: Resolved cached presentation entry when present.
     /// returns True when the entry exists; otherwise false.
     /// </summary>
     public static bool TryResolveEntry(string powerUpId, out PowerUpPresentationEntry entry)
@@ -104,7 +104,7 @@ public static class PlayerPowerUpPresentationRuntime
     #region Registration
     /// <summary>
     /// Registers modular active or passive power-up entries in the runtime presentation cache.
-    ///  powerUps: Modular power-up collection taken from the resolved preset.
+    /// powerUps: Modular power-up collection taken from the resolved preset.
     /// returns void.
     /// </summary>
     private static void RegisterModularEntries(IReadOnlyList<ModularPowerUpDefinition> powerUps)
@@ -125,7 +125,7 @@ public static class PlayerPowerUpPresentationRuntime
 
     /// <summary>
     /// Registers legacy active-tool entries in the runtime presentation cache.
-    ///  activeTools: Legacy active-tool collection taken from the resolved preset.
+    /// activeTools: Legacy active-tool collection taken from the resolved preset.
     /// returns void.
     /// </summary>
     private static void RegisterLegacyEntries(IReadOnlyList<ActiveToolDefinition> activeTools)
@@ -146,7 +146,7 @@ public static class PlayerPowerUpPresentationRuntime
 
     /// <summary>
     /// Registers legacy passive-tool entries in the runtime presentation cache.
-    ///  passiveTools: Legacy passive-tool collection taken from the resolved preset.
+    /// passiveTools: Legacy passive-tool collection taken from the resolved preset.
     /// returns void.
     /// </summary>
     private static void RegisterLegacyEntries(IReadOnlyList<PassiveToolDefinition> passiveTools)
@@ -167,7 +167,7 @@ public static class PlayerPowerUpPresentationRuntime
 
     /// <summary>
     /// Registers one shared power-up metadata entry in the runtime presentation cache.
-    ///  commonData: Shared power-up metadata resolved from the preset.
+    /// commonData: Shared power-up metadata resolved from the preset.
     /// returns void.
     /// </summary>
     private static void RegisterCommonData(PowerUpCommonData commonData)
@@ -205,10 +205,10 @@ public static class PlayerPowerUpPresentationRuntime
         #region Methods
         /// <summary>
         /// Creates one cached presentation record.
-        ///  powerUpIdValue: Stable power-up identifier.
-        ///  displayNameValue: Cached display name.
-        ///  descriptionValue: Cached description.
-        ///  iconValue: Cached sprite icon.
+        /// powerUpIdValue: Stable power-up identifier.
+        /// displayNameValue: Cached display name.
+        /// descriptionValue: Cached description.
+        /// iconValue: Cached sprite icon.
         /// returns A fully initialized presentation record.
         /// </summary>
         public PowerUpPresentationEntry(string powerUpIdValue,

@@ -15,8 +15,8 @@ public readonly struct EnemySpawnerGridCellPreviewData
     #region Constructors
     /// <summary>
     /// Creates one immutable preview snapshot for a painted grid cell.
-    ///  enemyCount: Authored enemy count of the cell.
-    ///  fillColor: Resolved paint color of the cell.
+    /// enemyCount: Authored enemy count of the cell.
+    /// fillColor: Resolved paint color of the cell.
     /// returns None.
     /// </summary>
     public EnemySpawnerGridCellPreviewData(int enemyCount, Color fillColor)
@@ -37,8 +37,8 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
     #region Lookup
     /// <summary>
     /// Returns the painted-cells property of one wave.
-    ///  wavesProperty: Serialized waves array.
-    ///  waveIndex: Wave index to inspect.
+    /// wavesProperty: Serialized waves array.
+    /// waveIndex: Wave index to inspect.
     /// returns Painted cells property, or null when the wave index is invalid.
     /// </summary>
     public static SerializedProperty GetPaintedCellsProperty(SerializedProperty wavesProperty, int waveIndex)
@@ -55,9 +55,9 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Finds one painted cell property by coordinate.
-    ///  wavesProperty: Serialized waves array.
-    ///  waveIndex: Wave index to inspect.
-    ///  coordinate: Target coordinate.
+    /// wavesProperty: Serialized waves array.
+    /// waveIndex: Wave index to inspect.
+    /// coordinate: Target coordinate.
     /// returns Serialized property representing the painted cell, or null when it does not exist.
     /// </summary>
     public static SerializedProperty FindCellProperty(SerializedProperty wavesProperty, int waveIndex, Vector2Int coordinate)
@@ -77,8 +77,8 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Finds the array index of one painted cell by grid coordinate.
-    ///  paintedCellsProperty: Serialized array of painted cells.
-    ///  coordinate: Target coordinate.
+    /// paintedCellsProperty: Serialized array of painted cells.
+    /// coordinate: Target coordinate.
     /// returns Index of the painted cell, or -1 when not found.
     /// </summary>
     public static int FindCellIndex(SerializedProperty paintedCellsProperty, Vector2Int coordinate)
@@ -102,7 +102,7 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Builds a coordinate lookup for existing painted cells of the current wave.
-    ///  paintedCellsProperty: Serialized array of painted cells.
+    /// paintedCellsProperty: Serialized array of painted cells.
     /// returns Coordinate-to-preview-data lookup.
     /// </summary>
     public static Dictionary<Vector2Int, EnemySpawnerGridCellPreviewData> BuildCellPreviewMap(SerializedProperty paintedCellsProperty)
@@ -132,7 +132,7 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Creates a deep clone of an animation curve while preserving wrap modes.
-    ///  sourceCurve: Source curve to duplicate.
+    /// sourceCurve: Source curve to duplicate.
     /// returns Cloned curve, or a default linear curve when the source is null.
     /// </summary>
     public static AnimationCurve CloneAnimationCurve(AnimationCurve sourceCurve)
@@ -154,17 +154,17 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
     #region Cell Mutation
     /// <summary>
     /// Paints or erases one cell depending on the current brush mode.
-    ///  serializedObject: Serialized object backing the editor.
-    ///  targetObject: Unity object marked dirty after mutation.
-    ///  wavesProperty: Serialized waves array.
-    ///  waveIndex: Wave index receiving the change.
-    ///  coordinate: Target grid coordinate.
-    ///  eraseMode: True to erase instead of paint.
-    ///  brushMasterPreset: Master preset assigned while painting.
-    ///  brushEnemyCount: Enemy count assigned while painting.
-    ///  brushDistributionCurve: Default curve copied into new cells.
-    ///  selectedWaveIndex: Current selected wave index, updated by the mutation.
-    ///  selectedCellCoordinate: Current selected coordinate, updated by the mutation.
+    /// serializedObject: Serialized object backing the editor.
+    /// targetObject: Unity object marked dirty after mutation.
+    /// wavesProperty: Serialized waves array.
+    /// waveIndex: Wave index receiving the change.
+    /// coordinate: Target grid coordinate.
+    /// eraseMode: True to erase instead of paint.
+    /// brushMasterPreset: Master preset assigned while painting.
+    /// brushEnemyCount: Enemy count assigned while painting.
+    /// brushDistributionCurve: Default curve copied into new cells.
+    /// selectedWaveIndex: Current selected wave index, updated by the mutation.
+    /// selectedCellCoordinate: Current selected coordinate, updated by the mutation.
     /// returns True when the serialized data changed, otherwise false.
     /// </summary>
     public static bool PaintCell(SerializedObject serializedObject,
@@ -233,11 +233,11 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Selects one painted cell for detailed editing.
-    ///  wavesProperty: Serialized waves array.
-    ///  waveIndex: Wave index containing the cell.
-    ///  coordinate: Grid coordinate of the selected cell.
-    ///  selectedWaveIndex: Current selected wave index, updated by the selection.
-    ///  selectedCellCoordinate: Current selected coordinate, updated by the selection.
+    /// wavesProperty: Serialized waves array.
+    /// waveIndex: Wave index containing the cell.
+    /// coordinate: Grid coordinate of the selected cell.
+    /// selectedWaveIndex: Current selected wave index, updated by the selection.
+    /// selectedCellCoordinate: Current selected coordinate, updated by the selection.
     /// returns True when the requested cell exists, otherwise false.
     /// </summary>
     public static bool SelectCell(SerializedProperty wavesProperty,
@@ -267,13 +267,13 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Removes one painted cell from the requested wave.
-    ///  serializedObject: Serialized object backing the editor.
-    ///  targetObject: Unity object marked dirty after mutation.
-    ///  wavesProperty: Serialized waves array.
-    ///  waveIndex: Wave index containing the cell.
-    ///  coordinate: Grid coordinate to remove.
-    ///  selectedWaveIndex: Current selected wave index, updated by the mutation.
-    ///  selectedCellCoordinate: Current selected coordinate, updated by the mutation.
+    /// serializedObject: Serialized object backing the editor.
+    /// targetObject: Unity object marked dirty after mutation.
+    /// wavesProperty: Serialized waves array.
+    /// waveIndex: Wave index containing the cell.
+    /// coordinate: Grid coordinate to remove.
+    /// selectedWaveIndex: Current selected wave index, updated by the mutation.
+    /// selectedCellCoordinate: Current selected coordinate, updated by the mutation.
     /// returns True when the cell existed and was removed, otherwise false.
     /// </summary>
     public static bool RemoveCell(SerializedObject serializedObject,
@@ -306,10 +306,10 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
     #region Wave Mutation
     /// <summary>
     /// Appends one new empty wave to the serialized wave array.
-    ///  serializedObject: Serialized object backing the editor.
-    ///  targetObject: Unity object marked dirty after mutation.
-    ///  wavesProperty: Serialized waves array.
-    ///  waveFoldoutState: Foldout-state cache updated for the new wave.
+    /// serializedObject: Serialized object backing the editor.
+    /// targetObject: Unity object marked dirty after mutation.
+    /// wavesProperty: Serialized waves array.
+    /// waveFoldoutState: Foldout-state cache updated for the new wave.
     /// returns None.
     /// </summary>
     public static void AddWave(SerializedObject serializedObject,
@@ -340,12 +340,12 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Deletes one wave from the serialized array.
-    ///  serializedObject: Serialized object backing the editor.
-    ///  targetObject: Unity object marked dirty after mutation.
-    ///  wavesProperty: Serialized waves array.
-    ///  waveIndex: Index of the wave to delete.
-    ///  selectedWaveIndex: Current selected wave index, updated by the mutation.
-    ///  selectedCellCoordinate: Current selected coordinate, updated by the mutation.
+    /// serializedObject: Serialized object backing the editor.
+    /// targetObject: Unity object marked dirty after mutation.
+    /// wavesProperty: Serialized waves array.
+    /// waveIndex: Index of the wave to delete.
+    /// selectedWaveIndex: Current selected wave index, updated by the mutation.
+    /// selectedCellCoordinate: Current selected coordinate, updated by the mutation.
     /// returns True when the wave existed and was removed, otherwise false.
     /// </summary>
     public static bool DeleteWave(SerializedObject serializedObject,
@@ -375,12 +375,12 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Clears all painted cells from the requested wave.
-    ///  serializedObject: Serialized object backing the editor.
-    ///  targetObject: Unity object marked dirty after mutation.
-    ///  wavesProperty: Serialized waves array.
-    ///  waveIndex: Index of the wave to clear.
-    ///  selectedWaveIndex: Current selected wave index, updated by the mutation.
-    ///  selectedCellCoordinate: Current selected coordinate, updated by the mutation.
+    /// serializedObject: Serialized object backing the editor.
+    /// targetObject: Unity object marked dirty after mutation.
+    /// wavesProperty: Serialized waves array.
+    /// waveIndex: Index of the wave to clear.
+    /// selectedWaveIndex: Current selected wave index, updated by the mutation.
+    /// selectedCellCoordinate: Current selected coordinate, updated by the mutation.
     /// returns True when the wave existed and was cleared, otherwise false.
     /// </summary>
     public static bool ClearWaveCells(SerializedObject serializedObject,
@@ -410,10 +410,10 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Enables preview on one wave and disables it on all others.
-    ///  serializedObject: Serialized object backing the editor.
-    ///  targetObject: Unity object marked dirty after mutation.
-    ///  wavesProperty: Serialized waves array.
-    ///  previewWaveIndex: Wave index that should remain previewed.
+    /// serializedObject: Serialized object backing the editor.
+    /// targetObject: Unity object marked dirty after mutation.
+    /// wavesProperty: Serialized waves array.
+    /// previewWaveIndex: Wave index that should remain previewed.
     /// returns None.
     /// </summary>
     public static void SetWavePreview(SerializedObject serializedObject,
@@ -436,10 +436,10 @@ public static class EnemySpawnerAuthoringEditorWaveUtility
 
     /// <summary>
     /// Terminates paint-drag mode when the mouse button is released.
-    ///  currentEvent: Current IMGUI event.
-    ///  paintDragActive: Current paint-drag flag, updated by the method.
-    ///  paintDragWaveIndex: Current paint-drag wave index, updated by the method.
-    ///  lastPaintedCoordinate: Last drag-painted coordinate, updated by the method.
+    /// currentEvent: Current IMGUI event.
+    /// paintDragActive: Current paint-drag flag, updated by the method.
+    /// paintDragWaveIndex: Current paint-drag wave index, updated by the method.
+    /// lastPaintedCoordinate: Last drag-painted coordinate, updated by the method.
     /// returns None.
     /// </summary>
     public static void HandlePaintDragTermination(Event currentEvent,

@@ -13,7 +13,7 @@ internal static class PlayerExperiencePickupRadiusRuntimeUtility
     #endregion
 
     #region Fields
-    private static readonly Dictionary<string, float> variableContext = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, PlayerFormulaValue> variableContext = new Dictionary<string, PlayerFormulaValue>(StringComparer.OrdinalIgnoreCase);
     #endregion
 
     #region Methods

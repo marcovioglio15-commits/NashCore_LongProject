@@ -315,6 +315,7 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
     {
         VisualElement container = CreateSubSectionContainer("Power-Ups VFX");
         SerializedObject presetSerializedObject = panel.PresetSerializedObject;
+        SerializedProperty elementalEnemyVfxByElementProperty = presetSerializedObject.FindProperty("elementalEnemyVfxByElement");
 
         AddPropertyField(panel,
                          container,
@@ -326,6 +327,26 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
                          presetSerializedObject.FindProperty("elementalTrailAttachedVfxScaleMultiplier"),
                          "Elemental Trail Attached VFX Scale Multiplier",
                          "Scale multiplier applied to the attached Elemental Trail VFX instance.");
+
+        if (elementalEnemyVfxByElementProperty != null)
+        {
+            Label elementalEnemyVfxHeader = new Label("Enemy Elemental Bullet VFX");
+            elementalEnemyVfxHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
+            elementalEnemyVfxHeader.style.marginTop = 6f;
+            elementalEnemyVfxHeader.style.marginBottom = 2f;
+            container.Add(elementalEnemyVfxHeader);
+
+            PropertyField elementalEnemyVfxField = new PropertyField(elementalEnemyVfxByElementProperty, "Per Element Assignments");
+            elementalEnemyVfxField.BindProperty(elementalEnemyVfxByElementProperty);
+            elementalEnemyVfxField.tooltip = "Per-element stack and proc VFX spawned on enemies hit by elemental bullets or trail effects.";
+            elementalEnemyVfxField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+            {
+                PlayerManagementDraftSession.MarkDirty();
+                panel.RefreshPresetList();
+            });
+            container.Add(elementalEnemyVfxField);
+        }
+
         AddPropertyField(panel,
                          container,
                          presetSerializedObject.FindProperty("maxIdenticalOneShotVfxPerCell"),

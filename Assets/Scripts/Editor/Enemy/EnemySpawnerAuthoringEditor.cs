@@ -84,8 +84,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
         drawGridGizmosProperty = serializedObject.FindProperty("drawGridGizmos");
         drawCellCoordinatesProperty = serializedObject.FindProperty("drawCellCoordinates");
         drawCellCountsProperty = serializedObject.FindProperty("drawCellCounts");
-        gridCoordinateLabelStyle = CreateGridLabelStyle(TextAnchor.UpperCenter, 9, FontStyle.Bold, new Color(0.95f, 0.97f, 1f, 0.98f));
-        gridCountLabelStyle = CreateGridLabelStyle(TextAnchor.LowerCenter, 10, FontStyle.Bold, Color.white);
+        gridCoordinateLabelStyle = null;
+        gridCountLabelStyle = null;
         RefreshWavePresetBinding();
 
         if (brushDistributionCurve == null)
@@ -465,8 +465,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
     /// <summary>
     /// Draws one wave foldout and its editable content.
-    ///  waveIndex: Index of the wave being drawn.
-    ///  waveProperty: Serialized property representing the wave.
+    /// waveIndex: Index of the wave being drawn.
+    /// waveProperty: Serialized property representing the wave.
     /// returns None.
     /// </summary>
     private void DrawWaveElement(int waveIndex, SerializedProperty waveProperty)
@@ -519,7 +519,7 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
     /// <summary>
     /// Draws a short summary of the current wave composition.
-    ///  waveIndex: Index of the wave being summarized.
+    /// waveIndex: Index of the wave being summarized.
     /// returns None.
     /// </summary>
     private void DrawWaveSummary(int waveIndex)
@@ -542,7 +542,7 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
     /// <summary>
     /// Draws per-wave action buttons.
-    ///  waveIndex: Index of the wave receiving the actions.
+    /// waveIndex: Index of the wave receiving the actions.
     /// returns None.
     /// </summary>
     private void DrawWaveActionButtons(int waveIndex)
@@ -588,8 +588,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
     /// <summary>
     /// Draws the paintable button grid for one wave and handles left/right mouse interaction.
-    ///  waveIndex: Wave index currently being edited.
-    ///  waveProperty: Serialized property representing the wave.
+    /// waveIndex: Wave index currently being edited.
+    /// waveProperty: Serialized property representing the wave.
     /// returns None.
     /// </summary>
     private void DrawWaveGrid(int waveIndex, SerializedProperty waveProperty)
@@ -628,10 +628,10 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
     /// <summary>
     /// Draws one button cell and handles mouse painting logic.
-    ///  cellRect: Screen-space rect of the button.
-    ///  waveIndex: Wave index owning the cell.
-    ///  coordinate: Grid coordinate represented by the rect.
-    ///  cellPropertyByCoordinate: Lookup of existing painted cells for the current wave.
+    /// cellRect: Screen-space rect of the button.
+    /// waveIndex: Wave index owning the cell.
+    /// coordinate: Grid coordinate represented by the rect.
+    /// cellPropertyByCoordinate: Lookup of existing painted cells for the current wave.
     /// returns None.
     /// </summary>
     private void DrawGridCellButton(Rect cellRect,
@@ -741,7 +741,7 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
     #region Local Utility Methods
     /// <summary>
     /// Returns the persisted foldout state of one wave.
-    ///  waveIndex: Wave index to inspect.
+    /// waveIndex: Wave index to inspect.
     /// returns True when the foldout is expanded, otherwise false.
     /// </summary>
     private bool GetWaveFoldoutState(int waveIndex)
@@ -756,8 +756,8 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
     /// <summary>
     /// Stores the foldout state of one wave.
-    ///  waveIndex: Wave index to update.
-    ///  isExpanded: New foldout state.
+    /// waveIndex: Wave index to update.
+    /// isExpanded: New foldout state.
     /// returns None.
     /// </summary>
     private void SetWaveFoldoutState(int waveIndex, bool isExpanded)
@@ -767,7 +767,7 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
     /// <summary>
     /// Enforces the single-preview rule after toggling a preview checkbox manually.
-    ///  previewWaveIndex: Wave index that remains previewed.
+    /// previewWaveIndex: Wave index that remains previewed.
     /// returns None.
     /// </summary>
     private void EnforceSinglePreviewWave(int previewWaveIndex)
@@ -831,15 +831,25 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
 
     /// <summary>
     /// Creates one cached label style used by the grid-button overlays.
-    ///  alignment: Text alignment inside the cell overlay rect.
-    ///  fontSize: Overlay font size in points.
-    ///  fontStyle: Overlay font style.
-    ///  textColor: Overlay text color.
+    /// alignment: Text alignment inside the cell overlay rect.
+    /// fontSize: Overlay font size in points.
+    /// fontStyle: Overlay font style.
+    /// textColor: Overlay text color.
     /// returns Configured GUIStyle instance.
     /// </summary>
     private static GUIStyle CreateGridLabelStyle(TextAnchor alignment, int fontSize, FontStyle fontStyle, Color textColor)
     {
-        GUIStyle style = new GUIStyle(EditorStyles.miniLabel);
+        GUIStyle baseStyle = EditorStyles.miniLabel;
+
+        if (baseStyle == null)
+            baseStyle = EditorStyles.label;
+
+        if (baseStyle == null && GUI.skin != null)
+            baseStyle = GUI.skin.label;
+
+        GUIStyle style = baseStyle != null
+            ? new GUIStyle(baseStyle)
+            : new GUIStyle();
         style.alignment = alignment;
         style.fontSize = fontSize;
         style.fontStyle = fontStyle;
@@ -849,11 +859,39 @@ public sealed class EnemySpawnerAuthoringEditor : Editor
     }
 
     /// <summary>
+    /// Lazily creates the grid overlay styles only when the editor skin is fully ready.
+    /// returns None.
+    /// </summary>
+    private void EnsureGridLabelStyles()
+    {
+        if (gridCoordinateLabelStyle == null)
+        {
+            gridCoordinateLabelStyle = CreateGridLabelStyle(TextAnchor.UpperCenter,
+                                                            9,
+                                                            FontStyle.Bold,
+                                                            new Color(0.95f, 0.97f, 1f, 0.98f));
+        }
+
+        if (gridCountLabelStyle == null)
+        {
+            gridCountLabelStyle = CreateGridLabelStyle(TextAnchor.LowerCenter,
+                                                       10,
+                                                       FontStyle.Bold,
+                                                       Color.white);
+        }
+    }
+
+    /// <summary>
     /// Updates cached grid label styles to stay readable across zoom levels.
     /// returns None.
     /// </summary>
     private void SyncGridLabelStyles()
     {
+        EnsureGridLabelStyles();
+
+        if (gridCoordinateLabelStyle == null || gridCountLabelStyle == null)
+            return;
+
         float normalizedZoom = Mathf.InverseLerp(0.45f, 2f, gridZoom);
         gridCoordinateLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Lerp(6f, 11f, normalizedZoom));
         gridCountLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Lerp(7f, 12f, normalizedZoom));

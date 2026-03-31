@@ -388,51 +388,6 @@ internal static class PlayerPowerUpsPresetValidationUtility
 
         if (preset.ElementalVfxByElementMutable == null)
             preset.ElementalVfxByElementMutable = new List<ElementalVfxByElementData>();
-
-        EnsureElementalVfxEntry(preset, ElementType.Fire);
-        EnsureElementalVfxEntry(preset, ElementType.Ice);
-        EnsureElementalVfxEntry(preset, ElementType.Poison);
-        EnsureElementalVfxEntry(preset, ElementType.Custom);
-
-        HashSet<ElementType> visitedElements = new HashSet<ElementType>();
-
-        for (int index = 0; index < preset.ElementalVfxByElementMutable.Count; index++)
-        {
-            ElementalVfxByElementData entry = preset.ElementalVfxByElementMutable[index];
-
-            if (entry == null)
-            {
-                preset.ElementalVfxByElementMutable.RemoveAt(index);
-                index--;
-                continue;
-            }
-
-            if (!visitedElements.Add(entry.ElementType))
-            {
-                preset.ElementalVfxByElementMutable.RemoveAt(index);
-                index--;
-                continue;
-            }
-
-            entry.Validate();
-        }
-    }
-
-    private static void EnsureElementalVfxEntry(PlayerPowerUpsPreset preset, ElementType elementType)
-    {
-        for (int index = 0; index < preset.ElementalVfxByElementMutable.Count; index++)
-        {
-            ElementalVfxByElementData entry = preset.ElementalVfxByElementMutable[index];
-
-            if (entry == null)
-                continue;
-
-            if (entry.ElementType == elementType)
-                return;
-        }
-
-        ElementalVfxByElementData newEntry = new ElementalVfxByElementData();
-        newEntry.SetElementType(elementType);
-        preset.ElementalVfxByElementMutable.Add(newEntry);
+        PlayerElementalVfxAssignmentUtility.ValidateAssignments(preset.ElementalVfxByElementMutable);
     }
 }

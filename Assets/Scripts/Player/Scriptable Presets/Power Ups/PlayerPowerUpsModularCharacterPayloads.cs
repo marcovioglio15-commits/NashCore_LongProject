@@ -32,7 +32,7 @@ public sealed class PowerUpCharacterTuningFormulaData
     #region Setup
     /// <summary>
     /// Assigns the serialized acquisition formula.
-    ///  formulaValue Assignment formula stored on this entry.
+    /// formulaValue Assignment formula stored on this entry.
     /// returns void.
     /// </summary>
     public void Configure(string formulaValue)
@@ -44,7 +44,7 @@ public sealed class PowerUpCharacterTuningFormulaData
     #region Validation
     /// <summary>
     /// Normalizes the stored formula string to avoid null serialization state.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     public void Validate()
@@ -89,7 +89,7 @@ public sealed class PowerUpCharacterTuningModuleData
     #region Setup
     /// <summary>
     /// Replaces the stored acquisition-formula list with the provided entries.
-    ///  formulasValue New ordered list of acquisition formulas.
+    /// formulasValue New ordered list of acquisition formulas.
     /// returns void.
     /// </summary>
     public void Configure(List<PowerUpCharacterTuningFormulaData> formulasValue)
@@ -101,7 +101,7 @@ public sealed class PowerUpCharacterTuningModuleData
     #region Validation
     /// <summary>
     /// Sanitizes the nested acquisition formulas and guarantees a non-null list.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     public void Validate()
@@ -157,7 +157,7 @@ public sealed class PowerUpStackableModuleData
     #region Setup
     /// <summary>
     /// Assigns the total acquisition cap exposed by the Stackable module.
-    ///  maxAcquisitionsValue Total number of allowed acquisitions.
+    /// maxAcquisitionsValue Total number of allowed acquisitions.
     /// returns void.
     /// </summary>
     public void Configure(int maxAcquisitionsValue)
@@ -169,7 +169,7 @@ public sealed class PowerUpStackableModuleData
     #region Validation
     /// <summary>
     /// Clamps the total acquisition cap to a meaningful stackable range.
-    ///  none.
+    /// none.
     /// returns void.
     /// </summary>
     public void Validate()

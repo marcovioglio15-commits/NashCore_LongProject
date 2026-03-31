@@ -115,9 +115,99 @@ MonoBehaviour:
       range: 20
       lifetime: 2
       damage: 3
+      appliedElements: 010000000000000000000000
+      elementBehaviours:
+        fire:
+          effectKind: 0
+          procMode: 0
+          reapplyMode: 0
+          stacksPerHit: 1
+          procThresholdStacks: 1
+          maximumStacks: 20
+          stackDecayPerSecond: 1
+          consumeStacksOnProc: 1
+          dotDamagePerTick: 4
+          dotTickInterval: 0.5
+          dotDurationSeconds: 2
+          impedimentSlowPercentPerStack: 10
+          impedimentProcSlowPercent: 50
+          impedimentMaxSlowPercent: 100
+          impedimentDurationSeconds: 2
+        ice:
+          effectKind: 0
+          procMode: 0
+          reapplyMode: 0
+          stacksPerHit: 1
+          procThresholdStacks: 1
+          maximumStacks: 20
+          stackDecayPerSecond: 1
+          consumeStacksOnProc: 1
+          dotDamagePerTick: 4
+          dotTickInterval: 0.5
+          dotDurationSeconds: 2
+          impedimentSlowPercentPerStack: 10
+          impedimentProcSlowPercent: 50
+          impedimentMaxSlowPercent: 100
+          impedimentDurationSeconds: 2
+        poison:
+          effectKind: 0
+          procMode: 0
+          reapplyMode: 0
+          stacksPerHit: 1
+          procThresholdStacks: 1
+          maximumStacks: 20
+          stackDecayPerSecond: 1
+          consumeStacksOnProc: 1
+          dotDamagePerTick: 4
+          dotTickInterval: 0.5
+          dotDurationSeconds: 2
+          impedimentSlowPercentPerStack: 10
+          impedimentProcSlowPercent: 50
+          impedimentMaxSlowPercent: 100
+          impedimentDurationSeconds: 2
+        custom:
+          effectKind: 0
+          procMode: 0
+          reapplyMode: 0
+          stacksPerHit: 1
+          procThresholdStacks: 1
+          maximumStacks: 20
+          stackDecayPerSecond: 1
+          consumeStacksOnProc: 1
+          dotDamagePerTick: 4
+          dotTickInterval: 0.5
+          dotDurationSeconds: 2
+          impedimentSlowPercentPerStack: 10
+          impedimentProcSlowPercent: 50
+          impedimentMaxSlowPercent: 100
+          impedimentDurationSeconds: 2
+      legacyAppliedElement: 1
+      legacyElementBulletSettings:
+        effectKind: 0
+        procMode: 0
+        reapplyMode: 0
+        stacksPerHit: 1
+        procThresholdStacks: 1
+        maximumStacks: 20
+        stackDecayPerSecond: 1
+        consumeStacksOnProc: 1
+        dotDamagePerTick: 4
+        dotTickInterval: 0.5
+        dotDurationSeconds: 2
+        impedimentSlowPercentPerStack: 10
+        impedimentProcSlowPercent: 50
+        impedimentMaxSlowPercent: 100
+        impedimentDurationSeconds: 2
+      elementalPayloadDataMigrated: 1
       projectileSizeMultiplier: 1
       penetrationMode: 1
       maxPenetrations: 0
+      knockback:
+        enabled: 1
+        strength: 6
+        durationSeconds: 0.18
+        directionMode: 0
+        stackingMode: 0
     initialPoolCapacity: 1500
     poolExpandBatch: 1500
   healthStatistics:
@@ -188,6 +278,52 @@ MonoBehaviour:
     formula: '[this] * [BulletSizeMultiplier]'
     debugInConsole: 1
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.penetrationMode
+    addScaling: 1
+    formula: '[InfinitePenetration]?[Infinite]:[FixedHits]'
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: 'shootingSettings.values.appliedElements.Array.data[0]'
+    addScaling: 1
+    formula: switch([BulletElementType_A],"Fire":[Fire],"Ice":[Ice],"Poison":[Poison],"None":[None],[None])
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.knockback.enabled
+    addScaling: 0
+    formula: 
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.elementBehaviours.fire.effectKind
+    addScaling: 0
+    formula: 
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.elementBehaviours.ice.effectKind
+    addScaling: 0
+    formula: 
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.elementBehaviours.poison.effectKind
+    addScaling: 0
+    formula: 
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: shootingSettings.values.elementBehaviours.custom.effectKind
+    addScaling: 0
+    formula: 
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: 'shootingSettings.values.appliedElements.Array.data[1]'
+    addScaling: 1
+    formula: switch([BulletElementType_B],"Fire":[Fire],"Ice":[Ice],"Poison":[Poison],"None":[None],[None])
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - statKey: 'shootingSettings.values.appliedElements.Array.data[2]'
+    addScaling: 1
+    formula: switch([BulletElementType_C],"Fire":[Fire],"Ice":[Ice],"Poison":[Poison],"None":[None],[None])
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  elementalPayloadScalingMigrated: 1
   moveActionId: 351f2ccd-1f9f-44bf-9bec-d62ac5c5f408
   lookActionId: 6b444451-8a00-4d00-a97e-f47457f736a8
   shootActionId: a1c9633a-dc63-42a5-ae60-1a5d6f5f171b

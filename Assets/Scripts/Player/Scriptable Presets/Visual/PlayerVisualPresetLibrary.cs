@@ -33,7 +33,7 @@ public sealed class PlayerVisualPresetLibrary : ScriptableObject
     #region Public Methods
     /// <summary>
     /// Registers a visual preset in the library when not already present.
-    ///  preset: Preset asset to register.
+    /// preset: Preset asset to register.
     /// returns None.
     /// </summary>
     public void AddPreset(PlayerVisualPreset preset)
@@ -49,7 +49,7 @@ public sealed class PlayerVisualPresetLibrary : ScriptableObject
 
     /// <summary>
     /// Removes a visual preset from the library when present.
-    ///  preset: Preset asset to remove.
+    /// preset: Preset asset to remove.
     /// returns None.
     /// </summary>
     public void RemovePreset(PlayerVisualPreset preset)

@@ -47,6 +47,10 @@ public sealed class PlayerControllerPreset : ScriptableObject
     [Tooltip("Optional formula-based scaling rules applied to numeric controller properties during bake.")]
     [SerializeField] private List<PlayerStatScalingRule> scalingRules = new List<PlayerStatScalingRule>();
 
+    [Tooltip("Internal migration flag used to avoid replaying the legacy single-element scaling upgrade on every validation.")]
+    [HideInInspector]
+    [SerializeField] private bool elementalPayloadScalingMigrated;
+
     [Header("Input Actions")]
     [Tooltip("Selected action ID for movement input.")]
     [FormerlySerializedAs("m_MoveActionId")]
@@ -168,6 +172,28 @@ public sealed class PlayerControllerPreset : ScriptableObject
 
     #endregion
 
+    #region Internal Properties
+    internal List<PlayerStatScalingRule> ScalingRulesMutable
+    {
+        get
+        {
+            return scalingRules;
+        }
+    }
+
+    internal bool ElementalPayloadScalingMigrated
+    {
+        get
+        {
+            return elementalPayloadScalingMigrated;
+        }
+        set
+        {
+            elementalPayloadScalingMigrated = value;
+        }
+    }
+    #endregion
+
     #region Unity Methods
     private void OnValidate()
     {
@@ -197,6 +223,8 @@ public sealed class PlayerControllerPreset : ScriptableObject
         cameraSettings.Validate();
         shootingSettings.Validate();
         healthStatistics.Validate();
+        PlayerControllerElementalShootingMigrationUtility.MigrateLegacyScalingRules(this);
+        PlayerControllerElementalShootingMigrationUtility.PruneAppliedElementScalingRules(this);
         ValidateScalingRules();
     }
     #endregion

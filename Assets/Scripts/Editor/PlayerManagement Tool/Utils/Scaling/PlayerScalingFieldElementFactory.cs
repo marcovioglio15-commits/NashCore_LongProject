@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Builds reusable UI Toolkit controls for numeric fields with Add Scaling toggle and formula validation.
+/// Builds reusable UI Toolkit controls for fields that support Add Scaling with typed formula validation.
 /// </summary>
 public static class PlayerScalingFieldElementFactory
 {
@@ -16,13 +16,19 @@ public static class PlayerScalingFieldElementFactory
     private const float ToggleMinWidth = 100f;
     private const float DebugToggleMinWidth = 150f;
     private const float DebugColorFieldWidth = 60f;
+    private const float AvailableVariablesBoxHeight = 46f;
+    #endregion
+
+    #region Fields
+    private static readonly Dictionary<string, Action> formulaFieldRefreshByKey = new Dictionary<string, Action>(StringComparer.Ordinal);
+    private static string activeFormulaFieldKey = string.Empty;
     #endregion
 
     #region Methods
 
     #region Public Methods
     /// <summary>
-    /// Creates a property editor for the provided property, adding scaling controls when the property is numeric.
+    /// Creates a property editor for the provided property, adding scaling controls when the property supports formula scaling.
     /// </summary>
     /// <param name="targetProperty">Target serialized property to render.</param>
     /// <param name="scalingRulesProperty">Serialized List&lt;PlayerStatScalingRule&gt; used for Add Scaling state.</param>
@@ -50,7 +56,7 @@ public static class PlayerScalingFieldElementFactory
         if (IsVectorProperty(targetProperty))
             return CreateVectorField(targetProperty, scalingRulesProperty, labelOverride, allowedVariables);
 
-        if (PlayerScalingStatKeyUtility.IsNumericProperty(targetProperty) == false)
+        if (!PlayerScalingFormulaEditorUtility.SupportsScalingTarget(targetProperty))
         {
             PropertyField fallbackField = string.IsNullOrWhiteSpace(labelOverride)
                 ? new PropertyField(targetProperty)
@@ -61,6 +67,9 @@ public static class PlayerScalingFieldElementFactory
         }
 
         string statKey = PlayerScalingStatKeyUtility.BuildStatKey(targetProperty);
+        string fieldKey = BuildFormulaFieldKey(targetProperty);
+        bool supportsRuntimeDebug = targetProperty.propertyType == SerializedPropertyType.Integer ||
+                                    targetProperty.propertyType == SerializedPropertyType.Float;
         VisualElement root = new VisualElement();
         root.style.flexDirection = FlexDirection.Column;
 
@@ -95,7 +104,8 @@ public static class PlayerScalingFieldElementFactory
 
         TextField formulaField = new TextField("Formula");
         formulaField.isDelayed = false;
-        formulaField.tooltip = "Use [this] and [ScalableStatName] variables. Supported operators: + - * / ^ and log().";
+        formulaField.tooltip = string.Format("Use [this], [ScalableStatName], true/false, quoted token literals such as \"Fire\", and, on enum targets, bracketed enum members such as [FixedHits]. Supported operators: + - * / ^, < <= > >=, == !=, && ||, !, ?:. Supported functions: {0}. switch() syntax: switch(condition, case:value, ..., fallback).",
+                                            PlayerFormulaFunctionUtility.SupportedFunctionsLabel);
         formulaField.style.flexGrow = 1f;
         formulaRow.Add(formulaField);
 
@@ -118,10 +128,32 @@ public static class PlayerScalingFieldElementFactory
         warningBox.style.display = DisplayStyle.None;
         formulaContainer.Add(warningBox);
 
+        ScrollView availableVariablesScrollView = new ScrollView(ScrollViewMode.Vertical);
+        availableVariablesScrollView.style.marginTop = 2f;
+        availableVariablesScrollView.style.height = AvailableVariablesBoxHeight;
+        availableVariablesScrollView.style.maxHeight = AvailableVariablesBoxHeight;
+        availableVariablesScrollView.style.flexShrink = 0f;
+        formulaContainer.Add(availableVariablesScrollView);
+
         Label availableVariablesLabel = new Label();
-        availableVariablesLabel.style.marginTop = 2f;
         availableVariablesLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-        formulaContainer.Add(availableVariablesLabel);
+        availableVariablesLabel.style.whiteSpace = WhiteSpace.Normal;
+        availableVariablesLabel.style.flexShrink = 0f;
+        availableVariablesScrollView.Add(availableVariablesLabel);
+
+        RegisterFormulaFieldRefresher(fieldKey, RefreshFromSerializedState);
+        root.RegisterCallback<DetachFromPanelEvent>(evt => UnregisterFormulaFieldRefresher(fieldKey));
+        root.RegisterCallback<MouseDownEvent>(evt =>
+        {
+            SetActiveFormulaField(fieldKey);
+        });
+        root.RegisterCallback<FocusOutEvent>(evt =>
+        {
+            if (evt.relatedTarget is VisualElement nextFocusedElement && root.Contains(nextFocusedElement))
+                return;
+
+            ClearActiveFormulaField(fieldKey);
+        });
 
         RefreshFromSerializedState();
 
@@ -142,12 +174,16 @@ public static class PlayerScalingFieldElementFactory
             ruleProperty.serializedObject.Update();
             addScalingProperty.boolValue = evt.newValue;
 
-            if (evt.newValue == false)
+            if (!evt.newValue)
                 debugInConsoleProperty.boolValue = false;
 
             ruleProperty.serializedObject.ApplyModifiedProperties();
             PlayerManagementDraftSession.MarkDirty();
-            RefreshFromSerializedState();
+
+            if (evt.newValue)
+                SetActiveFormulaField(fieldKey);
+            else
+                RefreshRegisteredFormulaFields();
         });
 
         formulaField.RegisterValueChangedCallback(evt =>
@@ -168,11 +204,19 @@ public static class PlayerScalingFieldElementFactory
             formulaProperty.stringValue = evt.newValue;
             ruleProperty.serializedObject.ApplyModifiedProperties();
             PlayerManagementDraftSession.MarkDirty();
-            RefreshFromSerializedState();
+            SetActiveFormulaField(fieldKey);
+        });
+
+        formulaField.RegisterCallback<FocusInEvent>(evt =>
+        {
+            SetActiveFormulaField(fieldKey);
         });
 
         debugInConsoleToggle.RegisterValueChangedCallback(evt =>
         {
+            if (!supportsRuntimeDebug)
+                return;
+
             SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, targetProperty, statKey);
 
             if (ruleProperty == null)
@@ -199,6 +243,9 @@ public static class PlayerScalingFieldElementFactory
 
         debugColorField.RegisterValueChangedCallback(evt =>
         {
+            if (!supportsRuntimeDebug)
+                return;
+
             SerializedProperty ruleProperty = EnsureRuleProperty(scalingRulesProperty, targetProperty, statKey);
 
             if (ruleProperty == null)
@@ -246,7 +293,7 @@ public static class PlayerScalingFieldElementFactory
                 if (addScalingProperty != null)
                     addScaling = addScalingProperty.boolValue;
 
-                if (formulaProperty != null && string.IsNullOrWhiteSpace(formulaProperty.stringValue) == false)
+                if (formulaProperty != null && !string.IsNullOrWhiteSpace(formulaProperty.stringValue))
                     formulaValue = formulaProperty.stringValue;
 
                 if (debugInConsoleProperty != null)
@@ -259,21 +306,32 @@ public static class PlayerScalingFieldElementFactory
             if (addScalingToggle.value != addScaling)
                 addScalingToggle.SetValueWithoutNotify(addScaling);
 
-            if (string.Equals(formulaField.value, formulaValue, StringComparison.Ordinal) == false)
+            if (!string.Equals(formulaField.value, formulaValue, StringComparison.Ordinal))
                 formulaField.SetValueWithoutNotify(formulaValue);
 
             if (debugInConsoleToggle.value != debugInConsole)
                 debugInConsoleToggle.SetValueWithoutNotify(debugInConsole);
 
-            if (AreColorsApproximatelyEqual(debugColorField.value, debugColor) == false)
+            if (!AreColorsApproximatelyEqual(debugColorField.value, debugColor))
                 debugColorField.SetValueWithoutNotify(debugColor);
 
             formulaContainer.style.display = addScaling ? DisplayStyle.Flex : DisplayStyle.None;
-            debugColorField.style.display = addScaling && debugInConsole ? DisplayStyle.Flex : DisplayStyle.None;
+            debugInConsoleToggle.style.display = addScaling && supportsRuntimeDebug ? DisplayStyle.Flex : DisplayStyle.None;
+            debugColorField.style.display = addScaling && debugInConsole && supportsRuntimeDebug ? DisplayStyle.Flex : DisplayStyle.None;
             ISet<string> resolvedAllowedVariables = ResolveAllowedVariables(allowedVariables, scalingRulesProperty);
-            availableVariablesLabel.text = PlayerScalingFormulaValidationUtility.BuildAvailableVariablesLabelText(resolvedAllowedVariables);
+            IReadOnlyDictionary<string, PlayerFormulaValueType> resolvedVariableTypes = ResolveAllowedVariableTypes(scalingRulesProperty);
+            IReadOnlyDictionary<string, PlayerScalableStatType> resolvedDisplayTypes = ResolveAllowedDisplayTypes(scalingRulesProperty);
+            string normalizedFormulaValue = PlayerScalingFormulaEditorUtility.NormalizeFormulaForTarget(formulaValue,
+                                                                                                        targetProperty,
+                                                                                                        resolvedAllowedVariables);
+            availableVariablesLabel.text = PlayerScalingFormulaEditorUtility.BuildHelperText(resolvedAllowedVariables,
+                                                                                             resolvedDisplayTypes,
+                                                                                             targetProperty);
+            availableVariablesScrollView.style.display = addScaling && IsActiveFormulaField(fieldKey)
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
 
-            if (addScaling == false)
+            if (!addScaling)
             {
                 warningBox.style.display = DisplayStyle.None;
                 warningBox.text = string.Empty;
@@ -287,7 +345,14 @@ public static class PlayerScalingFieldElementFactory
                 return;
             }
 
-            if (PlayerScalingFormulaValidationUtility.TryValidateFormula(formulaValue, resolvedAllowedVariables, out string warningMessage))
+            PlayerFormulaValueType requiredResultType = PlayerScalingFormulaEditorUtility.ResolveRequiredResultType(targetProperty);
+
+            if (PlayerScalingFormulaValidationUtility.TryValidateFormula(normalizedFormulaValue,
+                                                                        resolvedAllowedVariables,
+                                                                        resolvedVariableTypes,
+                                                                        requiredResultType,
+                                                                        requiredResultType,
+                                                                        out string warningMessage))
             {
                 warningBox.style.display = DisplayStyle.None;
                 warningBox.text = string.Empty;
@@ -418,7 +483,7 @@ public static class PlayerScalingFieldElementFactory
         if (string.IsNullOrWhiteSpace(statKey))
             return null;
 
-        if (scalingRulesProperty.isArray == false)
+        if (!scalingRulesProperty.isArray)
             return null;
 
         SerializedObject serializedObject = scalingRulesProperty.serializedObject;
@@ -449,10 +514,10 @@ public static class PlayerScalingFieldElementFactory
             if (targetProperty == null)
                 continue;
 
-            if (PlayerScalingStatKeyUtility.TryFindPropertyByStatKey(serializedObject, ruleStatKey, out SerializedProperty resolvedProperty) == false)
+            if (!PlayerScalingStatKeyUtility.TryFindPropertyByStatKey(serializedObject, ruleStatKey, out SerializedProperty resolvedProperty))
                 continue;
 
-            if (AreSameSerializedProperty(resolvedProperty, targetProperty) == false)
+            if (!AreSameSerializedProperty(resolvedProperty, targetProperty))
                 continue;
 
             if (autoRepairStatKey)
@@ -486,7 +551,7 @@ public static class PlayerScalingFieldElementFactory
         if (scalingRulesProperty == null)
             return null;
 
-        if (scalingRulesProperty.isArray == false)
+        if (!scalingRulesProperty.isArray)
             return null;
 
         scalingRulesProperty.serializedObject.Update();
@@ -611,6 +676,133 @@ public static class PlayerScalingFieldElementFactory
             mergedVariables.Add(variable);
 
         return mergedVariables;
+    }
+
+    private static IReadOnlyDictionary<string, PlayerFormulaValueType> ResolveAllowedVariableTypes(SerializedProperty scalingRulesProperty)
+    {
+        Dictionary<string, PlayerFormulaValueType> mergedTypes = new Dictionary<string, PlayerFormulaValueType>(StringComparer.OrdinalIgnoreCase);
+
+        if (scalingRulesProperty == null)
+            return mergedTypes;
+
+        SerializedObject serializedObject = scalingRulesProperty.serializedObject;
+
+        if (serializedObject == null)
+            return mergedTypes;
+
+        SerializedProperty scalableStatsProperty = serializedObject.FindProperty("scalableStats");
+
+        if (scalableStatsProperty != null)
+        {
+            Dictionary<string, PlayerFormulaValueType> localTypes = PlayerScalingFormulaValidationUtility.BuildVariableTypeMap(scalableStatsProperty);
+
+            foreach (KeyValuePair<string, PlayerFormulaValueType> entry in localTypes)
+                mergedTypes[entry.Key] = entry.Value;
+        }
+
+        Dictionary<string, PlayerFormulaValueType> scopedTypes = PlayerScalingFormulaValidationUtility.BuildScopedVariableTypeMap(serializedObject);
+
+        foreach (KeyValuePair<string, PlayerFormulaValueType> entry in scopedTypes)
+            mergedTypes[entry.Key] = entry.Value;
+
+        return mergedTypes;
+    }
+
+    private static IReadOnlyDictionary<string, PlayerScalableStatType> ResolveAllowedDisplayTypes(SerializedProperty scalingRulesProperty)
+    {
+        Dictionary<string, PlayerScalableStatType> mergedTypes = new Dictionary<string, PlayerScalableStatType>(StringComparer.OrdinalIgnoreCase);
+
+        if (scalingRulesProperty == null)
+            return mergedTypes;
+
+        SerializedObject serializedObject = scalingRulesProperty.serializedObject;
+
+        if (serializedObject == null)
+            return mergedTypes;
+
+        SerializedProperty scalableStatsProperty = serializedObject.FindProperty("scalableStats");
+
+        if (scalableStatsProperty != null)
+        {
+            Dictionary<string, PlayerScalableStatType> localTypes = PlayerScalingFormulaValidationUtility.BuildScalableStatTypeMap(scalableStatsProperty);
+
+            foreach (KeyValuePair<string, PlayerScalableStatType> entry in localTypes)
+                mergedTypes[entry.Key] = entry.Value;
+        }
+
+        Dictionary<string, PlayerScalableStatType> scopedTypes = PlayerScalingFormulaValidationUtility.BuildScopedScalableStatTypeMap(serializedObject);
+
+        foreach (KeyValuePair<string, PlayerScalableStatType> entry in scopedTypes)
+            mergedTypes[entry.Key] = entry.Value;
+
+        return mergedTypes;
+    }
+
+    private static string BuildFormulaFieldKey(SerializedProperty property)
+    {
+        if (property == null || property.serializedObject == null || property.serializedObject.targetObject == null)
+            return string.Empty;
+
+        return string.Format("{0}:{1}",
+                             property.serializedObject.targetObject.GetInstanceID(),
+                             property.propertyPath);
+    }
+
+    private static bool IsActiveFormulaField(string fieldKey)
+    {
+        if (string.IsNullOrWhiteSpace(fieldKey))
+            return false;
+
+        return string.Equals(activeFormulaFieldKey, fieldKey, StringComparison.Ordinal);
+    }
+
+    private static void SetActiveFormulaField(string fieldKey)
+    {
+        if (string.IsNullOrWhiteSpace(fieldKey))
+            return;
+
+        activeFormulaFieldKey = fieldKey;
+        RefreshRegisteredFormulaFields();
+    }
+
+    private static void ClearActiveFormulaField(string fieldKey)
+    {
+        if (string.IsNullOrWhiteSpace(fieldKey))
+            return;
+
+        if (!string.Equals(activeFormulaFieldKey, fieldKey, StringComparison.Ordinal))
+            return;
+
+        activeFormulaFieldKey = string.Empty;
+        RefreshRegisteredFormulaFields();
+    }
+
+    private static void RegisterFormulaFieldRefresher(string fieldKey, Action refresher)
+    {
+        if (string.IsNullOrWhiteSpace(fieldKey) || refresher == null)
+            return;
+
+        formulaFieldRefreshByKey[fieldKey] = refresher;
+    }
+
+    private static void UnregisterFormulaFieldRefresher(string fieldKey)
+    {
+        if (string.IsNullOrWhiteSpace(fieldKey))
+            return;
+
+        formulaFieldRefreshByKey.Remove(fieldKey);
+        ClearActiveFormulaField(fieldKey);
+    }
+
+    private static void RefreshRegisteredFormulaFields()
+    {
+        if (formulaFieldRefreshByKey.Count <= 0)
+            return;
+
+        List<Action> refreshers = new List<Action>(formulaFieldRefreshByKey.Values);
+
+        for (int index = 0; index < refreshers.Count; index++)
+            refreshers[index]?.Invoke();
     }
 
     #endregion

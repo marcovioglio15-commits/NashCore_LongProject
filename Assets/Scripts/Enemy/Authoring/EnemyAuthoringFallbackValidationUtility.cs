@@ -12,26 +12,26 @@ public static class EnemyAuthoringFallbackValidationUtility
     /// <summary>
     /// Sanitizes fallback values used only when no preset source is assigned on EnemyAuthoring.
     /// Called by EnemyAuthoring.OnValidate to keep hidden fallback data in a safe range.
-    ///  moveSpeed: Fallback movement speed value.
-    ///  maxSpeed: Fallback maximum movement speed value.
-    ///  acceleration: Fallback acceleration value.
-    ///  deceleration: Fallback deceleration value.
-    ///  inactivityTime: Fallback post-spawn inactivity duration.
-    ///  rotationSpeedDegreesPerSecond: Fallback self-rotation speed.
-    ///  minimumWallDistance: Fallback extra distance kept from static walls.
-    ///  separationRadius: Fallback neighbor separation radius.
-    ///  separationWeight: Fallback neighbor separation weight.
-    ///  bodyRadius: Fallback body radius.
-    ///  contactRadius: Fallback contact damage radius.
-    ///  contactAmountPerTick: Fallback contact damage amount.
-    ///  contactTickInterval: Fallback contact damage interval.
-    ///  areaRadius: Fallback area damage radius.
-    ///  areaAmountPerTickPercent: Fallback area damage percentage amount.
-    ///  areaTickInterval: Fallback area damage interval.
-    ///  maxHealth: Fallback maximum health.
-    ///  maxShield: Fallback maximum shield.
-    ///  priorityTier: Fallback priority tier.
-    ///  steeringAggressiveness: Fallback steering aggressiveness.
+    /// moveSpeed: Fallback movement speed value.
+    /// maxSpeed: Fallback maximum movement speed value.
+    /// acceleration: Fallback acceleration value.
+    /// deceleration: Fallback deceleration value.
+    /// inactivityTime: Fallback post-spawn inactivity duration.
+    /// rotationSpeedDegreesPerSecond: Fallback self-rotation speed.
+    /// minimumWallDistance: Fallback extra distance kept from static walls.
+    /// separationRadius: Fallback neighbor separation radius.
+    /// separationWeight: Fallback neighbor separation weight.
+    /// bodyRadius: Fallback body radius.
+    /// contactRadius: Fallback contact damage radius.
+    /// contactAmountPerTick: Fallback contact damage amount.
+    /// contactTickInterval: Fallback contact damage interval.
+    /// areaRadius: Fallback area damage radius.
+    /// areaAmountPerTickPercent: Fallback area damage percentage amount.
+    /// areaTickInterval: Fallback area damage interval.
+    /// maxHealth: Fallback maximum health.
+    /// maxShield: Fallback maximum shield.
+    /// priorityTier: Fallback priority tier.
+    /// steeringAggressiveness: Fallback steering aggressiveness.
     /// returns None.
     /// </summary>
     public static void ValidateFallbackValues(ref float moveSpeed,

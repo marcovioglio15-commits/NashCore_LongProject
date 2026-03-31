@@ -4,7 +4,7 @@ using UnityEditor;
 
 /// <summary>
 /// Draws runtime ECS gizmos inside the Scene view while the game is playing.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 [InitializeOnLoad]
@@ -78,7 +78,7 @@ public static class RuntimeEntityGizmoDrawer
     #region Types
     /// <summary>
     /// Handles the Scene view backend used by the shared runtime gizmo rendering utility.
-    ///  none.
+    /// none.
     /// returns none.
     /// </summary>
     private sealed class SceneViewPrimitiveDrawer : IRuntimeGizmoPrimitiveDrawer
@@ -92,7 +92,7 @@ public static class RuntimeEntityGizmoDrawer
         #region Public Methods
         /// <summary>
         /// Stores the label style reused by subsequent label draw calls.
-        ///  style: Scene view GUI style used for labels.
+        /// style: Scene view GUI style used for labels.
         /// returns void.
         /// </summary>
         public void BindLabelStyle(GUIStyle style)
@@ -102,9 +102,9 @@ public static class RuntimeEntityGizmoDrawer
 
         /// <summary>
         /// Draws one planar Scene view disc using Handles.
-        ///  center: World-space center of the disc.
-        ///  radius: Radius expressed in gameplay world units.
-        ///  color: Final Handles color.
+        /// center: World-space center of the disc.
+        /// radius: Radius expressed in gameplay world units.
+        /// color: Final Handles color.
         /// returns void.
         /// </summary>
         public void DrawWireDisc(Vector3 center, float radius, Color color)
@@ -118,10 +118,10 @@ public static class RuntimeEntityGizmoDrawer
 
         /// <summary>
         /// Draws one world-space directional indicator inside the Scene view.
-        ///  origin: Vector origin in world space.
-        ///  direction: Direction expected to be safely normalizable.
-        ///  length: Vector length expressed in gameplay world units.
-        ///  color: Final Handles color.
+        /// origin: Vector origin in world space.
+        /// direction: Direction expected to be safely normalizable.
+        /// length: Vector length expressed in gameplay world units.
+        /// color: Final Handles color.
         /// returns void.
         /// </summary>
         public void DrawDirection(Vector3 origin, Vector3 direction, float length, Color color)
@@ -143,9 +143,9 @@ public static class RuntimeEntityGizmoDrawer
 
         /// <summary>
         /// Draws one straight Scene view link between two positions.
-        ///  start: Link starting point in world space.
-        ///  end: Link end point in world space.
-        ///  color: Final Handles color.
+        /// start: Link starting point in world space.
+        /// end: Link end point in world space.
+        /// color: Final Handles color.
         /// returns void.
         /// </summary>
         public void DrawLink(Vector3 start, Vector3 end, Color color)
@@ -156,9 +156,9 @@ public static class RuntimeEntityGizmoDrawer
 
         /// <summary>
         /// Draws one compact marker in the Scene view.
-        ///  position: Marker position in world space.
-        ///  radius: Marker size expressed in gameplay world units.
-        ///  color: Final Handles color.
+        /// position: Marker position in world space.
+        /// radius: Marker size expressed in gameplay world units.
+        /// color: Final Handles color.
         /// returns void.
         /// </summary>
         public void DrawMarker(Vector3 position, float radius, Color color)
@@ -170,8 +170,8 @@ public static class RuntimeEntityGizmoDrawer
 
         /// <summary>
         /// Draws one Scene view label slightly above the target world position.
-        ///  position: World-space label anchor.
-        ///  text: Text shown in the Scene view.
+        /// position: World-space label anchor.
+        /// text: Text shown in the Scene view.
         /// returns void.
         /// </summary>
         public void DrawLabel(Vector3 position, string text)

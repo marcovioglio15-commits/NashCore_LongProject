@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Coordinates pause and ending menus for gameplay scenes while reading the authoritative run outcome from ECS.
-///  None.
+/// None.
 /// returns None.
 /// </summary>
 [DisallowMultipleComponent]
@@ -134,7 +134,7 @@ public sealed class GameplayMenuController : MonoBehaviour
     #region Lifecycle
     /// <summary>
     /// Applies the authored startup visibility for pause and ending menus.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void ApplyInitialVisualState()
@@ -150,7 +150,7 @@ public sealed class GameplayMenuController : MonoBehaviour
     #region Buttons
     /// <summary>
     /// Registers authored button callbacks for pause and ending menus.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void RegisterButtons()
@@ -179,7 +179,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Removes authored button callbacks from pause and ending menus.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void UnregisterButtons()
@@ -210,7 +210,7 @@ public sealed class GameplayMenuController : MonoBehaviour
     #region Runtime Input
     /// <summary>
     /// Registers runtime input lifecycle events so pause input can follow PlayerInputRuntime reinitialization.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void RegisterRuntimeEvents()
@@ -221,7 +221,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Removes runtime input lifecycle event subscriptions.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void UnregisterRuntimeEvents()
@@ -232,7 +232,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Rebinds the pause toggle action whenever the shared input runtime is recreated.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleInputRuntimeInitialized()
@@ -242,7 +242,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Clears the current pause-toggle action subscription when the shared input runtime shuts down.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleInputRuntimeShutdown()
@@ -252,7 +252,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Refreshes the pause-toggle binding from PlayerInputRuntime.PauseAction with UI cancel fallback.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void RefreshPauseActionBinding()
@@ -276,7 +276,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Removes the current pause-toggle subscription from the cached gameplay pause action.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void UnregisterPauseActionBinding()
@@ -290,7 +290,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Toggles pause only when gameplay is not already owned by another pause-capable overlay or ending screen.
-    ///  context: Input callback context for the performed cancel action.
+    /// context: Input callback context for the performed cancel action.
     /// returns None.
     /// </summary>
     private void HandlePausePerformed(InputAction.CallbackContext context)
@@ -314,7 +314,7 @@ public sealed class GameplayMenuController : MonoBehaviour
     #region ECS
     /// <summary>
     /// Initializes world and player-query state once a valid default world exists.
-    ///  None.
+    /// None.
     /// returns True when ECS bindings are ready, otherwise false.
     /// </summary>
     private bool TryInitializeEcsBindings()
@@ -357,7 +357,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Resolves the single local player entity used to drive gameplay menu state.
-    ///  playerEntity: Resolved player entity when available.
+    /// playerEntity: Resolved player entity when available.
     /// returns True when exactly one valid player entity exists, otherwise false.
     /// </summary>
     private bool TryResolvePlayerEntity(out Entity playerEntity)
@@ -403,7 +403,7 @@ public sealed class GameplayMenuController : MonoBehaviour
     #region Menu Flow
     /// <summary>
     /// Shows the authored pause menu and freezes gameplay time.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void ShowPauseMenu()
@@ -421,7 +421,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Hides the authored pause menu and restores gameplay time.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void ResumeGameplay()
@@ -441,7 +441,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Shows the authored ending menu using the resolved terminal run outcome.
-    ///  outcome: Finalized outcome computed by ECS.
+    /// outcome: Finalized outcome computed by ECS.
     /// returns None.
     /// </summary>
     private void ShowEndingMenu(PlayerRunOutcome outcome)
@@ -480,7 +480,7 @@ public sealed class GameplayMenuController : MonoBehaviour
     #region Button Callbacks
     /// <summary>
     /// Handles the Resume button from the pause menu.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleResumePressed()
@@ -490,7 +490,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Reloads the active gameplay scene from the pause menu.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleRestartPressed()
@@ -500,7 +500,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Returns to the main menu scene from the pause menu.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleMainMenuPressed()
@@ -510,7 +510,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Requests application shutdown from the pause menu.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleQuitPressed()
@@ -521,7 +521,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Reloads the active gameplay scene from the ending menu.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandlePlayAgainPressed()
@@ -531,7 +531,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Returns to the main menu scene from the ending menu.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleEndingMainMenuPressed()
@@ -541,7 +541,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Requests application shutdown from the ending menu.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void HandleEndingQuitPressed()
@@ -554,7 +554,7 @@ public sealed class GameplayMenuController : MonoBehaviour
     #region Scene Flow
     /// <summary>
     /// Reloads the current active gameplay scene.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void ReloadActiveScene()
@@ -576,7 +576,7 @@ public sealed class GameplayMenuController : MonoBehaviour
 
     /// <summary>
     /// Loads the configured main menu scene when a valid scene name is available.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void LoadMainMenuScene()
@@ -593,7 +593,7 @@ public sealed class GameplayMenuController : MonoBehaviour
     #region Helpers
     /// <summary>
     /// Selects the first non-null button from the provided authored button order.
-    ///  preferredButtons: Ordered button candidates for UI selection.
+    /// preferredButtons: Ordered button candidates for UI selection.
     /// returns None.
     /// </summary>
     private void SelectDefaultButton(params Button[] preferredButtons)

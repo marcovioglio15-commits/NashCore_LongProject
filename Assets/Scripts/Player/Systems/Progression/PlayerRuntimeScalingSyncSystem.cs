@@ -29,7 +29,7 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Declares the runtime data required to rebuild scaled controller, progression, and power-up configs.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -46,6 +46,8 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
                                  .WithAll<PlayerRuntimeCameraConfig>()
                                  .WithAll<PlayerBaseShootingConfig>()
                                  .WithAll<PlayerRuntimeShootingConfig>()
+                                 .WithAll<PlayerBaseShootingAppliedElementSlot>()
+                                 .WithAll<PlayerRuntimeShootingAppliedElementSlot>()
                                  .WithAll<PlayerBaseHealthStatisticsConfig>()
                                  .WithAll<PlayerRuntimeHealthStatisticsConfig>()
                                  .WithAll<PlayerRuntimeProgressionScalingElement>()
@@ -69,7 +71,7 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
 
     /// <summary>
     /// Rebuilds runtime-scaled configs only when the scalable-stat hash changed since the previous applied sample.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnUpdate(ref SystemState state)
@@ -84,6 +86,8 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
         ComponentLookup<PlayerRuntimeCameraConfig> runtimeCameraLookup = SystemAPI.GetComponentLookup<PlayerRuntimeCameraConfig>(false);
         ComponentLookup<PlayerBaseShootingConfig> baseShootingLookup = SystemAPI.GetComponentLookup<PlayerBaseShootingConfig>(true);
         ComponentLookup<PlayerRuntimeShootingConfig> runtimeShootingLookup = SystemAPI.GetComponentLookup<PlayerRuntimeShootingConfig>(false);
+        BufferLookup<PlayerBaseShootingAppliedElementSlot> baseAppliedElementSlotsLookup = SystemAPI.GetBufferLookup<PlayerBaseShootingAppliedElementSlot>(true);
+        BufferLookup<PlayerRuntimeShootingAppliedElementSlot> runtimeAppliedElementSlotsLookup = SystemAPI.GetBufferLookup<PlayerRuntimeShootingAppliedElementSlot>(false);
         ComponentLookup<PlayerBaseHealthStatisticsConfig> baseHealthLookup = SystemAPI.GetComponentLookup<PlayerBaseHealthStatisticsConfig>(true);
         ComponentLookup<PlayerRuntimeHealthStatisticsConfig> runtimeHealthLookup = SystemAPI.GetComponentLookup<PlayerRuntimeHealthStatisticsConfig>(false);
         BufferLookup<PlayerRuntimeProgressionScalingElement> progressionScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimeProgressionScalingElement>(true);
@@ -117,6 +121,8 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
                                                                  runtimeCameraLookup,
                                                                  baseShootingLookup,
                                                                  runtimeShootingLookup,
+                                                                 baseAppliedElementSlotsLookup,
+                                                                 runtimeAppliedElementSlotsLookup,
                                                                  baseHealthLookup,
                                                                  runtimeHealthLookup,
                                                                  progressionScalingLookup,

@@ -3,7 +3,7 @@ using Unity.Entities;
 
 /// <summary>
 /// Consumes authoritative swap commands issued by HUD or world-space prompts for dropped power-up containers.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
@@ -16,7 +16,7 @@ public partial struct PlayerPowerUpContainerSwapResolveSystem : ISystem
     #region Lifecycle
     /// <summary>
     /// Registers the runtime components required to resolve dropped-container swap commands.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnCreate(ref SystemState state)
@@ -29,7 +29,7 @@ public partial struct PlayerPowerUpContainerSwapResolveSystem : ISystem
 
     /// <summary>
     /// Applies the first valid dropped-container swap command queued on each player entity.
-    ///  state: Current ECS system state.
+    /// state: Current ECS system state.
     /// returns void.
     /// </summary>
     public void OnUpdate(ref SystemState state)

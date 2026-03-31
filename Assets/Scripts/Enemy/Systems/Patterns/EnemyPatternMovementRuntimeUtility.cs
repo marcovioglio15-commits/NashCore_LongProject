@@ -18,8 +18,8 @@ public static class EnemyPatternMovementRuntimeUtility
     #region Public Methods
     /// <summary>
     /// Resolves additional wall-clearance radius enforced during runtime movement.
-    ///  patternConfig: Current compiled pattern configuration.
-    ///  enemyData: Current immutable enemy data.
+    /// patternConfig: Current compiled pattern configuration.
+    /// enemyData: Current immutable enemy data.
     /// returns Additional wall-clearance radius in meters.
     /// </summary>
     public static float ResolveWallClearanceForMovement(in EnemyPatternConfig patternConfig, in EnemyData enemyData)
@@ -33,8 +33,8 @@ public static class EnemyPatternMovementRuntimeUtility
 
     /// <summary>
     /// Computes how much requested displacement was blocked by collision resolution.
-    ///  requestedDistance: Requested displacement length.
-    ///  allowedDistance: Allowed displacement length.
+    /// requestedDistance: Requested displacement length.
+    /// allowedDistance: Allowed displacement length.
     /// returns Blocked ratio in the [0..1] range.
     /// </summary>
     public static float ResolveBlockedDisplacementRatio(float requestedDistance, float allowedDistance)
@@ -48,15 +48,15 @@ public static class EnemyPatternMovementRuntimeUtility
 
     /// <summary>
     /// Resolves a lightweight wall-discomfort response used by Wanderer-based patterns to leave tight wall-adjacent spots early.
-    ///  baseVelocity: Current desired planar velocity before wall comfort correction.
-    ///  enemyPosition: Current enemy world position.
-    ///  bodyRadius: Current immutable body radius.
-    ///  minimumWallDistance: Additional authored wall clearance distance.
-    ///  desiredSpeed: Desired planar speed magnitude used for the comfort correction.
-    ///  physicsWorldSingleton: Physics world singleton used for wall distance queries.
-    ///  wallsLayerMask: Walls layer mask.
-    ///  wallsEnabled: Whether wall queries are enabled.
-    ///  wallComfortPressure: Output normalized wall-pressure scalar in the [0..1] range.
+    /// baseVelocity: Current desired planar velocity before wall comfort correction.
+    /// enemyPosition: Current enemy world position.
+    /// bodyRadius: Current immutable body radius.
+    /// minimumWallDistance: Additional authored wall clearance distance.
+    /// desiredSpeed: Desired planar speed magnitude used for the comfort correction.
+    /// physicsWorldSingleton: Physics world singleton used for wall distance queries.
+    /// wallsLayerMask: Walls layer mask.
+    /// wallsEnabled: Whether wall queries are enabled.
+    /// wallComfortPressure: Output normalized wall-pressure scalar in the [0..1] range.
     /// returns Corrected planar velocity that biases movement away from the wall comfort shell.
     /// </summary>
     public static float3 ResolveWallComfortVelocity(float3 baseVelocity,
@@ -123,8 +123,8 @@ public static class EnemyPatternMovementRuntimeUtility
 
     /// <summary>
     /// Consumes the active Wanderer target when wall clearance invalidates remaining progress.
-    ///  patternRuntimeState: Mutable Wanderer runtime state.
-    ///  patternConfig: Current compiled pattern configuration.
+    /// patternRuntimeState: Mutable Wanderer runtime state.
+    /// patternConfig: Current compiled pattern configuration.
     /// returns None.
     /// </summary>
     public static void ConsumeWanderTargetOnClearance(ref EnemyPatternRuntimeState patternRuntimeState,
@@ -140,12 +140,12 @@ public static class EnemyPatternMovementRuntimeUtility
 
     /// <summary>
     /// Resolves current Wanderer DVD desired velocity and initializes the first direction if needed.
-    ///  enemyEntity: Current enemy entity.
-    ///  patternConfig: Current compiled pattern configuration.
-    ///  patternRuntimeState: Mutable Wanderer runtime state.
-    ///  moveSpeed: Resolved movement speed.
-    ///  maxSpeed: Resolved maximum movement speed.
-    ///  elapsedTime: Elapsed world time in seconds.
+    /// enemyEntity: Current enemy entity.
+    /// patternConfig: Current compiled pattern configuration.
+    /// patternRuntimeState: Mutable Wanderer runtime state.
+    /// moveSpeed: Resolved movement speed.
+    /// maxSpeed: Resolved maximum movement speed.
+    /// elapsedTime: Elapsed world time in seconds.
     /// returns Desired planar velocity for the current frame.
     /// </summary>
     public static float3 ResolveWandererDvdVelocity(Entity enemyEntity,
@@ -198,8 +198,8 @@ public static class EnemyPatternMovementRuntimeUtility
     #region Private Methods
     /// <summary>
     /// Resolves the extra comfort shell added over the authored wall clearance so wall-adjacent wanderers start leaving earlier.
-    ///  bodyRadius: Current immutable body radius.
-    ///  minimumWallDistance: Additional authored wall clearance distance.
+    /// bodyRadius: Current immutable body radius.
+    /// minimumWallDistance: Additional authored wall clearance distance.
     /// returns Extra comfort shell thickness in meters.
     /// </summary>
     private static float ResolveWallComfortBand(float bodyRadius, float minimumWallDistance)

@@ -22,56 +22,106 @@ MonoBehaviour:
     defaultValue: 5
     minimumValue: 1
     maximumValue: 26
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: Shield
     statType: 1
     defaultValue: 0
     minimumValue: 0
     maximumValue: 100
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: MovementSpeed
     statType: 0
     defaultValue: 2
     minimumValue: -1000000
     maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: Damage
     statType: 0
     defaultValue: 1
     minimumValue: -1000000
     maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: FireRate
     statType: 0
     defaultValue: 4
     minimumValue: 0.1
     maximumValue: 8
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: ShotRange
     statType: 0
     defaultValue: 0.35
     minimumValue: -1000000
     maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: GatheringRadius
     statType: 0
     defaultValue: 6
     minimumValue: -1000000
     maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: Luck
     statType: 0
     defaultValue: 6
     minimumValue: -1000000
     maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: BulletPenetration
     statType: 1
     defaultValue: 0
     minimumValue: -1000000
     maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: ShotgunBarrels
     statType: 1
     defaultValue: 1
     minimumValue: 1
     maximumValue: 10
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   - statName: BulletSizeMultiplier
     statType: 0
     defaultValue: 1
     minimumValue: -1000000
     maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
+  - statName: InfinitePenetration
+    statType: 2
+    defaultValue: 1
+    minimumValue: -1000000
+    maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
+  - statName: BulletElementType_A
+    statType: 3
+    defaultValue: 1
+    minimumValue: -1000000
+    maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: '"None"'
+  - statName: BulletElementType_B
+    statType: 3
+    defaultValue: 1
+    minimumValue: -1000000
+    maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: '"None"'
+  - statName: BulletElementType_C
+    statType: 3
+    defaultValue: 1
+    minimumValue: -1000000
+    maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: '"None"'
   scalingRules:
   - statKey: gamePhasesDefinition.Array.data[0|phaseID:Phase0].requiredExperienceGrouth
     addScaling: 0

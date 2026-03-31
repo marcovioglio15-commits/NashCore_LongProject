@@ -85,6 +85,7 @@ public static class ProjectileSplitUtility
                                         splitDamage,
                                         splitExplosionRadius,
                                         splitScaleMultiplier,
+                                        in projectileData,
                                         in elementalPayload,
                                         projectileData.InheritPlayerSpeed);
                 return;
@@ -101,6 +102,7 @@ public static class ProjectileSplitUtility
                                             splitDamage,
                                             splitExplosionRadius,
                                             splitScaleMultiplier,
+                                            in projectileData,
                                             in elementalPayload,
                                             projectileData.InheritPlayerSpeed);
                     return;
@@ -116,6 +118,7 @@ public static class ProjectileSplitUtility
                                             splitDamage,
                                             splitExplosionRadius,
                                             splitScaleMultiplier,
+                                            in projectileData,
                                             in elementalPayload,
                                             projectileData.InheritPlayerSpeed);
                 return;
@@ -134,6 +137,7 @@ public static class ProjectileSplitUtility
                                                 float splitDamage,
                                                 float splitExplosionRadius,
                                                 float splitScaleMultiplier,
+                                                in Projectile sourceProjectile,
                                                 in ProjectileElementalPayload elementalPayload,
                                                 byte inheritPlayerSpeed)
     {
@@ -154,6 +158,7 @@ public static class ProjectileSplitUtility
                                  splitDamage,
                                  splitExplosionRadius,
                                  splitScaleMultiplier,
+                                 in sourceProjectile,
                                  in elementalPayload,
                                  inheritPlayerSpeed);
         }
@@ -169,6 +174,7 @@ public static class ProjectileSplitUtility
                                                     float splitDamage,
                                                     float splitExplosionRadius,
                                                     float splitScaleMultiplier,
+                                                    in Projectile sourceProjectile,
                                                     in ProjectileElementalPayload elementalPayload,
                                                     byte inheritPlayerSpeed)
     {
@@ -187,6 +193,7 @@ public static class ProjectileSplitUtility
                                  splitDamage,
                                  splitExplosionRadius,
                                  splitScaleMultiplier,
+                                 in sourceProjectile,
                                  in elementalPayload,
                                  inheritPlayerSpeed);
         }
@@ -201,6 +208,7 @@ public static class ProjectileSplitUtility
                                              float splitDamage,
                                              float splitExplosionRadius,
                                              float splitScaleMultiplier,
+                                             in Projectile sourceProjectile,
                                              in ProjectileElementalPayload elementalPayload,
                                              byte inheritPlayerSpeed)
     {
@@ -216,13 +224,14 @@ public static class ProjectileSplitUtility
             ProjectileScaleMultiplier = splitScaleMultiplier,
             PenetrationMode = ProjectilePenetrationMode.None,
             MaxPenetrations = 0,
+            KnockbackEnabled = sourceProjectile.KnockbackEnabled,
+            KnockbackStrength = math.max(0f, sourceProjectile.KnockbackStrength),
+            KnockbackDurationSeconds = math.max(0f, sourceProjectile.KnockbackDurationSeconds),
+            KnockbackDirectionMode = sourceProjectile.KnockbackDirectionMode,
+            KnockbackStackingMode = sourceProjectile.KnockbackStackingMode,
             InheritPlayerSpeed = inheritPlayerSpeed,
             IsSplitChild = 1,
-            HasElementalPayloadOverride = elementalPayload.Enabled != 0 && elementalPayload.StacksPerHit > 0f ? (byte)1 : (byte)0,
-            ElementalEffectOverride = elementalPayload.Effect,
-            ElementalStacksPerHitOverride = elementalPayload.Enabled != 0 && elementalPayload.StacksPerHit > 0f
-                ? math.max(0f, elementalPayload.StacksPerHit)
-                : 0f
+            ElementalPayloadOverride = elementalPayload
         });
     }
 

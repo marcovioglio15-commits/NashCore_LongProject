@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Defines the available scalar data type options for designer-authored scalable stats.
+/// Defines the scalable stat kinds supported by the unified formula system.
 /// </summary>
 public enum PlayerScalableStatType : byte
 {
     Float = 0,
-    Integer = 1
+    Integer = 1,
+    Boolean = 2,
+    Token = 3,
+    Unsigned = 4
 }
 
 /// <summary>
@@ -23,17 +26,23 @@ public sealed class PlayerScalableStatDefinition
     [Tooltip("Scalable stat identifier used in formulas with [StatName] syntax.")]
     [SerializeField] private string statName = "newStat";
 
-    [Tooltip("Data type used by this stat at runtime. Integer values are rounded after scaling.")]
+    [Tooltip("Runtime data type used by this scalable stat.")]
     [SerializeField] private PlayerScalableStatType statType = PlayerScalableStatType.Float;
 
-    [Tooltip("Default raw value of this scalable stat before formula-based scaling is evaluated.")]
+    [Tooltip("Default numeric value used when the stat type is Float, Integer or Unsigned.")]
     [SerializeField] private float defaultValue;
 
-    [Tooltip("Minimum runtime value allowed for this scalable stat. Runtime sorts Min/Max if they are inverted.")]
+    [Tooltip("Minimum numeric runtime value allowed when the stat type is Float, Integer or Unsigned.")]
     [SerializeField] private float minimumValue = PlayerScalableStatClampUtility.DefaultMinimumValue;
 
-    [Tooltip("Maximum runtime value allowed for this scalable stat. Runtime sorts Min/Max if they are inverted.")]
+    [Tooltip("Maximum numeric runtime value allowed when the stat type is Float, Integer or Unsigned.")]
     [SerializeField] private float maximumValue = PlayerScalableStatClampUtility.DefaultMaximumValue;
+
+    [Tooltip("Default boolean value used when the stat type is Boolean.")]
+    [SerializeField] private bool defaultBooleanValue;
+
+    [Tooltip("Default token value used when the stat type is Token.")]
+    [SerializeField] private string defaultTokenValue = string.Empty;
     #endregion
 
     #endregion
@@ -78,16 +87,32 @@ public sealed class PlayerScalableStatDefinition
             return maximumValue;
         }
     }
+
+    public bool DefaultBooleanValue
+    {
+        get
+        {
+            return defaultBooleanValue;
+        }
+    }
+
+    public string DefaultTokenValue
+    {
+        get
+        {
+            return defaultTokenValue;
+        }
+    }
     #endregion
 
     #region Methods
 
     #region Validation
     /// <summary>
-    /// Sanitizes this stat entry to keep name data valid for formulas while preserving designer-authored numeric values.
+    /// Sanitizes the scalable stat entry while preserving designer-authored values.
     /// </summary>
-    /// <param name="fallbackName">Name to apply when the current name is empty or invalid.</param>
-    /// <returns>True when at least one field was modified during validation, otherwise false.<returns>
+    /// <param name="fallbackName">Fallback name used when the current stat name is invalid.</param>
+    /// <returns>True when at least one field was modified during validation.<returns>
     public bool Validate(string fallbackName)
     {
         bool changed = false;
@@ -99,30 +124,62 @@ public sealed class PlayerScalableStatDefinition
             changed = true;
         }
 
+        string sanitizedTokenValue = string.IsNullOrWhiteSpace(defaultTokenValue)
+            ? string.Empty
+            : defaultTokenValue.Trim();
+
+        if (!string.Equals(defaultTokenValue, sanitizedTokenValue, StringComparison.Ordinal))
+        {
+            defaultTokenValue = sanitizedTokenValue;
+            changed = true;
+        }
+
         return changed;
     }
 
     /// <summary>
-    /// Resolves the normalized runtime default value after clamp and integer rules are applied.
+    /// Resolves the typed runtime default value of this scalable stat.
     /// </summary>
-    /// <returns>Runtime-ready scalable-stat default value.<returns>
+    /// <returns>Runtime-ready typed default value.<returns>
+    public PlayerFormulaValue ResolveRuntimeDefaultFormulaValue()
+    {
+        switch (statType)
+        {
+            case PlayerScalableStatType.Integer:
+            case PlayerScalableStatType.Unsigned:
+            case PlayerScalableStatType.Float:
+                return PlayerFormulaValue.CreateNumber(PlayerScalableStatClampUtility.ResolveNormalizedValue(statType,
+                                                                                                            minimumValue,
+                                                                                                            maximumValue,
+                                                                                                            defaultValue));
+            case PlayerScalableStatType.Boolean:
+                return PlayerFormulaValue.CreateBoolean(defaultBooleanValue);
+            case PlayerScalableStatType.Token:
+                return PlayerFormulaValue.CreateToken(defaultTokenValue);
+            default:
+                return PlayerFormulaValue.CreateInvalid();
+        }
+    }
+
+    /// <summary>
+    /// Resolves the numeric projection of the default value for legacy numeric-only code paths.
+    /// </summary>
+    /// <returns>Numeric default projection.<returns>
     public float ResolveRuntimeDefaultValue()
     {
-        return PlayerScalableStatClampUtility.ResolveNormalizedValue(statType,
-                                                                    minimumValue,
-                                                                    maximumValue,
-                                                                    defaultValue);
+        PlayerFormulaValue defaultFormulaValue = ResolveRuntimeDefaultFormulaValue();
+        return PlayerScalableStatTypeUtility.ResolveNumericProjection(statType, defaultFormulaValue);
     }
     #endregion
 
     #region Setup
     /// <summary>
-    /// Assigns all serialized fields for this scalable stat in one call.
+    /// Assigns the numeric configuration of the scalable stat.
     /// </summary>
-    /// <param name="statNameValue">Formula variable name for this stat.</param>
-    /// <param name="statTypeValue">Runtime data type of this stat.</param>
-    /// <param name="defaultValueValue">Default raw stat value before scaling.</param>
-
+    /// <param name="statNameValue">Formula variable name.</param>
+    /// <param name="statTypeValue">Runtime scalable stat type.</param>
+    /// <param name="defaultValueValue">Default numeric value.</param>
+    /// <returns>Void.<returns>
     public void Configure(string statNameValue, PlayerScalableStatType statTypeValue, float defaultValueValue)
     {
         Configure(statNameValue,
@@ -133,13 +190,14 @@ public sealed class PlayerScalableStatDefinition
     }
 
     /// <summary>
-    /// Assigns all serialized fields for this scalable stat in one call, including runtime clamp bounds.
+    /// Assigns the numeric configuration of the scalable stat including numeric clamp bounds.
     /// </summary>
-    /// <param name="statNameValue">Formula variable name for this stat.</param>
-    /// <param name="statTypeValue">Runtime data type of this stat.</param>
-    /// <param name="defaultValueValue">Default raw stat value before scaling.</param>
-    /// <param name="minimumValueValue">Minimum runtime clamp value.</param>
-    /// <param name="maximumValueValue">Maximum runtime clamp value.</param>
+    /// <param name="statNameValue">Formula variable name.</param>
+    /// <param name="statTypeValue">Runtime scalable stat type.</param>
+    /// <param name="defaultValueValue">Default numeric value.</param>
+    /// <param name="minimumValueValue">Minimum numeric clamp value.</param>
+    /// <param name="maximumValueValue">Maximum numeric clamp value.</param>
+    /// <returns>Void.<returns>
     public void Configure(string statNameValue,
                           PlayerScalableStatType statTypeValue,
                           float defaultValueValue,
@@ -151,6 +209,44 @@ public sealed class PlayerScalableStatDefinition
         defaultValue = defaultValueValue;
         minimumValue = minimumValueValue;
         maximumValue = maximumValueValue;
+        defaultBooleanValue = false;
+        defaultTokenValue = string.Empty;
+    }
+
+    /// <summary>
+    /// Assigns the boolean configuration of the scalable stat.
+    /// </summary>
+    /// <param name="statNameValue">Formula variable name.</param>
+    /// <param name="defaultBooleanValueValue">Default boolean value.</param>
+    /// <returns>Void.<returns>
+    public void ConfigureBoolean(string statNameValue, bool defaultBooleanValueValue)
+    {
+        statName = statNameValue;
+        statType = PlayerScalableStatType.Boolean;
+        defaultValue = defaultBooleanValueValue ? 1f : 0f;
+        minimumValue = 0f;
+        maximumValue = 1f;
+        defaultBooleanValue = defaultBooleanValueValue;
+        defaultTokenValue = string.Empty;
+    }
+
+    /// <summary>
+    /// Assigns the token configuration of the scalable stat.
+    /// </summary>
+    /// <param name="statNameValue">Formula variable name.</param>
+    /// <param name="defaultTokenValueValue">Default token value.</param>
+    /// <returns>Void.<returns>
+    public void ConfigureToken(string statNameValue, string defaultTokenValueValue)
+    {
+        statName = statNameValue;
+        statType = PlayerScalableStatType.Token;
+        defaultValue = 0f;
+        minimumValue = 0f;
+        maximumValue = 0f;
+        defaultBooleanValue = false;
+        defaultTokenValue = string.IsNullOrWhiteSpace(defaultTokenValueValue)
+            ? string.Empty
+            : defaultTokenValueValue.Trim();
     }
     #endregion
 
@@ -173,19 +269,19 @@ public sealed class PlayerStatScalingRule
     #region Fields
 
     #region Serialized Fields
-    [Tooltip("Stable stat key that identifies which numeric serialized property this scaling rule targets.")]
+    [Tooltip("Stable stat key that identifies which serialized property this scaling rule targets.")]
     [SerializeField] private string statKey;
 
     [Tooltip("When enabled, the Formula field is evaluated and applied to the target numeric stat.")]
     [SerializeField] private bool addScaling;
 
-    [Tooltip("Mathematical expression using [this] and/or [ScalableStatName] variables.")]
+    [Tooltip("Unified formula expression using [this], scalable stat variables and typed conditions.")]
     [SerializeField] private string formula;
 
-    [Tooltip("When enabled, runtime editor-only debug logs print scaling formulas only when tracked values change.")]
+    [Tooltip("When enabled, editor-only runtime debug logs print this scaling rule when tracked values change.")]
     [SerializeField] private bool debugInConsole;
 
-    [Tooltip("Editor-only debug color used for this specific rule when Debug in Console is enabled.")]
+    [Tooltip("Editor-only debug color used by this specific scaling rule log line.")]
     [SerializeField] private Color debugColor = new Color(DebugColorDefaultRed,
                                                           DebugColorDefaultGreen,
                                                           DebugColorDefaultBlue,
@@ -240,9 +336,9 @@ public sealed class PlayerStatScalingRule
 
     #region Public Methods
     /// <summary>
-    /// Returns the default color used for scaling debug logs.
+    /// Returns the default debug color used by scaling rules.
     /// </summary>
-    /// <returns>Default debug color (yellow).<returns>
+    /// <returns>Default opaque yellow debug color.<returns>
     public static Color GetDefaultDebugColor()
     {
         return new Color(DebugColorDefaultRed,
@@ -254,9 +350,9 @@ public sealed class PlayerStatScalingRule
 
     #region Validation
     /// <summary>
-    /// Normalizes rule storage fields to avoid null strings and invalid disabled debug state.
+    /// Normalizes rule storage fields to avoid invalid serialized state.
     /// </summary>
-    /// <returns>True when at least one field was modified during validation, otherwise false.<returns>
+    /// <returns>True when at least one field was modified during validation.<returns>
     public bool Validate()
     {
         bool changed = false;
@@ -295,10 +391,10 @@ public sealed class PlayerStatScalingRule
     /// <summary>
     /// Assigns all serialized fields for this scaling rule in one call.
     /// </summary>
-    /// <param name="statKeyValue">Stable key of the target numeric stat.</param>
-    /// <param name="addScalingValue">Whether formula scaling is enabled.</param>
-    /// <param name="formulaValue">Formula text to evaluate when scaling is enabled.</param>
-
+    /// <param name="statKeyValue">Stable key of the target serialized property.</param>
+    /// <param name="addScalingValue">Whether scaling is enabled.</param>
+    /// <param name="formulaValue">Formula text evaluated when scaling is enabled.</param>
+    /// <returns>Void.<returns>
     public void Configure(string statKeyValue, bool addScalingValue, string formulaValue)
     {
         Configure(statKeyValue, addScalingValue, formulaValue, false, GetDefaultDebugColor());
@@ -307,11 +403,11 @@ public sealed class PlayerStatScalingRule
     /// <summary>
     /// Assigns all serialized fields for this scaling rule in one call.
     /// </summary>
-    /// <param name="statKeyValue">Stable key of the target numeric stat.</param>
-    /// <param name="addScalingValue">Whether formula scaling is enabled.</param>
-    /// <param name="formulaValue">Formula text to evaluate when scaling is enabled.</param>
-    /// <param name="debugInConsoleValue">Whether runtime editor-only logging is enabled for this rule.</param>
-
+    /// <param name="statKeyValue">Stable key of the target serialized property.</param>
+    /// <param name="addScalingValue">Whether scaling is enabled.</param>
+    /// <param name="formulaValue">Formula text evaluated when scaling is enabled.</param>
+    /// <param name="debugInConsoleValue">Whether editor-only runtime logging is enabled.</param>
+    /// <returns>Void.<returns>
     public void Configure(string statKeyValue, bool addScalingValue, string formulaValue, bool debugInConsoleValue)
     {
         Configure(statKeyValue, addScalingValue, formulaValue, debugInConsoleValue, GetDefaultDebugColor());
@@ -320,12 +416,12 @@ public sealed class PlayerStatScalingRule
     /// <summary>
     /// Assigns all serialized fields for this scaling rule in one call.
     /// </summary>
-    /// <param name="statKeyValue">Stable key of the target numeric stat.</param>
-    /// <param name="addScalingValue">Whether formula scaling is enabled.</param>
-    /// <param name="formulaValue">Formula text to evaluate when scaling is enabled.</param>
-    /// <param name="debugInConsoleValue">Whether runtime editor-only logging is enabled for this rule.</param>
-    /// <param name="debugColorValue">Editor-only color applied to this rule debug log.</param>
-
+    /// <param name="statKeyValue">Stable key of the target serialized property.</param>
+    /// <param name="addScalingValue">Whether scaling is enabled.</param>
+    /// <param name="formulaValue">Formula text evaluated when scaling is enabled.</param>
+    /// <param name="debugInConsoleValue">Whether editor-only runtime logging is enabled.</param>
+    /// <param name="debugColorValue">Editor-only debug color used by this rule.</param>
+    /// <returns>Void.<returns>
     public void Configure(string statKeyValue,
                           bool addScalingValue,
                           string formulaValue,
@@ -342,10 +438,10 @@ public sealed class PlayerStatScalingRule
 
     #region Helpers
     /// <summary>
-    /// Sanitizes debug color channels and keeps legacy assets visible by forcing default yellow when alpha is zero.
+    /// Sanitizes debug color channels while preserving a visible alpha.
     /// </summary>
     /// <param name="sourceColor">Raw serialized color.</param>
-    /// <returns>Sanitized opaque debug color.<returns>
+    /// <returns>Sanitized opaque color.<returns>
     private static Color SanitizeDebugColor(Color sourceColor)
     {
         if (sourceColor.a <= 0.0001f)
@@ -358,11 +454,11 @@ public sealed class PlayerStatScalingRule
     }
 
     /// <summary>
-    /// Compares colors using a tiny tolerance to avoid noisy validate writes.
+    /// Compares colors using a small tolerance to avoid noisy validation writes.
     /// </summary>
     /// <param name="leftColor">First color.</param>
     /// <param name="rightColor">Second color.</param>
-    /// <returns>True when channel values are approximately equal.<returns>
+    /// <returns>True when the colors are approximately equal.<returns>
     private static bool AreColorsApproximatelyEqual(Color leftColor, Color rightColor)
     {
         if (Mathf.Abs(leftColor.r - rightColor.r) > 0.0001f)
@@ -394,10 +490,10 @@ public static class PlayerScalableStatNameUtility
 
     #region Public Methods
     /// <summary>
-    /// Normalizes and validates one scalable stat name using project naming rules.
+    /// Normalizes one scalable stat name using project naming rules.
     /// </summary>
     /// <param name="inputName">Raw user-entered stat name.</param>
-    /// <param name="fallbackName">Name used when the input is invalid or empty.</param>
+    /// <param name="fallbackName">Fallback name used when the input is invalid.</param>
     /// <returns>Sanitized stat name that is never null or whitespace.<returns>
     public static string Sanitize(string inputName, string fallbackName)
     {
@@ -416,8 +512,8 @@ public static class PlayerScalableStatNameUtility
     /// <summary>
     /// Checks whether a scalable stat name satisfies allowed syntax and reserved-word restrictions.
     /// </summary>
-    /// <param name="name">Candidate stat name to validate.</param>
-    /// <returns>True when the name is valid, otherwise false.<returns>
+    /// <param name="name">Candidate name to validate.</param>
+    /// <returns>True when the name is valid.<returns>
     public static bool IsValid(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -448,8 +544,8 @@ public static class PlayerScalableStatNameUtility
     /// <summary>
     /// Ensures scalable stat names are unique using case-insensitive comparison.
     /// </summary>
-    /// <param name="definitions">Collection of scalable stats to inspect.</param>
-    /// <returns>True when all names are unique, otherwise false.<returns>
+    /// <param name="definitions">Definitions to inspect.</param>
+    /// <returns>True when all names are unique.<returns>
     public static bool AreUnique(IReadOnlyList<PlayerScalableStatDefinition> definitions)
     {
         if (definitions == null)
@@ -461,10 +557,7 @@ public static class PlayerScalableStatNameUtility
         {
             PlayerScalableStatDefinition definition = definitions[index];
 
-            if (definition == null)
-                continue;
-
-            if (string.IsNullOrWhiteSpace(definition.StatName))
+            if (definition == null || string.IsNullOrWhiteSpace(definition.StatName))
                 continue;
 
             if (!visitedNames.Add(definition.StatName))
@@ -472,6 +565,87 @@ public static class PlayerScalableStatNameUtility
         }
 
         return true;
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Provides type conversion helpers shared by authoring, runtime and editor formula systems.
+/// </summary>
+public static class PlayerScalableStatTypeUtility
+{
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Converts one scalable stat type to the matching formula value type.
+    /// </summary>
+    /// <param name="statType">Scalable stat type.</param>
+    /// <returns>Matching formula value type.<returns>
+    public static PlayerFormulaValueType ToFormulaValueType(PlayerScalableStatType statType)
+    {
+        switch (statType)
+        {
+            case PlayerScalableStatType.Float:
+            case PlayerScalableStatType.Integer:
+            case PlayerScalableStatType.Unsigned:
+                return PlayerFormulaValueType.Number;
+            case PlayerScalableStatType.Boolean:
+                return PlayerFormulaValueType.Boolean;
+            case PlayerScalableStatType.Token:
+                return PlayerFormulaValueType.Token;
+            default:
+                return PlayerFormulaValueType.Invalid;
+        }
+    }
+
+    /// <summary>
+    /// Resolves the numeric projection of one typed scalable stat value.
+    /// </summary>
+    /// <param name="statType">Source scalable stat type.</param>
+    /// <param name="value">Typed source value.</param>
+    /// <returns>Numeric projection used by legacy numeric-only systems.<returns>
+    public static float ResolveNumericProjection(PlayerScalableStatType statType, PlayerFormulaValue value)
+    {
+        switch (statType)
+        {
+            case PlayerScalableStatType.Integer:
+            case PlayerScalableStatType.Unsigned:
+            case PlayerScalableStatType.Float:
+                return value.Type == PlayerFormulaValueType.Number ? value.NumberValue : 0f;
+            case PlayerScalableStatType.Boolean:
+                return value.Type == PlayerFormulaValueType.Boolean && value.BooleanValue ? 1f : 0f;
+            case PlayerScalableStatType.Token:
+                return 0f;
+            default:
+                return 0f;
+        }
+    }
+
+    /// <summary>
+    /// Builds the compact editor-facing label used to describe one scalable-stat type in formula helpers.
+    /// </summary>
+    /// <param name="statType">Source scalable-stat type.</param>
+    /// <returns>Short human-readable type label.<returns>
+    public static string BuildDisplayLabel(PlayerScalableStatType statType)
+    {
+        switch (statType)
+        {
+            case PlayerScalableStatType.Float:
+                return "Float";
+            case PlayerScalableStatType.Integer:
+                return "Integer";
+            case PlayerScalableStatType.Unsigned:
+                return "Unsigned";
+            case PlayerScalableStatType.Boolean:
+                return "Boolean";
+            case PlayerScalableStatType.Token:
+                return "Token";
+            default:
+                return "Invalid";
+        }
     }
     #endregion
 

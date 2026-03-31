@@ -17,7 +17,7 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
     #region Methods
     /// <summary>
     /// Builds the inspector UI for a module definition entry.
-    ///  property Serialized module definition property.
+    /// property Serialized module definition property.
     /// returns Root visual element for the inspector drawer.
     /// </summary>
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
@@ -112,12 +112,12 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Synchronizes module kind, stage, info box and payload UI whenever the selected kind changes.
-    ///  moduleKindProperty Serialized module kind property.
-    ///  stageProperty Serialized stage property updated to the recommended stage.
-    ///  dataProperty Serialized payload container property.
-    ///  moduleKindPopup Popup used for module kind selection.
-    ///  moduleKindInfoBox Help box showing the selected kind description.
-    ///  payloadContainer Visual container hosting payload fields.
+    /// moduleKindProperty Serialized module kind property.
+    /// stageProperty Serialized stage property updated to the recommended stage.
+    /// dataProperty Serialized payload container property.
+    /// moduleKindPopup Popup used for module kind selection.
+    /// moduleKindInfoBox Help box showing the selected kind description.
+    /// payloadContainer Visual container hosting payload fields.
     /// returns void
     /// </summary>
     private static void RefreshModuleUi(SerializedProperty moduleKindProperty,
@@ -148,9 +148,9 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Rebuilds the payload area according to the currently selected module kind.
-    ///  payloadContainer Container that hosts the payload UI.
-    ///  dataProperty Serialized payload root property.
-    ///  moduleKind Selected module kind.
+    /// payloadContainer Container that hosts the payload UI.
+    /// dataProperty Serialized payload root property.
+    /// moduleKind Selected module kind.
     /// returns void
     /// </summary>
     private static void RebuildPayloadContainer(VisualElement payloadContainer, SerializedProperty dataProperty, PowerUpModuleKind moduleKind)
@@ -188,10 +188,10 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Provides the shared payload entry point used by module and binding drawers.
-    ///  payloadContainer Container that will receive the payload UI.
-    ///  payloadProperty Serialized payload property for the selected kind.
-    ///  moduleKind Kind that selects the payload drawer variant.
-    ///  payloadLabel Optional label used by the generic fallback drawer.
+    /// payloadContainer Container that will receive the payload UI.
+    /// payloadProperty Serialized payload property for the selected kind.
+    /// moduleKind Kind that selects the payload drawer variant.
+    /// payloadLabel Optional label used by the generic fallback drawer.
     /// returns void
     /// </summary>
     public static void BuildPayloadEditor(VisualElement payloadContainer,
@@ -207,7 +207,7 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Builds the popup options list for module kind selection.
-    ///  none
+    /// none
     /// returns Materialized module kind list used by the popup field.
     /// </summary>
     private static List<PowerUpModuleKind> BuildModuleKindOptions()
@@ -223,7 +223,7 @@ public sealed class PowerUpModuleDefinitionPropertyDrawer : PropertyDrawer
 
     /// <summary>
     /// Resolves the serialized enum value to a valid module kind option.
-    ///  moduleKindProperty Serialized module kind enum property.
+    /// moduleKindProperty Serialized module kind enum property.
     /// returns Valid module kind, or the first configured option when the property is invalid.
     /// </summary>
     private static PowerUpModuleKind ResolveModuleKind(SerializedProperty moduleKindProperty)

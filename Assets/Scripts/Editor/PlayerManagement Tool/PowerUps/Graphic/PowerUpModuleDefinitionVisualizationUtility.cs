@@ -25,8 +25,8 @@ public static class PowerUpModuleDefinitionVisualizationUtility
     #region Public Methods
     /// <summary>
     /// Builds the cone payload editor and live preview chart.
-    ///  payloadContainer Container that hosts the payload UI.
-    ///  conePayloadProperty Serialized cone payload property.
+    /// payloadContainer Container that hosts the payload UI.
+    /// conePayloadProperty Serialized cone payload property.
     /// returns void
     /// </summary>
     public static void BuildProjectilePatternConePayloadUi(VisualElement payloadContainer, SerializedProperty conePayloadProperty)
@@ -70,8 +70,8 @@ public static class PowerUpModuleDefinitionVisualizationUtility
 
     /// <summary>
     /// Builds the split payload editor and live preview chart.
-    ///  payloadContainer Container that hosts the payload UI.
-    ///  splitPayloadProperty Serialized split payload property.
+    /// payloadContainer Container that hosts the payload UI.
+    /// splitPayloadProperty Serialized split payload property.
     /// returns void
     /// </summary>
     public static void BuildProjectileSplitPayloadUi(VisualElement payloadContainer, SerializedProperty splitPayloadProperty)

@@ -145,8 +145,9 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         SerializedProperty valuesProperty = movementProperty.FindPropertyRelative("values");
         SerializedProperty scalingRulesProperty = panel.PresetSerializedObject.FindProperty("scalingRules");
 
-        EnumField modeField = new EnumField("Allowed Directions");
-        modeField.BindProperty(modeProperty);
+        VisualElement modeField = CreateScalingField(modeProperty,
+                                                     scalingRulesProperty,
+                                                     "Allowed Directions");
         section.Add(modeField);
 
         VisualElement discreteContainer = new VisualElement();
@@ -167,8 +168,9 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         discreteContainer.Add(movementZoomSlider);
         section.Add(discreteContainer);
 
-        EnumField referenceField = new EnumField("Movement Reference");
-        referenceField.BindProperty(referenceProperty);
+        VisualElement referenceField = CreateScalingField(referenceProperty,
+                                                          scalingRulesProperty,
+                                                          "Movement Reference");
         section.Add(referenceField);
 
         SerializedProperty moveActionProperty = panel.PresetSerializedObject.FindProperty("moveActionId");
@@ -212,7 +214,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
             }
         };
 
-        modeField.RegisterValueChangedCallback(evt =>
+        modeField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
         {
             updateView();
         });
@@ -268,136 +270,8 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
 
     public static void BuildShootingSection(PlayerControllerPresetsPanel panel)
     {
-        if (panel == null)
-            return;
-
         VisualElement section = CreateSectionContainer(panel, "Shooting Settings");
-
-        if (section == null)
-            return;
-
-        SerializedProperty shootingProperty = panel.PresetSerializedObject.FindProperty("shootingSettings");
-
-        if (shootingProperty == null)
-            return;
-
-        SerializedProperty triggerModeProperty = shootingProperty.FindPropertyRelative("triggerMode");
-        SerializedProperty inheritPlayerSpeedProperty = shootingProperty.FindPropertyRelative("projectilesInheritPlayerSpeed");
-        SerializedProperty projectilePrefabProperty = shootingProperty.FindPropertyRelative("projectilePrefab");
-        SerializedProperty shootOffsetProperty = shootingProperty.FindPropertyRelative("shootOffset");
-        SerializedProperty valuesProperty = shootingProperty.FindPropertyRelative("values");
-        SerializedProperty initialPoolCapacityProperty = shootingProperty.FindPropertyRelative("initialPoolCapacity");
-        SerializedProperty poolExpandBatchProperty = shootingProperty.FindPropertyRelative("poolExpandBatch");
-        SerializedProperty scalingRulesProperty = panel.PresetSerializedObject.FindProperty("scalingRules");
-
-        EnumField triggerModeField = new EnumField("Trigger Mode");
-        triggerModeField.BindProperty(triggerModeProperty);
-        section.Add(triggerModeField);
-
-        Toggle inheritPlayerSpeedField = new Toggle("Projectiles Inherit Player Speed");
-        inheritPlayerSpeedField.tooltip = "When enabled, projectiles inherit the player's horizontal velocity while they are active.";
-        inheritPlayerSpeedField.BindProperty(inheritPlayerSpeedProperty);
-        section.Add(inheritPlayerSpeedField);
-
-        ObjectField projectilePrefabField = new ObjectField("Projectile Prefab");
-        projectilePrefabField.objectType = typeof(GameObject);
-        projectilePrefabField.BindProperty(projectilePrefabProperty);
-        section.Add(projectilePrefabField);
-
-        Vector3Field shootOffsetField = new Vector3Field("Shoot Offset");
-        shootOffsetField.tooltip = "Offset applied from the Weapon Reference set on PlayerAuthoring (fallback: player transform).";
-        shootOffsetField.BindProperty(shootOffsetProperty);
-        section.Add(shootOffsetField);
-
-        SerializedProperty shootActionProperty = panel.PresetSerializedObject.FindProperty("shootActionId");
-        PlayerControllerPresetsPanelFieldUtility.EnsureDefaultActionId(panel, shootActionProperty, "Shoot");
-
-        Foldout bindingsFoldout = PlayerControllerPresetsPanelFieldUtility.BuildBindingsFoldout(panel.InputAsset,
-                                                                                                panel.PresetSerializedObject,
-                                                                                                shootActionProperty,
-                                                                                                InputActionSelectionElement.SelectionMode.Shooting);
-        section.Add(bindingsFoldout);
-
-        SerializedProperty shootSpeedProperty = valuesProperty.FindPropertyRelative("shootSpeed");
-        SerializedProperty rateOfFireProperty = valuesProperty.FindPropertyRelative("rateOfFire");
-        SerializedProperty projectileSizeMultiplierProperty = valuesProperty.FindPropertyRelative("projectileSizeMultiplier");
-        SerializedProperty explosionRadiusProperty = valuesProperty.FindPropertyRelative("explosionRadius");
-        SerializedProperty rangeProperty = valuesProperty.FindPropertyRelative("range");
-        SerializedProperty lifetimeProperty = valuesProperty.FindPropertyRelative("lifetime");
-        SerializedProperty damageProperty = valuesProperty.FindPropertyRelative("damage");
-        SerializedProperty penetrationModeProperty = valuesProperty.FindPropertyRelative("penetrationMode");
-        SerializedProperty maxPenetrationsProperty = valuesProperty.FindPropertyRelative("maxPenetrations");
-
-        Foldout valuesFoldout = new Foldout();
-        valuesFoldout.text = "Values";
-        valuesFoldout.value = true;
-
-        VisualElement valuesContainer = new VisualElement();
-        valuesContainer.style.flexDirection = FlexDirection.Column;
-        valuesFoldout.Add(valuesContainer);
-
-        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(shootSpeedProperty, scalingRulesProperty));
-        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(rateOfFireProperty, scalingRulesProperty));
-        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(projectileSizeMultiplierProperty, scalingRulesProperty));
-        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(explosionRadiusProperty, scalingRulesProperty));
-        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(rangeProperty, scalingRulesProperty));
-        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(lifetimeProperty, scalingRulesProperty));
-        valuesContainer.Add(PlayerScalingFieldElementFactory.CreateField(damageProperty, scalingRulesProperty));
-
-        VisualElement penetrationModeField = PlayerScalingFieldElementFactory.CreateField(penetrationModeProperty,
-                                                                                          scalingRulesProperty,
-                                                                                          "Penetration Mode");
-        valuesContainer.Add(penetrationModeField);
-
-        VisualElement maxPenetrationsField = PlayerScalingFieldElementFactory.CreateField(maxPenetrationsProperty,
-                                                                                          scalingRulesProperty,
-                                                                                          "Max Penetration");
-        valuesContainer.Add(maxPenetrationsField);
-        section.Add(valuesFoldout);
-
-        void RefreshPenetrationFieldVisibility()
-        {
-            ProjectilePenetrationMode penetrationMode = (ProjectilePenetrationMode)penetrationModeProperty.enumValueIndex;
-            bool shouldShowMaxPenetration = ShouldDisplayMaxPenetrationField(penetrationMode);
-            maxPenetrationsField.style.display = shouldShowMaxPenetration ? DisplayStyle.Flex : DisplayStyle.None;
-        }
-
-        penetrationModeField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
-        {
-            RefreshPenetrationFieldVisibility();
-        });
-        RefreshPenetrationFieldVisibility();
-
-        Foldout objectPoolFoldout = new Foldout();
-        objectPoolFoldout.text = "Object Pool";
-        objectPoolFoldout.value = true;
-
-        VisualElement initialPoolCapacityField = PlayerScalingFieldElementFactory.CreateField(initialPoolCapacityProperty, scalingRulesProperty, "Initial Capacity");
-        initialPoolCapacityField.tooltip = "Number of projectiles pre-created when the pool initializes.";
-        objectPoolFoldout.Add(initialPoolCapacityField);
-
-        VisualElement poolExpandBatchField = PlayerScalingFieldElementFactory.CreateField(poolExpandBatchProperty, scalingRulesProperty, "Expand Batch");
-        poolExpandBatchField.tooltip = "Number of projectiles created each time the pool needs expansion.";
-        objectPoolFoldout.Add(poolExpandBatchField);
-
-        section.Add(objectPoolFoldout);
-    }
-
-    /// <summary>
-    /// Resolves whether the Max Penetration field is relevant for the selected penetration mode.
-    /// </summary>
-    /// <param name="penetrationMode">Currently selected projectile penetration behavior.</param>
-    /// <returns>True when the mode requires a maximum penetration count.<returns>
-    private static bool ShouldDisplayMaxPenetrationField(ProjectilePenetrationMode penetrationMode)
-    {
-        switch (penetrationMode)
-        {
-            case ProjectilePenetrationMode.FixedHits:
-            case ProjectilePenetrationMode.DamageBased:
-                return true;
-            default:
-                return false;
-        }
+        PlayerControllerPresetsPanelShootingSectionUtility.BuildShootingSection(panel, section);
     }
 
     /// <summary>
@@ -426,12 +300,15 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         SerializedProperty valuesProperty = cameraProperty.FindPropertyRelative("values");
         SerializedProperty scalingRulesProperty = panel.PresetSerializedObject.FindProperty("scalingRules");
 
-        EnumField behaviorField = new EnumField("Camera Behavior");
-        behaviorField.BindProperty(behaviorProperty);
+        VisualElement behaviorField = CreateScalingField(behaviorProperty,
+                                                         scalingRulesProperty,
+                                                         "Camera Behavior");
         section.Add(behaviorField);
 
-        Vector3Field offsetField = new Vector3Field("Follow Offset");
-        offsetField.BindProperty(offsetProperty);
+        VisualElement offsetField = CreateScalingField(offsetProperty,
+                                                       scalingRulesProperty,
+                                                       "Follow Offset",
+                                                       "Local offset applied by the follow camera relative to the tracked player position.");
         section.Add(offsetField);
 
         ObjectField anchorField = new ObjectField("Room Anchor");
@@ -458,7 +335,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
             anchorField.style.display = behavior == CameraBehavior.RoomFixed ? DisplayStyle.Flex : DisplayStyle.None;
         };
 
-        behaviorField.RegisterValueChangedCallback(evt =>
+        behaviorField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
         {
             updateView();
         });
@@ -511,13 +388,15 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         }
 
         section.Add(PlayerScalingFieldElementFactory.CreateField(maxHealthProperty, scalingRulesProperty, "Max Health"));
-        section.Add(CreatePropertyField(maxHealthAdjustmentModeProperty,
-                                        "Current Health On Max Change",
-                                        "Defines how Current Health is recomputed when Add Scaling changes Max Health at runtime."));
+        section.Add(CreateScalingField(maxHealthAdjustmentModeProperty,
+                                       scalingRulesProperty,
+                                       "Current Health On Max Change",
+                                       "Defines how Current Health is recomputed when Add Scaling changes Max Health at runtime."));
         section.Add(PlayerScalingFieldElementFactory.CreateField(maxShieldProperty, scalingRulesProperty, "Max Shield"));
-        section.Add(CreatePropertyField(maxShieldAdjustmentModeProperty,
-                                        "Current Shield On Max Change",
-                                        "Defines how Current Shield is recomputed when Add Scaling changes Max Shield at runtime."));
+        section.Add(CreateScalingField(maxShieldAdjustmentModeProperty,
+                                       scalingRulesProperty,
+                                       "Current Shield On Max Change",
+                                       "Defines how Current Shield is recomputed when Add Scaling changes Max Shield at runtime."));
         section.Add(PlayerScalingFieldElementFactory.CreateField(graceTimeProperty, scalingRulesProperty, "Grace Time Seconds"));
     }
 
@@ -616,22 +495,23 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
     }
 
     /// <summary>
-    /// Builds one standard property field with a custom label and tooltip.
+    /// Builds one scaling-aware property field with an optional tooltip override.
     /// </summary>
     /// <param name="property">Serialized property bound to the field.</param>
     /// <param name="label">Displayed field label.</param>
     /// <param name="tooltip">Tooltip shown by the field in the tool UI.</param>
     /// <returns>Returns the configured property field.<returns>
-    private static PropertyField CreatePropertyField(SerializedProperty property, string label, string tooltip)
+    private static VisualElement CreateScalingField(SerializedProperty property,
+                                                    SerializedProperty scalingRulesProperty,
+                                                    string label,
+                                                    string tooltip = null)
     {
-        PropertyField propertyField = new PropertyField(property, label);
-        propertyField.BindProperty(property);
-        propertyField.tooltip = tooltip;
-        propertyField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
-        {
-            PlayerManagementDraftSession.MarkDirty();
-        });
-        return propertyField;
+        VisualElement field = PlayerScalingFieldElementFactory.CreateField(property, scalingRulesProperty, label);
+
+        if (!string.IsNullOrWhiteSpace(tooltip))
+            field.tooltip = tooltip;
+
+        return field;
     }
 
     /// <summary>

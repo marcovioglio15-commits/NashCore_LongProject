@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 /// <summary>
 /// Provides shared UI and preset helper methods for the animation bindings management panel.
-///  none.
+/// none.
 /// returns void.
 /// </summary>
 public static class PlayerAnimationBindingsPanelUtility
@@ -16,8 +16,8 @@ public static class PlayerAnimationBindingsPanelUtility
     /// <summary>
     /// Checks whether one animation bindings preset matches the current search text.
     /// Used by the preset list refresh to keep filtering logic outside the panel container.
-    ///  preset: Preset inspected by the filter.
-    ///  searchText: Search text typed by the user.
+    /// preset: Preset inspected by the filter.
+    /// searchText: Search text typed by the user.
     /// returns True when the preset should remain visible in the list.
     /// </summary>
     public static bool MatchesSearch(PlayerAnimationBindingsPreset preset, string searchText)
@@ -44,8 +44,8 @@ public static class PlayerAnimationBindingsPanelUtility
 
     /// <summary>
     /// Creates one titled section and adds it to the details scroll view.
-    ///  detailsRoot: Scroll view receiving the new section.
-    ///  title: Visible title of the created section.
+    /// detailsRoot: Scroll view receiving the new section.
+    /// title: Visible title of the created section.
     /// returns Root element of the created section.
     /// </summary>
     public static VisualElement CreateSection(ScrollView detailsRoot, string title)
@@ -66,9 +66,9 @@ public static class PlayerAnimationBindingsPanelUtility
 
     /// <summary>
     /// Builds one property field using the shared scaling-aware field factory.
-    ///  serializedObject: Serialized preset currently edited by the panel.
-    ///  propertyName: Serialized property path to resolve.
-    ///  labelOverride: Custom label shown in the inspector row.
+    /// serializedObject: Serialized preset currently edited by the panel.
+    /// propertyName: Serialized property path to resolve.
+    /// labelOverride: Custom label shown in the inspector row.
     /// returns UI element bound to the requested property.
     /// </summary>
     public static VisualElement CreatePropertyField(SerializedObject serializedObject, string propertyName, string labelOverride)
@@ -83,8 +83,8 @@ public static class PlayerAnimationBindingsPanelUtility
 
     /// <summary>
     /// Builds a simple read-only label row used for immutable preset metadata.
-    ///  label: Static label displayed on the left.
-    ///  value: Value displayed on the right.
+    /// label: Static label displayed on the left.
+    /// value: Value displayed on the right.
     /// returns One row element containing the label/value pair.
     /// </summary>
     public static VisualElement CreateReadOnlyText(string label, string value)
@@ -103,8 +103,8 @@ public static class PlayerAnimationBindingsPanelUtility
 
     /// <summary>
     /// Renames one animation bindings preset and updates the draft session bookkeeping.
-    ///  preset: Preset asset to rename.
-    ///  newName: Requested display and asset name.
+    /// preset: Preset asset to rename.
+    /// newName: Requested display and asset name.
     /// returns void.
     /// </summary>
     public static void RenamePreset(PlayerAnimationBindingsPreset preset, string newName)
@@ -132,7 +132,7 @@ public static class PlayerAnimationBindingsPanelUtility
 
     /// <summary>
     /// Resolves the compact display label shown inside the preset list.
-    ///  preset: Preset converted to display text.
+    /// preset: Preset converted to display text.
     /// returns User-facing list label.
     /// </summary>
     public static string GetPresetDisplayName(PlayerAnimationBindingsPreset preset)
@@ -153,8 +153,8 @@ public static class PlayerAnimationBindingsPanelUtility
     #region Private Methods
     /// <summary>
     /// Checks whether one string contains another using case-insensitive comparison.
-    ///  value: Source text to inspect.
-    ///  search: Search fragment requested by the user.
+    /// value: Source text to inspect.
+    /// search: Search fragment requested by the user.
     /// returns True when the fragment exists inside the source text.
     /// </summary>
     private static bool ContainsIgnoreCase(string value, string search)

@@ -4,7 +4,7 @@ using Unity.Physics;
 
 /// <summary>
 /// Selects Coward retreat destinations using wall, occupancy and navigation topology scoring.
-///  none.
+/// none.
 /// returns none.
 /// </summary>
 public static class EnemyPatternCowardSelectionUtility
@@ -21,23 +21,23 @@ public static class EnemyPatternCowardSelectionUtility
     #region Public Methods
     /// <summary>
     /// Picks the best retreat destination by combining free-space, wall openness, and navigation-cost gains away from the player.
-    ///  enemyEntity Current enemy entity.
-    ///  selfPriorityTier Current enemy priority tier.
-    ///  bodyRadius Current enemy body radius.
-    ///  patternConfig Compiled pattern config.
-    ///  enemyPosition Current enemy position.
-    ///  playerPosition Current player position.
-    ///  minimumWallDistance Extra distance kept from walls.
-    ///  elapsedTime Elapsed world time.
-    ///  physicsWorldSingleton Physics world singleton.
-    ///  wallsLayerMask Walls layer mask.
-    ///  wallsEnabled Whether wall collision checks are enabled.
-    ///  navigationFlowReady Whether the shared flow field is currently valid.
-    ///  navigationGridState Shared navigation grid state.
-    ///  navigationCells Shared navigation cells buffer.
-    ///  occupancyContext Occupancy context used for free-trajectory scoring.
-    ///  selectedTarget Selected target output.
-    ///  selectedDirectionAngle Selected direction angle output.
+    /// enemyEntity Current enemy entity.
+    /// selfPriorityTier Current enemy priority tier.
+    /// bodyRadius Current enemy body radius.
+    /// patternConfig Compiled pattern config.
+    /// enemyPosition Current enemy position.
+    /// playerPosition Current player position.
+    /// minimumWallDistance Extra distance kept from walls.
+    /// elapsedTime Elapsed world time.
+    /// physicsWorldSingleton Physics world singleton.
+    /// wallsLayerMask Walls layer mask.
+    /// wallsEnabled Whether wall collision checks are enabled.
+    /// navigationFlowReady Whether the shared flow field is currently valid.
+    /// navigationGridState Shared navigation grid state.
+    /// navigationCells Shared navigation cells buffer.
+    /// occupancyContext Occupancy context used for free-trajectory scoring.
+    /// selectedTarget Selected target output.
+    /// selectedDirectionAngle Selected direction angle output.
     /// returns True when a valid retreat destination is found.
     /// </summary>
     public static bool TryPickRetreatDestination(Entity enemyEntity,
@@ -173,12 +173,12 @@ public static class EnemyPatternCowardSelectionUtility
     #region Private Methods
     /// <summary>
     /// Returns whether the candidate position and its direct segment preserve enough wall clearance.
-    ///  origin Current enemy position.
-    ///  candidate Candidate position being tested.
-    ///  collisionRadius Effective collision radius including wall clearance.
-    ///  physicsWorldSingleton Physics world singleton.
-    ///  wallsLayerMask Walls layer mask.
-    ///  wallsEnabled Whether wall checks are enabled.
+    /// origin Current enemy position.
+    /// candidate Candidate position being tested.
+    /// collisionRadius Effective collision radius including wall clearance.
+    /// physicsWorldSingleton Physics world singleton.
+    /// wallsLayerMask Walls layer mask.
+    /// wallsEnabled Whether wall checks are enabled.
     /// returns True when the candidate is wall-safe enough to consider.
     /// </summary>
     private static bool IsCandidateWallSafe(float3 origin,
@@ -217,13 +217,13 @@ public static class EnemyPatternCowardSelectionUtility
 
     /// <summary>
     /// Estimates how much navigation distance and topology safety a candidate gains over the current position.
-    ///  currentPosition Current enemy position.
-    ///  candidate Candidate position being tested.
-    ///  navigationFlowReady Whether the shared flow field is currently valid.
-    ///  navigationGridState Shared navigation grid state.
-    ///  navigationCells Shared navigation cells buffer.
-    ///  navigationEscapeScore Output normalized navigation gain score.
-    ///  navigationTopologyScore Output normalized topology safety score.
+    /// currentPosition Current enemy position.
+    /// candidate Candidate position being tested.
+    /// navigationFlowReady Whether the shared flow field is currently valid.
+    /// navigationGridState Shared navigation grid state.
+    /// navigationCells Shared navigation cells buffer.
+    /// navigationEscapeScore Output normalized navigation gain score.
+    /// navigationTopologyScore Output normalized topology safety score.
     /// returns True when the candidate has a valid reachable navigation analysis.
     /// </summary>
     private static bool TryResolveNavigationEscapeScore(float3 currentPosition,
@@ -261,14 +261,14 @@ public static class EnemyPatternCowardSelectionUtility
 
     /// <summary>
     /// Estimates how open a candidate position is by probing short wall-safe displacements around it.
-    ///  candidate Candidate position being evaluated.
-    ///  collisionRadius Collision radius used by wall probes.
-    ///  searchRadius Current candidate search radius.
-    ///  elapsedTime Elapsed world time.
-    ///  enemyEntity Current enemy entity.
-    ///  physicsWorldSingleton Physics world singleton.
-    ///  wallsLayerMask Walls layer mask.
-    ///  wallsEnabled Whether wall checks are enabled.
+    /// candidate Candidate position being evaluated.
+    /// collisionRadius Collision radius used by wall probes.
+    /// searchRadius Current candidate search radius.
+    /// elapsedTime Elapsed world time.
+    /// enemyEntity Current enemy entity.
+    /// physicsWorldSingleton Physics world singleton.
+    /// wallsLayerMask Walls layer mask.
+    /// wallsEnabled Whether wall checks are enabled.
     /// returns Normalized openness score in the [0..1] range.
     /// </summary>
     private static float EvaluateOpenSpaceScore(float3 candidate,

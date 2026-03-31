@@ -12,11 +12,11 @@ public static class EnemyDamageFlashRenderUtility
     #region Public Methods
     /// <summary>
     /// Ensures one render entity exposes the component set required by GPU hit-flash presentation.
-    ///  entityManager: Entity manager used to query current component presence.
-    ///  entityCommandBuffer: Deferred writer used to avoid structural changes while iterating ECS queries.
-    ///  renderEntity: Concrete render entity to initialize.
-    ///  baseColor: Original material color restored when the flash ends.
-    ///  flashColor: Flash color written into shader overrides.
+    /// entityManager: Entity manager used to query current component presence.
+    /// entityCommandBuffer: Deferred writer used to avoid structural changes while iterating ECS queries.
+    /// renderEntity: Concrete render entity to initialize.
+    /// baseColor: Original material color restored when the flash ends.
+    /// flashColor: Flash color written into shader overrides.
     /// returns None.
     /// </summary>
     public static void EnsureGpuFlashComponents(EntityManager entityManager,
@@ -67,10 +67,10 @@ public static class EnemyDamageFlashRenderUtility
 
     /// <summary>
     /// Writes the current flash blend to all registered renderer entities of one enemy.
-    ///  entityManager: Entity manager used to access flash render targets.
-    ///  enemyEntity: Enemy root entity that owns the flash config and render target buffer.
-    ///  flashColor: Linear-space overlay tint selected for the current frame.
-    ///  targetBlend: Flash blend to write this frame.
+    /// entityManager: Entity manager used to access flash render targets.
+    /// enemyEntity: Enemy root entity that owns the flash config and render target buffer.
+    /// flashColor: Linear-space overlay tint selected for the current frame.
+    /// targetBlend: Flash blend to write this frame.
     /// returns None.
     /// </summary>
     public static void ApplyGpuFlash(EntityManager entityManager,
@@ -96,8 +96,8 @@ public static class EnemyDamageFlashRenderUtility
 
     /// <summary>
     /// Restores all registered renderer entities to their baked non-flashing state.
-    ///  entityManager: Entity manager used to access flash render targets.
-    ///  enemyEntity: Enemy root entity that owns the flash render target buffer.
+    /// entityManager: Entity manager used to access flash render targets.
+    /// enemyEntity: Enemy root entity that owns the flash render target buffer.
     /// returns None.
     /// </summary>
     public static void ResetGpuFlash(EntityManager entityManager, Entity enemyEntity)
@@ -122,10 +122,10 @@ public static class EnemyDamageFlashRenderUtility
     #region Private Methods
     /// <summary>
     /// Writes per-instance material overrides for one concrete render entity.
-    ///  entityManager: Entity manager used to write component data.
-    ///  renderEntity: Concrete renderer entity to update.
-    ///  flashColor: Linear-space overlay tint selected for the current frame.
-    ///  targetBlend: Flash blend to write this frame.
+    /// entityManager: Entity manager used to write component data.
+    /// renderEntity: Concrete renderer entity to update.
+    /// flashColor: Linear-space overlay tint selected for the current frame.
+    /// targetBlend: Flash blend to write this frame.
     /// returns None.
     /// </summary>
     private static void ApplyGpuFlashToEntity(EntityManager entityManager,
@@ -179,8 +179,8 @@ public static class EnemyDamageFlashRenderUtility
 
     /// <summary>
     /// Restores one concrete render entity to its baked base color and zero flash blend.
-    ///  entityManager: Entity manager used to write component data.
-    ///  renderEntity: Concrete renderer entity to reset.
+    /// entityManager: Entity manager used to write component data.
+    /// renderEntity: Concrete renderer entity to reset.
     /// returns None.
     /// </summary>
     private static void ResetGpuFlashOnEntity(EntityManager entityManager, Entity renderEntity)
@@ -220,10 +220,10 @@ public static class EnemyDamageFlashRenderUtility
 
     /// <summary>
     /// Writes one component value, adding the component first when it is still missing on the target entity.
-    ///  entityManager: Entity manager used to inspect current component presence.
-    ///  entityCommandBuffer: Deferred writer used to record add/set operations safely.
-    ///  entity: Target entity that must receive the component value.
-    ///  componentData: Value to write.
+    /// entityManager: Entity manager used to inspect current component presence.
+    /// entityCommandBuffer: Deferred writer used to record add/set operations safely.
+    /// entity: Target entity that must receive the component value.
+    /// componentData: Value to write.
     /// returns None.
     /// </summary>
     private static void SetOrAddComponentData<T>(EntityManager entityManager,

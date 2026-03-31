@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -53,6 +54,9 @@ public sealed class PlayerVisualPreset : ScriptableObject
 
     [Tooltip("Scale multiplier applied to the attached Elemental Trail VFX instance.")]
     [SerializeField] private float elementalTrailAttachedVfxScaleMultiplier = 1f;
+
+    [Tooltip("Per-element enemy VFX assignments used when elemental player bullets or trail effects apply stacks and procs.")]
+    [SerializeField] private List<ElementalVfxByElementData> elementalEnemyVfxByElement = new List<ElementalVfxByElementData>();
 
     [Tooltip("Maximum number of identical one-shot VFX allowed in the same spatial cell. Set 0 to disable this cap.")]
     [SerializeField] private int maxIdenticalOneShotVfxPerCell = 1;
@@ -177,6 +181,14 @@ public sealed class PlayerVisualPreset : ScriptableObject
         }
     }
 
+    public IReadOnlyList<ElementalVfxByElementData> ElementalEnemyVfxByElement
+    {
+        get
+        {
+            return elementalEnemyVfxByElement;
+        }
+    }
+
     public int MaxIdenticalOneShotVfxPerCell
     {
         get
@@ -220,16 +232,48 @@ public sealed class PlayerVisualPreset : ScriptableObject
 
     #region Methods
 
+    #region Internal API
+    internal List<ElementalVfxByElementData> ElementalEnemyVfxByElementMutable
+    {
+        get
+        {
+            return elementalEnemyVfxByElement;
+        }
+        set
+        {
+            elementalEnemyVfxByElement = value;
+        }
+    }
+
+    /// <summary>
+    /// Imports legacy elemental enemy VFX assignments from another preset when this visual preset does not already own authored data.
+    /// /params sourceAssignments Legacy assignment list to copy.
+    /// /returns True when the visual preset was updated.
+    /// </summary>
+    internal bool ImportElementalEnemyVfxAssignments(IReadOnlyList<ElementalVfxByElementData> sourceAssignments)
+    {
+        if (PlayerElementalVfxAssignmentUtility.HasAnyConfiguredVfx(elementalEnemyVfxByElement))
+            return false;
+
+        return PlayerElementalVfxAssignmentUtility.CopyAssignments(sourceAssignments, elementalEnemyVfxByElement);
+    }
+    #endregion
+
     #region Unity Methods
     /// <summary>
     /// Ensures the preset keeps a stable ID after edits and duplications.
-    ///  None.
+    /// None.
     /// returns None.
     /// </summary>
     private void OnValidate()
     {
         if (string.IsNullOrWhiteSpace(presetId))
             presetId = Guid.NewGuid().ToString("N");
+
+        if (elementalEnemyVfxByElement == null)
+            elementalEnemyVfxByElement = new List<ElementalVfxByElementData>();
+
+        PlayerElementalVfxAssignmentUtility.ValidateAssignments(elementalEnemyVfxByElement);
     }
     #endregion
 

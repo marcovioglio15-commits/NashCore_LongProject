@@ -1,6 +1,11 @@
 using System;
 using UnityEngine;
 
+/// <summary>
+/// Stores the visual prefabs and scale multipliers used by one elemental effect when it spawns enemy-attached VFX.
+/// /params none.
+/// /returns none.
+/// </summary>
 [Serializable]
 public sealed class ElementalVfxByElementData
 {
@@ -95,20 +100,44 @@ public sealed class ElementalVfxByElementData
     #region Methods
 
     #region Setup
+    /// <summary>
+    /// Assigns the element identifier stored by this entry.
+    /// /params value Element associated with this VFX assignment.
+    /// /returns void.
+    /// </summary>
     public void SetElementType(ElementType value)
     {
         elementType = value;
     }
+
+    /// <summary>
+    /// Copies every authored value from another entry while preserving this instance allocation.
+    /// /params source Source entry whose values should be mirrored.
+    /// /returns void.
+    /// </summary>
+    public void CopyFrom(ElementalVfxByElementData source)
+    {
+        if (source == null)
+            return;
+
+        elementType = source.elementType;
+        spawnStackVfx = source.spawnStackVfx;
+        stackVfxPrefab = source.stackVfxPrefab;
+        stackVfxScaleMultiplier = source.stackVfxScaleMultiplier;
+        spawnProcVfx = source.spawnProcVfx;
+        procVfxPrefab = source.procVfxPrefab;
+        procVfxScaleMultiplier = source.procVfxScaleMultiplier;
+    }
     #endregion
 
     #region Validation
+    /// <summary>
+    /// Keeps the entry callable from legacy validation paths without snapping authored values.
+    /// /params none.
+    /// /returns void.
+    /// </summary>
     public void Validate()
     {
-        if (stackVfxScaleMultiplier < 0.01f)
-            stackVfxScaleMultiplier = 0.01f;
-
-        if (procVfxScaleMultiplier < 0.01f)
-            procVfxScaleMultiplier = 0.01f;
     }
     #endregion
 

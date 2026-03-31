@@ -57,10 +57,35 @@ public enum ShootingTriggerMode
 }
 
 [Serializable]
+public enum PlayerProjectileAppliedElement
+{
+    None = 0,
+    Fire = 1,
+    Ice = 2,
+    Poison = 3,
+    Custom = 4
+}
+
+[Serializable]
 public enum PlayerMaxStatAdjustmentMode : byte
 {
     KeepCurrentValue = 0,
     KeepPercentage = 1,
     AddDeltaToCurrent = 2
+}
+
+[Serializable]
+public enum ProjectileKnockbackDirectionMode : byte
+{
+    ProjectileTravel = 0,
+    HitToTarget = 1
+}
+
+[Serializable]
+public enum ProjectileKnockbackStackingMode : byte
+{
+    Replace = 0,
+    Add = 1,
+    KeepStrongest = 2
 }
 #endregion

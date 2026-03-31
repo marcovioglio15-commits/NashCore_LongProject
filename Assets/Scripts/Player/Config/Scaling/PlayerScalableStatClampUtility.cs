@@ -15,22 +15,35 @@ public static class PlayerScalableStatClampUtility
 
     #region Public Methods
     /// <summary>
-    /// Resolves one normalized scalable-stat value using the provided raw clamp range and stat type.
-    ///  statType: Runtime numeric type of the scalable stat.
-    ///  minimumValue: Raw minimum clamp value configured for the stat.
-    ///  maximumValue: Raw maximum clamp value configured for the stat.
-    ///  rawValue: Unnormalized value to sanitize for runtime usage.
-    /// returns Clamped value normalized for the scalable-stat type.
+    /// Resolves one normalized numeric scalable-stat value using the provided clamp range and stat type.
+    /// statType: Runtime scalable stat type.
+    /// minimumValue: Raw minimum clamp value configured for the stat.
+    /// maximumValue: Raw maximum clamp value configured for the stat.
+    /// rawValue: Unnormalized numeric value to sanitize.
+    /// returns Clamped numeric value normalized for the scalable-stat type.
     /// </summary>
     public static float ResolveNormalizedValue(PlayerScalableStatType statType,
                                                float minimumValue,
                                                float maximumValue,
                                                float rawValue)
     {
+        if (statType == PlayerScalableStatType.Boolean)
+            return rawValue >= 0.5f ? 1f : 0f;
+
+        if (statType == PlayerScalableStatType.Token)
+            return 0f;
+
         ResolveOrderedRange(minimumValue, maximumValue, out float resolvedMinimumValue, out float resolvedMaximumValue);
+
+        if (statType == PlayerScalableStatType.Unsigned)
+        {
+            resolvedMinimumValue = Mathf.Max(0f, resolvedMinimumValue);
+            resolvedMaximumValue = Mathf.Max(resolvedMinimumValue, resolvedMaximumValue);
+        }
+
         float clampedValue = Mathf.Clamp(rawValue, resolvedMinimumValue, resolvedMaximumValue);
 
-        if (statType == PlayerScalableStatType.Integer)
+        if (statType == PlayerScalableStatType.Integer || statType == PlayerScalableStatType.Unsigned)
             clampedValue = (float)Math.Round(clampedValue, MidpointRounding.AwayFromZero);
 
         return clampedValue;
@@ -38,8 +51,8 @@ public static class PlayerScalableStatClampUtility
 
     /// <summary>
     /// Resolves one normalized scalable-stat value using a baked blob entry as clamp metadata source.
-    ///  scalableStat: Baked scalable-stat metadata.
-    ///  rawValue: Unnormalized value to sanitize for runtime usage.
+    /// scalableStat: Baked scalable-stat metadata.
+    /// rawValue: Unnormalized value to sanitize for runtime usage.
     /// returns Clamped value normalized for the scalable-stat type.
     /// </summary>
     public static float ResolveNormalizedValue(ref PlayerScalableStatBlob scalableStat, float rawValue)
@@ -52,8 +65,8 @@ public static class PlayerScalableStatClampUtility
 
     /// <summary>
     /// Resolves one normalized scalable-stat value using a runtime buffer element as clamp metadata source.
-    ///  scalableStat: Runtime scalable-stat entry.
-    ///  rawValue: Unnormalized value to sanitize for runtime usage.
+    /// scalableStat: Runtime scalable-stat entry.
+    /// rawValue: Unnormalized value to sanitize for runtime usage.
     /// returns Clamped value normalized for the scalable-stat type.
     /// </summary>
     public static float ResolveNormalizedValue(in PlayerScalableStatElement scalableStat, float rawValue)
@@ -65,11 +78,31 @@ public static class PlayerScalableStatClampUtility
     }
 
     /// <summary>
+    /// Resolves one numeric projection from the current runtime scalable stat entry.
+    /// scalableStat: Runtime scalable stat entry.
+    /// returns Numeric projection of the typed scalable stat.
+    /// </summary>
+    public static float ResolveNumericProjection(in PlayerScalableStatElement scalableStat)
+    {
+        PlayerScalableStatType statType = (PlayerScalableStatType)scalableStat.Type;
+
+        switch (statType)
+        {
+            case PlayerScalableStatType.Boolean:
+                return scalableStat.BooleanValue != 0 ? 1f : 0f;
+            case PlayerScalableStatType.Token:
+                return 0f;
+            default:
+                return scalableStat.Value;
+        }
+    }
+
+    /// <summary>
     /// Resolves one ordered clamp range from raw serialized minimum and maximum values.
-    ///  minimumValue: Raw serialized minimum value.
-    ///  maximumValue: Raw serialized maximum value.
-    ///  resolvedMinimumValue: Ordered lower bound used by runtime normalization.
-    ///  resolvedMaximumValue: Ordered upper bound used by runtime normalization.
+    /// minimumValue: Raw serialized minimum value.
+    /// maximumValue: Raw serialized maximum value.
+    /// resolvedMinimumValue: Ordered lower bound used by runtime normalization.
+    /// resolvedMaximumValue: Ordered upper bound used by runtime normalization.
     /// returns void.
     /// </summary>
     public static void ResolveOrderedRange(float minimumValue,

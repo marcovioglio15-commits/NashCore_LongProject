@@ -13,7 +13,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
     #region Bake
     /// <summary>
     /// Converts the authored wave grid into ECS wave definitions, events and pool requirements.
-    ///  authoring: Spawner authoring source component.
+    /// authoring: Spawner authoring source component.
     /// returns None.
     /// </summary>
     public override void Bake(EnemySpawnerAuthoring authoring)
@@ -91,11 +91,11 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
     #region Helpers
     /// <summary>
     /// Stages wave definitions, runtime defaults and exact spawn events from the authored spawner data.
-    ///  authoring: Spawner authoring source.
-    ///  stagedWaveDefinitions: Target wave definition list.
-    ///  stagedWaveRuntime: Target wave runtime default list.
-    ///  stagedWaveEvents: Target exact spawn event list.
-    ///  plannedCountByPrefab: Target prefab usage count map.
+    /// authoring: Spawner authoring source.
+    /// stagedWaveDefinitions: Target wave definition list.
+    /// stagedWaveRuntime: Target wave runtime default list.
+    /// stagedWaveEvents: Target exact spawn event list.
+    /// plannedCountByPrefab: Target prefab usage count map.
     /// returns None.
     /// </summary>
     private void StageWaves(EnemySpawnerAuthoring authoring,
@@ -138,11 +138,11 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
     /// <summary>
     /// Stages exact spawn events for all painted cells of one wave.
-    ///  authoring: Spawner authoring source.
-    ///  wave: Wave being converted.
-    ///  waveIndex: Current wave index.
-    ///  stagedEventsForWave: Target event list for the current wave.
-    ///  plannedCountByPrefab: Target prefab usage count map.
+    /// authoring: Spawner authoring source.
+    /// wave: Wave being converted.
+    /// waveIndex: Current wave index.
+    /// stagedEventsForWave: Target event list for the current wave.
+    /// plannedCountByPrefab: Target prefab usage count map.
     /// returns None.
     /// </summary>
     private void StageWaveCells(EnemySpawnerAuthoring authoring,
@@ -197,9 +197,9 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
     /// <summary>
     /// Resolves the prefab entity used by one painted cell through its master and visual presets.
-    ///  authoring: Spawner authoring component used only for warning context.
-    ///  masterPreset: Enemy master preset painted on the cell.
-    ///  prefabEntity: Resolved prefab entity when successful.
+    /// authoring: Spawner authoring component used only for warning context.
+    /// masterPreset: Enemy master preset painted on the cell.
+    /// prefabEntity: Resolved prefab entity when successful.
     /// returns True when the cell references a valid enemy prefab, otherwise false.
     /// </summary>
     private bool TryResolveCellPrefab(EnemySpawnerAuthoring authoring,
@@ -281,7 +281,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
     /// <summary>
     /// Counts the total planned enemies across all unique prefab requirements.
-    ///  plannedCountByPrefab: Prefab usage count map.
+    /// plannedCountByPrefab: Prefab usage count map.
     /// returns Total planned enemy count for the spawner.
     /// </summary>
     private static int CountTotalPlannedEnemies(Dictionary<Entity, int> plannedCountByPrefab)
@@ -297,8 +297,8 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
     /// <summary>
     /// Resolves the maximum planar spawn distance authored by the staged wave events.
     /// The returned radius includes half a cell diagonal so the full painted cell area stays inside the envelope.
-    ///  stagedWaveEvents: Fully staged exact spawn events of the spawner.
-    ///  cellSize: Authored square cell size used by the spawn grid.
+    /// stagedWaveEvents: Fully staged exact spawn events of the spawner.
+    /// cellSize: Authored square cell size used by the spawn grid.
     /// returns Maximum planar spawn distance from the spawner center.
     /// </summary>
     private static float ResolveMaximumSpawnDistanceFromCenter(List<EnemySpawnerWaveEventElement> stagedWaveEvents, float cellSize)

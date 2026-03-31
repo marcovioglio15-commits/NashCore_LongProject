@@ -17,10 +17,9 @@ public static class PlayerPowerUpActivationExecutionUtility
         public float Range;
         public float Lifetime;
         public float ScaleMultiplier;
+        public ProjectileKnockbackSettingsBlob Knockback;
         public byte InheritPlayerSpeed;
-        public byte HasElementalPayloadOverride;
-        public ElementalEffectConfig ElementalEffectOverride;
-        public float ElementalStacksPerHitOverride;
+        public ProjectileElementalPayload ElementalPayloadOverride;
     }
     #endregion
 
@@ -33,6 +32,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                    in PlayerMovementState movementState,
                                    in PlayerRuntimeMovementConfig runtimeMovementConfig,
                                    in PlayerRuntimeShootingConfig runtimeShootingConfig,
+                                   DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
                                    in PlayerPassiveToolsState passiveToolsState,
                                    in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                    in ComponentLookup<LocalTransform> transformLookup,
@@ -67,6 +67,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                in localTransform,
                                in lookState,
                                in runtimeShootingConfig,
+                               appliedElementSlots,
                                in passiveToolsState,
                                playerEntity,
                                in muzzleLookup,
@@ -85,6 +86,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                          in LocalTransform localTransform,
                                          in PlayerLookState lookState,
                                          in PlayerRuntimeShootingConfig runtimeShootingConfig,
+                                         DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
                                          in PlayerPassiveToolsState passiveToolsState,
                                          Entity playerEntity,
                                          in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
@@ -109,6 +111,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                                          in transformLookup,
                                                          in localToWorldLookup);
         ProjectileRequestTemplate template = BuildProjectileTemplate(in runtimeShootingConfig,
+                                                                     appliedElementSlots,
                                                                      in passiveToolsState,
                                                                      slotConfig.ChargeShot.SizeMultiplier,
                                                                      slotConfig.ChargeShot.DamageMultiplier,
@@ -239,6 +242,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                        in LocalTransform localTransform,
                                        in PlayerLookState lookState,
                                        in PlayerRuntimeShootingConfig runtimeShootingConfig,
+                                       DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
                                        in PlayerPassiveToolsState passiveToolsState,
                                        Entity playerEntity,
                                        in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
@@ -261,6 +265,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                                          in transformLookup,
                                                          in localToWorldLookup);
         ProjectileRequestTemplate template = BuildProjectileTemplate(in runtimeShootingConfig,
+                                                                     appliedElementSlots,
                                                                      in passiveToolsState,
                                                                      slotConfig.Shotgun.SizeMultiplier,
                                                                      slotConfig.Shotgun.DamageMultiplier,
@@ -352,6 +357,7 @@ public static class PlayerPowerUpActivationExecutionUtility
     }
 
     private static ProjectileRequestTemplate BuildProjectileTemplate(in PlayerRuntimeShootingConfig runtimeShootingConfig,
+                                                                     DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
                                                                      in PlayerPassiveToolsState passiveToolsState,
                                                                      float sizeMultiplier,
                                                                      float damageMultiplier,
@@ -363,6 +369,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                                                      float elementalStacksPerHitOverride)
     {
         ShootingValuesBlob values = runtimeShootingConfig.Values;
+        ProjectileElementalPayload resolvedElementalPayloadOverride = default;
         float scale = math.max(0.01f,
                                math.max(0.01f, values.ProjectileSizeMultiplier) *
                                math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier) *
@@ -378,6 +385,18 @@ public static class PlayerPowerUpActivationExecutionUtility
         if (lifetime > 0f)
             lifetime = math.max(0f, lifetime * math.max(0f, passiveToolsState.ProjectileLifetimeSecondsMultiplier) * math.max(0f, lifetimeMultiplier));
 
+        if (hasElementalPayloadOverride)
+        {
+            resolvedElementalPayloadOverride = ProjectileElementalPayloadUtility.BuildSingle(in elementalEffectOverride,
+                                                                                            math.max(0f, elementalStacksPerHitOverride));
+        }
+        else
+        {
+            PlayerProjectileElementUtility.TryBuildDefaultPayload(appliedElementSlots,
+                                                                  in values,
+                                                                  out resolvedElementalPayloadOverride);
+        }
+
         return new ProjectileRequestTemplate
         {
             Speed = speed,
@@ -386,10 +405,9 @@ public static class PlayerPowerUpActivationExecutionUtility
             Range = range,
             Lifetime = lifetime,
             ScaleMultiplier = scale,
+            Knockback = values.Knockback,
             InheritPlayerSpeed = runtimeShootingConfig.ProjectilesInheritPlayerSpeed,
-            HasElementalPayloadOverride = hasElementalPayloadOverride ? (byte)1 : (byte)0,
-            ElementalEffectOverride = elementalEffectOverride,
-            ElementalStacksPerHitOverride = math.max(0f, elementalStacksPerHitOverride)
+            ElementalPayloadOverride = resolvedElementalPayloadOverride
         };
     }
 
@@ -428,11 +446,14 @@ public static class PlayerPowerUpActivationExecutionUtility
             ProjectileScaleMultiplier = math.max(0.01f, template.ScaleMultiplier),
             PenetrationMode = penetrationMode,
             MaxPenetrations = math.max(0, maxPenetrations),
+            KnockbackEnabled = template.Knockback.Enabled,
+            KnockbackStrength = math.max(0f, template.Knockback.Strength),
+            KnockbackDurationSeconds = math.max(0f, template.Knockback.DurationSeconds),
+            KnockbackDirectionMode = template.Knockback.DirectionMode,
+            KnockbackStackingMode = template.Knockback.StackingMode,
             InheritPlayerSpeed = template.InheritPlayerSpeed,
             IsSplitChild = isSplitChild,
-            HasElementalPayloadOverride = template.HasElementalPayloadOverride,
-            ElementalEffectOverride = template.ElementalEffectOverride,
-            ElementalStacksPerHitOverride = template.ElementalStacksPerHitOverride
+            ElementalPayloadOverride = template.ElementalPayloadOverride
         });
     }
     #endregion

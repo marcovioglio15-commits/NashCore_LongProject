@@ -60,8 +60,9 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
         SerializedProperty rightMaxSpeedMultiplierProperty = lookProperty.FindPropertyRelative("m_RightConeMaxSpeedMultiplier");
         SerializedProperty rightAccelerationMultiplierProperty = lookProperty.FindPropertyRelative("m_RightConeAccelerationMultiplier");
 
-        EnumField directionsModeField = new EnumField("Allowed Directions");
-        directionsModeField.BindProperty(directionsModeProperty);
+        VisualElement directionsModeField = PlayerScalingFieldElementFactory.CreateField(directionsModeProperty,
+                                                                                         scalingRulesProperty,
+                                                                                         "Allowed Directions");
         section.Add(directionsModeField);
 
         VisualElement discreteContainer = new VisualElement();
@@ -80,12 +81,35 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
         conesContainer.style.marginLeft = 8f;
         conesContainer.style.marginTop = 4f;
 
-        List<Toggle> coneToggles = new List<Toggle>();
-        List<FloatField> coneAngleFields = new List<FloatField>();
-        conesContainer.Add(BuildConeRow("Front", frontEnabledProperty, frontAngleProperty, frontMaxSpeedMultiplierProperty, frontAccelerationMultiplierProperty, coneToggles, coneAngleFields));
-        conesContainer.Add(BuildConeRow("Back", backEnabledProperty, backAngleProperty, backMaxSpeedMultiplierProperty, backAccelerationMultiplierProperty, coneToggles, coneAngleFields));
-        conesContainer.Add(BuildConeRow("Left", leftEnabledProperty, leftAngleProperty, leftMaxSpeedMultiplierProperty, leftAccelerationMultiplierProperty, coneToggles, coneAngleFields));
-        conesContainer.Add(BuildConeRow("Right", rightEnabledProperty, rightAngleProperty, rightMaxSpeedMultiplierProperty, rightAccelerationMultiplierProperty, coneToggles, coneAngleFields));
+        List<VisualElement> coneRefreshFields = new List<VisualElement>();
+        conesContainer.Add(BuildConeRow("Front",
+                                        frontEnabledProperty,
+                                        frontAngleProperty,
+                                        frontMaxSpeedMultiplierProperty,
+                                        frontAccelerationMultiplierProperty,
+                                        scalingRulesProperty,
+                                        coneRefreshFields));
+        conesContainer.Add(BuildConeRow("Back",
+                                        backEnabledProperty,
+                                        backAngleProperty,
+                                        backMaxSpeedMultiplierProperty,
+                                        backAccelerationMultiplierProperty,
+                                        scalingRulesProperty,
+                                        coneRefreshFields));
+        conesContainer.Add(BuildConeRow("Left",
+                                        leftEnabledProperty,
+                                        leftAngleProperty,
+                                        leftMaxSpeedMultiplierProperty,
+                                        leftAccelerationMultiplierProperty,
+                                        scalingRulesProperty,
+                                        coneRefreshFields));
+        conesContainer.Add(BuildConeRow("Right",
+                                        rightEnabledProperty,
+                                        rightAngleProperty,
+                                        rightMaxSpeedMultiplierProperty,
+                                        rightAccelerationMultiplierProperty,
+                                        scalingRulesProperty,
+                                        coneRefreshFields));
 
         PieChartElement pieChart = new PieChartElement();
         Slider lookZoomSlider = PlayerControllerPresetsPanelFieldUtility.CreatePieZoomSlider(pieChart);
@@ -97,15 +121,17 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
         section.Add(lookZoomSlider);
         section.Add(multipliersSection);
 
-        EnumField rotationModeField = new EnumField("Rotation Mode");
-        rotationModeField.BindProperty(rotationModeProperty);
+        VisualElement rotationModeField = PlayerScalingFieldElementFactory.CreateField(rotationModeProperty,
+                                                                                       scalingRulesProperty,
+                                                                                       "Rotation Mode");
         section.Add(rotationModeField);
 
         VisualElement rotationSpeedField = PlayerScalingFieldElementFactory.CreateField(rotationSpeedProperty, scalingRulesProperty, "Rotation Speed");
         section.Add(rotationSpeedField);
 
-        EnumField samplingField = new EnumField("Multiplier Sampling");
-        samplingField.BindProperty(samplingProperty);
+        VisualElement samplingField = PlayerScalingFieldElementFactory.CreateField(samplingProperty,
+                                                                                   scalingRulesProperty,
+                                                                                   "Multiplier Sampling");
         section.Add(samplingField);
 
         SerializedProperty lookActionProperty = panel.PresetSerializedObject.FindProperty("lookActionId");
@@ -185,7 +211,7 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
             }
         };
 
-        directionsModeField.RegisterValueChangedCallback(evt =>
+        directionsModeField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
         {
             updateView();
         });
@@ -210,29 +236,20 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
             updateView();
         });
 
-        rotationModeField.RegisterValueChangedCallback(evt =>
+        rotationModeField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
         {
             updateView();
         });
 
-        samplingField.RegisterValueChangedCallback(evt =>
+        samplingField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
         {
             updateView();
         });
 
-        for (int index = 0; index < coneToggles.Count; index++)
+        for (int index = 0; index < coneRefreshFields.Count; index++)
         {
-            Toggle toggle = coneToggles[index];
-            toggle.RegisterValueChangedCallback(evt =>
-            {
-                updateView();
-            });
-        }
-
-        for (int index = 0; index < coneAngleFields.Count; index++)
-        {
-            FloatField angleField = coneAngleFields[index];
-            angleField.RegisterValueChangedCallback(evt =>
+            VisualElement refreshField = coneRefreshFields[index];
+            refreshField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
             {
                 updateView();
             });
@@ -255,38 +272,41 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
 
     #region Private Methods
     /// <summary>
-    /// Builds one cone row with toggle, angle and multiplier fields and optionally registers the created controls.
+    /// Builds one cone row with scaling-aware enabled and angle fields plus percentage preview controls.
     /// </summary>
     /// <param name="label">Displayed cone label.</param>
     /// <param name="enabledProperty">Serialized cone enabled property.</param>
     /// <param name="angleProperty">Serialized cone angle property.</param>
     /// <param name="maxSpeedProperty">Serialized max-speed multiplier property.</param>
     /// <param name="accelerationProperty">Serialized acceleration multiplier property.</param>
-    /// <param name="toggles">Optional list that receives the created toggle.</param>
-    /// <param name="angleFields">Optional list that receives the created angle field.</param>
+    /// <param name="scalingRulesProperty">Controller scaling-rules array used by Add Scaling.</param>
+    /// <param name="refreshFields">Optional list that receives fields which should trigger preview refreshes.</param>
     /// <returns>Returns the constructed cone row.<returns>
     private static VisualElement BuildConeRow(string label,
                                               SerializedProperty enabledProperty,
                                               SerializedProperty angleProperty,
                                               SerializedProperty maxSpeedProperty,
                                               SerializedProperty accelerationProperty,
-                                              List<Toggle> toggles,
-                                              List<FloatField> angleFields)
+                                              SerializedProperty scalingRulesProperty,
+                                              List<VisualElement> refreshFields)
     {
         VisualElement row = new VisualElement();
         row.style.flexDirection = FlexDirection.Row;
-        row.style.alignItems = Align.Center;
+        row.style.alignItems = Align.FlexStart;
         row.style.marginBottom = MultiplierRowSpacing;
 
-        Toggle enabledToggle = new Toggle(label);
-        enabledToggle.style.minWidth = 120f;
-        enabledToggle.BindProperty(enabledProperty);
-        row.Add(enabledToggle);
+        VisualElement enabledField = PlayerScalingFieldElementFactory.CreateField(enabledProperty,
+                                                                                  scalingRulesProperty,
+                                                                                  label);
+        enabledField.style.minWidth = 180f;
+        enabledField.style.flexGrow = 1f;
+        row.Add(enabledField);
 
-        FloatField angleField = new FloatField("Angle");
-        angleField.style.flexGrow = 0f;
-        angleField.style.width = 110f;
-        angleField.BindProperty(angleProperty);
+        VisualElement angleField = PlayerScalingFieldElementFactory.CreateField(angleProperty,
+                                                                                scalingRulesProperty,
+                                                                                "Angle");
+        angleField.style.width = 160f;
+        angleField.style.flexShrink = 0f;
         row.Add(angleField);
 
         row.Add(PlayerControllerPresetsPanelVisualizationUtility.CreatePercentField(maxSpeedProperty,
@@ -298,11 +318,11 @@ internal static class PlayerControllerPresetsPanelLookSectionUtility
                                                                                     "Acceleration multiplier for this cone.",
                                                                                     "Accel %"));
 
-        if (toggles != null)
-            toggles.Add(enabledToggle);
-
-        if (angleFields != null)
-            angleFields.Add(angleField);
+        if (refreshFields != null)
+        {
+            refreshFields.Add(enabledField);
+            refreshFields.Add(angleField);
+        }
 
         return row;
     }
