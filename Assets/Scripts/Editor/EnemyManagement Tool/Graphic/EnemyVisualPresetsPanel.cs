@@ -503,6 +503,7 @@ public sealed class EnemyVisualPresetsPanel
         detailsRoot.Add(detailsSectionButtonsRoot);
         detailsRoot.Add(detailsSectionContentRoot);
         BuildActiveDetailsSection();
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(detailsRoot);
     }
 
     private VisualElement BuildDetailsSectionButtons()
@@ -547,12 +548,14 @@ public sealed class EnemyVisualPresetsPanel
         {
             case SectionType.Metadata:
                 EnemyVisualPresetsPanelSectionsUtility.BuildMetadataSection(this);
-                return;
+                break;
 
             case SectionType.Visual:
                 EnemyVisualPresetsPanelSectionsUtility.BuildVisualSection(this);
-                return;
+                break;
         }
+
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(detailsSectionContentRoot);
     }
 
     internal void RegeneratePresetId()
@@ -654,9 +657,10 @@ public sealed class EnemyVisualPresetsPanel
     internal enum VisualSubSectionType
     {
         Visibility = 0,
-        DamageFeedback = 1,
-        Prefabs = 2,
-        ShooterWarning = 3
+        Outline = 1,
+        DamageFeedback = 2,
+        Prefabs = 3,
+        ShooterWarning = 4
     }
 
     internal sealed class VisualSubSectionTabEntry

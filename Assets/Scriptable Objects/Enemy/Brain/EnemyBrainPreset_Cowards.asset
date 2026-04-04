@@ -17,8 +17,8 @@ MonoBehaviour:
   description: 
   version: 1.0.0
   movement:
-    moveSpeed: 15
-    maxSpeed: 20
+    moveSpeed: 12
+    maxSpeed: 18
     acceleration: 20
     deceleration: 20
     inactivityTime: 0.08

@@ -32,6 +32,129 @@ public static class EnemyPatternMovementRuntimeUtility
     }
 
     /// <summary>
+    /// Resolves whether the optional short-range interaction is currently active by using activation distance plus release hysteresis.
+    /// patternConfig: Current compiled pattern configuration.
+    /// patternRuntimeState: Current mutable pattern runtime state.
+    /// playerDistance: Current planar distance from enemy to player.
+    /// returns True when the short-range interaction should drive the active movement slot.
+    /// </summary>
+    public static bool ResolveShortRangeInteractionActive(in EnemyPatternConfig patternConfig,
+                                                          in EnemyPatternRuntimeState patternRuntimeState,
+                                                          float playerDistance)
+    {
+        if (patternConfig.HasShortRangeInteraction == 0)
+            return false;
+
+        float activationRange = math.max(0f, patternConfig.ShortRangeActivationRange);
+        float releaseDistance = activationRange + math.max(0f, patternConfig.ShortRangeReleaseDistanceBuffer);
+
+        if (patternRuntimeState.ShortRangeInteractionActive != 0)
+            return playerDistance <= releaseDistance;
+
+        return playerDistance <= activationRange;
+    }
+
+    /// <summary>
+    /// Resolves the movement kind that should currently be considered active after short-range overrides.
+    /// patternConfig: Current compiled pattern configuration.
+    /// patternRuntimeState: Current mutable pattern runtime state.
+    /// playerDistance: Current planar distance from enemy to player.
+    /// returns Active movement kind for this frame.
+    /// </summary>
+    public static EnemyCompiledMovementPatternKind ResolveActiveMovementKind(in EnemyPatternConfig patternConfig,
+                                                                             in EnemyPatternRuntimeState patternRuntimeState,
+                                                                             float playerDistance)
+    {
+        bool shortRangeInteractionActive = ResolveShortRangeInteractionActive(in patternConfig, in patternRuntimeState, playerDistance);
+
+        if (!shortRangeInteractionActive)
+            return patternConfig.MovementKind;
+
+        return patternConfig.ShortRangeMovementKind;
+    }
+
+    /// <summary>
+    /// Returns whether the current frame is driven by a non-grunt short-range interaction override.
+    /// patternConfig: Current compiled pattern configuration.
+    /// shortRangeInteractionActive: Whether the short-range interaction is active this frame.
+    /// returns True when the short-range override currently owns movement decisions.
+    /// </summary>
+    public static bool IsShortRangeOverrideDriving(in EnemyPatternConfig patternConfig, bool shortRangeInteractionActive)
+    {
+        if (!shortRangeInteractionActive)
+            return false;
+
+        if (patternConfig.HasShortRangeInteraction == 0)
+            return false;
+
+        return patternConfig.ShortRangeMovementKind != EnemyCompiledMovementPatternKind.Grunt;
+    }
+
+    /// <summary>
+    /// Clears transient long-range target state when a short-range interaction takes over movement.
+    /// patternConfig: Current compiled pattern configuration.
+    /// patternRuntimeState: Current mutable pattern runtime state.
+    /// returns None.
+    /// </summary>
+    public static void PrepareShortRangeTakeover(in EnemyPatternConfig patternConfig,
+                                                 ref EnemyPatternRuntimeState patternRuntimeState)
+    {
+        if (patternConfig.HasShortRangeInteraction == 0)
+            return;
+
+        patternRuntimeState.WanderHasTarget = 0;
+        patternRuntimeState.WanderWaitTimer = 0f;
+        patternRuntimeState.WanderRetryTimer = 0f;
+    }
+
+    /// <summary>
+    /// Builds the effective pattern config used by movement systems after short-range overrides are resolved.
+    /// patternConfig: Current compiled pattern configuration.
+    /// patternRuntimeState: Current mutable pattern runtime state.
+    /// playerDistance: Current planar distance from enemy to player.
+    /// returns Effective pattern config for the current frame.
+    /// </summary>
+    public static EnemyPatternConfig BuildActivePatternConfig(in EnemyPatternConfig patternConfig,
+                                                              in EnemyPatternRuntimeState patternRuntimeState,
+                                                              float playerDistance)
+    {
+        bool shortRangeInteractionActive = ResolveShortRangeInteractionActive(in patternConfig, in patternRuntimeState, playerDistance);
+
+        if (!shortRangeInteractionActive)
+            return patternConfig;
+
+        EnemyPatternConfig activePatternConfig = patternConfig;
+
+        switch (patternConfig.ShortRangeMovementKind)
+        {
+            case EnemyCompiledMovementPatternKind.Coward:
+                ApplyShortRangeCowardOverride(ref activePatternConfig);
+                break;
+
+            case EnemyCompiledMovementPatternKind.Grunt:
+                activePatternConfig.MovementKind = EnemyCompiledMovementPatternKind.Grunt;
+                break;
+        }
+
+        return activePatternConfig;
+    }
+
+    /// <summary>
+    /// Resolves whether the effective movement for the current frame still requires the custom movement system.
+    /// patternConfig: Current compiled pattern configuration.
+    /// patternRuntimeState: Current mutable pattern runtime state.
+    /// playerDistance: Current planar distance from enemy to player.
+    /// returns True when custom movement should stay in control for this frame.
+    /// </summary>
+    public static bool UsesCustomMovement(in EnemyPatternConfig patternConfig,
+                                          in EnemyPatternRuntimeState patternRuntimeState,
+                                          float playerDistance)
+    {
+        EnemyCompiledMovementPatternKind activeMovementKind = ResolveActiveMovementKind(in patternConfig, in patternRuntimeState, playerDistance);
+        return activeMovementKind != EnemyCompiledMovementPatternKind.Grunt;
+    }
+
+    /// <summary>
     /// Computes how much requested displacement was blocked by collision resolution.
     /// requestedDistance: Requested displacement length.
     /// allowedDistance: Allowed displacement length.
@@ -208,6 +331,44 @@ public static class EnemyPatternMovementRuntimeUtility
         float bodyDrivenBand = math.max(0.05f, bodyRadius) * 0.18f;
         float resolvedBand = math.max(MinimumWallComfortBand, math.max(distanceDrivenBand, bodyDrivenBand));
         return math.min(minimumWallDistance, resolvedBand);
+    }
+
+    /// <summary>
+    /// Copies the short-range coward category fields into the legacy coward slots consumed by the existing movement helpers.
+    /// activePatternConfig Mutable active pattern config for the current frame.
+    /// returns None.
+    /// </summary>
+    private static void ApplyShortRangeCowardOverride(ref EnemyPatternConfig activePatternConfig)
+    {
+        activePatternConfig.MovementKind = EnemyCompiledMovementPatternKind.Coward;
+        activePatternConfig.BasicSearchRadius = math.max(0.5f, activePatternConfig.ShortRangeSearchRadius);
+        activePatternConfig.BasicMinimumTravelDistance = math.max(0f, activePatternConfig.ShortRangeMinimumTravelDistance);
+        activePatternConfig.BasicMaximumTravelDistance = math.max(activePatternConfig.BasicMinimumTravelDistance,
+                                                                 activePatternConfig.ShortRangeMaximumTravelDistance);
+        activePatternConfig.BasicArrivalTolerance = math.max(0.05f, activePatternConfig.ShortRangeArrivalTolerance);
+        activePatternConfig.BasicWaitCooldownSeconds = 0f;
+        activePatternConfig.BasicCandidateSampleCount = math.clamp(math.max(1, activePatternConfig.ShortRangeCandidateSampleCount), 1, 64);
+        activePatternConfig.BasicUseInfiniteDirectionSampling = activePatternConfig.ShortRangeUseInfiniteDirectionSampling;
+        activePatternConfig.BasicInfiniteDirectionStepDegrees = math.clamp(activePatternConfig.ShortRangeInfiniteDirectionStepDegrees, 0.5f, 90f);
+        activePatternConfig.BasicUnexploredDirectionPreference = 0f;
+        activePatternConfig.BasicTowardPlayerPreference = 0f;
+        activePatternConfig.BasicMinimumEnemyClearance = math.max(0f, activePatternConfig.ShortRangeMinimumEnemyClearance);
+        activePatternConfig.BasicTrajectoryPredictionTime = math.max(0f, activePatternConfig.ShortRangeTrajectoryPredictionTime);
+        activePatternConfig.BasicFreeTrajectoryPreference = math.max(0f, activePatternConfig.ShortRangeFreeTrajectoryPreference);
+        activePatternConfig.BasicBlockedPathRetryDelay = math.max(0f, activePatternConfig.ShortRangeBlockedPathRetryDelay);
+        activePatternConfig.CowardDetectionRadius = math.max(0f,
+                                                             activePatternConfig.ShortRangeActivationRange +
+                                                             math.max(0f, activePatternConfig.ShortRangeReleaseDistanceBuffer));
+        activePatternConfig.CowardReleaseDistanceBuffer = 0f;
+        activePatternConfig.CowardRetreatDirectionPreference = math.saturate(activePatternConfig.ShortRangeRetreatDirectionPreference);
+        activePatternConfig.CowardOpenSpacePreference = math.saturate(activePatternConfig.ShortRangeOpenSpacePreference);
+        activePatternConfig.CowardNavigationPreference = math.saturate(activePatternConfig.ShortRangeNavigationPreference);
+        activePatternConfig.CowardPatrolRadius = 0f;
+        activePatternConfig.CowardPatrolWaitSeconds = 0f;
+        activePatternConfig.CowardPatrolSpeedMultiplier = 0f;
+        activePatternConfig.CowardRetreatSpeedMultiplierFar = math.max(0f, activePatternConfig.ShortRangeRetreatSpeedMultiplierFar);
+        activePatternConfig.CowardRetreatSpeedMultiplierNear = math.max(activePatternConfig.CowardRetreatSpeedMultiplierFar,
+                                                                        activePatternConfig.ShortRangeRetreatSpeedMultiplierNear);
     }
     #endregion
 

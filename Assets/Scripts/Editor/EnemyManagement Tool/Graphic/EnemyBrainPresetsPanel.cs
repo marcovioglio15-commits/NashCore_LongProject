@@ -508,6 +508,7 @@ public sealed class EnemyBrainPresetsPanel
         detailsRoot.Add(detailsSectionContentRoot);
 
         BuildActiveDetailsSection();
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(detailsRoot);
     }
     private VisualElement BuildDetailsSectionButtons()
     {
@@ -561,12 +562,14 @@ public sealed class EnemyBrainPresetsPanel
         {
             case SectionType.Metadata:
                 EnemyBrainPresetsPanelSectionsUtility.BuildMetadataSection(this);
-                return;
+                break;
 
             case SectionType.Brain:
                 EnemyBrainPresetsPanelSectionsUtility.BuildBrainSection(this);
-                return;
+                break;
         }
+
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(detailsSectionContentRoot);
     }
 
     internal void RegeneratePresetId()

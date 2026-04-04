@@ -531,6 +531,7 @@ internal static class PlayerControllerPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.Controller.Section." + sectionTitle);
         container.Add(header);
         panel.SectionContentRoot.Add(container);
         return container;

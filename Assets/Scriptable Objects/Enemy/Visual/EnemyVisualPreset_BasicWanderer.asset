@@ -27,6 +27,10 @@ MonoBehaviour:
     flashColor: {r: 1, g: 0, b: 0, a: 1}
     flashDurationSeconds: 0.6
     flashMaximumBlend: 0.6
+  outline:
+    enableOutline: 1
+    outlineThickness: 1
+    outlineColor: {r: 0, g: 0, b: 0, a: 1}
   shooterWarning:
     enableAimPulse: 1
     aimPulseColor: {r: 0.35, g: 1, b: 0.95, a: 1}

@@ -37,6 +37,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesUtility
         Label header = new Label(sectionLabel);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.PowerUps.Entries." + sectionLabel.Replace(" ", string.Empty));
         panel.sectionContentRoot.Add(header);
 
         SerializedProperty powerUpsProperty = panel.presetSerializedObject.FindProperty(propertyName);

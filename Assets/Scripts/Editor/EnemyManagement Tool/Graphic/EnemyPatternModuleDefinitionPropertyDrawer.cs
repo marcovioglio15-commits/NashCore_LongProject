@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -5,6 +6,8 @@ using UnityEngine.UIElements;
 
 /// <summary>
 /// Custom UI Toolkit drawer for EnemyPatternModuleDefinition.
+/// /params None.
+/// /returns None.
 /// </summary>
 [CustomPropertyDrawer(typeof(EnemyPatternModuleDefinition))]
 public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
@@ -13,10 +16,10 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
 
     #region Public Methods
     /// <summary>
-    /// Creates the module definition editor UI with smart payload visibility.
+    /// Creates the module definition editor UI with catalog-aware kind filtering and context-sensitive payload visibility.
+    /// /params property Serialized module definition property.
+    /// /returns The built root visual element.
     /// </summary>
-    /// <param name="property">Serialized module definition property.</param>
-    /// <returns>Returns the built root visual element.<returns>
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
         VisualElement root = new VisualElement();
@@ -40,7 +43,7 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
 
         EnemyAdvancedPatternDrawerUtility.AddField(root, moduleIdProperty, "Module ID");
         EnemyAdvancedPatternDrawerUtility.AddField(root, displayNameProperty, "Display Name");
-        EnemyAdvancedPatternDrawerUtility.AddField(root, moduleKindProperty, "Module Kind");
+        BuildModuleKindField(root, property, moduleKindProperty);
         EnemyAdvancedPatternDrawerUtility.AddField(root, notesProperty, "Notes");
 
         HelpBox moduleInfoBox = new HelpBox(string.Empty, HelpBoxMessageType.Info);
@@ -58,10 +61,11 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
         payloadContainer.style.marginLeft = 126f;
         root.Add(payloadContainer);
 
-        RefreshModuleUi(moduleKindProperty, payloadDataProperty, moduleInfoBox, payloadContainer);
+        EnemyAdvancedPatternPayloadEditorMode editorMode = ResolveEditorMode(property);
+        RefreshModuleUi(moduleKindProperty, payloadDataProperty, moduleInfoBox, payloadContainer, editorMode);
         root.TrackPropertyValue(moduleKindProperty, changedProperty =>
         {
-            RefreshModuleUi(changedProperty, payloadDataProperty, moduleInfoBox, payloadContainer);
+            RefreshModuleUi(changedProperty, payloadDataProperty, moduleInfoBox, payloadContainer, editorMode);
         });
 
         return root;
@@ -70,29 +74,168 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
 
     #region Private Methods
     /// <summary>
-    /// Refreshes module info and payload editor according to selected module kind.
+    /// Builds the module-kind field, switching to a filtered popup when the definition belongs to a shared catalog subsection.
+    /// /params root Root element that receives the field.
+    /// /params property Serialized module-definition property.
+    /// /params moduleKindProperty Serialized module-kind property.
+    /// /returns None.
     /// </summary>
-    /// <param name="moduleKindProperty">Module kind enum property.</param>
-    /// <param name="payloadDataProperty">Payload root property.</param>
-    /// <param name="moduleInfoBox">Info box UI element.</param>
-    /// <param name="payloadContainer">Payload host container.</param>
+    private static void BuildModuleKindField(VisualElement root,
+                                             SerializedProperty property,
+                                             SerializedProperty moduleKindProperty)
+    {
+        if (!EnemyAdvancedPatternDrawerUtility.TryResolveContainingCatalogSection(property, out EnemyPatternModuleCatalogSection catalogSection))
+        {
+            EnemyAdvancedPatternDrawerUtility.AddField(root, moduleKindProperty, "Module Kind");
+            return;
+        }
+
+        List<EnemyPatternModuleKind> choices = BuildCatalogChoices(catalogSection);
+        EnemyPatternModuleKind currentModuleKind = EnemyAdvancedPatternDrawerUtility.ResolveModuleKind(moduleKindProperty);
+
+        if (!EnemyAdvancedPatternDrawerUtility.IsModuleKindAllowedInCatalogSection(currentModuleKind, catalogSection))
+            currentModuleKind = choices[0];
+
+        PopupField<EnemyPatternModuleKind> kindPopup = new PopupField<EnemyPatternModuleKind>("Module Kind", choices, currentModuleKind);
+        kindPopup.tooltip = ResolveCatalogTooltip(catalogSection);
+        root.Add(kindPopup);
+
+        if (moduleKindProperty.enumValueIndex != (int)currentModuleKind)
+        {
+            moduleKindProperty.serializedObject.Update();
+            moduleKindProperty.enumValueIndex = (int)currentModuleKind;
+            moduleKindProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        kindPopup.RegisterValueChangedCallback(evt =>
+        {
+            if (evt.newValue == evt.previousValue)
+                return;
+
+            moduleKindProperty.serializedObject.Update();
+            moduleKindProperty.enumValueIndex = (int)evt.newValue;
+            moduleKindProperty.serializedObject.ApplyModifiedProperties();
+        });
+
+        root.TrackPropertyValue(moduleKindProperty, changedProperty =>
+        {
+            EnemyPatternModuleKind resolvedModuleKind = EnemyAdvancedPatternDrawerUtility.ResolveModuleKind(changedProperty);
+
+            if (!EnemyAdvancedPatternDrawerUtility.IsModuleKindAllowedInCatalogSection(resolvedModuleKind, catalogSection))
+                resolvedModuleKind = choices[0];
+
+            if (kindPopup.value != resolvedModuleKind)
+                kindPopup.SetValueWithoutNotify(resolvedModuleKind);
+        });
+    }
+
+    /// <summary>
+    /// Refreshes module info and payload editor according to the selected module kind.
+    /// /params moduleKindProperty Module kind enum property.
+    /// /params payloadDataProperty Payload root property.
+    /// /params moduleInfoBox Info box UI element.
+    /// /params payloadContainer Payload host container.
+    /// /params editorMode Payload visibility mode for the current authoring context.
+    /// /returns None.
+    /// </summary>
     private static void RefreshModuleUi(SerializedProperty moduleKindProperty,
                                         SerializedProperty payloadDataProperty,
                                         HelpBox moduleInfoBox,
-                                        VisualElement payloadContainer)
+                                        VisualElement payloadContainer,
+                                        EnemyAdvancedPatternPayloadEditorMode editorMode)
     {
         EnemyPatternModuleKind moduleKind = EnemyAdvancedPatternDrawerUtility.ResolveModuleKind(moduleKindProperty);
-        moduleInfoBox.text = ResolveModuleKindDescription(moduleKind);
+        moduleInfoBox.text = ResolveModuleKindDescription(moduleKind, editorMode);
         moduleInfoBox.messageType = HelpBoxMessageType.Info;
-        EnemyAdvancedPatternDrawerUtility.RefreshPayloadEditor(payloadDataProperty, moduleKind, payloadContainer);
+        EnemyAdvancedPatternDrawerUtility.RefreshPayloadEditor(payloadDataProperty, moduleKind, payloadContainer, editorMode);
+    }
+
+    /// <summary>
+    /// Resolves the payload editor mode implied by the current module-definition property.
+    /// /params property Serialized module-definition property.
+    /// /returns The resolved payload editor mode.
+    /// </summary>
+    private static EnemyAdvancedPatternPayloadEditorMode ResolveEditorMode(SerializedProperty property)
+    {
+        if (EnemyAdvancedPatternDrawerUtility.TryResolveContainingCatalogSection(property, out EnemyPatternModuleCatalogSection catalogSection))
+        {
+            switch (catalogSection)
+            {
+                case EnemyPatternModuleCatalogSection.ShortRangeInteraction:
+                    return EnemyAdvancedPatternPayloadEditorMode.ShortRangeInteraction;
+
+                case EnemyPatternModuleCatalogSection.WeaponInteraction:
+                    return EnemyAdvancedPatternPayloadEditorMode.WeaponInteraction;
+            }
+        }
+
+        return EnemyAdvancedPatternPayloadEditorMode.Full;
+    }
+
+    /// <summary>
+    /// Builds the list of legal module kinds for one shared catalog section.
+    /// /params catalogSection Target shared catalog section.
+    /// /returns The ordered list of selectable module kinds.
+    /// </summary>
+    private static List<EnemyPatternModuleKind> BuildCatalogChoices(EnemyPatternModuleCatalogSection catalogSection)
+    {
+        List<EnemyPatternModuleKind> choices = new List<EnemyPatternModuleKind>();
+
+        switch (catalogSection)
+        {
+            case EnemyPatternModuleCatalogSection.CoreMovement:
+                choices.Add(EnemyPatternModuleKind.Stationary);
+                choices.Add(EnemyPatternModuleKind.Grunt);
+                choices.Add(EnemyPatternModuleKind.Wanderer);
+                break;
+
+            case EnemyPatternModuleCatalogSection.ShortRangeInteraction:
+                choices.Add(EnemyPatternModuleKind.Grunt);
+                choices.Add(EnemyPatternModuleKind.Coward);
+                break;
+
+            case EnemyPatternModuleCatalogSection.WeaponInteraction:
+                choices.Add(EnemyPatternModuleKind.Shooter);
+                break;
+
+            default:
+                choices.Add(EnemyPatternModuleKind.DropItems);
+                break;
+        }
+
+        return choices;
+    }
+
+    /// <summary>
+    /// Resolves the tooltip shown by the catalog-aware module-kind popup.
+    /// /params catalogSection Target shared catalog section.
+    /// /returns Tooltip text for the popup.
+    /// </summary>
+    private static string ResolveCatalogTooltip(EnemyPatternModuleCatalogSection catalogSection)
+    {
+        switch (catalogSection)
+        {
+            case EnemyPatternModuleCatalogSection.CoreMovement:
+                return "Only Core Movement module kinds are valid in this catalog section.";
+
+            case EnemyPatternModuleCatalogSection.ShortRangeInteraction:
+                return "Only Short-Range Interaction module kinds are valid in this catalog section.";
+
+            case EnemyPatternModuleCatalogSection.WeaponInteraction:
+                return "Only Weapon Interaction module kinds are valid in this catalog section.";
+
+            default:
+                return "Only Drop Items module kinds are valid in this catalog section.";
+        }
     }
 
     /// <summary>
     /// Resolves a short description for the selected module kind.
+    /// /params moduleKind Module kind value.
+    /// /params editorMode Payload visibility mode for the current authoring context.
+    /// /returns Human-readable module kind description.
     /// </summary>
-    /// <param name="moduleKind">Module kind value.</param>
-    /// <returns>Returns human-readable module kind description.<returns>
-    private static string ResolveModuleKindDescription(EnemyPatternModuleKind moduleKind)
+    private static string ResolveModuleKindDescription(EnemyPatternModuleKind moduleKind, EnemyAdvancedPatternPayloadEditorMode editorMode)
     {
         switch (moduleKind)
         {
@@ -100,16 +243,22 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
                 return "Stationary: disables movement and can optionally freeze rotation.";
 
             case EnemyPatternModuleKind.Grunt:
-                return "Grunt: uses standard Brain-driven chase and steering.";
+                return editorMode == EnemyAdvancedPatternPayloadEditorMode.ShortRangeInteraction
+                    ? "Grunt: hands control back to the default brain steering while the short-range band stays active."
+                    : "Grunt: uses standard Brain-driven chase and steering.";
 
             case EnemyPatternModuleKind.Wanderer:
                 return "Wanderer: autonomous roaming behavior with Basic or DVD mode.";
 
             case EnemyPatternModuleKind.Coward:
-                return "Coward: retreats from the player while scoring open-space escape routes and respecting wall clearance.";
+                return editorMode == EnemyAdvancedPatternPayloadEditorMode.ShortRangeInteraction
+                    ? "Coward: retreats while the Short-Range Interaction category stays active. Detection and release live on the category assembly."
+                    : "Coward: retreats from the player while scoring open-space escape routes and respecting wall clearance.";
 
             case EnemyPatternModuleKind.Shooter:
-                return "Shooter: emits periodic projectiles with burst and elemental options.";
+                return editorMode == EnemyAdvancedPatternPayloadEditorMode.WeaponInteraction
+                    ? "Shooter: emits projectiles while the Weapon Interaction category decides when range gates are valid."
+                    : "Shooter: emits periodic projectiles with burst and elemental options.";
 
             case EnemyPatternModuleKind.DropItems:
                 return "DropItems: spawns configured drops on enemy death, including experience drops.";

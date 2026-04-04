@@ -625,6 +625,7 @@ public sealed class PlayerProgressionPresetsPanel
         Label header = new Label(sectionTitle);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.Progression.Section." + sectionTitle);
         container.Add(header);
 
         if (sectionContentRoot != null)

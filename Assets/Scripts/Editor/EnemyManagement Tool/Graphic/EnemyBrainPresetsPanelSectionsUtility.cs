@@ -162,6 +162,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
         contentHost.Clear();
         contentHost.Add(tabEntry.Content);
         UpdateBrainSubSectionTabStyles(panel);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(contentHost);
     }
     #endregion
 
@@ -188,6 +189,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.EnemyManagement.Brain.Section." + sectionTitle);
         container.Add(header);
         detailsSectionContentRoot.Add(container);
         return container;
@@ -206,6 +208,7 @@ internal static class EnemyBrainPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle + " Settings");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.EnemyManagement.Brain.SubSection." + sectionTitle);
         container.Add(header);
 
         return container;

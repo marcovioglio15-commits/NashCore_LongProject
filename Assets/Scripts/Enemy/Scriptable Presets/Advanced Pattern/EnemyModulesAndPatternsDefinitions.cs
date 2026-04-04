@@ -1,0 +1,523 @@
+using System;
+using UnityEngine;
+
+/// <summary>
+/// Declares the catalog subsection that owns one reusable enemy pattern module definition.
+/// /params None.
+/// /returns None.
+/// </summary>
+public enum EnemyPatternModuleCatalogSection
+{
+    CoreMovement = 0,
+    ShortRangeInteraction = 1,
+    WeaponInteraction = 2,
+    DropItems = 3
+}
+
+/// <summary>
+/// Stores the core movement selection assembled inside one shared enemy pattern.
+/// /params None.
+/// /returns None.
+/// </summary>
+[Serializable]
+public sealed class EnemyPatternCoreMovementAssembly
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Core movement module binding resolved from Core Movement definitions.")]
+    [SerializeField] private EnemyPatternModuleBinding binding = new EnemyPatternModuleBinding();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public EnemyPatternModuleBinding Binding
+    {
+        get
+        {
+            return binding;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Ensures the core movement assembly always owns one binding instance and keeps it enabled.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    public void Validate()
+    {
+        if (binding == null)
+            binding = new EnemyPatternModuleBinding();
+
+        binding.Validate();
+
+        if (!binding.IsEnabled)
+            binding.Configure(binding.ModuleId, true);
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Stores the optional short-range interaction selection and shared activation settings used by one pattern.
+/// /params None.
+/// /returns None.
+/// </summary>
+[Serializable]
+public sealed class EnemyPatternShortRangeInteractionAssembly
+{
+    #region Constants
+    private const float DefaultActivationRange = 6f;
+    private const float DefaultReleaseDistanceBuffer = 1f;
+    #endregion
+
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Enables one short-range interaction override when the player enters the configured activation range.")]
+    [SerializeField] private bool isEnabled;
+
+    [Tooltip("Distance from the enemy at which the short-range interaction starts overriding the core movement.")]
+    [SerializeField] private float activationRange = DefaultActivationRange;
+
+    [Tooltip("Extra distance added after activation before the short-range interaction releases back to the core movement.")]
+    [SerializeField] private float releaseDistanceBuffer = DefaultReleaseDistanceBuffer;
+
+    [Tooltip("Short-range interaction module binding resolved from Short-Range Interaction definitions.")]
+    [SerializeField] private EnemyPatternModuleBinding binding = new EnemyPatternModuleBinding();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public bool IsEnabled
+    {
+        get
+        {
+            return isEnabled;
+        }
+    }
+
+    public float ActivationRange
+    {
+        get
+        {
+            return activationRange;
+        }
+    }
+
+    public float ReleaseDistanceBuffer
+    {
+        get
+        {
+            return releaseDistanceBuffer;
+        }
+    }
+
+    public EnemyPatternModuleBinding Binding
+    {
+        get
+        {
+            return binding;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Configures the short-range interaction activation gate.
+    /// /params isEnabledValue New enabled flag.
+    /// /params activationRangeValue New activation range.
+    /// /params releaseDistanceBufferValue New release distance buffer.
+    /// /returns None.
+    /// </summary>
+    public void Configure(bool isEnabledValue, float activationRangeValue, float releaseDistanceBufferValue)
+    {
+        isEnabled = isEnabledValue;
+        activationRange = activationRangeValue;
+        releaseDistanceBuffer = releaseDistanceBufferValue;
+    }
+
+    /// <summary>
+    /// Ensures the short-range interaction assembly keeps valid references without snapping authored numeric values.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    public void Validate()
+    {
+        if (binding == null)
+            binding = new EnemyPatternModuleBinding();
+
+        binding.Validate();
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Stores the optional weapon interaction selection and shared range gates used by one pattern.
+/// /params None.
+/// /returns None.
+/// </summary>
+[Serializable]
+public sealed class EnemyPatternWeaponInteractionAssembly
+{
+    #region Constants
+    private const float DefaultMinimumRange = 2f;
+    private const float DefaultMaximumRange = 20f;
+    #endregion
+
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Enables one weapon interaction module for this pattern.")]
+    [SerializeField] private bool isEnabled;
+
+    [Tooltip("When enabled, the weapon interaction only activates after the player is farther than Minimum Range.")]
+    [SerializeField] private bool useMinimumRange;
+
+    [Tooltip("Minimum player distance required to activate the weapon interaction when Minimum Range gating is enabled.")]
+    [SerializeField] private float minimumRange = DefaultMinimumRange;
+
+    [Tooltip("When enabled, the weapon interaction only activates while the player stays within Maximum Range.")]
+    [SerializeField] private bool useMaximumRange;
+
+    [Tooltip("Maximum player distance allowed to activate the weapon interaction when Maximum Range gating is enabled.")]
+    [SerializeField] private float maximumRange = DefaultMaximumRange;
+
+    [Tooltip("Weapon interaction module binding resolved from Weapon Interaction definitions.")]
+    [SerializeField] private EnemyPatternModuleBinding binding = new EnemyPatternModuleBinding();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public bool IsEnabled
+    {
+        get
+        {
+            return isEnabled;
+        }
+    }
+
+    public bool UseMinimumRange
+    {
+        get
+        {
+            return useMinimumRange;
+        }
+    }
+
+    public float MinimumRange
+    {
+        get
+        {
+            return minimumRange;
+        }
+    }
+
+    public bool UseMaximumRange
+    {
+        get
+        {
+            return useMaximumRange;
+        }
+    }
+
+    public float MaximumRange
+    {
+        get
+        {
+            return maximumRange;
+        }
+    }
+
+    public EnemyPatternModuleBinding Binding
+    {
+        get
+        {
+            return binding;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Configures the weapon interaction range gate.
+    /// /params isEnabledValue New enabled flag.
+    /// /params useMinimumRangeValue New minimum-range gate toggle.
+    /// /params minimumRangeValue New minimum range.
+    /// /params useMaximumRangeValue New maximum-range gate toggle.
+    /// /params maximumRangeValue New maximum range.
+    /// /returns None.
+    /// </summary>
+    public void Configure(bool isEnabledValue,
+                          bool useMinimumRangeValue,
+                          float minimumRangeValue,
+                          bool useMaximumRangeValue,
+                          float maximumRangeValue)
+    {
+        isEnabled = isEnabledValue;
+        useMinimumRange = useMinimumRangeValue;
+        minimumRange = minimumRangeValue;
+        useMaximumRange = useMaximumRangeValue;
+        maximumRange = maximumRangeValue;
+    }
+
+    /// <summary>
+    /// Ensures the weapon interaction assembly keeps valid references without snapping authored numeric values.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    public void Validate()
+    {
+        if (binding == null)
+            binding = new EnemyPatternModuleBinding();
+
+        binding.Validate();
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Stores the optional drop-items selection used by one shared pattern.
+/// This remains separated so existing loot logic can be preserved while the movement and weapon flow is restructured.
+/// /params None.
+/// /returns None.
+/// </summary>
+[Serializable]
+public sealed class EnemyPatternDropItemsAssembly
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Enables one drop-items module for this pattern.")]
+    [SerializeField] private bool isEnabled;
+
+    [Tooltip("Drop-items module binding resolved from Drop Items definitions.")]
+    [SerializeField] private EnemyPatternModuleBinding binding = new EnemyPatternModuleBinding();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public bool IsEnabled
+    {
+        get
+        {
+            return isEnabled;
+        }
+    }
+
+    public EnemyPatternModuleBinding Binding
+    {
+        get
+        {
+            return binding;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Configures the drop-items assembly enabled state.
+    /// /params isEnabledValue New enabled flag.
+    /// /returns None.
+    /// </summary>
+    public void Configure(bool isEnabledValue)
+    {
+        isEnabled = isEnabledValue;
+    }
+
+    /// <summary>
+    /// Ensures the drop-items assembly always owns one binding instance.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    public void Validate()
+    {
+        if (binding == null)
+            binding = new EnemyPatternModuleBinding();
+
+        binding.Validate();
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Declares one assembled shared pattern built from category-specific module selections.
+/// /params None.
+/// /returns None.
+/// </summary>
+[Serializable]
+public sealed class EnemyModulesPatternDefinition
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Stable identifier used by Enemy Advanced Pattern Presets loadouts.")]
+    [SerializeField] private string patternId;
+
+    [Tooltip("Display name shown in Modules & Patterns editing and advanced-pattern loadouts.")]
+    [SerializeField] private string displayName = "New Pattern";
+
+    [Tooltip("Optional description for this shared assembled pattern.")]
+    [SerializeField] private string description;
+
+    [Tooltip("If enabled, this pattern should not be replaced by procedural runtime swaps.")]
+    [SerializeField] private bool unreplaceable;
+
+    [Tooltip("Core movement selection resolved while the player is outside short-range overrides.")]
+    [SerializeField] private EnemyPatternCoreMovementAssembly coreMovement = new EnemyPatternCoreMovementAssembly();
+
+    [Tooltip("Optional short-range interaction that overrides the core movement when the player enters the configured range.")]
+    [SerializeField] private EnemyPatternShortRangeInteractionAssembly shortRangeInteraction = new EnemyPatternShortRangeInteractionAssembly();
+
+    [Tooltip("Optional weapon interaction selection for this pattern.")]
+    [SerializeField] private EnemyPatternWeaponInteractionAssembly weaponInteraction = new EnemyPatternWeaponInteractionAssembly();
+
+    [Tooltip("Optional drop-items selection preserved for loot-driven enemies.")]
+    [SerializeField] private EnemyPatternDropItemsAssembly dropItems = new EnemyPatternDropItemsAssembly();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public string PatternId
+    {
+        get
+        {
+            return patternId;
+        }
+    }
+
+    public string DisplayName
+    {
+        get
+        {
+            return displayName;
+        }
+    }
+
+    public string Description
+    {
+        get
+        {
+            return description;
+        }
+    }
+
+    public bool Unreplaceable
+    {
+        get
+        {
+            return unreplaceable;
+        }
+    }
+
+    public EnemyPatternCoreMovementAssembly CoreMovement
+    {
+        get
+        {
+            return coreMovement;
+        }
+    }
+
+    public EnemyPatternShortRangeInteractionAssembly ShortRangeInteraction
+    {
+        get
+        {
+            return shortRangeInteraction;
+        }
+    }
+
+    public EnemyPatternWeaponInteractionAssembly WeaponInteraction
+    {
+        get
+        {
+            return weaponInteraction;
+        }
+    }
+
+    public EnemyPatternDropItemsAssembly DropItems
+    {
+        get
+        {
+            return dropItems;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Configures this shared pattern identity and editor-facing metadata.
+    /// /params patternIdValue New stable pattern identifier.
+    /// /params displayNameValue New display name.
+    /// /params descriptionValue New description text.
+    /// /params unreplaceableValue New unreplaceable flag.
+    /// /returns None.
+    /// </summary>
+    public void Configure(string patternIdValue,
+                          string displayNameValue,
+                          string descriptionValue,
+                          bool unreplaceableValue)
+    {
+        patternId = patternIdValue;
+        displayName = displayNameValue;
+        description = descriptionValue;
+        unreplaceable = unreplaceableValue;
+    }
+
+    /// <summary>
+    /// Ensures nested assemblies always exist before editor drawing, validation and bake-time compilation.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    public void Validate()
+    {
+        if (string.IsNullOrWhiteSpace(patternId))
+            patternId = "Pattern_Custom";
+
+        if (string.IsNullOrWhiteSpace(displayName))
+            displayName = patternId;
+
+        if (coreMovement == null)
+            coreMovement = new EnemyPatternCoreMovementAssembly();
+
+        if (shortRangeInteraction == null)
+            shortRangeInteraction = new EnemyPatternShortRangeInteractionAssembly();
+
+        if (weaponInteraction == null)
+            weaponInteraction = new EnemyPatternWeaponInteractionAssembly();
+
+        if (dropItems == null)
+            dropItems = new EnemyPatternDropItemsAssembly();
+
+        coreMovement.Validate();
+        shortRangeInteraction.Validate();
+        weaponInteraction.Validate();
+        dropItems.Validate();
+    }
+    #endregion
+
+    #endregion
+}

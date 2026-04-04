@@ -16,6 +16,9 @@ MonoBehaviour:
   presetName: EnemyAdvancedPatternPreset_DVDWanderer
   description: 
   version: 1.0.0
+  modulesAndPatternsPreset: {fileID: 11400000, guid: 3fca150e2607eee4bafe414260cff7cb, type: 2}
+  activePatternIds:
+  - Pattern_DVDWanderer
   legacyShooterProjectilePrefab: {fileID: 0}
   legacyShooterProjectilePoolInitialCapacity: 24
   legacyShooterProjectilePoolExpandBatch: 8
@@ -821,5 +824,3 @@ MonoBehaviour:
               collectDistancePerPlayerSpeed: 0.05
               spawnAnimationMinDuration: 0.08
               spawnAnimationMaxDuration: 0.16
-  activePatternIds:
-  - Pattern_DVDWanderer

@@ -515,6 +515,7 @@ public sealed class PlayerVisualPresetsPanel
         detailsRoot.Add(detailsSectionButtonsRoot);
         detailsRoot.Add(detailsSectionContentRoot);
         BuildActiveDetailsSection();
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(detailsRoot);
     }
 
     private VisualElement BuildDetailsSectionButtons()
@@ -559,12 +560,14 @@ public sealed class PlayerVisualPresetsPanel
         {
             case SectionType.Metadata:
                 PlayerVisualPresetsPanelSectionsUtility.BuildMetadataSection(this);
-                return;
+                break;
 
             case SectionType.Visual:
                 PlayerVisualPresetsPanelSectionsUtility.BuildVisualSection(this);
-                return;
+                break;
         }
+
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(detailsSectionContentRoot);
     }
 
     internal void RegeneratePresetId()
@@ -666,8 +669,9 @@ public sealed class PlayerVisualPresetsPanel
     internal enum VisualSubSectionType
     {
         RuntimeBridge = 0,
-        DamageFeedback = 1,
-        PowerUpVfx = 2
+        Outline = 1,
+        DamageFeedback = 2,
+        PowerUpVfx = 3
     }
 
     internal sealed class VisualSubSectionTabEntry

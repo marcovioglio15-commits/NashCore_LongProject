@@ -4,19 +4,22 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 /// <summary>
-/// Stores modular advanced enemy behavior definitions and active loadout selection.
+/// Stores enemy-specific advanced-pattern metadata, active loadout selection and the shared Modules & Patterns preset reference.
+/// Legacy local catalogs remain serialized only as a compatibility fallback for already-authored assets.
+/// /params None.
+/// /returns None.
 /// </summary>
 [CreateAssetMenu(fileName = "EnemyAdvancedPatternPreset", menuName = "Enemy/Advanced Pattern Preset", order = 12)]
 public sealed class EnemyAdvancedPatternPreset : ScriptableObject
 {
     #region Constants
-    private const string DefaultPatternId = "Pattern_DefaultGrunt";
-    private const string DefaultModuleIdStationary = "Module_Stationary";
-    private const string DefaultModuleIdGrunt = "Module_Grunt";
-    private const string DefaultModuleIdWanderer = "Module_Wanderer";
-    private const string DefaultModuleIdCoward = "Module_Coward";
-    private const string DefaultModuleIdShooter = "Module_Shooter";
-    private const string DefaultModuleIdDropItems = "Module_DropItems";
+    private const string DefaultLegacyPatternId = "Pattern_DefaultGrunt";
+    private const string DefaultLegacyModuleIdStationary = "Module_Stationary";
+    private const string DefaultLegacyModuleIdGrunt = "Module_Grunt";
+    private const string DefaultLegacyModuleIdWanderer = "Module_Wanderer";
+    private const string DefaultLegacyModuleIdCoward = "Module_Coward";
+    private const string DefaultLegacyModuleIdShooter = "Module_Shooter";
+    private const string DefaultLegacyModuleIdDropItems = "Module_DropItems";
     #endregion
 
     #region Fields
@@ -35,29 +38,36 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
     [Tooltip("Optional semantic version string for this preset.")]
     [SerializeField] private string version = "1.0.0";
 
+    [Header("Modules & Patterns Preset")]
+    [Tooltip("Shared modules and patterns preset referenced by this enemy-specific loadout.")]
+    [SerializeField] private EnemyModulesAndPatternsPreset modulesAndPatternsPreset;
+
+    [Header("Pattern Loadout")]
+    [Tooltip("Active shared pattern IDs compiled at bake time. The current tool flow expects one selected pattern.")]
+    [SerializeField] private List<string> activePatternIds = new List<string>();
+
     [Tooltip("Legacy shooter projectile prefab fallback kept for backward compatibility with older presets.")]
     [FormerlySerializedAs("shooterProjectilePrefab")]
-    [SerializeField] private GameObject legacyShooterProjectilePrefab;
+    [SerializeField]
+    [HideInInspector] private GameObject legacyShooterProjectilePrefab;
 
     [Tooltip("Legacy shooter pool initial capacity fallback kept for backward compatibility with older presets.")]
     [FormerlySerializedAs("shooterProjectilePoolInitialCapacity")]
-    [SerializeField] private int legacyShooterProjectilePoolInitialCapacity = 24;
+    [SerializeField]
+    [HideInInspector] private int legacyShooterProjectilePoolInitialCapacity = 24;
 
     [Tooltip("Legacy shooter pool expand batch fallback kept for backward compatibility with older presets.")]
     [FormerlySerializedAs("shooterProjectilePoolExpandBatch")]
-    [SerializeField] private int legacyShooterProjectilePoolExpandBatch = 8;
+    [SerializeField]
+    [HideInInspector] private int legacyShooterProjectilePoolExpandBatch = 8;
 
-    [Header("Modules Definition")]
-    [Tooltip("Reusable module catalog used by Pattern Assemble entries.")]
-    [SerializeField] private List<EnemyPatternModuleDefinition> moduleDefinitions = new List<EnemyPatternModuleDefinition>();
+    [Tooltip("Legacy reusable module catalog kept hidden so pre-refactor assets can still be migrated and baked safely.")]
+    [SerializeField]
+    [HideInInspector] private List<EnemyPatternModuleDefinition> moduleDefinitions = new List<EnemyPatternModuleDefinition>();
 
-    [Header("Pattern Assemble")]
-    [Tooltip("Assembled patterns composed from module bindings.")]
-    [SerializeField] private List<EnemyPatternDefinition> patterns = new List<EnemyPatternDefinition>();
-
-    [Header("Pattern Loadout")]
-    [Tooltip("List of active pattern IDs compiled at bake time. All selected patterns are merged.")]
-    [SerializeField] private List<string> activePatternIds = new List<string>();
+    [Tooltip("Legacy assembled patterns kept hidden so pre-refactor assets can still be migrated and baked safely.")]
+    [SerializeField]
+    [HideInInspector] private List<EnemyPatternDefinition> patterns = new List<EnemyPatternDefinition>();
     #endregion
 
     #endregion
@@ -95,43 +105,11 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
         }
     }
 
-    public GameObject ShooterProjectilePrefab
+    public EnemyModulesAndPatternsPreset ModulesAndPatternsPreset
     {
         get
         {
-            return legacyShooterProjectilePrefab;
-        }
-    }
-
-    public int ShooterProjectilePoolInitialCapacity
-    {
-        get
-        {
-            return legacyShooterProjectilePoolInitialCapacity;
-        }
-    }
-
-    public int ShooterProjectilePoolExpandBatch
-    {
-        get
-        {
-            return legacyShooterProjectilePoolExpandBatch;
-        }
-    }
-
-    public IReadOnlyList<EnemyPatternModuleDefinition> ModuleDefinitions
-    {
-        get
-        {
-            return moduleDefinitions;
-        }
-    }
-
-    public IReadOnlyList<EnemyPatternDefinition> Patterns
-    {
-        get
-        {
-            return patterns;
+            return modulesAndPatternsPreset;
         }
     }
 
@@ -142,17 +120,114 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
             return activePatternIds;
         }
     }
+
+    public IReadOnlyList<EnemyPatternModuleDefinition> LegacyModuleDefinitions
+    {
+        get
+        {
+            return moduleDefinitions;
+        }
+    }
+
+    public IReadOnlyList<EnemyPatternDefinition> LegacyPatterns
+    {
+        get
+        {
+            return patterns;
+        }
+    }
+
+    public GameObject LegacyShooterProjectilePrefab
+    {
+        get
+        {
+            return legacyShooterProjectilePrefab;
+        }
+    }
+
+    public int LegacyShooterProjectilePoolInitialCapacity
+    {
+        get
+        {
+            return legacyShooterProjectilePoolInitialCapacity;
+        }
+    }
+
+    public int LegacyShooterProjectilePoolExpandBatch
+    {
+        get
+        {
+            return legacyShooterProjectilePoolExpandBatch;
+        }
+    }
+
+    public bool HasLegacyCatalogData
+    {
+        get
+        {
+            if (moduleDefinitions != null && moduleDefinitions.Count > 0)
+                return true;
+
+            return patterns != null && patterns.Count > 0;
+        }
+    }
     #endregion
 
     #region Methods
 
     #region Public Methods
     /// <summary>
-    /// Resolves one module definition by module ID.
+    /// Resolves one shared or legacy module definition by module ID.
+    /// Shared catalog data has priority when a Modules & Patterns preset is assigned.
+    /// /params moduleId Target module identifier.
+    /// /returns The resolved module definition, or null when not found.
     /// </summary>
-    /// <param name="moduleId">Target module ID.</param>
-    /// <returns>Resolved module definition instance or null when not found.<returns>
     public EnemyPatternModuleDefinition ResolveModuleDefinitionById(string moduleId)
+    {
+        if (string.IsNullOrWhiteSpace(moduleId))
+            return null;
+
+        if (modulesAndPatternsPreset != null)
+        {
+            EnemyPatternModuleDefinition sharedDefinition = modulesAndPatternsPreset.ResolveModuleDefinitionById(moduleId);
+
+            if (sharedDefinition != null)
+                return sharedDefinition;
+        }
+
+        return ResolveLegacyModuleDefinitionById(moduleId);
+    }
+
+    /// <summary>
+    /// Resolves one pattern definition by pattern ID using the hidden legacy local catalog.
+    /// This compatibility wrapper keeps legacy bake/editor code working after the shared-preset split.
+    /// /params patternId Target pattern identifier.
+    /// /returns The resolved legacy pattern definition, or null when not found.
+    /// </summary>
+    public EnemyPatternDefinition ResolvePatternById(string patternId)
+    {
+        return ResolveLegacyPatternById(patternId);
+    }
+
+    /// <summary>
+    /// Resolves one shared pattern definition by pattern ID.
+    /// /params patternId Target shared pattern identifier.
+    /// /returns The resolved shared pattern definition, or null when no shared preset is assigned or no match exists.
+    /// </summary>
+    public EnemyModulesPatternDefinition ResolveSharedPatternById(string patternId)
+    {
+        if (modulesAndPatternsPreset == null)
+            return null;
+
+        return modulesAndPatternsPreset.ResolvePatternById(patternId);
+    }
+
+    /// <summary>
+    /// Resolves one legacy local module definition by module ID.
+    /// /params moduleId Target legacy module identifier.
+    /// /returns The resolved legacy module definition, or null when not found.
+    /// </summary>
+    public EnemyPatternModuleDefinition ResolveLegacyModuleDefinitionById(string moduleId)
     {
         if (string.IsNullOrWhiteSpace(moduleId))
             return null;
@@ -176,11 +251,11 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
     }
 
     /// <summary>
-    /// Resolves one assembled pattern by pattern ID.
+    /// Resolves one legacy local pattern definition by pattern ID.
+    /// /params patternId Target legacy pattern identifier.
+    /// /returns The resolved legacy pattern definition, or null when not found.
     /// </summary>
-    /// <param name="patternId">Target pattern ID.</param>
-    /// <returns>Resolved pattern definition instance or null when not found.<returns>
-    public EnemyPatternDefinition ResolvePatternById(string patternId)
+    public EnemyPatternDefinition ResolveLegacyPatternById(string patternId)
     {
         if (string.IsNullOrWhiteSpace(patternId))
             return null;
@@ -204,7 +279,9 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
     }
 
     /// <summary>
-    /// Validates metadata, module catalog, pattern assembly and active loadout.
+    /// Validates metadata, active loadout data, referenced shared preset and hidden legacy compatibility data.
+    /// /params None.
+    /// /returns None.
     /// </summary>
     public void ValidateValues()
     {
@@ -214,28 +291,17 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
         if (string.IsNullOrWhiteSpace(presetName))
             presetName = "New Enemy Advanced Pattern Preset";
 
-        if (moduleDefinitions == null)
-            moduleDefinitions = new List<EnemyPatternModuleDefinition>();
-
-        if (patterns == null)
-            patterns = new List<EnemyPatternDefinition>();
-
         if (activePatternIds == null)
             activePatternIds = new List<string>();
 
-        if (moduleDefinitions.Count <= 0)
-            moduleDefinitions = BuildDefaultModuleDefinitions();
+        if (modulesAndPatternsPreset != null)
+            modulesAndPatternsPreset.ValidateValues();
 
-        if (patterns.Count <= 0)
-            patterns = BuildDefaultPatternDefinitions();
-
-        ValidateModuleDefinitions();
-        ValidatePatternDefinitions();
-        MigrateLegacyRuntimeProjectileToShooterPayload();
+        ValidateLegacyCompatibilityData();
         NormalizeLoadoutIds();
 
-        if (activePatternIds.Count <= 0 && patterns.Count > 0)
-            activePatternIds.Add(patterns[0].PatternId);
+        if (activePatternIds.Count <= 0)
+            AddDefaultLoadoutEntry();
 
         if (legacyShooterProjectilePoolInitialCapacity < 0)
             legacyShooterProjectilePoolInitialCapacity = 0;
@@ -252,130 +318,88 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
     }
     #endregion
 
-    #region Defaults
-    private static List<EnemyPatternModuleDefinition> BuildDefaultModuleDefinitions()
+    #region Private Methods
+    /// <summary>
+    /// Ensures hidden legacy data remains structurally valid whenever older assets are still loaded.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void ValidateLegacyCompatibilityData()
     {
-        List<EnemyPatternModuleDefinition> definitions = new List<EnemyPatternModuleDefinition>();
-        definitions.Add(CreateDefaultModule(DefaultModuleIdStationary, "Stationary", EnemyPatternModuleKind.Stationary, "Forces movement speed to zero."));
-        definitions.Add(CreateDefaultModule(DefaultModuleIdGrunt, "Grunt", EnemyPatternModuleKind.Grunt, "Uses standard chase and separation from Brain settings."));
-        definitions.Add(CreateDefaultModule(DefaultModuleIdWanderer, "Wanderer", EnemyPatternModuleKind.Wanderer, "Uses autonomous wandering behavior."));
-        definitions.Add(CreateDefaultModule(DefaultModuleIdCoward, "Coward", EnemyPatternModuleKind.Coward, "Retreats from the player while still keeping contact and area damage active."));
-        definitions.Add(CreateDefaultModule(DefaultModuleIdShooter, "Shooter", EnemyPatternModuleKind.Shooter, "Shoots periodic projectiles toward the player."));
-        definitions.Add(CreateDefaultModule(DefaultModuleIdDropItems, "Drop Items", EnemyPatternModuleKind.DropItems, "Spawns collectible drops (for now experience drops) at enemy death."));
-        return definitions;
+        if (moduleDefinitions == null)
+            moduleDefinitions = new List<EnemyPatternModuleDefinition>();
+
+        if (patterns == null)
+            patterns = new List<EnemyPatternDefinition>();
+
+        if (moduleDefinitions.Count <= 0 && patterns.Count <= 0)
+            return;
+
+        if (moduleDefinitions.Count <= 0)
+            moduleDefinitions = BuildDefaultLegacyModuleDefinitions();
+
+        if (patterns.Count <= 0)
+            patterns = BuildDefaultLegacyPatternDefinitions();
+
+        ValidateLegacyModuleDefinitions();
+        ValidateLegacyPatternDefinitions();
+        MigrateLegacyRuntimeProjectileToShooterPayload();
     }
 
-    private static EnemyPatternModuleDefinition CreateDefaultModule(string moduleId,
-                                                                    string displayName,
-                                                                    EnemyPatternModuleKind moduleKind,
-                                                                    string notes)
+    /// <summary>
+    /// Adds a default pattern loadout entry from the shared preset when available, otherwise from hidden legacy data.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void AddDefaultLoadoutEntry()
     {
-        EnemyPatternModuleDefinition definition = new EnemyPatternModuleDefinition();
-        EnemyPatternModulePayloadData payloadData = new EnemyPatternModulePayloadData();
-        definition.Configure(moduleId, displayName, moduleKind, notes, payloadData);
-        definition.Validate();
-        return definition;
-    }
-
-    private static List<EnemyPatternDefinition> BuildDefaultPatternDefinitions()
-    {
-        List<EnemyPatternDefinition> definitions = new List<EnemyPatternDefinition>();
-        EnemyPatternDefinition defaultPattern = new EnemyPatternDefinition();
-        EnemyPatternModuleBinding gruntBinding = new EnemyPatternModuleBinding();
-        gruntBinding.Configure(DefaultModuleIdGrunt, true);
-        gruntBinding.ConfigureOverride(false, new EnemyPatternModulePayloadData());
-        defaultPattern.Configure(DefaultPatternId,
-                                 "Default Grunt",
-                                 "Baseline pattern with Grunt movement.",
-                                 false);
-        defaultPattern.ClearBindings();
-        defaultPattern.AddBinding(gruntBinding);
-        defaultPattern.Validate();
-        definitions.Add(defaultPattern);
-        return definitions;
-    }
-    #endregion
-
-    #region Validation
-    private void ValidateModuleDefinitions()
-    {
-        HashSet<string> moduleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (int index = 0; index < moduleDefinitions.Count; index++)
+        if (modulesAndPatternsPreset != null && modulesAndPatternsPreset.Patterns.Count > 0)
         {
-            EnemyPatternModuleDefinition definition = moduleDefinitions[index];
-
-            if (definition == null)
-            {
-                definition = new EnemyPatternModuleDefinition();
-                moduleDefinitions[index] = definition;
-            }
-
-            definition.Validate();
-            string normalizedId = NormalizeId(definition.ModuleId, "Module_Custom");
-            string uniqueId = ResolveUniqueId(normalizedId, moduleIds, "Module_Custom");
-
-            if (!string.Equals(definition.ModuleId, uniqueId, StringComparison.Ordinal))
-            {
-                definition.Configure(uniqueId,
-                                     definition.DisplayName,
-                                     definition.ModuleKind,
-                                     definition.Notes,
-                                     definition.Data);
-                definition.Validate();
-            }
-
-            moduleIds.Add(uniqueId);
+            activePatternIds.Add(modulesAndPatternsPreset.Patterns[0].PatternId);
+            return;
         }
+
+        if (patterns.Count > 0)
+            activePatternIds.Add(patterns[0].PatternId);
     }
 
-    private void ValidatePatternDefinitions()
-    {
-        HashSet<string> patternIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (int index = 0; index < patterns.Count; index++)
-        {
-            EnemyPatternDefinition pattern = patterns[index];
-
-            if (pattern == null)
-            {
-                patterns.RemoveAt(index);
-                index--;
-                continue;
-            }
-
-            pattern.Validate();
-            string normalizedId = NormalizeId(pattern.PatternId, "Pattern_Custom");
-            string uniqueId = ResolveUniqueId(normalizedId, patternIds, "Pattern_Custom");
-
-            if (!string.Equals(pattern.PatternId, uniqueId, StringComparison.Ordinal))
-            {
-                pattern.Configure(uniqueId,
-                                  pattern.DisplayName,
-                                  pattern.Description,
-                                  pattern.Unreplaceable);
-                pattern.Validate();
-            }
-
-            patternIds.Add(uniqueId);
-        }
-    }
-
+    /// <summary>
+    /// Normalizes active loadout IDs against the currently assigned shared preset, or against legacy data when no shared preset exists.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
     private void NormalizeLoadoutIds()
     {
         HashSet<string> validPatternIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        for (int index = 0; index < patterns.Count; index++)
+        if (modulesAndPatternsPreset != null)
         {
-            EnemyPatternDefinition pattern = patterns[index];
+            IReadOnlyList<EnemyModulesPatternDefinition> sharedPatterns = modulesAndPatternsPreset.Patterns;
 
-            if (pattern == null)
-                continue;
+            for (int index = 0; index < sharedPatterns.Count; index++)
+            {
+                EnemyModulesPatternDefinition pattern = sharedPatterns[index];
 
-            validPatternIds.Add(pattern.PatternId);
+                if (pattern == null || string.IsNullOrWhiteSpace(pattern.PatternId))
+                    continue;
+
+                validPatternIds.Add(pattern.PatternId);
+            }
+        }
+        else
+        {
+            for (int index = 0; index < patterns.Count; index++)
+            {
+                EnemyPatternDefinition pattern = patterns[index];
+
+                if (pattern == null || string.IsNullOrWhiteSpace(pattern.PatternId))
+                    continue;
+
+                validPatternIds.Add(pattern.PatternId);
+            }
         }
 
-        HashSet<string> visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> visitedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         for (int index = 0; index < activePatternIds.Count; index++)
         {
@@ -395,7 +419,7 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
                 continue;
             }
 
-            if (!visited.Add(loadoutId))
+            if (!visitedIds.Add(loadoutId))
             {
                 activePatternIds.RemoveAt(index);
                 index--;
@@ -406,42 +430,163 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
         }
     }
 
-    private static string NormalizeId(string rawId, string fallback)
+    /// <summary>
+    /// Builds the hidden legacy module catalog used by old presets that still serialize local module definitions.
+    /// /params None.
+    /// /returns The default legacy module-definition list.
+    /// </summary>
+    private static List<EnemyPatternModuleDefinition> BuildDefaultLegacyModuleDefinitions()
     {
-        if (string.IsNullOrWhiteSpace(rawId))
-            return fallback;
-
-        string normalized = rawId.Trim();
-
-        if (string.IsNullOrWhiteSpace(normalized))
-            return fallback;
-
-        return normalized;
+        List<EnemyPatternModuleDefinition> definitions = new List<EnemyPatternModuleDefinition>();
+        definitions.Add(CreateDefaultLegacyModule(DefaultLegacyModuleIdStationary,
+                                                  "Stationary",
+                                                  EnemyPatternModuleKind.Stationary,
+                                                  "Forces movement speed to zero."));
+        definitions.Add(CreateDefaultLegacyModule(DefaultLegacyModuleIdGrunt,
+                                                  "Grunt",
+                                                  EnemyPatternModuleKind.Grunt,
+                                                  "Uses standard chase and separation from Brain settings."));
+        definitions.Add(CreateDefaultLegacyModule(DefaultLegacyModuleIdWanderer,
+                                                  "Wanderer",
+                                                  EnemyPatternModuleKind.Wanderer,
+                                                  "Uses autonomous wandering behaviour."));
+        definitions.Add(CreateDefaultLegacyModule(DefaultLegacyModuleIdCoward,
+                                                  "Coward",
+                                                  EnemyPatternModuleKind.Coward,
+                                                  "Retreats from the player while still keeping contact and area damage active."));
+        definitions.Add(CreateDefaultLegacyModule(DefaultLegacyModuleIdShooter,
+                                                  "Shooter",
+                                                  EnemyPatternModuleKind.Shooter,
+                                                  "Shoots periodic projectiles toward the player."));
+        definitions.Add(CreateDefaultLegacyModule(DefaultLegacyModuleIdDropItems,
+                                                  "Drop Items",
+                                                  EnemyPatternModuleKind.DropItems,
+                                                  "Spawns collectible drops on enemy death."));
+        return definitions;
     }
 
-    private static string ResolveUniqueId(string baseId, HashSet<string> usedIds, string fallbackBaseId)
+    /// <summary>
+    /// Creates one default hidden legacy module definition.
+    /// /params moduleIdValue Module identifier.
+    /// /params displayNameValue Display name.
+    /// /params moduleKindValue Module kind.
+    /// /params notesValue Notes text.
+    /// /returns The created legacy module definition.
+    /// </summary>
+    private static EnemyPatternModuleDefinition CreateDefaultLegacyModule(string moduleIdValue,
+                                                                          string displayNameValue,
+                                                                          EnemyPatternModuleKind moduleKindValue,
+                                                                          string notesValue)
     {
-        string normalizedBaseId = NormalizeId(baseId, fallbackBaseId);
+        EnemyPatternModuleDefinition definition = new EnemyPatternModuleDefinition();
+        EnemyPatternModulePayloadData payloadData = new EnemyPatternModulePayloadData();
+        definition.Configure(moduleIdValue, displayNameValue, moduleKindValue, notesValue, payloadData);
+        definition.Validate();
+        return definition;
+    }
 
-        if (usedIds == null)
-            return normalizedBaseId;
+    /// <summary>
+    /// Builds the hidden default legacy pattern list used by already-authored local presets.
+    /// /params None.
+    /// /returns The default legacy pattern list.
+    /// </summary>
+    private static List<EnemyPatternDefinition> BuildDefaultLegacyPatternDefinitions()
+    {
+        List<EnemyPatternDefinition> definitions = new List<EnemyPatternDefinition>();
+        EnemyPatternDefinition defaultPattern = new EnemyPatternDefinition();
+        EnemyPatternModuleBinding gruntBinding = new EnemyPatternModuleBinding();
+        gruntBinding.Configure(DefaultLegacyModuleIdGrunt, true);
+        gruntBinding.ConfigureOverride(false, new EnemyPatternModulePayloadData());
+        defaultPattern.Configure(DefaultLegacyPatternId,
+                                 "Default Grunt",
+                                 "Baseline pattern with Grunt movement.",
+                                 false);
+        defaultPattern.ClearBindings();
+        defaultPattern.AddBinding(gruntBinding);
+        defaultPattern.Validate();
+        definitions.Add(defaultPattern);
+        return definitions;
+    }
 
-        if (!usedIds.Contains(normalizedBaseId))
-            return normalizedBaseId;
+    /// <summary>
+    /// Validates the hidden legacy module-definition list and keeps module IDs unique.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void ValidateLegacyModuleDefinitions()
+    {
+        HashSet<string> usedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        int suffix = 2;
-
-        while (true)
+        for (int index = 0; index < moduleDefinitions.Count; index++)
         {
-            string indexedId = string.Format("{0}_{1}", normalizedBaseId, suffix);
+            EnemyPatternModuleDefinition definition = moduleDefinitions[index];
 
-            if (!usedIds.Contains(indexedId))
-                return indexedId;
+            if (definition == null)
+            {
+                definition = new EnemyPatternModuleDefinition();
+                moduleDefinitions[index] = definition;
+            }
 
-            suffix++;
+            definition.Validate();
+            string normalizedId = NormalizeId(definition.ModuleId, "Module_Custom");
+            string uniqueId = ResolveUniqueId(normalizedId, usedIds, "Module_Custom");
+
+            if (!string.Equals(uniqueId, definition.ModuleId, StringComparison.Ordinal))
+            {
+                definition.Configure(uniqueId,
+                                     definition.DisplayName,
+                                     definition.ModuleKind,
+                                     definition.Notes,
+                                     definition.Data);
+                definition.Validate();
+            }
+
+            usedIds.Add(uniqueId);
         }
     }
 
+    /// <summary>
+    /// Validates the hidden legacy pattern list and keeps pattern IDs unique.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void ValidateLegacyPatternDefinitions()
+    {
+        HashSet<string> usedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < patterns.Count; index++)
+        {
+            EnemyPatternDefinition pattern = patterns[index];
+
+            if (pattern == null)
+            {
+                patterns.RemoveAt(index);
+                index--;
+                continue;
+            }
+
+            pattern.Validate();
+            string normalizedId = NormalizeId(pattern.PatternId, "Pattern_Custom");
+            string uniqueId = ResolveUniqueId(normalizedId, usedIds, "Pattern_Custom");
+
+            if (!string.Equals(uniqueId, pattern.PatternId, StringComparison.Ordinal))
+            {
+                pattern.Configure(uniqueId,
+                                  pattern.DisplayName,
+                                  pattern.Description,
+                                  pattern.Unreplaceable);
+                pattern.Validate();
+            }
+
+            usedIds.Add(uniqueId);
+        }
+    }
+
+    /// <summary>
+    /// Migrates hidden legacy shooter runtime values into hidden legacy shooter modules when those modules still miss a runtime projectile payload.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
     private void MigrateLegacyRuntimeProjectileToShooterPayload()
     {
         if (legacyShooterProjectilePrefab == null)
@@ -471,6 +616,57 @@ public sealed class EnemyAdvancedPatternPreset : ScriptableObject
                                      legacyShooterProjectilePoolInitialCapacity,
                                      legacyShooterProjectilePoolExpandBatch);
             runtimePayload.Validate();
+        }
+    }
+
+    /// <summary>
+    /// Normalizes one identifier while preserving author intent whenever possible.
+    /// /params rawId Raw authored identifier.
+    /// /params fallback Fallback identifier used when the authored value is empty.
+    /// /returns The normalized identifier.
+    /// </summary>
+    private static string NormalizeId(string rawId, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(rawId))
+            return fallback;
+
+        string normalizedId = rawId.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedId))
+            return fallback;
+
+        return normalizedId;
+    }
+
+    /// <summary>
+    /// Resolves one unique identifier against a set of already-used values.
+    /// /params baseId Requested base identifier.
+    /// /params usedIds Already-used identifier set.
+    /// /params fallbackBaseId Fallback identifier used when the base ID is invalid.
+    /// /returns A unique identifier.
+    /// </summary>
+    private static string ResolveUniqueId(string baseId,
+                                          HashSet<string> usedIds,
+                                          string fallbackBaseId)
+    {
+        string normalizedBaseId = NormalizeId(baseId, fallbackBaseId);
+
+        if (usedIds == null)
+            return normalizedBaseId;
+
+        if (!usedIds.Contains(normalizedBaseId))
+            return normalizedBaseId;
+
+        int suffix = 2;
+
+        while (true)
+        {
+            string indexedId = string.Format("{0}_{1}", normalizedBaseId, suffix);
+
+            if (!usedIds.Contains(indexedId))
+                return indexedId;
+
+            suffix++;
         }
     }
     #endregion

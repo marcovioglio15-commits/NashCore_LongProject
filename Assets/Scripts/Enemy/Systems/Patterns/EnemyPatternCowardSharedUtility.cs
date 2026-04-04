@@ -10,6 +10,8 @@ public static class EnemyPatternCowardSharedUtility
 {
     #region Constants
     private const float DirectionEpsilon = 1e-6f;
+    private const float RetreatClearanceMultiplier = 1.35f;
+    private const float RetreatClearanceBodyRadiusMultiplier = 0.35f;
     #endregion
 
     #region Methods
@@ -167,6 +169,19 @@ public static class EnemyPatternCowardSharedUtility
         uint cooldownSeed = math.hash(new int2(enemyEntity.Index ^ 1877, enemyEntity.Version ^ 6151));
         float cooldown01 = EnemyPatternWandererMovementUtility.ResolveHash01(cooldownSeed);
         return math.lerp(clampedMinimumSeconds, clampedMaximumSeconds, cooldown01);
+    }
+
+    /// <summary>
+    /// Resolves the effective enemy-clearance budget used by Cowards while retreating.
+    /// enemyBodyRadius Current enemy body radius.
+    /// baseMinimumEnemyClearance Authored minimum enemy clearance.
+    /// returns Effective retreat-time clearance budget.
+    /// </summary>
+    public static float ResolveRetreatEnemyClearance(float enemyBodyRadius, float baseMinimumEnemyClearance)
+    {
+        float clampedBodyRadius = math.max(0f, enemyBodyRadius);
+        float clampedBaseClearance = math.max(0f, baseMinimumEnemyClearance);
+        return clampedBaseClearance * RetreatClearanceMultiplier + clampedBodyRadius * RetreatClearanceBodyRadiusMultiplier;
     }
 
     /// <summary>

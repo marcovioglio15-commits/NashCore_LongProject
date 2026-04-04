@@ -268,6 +268,21 @@ public static class PlayerAuthoringVisualPresetResolverUtility
 
         return null;
     }
+
+    /// <summary>
+    /// Resolves the player outline settings block authored on the active visual preset.
+    /// masterPreset: Master preset assigned to the player authoring.
+    /// returns Resolved outline settings, or null when no visual preset is available.
+    /// </summary>
+    public static PlayerVisualOutlineSettings ResolveOutlineSettings(PlayerMasterPreset masterPreset)
+    {
+        PlayerVisualPreset visualPreset = ResolveVisualPreset(masterPreset);
+
+        if (visualPreset == null)
+            return null;
+
+        return visualPreset.Outline;
+    }
     #endregion
 
     #endregion

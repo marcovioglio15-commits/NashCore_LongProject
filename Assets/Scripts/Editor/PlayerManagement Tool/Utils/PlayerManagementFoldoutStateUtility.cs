@@ -10,10 +10,6 @@ using UnityEngine.UIElements;
 /// </summary>
 public static class PlayerManagementFoldoutStateUtility
 {
-    #region Fields
-    private static readonly Dictionary<string, bool> foldoutStateByKey = new Dictionary<string, bool>(StringComparer.Ordinal);
-    #endregion
-
     #region Methods
 
     #region Public Methods
@@ -26,10 +22,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static Foldout CreateFoldout(string title, string stateKey, bool defaultValue)
     {
-        Foldout foldout = new Foldout();
-        foldout.text = title;
-        BindFoldoutState(foldout, stateKey, defaultValue);
-        return foldout;
+        return ManagementToolFoldoutStateUtility.CreateFoldout(title, stateKey, defaultValue);
     }
 
     /// <summary>
@@ -45,8 +38,7 @@ public static class PlayerManagementFoldoutStateUtility
                                                 string suffix,
                                                 bool defaultValue)
     {
-        string stateKey = BuildPropertyStateKey(property, suffix);
-        return CreateFoldout(title, stateKey, defaultValue);
+        return ManagementToolFoldoutStateUtility.CreatePropertyFoldout(property, title, suffix, defaultValue);
     }
 
     /// <summary>
@@ -58,21 +50,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static void BindFoldoutState(Foldout foldout, string stateKey, bool defaultValue)
     {
-        if (foldout == null)
-            return;
-
-        if (string.IsNullOrWhiteSpace(stateKey))
-        {
-            foldout.value = defaultValue;
-            return;
-        }
-
-        foldout.viewDataKey = stateKey;
-        foldout.value = ResolveFoldoutState(stateKey, defaultValue);
-        foldout.RegisterValueChangedCallback(evt =>
-        {
-            SetFoldoutState(stateKey, evt.newValue);
-        });
+        ManagementToolFoldoutStateUtility.BindFoldoutState(foldout, stateKey, defaultValue);
     }
 
     /// <summary>
@@ -82,28 +60,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static string BuildSerializedObjectStateKey(SerializedObject serializedObject)
     {
-        if (serializedObject == null)
-            return string.Empty;
-
-        UnityEngine.Object targetObject = serializedObject.targetObject;
-
-        if (targetObject == null)
-            return string.Empty;
-
-        string assetPath = AssetDatabase.GetAssetPath(targetObject);
-
-        if (!string.IsNullOrWhiteSpace(assetPath))
-            return string.Format("{0}|{1}", targetObject.GetType().FullName, assetPath);
-
-        GlobalObjectId globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(targetObject);
-        string globalObjectIdText = globalObjectId.ToString();
-
-        if (!string.IsNullOrWhiteSpace(globalObjectIdText))
-            return string.Format("{0}|{1}", targetObject.GetType().FullName, globalObjectIdText);
-
-        return string.Format("{0}|Instance:{1}",
-                             targetObject.GetType().FullName,
-                             targetObject.GetInstanceID());
+        return ManagementToolFoldoutStateUtility.BuildSerializedObjectStateKey(serializedObject);
     }
 
     /// <summary>
@@ -113,24 +70,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static string BuildPropertyContextKey(SerializedProperty property)
     {
-        if (property == null)
-            return string.Empty;
-
-        SerializedObject serializedObject = property.serializedObject;
-
-        if (serializedObject == null)
-            return string.Empty;
-
-        string objectKey = BuildSerializedObjectStateKey(serializedObject);
-        string propertyKey = PlayerScalingStatKeyUtility.NormalizePropertyPath(serializedObject, property.propertyPath);
-
-        if (string.IsNullOrWhiteSpace(propertyKey))
-            propertyKey = property.propertyPath;
-
-        if (string.IsNullOrWhiteSpace(objectKey))
-            return propertyKey;
-
-        return string.Format("{0}|{1}", objectKey, propertyKey);
+        return ManagementToolFoldoutStateUtility.BuildPropertyContextKey(property);
     }
 
     /// <summary>
@@ -141,15 +81,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static string BuildPropertyStateKey(SerializedProperty property, string suffix)
     {
-        string propertyContextKey = BuildPropertyContextKey(property);
-
-        if (string.IsNullOrWhiteSpace(propertyContextKey))
-            return string.Empty;
-
-        if (string.IsNullOrWhiteSpace(suffix))
-            return propertyContextKey;
-
-        return string.Format("{0}|{1}", propertyContextKey, suffix.Trim());
+        return ManagementToolFoldoutStateUtility.BuildPropertyStateKey(property, suffix);
     }
 
     /// <summary>
@@ -160,15 +92,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static bool ResolveFoldoutState(string stateKey, bool defaultValue)
     {
-        if (string.IsNullOrWhiteSpace(stateKey))
-            return defaultValue;
-
-        bool isExpanded;
-
-        if (foldoutStateByKey.TryGetValue(stateKey, out isExpanded))
-            return isExpanded;
-
-        return defaultValue;
+        return ManagementToolFoldoutStateUtility.ResolveFoldoutState(stateKey, defaultValue);
     }
 
     /// <summary>
@@ -179,16 +103,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static void SetFoldoutState(string stateKey, bool expanded)
     {
-        if (string.IsNullOrWhiteSpace(stateKey))
-            return;
-
-        if (expanded)
-        {
-            foldoutStateByKey[stateKey] = true;
-            return;
-        }
-
-        foldoutStateByKey.Remove(stateKey);
+        ManagementToolFoldoutStateUtility.SetFoldoutState(stateKey, expanded);
     }
 
     /// <summary>
@@ -199,27 +114,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static void PruneFoldoutStates(string keyPrefix, HashSet<string> validStateKeys)
     {
-        if (string.IsNullOrWhiteSpace(keyPrefix))
-            return;
-
-        if (validStateKeys == null)
-            return;
-
-        List<string> keysToRemove = new List<string>();
-
-        foreach (KeyValuePair<string, bool> entry in foldoutStateByKey)
-        {
-            if (!entry.Key.StartsWith(keyPrefix, StringComparison.Ordinal))
-                continue;
-
-            if (validStateKeys.Contains(entry.Key))
-                continue;
-
-            keysToRemove.Add(entry.Key);
-        }
-
-        for (int index = 0; index < keysToRemove.Count; index++)
-            foldoutStateByKey.Remove(keysToRemove[index]);
+        ManagementToolFoldoutStateUtility.PruneFoldoutStates(keyPrefix, validStateKeys);
     }
 
     /// <summary>
@@ -229,23 +124,7 @@ public static class PlayerManagementFoldoutStateUtility
     /// </summary>
     public static void CaptureFoldoutStates(VisualElement root)
     {
-        if (root == null)
-            return;
-
-        List<Foldout> foldouts = root.Query<Foldout>().ToList();
-
-        for (int foldoutIndex = 0; foldoutIndex < foldouts.Count; foldoutIndex++)
-        {
-            Foldout foldout = foldouts[foldoutIndex];
-
-            if (foldout == null)
-                continue;
-
-            if (string.IsNullOrWhiteSpace(foldout.viewDataKey))
-                continue;
-
-            SetFoldoutState(foldout.viewDataKey, foldout.value);
-        }
+        ManagementToolFoldoutStateUtility.CaptureFoldoutStates(root);
     }
     #endregion
 

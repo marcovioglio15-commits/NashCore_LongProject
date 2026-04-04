@@ -251,7 +251,9 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// <param name="payloadDataProperty">Payload data root.</param>
     /// <param name="payloadContainer">Target UI container.</param>
     /// <returns>Returns true when UI is built.<returns>
-    public static bool BuildCowardPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
+    public static bool BuildCowardPayloadEditor(SerializedProperty payloadDataProperty,
+                                                VisualElement payloadContainer,
+                                                bool includeActivationAndPatrolSettings)
     {
         SerializedProperty cowardProperty = payloadDataProperty.FindPropertyRelative("coward");
 
@@ -262,16 +264,24 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
             return false;
         }
 
-        Foldout detectionFoldout = new Foldout();
-        detectionFoldout.text = "1. Detection";
-        detectionFoldout.value = true;
-        payloadContainer.Add(detectionFoldout);
+        if (includeActivationAndPatrolSettings)
+        {
+            Foldout detectionFoldout = new Foldout();
+            detectionFoldout.text = "Detection";
+            detectionFoldout.value = true;
+            payloadContainer.Add(detectionFoldout);
 
-        EnemyAdvancedPatternDrawerUtility.AddField(detectionFoldout, cowardProperty.FindPropertyRelative("detectionRadius"), "Detection Radius");
-        EnemyAdvancedPatternDrawerUtility.AddField(detectionFoldout, cowardProperty.FindPropertyRelative("releaseDistanceBuffer"), "Release Buffer");
+            EnemyAdvancedPatternDrawerUtility.AddField(detectionFoldout, cowardProperty.FindPropertyRelative("detectionRadius"), "Detection Radius");
+            EnemyAdvancedPatternDrawerUtility.AddField(detectionFoldout, cowardProperty.FindPropertyRelative("releaseDistanceBuffer"), "Release Buffer");
+        }
+        else
+        {
+            HelpBox categorySettingsInfoBox = new HelpBox("Activation range and release buffer are configured on the Short-Range Interaction assembly.", HelpBoxMessageType.Info);
+            payloadContainer.Add(categorySettingsInfoBox);
+        }
 
         Foldout retreatDistancesFoldout = new Foldout();
-        retreatDistancesFoldout.text = "2. Retreat Distances";
+        retreatDistancesFoldout.text = "Retreat Distances";
         retreatDistancesFoldout.value = true;
         payloadContainer.Add(retreatDistancesFoldout);
 
@@ -296,7 +306,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
         });
 
         Foldout retreatSteeringFoldout = new Foldout();
-        retreatSteeringFoldout.text = "3. Retreat Steering";
+        retreatSteeringFoldout.text = "Retreat Steering";
         retreatSteeringFoldout.value = true;
         payloadContainer.Add(retreatSteeringFoldout);
 
@@ -307,17 +317,20 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
         EnemyAdvancedPatternDrawerUtility.AddField(retreatSteeringFoldout, cowardProperty.FindPropertyRelative("openSpacePreference"), "Open Space Bias");
         EnemyAdvancedPatternDrawerUtility.AddField(retreatSteeringFoldout, cowardProperty.FindPropertyRelative("navigationRetreatPreference"), "Pathfinding Bias");
 
-        Foldout patrolFoldout = new Foldout();
-        patrolFoldout.text = "4. Patrol";
-        patrolFoldout.value = true;
-        payloadContainer.Add(patrolFoldout);
+        if (includeActivationAndPatrolSettings)
+        {
+            Foldout patrolFoldout = new Foldout();
+            patrolFoldout.text = "Patrol";
+            patrolFoldout.value = true;
+            payloadContainer.Add(patrolFoldout);
 
-        EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolRadius"), "Patrol Radius");
-        EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolWaitSeconds"), "Patrol Pause");
-        EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolSpeedMultiplier"), "Patrol Speed");
+            EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolRadius"), "Patrol Radius");
+            EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolWaitSeconds"), "Patrol Pause");
+            EnemyAdvancedPatternDrawerUtility.AddField(patrolFoldout, cowardProperty.FindPropertyRelative("patrolSpeedMultiplier"), "Patrol Speed");
+        }
 
         Foldout speedFoldout = new Foldout();
-        speedFoldout.text = "5. Speed";
+        speedFoldout.text = "Speed";
         speedFoldout.value = true;
         payloadContainer.Add(speedFoldout);
 
@@ -325,7 +338,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
         EnemyAdvancedPatternDrawerUtility.AddField(speedFoldout, cowardProperty.FindPropertyRelative("retreatSpeedMultiplierNear"), "Retreat Speed Near");
 
         Foldout recoveryFoldout = new Foldout();
-        recoveryFoldout.text = "6. Recovery";
+        recoveryFoldout.text = "Recovery";
         recoveryFoldout.value = true;
         payloadContainer.Add(recoveryFoldout);
 
@@ -339,7 +352,9 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// <param name="payloadDataProperty">Payload data root.</param>
     /// <param name="payloadContainer">Target UI container.</param>
     /// <returns>Returns true when UI is built.<returns>
-    public static bool BuildShooterPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
+    public static bool BuildShooterPayloadEditor(SerializedProperty payloadDataProperty,
+                                                 VisualElement payloadContainer,
+                                                 bool includeRangeSettings)
     {
         SerializedProperty shooterProperty = payloadDataProperty.FindPropertyRelative("shooter");
 
@@ -394,30 +409,39 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
         EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, burstCountProperty, "Burst Count");
         EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, aimWindupSecondsProperty, "Aim Windup Seconds");
         EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, intraBurstDelayProperty, "Intra Burst Delay");
-        EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, useMinimumRangeProperty, "Use Minimum Range");
 
-        VisualElement minimumRangeContainer = new VisualElement();
-        minimumRangeContainer.style.marginLeft = 12f;
-        firingFoldout.Add(minimumRangeContainer);
-        EnemyAdvancedPatternDrawerUtility.AddField(minimumRangeContainer, minimumRangeProperty, "Minimum Range");
-
-        EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, useMaximumRangeProperty, "Use Maximum Range");
-
-        VisualElement maximumRangeContainer = new VisualElement();
-        maximumRangeContainer.style.marginLeft = 12f;
-        firingFoldout.Add(maximumRangeContainer);
-        EnemyAdvancedPatternDrawerUtility.AddField(maximumRangeContainer, maximumRangeProperty, "Maximum Range");
-
-        UpdateToggleContainerVisibility(useMinimumRangeProperty, minimumRangeContainer);
-        UpdateToggleContainerVisibility(useMaximumRangeProperty, maximumRangeContainer);
-        firingFoldout.TrackPropertyValue(useMinimumRangeProperty, changedProperty =>
+        if (includeRangeSettings)
         {
-            UpdateToggleContainerVisibility(changedProperty, minimumRangeContainer);
-        });
-        firingFoldout.TrackPropertyValue(useMaximumRangeProperty, changedProperty =>
+            EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, useMinimumRangeProperty, "Use Minimum Range");
+
+            VisualElement minimumRangeContainer = new VisualElement();
+            minimumRangeContainer.style.marginLeft = 12f;
+            firingFoldout.Add(minimumRangeContainer);
+            EnemyAdvancedPatternDrawerUtility.AddField(minimumRangeContainer, minimumRangeProperty, "Minimum Range");
+
+            EnemyAdvancedPatternDrawerUtility.AddField(firingFoldout, useMaximumRangeProperty, "Use Maximum Range");
+
+            VisualElement maximumRangeContainer = new VisualElement();
+            maximumRangeContainer.style.marginLeft = 12f;
+            firingFoldout.Add(maximumRangeContainer);
+            EnemyAdvancedPatternDrawerUtility.AddField(maximumRangeContainer, maximumRangeProperty, "Maximum Range");
+
+            UpdateToggleContainerVisibility(useMinimumRangeProperty, minimumRangeContainer);
+            UpdateToggleContainerVisibility(useMaximumRangeProperty, maximumRangeContainer);
+            firingFoldout.TrackPropertyValue(useMinimumRangeProperty, changedProperty =>
+            {
+                UpdateToggleContainerVisibility(changedProperty, minimumRangeContainer);
+            });
+            firingFoldout.TrackPropertyValue(useMaximumRangeProperty, changedProperty =>
+            {
+                UpdateToggleContainerVisibility(changedProperty, maximumRangeContainer);
+            });
+        }
+        else
         {
-            UpdateToggleContainerVisibility(changedProperty, maximumRangeContainer);
-        });
+            HelpBox rangeSettingsInfoBox = new HelpBox("Minimum and maximum range are configured on the Weapon Interaction assembly.", HelpBoxMessageType.Info);
+            firingFoldout.Add(rangeSettingsInfoBox);
+        }
 
         Foldout projectileFoldout = new Foldout();
         projectileFoldout.text = "Projectile";

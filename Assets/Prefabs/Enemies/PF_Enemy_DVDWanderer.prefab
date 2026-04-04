@@ -131,6 +131,7 @@ MonoBehaviour:
   maxSpeed: 4
   acceleration: 8
   deceleration: 8
+  inactivityTime: 0
   rotationSpeedDegreesPerSecond: 0
   minimumWallDistance: 0.25
   separationRadius: 1.1

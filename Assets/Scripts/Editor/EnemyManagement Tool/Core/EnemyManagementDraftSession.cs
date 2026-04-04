@@ -265,6 +265,7 @@ public static class EnemyManagementDraftSession
         AddAssetPathsOfType<EnemyVisualPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyAdvancedPatternPresetLibrary>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyAdvancedPatternPreset>(uniquePaths, TrackedEnemyAssetsRoot);
+        AddAssetPathsOfType<EnemyModulesAndPatternsPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddEnemyPrefabPaths(uniquePaths);
 
         List<string> paths = new List<string>(uniquePaths);
@@ -387,7 +388,7 @@ public static class EnemyManagementDraftSession
                 continue;
 
             string currentFileName = Path.GetFileNameWithoutExtension(assetPath);
-            string targetFileName = NormalizeAssetName(assetObject.name);
+            string targetFileName = ResolveRequestedPresetFileName(assetObject);
 
             if (string.IsNullOrWhiteSpace(targetFileName))
                 continue;
@@ -397,8 +398,6 @@ public static class EnemyManagementDraftSession
                 SyncPresetAssetNameToFileName(assetObject, currentFileName);
                 continue;
             }
-
-            SyncPresetAssetNameToFileName(assetObject, currentFileName);
 
             string directoryPath = Path.GetDirectoryName(assetPath);
 
@@ -447,7 +446,33 @@ public static class EnemyManagementDraftSession
         if (assetObject is EnemyAdvancedPatternPreset)
             return true;
 
+        if (assetObject is EnemyModulesAndPatternsPreset)
+            return true;
+
         return false;
+    }
+
+    private static string ResolveRequestedPresetFileName(UnityEngine.Object assetObject)
+    {
+        if (assetObject == null)
+            return string.Empty;
+
+        SerializedObject serializedObject = new SerializedObject(assetObject);
+        SerializedProperty presetNameProperty = serializedObject.FindProperty("presetName");
+
+        if (presetNameProperty == null)
+            presetNameProperty = serializedObject.FindProperty("m_PresetName");
+
+        if (presetNameProperty != null)
+        {
+            serializedObject.Update();
+            string requestedPresetName = NormalizeAssetName(presetNameProperty.stringValue);
+
+            if (!string.IsNullOrWhiteSpace(requestedPresetName))
+                return requestedPresetName;
+        }
+
+        return NormalizeAssetName(assetObject.name);
     }
 
     private static void SyncPresetAssetNameToFileName(UnityEngine.Object assetObject, string fileName)

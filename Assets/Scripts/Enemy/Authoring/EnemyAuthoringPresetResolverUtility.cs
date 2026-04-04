@@ -91,6 +91,16 @@ public static class EnemyAuthoringPresetResolverUtility
 
         return resolvedVisualPreset.Prefabs;
     }
+
+    public static EnemyVisualOutlineSettings ResolveOutlineSettings(EnemyMasterPreset masterPreset, EnemyVisualPreset fallbackVisualPreset)
+    {
+        EnemyVisualPreset resolvedVisualPreset = ResolveVisualPreset(masterPreset, fallbackVisualPreset);
+
+        if (resolvedVisualPreset == null)
+            return null;
+
+        return resolvedVisualPreset.Outline;
+    }
     #endregion
 
     #endregion

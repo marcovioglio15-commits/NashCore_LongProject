@@ -19,8 +19,10 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private const float DefaultHitVfxLifetimeSeconds = 0.35f;
     private const float DefaultHitVfxScaleMultiplier = 1f;
     private static readonly Color DefaultDamageFlashColor = new Color(1f, 0.15f, 0.15f, 1f);
+    private static readonly Color DefaultOutlineColor = Color.black;
     private const float DefaultDamageFlashDurationSeconds = 0.06f;
     private const float DefaultDamageFlashMaximumBlend = 0.85f;
+    private const float DefaultOutlineThickness = 1f;
     private static readonly Color DefaultShooterAimPulseColor = new Color(0.35f, 1f, 0.95f, 1f);
     private const float DefaultShooterAimPulseLeadTimeSeconds = 0.3f;
     private const float DefaultShooterAimPulseFadeOutSeconds = 0.18f;
@@ -592,6 +594,45 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
+    public bool EnableOutline
+    {
+        get
+        {
+            EnemyVisualOutlineSettings settings = ResolveOutlineSettings();
+
+            if (settings == null)
+                return true;
+
+            return settings.EnableOutline;
+        }
+    }
+
+    public float OutlineThickness
+    {
+        get
+        {
+            EnemyVisualOutlineSettings settings = ResolveOutlineSettings();
+
+            if (settings == null)
+                return DefaultOutlineThickness;
+
+            return settings.OutlineThickness;
+        }
+    }
+
+    public Color OutlineColor
+    {
+        get
+        {
+            EnemyVisualOutlineSettings settings = ResolveOutlineSettings();
+
+            if (settings == null)
+                return DefaultOutlineColor;
+
+            return settings.OutlineColor;
+        }
+    }
+
     public Color DamageFlashColor
     {
         get
@@ -832,6 +873,15 @@ public sealed class EnemyAuthoring : MonoBehaviour
             return null;
 
         return resolvedVisualPreset.DamageFeedback;
+    }
+
+    /// <summary>
+    /// Resolves the active outline settings source.
+    /// returns Resolved outline settings or null when no preset source is available.
+    /// </summary>
+    private EnemyVisualOutlineSettings ResolveOutlineSettings()
+    {
+        return EnemyAuthoringPresetResolverUtility.ResolveOutlineSettings(masterPreset, visualPreset);
     }
 
     /// <summary>

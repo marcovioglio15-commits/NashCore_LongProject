@@ -18,17 +18,13 @@ public static class EnemyAdvancedPatternBakeUtility
     /// <returns>Compiled bake result.<returns>
     public static EnemyCompiledPatternBakeResult Compile(EnemyAdvancedPatternPreset preset)
     {
-        EnemyCompiledPatternBakeResult result = new EnemyCompiledPatternBakeResult();
-        result.PatternConfig = BuildDefaultPatternConfig();
-        result.HasCustomMovement = false;
-        result.ShooterProjectilePrefab = preset != null ? preset.ShooterProjectilePrefab : null;
-        result.ShooterProjectilePoolInitialCapacity = preset != null ? math.max(0, preset.ShooterProjectilePoolInitialCapacity) : 0;
-        result.ShooterProjectilePoolExpandBatch = preset != null ? math.max(1, preset.ShooterProjectilePoolExpandBatch) : 1;
-        result.HasShooterRuntimeSettings = false;
-        result.DropItemsConfig = BuildDefaultDropItemsConfig();
+        EnemyCompiledPatternBakeResult result = CreateDefaultResult(preset);
 
         if (preset == null)
             return result;
+
+        if (preset.ModulesAndPatternsPreset != null)
+            return EnemyModulesAndPatternsBakeUtility.Compile(preset);
 
         int selectedMovementPriority = 0;
 
@@ -90,11 +86,44 @@ public static class EnemyAdvancedPatternBakeUtility
     #endregion
 
     #region Helpers
-    private static EnemyPatternConfig BuildDefaultPatternConfig()
+    internal static EnemyCompiledPatternBakeResult CreateDefaultResult(EnemyAdvancedPatternPreset preset)
+    {
+        EnemyCompiledPatternBakeResult result = new EnemyCompiledPatternBakeResult();
+        result.PatternConfig = BuildDefaultPatternConfig();
+        result.HasCustomMovement = false;
+        result.ShooterProjectilePrefab = preset != null ? preset.LegacyShooterProjectilePrefab : null;
+        result.ShooterProjectilePoolInitialCapacity = preset != null ? math.max(0, preset.LegacyShooterProjectilePoolInitialCapacity) : 0;
+        result.ShooterProjectilePoolExpandBatch = preset != null ? math.max(1, preset.LegacyShooterProjectilePoolExpandBatch) : 1;
+        result.HasShooterRuntimeSettings = false;
+        result.DropItemsConfig = BuildDefaultDropItemsConfig();
+        return result;
+    }
+
+    internal static EnemyPatternConfig BuildDefaultPatternConfig()
     {
         return new EnemyPatternConfig
         {
             MovementKind = EnemyCompiledMovementPatternKind.Grunt,
+            HasShortRangeInteraction = 0,
+            ShortRangeMovementKind = EnemyCompiledMovementPatternKind.Grunt,
+            ShortRangeActivationRange = 6f,
+            ShortRangeReleaseDistanceBuffer = 1f,
+            ShortRangeSearchRadius = 8f,
+            ShortRangeMinimumTravelDistance = 2f,
+            ShortRangeMaximumTravelDistance = 8f,
+            ShortRangeArrivalTolerance = 0.35f,
+            ShortRangeCandidateSampleCount = 12,
+            ShortRangeUseInfiniteDirectionSampling = 1,
+            ShortRangeInfiniteDirectionStepDegrees = 8f,
+            ShortRangeMinimumEnemyClearance = 0.25f,
+            ShortRangeTrajectoryPredictionTime = 0.35f,
+            ShortRangeFreeTrajectoryPreference = 0.85f,
+            ShortRangeBlockedPathRetryDelay = 0.2f,
+            ShortRangeRetreatDirectionPreference = 0.65f,
+            ShortRangeOpenSpacePreference = 0.55f,
+            ShortRangeNavigationPreference = 0.6f,
+            ShortRangeRetreatSpeedMultiplierFar = 1f,
+            ShortRangeRetreatSpeedMultiplierNear = 1.4f,
             StationaryFreezeRotation = 1,
             BasicSearchRadius = 9f,
             BasicMinimumTravelDistance = 2f,
@@ -129,7 +158,7 @@ public static class EnemyAdvancedPatternBakeUtility
         };
     }
 
-    private static EnemyDropItemsConfig BuildDefaultDropItemsConfig()
+    internal static EnemyDropItemsConfig BuildDefaultDropItemsConfig()
     {
         return new EnemyDropItemsConfig
         {
@@ -147,8 +176,8 @@ public static class EnemyAdvancedPatternBakeUtility
         };
     }
 
-    private static EnemyPatternModulePayloadData ResolveBindingPayload(EnemyPatternModuleDefinition moduleDefinition,
-                                                                       EnemyPatternModuleBinding binding)
+    internal static EnemyPatternModulePayloadData ResolveBindingPayload(EnemyPatternModuleDefinition moduleDefinition,
+                                                                        EnemyPatternModuleBinding binding)
     {
         if (binding != null && binding.UseOverridePayload && binding.OverridePayload != null)
             return binding.OverridePayload;
@@ -159,11 +188,11 @@ public static class EnemyAdvancedPatternBakeUtility
         return new EnemyPatternModulePayloadData();
     }
 
-    private static void TryApplyMovementModule(EnemyPatternModuleKind moduleKind,
-                                               EnemyPatternModulePayloadData payload,
-                                               ref EnemyPatternConfig patternConfig,
-                                               ref int selectedPriority,
-                                               ref bool hasCustomMovement)
+    internal static void TryApplyMovementModule(EnemyPatternModuleKind moduleKind,
+                                                EnemyPatternModulePayloadData payload,
+                                                ref EnemyPatternConfig patternConfig,
+                                                ref int selectedPriority,
+                                                ref bool hasCustomMovement)
     {
         int candidatePriority = ResolveMovementPriority(moduleKind);
 
@@ -196,7 +225,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static int ResolveMovementPriority(EnemyPatternModuleKind moduleKind)
+    internal static int ResolveMovementPriority(EnemyPatternModuleKind moduleKind)
     {
         switch (moduleKind)
         {
@@ -215,7 +244,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static void ApplyWandererPayload(EnemyPatternModulePayloadData payload, ref EnemyPatternConfig patternConfig)
+    internal static void ApplyWandererPayload(EnemyPatternModulePayloadData payload, ref EnemyPatternConfig patternConfig)
     {
         if (payload == null || payload.Wanderer == null)
         {
@@ -268,7 +297,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static void ApplyStationaryPayload(EnemyPatternModulePayloadData payload, ref EnemyPatternConfig patternConfig)
+    internal static void ApplyStationaryPayload(EnemyPatternModulePayloadData payload, ref EnemyPatternConfig patternConfig)
     {
         patternConfig.MovementKind = EnemyCompiledMovementPatternKind.Stationary;
         patternConfig.StationaryFreezeRotation = 1;
@@ -279,7 +308,7 @@ public static class EnemyAdvancedPatternBakeUtility
         patternConfig.StationaryFreezeRotation = payload.Stationary.FreezeRotation ? (byte)1 : (byte)0;
     }
 
-    private static void ApplyCowardPayload(EnemyPatternModulePayloadData payload, ref EnemyPatternConfig patternConfig)
+    internal static void ApplyCowardPayload(EnemyPatternModulePayloadData payload, ref EnemyPatternConfig patternConfig)
     {
         patternConfig.MovementKind = EnemyCompiledMovementPatternKind.Coward;
 
@@ -315,9 +344,9 @@ public static class EnemyAdvancedPatternBakeUtility
                                                                   coward.RetreatSpeedMultiplierNear);
     }
 
-    private static void TryAddShooterModule(EnemyPatternModulePayloadData payload,
-                                            List<EnemyShooterConfigElement> shooterConfigs,
-                                            ref EnemyCompiledPatternBakeResult result)
+    internal static void TryAddShooterModule(EnemyPatternModulePayloadData payload,
+                                             List<EnemyShooterConfigElement> shooterConfigs,
+                                             ref EnemyCompiledPatternBakeResult result)
     {
         if (shooterConfigs == null)
             return;
@@ -378,8 +407,8 @@ public static class EnemyAdvancedPatternBakeUtility
         shooterConfigs.Add(shooterConfig);
     }
 
-    private static void TryApplyDropItemsModule(EnemyPatternModulePayloadData payload,
-                                                ref EnemyCompiledPatternBakeResult result)
+    internal static void TryApplyDropItemsModule(EnemyPatternModulePayloadData payload,
+                                                 ref EnemyCompiledPatternBakeResult result)
     {
         if (payload == null || payload.DropItems == null)
             return;
@@ -465,7 +494,7 @@ public static class EnemyAdvancedPatternBakeUtility
         };
     }
 
-    private static void TryAssignShooterRuntimeSettings(EnemyShooterModuleData shooterData, ref EnemyCompiledPatternBakeResult result)
+    internal static void TryAssignShooterRuntimeSettings(EnemyShooterModuleData shooterData, ref EnemyCompiledPatternBakeResult result)
     {
         if (result.HasShooterRuntimeSettings)
             return;
@@ -489,7 +518,7 @@ public static class EnemyAdvancedPatternBakeUtility
         result.HasShooterRuntimeSettings = true;
     }
 
-    private static EnemyPatternModuleKind ResolveModuleKind(EnemyPatternModuleKind moduleKind)
+    internal static EnemyPatternModuleKind ResolveModuleKind(EnemyPatternModuleKind moduleKind)
     {
         switch (moduleKind)
         {
@@ -506,7 +535,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static EnemyWandererMode ResolveWandererMode(EnemyWandererMode mode)
+    internal static EnemyWandererMode ResolveWandererMode(EnemyWandererMode mode)
     {
         switch (mode)
         {
@@ -519,7 +548,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static EnemyShooterAimPolicy ResolveShooterAimPolicy(EnemyShooterAimPolicy aimPolicy)
+    internal static EnemyShooterAimPolicy ResolveShooterAimPolicy(EnemyShooterAimPolicy aimPolicy)
     {
         switch (aimPolicy)
         {
@@ -532,7 +561,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static EnemyShooterMovementPolicy ResolveShooterMovementPolicy(EnemyShooterMovementPolicy movementPolicy)
+    internal static EnemyShooterMovementPolicy ResolveShooterMovementPolicy(EnemyShooterMovementPolicy movementPolicy)
     {
         switch (movementPolicy)
         {
@@ -545,7 +574,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static ProjectilePenetrationMode ResolveProjectilePenetrationMode(ProjectilePenetrationMode penetrationMode)
+    internal static ProjectilePenetrationMode ResolveProjectilePenetrationMode(ProjectilePenetrationMode penetrationMode)
     {
         switch (penetrationMode)
         {
@@ -560,7 +589,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static EnemyDropItemsPayloadKind ResolveDropItemsPayloadKind(EnemyDropItemsPayloadKind payloadKind)
+    internal static EnemyDropItemsPayloadKind ResolveDropItemsPayloadKind(EnemyDropItemsPayloadKind payloadKind)
     {
         switch (payloadKind)
         {
@@ -572,7 +601,7 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
-    private static ElementalEffectConfig BuildElementalEffectConfig(ElementalEffectDefinitionData definitionData)
+    internal static ElementalEffectConfig BuildElementalEffectConfig(ElementalEffectDefinitionData definitionData)
     {
         if (definitionData == null)
             return default;

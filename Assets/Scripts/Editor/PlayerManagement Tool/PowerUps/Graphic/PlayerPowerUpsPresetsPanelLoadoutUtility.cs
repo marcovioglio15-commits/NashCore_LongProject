@@ -18,6 +18,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         Label header = new Label("Loadout & Inputs");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.PowerUps.Loadout.Main");
         panel.sectionContentRoot.Add(header);
 
         SerializedProperty primaryToolActionIdProperty = panel.presetSerializedObject.FindProperty("primaryToolActionId");
@@ -65,6 +66,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         bindingsHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
         bindingsHeader.style.marginTop = 6f;
         bindingsHeader.style.marginBottom = 2f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(bindingsHeader, "NashCore.PlayerManagement.PowerUps.Loadout.Bindings");
         panel.sectionContentRoot.Add(bindingsHeader);
 
         panel.sectionContentRoot.Add(BuildBindingsFoldout(panel, "Primary Tool Input", primaryToolActionIdProperty));
@@ -75,6 +77,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         loadoutHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
         loadoutHeader.style.marginTop = 6f;
         loadoutHeader.style.marginBottom = 2f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(loadoutHeader, "NashCore.PlayerManagement.PowerUps.Loadout.Active");
         panel.sectionContentRoot.Add(loadoutHeader);
 
         HelpBox loadoutInfoBox = new HelpBox("Select <None> to keep a startup active slot empty. Empty slots stay hidden in the HUD and are filled only after the player obtains an active power up during gameplay.", HelpBoxMessageType.Info);
@@ -100,6 +103,7 @@ public static class PlayerPowerUpsPresetsPanelLoadoutUtility
         passiveLoadoutHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
         passiveLoadoutHeader.style.marginTop = 8f;
         passiveLoadoutHeader.style.marginBottom = 2f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(passiveLoadoutHeader, "NashCore.PlayerManagement.PowerUps.Loadout.Passive");
         panel.sectionContentRoot.Add(passiveLoadoutHeader);
 
         List<string> passiveToolIds = BuildPassiveLoadoutOptions(passivePowerUpsProperty);

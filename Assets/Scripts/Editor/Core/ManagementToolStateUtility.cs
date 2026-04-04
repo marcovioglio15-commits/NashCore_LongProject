@@ -139,6 +139,72 @@ public static class ManagementToolStateUtility
     }
     #endregion
 
+    #region Color State
+    /// <summary>
+    /// Saves one text/background color pair to EditorPrefs for customizable management-tool labels.
+    /// Takes as arguments a key to identify the state and the two colors to persist.
+    /// </summary>
+    /// <param name="stateKey"></param>
+    /// <param name="textColor"></param>
+    /// <param name="backgroundColor"></param>
+    public static void SaveColorPair(string stateKey, Color textColor, Color backgroundColor)
+    {
+        if (string.IsNullOrWhiteSpace(stateKey))
+            return;
+
+        string serializedValue = SerializeColor(textColor) + ";" + SerializeColor(backgroundColor);
+        EditorPrefs.SetString(stateKey, serializedValue);
+    }
+
+    /// <summary>
+    /// Tries to load one persisted text/background color pair from EditorPrefs.
+    /// Takes as arguments a key to identify the state and outputs the loaded colors when successful.
+    /// </summary>
+    /// <param name="stateKey"></param>
+    /// <param name="textColor"></param>
+    /// <param name="backgroundColor"></param>
+    /// <returns> Returns true when a valid color pair is found and parsed. <returns>
+    public static bool TryLoadColorPair(string stateKey, out Color textColor, out Color backgroundColor)
+    {
+        textColor = Color.white;
+        backgroundColor = Color.clear;
+
+        if (string.IsNullOrWhiteSpace(stateKey))
+            return false;
+
+        string rawValue = EditorPrefs.GetString(stateKey, string.Empty);
+
+        if (string.IsNullOrWhiteSpace(rawValue))
+            return false;
+
+        string[] tokens = rawValue.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (tokens.Length != 2)
+            return false;
+
+        if (!TryDeserializeColor(tokens[0], out textColor))
+            return false;
+
+        if (!TryDeserializeColor(tokens[1], out backgroundColor))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Deletes one persisted EditorPrefs key used by management-tool UI state.
+    /// Takes as an argument the state key to remove.
+    /// </summary>
+    /// <param name="stateKey"></param>
+    public static void DeleteState(string stateKey)
+    {
+        if (string.IsNullOrWhiteSpace(stateKey))
+            return;
+
+        EditorPrefs.DeleteKey(stateKey);
+    }
+    #endregion
+
     #region Asset State
     /// <summary>
     /// Saves a reference to an asset in EditorPrefs by storing its asset path.
@@ -190,6 +256,59 @@ public static class ManagementToolStateUtility
             return null;
 
         return AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+    }
+    #endregion
+
+    #region Serialization Helpers
+    /// <summary>
+    /// Serializes one color to an invariant comma-separated RGBA string.
+    /// Takes as an argument the color to serialize and returns the encoded string.
+    /// </summary>
+    /// <param name="color"></param>
+    /// <returns> Returns the serialized RGBA string. <returns>
+    private static string SerializeColor(Color color)
+    {
+        return string.Format(CultureInfo.InvariantCulture,
+                             "{0},{1},{2},{3}",
+                             color.r,
+                             color.g,
+                             color.b,
+                             color.a);
+    }
+
+    /// <summary>
+    /// Tries to deserialize one invariant comma-separated RGBA color string.
+    /// Takes as an argument the serialized value and outputs the decoded color when successful.
+    /// </summary>
+    /// <param name="serializedColor"></param>
+    /// <param name="color"></param>
+    /// <returns> Returns true when the color string is valid. <returns>
+    private static bool TryDeserializeColor(string serializedColor, out Color color)
+    {
+        color = Color.clear;
+
+        if (string.IsNullOrWhiteSpace(serializedColor))
+            return false;
+
+        string[] tokens = serializedColor.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (tokens.Length != 4)
+            return false;
+
+        if (!float.TryParse(tokens[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float red))
+            return false;
+
+        if (!float.TryParse(tokens[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float green))
+            return false;
+
+        if (!float.TryParse(tokens[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float blue))
+            return false;
+
+        if (!float.TryParse(tokens[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float alpha))
+            return false;
+
+        color = new Color(red, green, blue, alpha);
+        return true;
     }
     #endregion
 

@@ -130,6 +130,7 @@ public sealed class PlayerManagementWindow : EditorWindow
         BuildPanels();
         ShowPanel(activePanel);
         RefreshSessionStatus();
+        ManagementToolInteractiveElementColorUtility.RegisterHierarchy(rootVisualElement, "NashCore.PlayerManagement.Controls");
 
         // Restart periodic refresh of pending status.
         if (pendingCheckSchedule != null)
@@ -177,6 +178,11 @@ public sealed class PlayerManagementWindow : EditorWindow
         discardButton.tooltip = "Discard unapplied changes and restore baseline assets.";
         toolbar.Add(discardButton);
 
+        Button colorsButton = new Button(OpenColorBrowser);
+        colorsButton.text = "Colors";
+        colorsButton.tooltip = "Open the stable browser listing all currently visible recolorable tool elements.";
+        toolbar.Add(colorsButton);
+
         // Add session status label.
         sessionStatusLabel = new Label();
         sessionStatusLabel.style.marginLeft = 8f;
@@ -184,6 +190,17 @@ public sealed class PlayerManagementWindow : EditorWindow
         toolbar.Add(sessionStatusLabel);
 
         return toolbar;
+    }
+
+    /// <summary>
+    /// Opens the stable color browser for the current tool window.
+    /// Called by the toolbar Colors button.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void OpenColorBrowser()
+    {
+        ManagementToolColorBrowserWindow.Open(this, "Player Management Tool");
     }
 
     /// <summary>

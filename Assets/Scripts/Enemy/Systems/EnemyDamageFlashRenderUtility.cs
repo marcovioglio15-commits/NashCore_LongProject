@@ -66,6 +66,40 @@ public static class EnemyDamageFlashRenderUtility
     }
 
     /// <summary>
+    /// Ensures one render entity exposes the component set required by GPU outline presentation.
+    /// entityManager: Entity manager used to query current component presence.
+    /// entityCommandBuffer: Deferred writer used to avoid structural changes while iterating ECS queries.
+    /// renderEntity: Concrete render entity to initialize.
+    /// outlineColor: Outline color written into shader overrides.
+    /// outlineThickness: Outline thickness written into shader overrides.
+    /// returns None.
+    /// </summary>
+    public static void EnsureGpuOutlineComponents(EntityManager entityManager,
+                                                  EntityCommandBuffer entityCommandBuffer,
+                                                  Entity renderEntity,
+                                                  float4 outlineColor,
+                                                  float outlineThickness)
+    {
+        if (!entityManager.Exists(renderEntity))
+            return;
+
+        SetOrAddComponentData(entityManager,
+                              entityCommandBuffer,
+                              renderEntity,
+                              new MaterialOutlineColor
+                              {
+                                  Value = outlineColor
+                              });
+        SetOrAddComponentData(entityManager,
+                              entityCommandBuffer,
+                              renderEntity,
+                              new MaterialOutlineThickness
+                              {
+                                  Value = outlineThickness
+                              });
+    }
+
+    /// <summary>
     /// Writes the current flash blend to all registered renderer entities of one enemy.
     /// entityManager: Entity manager used to access flash render targets.
     /// enemyEntity: Enemy root entity that owns the flash config and render target buffer.

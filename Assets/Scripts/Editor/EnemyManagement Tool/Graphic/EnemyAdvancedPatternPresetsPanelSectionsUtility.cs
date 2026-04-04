@@ -6,7 +6,9 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Builds detail sections for enemy advanced pattern preset panels and manages active pattern loadout editing.
+/// Builds detail sections for enemy advanced pattern preset panels and manages shared Modules & Patterns authoring.
+/// /params None.
+/// /returns None.
 /// </summary>
 internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 {
@@ -14,10 +16,10 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     #region Public Methods
     /// <summary>
-    /// Builds the metadata section for the selected advanced pattern preset.
+    /// Builds the metadata section for the selected advanced-pattern preset.
+    /// /params panel Owning panel that provides serialized context and refresh callbacks.
+    /// /returns None.
     /// </summary>
-    /// <param name="panel">Owning panel that provides serialized context and refresh callbacks.</param>
-
     public static void BuildMetadataSection(EnemyAdvancedPatternPresetsPanel panel)
     {
         if (panel == null)
@@ -89,58 +91,20 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     }
 
     /// <summary>
-    /// Builds the reusable module definition section.
+    /// Builds the shared Modules & Patterns preset section and inlines the referenced shared asset when assigned.
+    /// /params panel Owning panel that provides serialized context and refresh callbacks.
+    /// /returns None.
     /// </summary>
-    /// <param name="panel">Owning panel that provides serialized context and refresh callbacks.</param>
-
-    public static void BuildModulesDefinitionSection(EnemyAdvancedPatternPresetsPanel panel)
+    public static void BuildModulesAndPatternsPresetSection(EnemyAdvancedPatternPresetsPanel panel)
     {
-        if (panel == null)
-            return;
-
-        VisualElement sectionContainer = EnemyAdvancedPatternPresetsPanelElementUtility.CreateDetailsSectionContainer(panel, "Modules Definition");
-
-        if (sectionContainer == null)
-            return;
-
-        Label infoLabel = new Label("Reusable module catalog used by Pattern Assemble entries.");
-        infoLabel.style.marginBottom = 4f;
-        sectionContainer.Add(infoLabel);
-
-        SerializedProperty property = panel.PresetSerializedObject.FindProperty("moduleDefinitions");
-        EnemyAdvancedPatternPresetsPanelElementUtility.AddTrackedPropertyField(panel, sectionContainer, property, "Modules");
+        EnemyAdvancedPatternSharedPresetSectionUtility.BuildSection(panel);
     }
 
     /// <summary>
-    /// Builds the assembled pattern catalog section.
+    /// Builds the pattern loadout section that exposes active shared pattern IDs.
+    /// /params panel Owning panel that provides serialized context and refresh callbacks.
+    /// /returns None.
     /// </summary>
-    /// <param name="panel">Owning panel that provides serialized context and refresh callbacks.</param>
-
-    public static void BuildPatternAssembleSection(EnemyAdvancedPatternPresetsPanel panel)
-    {
-        if (panel == null)
-            return;
-
-        VisualElement sectionContainer = EnemyAdvancedPatternPresetsPanelElementUtility.CreateDetailsSectionContainer(panel, "Pattern Assemble");
-
-        if (sectionContainer == null)
-            return;
-
-        Label infoLabel = new Label("Assembled patterns built from module bindings.");
-        infoLabel.style.marginBottom = 4f;
-        sectionContainer.Add(infoLabel);
-
-        SerializedProperty property = panel.PresetSerializedObject.FindProperty("patterns");
-        EnemyAdvancedPatternPresetsPanelElementUtility.AddTrackedPropertyField(panel, sectionContainer, property, "Patterns");
-        EnemyAdvancedPatternCompositionWarningUtility.AddWarnings(panel, sectionContainer);
-        EnemyAdvancedPatternPresetsPanelElementUtility.AddReactiveDetailsRefreshTracker(panel, sectionContainer);
-    }
-
-    /// <summary>
-    /// Builds the pattern loadout section that exposes active assembled pattern IDs.
-    /// </summary>
-    /// <param name="panel">Owning panel that provides serialized context and refresh callbacks.</param>
-
     public static void BuildPatternLoadoutSection(EnemyAdvancedPatternPresetsPanel panel)
     {
         if (panel == null)
@@ -151,28 +115,56 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
         if (sectionContainer == null)
             return;
 
-        Label loadoutHeader = new Label("Active Pattern ID");
+        Label loadoutHeader = new Label("Active Pattern");
         loadoutHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
         loadoutHeader.style.marginTop = 2f;
         loadoutHeader.style.marginBottom = 2f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(loadoutHeader, "NashCore.EnemyManagement.AdvancedPattern.Loadout.ActivePatternId");
         sectionContainer.Add(loadoutHeader);
-
-        HelpBox loadoutInfoBox = new HelpBox("Use one assembled pattern in the active loadout. Combine one base movement module with optional Shooter and Drop Items modules inside Pattern Assemble.", HelpBoxMessageType.Info);
-        loadoutInfoBox.style.marginBottom = 4f;
-        sectionContainer.Add(loadoutInfoBox);
 
         SerializedObject presetSerializedObject = panel.PresetSerializedObject;
 
         if (presetSerializedObject == null)
             return;
 
-        SerializedProperty patternsProperty = presetSerializedObject.FindProperty("patterns");
         SerializedProperty activePatternIdsProperty = presetSerializedObject.FindProperty("activePatternIds");
 
-        if (patternsProperty == null || activePatternIdsProperty == null)
+        if (activePatternIdsProperty == null)
         {
-            HelpBox missingPropertiesBox = new HelpBox("Pattern assemble or loadout properties are missing on this preset.", HelpBoxMessageType.Warning);
+            HelpBox missingPropertiesBox = new HelpBox("Active Pattern Loadout is missing on this preset.", HelpBoxMessageType.Warning);
             sectionContainer.Add(missingPropertiesBox);
+            return;
+        }
+
+        SerializedProperty sharedPresetProperty = presetSerializedObject.FindProperty("modulesAndPatternsPreset");
+        EnemyModulesAndPatternsPreset sharedPreset = sharedPresetProperty != null
+            ? sharedPresetProperty.objectReferenceValue as EnemyModulesAndPatternsPreset
+            : null;
+
+        SerializedProperty patternsProperty = null;
+        string infoMessage = string.Empty;
+
+        if (sharedPreset != null)
+        {
+            SerializedObject sharedPresetSerializedObject = new SerializedObject(sharedPreset);
+            sharedPresetSerializedObject.Update();
+            patternsProperty = sharedPresetSerializedObject.FindProperty("patterns");
+            infoMessage = "Select one shared assembled pattern from the assigned Modules & Patterns preset.";
+        }
+        else
+        {
+            patternsProperty = presetSerializedObject.FindProperty("patterns");
+            infoMessage = "No shared preset is assigned yet. Loadout is still reading hidden legacy patterns for backward compatibility.";
+        }
+
+        HelpBox loadoutInfoBox = new HelpBox(infoMessage, HelpBoxMessageType.Info);
+        loadoutInfoBox.style.marginBottom = 4f;
+        sectionContainer.Add(loadoutInfoBox);
+
+        if (patternsProperty == null)
+        {
+            HelpBox missingPatternsBox = new HelpBox("Pattern definitions are missing for the current loadout source.", HelpBoxMessageType.Warning);
+            sectionContainer.Add(missingPatternsBox);
             return;
         }
 
@@ -180,39 +172,38 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
         if (loadoutOptions.Count <= 0)
         {
-            HelpBox noOptionsBox = new HelpBox("No valid patterns found. Add patterns in Pattern Assemble first.", HelpBoxMessageType.Warning);
+            HelpBox noOptionsBox = new HelpBox("No valid patterns are available. Add patterns to the assigned Modules & Patterns preset first.", HelpBoxMessageType.Warning);
             sectionContainer.Add(noOptionsBox);
             return;
         }
 
         BuildPatternLoadoutArray(panel, activePatternIdsProperty, loadoutOptions, sectionContainer);
         EnemyAdvancedPatternCompositionWarningUtility.AddWarnings(panel, sectionContainer);
-        EnemyAdvancedPatternPresetsPanelElementUtility.AddReactiveDetailsRefreshTracker(panel, sectionContainer);
     }
     #endregion
 
     #region Private Methods
     /// <summary>
     /// Builds the editable active pattern loadout UI rows.
+    /// /params panel Owning panel used for undo, refresh and rebuild callbacks.
+    /// /params activePatternIdsProperty Serialized active pattern ID array.
+    /// /params loadoutOptions Distinct assembled pattern options.
+    /// /params sectionContainer Section container that receives the generated rows.
+    /// /returns None.
     /// </summary>
-    /// <param name="panel">Owning panel used for undo, refresh and rebuild callbacks.</param>
-    /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
-    /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <param name="sectionContainer">Section container that receives the generated rows.</param>
-
     private static void BuildPatternLoadoutArray(EnemyAdvancedPatternPresetsPanel panel,
                                                  SerializedProperty activePatternIdsProperty,
                                                  List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions,
                                                  VisualElement sectionContainer)
     {
-        if (panel == null)
+        if (panel == null ||
+            activePatternIdsProperty == null ||
+            loadoutOptions == null ||
+            loadoutOptions.Count <= 0 ||
+            sectionContainer == null)
+        {
             return;
-
-        if (activePatternIdsProperty == null)
-            return;
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
-            return;
+        }
 
         SerializedObject presetSerializedObject = panel.PresetSerializedObject;
 
@@ -257,7 +248,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
             row.style.marginBottom = 4f;
 
             PopupField<string> selector = new PopupField<string>("Pattern " + (index + 1), optionLabels, selectedOptionIndex);
-            selector.tooltip = "Select one assembled pattern ID for active runtime loadout.";
+            selector.tooltip = "Select one shared assembled pattern ID for the active runtime loadout.";
             selector.style.flexGrow = 1f;
             int capturedIndex = index;
             selector.RegisterValueChangedCallback(evt =>
@@ -277,7 +268,7 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
                 RemovePatternLoadoutEntry(panel, activePatternIdsProperty, capturedIndex, loadoutOptions);
             });
             removeButton.text = "Remove";
-            removeButton.tooltip = "Remove this pattern entry from active loadout.";
+            removeButton.tooltip = "Remove this pattern entry from the active loadout.";
             removeButton.style.marginLeft = 6f;
             removeButton.SetEnabled(activePatternIdsProperty.arraySize > 1);
             row.Add(removeButton);
@@ -304,22 +295,16 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Adds one new active pattern loadout entry using the next compatible pattern ID.
+    /// /params panel Owning panel used for undo, refresh and rebuild callbacks.
+    /// /params activePatternIdsProperty Serialized active pattern ID array.
+    /// /params loadoutOptions Distinct assembled pattern options.
+    /// /returns None.
     /// </summary>
-    /// <param name="panel">Owning panel used for undo, refresh and rebuild callbacks.</param>
-    /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
-    /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-
     private static void AddPatternLoadoutEntry(EnemyAdvancedPatternPresetsPanel panel,
                                                SerializedProperty activePatternIdsProperty,
                                                List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
-        if (panel == null)
-            return;
-
-        if (activePatternIdsProperty == null)
-            return;
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
+        if (panel == null || activePatternIdsProperty == null || loadoutOptions == null || loadoutOptions.Count <= 0)
             return;
 
         string nextPatternId = ResolveNextPatternLoadoutId(activePatternIdsProperty, loadoutOptions);
@@ -350,21 +335,18 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Removes one active pattern loadout entry and rebuilds the section.
+    /// /params panel Owning panel used for undo, refresh and rebuild callbacks.
+    /// /params activePatternIdsProperty Serialized active pattern ID array.
+    /// /params entryIndex Index of the entry to remove.
+    /// /params loadoutOptions Distinct assembled pattern options.
+    /// /returns None.
     /// </summary>
-    /// <param name="panel">Owning panel used for undo, refresh and rebuild callbacks.</param>
-    /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
-    /// <param name="entryIndex">Index of the entry to remove.</param>
-    /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-
     private static void RemovePatternLoadoutEntry(EnemyAdvancedPatternPresetsPanel panel,
                                                   SerializedProperty activePatternIdsProperty,
                                                   int entryIndex,
                                                   List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
-        if (panel == null)
-            return;
-
-        if (activePatternIdsProperty == null)
+        if (panel == null || activePatternIdsProperty == null)
             return;
 
         if (entryIndex < 0 || entryIndex >= activePatternIdsProperty.arraySize)
@@ -387,23 +369,20 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Replaces one active pattern loadout entry with another valid pattern ID.
+    /// /params panel Owning panel used for undo, refresh and rebuild callbacks.
+    /// /params activePatternIdsProperty Serialized active pattern ID array.
+    /// /params entryIndex Target entry index to replace.
+    /// /params patternId Replacement pattern ID.
+    /// /params loadoutOptions Distinct assembled pattern options.
+    /// /returns None.
     /// </summary>
-    /// <param name="panel">Owning panel used for undo, refresh and rebuild callbacks.</param>
-    /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
-    /// <param name="entryIndex">Target entry index to replace.</param>
-    /// <param name="patternId">Replacement pattern ID.</param>
-    /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-
     private static void SetPatternLoadoutEntry(EnemyAdvancedPatternPresetsPanel panel,
                                                SerializedProperty activePatternIdsProperty,
                                                int entryIndex,
                                                string patternId,
                                                List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
-        if (panel == null)
-            return;
-
-        if (activePatternIdsProperty == null)
+        if (panel == null || activePatternIdsProperty == null)
             return;
 
         if (entryIndex < 0 || entryIndex >= activePatternIdsProperty.arraySize)
@@ -436,10 +415,10 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
     }
 
     /// <summary>
-    /// Builds one distinct list of assembled pattern IDs and labels from the patterns array.
+    /// Builds one distinct list of assembled pattern IDs and labels from the supplied patterns array.
+    /// /params patternsProperty Serialized patterns array.
+    /// /returns The distinct assembled pattern options in authoring order.
     /// </summary>
-    /// <param name="patternsProperty">Serialized patterns array.</param>
-    /// <returns>Returns the distinct assembled pattern options in authoring order.<returns>
     private static List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> BuildPatternLoadoutOptions(SerializedProperty patternsProperty)
     {
         List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> options = new List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption>();
@@ -484,17 +463,14 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Normalizes the active pattern loadout array by removing invalid or duplicated entries.
+    /// /params activePatternIdsProperty Serialized active pattern ID array.
+    /// /params loadoutOptions Distinct assembled pattern options.
+    /// /returns True when the array content changes.
     /// </summary>
-    /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
-    /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns true when the array content changes.<returns>
     private static bool NormalizePatternLoadoutArray(SerializedProperty activePatternIdsProperty,
                                                      List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
-        if (activePatternIdsProperty == null)
-            return false;
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
+        if (activePatternIdsProperty == null || loadoutOptions == null || loadoutOptions.Count <= 0)
             return false;
 
         HashSet<string> validIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -519,28 +495,12 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
             string patternId = entryProperty.stringValue;
 
-            if (string.IsNullOrWhiteSpace(patternId))
+            if (string.IsNullOrWhiteSpace(patternId) || !validIds.Contains(patternId) || !visited.Add(patternId))
             {
                 activePatternIdsProperty.DeleteArrayElementAtIndex(index);
                 index--;
                 changed = true;
-                continue;
             }
-
-            if (!validIds.Contains(patternId))
-            {
-                activePatternIdsProperty.DeleteArrayElementAtIndex(index);
-                index--;
-                changed = true;
-                continue;
-            }
-
-            if (visited.Add(patternId))
-                continue;
-
-            activePatternIdsProperty.DeleteArrayElementAtIndex(index);
-            index--;
-            changed = true;
         }
 
         if (activePatternIdsProperty.arraySize > 0)
@@ -557,17 +517,14 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Checks whether the active loadout can receive one pattern entry.
+    /// /params activePatternIdsProperty Serialized active pattern ID array.
+    /// /params loadoutOptions Distinct assembled pattern options.
+    /// /returns True when the loadout is empty and at least one option exists.
     /// </summary>
-    /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
-    /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns true when the loadout is empty and at least one option exists.<returns>
     private static bool CanAddPatternLoadoutEntry(SerializedProperty activePatternIdsProperty,
                                                   List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
-        if (activePatternIdsProperty == null)
-            return false;
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
+        if (activePatternIdsProperty == null || loadoutOptions == null || loadoutOptions.Count <= 0)
             return false;
 
         if (activePatternIdsProperty.arraySize > 0)
@@ -586,17 +543,14 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Resolves the next unused pattern ID that can be inserted into the loadout.
+    /// /params activePatternIdsProperty Serialized active pattern ID array.
+    /// /params loadoutOptions Distinct assembled pattern options.
+    /// /returns One unused pattern ID, or an empty string when none are available.
     /// </summary>
-    /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
-    /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns one unused pattern ID, or an empty string when none are available.<returns>
     private static string ResolveNextPatternLoadoutId(SerializedProperty activePatternIdsProperty,
                                                       List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
-        if (activePatternIdsProperty == null)
-            return string.Empty;
-
-        if (loadoutOptions == null || loadoutOptions.Count <= 0)
+        if (activePatternIdsProperty == null || loadoutOptions == null || loadoutOptions.Count <= 0)
             return string.Empty;
 
         for (int optionIndex = 0; optionIndex < loadoutOptions.Count; optionIndex++)
@@ -614,16 +568,13 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Checks whether a specific pattern ID already exists in the serialized active loadout array.
+    /// /params activePatternIdsProperty Serialized active pattern ID array.
+    /// /params patternId Pattern ID to search for.
+    /// /returns True when the pattern ID is already present.
     /// </summary>
-    /// <param name="activePatternIdsProperty">Serialized active pattern ID array.</param>
-    /// <param name="patternId">Pattern ID to search for.</param>
-    /// <returns>Returns true when the pattern ID is already present.<returns>
     private static bool ContainsPatternLoadoutId(SerializedProperty activePatternIdsProperty, string patternId)
     {
-        if (activePatternIdsProperty == null)
-            return false;
-
-        if (string.IsNullOrWhiteSpace(patternId))
+        if (activePatternIdsProperty == null || string.IsNullOrWhiteSpace(patternId))
             return false;
 
         for (int index = 0; index < activePatternIdsProperty.arraySize; index++)
@@ -642,10 +593,10 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Resolves the currently selected pattern ID to a safe option value.
+    /// /params selectedPatternId Current serialized pattern ID value.
+    /// /params loadoutOptions Distinct assembled pattern options.
+    /// /returns One pattern ID guaranteed to exist in the options list when the list is not empty.
     /// </summary>
-    /// <param name="selectedPatternId">Current serialized pattern ID value.</param>
-    /// <param name="loadoutOptions">Distinct assembled pattern options.</param>
-    /// <returns>Returns one pattern ID that is guaranteed to exist in the options list when the list is not empty.<returns>
     private static string ResolveSelectedPatternId(string selectedPatternId,
                                                    List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> loadoutOptions)
     {
@@ -666,16 +617,13 @@ internal static class EnemyAdvancedPatternPresetsPanelSectionsUtility
 
     /// <summary>
     /// Checks whether a distinct pattern option list already contains one pattern ID.
+    /// /params options Current distinct option list.
+    /// /params patternId Pattern ID to search for.
+    /// /returns True when the list already contains the ID.
     /// </summary>
-    /// <param name="options">Current distinct option list.</param>
-    /// <param name="patternId">Pattern ID to search for.</param>
-    /// <returns>Returns true when the list already contains the ID.<returns>
     private static bool ContainsPatternOption(List<EnemyAdvancedPatternPresetsPanel.PatternLoadoutOption> options, string patternId)
     {
-        if (options == null)
-            return false;
-
-        if (string.IsNullOrWhiteSpace(patternId))
+        if (options == null || string.IsNullOrWhiteSpace(patternId))
             return false;
 
         for (int index = 0; index < options.Count; index++)

@@ -11,6 +11,22 @@ using UnityEngine.UIElements;
 [CustomPropertyDrawer(typeof(EnemyPatternModuleBinding))]
 public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
 {
+    #region Nested Types
+    /// <summary>
+    /// Declares the UI context in which one module binding is currently being edited.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private enum BindingPresentationContext
+    {
+        Generic = 0,
+        CoreMovementAssembly = 1,
+        ShortRangeInteractionAssembly = 2,
+        WeaponInteractionAssembly = 3,
+        DropItemsAssembly = 4
+    }
+    #endregion
+
     #region Methods
 
     #region Public Methods
@@ -38,22 +54,20 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
             return root;
         }
 
-        List<string> moduleOptions = EnemyAdvancedPatternDrawerUtility.BuildModuleIdOptions(property.serializedObject);
+        List<string> moduleOptions = BuildModulePopupOptions(property, moduleIdProperty.stringValue);
 
-        if (moduleOptions.Count == 0)
-            moduleOptions.Add(string.Empty);
-
+        BindingPresentationContext presentationContext = ResolvePresentationContext(property);
         string selectedModuleId = EnemyAdvancedPatternDrawerUtility.ResolveInitialModuleId(moduleIdProperty.stringValue, moduleOptions);
         PopupField<string> modulePopup = new PopupField<string>("Module ID", moduleOptions, selectedModuleId);
-        modulePopup.tooltip = "Module reference from Modules Definition catalog.";
+        modulePopup.tooltip = "Module reference resolved from the shared Modules Definition catalogs.";
         root.Add(modulePopup);
 
-        HelpBox moduleInfoBox = new HelpBox(string.Empty, HelpBoxMessageType.Info);
-        moduleInfoBox.style.marginTop = 2f;
-        moduleInfoBox.style.marginLeft = 126f;
-        root.Add(moduleInfoBox);
+        HelpBox moduleWarningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+        root.Add(moduleWarningBox);
 
-        EnemyAdvancedPatternDrawerUtility.AddField(root, enabledProperty, "Enabled");
+        if (ShouldShowBindingEnabledToggle(presentationContext))
+            EnemyAdvancedPatternDrawerUtility.AddField(root, enabledProperty, "Enable Module Binding");
+
         EnemyAdvancedPatternDrawerUtility.AddField(root, useOverridePayloadProperty, "Use Override Payload");
 
         Label payloadHeader = new Label("Override Payload");
@@ -66,12 +80,13 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
         overridePayloadContainer.style.marginLeft = 126f;
         root.Add(overridePayloadContainer);
 
-        RefreshBindingUi(property.serializedObject,
+        RefreshBindingUi(property,
                          moduleIdProperty,
                          useOverridePayloadProperty,
                          overridePayloadProperty,
                          modulePopup,
-                         moduleInfoBox,
+                         moduleWarningBox,
+                         payloadHeader,
                          overridePayloadContainer);
 
         modulePopup.RegisterValueChangedCallback(evt =>
@@ -85,34 +100,37 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
             moduleIdProperty.stringValue = evt.newValue;
             moduleIdProperty.serializedObject.ApplyModifiedProperties();
 
-            RefreshBindingUi(property.serializedObject,
+            RefreshBindingUi(property,
                              moduleIdProperty,
                              useOverridePayloadProperty,
                              overridePayloadProperty,
                              modulePopup,
-                             moduleInfoBox,
+                             moduleWarningBox,
+                             payloadHeader,
                              overridePayloadContainer);
         });
 
         root.TrackPropertyValue(moduleIdProperty, changedProperty =>
         {
-            RefreshBindingUi(property.serializedObject,
+            RefreshBindingUi(property,
                              changedProperty,
                              useOverridePayloadProperty,
                              overridePayloadProperty,
                              modulePopup,
-                             moduleInfoBox,
+                             moduleWarningBox,
+                             payloadHeader,
                              overridePayloadContainer);
         });
 
         root.TrackPropertyValue(useOverridePayloadProperty, changedProperty =>
         {
-            RefreshBindingUi(property.serializedObject,
+            RefreshBindingUi(property,
                              moduleIdProperty,
                              changedProperty,
                              overridePayloadProperty,
                              modulePopup,
-                             moduleInfoBox,
+                             moduleWarningBox,
+                             payloadHeader,
                              overridePayloadContainer);
         });
 
@@ -124,25 +142,24 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
     /// <summary>
     /// Refreshes binding UI when module selection or override state changes.
     /// </summary>
-    /// <param name="serializedObject">Serialized object containing moduleDefinitions.</param>
+    /// <param name="bindingProperty">Serialized binding property used to resolve the correct module catalog context.</param>
     /// <param name="moduleIdProperty">Binding module ID property.</param>
     /// <param name="useOverridePayloadProperty">Use override toggle property.</param>
     /// <param name="overridePayloadProperty">Override payload property.</param>
     /// <param name="modulePopup">Module popup UI control.</param>
-    /// <param name="moduleInfoBox">Module info help box.</param>
+    /// <param name="moduleWarningBox">Module warning help box.</param>
+    /// <param name="payloadHeader">Override payload header label.</param>
     /// <param name="overridePayloadContainer">Override payload host container.</param>
-    private static void RefreshBindingUi(SerializedObject serializedObject,
+    private static void RefreshBindingUi(SerializedProperty bindingProperty,
                                          SerializedProperty moduleIdProperty,
                                          SerializedProperty useOverridePayloadProperty,
                                          SerializedProperty overridePayloadProperty,
                                          PopupField<string> modulePopup,
-                                         HelpBox moduleInfoBox,
+                                         HelpBox moduleWarningBox,
+                                         Label payloadHeader,
                                          VisualElement overridePayloadContainer)
     {
-        List<string> moduleOptions = EnemyAdvancedPatternDrawerUtility.BuildModuleIdOptions(serializedObject);
-
-        if (moduleOptions.Count == 0)
-            moduleOptions.Add(string.Empty);
+        List<string> moduleOptions = BuildModulePopupOptions(bindingProperty, moduleIdProperty.stringValue);
 
         modulePopup.choices = moduleOptions;
 
@@ -151,70 +168,104 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
         if (!string.Equals(modulePopup.value, resolvedModuleId, StringComparison.Ordinal))
             modulePopup.SetValueWithoutNotify(resolvedModuleId);
 
-        if (!string.Equals(moduleIdProperty.stringValue, resolvedModuleId, StringComparison.Ordinal))
-        {
-            moduleIdProperty.serializedObject.Update();
-            moduleIdProperty.stringValue = resolvedModuleId;
-            moduleIdProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-        }
-
         EnemyPatternModuleKind moduleKind;
         string displayName;
-        bool moduleResolved = EnemyAdvancedPatternDrawerUtility.TryResolveModuleInfo(serializedObject,
-                                                                                     resolvedModuleId,
+        string selectedModuleId = moduleIdProperty.stringValue;
+        bool moduleResolved = EnemyAdvancedPatternDrawerUtility.TryResolveModuleInfo(bindingProperty,
+                                                                                     selectedModuleId,
                                                                                      out moduleKind,
                                                                                      out displayName);
 
-        UpdateInfoBox(moduleInfoBox, moduleResolved, moduleKind, displayName);
-        RebuildOverridePayload(moduleResolved,
+        UpdateModuleTooltip(modulePopup, selectedModuleId, moduleResolved, moduleKind, displayName);
+        UpdateModuleWarningBox(moduleWarningBox, selectedModuleId, moduleResolved);
+        RebuildOverridePayload(bindingProperty,
+                               moduleResolved,
                                moduleKind,
                                useOverridePayloadProperty,
                                overridePayloadProperty,
+                               payloadHeader,
                                overridePayloadContainer);
     }
 
 
     /// <summary>
-    /// Updates module info help box from resolution state.
+    /// Updates the module popup tooltip from the current resolution state.
     /// </summary>
-    /// <param name="moduleInfoBox">Target info box.</param>
+    /// <param name="modulePopup">Target popup.</param>
+    /// <param name="selectedModuleId">Currently authored module ID.</param>
     /// <param name="moduleResolved">Module resolution result.</param>
     /// <param name="moduleKind">Resolved module kind.</param>
     /// <param name="displayName">Resolved display name.</param>
-    private static void UpdateInfoBox(HelpBox moduleInfoBox,
-                                      bool moduleResolved,
-                                      EnemyPatternModuleKind moduleKind,
-                                      string displayName)
+    private static void UpdateModuleTooltip(PopupField<string> modulePopup,
+                                            string selectedModuleId,
+                                            bool moduleResolved,
+                                            EnemyPatternModuleKind moduleKind,
+                                            string displayName)
     {
-        if (moduleInfoBox == null)
+        if (modulePopup == null)
             return;
 
-        if (!moduleResolved)
+        if (string.IsNullOrWhiteSpace(selectedModuleId))
         {
-            moduleInfoBox.text = "Selected module could not be resolved from Modules Definition.";
-            moduleInfoBox.messageType = HelpBoxMessageType.Warning;
+            modulePopup.tooltip = "Choose one module reference from the shared Modules Definition catalogs.";
             return;
         }
 
-        moduleInfoBox.text = string.Format("Selected module: {0} | Kind: {1}", displayName, moduleKind);
-        moduleInfoBox.messageType = HelpBoxMessageType.Info;
+        if (!moduleResolved)
+        {
+            modulePopup.tooltip = "Selected module could not be resolved from the shared Modules Definition catalogs.";
+            return;
+        }
+
+        modulePopup.tooltip = string.Format("Selected module: {0} | Kind: {1}", displayName, moduleKind);
     }
 
+    /// <summary>
+    /// Updates the warning help box shown below the module popup.
+    /// /params moduleWarningBox Warning help box.
+    /// /params selectedModuleId Currently authored module ID.
+    /// /params moduleResolved True when the selected module can be resolved.
+    /// /returns None.
+    /// </summary>
+    private static void UpdateModuleWarningBox(HelpBox moduleWarningBox,
+                                               string selectedModuleId,
+                                               bool moduleResolved)
+    {
+        if (moduleWarningBox == null)
+            return;
 
+        if (string.IsNullOrWhiteSpace(selectedModuleId))
+        {
+            moduleWarningBox.text = "No module is selected. Choose one shared module from the matching catalog.";
+            moduleWarningBox.style.display = DisplayStyle.Flex;
+            return;
+        }
 
+        if (moduleResolved)
+        {
+            moduleWarningBox.style.display = DisplayStyle.None;
+            return;
+        }
 
+        moduleWarningBox.text = "Selected module could not be resolved from the shared Modules Definition catalogs.";
+        moduleWarningBox.style.display = DisplayStyle.Flex;
+    }
     /// <summary>
     /// Rebuilds override payload block based on current toggle and resolved module kind.
     /// </summary>
+    /// <param name="bindingProperty">Serialized binding property used to infer payload editor visibility mode.</param>
     /// <param name="moduleResolved">Whether the selected module can be resolved.</param>
     /// <param name="moduleKind">Resolved module kind.</param>
     /// <param name="useOverridePayloadProperty">Use override toggle property.</param>
     /// <param name="overridePayloadProperty">Override payload property.</param>
+    /// <param name="payloadHeader">Header shown above the override payload editor.</param>
     /// <param name="overridePayloadContainer">Container to rebuild.</param>
-    private static void RebuildOverridePayload(bool moduleResolved,
+    private static void RebuildOverridePayload(SerializedProperty bindingProperty,
+                                               bool moduleResolved,
                                                EnemyPatternModuleKind moduleKind,
                                                SerializedProperty useOverridePayloadProperty,
                                                SerializedProperty overridePayloadProperty,
+                                               Label payloadHeader,
                                                VisualElement overridePayloadContainer)
     {
         if (overridePayloadContainer == null)
@@ -223,6 +274,7 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
         overridePayloadContainer.Clear();
 
         bool showOverride = useOverridePayloadProperty != null && useOverridePayloadProperty.boolValue;
+        SetPayloadVisibility(payloadHeader, overridePayloadContainer, showOverride);
         overridePayloadContainer.style.display = showOverride ? DisplayStyle.Flex : DisplayStyle.None;
 
         if (!showOverride)
@@ -235,7 +287,112 @@ public sealed class EnemyPatternModuleBindingPropertyDrawer : PropertyDrawer
             return;
         }
 
-        EnemyAdvancedPatternDrawerUtility.RefreshPayloadEditor(overridePayloadProperty, moduleKind, overridePayloadContainer);
+        EnemyAdvancedPatternPayloadEditorMode editorMode = EnemyAdvancedPatternDrawerUtility.ResolvePayloadEditorMode(bindingProperty);
+        EnemyAdvancedPatternDrawerUtility.RefreshPayloadEditor(overridePayloadProperty, moduleKind, overridePayloadContainer, editorMode);
+    }
+
+    /// <summary>
+    /// Builds the popup choices while preserving one currently invalid or empty authored module ID.
+    /// /params bindingProperty Serialized binding property used to resolve available module IDs.
+    /// /params currentModuleId Currently authored module ID.
+    /// /returns Ordered popup choices.
+    /// </summary>
+    private static List<string> BuildModulePopupOptions(SerializedProperty bindingProperty, string currentModuleId)
+    {
+        List<string> moduleOptions = EnemyAdvancedPatternDrawerUtility.BuildModuleIdOptions(bindingProperty);
+
+        if (moduleOptions.Count <= 0)
+        {
+            moduleOptions.Add(string.Empty);
+            return moduleOptions;
+        }
+
+        if (ContainsOption(moduleOptions, currentModuleId))
+            return moduleOptions;
+
+        moduleOptions.Insert(0, currentModuleId ?? string.Empty);
+        return moduleOptions;
+    }
+
+    /// <summary>
+    /// Returns whether one popup options list already contains the requested module ID.
+    /// /params moduleOptions Candidate popup options.
+    /// /params moduleId Module ID to search.
+    /// /returns True when the value already exists.
+    /// </summary>
+    private static bool ContainsOption(List<string> moduleOptions, string moduleId)
+    {
+        if (moduleOptions == null)
+            return false;
+
+        for (int optionIndex = 0; optionIndex < moduleOptions.Count; optionIndex++)
+        {
+            if (!string.Equals(moduleOptions[optionIndex], moduleId, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Resolves whether the internal module-binding enabled toggle should be shown in the current presentation context.
+    /// Shared assemblies use their own category enable state, so the binding-level toggle is hidden there.
+    /// /params presentationContext Resolved binding presentation context.
+    /// /returns True when the binding enabled toggle should remain visible.
+    /// </summary>
+    private static bool ShouldShowBindingEnabledToggle(BindingPresentationContext presentationContext)
+    {
+        return presentationContext == BindingPresentationContext.Generic;
+    }
+
+    /// <summary>
+    /// Resolves the current binding presentation context from the serialized property path.
+    /// /params property Serialized binding property currently being drawn.
+    /// /returns The resolved binding presentation context.
+    /// </summary>
+    private static BindingPresentationContext ResolvePresentationContext(SerializedProperty property)
+    {
+        if (property == null)
+            return BindingPresentationContext.Generic;
+
+        string propertyPath = property.propertyPath;
+
+        if (string.IsNullOrWhiteSpace(propertyPath))
+            return BindingPresentationContext.Generic;
+
+        if (propertyPath.Contains("coreMovement.binding"))
+            return BindingPresentationContext.CoreMovementAssembly;
+
+        if (propertyPath.Contains("shortRangeInteraction.binding"))
+            return BindingPresentationContext.ShortRangeInteractionAssembly;
+
+        if (propertyPath.Contains("weaponInteraction.binding"))
+            return BindingPresentationContext.WeaponInteractionAssembly;
+
+        if (propertyPath.Contains("dropItems.binding"))
+            return BindingPresentationContext.DropItemsAssembly;
+
+        return BindingPresentationContext.Generic;
+    }
+
+    /// <summary>
+    /// Updates the visibility of the override-payload header and content container.
+    /// /params payloadHeader Header label displayed above the payload editor.
+    /// /params overridePayloadContainer Container that hosts the payload editor.
+    /// /params isVisible True when both elements should be shown.
+    /// /returns None.
+    /// </summary>
+    private static void SetPayloadVisibility(Label payloadHeader,
+                                             VisualElement overridePayloadContainer,
+                                             bool isVisible)
+    {
+        if (payloadHeader != null)
+            payloadHeader.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
+
+        if (overridePayloadContainer != null)
+            overridePayloadContainer.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
     }
     #endregion
 

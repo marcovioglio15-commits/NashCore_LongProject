@@ -89,6 +89,7 @@ public partial struct EnemySteeringSystem : ISystem
         NativeList<int> evaluatedEnemyIndices = new NativeList<int>(enemyCount, Allocator.TempJob);
         ComponentLookup<EnemyCustomPatternMovementTag> customPatternMovementTagLookup = SystemAPI.GetComponentLookup<EnemyCustomPatternMovementTag>(true);
         ComponentLookup<EnemyPatternConfig> patternConfigLookup = SystemAPI.GetComponentLookup<EnemyPatternConfig>(true);
+        ComponentLookup<EnemyPatternRuntimeState> patternRuntimeStateLookup = SystemAPI.GetComponentLookup<EnemyPatternRuntimeState>(true);
         ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup = SystemAPI.GetComponentLookup<EnemySpawnInactivityLock>(true);
 
         float maxSeparationRadius = 0.25f;
@@ -122,18 +123,33 @@ public partial struct EnemySteeringSystem : ISystem
                 ? (byte)1
                 : (byte)0;
             bool hasCustomPatternMovementTag = customPatternMovementTagLookup.HasComponent(enemyEntity);
-            customPatternMovementFlags[index] = hasCustomPatternMovementTag ? (byte)1 : (byte)0;
+            bool usesCustomPatternMovement = hasCustomPatternMovementTag;
 
-            if (hasCustomPatternMovementTag && patternConfigLookup.HasComponent(enemyEntity))
+            if (patternConfigLookup.HasComponent(enemyEntity))
             {
                 EnemyPatternConfig patternConfig = patternConfigLookup[enemyEntity];
+                EnemyPatternRuntimeState patternRuntimeState = patternRuntimeStateLookup.HasComponent(enemyEntity)
+                    ? patternRuntimeStateLookup[enemyEntity]
+                    : default;
+                float3 toPlayer = playerPosition - enemyTransform.Position;
+                toPlayer.y = 0f;
+                float playerDistance = math.length(toPlayer);
+                EnemyCompiledMovementPatternKind activeMovementKind = EnemyPatternMovementRuntimeUtility.ResolveActiveMovementKind(in patternConfig,
+                                                                                                                                    in patternRuntimeState,
+                                                                                                                                    playerDistance);
 
-                if (patternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
-                    patternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd ||
-                    patternConfig.MovementKind == EnemyCompiledMovementPatternKind.Coward)
+                if (hasCustomPatternMovementTag && activeMovementKind == EnemyCompiledMovementPatternKind.Grunt)
+                    usesCustomPatternMovement = false;
+
+                if (activeMovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
+                    activeMovementKind == EnemyCompiledMovementPatternKind.WandererDvd ||
+                    activeMovementKind == EnemyCompiledMovementPatternKind.Coward)
+                {
                     wandererMovementFlags[index] = 1;
+                }
             }
 
+            customPatternMovementFlags[index] = usesCustomPatternMovement ? (byte)1 : (byte)0;
             shooterMovementLockedFlags[index] = 0;
 
             if (enemyShooterControlArray[index].MovementLocked != 0)
@@ -156,7 +172,7 @@ public partial struct EnemySteeringSystem : ISystem
             // LOD gating reduces per-frame steering cost for far enemies while keeping a stable cadence.
             EnemySteeringUtility.SteeringLodLevel lodLevel = EnemySteeringUtility.EvaluateLod(playerPosition, enemyTransform.Position);
             bool shouldEvaluate = EnemySteeringUtility.ShouldEvaluateLod(lodLevel, frameCount, enemyEntity.Index);
-            if (shouldEvaluate && !hasCustomPatternMovementTag && spawnInactivityLockFlags[index] == 0)
+            if (shouldEvaluate && customPatternMovementFlags[index] == 0 && spawnInactivityLockFlags[index] == 0)
             {
                 int evaluatedIndex = evaluatedEnemyIndices.Length;
                 enemyToEvaluatedIndex[index] = evaluatedIndex;

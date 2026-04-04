@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using UnityEngine;
 
 /// <summary>
@@ -17,6 +16,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         if (authoring == null)
             return;
 
+        DeclarePresetDependencies(authoring);
         Entity entity = GetEntity(TransformUsageFlags.Dynamic);
 
         AddComponent(entity, new EnemyData
@@ -77,12 +77,15 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         AddComponent(entity, compiledPattern.PatternConfig);
         AddComponent(entity, new EnemyPatternRuntimeState
         {
+            ShortRangeInteractionActive = 0,
             WanderTargetPosition = float3.zero,
             WanderWaitTimer = 0f,
             WanderRetryTimer = 0f,
             LastWanderDirectionAngle = 0f,
             WanderHasTarget = 0,
             WanderInitialized = 0,
+            CowardPatrolAnchorPosition = float3.zero,
+            CowardPatrolAnchorInitialized = 0,
             DvdDirection = float3.zero,
             DvdInitialized = 0
         });
@@ -130,6 +133,12 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             MaxVisibleDistance = math.max(0f, authoring.MaxVisibleDistance),
             VisibleDistanceHysteresis = math.max(0f, authoring.VisibleDistanceHysteresis),
             UseDistanceCulling = authoring.EnableDistanceCulling ? (byte)1 : (byte)0
+        });
+        AddComponent(entity, new OutlineVisualConfig
+        {
+            Enabled = authoring.EnableOutline ? (byte)1 : (byte)0,
+            Thickness = math.max(0f, authoring.OutlineThickness),
+            Color = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.OutlineColor)
         });
 
         Entity hitVfxPrefabEntity = ResolveHitVfxPrefabEntity(authoring);
@@ -235,6 +244,39 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
     #endregion
 
     #region Helpers
+    /// <summary>
+    /// Declares preset dependencies consumed during enemy bake so edits on master, sub-preset and shared pattern assets trigger a rebake.
+    /// /params authoring Source authoring component used to resolve all preset references.
+    /// /returns None.
+    /// </summary>
+    private void DeclarePresetDependencies(EnemyAuthoring authoring)
+    {
+        if (authoring == null)
+            return;
+
+        EnemyMasterPreset masterPreset = authoring.MasterPreset;
+        EnemyBrainPreset brainPreset = authoring.BrainPreset;
+        EnemyVisualPreset visualPreset = authoring.VisualPreset;
+        EnemyAdvancedPatternPreset advancedPatternPreset = authoring.AdvancedPatternPreset;
+
+        if (masterPreset != null)
+            DependsOn(masterPreset);
+
+        if (brainPreset != null)
+            DependsOn(brainPreset);
+
+        if (visualPreset != null)
+            DependsOn(visualPreset);
+
+        if (advancedPatternPreset != null)
+        {
+            DependsOn(advancedPatternPreset);
+
+            if (advancedPatternPreset.ModulesAndPatternsPreset != null)
+                DependsOn(advancedPatternPreset.ModulesAndPatternsPreset);
+        }
+    }
+
     private static EnemyVisualMode ResolveBakedVisualMode(EnemyAuthoring authoring, out Animator resolvedAnimatorComponent)
     {
         resolvedAnimatorComponent = null;

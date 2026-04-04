@@ -33,6 +33,7 @@ internal static class EnemyAdvancedPatternPresetsPanelElementUtility
         Label header = new Label(sectionTitle);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.EnemyManagement.AdvancedPattern.Section." + sectionTitle);
         container.Add(header);
         detailsSectionContentRoot.Add(container);
         return container;

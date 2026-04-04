@@ -14,6 +14,7 @@ public static class EnemyPatternCowardSelectionUtility
     private const float RetreatNavigationGainNormalization = 6f;
     private const float OpenSpaceProbeMaximumDistance = 1.6f;
     private const int OpenSpaceSampleCount = 4;
+    private const float CandidateClearanceProbeSpeedMinimum = 0.75f;
     #endregion
 
     #region Methods
@@ -64,12 +65,15 @@ public static class EnemyPatternCowardSelectionUtility
         float searchRadius = math.max(0.5f, patternConfig.BasicSearchRadius);
         float minimumDistance = math.max(0f, patternConfig.BasicMinimumTravelDistance);
         float maximumDistance = math.max(minimumDistance, patternConfig.BasicMaximumTravelDistance);
-        float minimumEnemyClearance = math.max(0f, patternConfig.BasicMinimumEnemyClearance);
+        float minimumEnemyClearance = EnemyPatternCowardSharedUtility.ResolveRetreatEnemyClearance(bodyRadius,
+                                                                                                   patternConfig.BasicMinimumEnemyClearance);
         float trajectoryPredictionTime = math.max(0f, patternConfig.BasicTrajectoryPredictionTime);
         float freeTrajectoryPreference = math.max(0f, patternConfig.BasicFreeTrajectoryPreference);
         float retreatDirectionPreference = math.max(0f, patternConfig.CowardRetreatDirectionPreference);
         float openSpacePreference = math.max(0f, patternConfig.CowardOpenSpacePreference);
         float navigationPreference = math.max(0f, patternConfig.CowardNavigationPreference);
+        float clearanceProbeSpeed = math.max(CandidateClearanceProbeSpeedMinimum,
+                                             math.min(maximumDistance, searchRadius));
         bool useInfiniteDirectionSampling = patternConfig.BasicUseInfiniteDirectionSampling != 0;
         int sampleCount = EnemyPatternCowardSharedUtility.ResolveSampleCount(in patternConfig, useInfiniteDirectionSampling, 1);
         float directionStepDegrees = math.clamp(patternConfig.BasicInfiniteDirectionStepDegrees, 0.5f, 90f);
@@ -149,15 +153,24 @@ public static class EnemyPatternCowardSelectionUtility
                                                           in physicsWorldSingleton,
                                                           wallsLayerMask,
                                                           wallsEnabled);
-            float safetyScore = math.saturate(freeTrajectoryScore * 0.68f +
-                                              freeSpaceScore * 0.18f +
-                                              openSpaceScore * 0.14f);
+            float localSeparationScore = EvaluateCandidateSeparationScore(enemyEntity,
+                                                                          selfPriorityTier,
+                                                                          candidate,
+                                                                          bodyRadius,
+                                                                          minimumEnemyClearance,
+                                                                          clearanceProbeSpeed,
+                                                                          in occupancyContext);
+            float safetyScore = math.saturate(freeTrajectoryScore * 0.54f +
+                                              freeSpaceScore * 0.12f +
+                                              openSpaceScore * 0.14f +
+                                              localSeparationScore * 0.2f);
             float retreatScore = math.saturate(alignmentToRetreat * 0.5f + distanceGainScore * 0.5f);
             float safetyWeight = math.max(1f, freeTrajectoryPreference * 10f);
             float score = safetyWeight * safetyScore +
                           retreatDirectionPreference * retreatScore +
                           openSpacePreference * openSpaceScore +
-                          navigationPreference * navigationEscapeScore;
+                          navigationPreference * navigationEscapeScore +
+                          localSeparationScore * 2.1f;
             if (score <= bestScore)
                 continue;
             bestScore = score;
@@ -319,6 +332,41 @@ public static class EnemyPatternCowardSelectionUtility
         }
 
         return opennessScore / OpenSpaceSampleCount;
+    }
+
+    /// <summary>
+    /// Evaluates how much crowding pressure exists around one candidate by sampling the local clearance field.
+    /// candidate Candidate position being evaluated.
+    /// enemyEntity Current enemy entity.
+    /// selfPriorityTier Current enemy priority tier.
+    /// bodyRadius Current enemy body radius.
+    /// minimumEnemyClearance Effective minimum enemy clearance.
+    /// probeSpeed Speed cap used while sampling the clearance field.
+    /// occupancyContext Occupancy context used for neighbor lookup.
+    /// returns Normalized separation score in the [0..1] range.
+    /// </summary>
+    private static float EvaluateCandidateSeparationScore(Entity enemyEntity,
+                                                          int selfPriorityTier,
+                                                          float3 candidate,
+                                                          float bodyRadius,
+                                                          float minimumEnemyClearance,
+                                                          float probeSpeed,
+                                                          in EnemyPatternWandererUtility.OccupancyContext occupancyContext)
+    {
+        float constrainedProbeSpeed = math.max(CandidateClearanceProbeSpeedMinimum, probeSpeed);
+        float3 clearanceVelocity = EnemyPatternWandererUtility.ResolveLocalClearanceVelocity(enemyEntity,
+                                                                                             selfPriorityTier,
+                                                                                             candidate,
+                                                                                             bodyRadius,
+                                                                                             minimumEnemyClearance,
+                                                                                             constrainedProbeSpeed,
+                                                                                             1f,
+                                                                                             out float priorityYieldUrgency,
+                                                                                             out float _,
+                                                                                             in occupancyContext);
+        float separationPenalty = math.length(clearanceVelocity) / constrainedProbeSpeed;
+        separationPenalty = math.max(separationPenalty, priorityYieldUrgency * 0.9f);
+        return 1f - math.saturate(separationPenalty);
     }
     #endregion
 

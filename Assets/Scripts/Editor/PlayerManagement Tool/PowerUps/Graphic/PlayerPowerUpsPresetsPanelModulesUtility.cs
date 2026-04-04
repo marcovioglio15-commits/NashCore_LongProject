@@ -18,6 +18,7 @@ public static class PlayerPowerUpsPresetsPanelModulesUtility
         Label header = new Label("Modules Management");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.PowerUps.Modules.Management");
         panel.sectionContentRoot.Add(header);
 
         SerializedProperty moduleDefinitionsProperty = panel.presetSerializedObject.FindProperty("moduleDefinitions");

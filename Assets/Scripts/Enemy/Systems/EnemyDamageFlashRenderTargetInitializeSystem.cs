@@ -29,6 +29,7 @@ public partial struct EnemyDamageFlashRenderTargetInitializeSystem : ISystem
     public void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<DamageFlashConfig>();
+        state.RequireForUpdate<OutlineVisualConfig>();
         state.RequireForUpdate<DamageFlashRenderTargetElement>();
     }
 
@@ -45,13 +46,18 @@ public partial struct EnemyDamageFlashRenderTargetInitializeSystem : ISystem
         try
         {
             foreach ((RefRO<DamageFlashConfig> damageFlashConfig,
+                      RefRO<OutlineVisualConfig> outlineVisualConfig,
                       DynamicBuffer<DamageFlashRenderTargetElement> renderTargets,
                       Entity enemyEntity)
-                     in SystemAPI.Query<RefRO<DamageFlashConfig>, DynamicBuffer<DamageFlashRenderTargetElement>>()
+                     in SystemAPI.Query<RefRO<DamageFlashConfig>, RefRO<OutlineVisualConfig>, DynamicBuffer<DamageFlashRenderTargetElement>>()
                                  .WithNone<EnemyDamageFlashRenderTargetsInitialized>()
                                  .WithEntityAccess())
             {
                 float4 flashColor = damageFlashConfig.ValueRO.FlashColor;
+                float4 outlineColor = outlineVisualConfig.ValueRO.Color;
+                float outlineThickness = outlineVisualConfig.ValueRO.Enabled != 0
+                    ? outlineVisualConfig.ValueRO.Thickness
+                    : 0f;
 
                 for (int targetIndex = 0; targetIndex < renderTargets.Length; targetIndex++)
                 {
@@ -61,6 +67,11 @@ public partial struct EnemyDamageFlashRenderTargetInitializeSystem : ISystem
                                                                            renderTarget.Value,
                                                                            renderTarget.BaseColor,
                                                                            flashColor);
+                    EnemyDamageFlashRenderUtility.EnsureGpuOutlineComponents(entityManager,
+                                                                            entityCommandBuffer,
+                                                                            renderTarget.Value,
+                                                                            outlineColor,
+                                                                            outlineThickness);
                 }
 
                 entityCommandBuffer.AddComponent<EnemyDamageFlashRenderTargetsInitialized>(enemyEntity);

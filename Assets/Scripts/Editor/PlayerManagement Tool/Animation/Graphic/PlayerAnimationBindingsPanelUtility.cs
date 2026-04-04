@@ -56,6 +56,7 @@ public static class PlayerAnimationBindingsPanelUtility
         Label titleLabel = new Label(title);
         titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
         titleLabel.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(titleLabel, "NashCore.PlayerManagement.Animation.Section." + title);
         section.Add(titleLabel);
 
         if (detailsRoot != null)

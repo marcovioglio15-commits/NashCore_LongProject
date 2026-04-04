@@ -119,6 +119,10 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
                                "Visibility",
                                BuildVisibilitySubSection(panel));
         AddVisualSubSectionTab(panel,
+                               EnemyVisualPresetsPanel.VisualSubSectionType.Outline,
+                               "Outline",
+                               BuildOutlineSubSection(panel));
+        AddVisualSubSectionTab(panel,
                                EnemyVisualPresetsPanel.VisualSubSectionType.DamageFeedback,
                                "Damage Feedback",
                                BuildDamageFeedbackSubSection(panel));
@@ -158,6 +162,7 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         contentHost.Clear();
         contentHost.Add(tabEntry.Content);
         UpdateVisualSubSectionTabStyles(panel);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(contentHost);
     }
     #endregion
 
@@ -178,6 +183,7 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.EnemyManagement.Visual.Section." + sectionTitle);
         container.Add(header);
         detailsSectionContentRoot.Add(container);
         return container;
@@ -191,6 +197,7 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle + " Settings");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.EnemyManagement.Visual.SubSection." + sectionTitle);
         container.Add(header);
         return container;
     }
@@ -287,6 +294,17 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         AddPropertyField(panel, container, visibilityProperty, "enableDistanceCulling", "Enable Distance Culling", "Enable distance-based visual culling while gameplay simulation remains fully active.");
         AddPropertyField(panel, container, visibilityProperty, "maxVisibleDistance", "Max Visible Distance", "Maximum planar distance from player where visuals stay visible. Set to 0 to keep always visible.");
         AddPropertyField(panel, container, visibilityProperty, "visibleDistanceHysteresis", "Visible Distance Hysteresis", "Additional distance band used to avoid visual popping when crossing the culling boundary.");
+        return container;
+    }
+
+    private static VisualElement BuildOutlineSubSection(EnemyVisualPresetsPanel panel)
+    {
+        SerializedProperty outlineProperty = panel.PresetSerializedObject.FindProperty("outline");
+        VisualElement container = CreateSubSectionContainer("Outline");
+
+        AddPropertyField(panel, container, outlineProperty, "enableOutline", "Enable Outline", "When enabled, compatible enemy renderers receive outline property overrides from this preset.");
+        AddPropertyField(panel, container, outlineProperty, "outlineThickness", "Outline Thickness", "Outline thickness written to compatible enemy materials exposing _OutlineThickness.");
+        AddPropertyField(panel, container, outlineProperty, "outlineColor", "Outline Color", "Outline color written to compatible enemy materials exposing _OutlineColor.");
         return container;
     }
 

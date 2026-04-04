@@ -264,6 +264,7 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
         panel.DetailsRoot.Add(panel.DetailSectionContentRoot);
 
         BuildActiveDetailsSection(panel);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(panel.DetailsRoot);
         panel.RefreshActiveStatus();
         EnemyMasterPresetsPanelSidePanelUtility.SyncOpenSidePanels(panel);
     }
@@ -343,17 +344,19 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
         {
             case EnemyMasterPresetsPanel.DetailsSectionType.Metadata:
                 BuildMetadataSection(panel);
-                return;
+                break;
             case EnemyMasterPresetsPanel.DetailsSectionType.SubPresets:
                 BuildSubPresetsSection(panel);
-                return;
+                break;
             case EnemyMasterPresetsPanel.DetailsSectionType.ActivePreset:
                 BuildActivePresetSection(panel);
-                return;
+                break;
             case EnemyMasterPresetsPanel.DetailsSectionType.Navigation:
                 BuildNavigationSection(panel);
-                return;
+                break;
         }
+
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(panel.DetailSectionContentRoot);
     }
 
     /// <summary>
@@ -475,6 +478,7 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.EnemyManagement.Master.Section." + sectionTitle);
         container.Add(header);
         panel.DetailSectionContentRoot.Add(container);
         return container;

@@ -103,6 +103,7 @@ public partial struct EnemyCompanionAnimatorVisualSystem : ISystem
         state.RequireForUpdate<EnemyVisualCompanionAnimator>();
         state.RequireForUpdate<EnemyData>();
         state.RequireForUpdate<EnemyVisualConfig>();
+        state.RequireForUpdate<OutlineVisualConfig>();
         state.RequireForUpdate<EnemyVisualRuntimeState>();
     }
 
@@ -112,9 +113,10 @@ public partial struct EnemyCompanionAnimatorVisualSystem : ISystem
 
         foreach ((RefRO<EnemyData> enemyData,
                   RefRO<EnemyVisualConfig> visualConfig,
+                  RefRO<OutlineVisualConfig> outlineConfig,
                   RefRW<EnemyVisualRuntimeState> visualRuntimeState,
                   Entity enemyEntity)
-                 in SystemAPI.Query<RefRO<EnemyData>, RefRO<EnemyVisualConfig>, RefRW<EnemyVisualRuntimeState>>()
+                 in SystemAPI.Query<RefRO<EnemyData>, RefRO<EnemyVisualConfig>, RefRO<OutlineVisualConfig>, RefRW<EnemyVisualRuntimeState>>()
                              .WithAll<EnemyVisualCompanionAnimator, EnemyActive>()
                              .WithEntityAccess())
         {
@@ -155,6 +157,11 @@ public partial struct EnemyCompanionAnimatorVisualSystem : ISystem
                 ApplyAnimatorVisibilityPriorityDelta(animator, previousVisibilityPriorityTier, targetVisibilityPriorityTier);
                 currentVisualRuntimeState.AppliedVisibilityPriorityTier = targetVisibilityPriorityTier;
             }
+
+            ManagedOutlineRendererUtility.ApplyToAnimator(animator,
+                                                         outlineConfig.ValueRO.Enabled != 0,
+                                                         DamageFlashRuntimeUtility.ToManagedColor(outlineConfig.ValueRO.Color),
+                                                         outlineConfig.ValueRO.Thickness);
 
             bool shouldBeVisible = currentVisualRuntimeState.IsVisible != 0;
 

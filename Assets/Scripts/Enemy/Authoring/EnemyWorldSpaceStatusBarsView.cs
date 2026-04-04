@@ -60,6 +60,7 @@ public sealed class EnemyWorldSpaceStatusBarsView : MonoBehaviour
     private bool visibilityStateInitialized;
     private bool enemyActiveStateInitialized;
     private bool lastEnemyActiveState;
+    private bool pendingImmediateValueRefresh;
     private Canvas cachedCanvas;
     private Camera lastAssignedWorldCamera;
     #endregion
@@ -149,14 +150,43 @@ public sealed class EnemyWorldSpaceStatusBarsView : MonoBehaviour
 
     public void SyncFromRuntime(float healthNormalized, float shieldNormalized, bool enemyActive, bool enemyVisible, float deltaTime)
     {
-        float targetHealthNormalized = Mathf.Clamp01(healthNormalized);
-        float targetShieldNormalized = Mathf.Clamp01(shieldNormalized);
-        bool forceImmediateUpdate = ResolveImmediateRefresh(enemyActive);
-        UpdateDisplayedValues(targetHealthNormalized, targetShieldNormalized, deltaTime, forceImmediateUpdate);
+        SyncVisibilityState(enemyActive, enemyVisible);
+        SyncDisplayedValues(healthNormalized, shieldNormalized, deltaTime);
+    }
+
+    /// <summary>
+    /// Updates the visibility state of the widget without re-sampling health or shield values.
+    /// /params enemyActive Whether the owning enemy is currently active.
+    /// /params enemyVisible Whether the owning enemy is currently visible after presentation culling.
+    /// /returns None.
+    /// </summary>
+    public void SyncVisibilityState(bool enemyActive, bool enemyVisible)
+    {
+        if (ResolveImmediateRefresh(enemyActive))
+            pendingImmediateValueRefresh = true;
 
         bool shouldDisplayBars = ResolveBarVisibility(enemyActive, enemyVisible);
         ApplyVisibility(shouldDisplayBars);
         ApplyFillValues(shouldDisplayBars);
+    }
+
+    /// <summary>
+    /// Updates displayed health and shield values while preserving the current visibility state.
+    /// /params healthNormalized Target normalized health value.
+    /// /params shieldNormalized Target normalized shield value.
+    /// /params deltaTime Presentation delta time used for smoothing.
+    /// /returns None.
+    /// </summary>
+    public void SyncDisplayedValues(float healthNormalized, float shieldNormalized, float deltaTime)
+    {
+        float targetHealthNormalized = Mathf.Clamp01(healthNormalized);
+        float targetShieldNormalized = Mathf.Clamp01(shieldNormalized);
+        bool forceImmediateUpdate = pendingImmediateValueRefresh;
+        pendingImmediateValueRefresh = false;
+        UpdateDisplayedValues(targetHealthNormalized, targetShieldNormalized, deltaTime, forceImmediateUpdate);
+
+        bool isVisible = visibilityStateInitialized ? lastVisibilityState : true;
+        ApplyFillValues(isVisible);
     }
     #endregion
 

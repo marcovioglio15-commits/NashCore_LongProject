@@ -27,6 +27,7 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
         Label header = new Label("Preset Details");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.Progression.Metadata.PresetDetails");
         panel.sectionContentRoot.Add(header);
 
         SerializedProperty idProperty = panel.presetSerializedObject.FindProperty("presetId");

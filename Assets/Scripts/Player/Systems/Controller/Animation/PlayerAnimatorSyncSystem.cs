@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -13,13 +12,8 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
 {
     #region Constants
     private const float DirectionEpsilon = 1e-6f;
-    private const string OutlineShaderName = "Cel Shader/Toon Outline ECS";
-    private const string OutlineShaderFallbackName = "Cel Shader/Toon Outline";
-    private const float OutlineThicknessDefault = 5f;
     private static readonly float3 DefaultForward = new float3(0f, 0f, 1f);
     private static readonly float3 WorldUp = new float3(0f, 1f, 0f);
-    private static readonly HashSet<int> outlineAppliedAnimatorInstanceIds = new HashSet<int>(4);
-    private static Material outlineMaterialInstance;
     private byte loggedNoAnimatorEntityWarning;
     private byte loggedMissingAnimatorComponentWarning;
     private byte loggedNullAnimatorWarning;
@@ -33,22 +27,17 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
     {
         state.RequireForUpdate<PlayerAnimatorParameterConfig>();
         state.RequireForUpdate<PlayerAnimatorRuntimeState>();
+        state.RequireForUpdate<OutlineVisualConfig>();
         loggedNoAnimatorEntityWarning = 0;
         loggedMissingAnimatorComponentWarning = 0;
         loggedNullAnimatorWarning = 0;
         loggedMissingStateWarning = 0;
-        outlineAppliedAnimatorInstanceIds.Clear();
     }
 
     public void OnDestroy(ref SystemState state)
     {
-        outlineAppliedAnimatorInstanceIds.Clear();
-
-        if (outlineMaterialInstance == null)
-            return;
-
-        Object.Destroy(outlineMaterialInstance);
-        outlineMaterialInstance = null;
+        ManagedOutlineRendererUtility.ClearCache();
+        PlayerOutlineRuntimeMaterialSyncUtility.ClearCache();
     }
 
     public void OnUpdate(ref SystemState state)
@@ -67,9 +56,11 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
         int processedAnimatorEntities = 0;
 
         foreach ((RefRW<PlayerAnimatorParameterConfig> parameterConfig,
+                  RefRO<OutlineVisualConfig> outlineConfig,
                   RefRW<PlayerAnimatorRuntimeState> animatorRuntimeState,
                   Entity entity)
                  in SystemAPI.Query<RefRW<PlayerAnimatorParameterConfig>,
+                                    RefRO<OutlineVisualConfig>,
                                     RefRW<PlayerAnimatorRuntimeState>>()
                              .WithEntityAccess())
         {
@@ -126,7 +117,8 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
                                        ref animatorRuntimeState.ValueRW);
 
             EnsureAnimatorRuntimeSettings(animator, ref animatorRuntimeState.ValueRW);
-            EnsureAnimatorOutlineMaterial(animator);
+            PlayerOutlineRuntimeMaterialSyncUtility.ApplyFromOutlineConfig(in outlineConfig.ValueRO);
+            EnsureAnimatorOutline(animator, in outlineConfig.ValueRO);
 
             if (animator.enabled == false)
                 animator.enabled = true;
@@ -469,107 +461,15 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
         runtimeState.Initialized = 1;
     }
 
-    private static void EnsureAnimatorOutlineMaterial(Animator animator)
+    private static void EnsureAnimatorOutline(Animator animator, in OutlineVisualConfig outlineConfig)
     {
         if (animator == null)
             return;
 
-        int animatorInstanceId = animator.GetInstanceID();
-
-        if (outlineAppliedAnimatorInstanceIds.Contains(animatorInstanceId))
-            return;
-
-        Material outlineMaterial = ResolveOutlineMaterial();
-
-        if (outlineMaterial == null)
-            return;
-
-        Renderer[] childRenderers = animator.GetComponentsInChildren<Renderer>(true);
-        bool wasOutlineApplied = false;
-
-        for (int rendererIndex = 0; rendererIndex < childRenderers.Length; rendererIndex++)
-        {
-            Renderer childRenderer = childRenderers[rendererIndex];
-
-            if (childRenderer == null)
-                continue;
-
-            Material[] sharedMaterials = childRenderer.sharedMaterials;
-
-            if (sharedMaterials == null || sharedMaterials.Length == 0)
-                continue;
-
-            if (ContainsOutlineMaterial(sharedMaterials))
-            {
-                wasOutlineApplied = true;
-                continue;
-            }
-
-            Material[] expandedMaterials = new Material[sharedMaterials.Length + 1];
-
-            for (int materialIndex = 0; materialIndex < sharedMaterials.Length; materialIndex++)
-                expandedMaterials[materialIndex] = sharedMaterials[materialIndex];
-
-            expandedMaterials[sharedMaterials.Length] = outlineMaterial;
-            childRenderer.sharedMaterials = expandedMaterials;
-            wasOutlineApplied = true;
-        }
-
-        if (wasOutlineApplied)
-            outlineAppliedAnimatorInstanceIds.Add(animatorInstanceId);
-    }
-
-    private static bool ContainsOutlineMaterial(Material[] materials)
-    {
-        if (materials == null || materials.Length == 0)
-            return false;
-
-        for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
-        {
-            Material material = materials[materialIndex];
-
-            if (material == null)
-                continue;
-
-            Shader shader = material.shader;
-
-            if (shader == null)
-                continue;
-
-            if (string.Equals(shader.name, OutlineShaderName, System.StringComparison.Ordinal))
-                return true;
-
-            if (string.Equals(shader.name, OutlineShaderFallbackName, System.StringComparison.Ordinal))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static Material ResolveOutlineMaterial()
-    {
-        if (outlineMaterialInstance != null)
-            return outlineMaterialInstance;
-
-        Shader outlineShader = Shader.Find(OutlineShaderName);
-
-        if (outlineShader == null)
-            outlineShader = Shader.Find(OutlineShaderFallbackName);
-
-        if (outlineShader == null)
-            return null;
-
-        outlineMaterialInstance = new Material(outlineShader);
-        outlineMaterialInstance.name = "M_RuntimePlayerOutline_Auto";
-        outlineMaterialInstance.enableInstancing = true;
-
-        if (outlineMaterialInstance.HasProperty("_OutlineThickness"))
-            outlineMaterialInstance.SetFloat("_OutlineThickness", OutlineThicknessDefault);
-
-        if (outlineMaterialInstance.HasProperty("_OutlineColor"))
-            outlineMaterialInstance.SetColor("_OutlineColor", Color.black);
-
-        return outlineMaterialInstance;
+        ManagedOutlineRendererUtility.ApplyToAnimator(animator,
+                                                     outlineConfig.Enabled != 0,
+                                                     DamageFlashRuntimeUtility.ToManagedColor(outlineConfig.Color),
+                                                     outlineConfig.Thickness);
     }
 
     private static float2 ResolveLocalMoveDirection(in PlayerMovementState movementState,

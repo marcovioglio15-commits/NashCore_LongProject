@@ -321,6 +321,7 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
         panel.DetailsRoot.Add(panel.DetailSectionContentRoot);
 
         BuildActiveDetailsSection(panel);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(panel.DetailsRoot);
         panel.RefreshActiveStatus();
         PlayerMasterPresetsPanelSidePanelUtility.SyncOpenSidePanels(panel);
     }
@@ -404,20 +405,22 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
         {
             case PlayerMasterPresetsPanel.DetailsSectionType.Metadata:
                 BuildMetadataSection(panel);
-                return;
+                break;
             case PlayerMasterPresetsPanel.DetailsSectionType.SubPresets:
                 BuildSubPresetsSection(panel);
-                return;
+                break;
             case PlayerMasterPresetsPanel.DetailsSectionType.ActivePreset:
                 BuildActivePresetSection(panel);
-                return;
+                break;
             case PlayerMasterPresetsPanel.DetailsSectionType.Navigation:
                 BuildNavigationSection(panel);
-                return;
+                break;
             case PlayerMasterPresetsPanel.DetailsSectionType.Layers:
                 BuildLayersSection(panel);
-                return;
+                break;
         }
+
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(panel.DetailSectionContentRoot);
     }
 
     /// <summary>
@@ -663,6 +666,7 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.Master.Section." + sectionTitle);
         container.Add(header);
         panel.DetailSectionContentRoot.Add(container);
         return container;

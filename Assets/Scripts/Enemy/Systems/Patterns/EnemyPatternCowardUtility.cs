@@ -14,6 +14,7 @@ public static class EnemyPatternCowardUtility
     private const float PatrolMinimumRadius = 0.5f;
     private const float PatrolLooseAnchorMultiplier = 1.65f;
     private const float PatrolRetargetRadiusMultiplier = 1.15f;
+    private const float ImmediateRetreatAlignmentThreshold = 0.18f;
     #endregion
 
     #region Methods
@@ -323,18 +324,35 @@ public static class EnemyPatternCowardUtility
                                                                                                   in navigationGridState,
                                                                                                   navigationCells,
                                                                                                   immediateVelocity);
-            return EnemyPatternCowardMovementUtility.ResolveWallAwareVelocity(enemyEntity,
-                                                                              enemyPosition,
-                                                                              immediateVelocity,
-                                                                              bodyRadius,
-                                                                              minimumWallDistance,
-                                                                              desiredSpeed,
-                                                                              in physicsWorldSingleton,
-                                                                              wallsLayerMask,
-                                                                              wallsEnabled);
+            immediateVelocity = EnemyPatternCowardMovementUtility.ResolveWallAwareVelocity(enemyEntity,
+                                                                                           enemyPosition,
+                                                                                           immediateVelocity,
+                                                                                           bodyRadius,
+                                                                                           minimumWallDistance,
+                                                                                           desiredSpeed,
+                                                                                           in physicsWorldSingleton,
+                                                                                           wallsLayerMask,
+                                                                                           wallsEnabled);
+
+            float3 immediateDirection = math.normalizesafe(immediateVelocity, float3.zero);
+            float3 targetDirection = math.normalizesafe(selectedTarget - enemyPosition, float3.zero);
+            float immediateAlignment = math.dot(immediateDirection, targetDirection);
+
+            if (math.lengthsq(immediateVelocity) > DirectionEpsilon &&
+                immediateAlignment >= ImmediateRetreatAlignmentThreshold)
+            {
+                return immediateVelocity;
+            }
+
+            patternRuntimeState.WanderHasTarget = 0;
+            patternRuntimeState.WanderRetryTimer = math.max(patternRuntimeState.WanderRetryTimer,
+                                                            EnemyPatternCowardSharedUtility.ResolveDecisionCooldown(enemyEntity,
+                                                                                                                   0.02f,
+                                                                                                                   0.05f));
+            return retreatFallbackVelocity;
         }
 
-        patternRuntimeState.WanderRetryTimer = math.max(0f, patternConfig.BasicBlockedPathRetryDelay);
+        patternRuntimeState.WanderRetryTimer = math.max(0.02f, patternConfig.BasicBlockedPathRetryDelay * 0.6f);
         patternRuntimeState.WanderWaitTimer = math.max(patternRuntimeState.WanderWaitTimer,
                                                        EnemyPatternCowardSharedUtility.ResolveDecisionCooldown(enemyEntity, 0.05f, 0.1f));
         return retreatFallbackVelocity;

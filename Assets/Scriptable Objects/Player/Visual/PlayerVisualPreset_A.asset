@@ -20,6 +20,10 @@ MonoBehaviour:
   spawnRuntimeVisualBridgeWhenAnimatorMissing: 1
   runtimeVisualBridgeSyncRotation: 1
   runtimeVisualBridgeOffset: {x: 0, y: 0, z: 0}
+  outline:
+    enableOutline: 1
+    outlineThickness: 5.607
+    outlineColor: {r: 0, g: 0, b: 0, a: 1}
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   damageFlashDurationSeconds: 0.7
   damageFlashMaximumBlend: 10

@@ -17,6 +17,7 @@ public static class PlayerPowerUpsPresetsPanelMetadataUtility
         Label header = new Label("Preset Details");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.PowerUps.Metadata.PresetDetails");
         panel.sectionContentRoot.Add(header);
 
         SerializedProperty presetIdProperty = panel.presetSerializedObject.FindProperty("presetId");
@@ -76,6 +77,7 @@ public static class PlayerPowerUpsPresetsPanelMetadataUtility
         Label header = new Label("Drop Pools & Tiers");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.PowerUps.Metadata.DropPoolsAndTiers");
         panel.sectionContentRoot.Add(header);
 
         SerializedProperty dropPoolsProperty = panel.presetSerializedObject.FindProperty("dropPools");

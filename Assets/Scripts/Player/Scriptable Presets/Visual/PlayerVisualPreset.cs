@@ -3,6 +3,77 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
+/// Stores player outline presentation settings applied to managed renderers.
+/// returns None.
+/// </summary>
+[Serializable]
+public sealed class PlayerVisualOutlineSettings
+{
+    #region Constants
+    private const float MinimumOutlineThickness = 0f;
+    private const float MaximumOutlineThickness = 10f;
+    #endregion
+
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("When enabled, compatible player renderers receive outline property overrides from this preset.")]
+    [SerializeField] private bool enableOutline = true;
+
+    [Tooltip("Outline thickness written to compatible player materials exposing _OutlineThickness. Matches the shader authoring range 0-10.")]
+    [Range(MinimumOutlineThickness, MaximumOutlineThickness)]
+    [SerializeField] private float outlineThickness = 1f;
+
+    [Tooltip("Outline color written to compatible player materials exposing _OutlineColor.")]
+    [SerializeField] private Color outlineColor = Color.black;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public bool EnableOutline
+    {
+        get
+        {
+            return enableOutline;
+        }
+    }
+
+    public float OutlineThickness
+    {
+        get
+        {
+            return outlineThickness;
+        }
+    }
+
+    public Color OutlineColor
+    {
+        get
+        {
+            return outlineColor;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Validates outline authored values after inspector edits.
+    /// None.
+    /// returns None.
+    /// </summary>
+    public void Validate()
+    {
+        outlineColor.a = Mathf.Clamp01(outlineColor.a);
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
 /// Stores runtime bridge, damage feedback and player-facing power-up VFX settings shared by one visual setup.
 /// returns None.
 /// </summary>
@@ -37,6 +108,10 @@ public sealed class PlayerVisualPreset : ScriptableObject
 
     [Tooltip("Local-space position offset applied to the runtime visual bridge relative to the ECS player transform.")]
     [SerializeField] private Vector3 runtimeVisualBridgeOffset = Vector3.zero;
+
+    [Header("Outline")]
+    [Tooltip("Outline settings applied to compatible player renderers.")]
+    [SerializeField] private PlayerVisualOutlineSettings outline = new PlayerVisualOutlineSettings();
 
     [Header("Damage Feedback")]
     [Tooltip("Tint color applied during the brief damage flash after the player receives valid damage.")]
@@ -138,6 +213,14 @@ public sealed class PlayerVisualPreset : ScriptableObject
         get
         {
             return runtimeVisualBridgeOffset;
+        }
+    }
+
+    public PlayerVisualOutlineSettings Outline
+    {
+        get
+        {
+            return outline;
         }
     }
 
@@ -270,9 +353,13 @@ public sealed class PlayerVisualPreset : ScriptableObject
         if (string.IsNullOrWhiteSpace(presetId))
             presetId = Guid.NewGuid().ToString("N");
 
+        if (outline == null)
+            outline = new PlayerVisualOutlineSettings();
+
         if (elementalEnemyVfxByElement == null)
             elementalEnemyVfxByElement = new List<ElementalVfxByElementData>();
 
+        outline.Validate();
         PlayerElementalVfxAssignmentUtility.ValidateAssignments(elementalEnemyVfxByElement);
     }
     #endregion

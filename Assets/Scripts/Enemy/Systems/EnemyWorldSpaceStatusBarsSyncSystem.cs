@@ -154,13 +154,13 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
                              .WithAll<EnemyActive>()
                              .WithEntityAccess())
         {
+            bool shouldUpdateRuntimeValues = true;
+
             if (canEvaluateDistanceLod)
             {
                 float3 enemyWorldPosition = enemyTransform.ValueRO.Position;
                 StatusBarsLodLevel lodLevel = EvaluateStatusBarsLod(cameraPosition, enemyWorldPosition);
-
-                if (!ShouldUpdateStatusBarsLod(lodLevel, frameCount, enemyEntity.Index))
-                    continue;
+                shouldUpdateRuntimeValues = ShouldUpdateStatusBarsLod(lodLevel, frameCount, enemyEntity.Index);
             }
 
             EnemyWorldSpaceStatusBarsRuntimeLink currentRuntimeLink = runtimeLink.ValueRO;
@@ -188,6 +188,11 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
             float3 enemyPositionFloat3 = enemyTransform.ValueRO.Position;
             Vector3 enemyPosition = new Vector3(enemyPositionFloat3.x, enemyPositionFloat3.y, enemyPositionFloat3.z);
             statusBarsView.SyncWorldPose(enemyPosition, mainCameraTransform);
+            bool enemyVisible = visualRuntimeState.ValueRO.IsVisible != 0;
+            statusBarsView.SyncVisibilityState(true, enemyVisible);
+
+            if (!shouldUpdateRuntimeValues)
+                continue;
 
             EnemyHealth healthState = enemyHealth.ValueRO;
             float normalizedHealth = 0f;
@@ -199,13 +204,7 @@ public partial struct EnemyWorldSpaceStatusBarsSyncSystem : ISystem
 
             if (healthState.MaxShield > 0f)
                 normalizedShield = math.clamp(healthState.CurrentShield / healthState.MaxShield, 0f, 1f);
-
-            bool enemyVisible = visualRuntimeState.ValueRO.IsVisible != 0;
-            statusBarsView.SyncFromRuntime(normalizedHealth,
-                                           normalizedShield,
-                                           true,
-                                           enemyVisible,
-                                           deltaTime);
+            statusBarsView.SyncDisplayedValues(normalizedHealth, normalizedShield, deltaTime);
         }
     }
 

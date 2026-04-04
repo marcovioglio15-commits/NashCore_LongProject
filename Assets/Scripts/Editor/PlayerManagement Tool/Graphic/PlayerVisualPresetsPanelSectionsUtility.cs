@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -119,6 +120,10 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
                                "Runtime Bridge",
                                BuildRuntimeBridgeSubSection(panel));
         AddVisualSubSectionTab(panel,
+                               PlayerVisualPresetsPanel.VisualSubSectionType.Outline,
+                               "Outline",
+                               BuildOutlineSubSection(panel));
+        AddVisualSubSectionTab(panel,
                                PlayerVisualPresetsPanel.VisualSubSectionType.DamageFeedback,
                                "Damage Feedback",
                                BuildDamageFeedbackSubSection(panel));
@@ -154,6 +159,7 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
         contentHost.Clear();
         contentHost.Add(tabEntry.Content);
         UpdateVisualSubSectionTabStyles(panel);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(contentHost);
     }
     #endregion
 
@@ -174,6 +180,7 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle);
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.Visual.Section." + sectionTitle);
         container.Add(header);
         detailsSectionContentRoot.Add(container);
         return container;
@@ -187,6 +194,7 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
         Label header = new Label(sectionTitle + " Settings");
         header.style.unityFontStyleAndWeight = FontStyle.Bold;
         header.style.marginBottom = 4f;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(header, "NashCore.PlayerManagement.Visual.SubSection." + sectionTitle);
         container.Add(header);
         return container;
     }
@@ -195,7 +203,8 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
                                          VisualElement target,
                                          SerializedProperty property,
                                          string label,
-                                         string tooltip)
+                                         string tooltip,
+                                         Action changedCallback = null)
     {
         if (panel == null)
             return;
@@ -210,6 +219,9 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
         {
             PlayerManagementDraftSession.MarkDirty();
             panel.RefreshPresetList();
+
+            if (changedCallback != null)
+                changedCallback();
         });
         target.Add(propertyField);
     }
@@ -285,6 +297,35 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
                          presetSerializedObject.FindProperty("runtimeVisualBridgeOffset"),
                          "Runtime Visual Bridge Offset",
                          "Local-space offset applied to the runtime visual bridge relative to the ECS player transform.");
+        return container;
+    }
+
+    private static VisualElement BuildOutlineSubSection(PlayerVisualPresetsPanel panel)
+    {
+        VisualElement container = CreateSubSectionContainer("Outline");
+        SerializedObject presetSerializedObject = panel.PresetSerializedObject;
+        SerializedProperty outlineProperty = presetSerializedObject.FindProperty("outline");
+        Action outlineChangedCallback = () => ApplySelectedPlayerOutlineMaterial(panel);
+
+        AddPropertyField(panel,
+                         container,
+                         outlineProperty != null ? outlineProperty.FindPropertyRelative("enableOutline") : null,
+                         "Enable Outline",
+                         "When enabled, compatible player renderers receive outline property overrides from this preset.",
+                         outlineChangedCallback);
+        AddPropertyField(panel,
+                         container,
+                         outlineProperty != null ? outlineProperty.FindPropertyRelative("outlineThickness") : null,
+                         "Outline Thickness",
+                         "Outline thickness written to compatible player materials exposing _OutlineThickness.",
+                         outlineChangedCallback);
+        AddPropertyField(panel,
+                         container,
+                         outlineProperty != null ? outlineProperty.FindPropertyRelative("outlineColor") : null,
+                         "Outline Color",
+                         "Outline color written to compatible player materials exposing _OutlineColor.",
+                         outlineChangedCallback);
+        ApplySelectedPlayerOutlineMaterial(panel);
         return container;
     }
 
@@ -373,6 +414,29 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
                          "Refresh Attached Elemental VFX Lifetime On Cap Hit",
                          "When enabled, hitting the attached-target cap refreshes lifetime of the existing VFX.");
         return container;
+    }
+
+    /// <summary>
+    /// Applies the currently selected player visual preset outline values to the runtime outline material preview used by the player renderer feature.
+    /// /params panel Owning player visual preset panel providing the selected preset context.
+    /// /returns None.
+    /// </summary>
+    private static void ApplySelectedPlayerOutlineMaterial(PlayerVisualPresetsPanel panel)
+    {
+        if (panel == null)
+            return;
+
+        SerializedObject presetSerializedObject = panel.PresetSerializedObject;
+
+        if (presetSerializedObject == null)
+            return;
+
+        PlayerVisualPreset selectedPreset = presetSerializedObject.targetObject as PlayerVisualPreset;
+
+        if (selectedPreset == null)
+            return;
+
+        PlayerOutlineRuntimeMaterialSyncUtility.ApplyFromPreset(selectedPreset);
     }
     #endregion
 

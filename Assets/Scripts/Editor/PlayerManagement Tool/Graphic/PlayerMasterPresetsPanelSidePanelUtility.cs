@@ -276,6 +276,7 @@ internal static class PlayerMasterPresetsPanelSidePanelUtility
 
         Label title = new Label(GetPanelTitle(panelType));
         title.style.unityFontStyleAndWeight = FontStyle.Bold;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(title, "NashCore.PlayerManagement.SidePanel." + GetPanelTitle(panelType));
         headerRow.Add(title);
 
         Button closeButton = new Button(() => CloseSidePanel(panel, panelType));

@@ -15,6 +15,8 @@ public static class EnemyPatternCowardMovementUtility
     private const float PathBlockedAllowanceRatio = 0.94f;
     private const float WallProbeSeconds = 0.28f;
     private const float MinimumWallProbeDistance = 0.45f;
+    private const float TargetAlignmentRepathThreshold = 0.18f;
+    private const float DeadlockVelocityThreshold = 0.18f;
     #endregion
 
     #region Methods
@@ -118,7 +120,8 @@ public static class EnemyPatternCowardMovementUtility
                                                    wallsEnabled);
 
         float resolvedSteeringAggressiveness = EnemyPatternWandererMovementUtility.ResolveSteeringAggressiveness(steeringAggressiveness);
-        float minimumEnemyClearance = math.max(0f, patternConfig.BasicMinimumEnemyClearance);
+        float minimumEnemyClearance = EnemyPatternCowardSharedUtility.ResolveRetreatEnemyClearance(bodyRadius,
+                                                                                                   patternConfig.BasicMinimumEnemyClearance);
         float predictionTime = math.max(ClearancePredictionMinimumSeconds, patternConfig.BasicTrajectoryPredictionTime);
 
         if (EnemyPatternWandererMovementUtility.ShouldYieldToNeighbor(enemyEntity,
@@ -166,6 +169,33 @@ public static class EnemyPatternCowardMovementUtility
             patternRuntimeState.WanderRetryTimer = math.max(patternRuntimeState.WanderRetryTimer, yieldRetrySeconds);
             resolvedVelocity = float3.zero;
             return true;
+        }
+
+        float3 towardTargetDirection = math.normalizesafe(toTarget, float3.zero);
+
+        if (math.lengthsq(towardTargetDirection) > DirectionEpsilon)
+        {
+            float3 resolvedDirection = math.normalizesafe(desiredVelocity, float3.zero);
+            float targetAlignment = math.dot(resolvedDirection, towardTargetDirection);
+            bool targetDirectionBroken = targetAlignment < TargetAlignmentRepathThreshold;
+            bool targetDeadlocked = math.lengthsq(desiredVelocity) < desiredSpeed * desiredSpeed * DeadlockVelocityThreshold * DeadlockVelocityThreshold;
+
+            if (targetDirectionBroken || targetDeadlocked)
+            {
+                patternRuntimeState.WanderHasTarget = 0;
+                patternRuntimeState.WanderWaitTimer = math.max(patternRuntimeState.WanderWaitTimer,
+                                                               EnemyPatternCowardSharedUtility.ResolveDecisionCooldown(enemyEntity,
+                                                                                                                      0.02f,
+                                                                                                                      0.05f));
+
+                if (math.lengthsq(retryFallbackVelocity) > DirectionEpsilon)
+                {
+                    resolvedVelocity = retryFallbackVelocity;
+                    return true;
+                }
+
+                return false;
+            }
         }
 
         resolvedVelocity = desiredVelocity;
@@ -409,14 +439,21 @@ public static class EnemyPatternCowardMovementUtility
         if (blockedRatio <= DirectionEpsilon)
             return correctedVelocity;
 
-        float3 slideVelocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(correctedVelocity, hitNormal);
+        float3 escapeWallNormal = hitNormal;
+
+        if (violatesCurrentClearance)
+            escapeWallNormal = math.normalizesafe(currentWallNormal + hitNormal, hitNormal);
+
+        float3 slideVelocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(correctedVelocity, escapeWallNormal);
         float3 slideDirection = math.normalizesafe(slideVelocity, float3.zero);
 
         if (math.lengthsq(slideDirection) <= DirectionEpsilon)
-            slideDirection = EnemyPatternCowardSharedUtility.ResolveWallTangentDirection(enemyEntity, hitNormal);
+            slideDirection = EnemyPatternCowardSharedUtility.ResolveWallTangentDirection(enemyEntity, escapeWallNormal);
 
-        float3 wallNormalDirection = math.normalizesafe(new float3(hitNormal.x, 0f, hitNormal.z), float3.zero);
-        float normalBias = 0.28f + blockedRatio * 1.15f;
+        float3 wallNormalDirection = math.normalizesafe(new float3(escapeWallNormal.x, 0f, escapeWallNormal.z), float3.zero);
+        float normalBias = violatesCurrentClearance
+            ? 0.2f + blockedRatio * 0.72f
+            : 0.28f + blockedRatio * 1.15f;
         float3 blendedDirection = math.normalizesafe(slideDirection + wallNormalDirection * normalBias,
                                                      wallNormalDirection);
         return blendedDirection * desiredSpeed;
@@ -447,11 +484,13 @@ public static class EnemyPatternCowardMovementUtility
                                                   float3 baseVelocity,
                                                   in EnemyPatternWandererUtility.OccupancyContext occupancyContext)
     {
+        float effectiveMinimumEnemyClearance = EnemyPatternCowardSharedUtility.ResolveRetreatEnemyClearance(bodyRadius,
+                                                                                                             minimumEnemyClearance);
         float3 clearanceVelocity = EnemyPatternWandererUtility.ResolveLocalClearanceVelocity(enemyEntity,
                                                                                              selfPriorityTier,
                                                                                              enemyPosition,
                                                                                              bodyRadius,
-                                                                                             minimumEnemyClearance,
+                                                                                             effectiveMinimumEnemyClearance,
                                                                                              desiredSpeed,
                                                                                              steeringAggressiveness,
                                                                                              out float _,

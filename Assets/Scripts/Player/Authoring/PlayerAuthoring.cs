@@ -11,6 +11,11 @@ using UnityEngine.Serialization;
 [DisallowMultipleComponent]
 public sealed class PlayerAuthoring : MonoBehaviour
 {
+    #region Constants
+    private const float DefaultOutlineThickness = 1f;
+    private static readonly Color DefaultOutlineColor = Color.black;
+    #endregion
+
     #region Fields
 
     #region Serialized Fields
@@ -165,6 +170,45 @@ public sealed class PlayerAuthoring : MonoBehaviour
         get
         {
             return PlayerAuthoringVisualPresetResolverUtility.ResolveRuntimeVisualBridgeOffset(masterPreset, runtimeVisualBridgeOffset);
+        }
+    }
+
+    public bool EnableOutline
+    {
+        get
+        {
+            PlayerVisualOutlineSettings settings = PlayerAuthoringVisualPresetResolverUtility.ResolveOutlineSettings(masterPreset);
+
+            if (settings == null)
+                return true;
+
+            return settings.EnableOutline;
+        }
+    }
+
+    public float OutlineThickness
+    {
+        get
+        {
+            PlayerVisualOutlineSettings settings = PlayerAuthoringVisualPresetResolverUtility.ResolveOutlineSettings(masterPreset);
+
+            if (settings == null)
+                return DefaultOutlineThickness;
+
+            return settings.OutlineThickness;
+        }
+    }
+
+    public Color OutlineColor
+    {
+        get
+        {
+            PlayerVisualOutlineSettings settings = PlayerAuthoringVisualPresetResolverUtility.ResolveOutlineSettings(masterPreset);
+
+            if (settings == null)
+                return DefaultOutlineColor;
+
+            return settings.OutlineColor;
         }
     }
 
@@ -326,6 +370,8 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         // Validate authoring data
         if (authoring == null)
             return;
+
+        DeclarePresetDependencies(authoring);
 
         PlayerControllerPreset controllerPreset = authoring.GetControllerPreset();
 
@@ -510,6 +556,12 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                         authoring.RuntimeVisualBridgeOffset.z),
             SyncRotation = authoring.RuntimeVisualBridgeSyncRotation ? (byte)1 : (byte)0,
             SpawnWhenAnimatorMissing = authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing ? (byte)1 : (byte)0
+        });
+        AddComponent(entity, new OutlineVisualConfig
+        {
+            Enabled = authoring.EnableOutline ? (byte)1 : (byte)0,
+            Thickness = math.max(0f, authoring.OutlineThickness),
+            Color = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.OutlineColor)
         });
         AddComponent(entity, new DamageFlashConfig
         {
@@ -702,6 +754,42 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
     #endregion
 
     #region Bake Helpers
+    /// <summary>
+    /// Declares preset dependencies consumed by this baker so editing preset assets triggers a player rebake.
+    /// /params authoring Source authoring component used to resolve all preset references.
+    /// /returns None.
+    /// </summary>
+    private void DeclarePresetDependencies(PlayerAuthoring authoring)
+    {
+        if (authoring == null)
+            return;
+
+        PlayerMasterPreset masterPreset = authoring.MasterPreset;
+
+        if (masterPreset != null)
+        {
+            DependsOn(masterPreset);
+
+            if (masterPreset.ControllerPreset != null)
+                DependsOn(masterPreset.ControllerPreset);
+
+            if (masterPreset.ProgressionPreset != null)
+                DependsOn(masterPreset.ProgressionPreset);
+
+            if (masterPreset.PowerUpsPreset != null)
+                DependsOn(masterPreset.PowerUpsPreset);
+
+            if (masterPreset.VisualPreset != null)
+                DependsOn(masterPreset.VisualPreset);
+
+            if (masterPreset.AnimationBindingsPreset != null)
+                DependsOn(masterPreset.AnimationBindingsPreset);
+        }
+
+        if (authoring.PowerUpsCheatPresetLibrary != null)
+            DependsOn(authoring.PowerUpsCheatPresetLibrary);
+    }
+
     /// <summary>
     /// Resolves one prefab asset as a dynamic ECS prefab entity for power-up bake helpers.
     /// prefab: Prefab asset to resolve.

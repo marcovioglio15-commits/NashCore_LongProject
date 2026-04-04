@@ -19,6 +19,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
     #region Fields
     private readonly VisualElement root;
     private readonly List<EnemyAdvancedPatternPreset> filteredPresets = new List<EnemyAdvancedPatternPreset>();
+    private readonly EnemyAdvancedPatternSharedPresetViewState sharedPresetViewState = new EnemyAdvancedPatternSharedPresetViewState();
 
     private EnemyAdvancedPatternPresetLibrary library;
     private ListView listView;
@@ -62,6 +63,14 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         get
         {
             return detailsSectionContentRoot;
+        }
+    }
+
+    internal EnemyAdvancedPatternSharedPresetViewState SharedPresetViewState
+    {
+        get
+        {
+            return sharedPresetViewState;
         }
     }
     #endregion
@@ -469,6 +478,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         detailsRoot.Add(detailsSectionContentRoot);
 
         BuildActiveDetailsSection();
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(detailsRoot);
     }
 
     private VisualElement BuildDetailsSectionButtons()
@@ -479,8 +489,7 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         buttonsRoot.style.marginBottom = 6f;
 
         AddDetailsSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
-        AddDetailsSectionButton(buttonsRoot, SectionType.ModulesDefinition, "Modules Definition");
-        AddDetailsSectionButton(buttonsRoot, SectionType.PatternAssemble, "Pattern Assemble");
+        AddDetailsSectionButton(buttonsRoot, SectionType.ModulesAndPatternsPreset, "Modules & Patterns Preset");
         AddDetailsSectionButton(buttonsRoot, SectionType.PatternLoadout, "Pattern Loadout");
         return buttonsRoot;
     }
@@ -532,20 +541,18 @@ public sealed class EnemyAdvancedPatternPresetsPanel
         {
             case SectionType.Metadata:
                 EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildMetadataSection(this);
-                return;
+                break;
 
-            case SectionType.ModulesDefinition:
-                EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildModulesDefinitionSection(this);
-                return;
-
-            case SectionType.PatternAssemble:
-                EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildPatternAssembleSection(this);
-                return;
+            case SectionType.ModulesAndPatternsPreset:
+                EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildModulesAndPatternsPresetSection(this);
+                break;
 
             case SectionType.PatternLoadout:
                 EnemyAdvancedPatternPresetsPanelSectionsUtility.BuildPatternLoadoutSection(this);
-                return;
+                break;
         }
+
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(detailsSectionContentRoot);
     }
 
     internal void RegeneratePresetId()
@@ -632,9 +639,8 @@ public sealed class EnemyAdvancedPatternPresetsPanel
     private enum SectionType
     {
         Metadata = 0,
-        ModulesDefinition = 1,
-        PatternAssemble = 2,
-        PatternLoadout = 3
+        ModulesAndPatternsPreset = 1,
+        PatternLoadout = 2
     }
 
     internal struct PatternLoadoutOption

@@ -8,6 +8,26 @@ using Unity.Mathematics;
 public struct EnemyPatternConfig : IComponentData
 {
     public EnemyCompiledMovementPatternKind MovementKind;
+    public byte HasShortRangeInteraction;
+    public EnemyCompiledMovementPatternKind ShortRangeMovementKind;
+    public float ShortRangeActivationRange;
+    public float ShortRangeReleaseDistanceBuffer;
+    public float ShortRangeSearchRadius;
+    public float ShortRangeMinimumTravelDistance;
+    public float ShortRangeMaximumTravelDistance;
+    public float ShortRangeArrivalTolerance;
+    public int ShortRangeCandidateSampleCount;
+    public byte ShortRangeUseInfiniteDirectionSampling;
+    public float ShortRangeInfiniteDirectionStepDegrees;
+    public float ShortRangeMinimumEnemyClearance;
+    public float ShortRangeTrajectoryPredictionTime;
+    public float ShortRangeFreeTrajectoryPreference;
+    public float ShortRangeBlockedPathRetryDelay;
+    public float ShortRangeRetreatDirectionPreference;
+    public float ShortRangeOpenSpacePreference;
+    public float ShortRangeNavigationPreference;
+    public float ShortRangeRetreatSpeedMultiplierFar;
+    public float ShortRangeRetreatSpeedMultiplierNear;
     public byte StationaryFreezeRotation;
     public float BasicSearchRadius;
     public float BasicMinimumTravelDistance;
@@ -46,6 +66,7 @@ public struct EnemyPatternConfig : IComponentData
 /// </summary>
 public struct EnemyPatternRuntimeState : IComponentData
 {
+    public byte ShortRangeInteractionActive;
     public float3 WanderTargetPosition;
     public float WanderWaitTimer;
     public float WanderRetryTimer;

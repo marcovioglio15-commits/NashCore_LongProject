@@ -178,6 +178,7 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
 
         Label title = new Label(GetPanelTitle(panelType));
         title.style.unityFontStyleAndWeight = FontStyle.Bold;
+        ManagementToolCategoryLabelUtility.RegisterColorContextMenu(title, "NashCore.EnemyManagement.SidePanel." + GetPanelTitle(panelType));
         headerRow.Add(title);
 
         Button closeButton = new Button(() => CloseSidePanel(panel, panelType));
