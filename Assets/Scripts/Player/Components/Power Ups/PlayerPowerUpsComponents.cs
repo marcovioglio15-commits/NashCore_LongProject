@@ -236,6 +236,8 @@ public struct PlayerPassiveToolsState : IComponentData
     public PassiveHealConfig Heal;
     public byte HasBulletTime;
     public PassiveBulletTimeConfig BulletTime;
+    public byte HasLaserBeam;
+    public LaserBeamPassiveConfig LaserBeam;
 }
 
 /// <summary>
@@ -361,6 +363,43 @@ public struct PlayerPassiveBulletTimeState : IComponentData
 {
     public float CooldownRemaining;
     public float PreviousObservedHealth;
+}
+
+/// <summary>
+/// Holds runtime activation and timing data for the Laser Beam passive shooting override.
+/// </summary>
+public struct PlayerLaserBeamState : IComponentData
+{
+    public byte IsActive;
+    public byte IsOverheated;
+    public byte IsTickReady;
+    public int LastResolvedPrimaryLaneCount;
+    public float CooldownRemaining;
+    public float ConsecutiveActiveElapsed;
+    public float DamageTickTimer;
+    public float ChargeImpulseRemainingSeconds;
+    public float ChargeImpulseDamageMultiplier;
+    public float ChargeImpulseWidthMultiplier;
+    public float ChargeImpulseTravelDistance;
+}
+
+/// <summary>
+/// Stores one resolved Laser Beam lane for the current frame.
+/// </summary>
+public struct PlayerLaserBeamLaneElement : IBufferElementData
+{
+    public int LaneIndex;
+    public byte IsSplitChild;
+    public byte IsTerminalSegment;
+    public byte TerminalBlockedByWall;
+    public float3 StartPoint;
+    public float3 EndPoint;
+    public float3 Direction;
+    public float Length;
+    public float CollisionRadius;
+    public float VisualWidth;
+    public float DamageMultiplier;
+    public float3 TerminalNormal;
 }
 
 /// <summary>

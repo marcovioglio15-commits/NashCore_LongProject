@@ -636,32 +636,24 @@ public partial struct EnemyProjectileHitSystem : ISystem
                                          ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
                                          ref BufferLookup<EnemyElementStackElement> elementalStackLookup)
     {
-        Entity enemyEntity = enemyEntities[enemyIndex];
-        float3 enemyPosition = enemyPositions[enemyIndex];
-        EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
-        TryApplyElementalPayloads(enemyEntity,
-                                  enemyPosition,
-                                  shooterEntity,
-                                  in elementalPayload,
-                                  in enemyRuntimeState,
-                                  in elementalVfxConfigLookup,
-                                  in elementalVfxAnchorLookup,
-                                  canEnqueueShooterVfxRequests,
-                                  ref shooterVfxRequests,
-                                  ref elementalStackLookup);
-        TryApplyKnockbackPayload(enemyIndex,
-                                 enemyEntity,
-                                 enemyPosition,
-                                 in projectileData,
-                                 in projectileTransform,
-                                 ref projectedEnemyKnockback,
-                                 in spawnInactivityLockLookup);
-        TryEnqueueEnemyHitVfx(enemyEntity,
-                              enemyPosition,
-                              in enemyRuntimeState,
-                              in enemyHitVfxConfigLookup,
-                              canEnqueueShooterVfxRequests,
-                              ref shooterVfxRequests);
+        float3 impactPosition = enemyPositions[enemyIndex];
+        EnemyHitPayloadRuntimeUtility.ApplyEnemyHitPayloads(enemyIndex,
+                                                            shooterEntity,
+                                                            impactPosition,
+                                                            in projectileData,
+                                                            in projectileTransform,
+                                                            in elementalPayload,
+                                                            enemyEntities,
+                                                            enemyPositions,
+                                                            enemyRuntimeArray,
+                                                            ref projectedEnemyKnockback,
+                                                            in elementalVfxConfigLookup,
+                                                            in elementalVfxAnchorLookup,
+                                                            in enemyHitVfxConfigLookup,
+                                                            in spawnInactivityLockLookup,
+                                                            canEnqueueShooterVfxRequests,
+                                                            ref shooterVfxRequests,
+                                                            ref elementalStackLookup);
     }
 
     private static float ResolveCurrentScaleMultiplier(Entity projectileEntity,
@@ -675,222 +667,12 @@ public partial struct EnemyProjectileHitSystem : ISystem
         return math.max(0.01f, currentScale / baseScale);
     }
 
-    private static void TryApplyElementalPayloads(Entity enemyEntity,
-                                                  float3 enemyPosition,
-                                                  Entity shooterEntity,
-                                                  in ProjectileElementalPayload elementalPayload,
-                                                  in EnemyRuntimeState enemyRuntimeState,
-                                                  in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
-                                                  in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
-                                                  bool canEnqueueVfxRequests,
-                                                  ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
-                                                  ref BufferLookup<EnemyElementStackElement> elementalStackLookup)
-    {
-        if (!ProjectileElementalPayloadUtility.HasAnyPayload(in elementalPayload))
-            return;
-
-        Entity followTargetEntity = enemyEntity;
-
-        if (elementalVfxAnchorLookup.HasComponent(enemyEntity))
-        {
-            Entity anchorEntity = elementalVfxAnchorLookup[enemyEntity].AnchorEntity;
-
-            if (anchorEntity != Entity.Null)
-                followTargetEntity = anchorEntity;
-        }
-
-        for (int payloadIndex = 0; payloadIndex < elementalPayload.Entries.Length; payloadIndex++)
-        {
-            ProjectileElementalPayloadEntry payloadEntry = elementalPayload.Entries[payloadIndex];
-
-            if (payloadEntry.StacksPerHit <= 0f)
-                continue;
-
-            bool procTriggered;
-            bool applied = EnemyElementalStackUtility.TryApplyStacks(enemyEntity,
-                                                                     math.max(0f, payloadEntry.StacksPerHit),
-                                                                     payloadEntry.Effect,
-                                                                     ref elementalStackLookup,
-                                                                     out procTriggered);
-
-            if (!applied)
-                continue;
-
-            if (!canEnqueueVfxRequests)
-                continue;
-
-            ElementalVfxDefinitionConfig elementalVfxConfig = ResolveElementalVfxDefinition(shooterEntity,
-                                                                                            payloadEntry.Effect.ElementType,
-                                                                                            in elementalVfxConfigLookup);
-
-            if (elementalVfxConfig.SpawnStackVfx != 0)
-                EnqueueElementalVfx(ref vfxRequests,
-                                    elementalVfxConfig.StackVfxPrefabEntity,
-                                    enemyPosition,
-                                    elementalVfxConfig.StackVfxScaleMultiplier,
-                                    followTargetEntity,
-                                    enemyEntity,
-                                    enemyRuntimeState.SpawnVersion,
-                                    0.35f);
-
-            if (!procTriggered || elementalVfxConfig.SpawnProcVfx == 0)
-                continue;
-
-            float procVfxLifetimeSeconds = ResolveProcVfxLifetimeSeconds(in payloadEntry.Effect);
-            EnqueueElementalVfx(ref vfxRequests,
-                                elementalVfxConfig.ProcVfxPrefabEntity,
-                                enemyPosition,
-                                elementalVfxConfig.ProcVfxScaleMultiplier,
-                                followTargetEntity,
-                                enemyEntity,
-                                enemyRuntimeState.SpawnVersion,
-                                procVfxLifetimeSeconds);
-        }
-    }
-
-    private static void TryApplyKnockbackPayload(int enemyIndex,
-                                                 Entity enemyEntity,
-                                                 float3 enemyPosition,
-                                                 in Projectile projectileData,
-                                                 in LocalTransform projectileTransform,
-                                                 ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
-                                                 in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup)
-    {
-        if (enemyIndex < 0 || enemyIndex >= projectedEnemyKnockback.Length)
-            return;
-
-        if (spawnInactivityLockLookup.HasComponent(enemyEntity) &&
-            spawnInactivityLockLookup.IsComponentEnabled(enemyEntity))
-        {
-            return;
-        }
-
-        EnemyKnockbackState knockbackState = projectedEnemyKnockback[enemyIndex];
-
-        if (!EnemyKnockbackRuntimeUtility.TryApplyFromProjectile(in projectileData,
-                                                                 in projectileTransform,
-                                                                 enemyPosition,
-                                                                 ref knockbackState))
-        {
-            return;
-        }
-
-        projectedEnemyKnockback[enemyIndex] = knockbackState;
-    }
-
     private static bool DidKnockbackStateChange(EnemyKnockbackState leftValue, EnemyKnockbackState rightValue)
     {
         return leftValue.RemainingTime != rightValue.RemainingTime ||
                leftValue.Velocity.x != rightValue.Velocity.x ||
                leftValue.Velocity.y != rightValue.Velocity.y ||
                leftValue.Velocity.z != rightValue.Velocity.z;
-    }
-
-    /// <summary>
-    /// Queues a one-shot hit-react VFX request when the target enemy has a valid hit VFX configuration.
-    /// </summary>
-    /// <param name="enemyEntity">Enemy entity that received the hit.</param>
-    /// <param name="enemyPosition">World position used as spawn anchor for the one-shot VFX.</param>
-    /// <param name="enemyRuntimeState">Enemy runtime data used for spawn-version validation metadata.</param>
-    /// <param name="enemyHitVfxConfigLookup">Lookup used to resolve baked hit VFX settings.</param>
-    /// <param name="canEnqueueVfxRequests">True when the shooter has a writable VFX request buffer.</param>
-    /// <param name="vfxRequests">Writable shooter-side VFX request buffer.</param>
-    private static void TryEnqueueEnemyHitVfx(Entity enemyEntity,
-                                              float3 enemyPosition,
-                                              in EnemyRuntimeState enemyRuntimeState,
-                                              in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
-                                              bool canEnqueueVfxRequests,
-                                              ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests)
-    {
-        if (!canEnqueueVfxRequests)
-            return;
-
-        if (!enemyHitVfxConfigLookup.HasComponent(enemyEntity))
-            return;
-
-        EnemyHitVfxConfig hitVfxConfig = enemyHitVfxConfigLookup[enemyEntity];
-
-        if (hitVfxConfig.PrefabEntity == Entity.Null)
-            return;
-
-        vfxRequests.Add(new PlayerPowerUpVfxSpawnRequest
-        {
-            PrefabEntity = hitVfxConfig.PrefabEntity,
-            Position = enemyPosition,
-            Rotation = quaternion.identity,
-            UniformScale = math.max(0.01f, hitVfxConfig.ScaleMultiplier),
-            LifetimeSeconds = math.max(0.05f, hitVfxConfig.LifetimeSeconds),
-            FollowTargetEntity = Entity.Null,
-            FollowPositionOffset = float3.zero,
-            FollowValidationEntity = enemyEntity,
-            FollowValidationSpawnVersion = enemyRuntimeState.SpawnVersion,
-            Velocity = float3.zero
-        });
-    }
-
-    private static ElementalVfxDefinitionConfig ResolveElementalVfxDefinition(Entity shooterEntity,
-                                                                              ElementType elementType,
-                                                                              in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup)
-    {
-        if (shooterEntity == Entity.Null || shooterEntity.Index < 0)
-            return default;
-
-        if (!elementalVfxConfigLookup.HasComponent(shooterEntity))
-            return default;
-
-        PlayerElementalVfxConfig elementalVfxConfig = elementalVfxConfigLookup[shooterEntity];
-
-        switch (elementType)
-        {
-            case ElementType.Fire:
-                return elementalVfxConfig.Fire;
-            case ElementType.Ice:
-                return elementalVfxConfig.Ice;
-            case ElementType.Poison:
-                return elementalVfxConfig.Poison;
-            default:
-                return elementalVfxConfig.Custom;
-        }
-    }
-
-    private static void EnqueueElementalVfx(ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
-                                            Entity prefabEntity,
-                                            float3 position,
-                                            float scaleMultiplier,
-                                            Entity followTargetEntity,
-                                            Entity followValidationEntity,
-                                            uint followValidationSpawnVersion,
-                                            float lifetimeSeconds)
-    {
-        if (prefabEntity == Entity.Null)
-            return;
-
-        vfxRequests.Add(new PlayerPowerUpVfxSpawnRequest
-        {
-            PrefabEntity = prefabEntity,
-            Position = position,
-            Rotation = quaternion.identity,
-            UniformScale = math.max(0.01f, scaleMultiplier),
-            LifetimeSeconds = math.max(0.05f, lifetimeSeconds),
-            FollowTargetEntity = followTargetEntity,
-            FollowPositionOffset = float3.zero,
-            FollowValidationEntity = followValidationEntity,
-            FollowValidationSpawnVersion = followValidationSpawnVersion,
-            Velocity = float3.zero
-        });
-    }
-
-    private static float ResolveProcVfxLifetimeSeconds(in ElementalEffectConfig effectConfig)
-    {
-        switch (effectConfig.EffectKind)
-        {
-            case ElementalEffectKind.Dots:
-                return math.max(0.05f, effectConfig.DotDurationSeconds);
-            case ElementalEffectKind.Impediment:
-                return math.max(0.05f, effectConfig.ImpedimentDurationSeconds);
-            default:
-                return 0.5f;
-        }
     }
 
     private static void DespawnProjectile(EntityManager entityManager,

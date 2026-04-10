@@ -55,11 +55,32 @@ public static class PlayerVisualPresetLibraryUtility
 
         SerializedObject serializedPreset = new SerializedObject(preset);
         SerializedProperty nameProperty = serializedPreset.FindProperty("presetName");
+        SerializedProperty laserBeamProperty = serializedPreset.FindProperty("laserBeam");
 
         if (nameProperty != null)
             nameProperty.stringValue = finalName;
 
+        if (laserBeamProperty != null)
+        {
+            SerializedProperty beamMaterialProperty = laserBeamProperty.FindPropertyRelative("beamMaterial");
+            SerializedProperty sourceBubbleMaterialProperty = laserBeamProperty.FindPropertyRelative("sourceBubbleMaterial");
+            SerializedProperty impactSplashMaterialProperty = laserBeamProperty.FindPropertyRelative("impactSplashMaterial");
+            Material laserBeamMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultBodyMaterialPath);
+            Material sourceBubbleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultSourceBubbleMaterialPath);
+            Material impactSplashMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultImpactSplashMaterialPath);
+
+            if (beamMaterialProperty != null && laserBeamMaterial != null)
+                beamMaterialProperty.objectReferenceValue = laserBeamMaterial;
+
+            if (sourceBubbleMaterialProperty != null && sourceBubbleMaterial != null)
+                sourceBubbleMaterialProperty.objectReferenceValue = sourceBubbleMaterial;
+
+            if (impactSplashMaterialProperty != null && impactSplashMaterial != null)
+                impactSplashMaterialProperty.objectReferenceValue = impactSplashMaterial;
+        }
+
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
+        preset.LaserBeam.Validate();
         EditorUtility.SetDirty(preset);
         return preset;
     }

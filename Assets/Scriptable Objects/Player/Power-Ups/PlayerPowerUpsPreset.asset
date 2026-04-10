@@ -261,6 +261,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -405,6 +427,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -549,6 +593,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -693,6 +759,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -837,6 +925,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -981,6 +1091,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -1125,6 +1257,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -1269,6 +1423,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -1413,6 +1589,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -1557,6 +1755,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -1701,6 +1921,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -1845,6 +2087,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -1989,6 +2253,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -2133,6 +2419,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -2277,6 +2585,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -2421,6 +2751,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -2565,6 +2917,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -2709,6 +3083,28 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -2853,6 +3249,194 @@ MonoBehaviour:
         splitSizePercentFromOriginal: 75
         splitSpeedPercentFromOriginal: 85
         splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 2.5
+        cooldownSeconds: 2
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 4.25
+        collisionWidthMultiplier: 1
+        sourceScaleMultiplier: 1.35
+        impactScaleMultiplier: 1.85
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 0.05
+        bubbleDriftSpeed: 1.4
+      trailSpawn:
+        trailSegmentLifetimeSeconds: 1.5
+        trailSpawnDistance: 0.6
+        trailSpawnIntervalSeconds: 0.1
+        trailRadius: 1.2
+        maxActiveSegmentsPerPlayer: 30
+        trailAttachedVfxOffset: {x: 0, y: 0.08, z: 0}
+      elementalAreaTick:
+        effectData:
+          elementType: 0
+          effectKind: 0
+          procMode: 0
+          reapplyMode: 0
+          procThresholdStacks: 5
+          maximumStacks: 20
+          stackDecayPerSecond: 1
+          consumeStacksOnProc: 0
+          dotDamagePerTick: 4
+          dotTickInterval: 0.5
+          dotDurationSeconds: 2
+          impedimentSlowPercentPerStack: 10
+          impedimentProcSlowPercent: 50
+          impedimentMaxSlowPercent: 100
+          impedimentDurationSeconds: 2
+        stacksPerTick: 1
+        applyIntervalSeconds: 0.2
+      stackable:
+        maxAcquisitions: 2
+  - moduleId: Module_LaserBeam
+    displayName: Laser Beam
+    moduleKind: 19
+    defaultStage: 7
+    notes: 
+    data:
+      holdCharge:
+        requiredCharge: 500
+        maximumCharge: 500
+        chargeRatePerSecond: 125
+        decayAfterRelease: 0
+        decayAfterReleasePercentPerSecond: 25
+        passiveChargeGainWhileReleased: 0
+        passiveChargeGainPercentPerSecond: 10
+      triggerEvent:
+        eventType: 0
+      resourceGate:
+        activationResource: 1
+        maintenanceResource: 1
+        maximumEnergy: 100
+        activationCost: 100
+        maintenanceCostPerSecond: 0
+        isToggleable: 0
+        maintenanceTicksPerSecond: 4
+        minimumActivationEnergyPercent: 0
+        chargeType: 0
+        chargePerTrigger: 100
+        cooldownSeconds: 1
+        allowRechargeDuringToggleStartupLock: 0
+      suppressShooting:
+        suppressBaseShootingWhileActive: 1
+        interruptOtherSlotOnEnter: 0
+        interruptOtherSlotChargingOnly: 1
+      projectilePatternCone:
+        projectileCount: 6
+        coneAngleDegrees: 45
+      characterTuning:
+        formulas: []
+      bomb:
+        bombPrefab: {fileID: 0}
+        spawnOffset: {x: 0, y: 0, z: 1.2}
+        spawnOffsetOrientation: 0
+        deploySpeed: 4.5
+        collisionRadius: 0.18
+        bounceOnWalls: 1
+        bounceDamping: 0.65
+        linearDampingPerSecond: 1.2
+        fuseSeconds: 1.25
+        radius: 7
+        enableDamagePayload: 1
+        damage: 120
+        affectAllEnemiesInRadius: 1
+        explosionVfxPrefab: {fileID: 0}
+        scaleVfxToRadius: 1
+        vfxScaleMultiplier: 1
+      dash:
+        distance: 6
+        duration: 0.18
+        speedTransitionInSeconds: 0.06
+        speedTransitionOutSeconds: 0.08
+        grantsInvulnerability: 1
+        invulnerabilityExtraTime: 0.1
+      bulletTime:
+        duration: 3
+        enemySlowPercent: 40
+        transitionTimeSeconds: 0.2
+      healMissingHealth:
+        applyMode: 0
+        healAmount: 30
+        durationSeconds: 2
+        tickIntervalSeconds: 0.2
+        stackPolicy: 0
+      deathExplosion:
+        triggerMode: 0
+        cooldownSeconds: 2
+        radius: 4
+        damage: 20
+        affectAllEnemiesInRadius: 1
+        triggerOffset: {x: 0, y: 0, z: 0}
+        explosionVfxPrefab: {fileID: 0}
+        scaleVfxToRadius: 1
+        vfxScaleMultiplier: 1
+      projectileOrbitOverride:
+        pathMode: 0
+        radialEntrySpeed: 12
+        orbitalSpeed: 8
+        orbitRadiusMin: 4
+        orbitRadiusMax: 6
+        orbitPulseFrequency: 0.7
+        orbitEntryRatio: 0.9
+        orbitBlendDuration: 0.3
+        heightOffset: 0
+        goldenAngleDegrees: 137.5
+        spiralStartRadius: 2.5
+        spiralMaximumRadius: 8
+        spiralAngularSpeedDegreesPerSecond: 240
+        spiralGrowthMultiplier: 1
+        spiralTurnsBeforeDespawn: 1.25
+        spiralClockwise: 0
+      projectileBounceOnWalls:
+        maxBounces: 2
+        speedPercentChangePerBounce: -5
+        minimumSpeedMultiplierAfterBounce: 0.1
+        maximumSpeedMultiplierAfterBounce: 3
+      projectileSplit:
+        triggerMode: 0
+        directionMode: 0
+        splitProjectileCount: 2
+        splitOffsetDegrees: 0
+        customAnglesDegrees:
+        - -20
+        - 20
+        splitDamagePercentFromOriginal: 50
+        splitSizePercentFromOriginal: 75
+        splitSpeedPercentFromOriginal: 85
+        splitLifetimePercentFromOriginal: 65
+      laserBeam:
+        damageMultiplier: 1
+        virtualProjectileSpeedMultiplier: 1
+        damageTickIntervalSeconds: 0.15
+        maximumContinuousActiveSeconds: 0
+        cooldownSeconds: 0
+        maximumBounceSegments: 0
+        visualPalette: 0
+        bodyProfile: 0
+        sourceShape: 2
+        impactShape: 1
+        bodyWidthMultiplier: 2
+        collisionWidthMultiplier: 2
+        sourceScaleMultiplier: 2
+        impactScaleMultiplier: 2
+        bodyOpacity: 0.96
+        coreBrightness: 1.45
+        rimBrightness: 1.32
+        flowScrollSpeed: 1.15
+        flowPulseFrequency: 0.4
+        wobbleAmplitude: 1
+        bubbleDriftSpeed: 1.4
       trailSpawn:
         trailSegmentLifetimeSeconds: 1.5
         trailSpawnDistance: 0.6
@@ -3010,6 +3594,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -3154,6 +3760,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -3298,6 +3926,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -3455,6 +4105,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -3599,6 +4271,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -3743,6 +4437,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -3887,6 +4603,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -4034,6 +4772,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -4191,6 +4951,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -4335,6 +5117,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -4479,6 +5283,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -4636,6 +5462,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -4780,6 +5628,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -4924,6 +5794,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -5081,6 +5973,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -5225,6 +6139,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -5369,6 +6305,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -5526,6 +6484,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -5670,6 +6650,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -5814,6 +6816,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -5968,6 +6992,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -6112,6 +7158,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -6257,6 +7325,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -6415,6 +7505,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -6559,6 +7671,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -6716,6 +7850,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -6873,6 +8029,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -7018,6 +8196,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -7175,6 +8375,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -7332,6 +8554,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 75
           splitSpeedPercentFromOriginal: 85
           splitLifetimePercentFromOriginal: 65
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 1.5
           trailSpawnDistance: 0.6
@@ -7487,6 +8731,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -7640,6 +8906,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -7783,6 +9071,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -7936,6 +9246,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -8079,6 +9411,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -8222,6 +9576,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -8375,6 +9751,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -8518,6 +9916,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -8671,6 +10091,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -8814,6 +10256,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -8967,6 +10431,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -9110,6 +10596,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -9263,6 +10771,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -9406,6 +10936,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -9559,6 +11111,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -9702,6 +11276,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -9856,6 +11452,28 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -10010,6 +11628,203 @@ MonoBehaviour:
           splitSizePercentFromOriginal: 0
           splitSpeedPercentFromOriginal: 0
           splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 1
+          virtualProjectileSpeedMultiplier: 1
+          damageTickIntervalSeconds: 0.15
+          maximumContinuousActiveSeconds: 2.5
+          cooldownSeconds: 2
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 2
+          impactShape: 1
+          bodyWidthMultiplier: 4.25
+          collisionWidthMultiplier: 1
+          sourceScaleMultiplier: 1.35
+          impactScaleMultiplier: 1.85
+          bodyOpacity: 0.96
+          coreBrightness: 1.45
+          rimBrightness: 1.32
+          flowScrollSpeed: 1.15
+          flowPulseFrequency: 0.4
+          wobbleAmplitude: 0.05
+          bubbleDriftSpeed: 1.4
+        trailSpawn:
+          trailSegmentLifetimeSeconds: 0.05
+          trailSpawnDistance: 0
+          trailSpawnIntervalSeconds: 0.01
+          trailRadius: 0
+          maxActiveSegmentsPerPlayer: 1
+          trailAttachedVfxOffset: {x: 0, y: 0, z: 0}
+        elementalAreaTick:
+          effectData:
+            elementType: 0
+            effectKind: 0
+            procMode: 0
+            reapplyMode: 0
+            procThresholdStacks: 0.1
+            maximumStacks: 0.1
+            stackDecayPerSecond: 0
+            consumeStacksOnProc: 0
+            dotDamagePerTick: 0
+            dotTickInterval: 0.01
+            dotDurationSeconds: 0.05
+            impedimentSlowPercentPerStack: 0
+            impedimentProcSlowPercent: 0
+            impedimentMaxSlowPercent: 0
+            impedimentDurationSeconds: 0.05
+          stacksPerTick: 0
+          applyIntervalSeconds: 0.01
+        stackable:
+          maxAcquisitions: 2
+    unreplaceable: 0
+  - commonData:
+      powerUpId: Passive_LaserBeam
+      displayName: Laser Beam
+      description: IL LAZERONE
+      icon: {fileID: 21300000, guid: 283ddc3a73b4fc649a727c325fc6787e, type: 3}
+      dropPools:
+      - Milestone
+      dropTier: 1
+      purchaseCost: 0
+    moduleBindings:
+    - bindingId: 85ee556cfe0a41d380e6763918a7393f
+      moduleId: Module_LaserBeam
+      stage: 7
+      isEnabled: 1
+      useOverridePayload: 0
+      overridePayload:
+        holdCharge:
+          requiredCharge: 0
+          maximumCharge: 0
+          chargeRatePerSecond: 0
+          decayAfterRelease: 0
+          decayAfterReleasePercentPerSecond: 0
+          passiveChargeGainWhileReleased: 0
+          passiveChargeGainPercentPerSecond: 0
+        triggerEvent:
+          eventType: 0
+        resourceGate:
+          activationResource: 0
+          maintenanceResource: 0
+          maximumEnergy: 0
+          activationCost: 0
+          maintenanceCostPerSecond: 0
+          isToggleable: 0
+          maintenanceTicksPerSecond: 0
+          minimumActivationEnergyPercent: 0
+          chargeType: 0
+          chargePerTrigger: 0
+          cooldownSeconds: 0
+          allowRechargeDuringToggleStartupLock: 0
+        suppressShooting:
+          suppressBaseShootingWhileActive: 0
+          interruptOtherSlotOnEnter: 0
+          interruptOtherSlotChargingOnly: 0
+        projectilePatternCone:
+          projectileCount: 1
+          coneAngleDegrees: 0
+        characterTuning:
+          formulas: []
+        bomb:
+          bombPrefab: {fileID: 0}
+          spawnOffset: {x: 0, y: 0, z: 0}
+          spawnOffsetOrientation: 0
+          deploySpeed: 0
+          collisionRadius: 0.01
+          bounceOnWalls: 0
+          bounceDamping: 0
+          linearDampingPerSecond: 0
+          fuseSeconds: 0.05
+          radius: 0.1
+          enableDamagePayload: 0
+          damage: 0
+          affectAllEnemiesInRadius: 0
+          explosionVfxPrefab: {fileID: 0}
+          scaleVfxToRadius: 0
+          vfxScaleMultiplier: 0.01
+        dash:
+          distance: 0
+          duration: 0.01
+          speedTransitionInSeconds: 0
+          speedTransitionOutSeconds: 0
+          grantsInvulnerability: 0
+          invulnerabilityExtraTime: 0
+        bulletTime:
+          duration: 0.05
+          enemySlowPercent: 0
+          transitionTimeSeconds: 0
+        healMissingHealth:
+          applyMode: 0
+          healAmount: 0
+          durationSeconds: 0
+          tickIntervalSeconds: 0.01
+          stackPolicy: 0
+        deathExplosion:
+          triggerMode: 0
+          cooldownSeconds: 0
+          radius: 0
+          damage: 0
+          affectAllEnemiesInRadius: 0
+          triggerOffset: {x: 0, y: 0, z: 0}
+          explosionVfxPrefab: {fileID: 0}
+          scaleVfxToRadius: 0
+          vfxScaleMultiplier: 0.01
+        projectileOrbitOverride:
+          pathMode: 0
+          radialEntrySpeed: 0
+          orbitalSpeed: 0
+          orbitRadiusMin: 0
+          orbitRadiusMax: 0
+          orbitPulseFrequency: 0
+          orbitEntryRatio: 0
+          orbitBlendDuration: 0
+          heightOffset: 0
+          goldenAngleDegrees: 0
+          spiralStartRadius: 0
+          spiralMaximumRadius: 0
+          spiralAngularSpeedDegreesPerSecond: 0
+          spiralGrowthMultiplier: 0
+          spiralTurnsBeforeDespawn: 0.1
+          spiralClockwise: 0
+        projectileBounceOnWalls:
+          maxBounces: 0
+          speedPercentChangePerBounce: 0
+          minimumSpeedMultiplierAfterBounce: 0
+          maximumSpeedMultiplierAfterBounce: 0
+        projectileSplit:
+          triggerMode: 0
+          directionMode: 0
+          splitProjectileCount: 1
+          splitOffsetDegrees: 0
+          customAnglesDegrees: []
+          splitDamagePercentFromOriginal: 0
+          splitSizePercentFromOriginal: 0
+          splitSpeedPercentFromOriginal: 0
+          splitLifetimePercentFromOriginal: 0
+        laserBeam:
+          damageMultiplier: 0
+          virtualProjectileSpeedMultiplier: 0
+          damageTickIntervalSeconds: 0
+          maximumContinuousActiveSeconds: 0
+          cooldownSeconds: 0
+          maximumBounceSegments: 0
+          visualPalette: 0
+          bodyProfile: 0
+          sourceShape: 0
+          impactShape: 1
+          bodyWidthMultiplier: 0
+          collisionWidthMultiplier: 0
+          sourceScaleMultiplier: 0
+          impactScaleMultiplier: 0
+          bodyOpacity: 0
+          coreBrightness: 0
+          rimBrightness: 0
+          flowScrollSpeed: 0
+          flowPulseFrequency: 0
+          wobbleAmplitude: 0
+          bubbleDriftSpeed: 0
         trailSpawn:
           trailSegmentLifetimeSeconds: 0.05
           trailSpawnDistance: 0
@@ -10041,7 +11856,8 @@ MonoBehaviour:
     unreplaceable: 0
   primaryActivePowerUpId: ActiveChargeShot
   secondaryActivePowerUpId: 
-  equippedPassivePowerUpIds: []
+  equippedPassivePowerUpIds:
+  - Passive_LaserBeam
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT

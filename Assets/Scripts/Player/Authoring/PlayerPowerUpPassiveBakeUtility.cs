@@ -173,6 +173,8 @@ public static class PlayerPowerUpPassiveBakeUtility
         float bulletTimeDurationSeconds = 0.05f;
         float bulletTimeEnemySlowPercent = 0f;
         float bulletTimeTransitionTimeSeconds = 0f;
+        bool hasLaserBeam = false;
+        LaserBeamPassiveConfig laserBeamConfig = default;
         IReadOnlyList<PowerUpModuleBinding> moduleBindings = powerUp.ModuleBindings;
 
         if (moduleBindings == null || moduleBindings.Count == 0)
@@ -361,6 +363,55 @@ public static class PlayerPowerUpPassiveBakeUtility
                     bulletTimeTransitionTimeSeconds = math.max(bulletTimeTransitionTimeSeconds,
                                                                math.max(0f, bulletTimeData.TransitionTimeSeconds));
                     break;
+                case PowerUpModuleKind.LaserBeam:
+                    LaserBeamPassiveConfig candidateLaserBeamConfig = PlayerPowerUpPassiveConfigBuildUtility.BuildLaserBeamPassiveConfig(payload.LaserBeam);
+
+                    if (!hasLaserBeam)
+                    {
+                        hasLaserBeam = true;
+                        laserBeamConfig = candidateLaserBeamConfig;
+                        break;
+                    }
+
+                    laserBeamConfig.DamageMultiplier *= math.max(0f, candidateLaserBeamConfig.DamageMultiplier);
+                    laserBeamConfig.VirtualProjectileSpeedMultiplier *= math.max(0f, candidateLaserBeamConfig.VirtualProjectileSpeedMultiplier);
+                    laserBeamConfig.DamageTickIntervalSeconds = math.min(laserBeamConfig.DamageTickIntervalSeconds,
+                                                                        math.max(0.0001f, candidateLaserBeamConfig.DamageTickIntervalSeconds));
+                    laserBeamConfig.MaximumContinuousActiveSeconds = math.max(laserBeamConfig.MaximumContinuousActiveSeconds,
+                                                                             candidateLaserBeamConfig.MaximumContinuousActiveSeconds);
+                    laserBeamConfig.CooldownSeconds = laserBeamConfig.CooldownSeconds <= 0f ||
+                                                      candidateLaserBeamConfig.CooldownSeconds <= 0f
+                        ? 0f
+                        : math.min(laserBeamConfig.CooldownSeconds, candidateLaserBeamConfig.CooldownSeconds);
+                    laserBeamConfig.MaximumBounceSegments = math.max(laserBeamConfig.MaximumBounceSegments,
+                                                                    candidateLaserBeamConfig.MaximumBounceSegments);
+                    laserBeamConfig.BodyWidthMultiplier = math.max(laserBeamConfig.BodyWidthMultiplier,
+                                                                  candidateLaserBeamConfig.BodyWidthMultiplier);
+                    laserBeamConfig.CollisionWidthMultiplier = math.max(laserBeamConfig.CollisionWidthMultiplier,
+                                                                       candidateLaserBeamConfig.CollisionWidthMultiplier);
+                    laserBeamConfig.SourceScaleMultiplier = math.max(laserBeamConfig.SourceScaleMultiplier,
+                                                                    candidateLaserBeamConfig.SourceScaleMultiplier);
+                    laserBeamConfig.ImpactScaleMultiplier = math.max(laserBeamConfig.ImpactScaleMultiplier,
+                                                                    candidateLaserBeamConfig.ImpactScaleMultiplier);
+                    laserBeamConfig.BodyOpacity = math.max(laserBeamConfig.BodyOpacity,
+                                                          candidateLaserBeamConfig.BodyOpacity);
+                    laserBeamConfig.CoreBrightness = math.max(laserBeamConfig.CoreBrightness,
+                                                             candidateLaserBeamConfig.CoreBrightness);
+                    laserBeamConfig.RimBrightness = math.max(laserBeamConfig.RimBrightness,
+                                                            candidateLaserBeamConfig.RimBrightness);
+                    laserBeamConfig.FlowScrollSpeed = math.max(laserBeamConfig.FlowScrollSpeed,
+                                                              candidateLaserBeamConfig.FlowScrollSpeed);
+                    laserBeamConfig.FlowPulseFrequency = math.max(laserBeamConfig.FlowPulseFrequency,
+                                                                 candidateLaserBeamConfig.FlowPulseFrequency);
+                    laserBeamConfig.WobbleAmplitude = math.max(laserBeamConfig.WobbleAmplitude,
+                                                              candidateLaserBeamConfig.WobbleAmplitude);
+                    laserBeamConfig.BubbleDriftSpeed = math.max(laserBeamConfig.BubbleDriftSpeed,
+                                                                candidateLaserBeamConfig.BubbleDriftSpeed);
+                    laserBeamConfig.VisualPalette = candidateLaserBeamConfig.VisualPalette;
+                    laserBeamConfig.BodyProfile = candidateLaserBeamConfig.BodyProfile;
+                    laserBeamConfig.SourceShape = candidateLaserBeamConfig.SourceShape;
+                    laserBeamConfig.ImpactShape = candidateLaserBeamConfig.ImpactShape;
+                    break;
             }
         }
 
@@ -389,6 +440,7 @@ public static class PlayerPowerUpPassiveBakeUtility
             HasElementalTrail = hasTrailSpawn || hasAreaTick ? (byte)1 : (byte)0,
             HasHeal = hasHeal && healAmount > 0f ? (byte)1 : (byte)0,
             HasBulletTime = hasBulletTime && bulletTimeEnemySlowPercent > 0f ? (byte)1 : (byte)0,
+            HasLaserBeam = hasLaserBeam ? (byte)1 : (byte)0,
             ProjectileSize = new ProjectileSizePassiveConfig
             {
                 SizeMultiplier = math.max(0.01f, projectileSizeMultiplier),
@@ -455,7 +507,8 @@ public static class PlayerPowerUpPassiveBakeUtility
                 DurationSeconds = math.max(0.05f, bulletTimeDurationSeconds),
                 EnemySlowPercent = math.clamp(bulletTimeEnemySlowPercent, 0f, 100f),
                 TransitionTimeSeconds = math.max(0f, bulletTimeTransitionTimeSeconds)
-            }
+            },
+            LaserBeam = laserBeamConfig
         };
 
         if (!PlayerPowerUpPassiveConfigBuildUtility.HasAnyPayload(config))

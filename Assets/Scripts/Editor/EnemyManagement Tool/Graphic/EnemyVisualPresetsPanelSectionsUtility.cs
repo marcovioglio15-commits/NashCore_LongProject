@@ -303,7 +303,7 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         VisualElement container = CreateSubSectionContainer("Outline");
 
         AddPropertyField(panel, container, outlineProperty, "enableOutline", "Enable Outline", "When enabled, compatible enemy renderers receive outline property overrides from this preset.");
-        AddPropertyField(panel, container, outlineProperty, "outlineThickness", "Outline Thickness", "Outline thickness written to compatible enemy materials exposing _OutlineThickness.");
+        AddPropertyField(panel, container, outlineProperty, "outlineThickness", "Outline Thickness", "Outline thickness written to compatible enemy materials exposing _OutlineThickness. Enemy presets support stronger values up to 25.");
         AddPropertyField(panel, container, outlineProperty, "outlineColor", "Outline Color", "Outline color written to compatible enemy materials exposing _OutlineColor.");
         return container;
     }

@@ -217,12 +217,14 @@ public static class PlayerPassiveToolsAggregationUtility
             }
         }
 
-        if (passiveToolConfig.HasHeal == 0)
+        if (passiveToolConfig.HasHeal == 0 &&
+            passiveToolConfig.HasBulletTime == 0 &&
+            passiveToolConfig.HasLaserBeam == 0)
         {
-            if (passiveToolConfig.HasBulletTime == 0)
-                return;
+            return;
         }
-        else
+
+        if (passiveToolConfig.HasHeal != 0)
         {
             passiveToolsState.HasHeal = 1;
 
@@ -241,26 +243,77 @@ public static class PlayerPassiveToolsAggregationUtility
             }
         }
 
-        if (passiveToolConfig.HasBulletTime == 0)
+        if (passiveToolConfig.HasBulletTime != 0)
+        {
+            passiveToolsState.HasBulletTime = 1;
+
+            if (passiveToolsState.BulletTime.EnemySlowPercent <= 0f)
+            {
+                passiveToolsState.BulletTime = passiveToolConfig.BulletTime;
+            }
+            else
+            {
+                passiveToolsState.BulletTime.TriggerMode = passiveToolConfig.BulletTime.TriggerMode;
+                passiveToolsState.BulletTime.CooldownSeconds = math.min(passiveToolsState.BulletTime.CooldownSeconds,
+                                                                        passiveToolConfig.BulletTime.CooldownSeconds);
+                passiveToolsState.BulletTime.DurationSeconds = math.max(passiveToolsState.BulletTime.DurationSeconds,
+                                                                        passiveToolConfig.BulletTime.DurationSeconds);
+                passiveToolsState.BulletTime.EnemySlowPercent = math.max(passiveToolsState.BulletTime.EnemySlowPercent,
+                                                                         passiveToolConfig.BulletTime.EnemySlowPercent);
+                passiveToolsState.BulletTime.TransitionTimeSeconds = math.max(passiveToolsState.BulletTime.TransitionTimeSeconds,
+                                                                              passiveToolConfig.BulletTime.TransitionTimeSeconds);
+            }
+        }
+
+        if (passiveToolConfig.HasLaserBeam == 0)
             return;
 
-        passiveToolsState.HasBulletTime = 1;
+        passiveToolsState.HasLaserBeam = 1;
 
-        if (passiveToolsState.BulletTime.EnemySlowPercent <= 0f)
+        if (passiveToolsState.LaserBeam.DamageTickIntervalSeconds <= 0f)
         {
-            passiveToolsState.BulletTime = passiveToolConfig.BulletTime;
+            passiveToolsState.LaserBeam = passiveToolConfig.LaserBeam;
             return;
         }
 
-        passiveToolsState.BulletTime.TriggerMode = passiveToolConfig.BulletTime.TriggerMode;
-        passiveToolsState.BulletTime.CooldownSeconds = math.min(passiveToolsState.BulletTime.CooldownSeconds,
-                                                                passiveToolConfig.BulletTime.CooldownSeconds);
-        passiveToolsState.BulletTime.DurationSeconds = math.max(passiveToolsState.BulletTime.DurationSeconds,
-                                                                passiveToolConfig.BulletTime.DurationSeconds);
-        passiveToolsState.BulletTime.EnemySlowPercent = math.max(passiveToolsState.BulletTime.EnemySlowPercent,
-                                                                 passiveToolConfig.BulletTime.EnemySlowPercent);
-        passiveToolsState.BulletTime.TransitionTimeSeconds = math.max(passiveToolsState.BulletTime.TransitionTimeSeconds,
-                                                                      passiveToolConfig.BulletTime.TransitionTimeSeconds);
+        passiveToolsState.LaserBeam.DamageMultiplier *= math.max(0f, passiveToolConfig.LaserBeam.DamageMultiplier);
+        passiveToolsState.LaserBeam.VirtualProjectileSpeedMultiplier *= math.max(0f, passiveToolConfig.LaserBeam.VirtualProjectileSpeedMultiplier);
+        passiveToolsState.LaserBeam.DamageTickIntervalSeconds = math.min(passiveToolsState.LaserBeam.DamageTickIntervalSeconds,
+                                                                         math.max(0.0001f, passiveToolConfig.LaserBeam.DamageTickIntervalSeconds));
+        passiveToolsState.LaserBeam.MaximumContinuousActiveSeconds = math.max(passiveToolsState.LaserBeam.MaximumContinuousActiveSeconds,
+                                                                              passiveToolConfig.LaserBeam.MaximumContinuousActiveSeconds);
+        passiveToolsState.LaserBeam.CooldownSeconds = passiveToolsState.LaserBeam.CooldownSeconds <= 0f ||
+                                                      passiveToolConfig.LaserBeam.CooldownSeconds <= 0f
+            ? 0f
+            : math.min(passiveToolsState.LaserBeam.CooldownSeconds, passiveToolConfig.LaserBeam.CooldownSeconds);
+        passiveToolsState.LaserBeam.MaximumBounceSegments = math.max(passiveToolsState.LaserBeam.MaximumBounceSegments,
+                                                                     passiveToolConfig.LaserBeam.MaximumBounceSegments);
+        passiveToolsState.LaserBeam.BodyWidthMultiplier = math.max(passiveToolsState.LaserBeam.BodyWidthMultiplier,
+                                                                   passiveToolConfig.LaserBeam.BodyWidthMultiplier);
+        passiveToolsState.LaserBeam.CollisionWidthMultiplier = math.max(passiveToolsState.LaserBeam.CollisionWidthMultiplier,
+                                                                        passiveToolConfig.LaserBeam.CollisionWidthMultiplier);
+        passiveToolsState.LaserBeam.SourceScaleMultiplier = math.max(passiveToolsState.LaserBeam.SourceScaleMultiplier,
+                                                                     passiveToolConfig.LaserBeam.SourceScaleMultiplier);
+        passiveToolsState.LaserBeam.ImpactScaleMultiplier = math.max(passiveToolsState.LaserBeam.ImpactScaleMultiplier,
+                                                                     passiveToolConfig.LaserBeam.ImpactScaleMultiplier);
+        passiveToolsState.LaserBeam.BodyOpacity = math.max(passiveToolsState.LaserBeam.BodyOpacity,
+                                                           passiveToolConfig.LaserBeam.BodyOpacity);
+        passiveToolsState.LaserBeam.CoreBrightness = math.max(passiveToolsState.LaserBeam.CoreBrightness,
+                                                              passiveToolConfig.LaserBeam.CoreBrightness);
+        passiveToolsState.LaserBeam.RimBrightness = math.max(passiveToolsState.LaserBeam.RimBrightness,
+                                                             passiveToolConfig.LaserBeam.RimBrightness);
+        passiveToolsState.LaserBeam.FlowScrollSpeed = math.max(passiveToolsState.LaserBeam.FlowScrollSpeed,
+                                                               passiveToolConfig.LaserBeam.FlowScrollSpeed);
+        passiveToolsState.LaserBeam.FlowPulseFrequency = math.max(passiveToolsState.LaserBeam.FlowPulseFrequency,
+                                                                  passiveToolConfig.LaserBeam.FlowPulseFrequency);
+        passiveToolsState.LaserBeam.WobbleAmplitude = math.max(passiveToolsState.LaserBeam.WobbleAmplitude,
+                                                               passiveToolConfig.LaserBeam.WobbleAmplitude);
+        passiveToolsState.LaserBeam.BubbleDriftSpeed = math.max(passiveToolsState.LaserBeam.BubbleDriftSpeed,
+                                                                passiveToolConfig.LaserBeam.BubbleDriftSpeed);
+        passiveToolsState.LaserBeam.VisualPalette = passiveToolConfig.LaserBeam.VisualPalette;
+        passiveToolsState.LaserBeam.BodyProfile = passiveToolConfig.LaserBeam.BodyProfile;
+        passiveToolsState.LaserBeam.SourceShape = passiveToolConfig.LaserBeam.SourceShape;
+        passiveToolsState.LaserBeam.ImpactShape = passiveToolConfig.LaserBeam.ImpactShape;
     }
     #endregion
 
@@ -291,7 +344,9 @@ public static class PlayerPassiveToolsAggregationUtility
             HasHeal = 0,
             Heal = default,
             HasBulletTime = 0,
-            BulletTime = default
+            BulletTime = default,
+            HasLaserBeam = 0,
+            LaserBeam = default
         };
     }
     #endregion

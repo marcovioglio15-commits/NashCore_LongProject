@@ -207,6 +207,36 @@ internal static class PlayerRuntimeScalingEnumUtility
     {
         return (ProjectileOrbitPathMode)ResolveEnumIndex(value, 1);
     }
+
+    /// <summary>
+    /// Resolves a safe LaserBeamVisualPalette from one numeric Add Scaling result.
+    /// </summary>
+    /// <param name="value">Resolved numeric formula result.</param>
+    /// <returns>Clamped enum value.<returns>
+    public static LaserBeamVisualPalette ResolveLaserBeamVisualPalette(float value)
+    {
+        return (LaserBeamVisualPalette)ResolveEnumIndex(value, 3);
+    }
+
+    /// <summary>
+    /// Resolves a safe LaserBeamBodyProfile from one numeric Add Scaling result.
+    /// </summary>
+    /// <param name="value">Resolved numeric formula result.</param>
+    /// <returns>Clamped enum value.<returns>
+    public static LaserBeamBodyProfile ResolveLaserBeamBodyProfile(float value)
+    {
+        return (LaserBeamBodyProfile)ResolveEnumIndex(value, 2);
+    }
+
+    /// <summary>
+    /// Resolves a safe LaserBeamCapShape from one numeric Add Scaling result.
+    /// </summary>
+    /// <param name="value">Resolved numeric formula result.</param>
+    /// <returns>Clamped enum value.<returns>
+    public static LaserBeamCapShape ResolveLaserBeamCapShape(float value)
+    {
+        return (LaserBeamCapShape)ResolveEnumIndex(value, 2);
+    }
     #endregion
 
     #region Private Methods

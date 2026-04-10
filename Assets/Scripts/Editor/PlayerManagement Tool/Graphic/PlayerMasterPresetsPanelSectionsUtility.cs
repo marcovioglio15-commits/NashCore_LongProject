@@ -704,7 +704,37 @@ internal static class PlayerMasterPresetsPanelSectionsUtility
         if (nameProperty != null)
             nameProperty.stringValue = finalName;
 
+        PlayerVisualPreset visualPreset = preset as PlayerVisualPreset;
+
+        if (visualPreset != null)
+        {
+            SerializedProperty laserBeamProperty = serializedPreset.FindProperty("laserBeam");
+
+            if (laserBeamProperty != null)
+            {
+                SerializedProperty beamMaterialProperty = laserBeamProperty.FindPropertyRelative("beamMaterial");
+                SerializedProperty sourceBubbleMaterialProperty = laserBeamProperty.FindPropertyRelative("sourceBubbleMaterial");
+                SerializedProperty impactSplashMaterialProperty = laserBeamProperty.FindPropertyRelative("impactSplashMaterial");
+                Material laserBeamMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultBodyMaterialPath);
+                Material sourceBubbleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultSourceBubbleMaterialPath);
+                Material impactSplashMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultImpactSplashMaterialPath);
+
+                if (beamMaterialProperty != null && laserBeamMaterial != null)
+                    beamMaterialProperty.objectReferenceValue = laserBeamMaterial;
+
+                if (sourceBubbleMaterialProperty != null && sourceBubbleMaterial != null)
+                    sourceBubbleMaterialProperty.objectReferenceValue = sourceBubbleMaterial;
+
+                if (impactSplashMaterialProperty != null && impactSplashMaterial != null)
+                    impactSplashMaterialProperty.objectReferenceValue = impactSplashMaterial;
+            }
+        }
+
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();
+
+        if (visualPreset != null)
+            visualPreset.LaserBeam.Validate();
+
         EditorUtility.SetDirty(preset);
         PlayerManagementDraftSession.MarkDirty();
         return preset;

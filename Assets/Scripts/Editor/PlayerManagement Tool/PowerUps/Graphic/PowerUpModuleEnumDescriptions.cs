@@ -35,7 +35,8 @@ public static class PowerUpModuleEnumDescriptions
         PowerUpModuleKind.OrbitalProjectiles,
         PowerUpModuleKind.BouncingProjectiles,
         PowerUpModuleKind.ProjectileSplit,
-        PowerUpModuleKind.Stackable
+        PowerUpModuleKind.Stackable,
+        PowerUpModuleKind.LaserBeam
     };
     #endregion
 
@@ -137,6 +138,8 @@ public static class PowerUpModuleEnumDescriptions
                 return "Splits projectiles on configured split trigger.";
             case PowerUpModuleKind.Stackable:
                 return "Allows a Character Tuning power-up to be rolled multiple times up to a configured cap.";
+            case PowerUpModuleKind.LaserBeam:
+                return "Replaces base projectile emission with one or more continuous liquid-laser lanes derived from current shooting and projectile passives.";
             default:
                 return "No description available.";
         }
@@ -223,6 +226,10 @@ public static class PowerUpModuleEnumDescriptions
             case PowerUpModuleKind.Stackable:
                 relativePropertyPath = "stackable";
                 payloadLabel = "Stackable Payload";
+                return true;
+            case PowerUpModuleKind.LaserBeam:
+                relativePropertyPath = "laserBeam";
+                payloadLabel = "Laser Beam Payload";
                 return true;
             default:
                 relativePropertyPath = string.Empty;

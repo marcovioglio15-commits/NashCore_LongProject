@@ -1173,6 +1173,7 @@ MonoBehaviour:
       minimumRange: 2
       useMaximumRange: 0
       maximumRange: 20
+      exclusiveLookDirectionControl: 0
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -1642,6 +1643,7 @@ MonoBehaviour:
       minimumRange: 2
       useMaximumRange: 0
       maximumRange: 20
+      exclusiveLookDirectionControl: 0
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -2111,6 +2113,7 @@ MonoBehaviour:
       minimumRange: 2
       useMaximumRange: 0
       maximumRange: 20
+      exclusiveLookDirectionControl: 0
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -2580,6 +2583,7 @@ MonoBehaviour:
       minimumRange: 2
       useMaximumRange: 0
       maximumRange: 20
+      exclusiveLookDirectionControl: 0
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -3050,6 +3054,7 @@ MonoBehaviour:
       minimumRange: 2
       useMaximumRange: 1
       maximumRange: 15
+      exclusiveLookDirectionControl: 0
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -3520,6 +3525,7 @@ MonoBehaviour:
       minimumRange: 2
       useMaximumRange: 1
       maximumRange: 15
+      exclusiveLookDirectionControl: 0
       binding:
         moduleId: Module_Shooter
         isEnabled: 1

@@ -68,6 +68,10 @@ public sealed class PowerUpModuleData
     [FormerlySerializedAs("projectileSplitOnDeath")]
     [SerializeField] private SplittingProjectilesPassiveToolData projectileSplit = new SplittingProjectilesPassiveToolData();
 
+    [Header("Hook - Laser Beam")]
+    [Tooltip("Continuous beam settings used by LaserBeam modules.")]
+    [SerializeField] private PowerUpLaserBeamModuleData laserBeam = new PowerUpLaserBeamModuleData();
+
     [Header("Hook - Trail Spawn")]
     [Tooltip("Trail spawn settings used by SpawnTrailSegment modules.")]
     [SerializeField] private PowerUpTrailSpawnModuleData trailSpawn = new PowerUpTrailSpawnModuleData();
@@ -196,6 +200,14 @@ public sealed class PowerUpModuleData
         }
     }
 
+    public PowerUpLaserBeamModuleData LaserBeam
+    {
+        get
+        {
+            return laserBeam;
+        }
+    }
+
     public PowerUpTrailSpawnModuleData TrailSpawn
     {
         get
@@ -268,6 +280,9 @@ public sealed class PowerUpModuleData
         if (projectileSplit == null)
             projectileSplit = new SplittingProjectilesPassiveToolData();
 
+        if (laserBeam == null)
+            laserBeam = new PowerUpLaserBeamModuleData();
+
         if (trailSpawn == null)
             trailSpawn = new PowerUpTrailSpawnModuleData();
 
@@ -289,6 +304,7 @@ public sealed class PowerUpModuleData
         projectileOrbitOverride.Validate();
         projectileBounceOnWalls.Validate();
         projectileSplit.Validate();
+        laserBeam.Validate();
         trailSpawn.Validate();
         elementalAreaTick.Validate();
         stackable.Validate();

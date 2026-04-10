@@ -14,6 +14,8 @@ Shader "Cel Shader/Toon Diffuse Hit Flash"
         _ShadowRangeMax("Shadow Range Max", Range(-2,2)) = -0.4
         _HitFlashColor("Hit Flash Color", Color) = (1,0.15,0.15,1)
         _HitFlashBlend("Hit Flash Blend", Range(0,1)) = 0
+        _OutlineThickness("Outline Thickness", Range(0,10)) = 1
+        _OutlineColor("Outline Color", Color) = (0,0,0,1)
     }
 
     SubShader
@@ -72,6 +74,8 @@ Shader "Cel Shader/Toon Diffuse Hit Flash"
             float _ShadowRangeMax;
             float4 _HitFlashColor;
             float _HitFlashBlend;
+            float4 _OutlineColor;
+            float _OutlineThickness;
 
             Interpolators ToonNormalMap(v2f inputValue)
             {
@@ -128,6 +132,56 @@ Shader "Cel Shader/Toon Diffuse Hit Flash"
                 finalColor.rgb = lerp(finalColor.rgb, _HitFlashColor.rgb, flashBlend);
                 UNITY_APPLY_FOG(inputValue.fogCoord, finalColor);
                 return finalColor;
+            }
+            ENDCG
+        }
+
+        Pass
+        {
+            Name "ToonOutline"
+            Tags
+            {
+                "LightMode" = "OutlineRender"
+            }
+
+            Cull Front
+            ZWrite Off
+            ZTest LEqual
+            Blend SrcAlpha OneMinusSrcAlpha
+
+            CGPROGRAM
+            #pragma vertex OutlineVertex
+            #pragma fragment OutlineFragment
+
+            #include "UnityCG.cginc"
+
+            struct OutlineAppData
+            {
+                float4 vertex : POSITION;
+                float3 normal : NORMAL;
+            };
+
+            struct OutlineVaryings
+            {
+                float4 vertex : SV_POSITION;
+            };
+
+            float4 _OutlineColor;
+            float _OutlineThickness;
+
+            OutlineVaryings OutlineVertex(OutlineAppData inputValue)
+            {
+                OutlineVaryings outputValue;
+                float outlineThickness = _OutlineThickness / 250.0;
+                float3 normalDirection = normalize(inputValue.normal);
+                float4 extrudedPosition = inputValue.vertex + float4(normalDirection * outlineThickness, 0.0);
+                outputValue.vertex = UnityObjectToClipPos(extrudedPosition);
+                return outputValue;
+            }
+
+            fixed4 OutlineFragment(OutlineVaryings inputValue) : SV_Target
+            {
+                return fixed4(_OutlineColor.rgb, _OutlineColor.a);
             }
             ENDCG
         }

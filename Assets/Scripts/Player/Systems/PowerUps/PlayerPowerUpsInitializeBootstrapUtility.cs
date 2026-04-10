@@ -167,6 +167,27 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     }
 
     /// <summary>
+    /// Adds PlayerLaserBeamState to entities missing it.
+    /// </summary>
+    /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
+    /// <param name="missingLaserBeamStateQuery">Query selecting entities without PlayerLaserBeamState.</param>
+    public static void AddMissingLaserBeamState(ref EntityCommandBuffer commandBuffer, in EntityQuery missingLaserBeamStateQuery)
+    {
+        PlayerLaserBeamState initialState = new PlayerLaserBeamState
+        {
+            IsActive = 0,
+            IsOverheated = 0,
+            IsTickReady = 0,
+            LastResolvedPrimaryLaneCount = 0,
+            CooldownRemaining = 0f,
+            ConsecutiveActiveElapsed = 0f,
+            DamageTickTimer = 0f
+        };
+
+        AddComponentForEntities(ref commandBuffer, in missingLaserBeamStateQuery, initialState);
+    }
+
+    /// <summary>
     /// Adds PlayerElementalTrailState to entities missing it.
     /// </summary>
     /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
@@ -224,6 +245,16 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
     public static void AddMissingElementalTrailSegmentBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingElementalTrailSegmentBufferQuery)
     {
         AddBufferForEntities<PlayerElementalTrailSegmentElement>(ref commandBuffer, in missingElementalTrailSegmentBufferQuery);
+    }
+
+    /// <summary>
+    /// Adds PlayerLaserBeamLaneElement buffers to entities missing them.
+    /// </summary>
+    /// <param name="commandBuffer">ECB used to enqueue structural changes.</param>
+    /// <param name="missingLaserBeamLaneBufferQuery">Query selecting entities without PlayerLaserBeamLaneElement buffer.</param>
+    public static void AddMissingLaserBeamLaneBuffers(ref EntityCommandBuffer commandBuffer, in EntityQuery missingLaserBeamLaneBufferQuery)
+    {
+        AddBufferForEntities<PlayerLaserBeamLaneElement>(ref commandBuffer, in missingLaserBeamLaneBufferQuery);
     }
 
     /// <summary>

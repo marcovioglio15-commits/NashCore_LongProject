@@ -283,6 +283,21 @@ public static class PlayerAuthoringVisualPresetResolverUtility
 
         return visualPreset.Outline;
     }
+
+    /// <summary>
+    /// Resolves the shared Laser Beam visual settings block authored on the active visual preset.
+    /// masterPreset: Master preset assigned to the player authoring.
+    /// returns Resolved Laser Beam visual settings, or null when no visual preset is available.
+    /// </summary>
+    public static PlayerLaserBeamVisualSettings ResolveLaserBeamVisualSettings(PlayerMasterPreset masterPreset)
+    {
+        PlayerVisualPreset visualPreset = ResolveVisualPreset(masterPreset);
+
+        if (visualPreset == null)
+            return null;
+
+        return visualPreset.LaserBeam;
+    }
     #endregion
 
     #endregion

@@ -201,6 +201,7 @@ public static class ManagementToolInteractiveElementColorUtility
         ManagementToolInteractiveElementColorHierarchyUtility.RegisterHierarchyElements(registeredRoot,
                                                                                         refreshRoot,
                                                                                         stateKeyPrefix);
+        ScheduleDeferredHierarchyRefresh(registeredRoot, stateKeyPrefix);
     }
 
     /// <summary>
@@ -622,6 +623,31 @@ public static class ManagementToolInteractiveElementColorUtility
             return;
 
         ManagementToolCategoryLabelUtility.TryOpenFallbackFromAncestors(root, clickedElement, evt);
+    }
+
+    /// <summary>
+    /// Schedules one deferred full-tree rescan so controls materialized after a panel swap or PropertyField rebind still recover their saved color mapping automatically.
+    /// /params registeredRoot Registered management-tool root that owns the hierarchy.
+    /// /params stateKeyPrefix Stable state-key prefix used by the root hierarchy.
+    /// /returns None.
+    /// </summary>
+    private static void ScheduleDeferredHierarchyRefresh(VisualElement registeredRoot, string stateKeyPrefix)
+    {
+        if (registeredRoot == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(stateKeyPrefix))
+            return;
+
+        registeredRoot.schedule.Execute(() =>
+        {
+            if (registeredRoot.panel == null)
+                return;
+
+            ManagementToolInteractiveElementColorHierarchyUtility.RegisterHierarchyElements(registeredRoot,
+                                                                                            registeredRoot,
+                                                                                            stateKeyPrefix);
+        });
     }
 
     #endregion

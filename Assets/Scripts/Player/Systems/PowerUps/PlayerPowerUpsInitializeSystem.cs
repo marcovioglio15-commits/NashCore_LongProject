@@ -16,10 +16,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
     private EntityQuery missingPassiveExplosionStateQuery;
     private EntityQuery missingPassiveHealStateQuery;
     private EntityQuery missingPassiveBulletTimeStateQuery;
+    private EntityQuery missingLaserBeamStateQuery;
     private EntityQuery missingElementalTrailStateQuery;
     private EntityQuery missingElementalTrailAttachedVfxStateQuery;
     private EntityQuery missingBombRequestBufferQuery;
     private EntityQuery missingElementalTrailSegmentBufferQuery;
+    private EntityQuery missingLaserBeamLaneBufferQuery;
     private EntityQuery missingExplosionRequestBufferQuery;
     private EntityQuery missingPowerUpVfxRequestBufferQuery;
     private EntityQuery missingPowerUpVfxPoolBufferQuery;
@@ -90,6 +92,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             .WithNone<PlayerPassiveBulletTimeState>()
             .Build();
 
+        missingLaserBeamStateQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerLaserBeamState>()
+            .Build();
+
         missingElementalTrailStateQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerElementalTrailState>()
@@ -108,6 +115,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         missingElementalTrailSegmentBufferQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerPowerUpsConfig>()
             .WithNone<PlayerElementalTrailSegmentElement>()
+            .Build();
+
+        missingLaserBeamLaneBufferQuery = SystemAPI.QueryBuilder()
+            .WithAll<PlayerPowerUpsConfig>()
+            .WithNone<PlayerLaserBeamLaneElement>()
             .Build();
 
         missingExplosionRequestBufferQuery = SystemAPI.QueryBuilder()
@@ -207,10 +219,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingPassiveExplosionStateQuery,
             in missingPassiveHealStateQuery,
             in missingPassiveBulletTimeStateQuery,
+            in missingLaserBeamStateQuery,
             in missingElementalTrailStateQuery,
             in missingElementalTrailAttachedVfxStateQuery,
             in missingBombRequestBufferQuery,
             in missingElementalTrailSegmentBufferQuery,
+            in missingLaserBeamLaneBufferQuery,
             in missingExplosionRequestBufferQuery,
             in missingPowerUpVfxRequestBufferQuery,
             in missingPowerUpVfxPoolBufferQuery,
@@ -281,6 +295,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             PlayerPowerUpsInitializeBootstrapUtility.AddMissingPassiveBulletTimeState(ref commandBuffer, in missingPassiveBulletTimeStateQuery);
         }
 
+        if (missingFlags.HasMissingLaserBeamState)
+        {
+            PlayerPowerUpsInitializeBootstrapUtility.AddMissingLaserBeamState(ref commandBuffer, in missingLaserBeamStateQuery);
+        }
+
         if (missingFlags.HasMissingElementalTrailState)
         {
             PlayerPowerUpsInitializeBootstrapUtility.AddMissingElementalTrailState(ref commandBuffer, in missingElementalTrailStateQuery);
@@ -299,6 +318,11 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
         if (missingFlags.HasMissingElementalTrailSegmentBuffer)
         {
             PlayerPowerUpsInitializeBootstrapUtility.AddMissingElementalTrailSegmentBuffers(ref commandBuffer, in missingElementalTrailSegmentBufferQuery);
+        }
+
+        if (missingFlags.HasMissingLaserBeamLaneBuffer)
+        {
+            PlayerPowerUpsInitializeBootstrapUtility.AddMissingLaserBeamLaneBuffers(ref commandBuffer, in missingLaserBeamLaneBufferQuery);
         }
 
         if (missingFlags.HasMissingExplosionRequestBuffer)
@@ -395,10 +419,12 @@ public partial struct PlayerPowerUpsInitializeSystem : ISystem
             in missingPassiveExplosionStateQuery,
             in missingPassiveHealStateQuery,
             in missingPassiveBulletTimeStateQuery,
+            in missingLaserBeamStateQuery,
             in missingElementalTrailStateQuery,
             in missingElementalTrailAttachedVfxStateQuery,
             in missingBombRequestBufferQuery,
             in missingElementalTrailSegmentBufferQuery,
+            in missingLaserBeamLaneBufferQuery,
             in missingExplosionRequestBufferQuery,
             in missingPowerUpVfxRequestBufferQuery,
             in missingPowerUpVfxPoolBufferQuery,

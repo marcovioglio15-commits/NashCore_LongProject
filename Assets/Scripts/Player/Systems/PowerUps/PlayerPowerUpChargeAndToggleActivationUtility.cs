@@ -59,6 +59,7 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
                                              in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                              in ComponentLookup<LocalTransform> transformLookup,
                                              in ComponentLookup<LocalToWorld> localToWorldLookup,
+                                             ref PlayerLaserBeamState laserBeamState,
                                              ref float slotEnergy,
                                              ref float cooldownRemaining,
                                              ref float charge,
@@ -142,6 +143,9 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
 
             if (hasEnoughCharge && canPayActivationCost)
             {
+                float normalizedCharge = ResolveNormalizedChargeRatio(charge,
+                                                                     requiredCharge,
+                                                                     maximumCharge);
                 PlayerPowerUpResourceCostUtility.ConsumeActivationCost(in slotConfig,
                                                                        ref slotEnergy,
                                                                        playerEntity,
@@ -172,6 +176,8 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
                                                                           in muzzleLookup,
                                                                           in transformLookup,
                                                                           in localToWorldLookup,
+                                                                          ref laserBeamState,
+                                                                          normalizedCharge,
                                                                           shootRequests);
 
                 cooldownRemaining = math.max(0f, slotConfig.CooldownSeconds);
@@ -341,6 +347,25 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
     #endregion
 
     #region Private Methods
+    /// <summary>
+    /// Resolves the normalized charge fraction above the minimum release threshold.
+    /// slotCharge: Stored charge sampled at release time.
+    /// requiredCharge: Minimum charge required to fire.
+    /// maximumCharge: Maximum charge supported by the slot.
+    /// returns Normalized charge ratio in the 0-1 range.
+    /// </summary>
+    private static float ResolveNormalizedChargeRatio(float slotCharge,
+                                                      float requiredCharge,
+                                                      float maximumCharge)
+    {
+        float clampedCharge = math.clamp(slotCharge, 0f, math.max(requiredCharge, maximumCharge));
+
+        if (maximumCharge <= requiredCharge)
+            return clampedCharge >= requiredCharge ? 1f : 0f;
+
+        return math.saturate((clampedCharge - requiredCharge) / (maximumCharge - requiredCharge));
+    }
+
     /// <summary>
     /// Updates released charge storage using the optional passive gain and decay settings.
     /// chargeShotConfig: Charge-shot payload containing released-state gain and decay options.

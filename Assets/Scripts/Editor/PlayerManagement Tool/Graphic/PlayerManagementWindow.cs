@@ -297,20 +297,16 @@ public sealed class PlayerManagementWindow : EditorWindow
 
         // Swap current panel content.
         contentRoot.Clear();
+        VisualElement panelContent = placeholderPanel;
 
         if (panelType == PanelType.PlayerMasterPresets)
-        {
-            contentRoot.Add(masterPresetsPanel.Root);
-            return;
-        }
+            panelContent = masterPresetsPanel.Root;
 
         if (panelType == PanelType.PlayerControllerPresets)
-        {
-            contentRoot.Add(controllerPresetsPanel.Root);
-            return;
-        }
+            panelContent = controllerPresetsPanel.Root;
 
-        contentRoot.Add(placeholderPanel);
+        contentRoot.Add(panelContent);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(contentRoot);
     }
 
     /// <summary>

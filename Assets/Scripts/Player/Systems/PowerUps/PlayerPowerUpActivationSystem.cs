@@ -64,6 +64,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         state.RequireForUpdate<PlayerBulletTimeState>();
         state.RequireForUpdate<PlayerHealOverTimeState>();
         state.RequireForUpdate<PlayerPassiveToolsState>();
+        state.RequireForUpdate<PlayerLaserBeamState>();
     }
 
     public void OnUpdate(ref SystemState state)
@@ -115,6 +116,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                   RefRW<PlayerPowerUpsConfig> powerUpsConfig,
                   RefRW<PlayerPowerUpsState> powerUpsState,
                   RefRW<PlayerDashState> dashState,
+                  RefRW<PlayerLaserBeamState> laserBeamState,
                   DynamicBuffer<PlayerBombSpawnRequest> bombRequests,
                   DynamicBuffer<ShootRequest> shootRequests,
                   Entity entity)
@@ -122,6 +124,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                     RefRW<PlayerPowerUpsConfig>,
                                     RefRW<PlayerPowerUpsState>,
                                     RefRW<PlayerDashState>,
+                                    RefRW<PlayerLaserBeamState>,
                                     DynamicBuffer<PlayerBombSpawnRequest>,
                                     DynamicBuffer<ShootRequest>>().WithEntityAccess())
         {
@@ -198,6 +201,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas = characterTuningFormulaLookup[entity];
             DynamicBuffer<PlayerScalableStatElement> scalableStats = scalableStatsLookup[entity];
             DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases = runtimeGamePhasesLookup[entity];
+            PlayerLaserBeamState mutableLaserBeamState = laserBeamState.ValueRO;
             bool primaryPressed = inputState.ValueRO.PowerUpPrimary > InputPressThreshold;
             bool secondaryPressed = inputState.ValueRO.PowerUpSecondary > InputPressThreshold;
             bool primaryPressedThisFrame = primaryPressed && powerUpsState.ValueRO.PreviousPrimaryPressed == 0;
@@ -311,11 +315,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                        in runtimeShootingConfig,
                                                        runtimeAppliedElementSlots,
                                                        in passiveToolsState,
-                                                       in muzzleLookup,
+                                                                in muzzleLookup,
                                                                 in transformLookup,
                                                                 in localToWorldLookup,
                                                                 inputState.ValueRO.Move,
                                                                 powerUpsState.ValueRO.LastValidMovementDirection,
+                                                                ref mutableLaserBeamState,
                                                                 ref primaryEnergy,
                                                                 ref primaryCooldownRemaining,
                                                                 ref primaryCharge,
@@ -421,11 +426,12 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                        in runtimeShootingConfig,
                                                        runtimeAppliedElementSlots,
                                                        in passiveToolsState,
-                                                       in muzzleLookup,
+                                                                in muzzleLookup,
                                                                 in transformLookup,
                                                                 in localToWorldLookup,
                                                                 inputState.ValueRO.Move,
                                                                 powerUpsState.ValueRO.LastValidMovementDirection,
+                                                                ref mutableLaserBeamState,
                                                                 ref secondaryEnergy,
                                                                 ref secondaryCooldownRemaining,
                                                                 ref secondaryCharge,
@@ -535,6 +541,7 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
             powerUpsState.ValueRW.PrimaryIsActive = primaryIsActive;
             powerUpsState.ValueRW.SecondaryIsActive = secondaryIsActive;
             powerUpsState.ValueRW.IsShootingSuppressed = isShootingSuppressed;
+            laserBeamState.ValueRW = mutableLaserBeamState;
             bulletTimeLookup[entity] = bulletTimeState;
             healOverTimeLookup[entity] = healOverTimeState;
             chargeCharacterTuningStateLookup[entity] = chargeCharacterTuningState;

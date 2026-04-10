@@ -51,6 +51,8 @@ Shader "Cel Shader/Toon Outline ECS"
             #if defined(DOTS_INSTANCING_ON)
             UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
                 UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float, _ComputeMeshIndex)
+                UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float4, _OutlineColor)
+                UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float, _OutlineThickness)
             UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
             #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
             #else
@@ -102,7 +104,7 @@ Shader "Cel Shader/Toon Outline ECS"
                     }
                 #endif
 
-                float outlineThickness = _OutlineThickness / 250.0;
+                float outlineThickness = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_OutlineThickness, float) / 250.0;
                 float3 normalDirection = SafeNormalize(normalOS);
                 float3 extrudedPositionOS = positionOS + normalDirection * outlineThickness;
                 VertexPositionInputs vertexPositionInputs = GetVertexPositionInputs(extrudedPositionOS);
@@ -114,7 +116,8 @@ Shader "Cel Shader/Toon Outline ECS"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-                return half4(_OutlineColor.rgb, _OutlineColor.a);
+                float4 outlineColor = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_OutlineColor, float4);
+                return half4(outlineColor.rgb, outlineColor.a);
             }
             ENDHLSL
         }

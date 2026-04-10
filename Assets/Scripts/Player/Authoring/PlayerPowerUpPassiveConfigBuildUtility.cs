@@ -24,7 +24,8 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
                config.HasExplosion != 0 ||
                config.HasElementalTrail != 0 ||
                config.HasHeal != 0 ||
-               config.HasBulletTime != 0;
+               config.HasBulletTime != 0 ||
+               config.HasLaserBeam != 0;
     }
 
     public static PassiveToolKind ResolvePassiveToolKind(PlayerPassiveToolConfig config)
@@ -49,6 +50,9 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
 
         if (config.HasBulletTime != 0)
             return PassiveToolKind.BulletTime;
+
+        if (config.HasLaserBeam != 0)
+            return PassiveToolKind.LaserBeam;
 
         if (config.HasHeal != 0)
             return PassiveToolKind.Custom;
@@ -223,6 +227,37 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
             SpeedPercentChangePerBounce = bouncingProjectilesData != null ? bouncingProjectilesData.SpeedPercentChangePerBounce : 0f,
             MinimumSpeedMultiplierAfterBounce = bouncingProjectilesData != null ? math.max(0f, bouncingProjectilesData.MinimumSpeedMultiplierAfterBounce) : 0f,
             MaximumSpeedMultiplierAfterBounce = bouncingProjectilesData != null ? math.max(0f, bouncingProjectilesData.MaximumSpeedMultiplierAfterBounce) : 0f
+        };
+    }
+
+    public static LaserBeamPassiveConfig BuildLaserBeamPassiveConfig(PowerUpLaserBeamModuleData laserBeamData)
+    {
+        if (laserBeamData == null)
+            return default;
+
+        return new LaserBeamPassiveConfig
+        {
+            DamageMultiplier = math.max(0f, laserBeamData.DamageMultiplier),
+            VirtualProjectileSpeedMultiplier = math.max(0f, laserBeamData.VirtualProjectileSpeedMultiplier),
+            DamageTickIntervalSeconds = math.max(0.0001f, laserBeamData.DamageTickIntervalSeconds),
+            MaximumContinuousActiveSeconds = math.max(0f, laserBeamData.MaximumContinuousActiveSeconds),
+            CooldownSeconds = math.max(0f, laserBeamData.CooldownSeconds),
+            MaximumBounceSegments = math.max(0, laserBeamData.MaximumBounceSegments),
+            VisualPalette = laserBeamData.VisualPalette,
+            BodyProfile = laserBeamData.BodyProfile,
+            SourceShape = laserBeamData.SourceShape,
+            ImpactShape = laserBeamData.ImpactShape,
+            BodyWidthMultiplier = math.max(0.01f, laserBeamData.BodyWidthMultiplier),
+            CollisionWidthMultiplier = math.max(0.01f, laserBeamData.CollisionWidthMultiplier),
+            SourceScaleMultiplier = math.max(0.01f, laserBeamData.SourceScaleMultiplier),
+            ImpactScaleMultiplier = math.max(0.01f, laserBeamData.ImpactScaleMultiplier),
+            BodyOpacity = math.max(0.01f, laserBeamData.BodyOpacity),
+            CoreBrightness = math.max(0f, laserBeamData.CoreBrightness),
+            RimBrightness = math.max(0f, laserBeamData.RimBrightness),
+            FlowScrollSpeed = math.max(0f, laserBeamData.FlowScrollSpeed),
+            FlowPulseFrequency = math.max(0f, laserBeamData.FlowPulseFrequency),
+            WobbleAmplitude = math.max(0f, laserBeamData.WobbleAmplitude),
+            BubbleDriftSpeed = math.max(0f, laserBeamData.BubbleDriftSpeed)
         };
     }
 

@@ -203,6 +203,34 @@ public struct PassiveBulletTimeConfig
 }
 
 /// <summary>
+/// Holds baked runtime configuration for the Laser Beam passive shooting override.
+/// </summary>
+public struct LaserBeamPassiveConfig
+{
+    public float DamageMultiplier;
+    public float VirtualProjectileSpeedMultiplier;
+    public float DamageTickIntervalSeconds;
+    public float MaximumContinuousActiveSeconds;
+    public float CooldownSeconds;
+    public int MaximumBounceSegments;
+    public LaserBeamVisualPalette VisualPalette;
+    public LaserBeamBodyProfile BodyProfile;
+    public LaserBeamCapShape SourceShape;
+    public LaserBeamCapShape ImpactShape;
+    public float BodyWidthMultiplier;
+    public float CollisionWidthMultiplier;
+    public float SourceScaleMultiplier;
+    public float ImpactScaleMultiplier;
+    public float BodyOpacity;
+    public float CoreBrightness;
+    public float RimBrightness;
+    public float FlowScrollSpeed;
+    public float FlowPulseFrequency;
+    public float WobbleAmplitude;
+    public float BubbleDriftSpeed;
+}
+
+/// <summary>
 /// Holds baked runtime configuration for a single passive-tool slot.
 /// </summary>
 public struct PlayerPassiveToolConfig
@@ -219,6 +247,7 @@ public struct PlayerPassiveToolConfig
     public byte HasElementalTrail;
     public byte HasHeal;
     public byte HasBulletTime;
+    public byte HasLaserBeam;
     public ProjectileSizePassiveConfig ProjectileSize;
     public ShotgunPowerUpConfig Shotgun;
     public ElementalProjectilesPassiveConfig ElementalProjectiles;
@@ -229,6 +258,7 @@ public struct PlayerPassiveToolConfig
     public ElementalTrailPassiveConfig ElementalTrail;
     public PassiveHealConfig Heal;
     public PassiveBulletTimeConfig BulletTime;
+    public LaserBeamPassiveConfig LaserBeam;
 }
 
 /// <summary>

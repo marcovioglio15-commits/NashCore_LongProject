@@ -464,6 +464,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
             case PowerUpModuleKind.BouncingProjectiles:
             case PowerUpModuleKind.ProjectileSplit:
             case PowerUpModuleKind.TimeDilationEnemies:
+            case PowerUpModuleKind.LaserBeam:
             case PowerUpModuleKind.Stackable:
                 return true;
             default:
@@ -669,9 +670,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         bool hasHeal = moduleKinds.Contains(PowerUpModuleKind.Heal);
         bool hasBulletTime = moduleKinds.Contains(PowerUpModuleKind.TimeDilationEnemies);
         bool hasCharacterTuning = moduleKinds.Contains(PowerUpModuleKind.CharacterTuning);
+        bool hasLaserBeam = moduleKinds.Contains(PowerUpModuleKind.LaserBeam);
         bool hasGateResource = moduleKinds.Contains(PowerUpModuleKind.GateResource);
         bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
-        bool hasAnyPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal || hasBulletTime || hasCharacterTuning;
+        bool hasAnyPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal || hasBulletTime || hasCharacterTuning || hasLaserBeam;
 
         if (!hasAnyPassiveRuntimeConsumer)
             warningLines.Add("No passive runtime module found. This passive power up compiles as undefined.");

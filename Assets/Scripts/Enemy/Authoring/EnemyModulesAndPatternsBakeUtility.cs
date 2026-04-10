@@ -191,6 +191,7 @@ internal static class EnemyModulesAndPatternsBakeUtility
             shooterConfig.MinimumRange = math.max(0f, weaponInteraction.MinimumRange);
             shooterConfig.UseMaximumRange = weaponInteraction.UseMaximumRange ? (byte)1 : (byte)0;
             shooterConfig.MaximumRange = math.max(shooterConfig.MinimumRange, weaponInteraction.MaximumRange);
+            shooterConfig.ExclusiveLookDirectionControl = weaponInteraction.ExclusiveLookDirectionControl ? (byte)1 : (byte)0;
             result.ShooterConfigs[shooterIndex] = shooterConfig;
         }
     }

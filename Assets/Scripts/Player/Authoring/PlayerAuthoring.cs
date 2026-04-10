@@ -530,6 +530,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         Animator resolvedAnimatorComponent = PlayerAuthoringBakerValidationUtility.ResolveAnimatorComponent(authoring);
         GameObject resolvedRuntimeVisualBridgePrefab = PlayerAuthoringBakerValidationUtility.ResolveRuntimeVisualBridgePrefab(authoring);
 
+        if (resolvedRuntimeVisualBridgePrefab != null)
+            DeclareLaserBeamVisualRigDependencies(resolvedRuntimeVisualBridgePrefab);
+
         if (animationBindingsPreset != null)
         {
             AddComponent(entity, PlayerControllerConfigBakeUtility.BuildAnimatorParameterConfig(animationBindingsPreset));
@@ -574,6 +577,15 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             RemainingSeconds = 0f,
             AppliedBlend = 0f
         });
+        AddComponent(entity, PlayerLaserBeamVisualBakeUtility.BuildConfig(authoring));
+        DynamicBuffer<PlayerLaserBeamBodyVariantElement> laserBeamBodyVariantBuffer = AddBuffer<PlayerLaserBeamBodyVariantElement>(entity);
+        DynamicBuffer<PlayerLaserBeamSourceVariantElement> laserBeamSourceVariantBuffer = AddBuffer<PlayerLaserBeamSourceVariantElement>(entity);
+        DynamicBuffer<PlayerLaserBeamImpactVariantElement> laserBeamImpactVariantBuffer = AddBuffer<PlayerLaserBeamImpactVariantElement>(entity);
+        DynamicBuffer<PlayerLaserBeamPaletteElement> laserBeamPaletteBuffer = AddBuffer<PlayerLaserBeamPaletteElement>(entity);
+        PlayerLaserBeamVisualBakeUtility.PopulateBodyVariantBuffer(authoring, laserBeamBodyVariantBuffer);
+        PlayerLaserBeamVisualBakeUtility.PopulateSourceVariantBuffer(authoring, laserBeamSourceVariantBuffer);
+        PlayerLaserBeamVisualBakeUtility.PopulateImpactVariantBuffer(authoring, laserBeamImpactVariantBuffer);
+        PlayerLaserBeamVisualBakeUtility.PopulatePaletteBuffer(authoring, laserBeamPaletteBuffer);
 
         if (authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing &&
             resolvedRuntimeVisualBridgePrefab == null)
@@ -788,6 +800,33 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
 
         if (authoring.PowerUpsCheatPresetLibrary != null)
             DependsOn(authoring.PowerUpsCheatPresetLibrary);
+    }
+
+    /// <summary>
+    /// Declares prefab dependencies consumed by the Laser Beam visual rig so prefab edits trigger a rebake.
+    /// /params runtimeVisualBridgePrefab Resolved visual bridge prefab that may host the rig authoring component.
+    /// /returns None.
+    /// </summary>
+    private void DeclareLaserBeamVisualRigDependencies(GameObject runtimeVisualBridgePrefab)
+    {
+        if (runtimeVisualBridgePrefab == null)
+            return;
+
+        DependsOn(runtimeVisualBridgePrefab);
+        PlayerLaserBeamVisualRigAuthoring rigAuthoring = runtimeVisualBridgePrefab.GetComponent<PlayerLaserBeamVisualRigAuthoring>();
+
+        if (rigAuthoring == null)
+            return;
+
+        DependsOn(rigAuthoring.RoundedTubeBodyPrefab);
+        DependsOn(rigAuthoring.TaperedJetBodyPrefab);
+        DependsOn(rigAuthoring.DenseRibbonBodyPrefab);
+        DependsOn(rigAuthoring.BubbleBurstSourcePrefab);
+        DependsOn(rigAuthoring.StarBloomSourcePrefab);
+        DependsOn(rigAuthoring.SoftDiscSourcePrefab);
+        DependsOn(rigAuthoring.BubbleBurstImpactPrefab);
+        DependsOn(rigAuthoring.StarBloomImpactPrefab);
+        DependsOn(rigAuthoring.SoftDiscImpactPrefab);
     }
 
     /// <summary>

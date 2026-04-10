@@ -73,6 +73,15 @@ internal static class PlayerPowerUpsPresetMigrationUtility
                                                                                              "Fires from a runtime event selected in payload."));
         }
 
+        if (!validModuleIds.Contains(PlayerPowerUpsPresetDefaultsUtility.ModuleIdLaserBeam))
+        {
+            moduleDefinitions.Add(PlayerPowerUpsPresetDefaultsUtility.CreateModuleDefinition(PlayerPowerUpsPresetDefaultsUtility.ModuleIdLaserBeam,
+                                                                                             "Laser Beam",
+                                                                                             PowerUpModuleKind.LaserBeam,
+                                                                                             PowerUpModuleStage.Hook,
+                                                                                             "Overrides base projectile spawning with one or more continuous liquid beam lanes."));
+        }
+
         ApplyUnifiedBindings(preset.ActivePowerUpsMutable, moduleDefinitions);
         ApplyUnifiedBindings(preset.PassivePowerUpsMutable, moduleDefinitions);
     }

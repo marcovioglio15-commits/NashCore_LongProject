@@ -67,6 +67,9 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             case PowerUpModuleKind.OrbitalProjectiles:
                 BuildOrbitalProjectilesPayloadUi(payloadContainer, payloadProperty);
                 return;
+            case PowerUpModuleKind.LaserBeam:
+                BuildLaserBeamPayloadUi(payloadContainer, payloadProperty);
+                return;
             case PowerUpModuleKind.Stackable:
                 BuildStackablePayloadUi(payloadContainer, payloadProperty);
                 return;
@@ -590,6 +593,214 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             UpdateOrbitPathModeContainers(changedProperty, circleContainer, spiralContainer);
         });
     }
+
+    private static void BuildLaserBeamPayloadUi(VisualElement payloadContainer, SerializedProperty laserBeamPayloadProperty)
+    {
+        if (payloadContainer == null || laserBeamPayloadProperty == null)
+            return;
+
+        SerializedProperty damageMultiplierProperty = laserBeamPayloadProperty.FindPropertyRelative("damageMultiplier");
+        SerializedProperty virtualProjectileSpeedMultiplierProperty = laserBeamPayloadProperty.FindPropertyRelative("virtualProjectileSpeedMultiplier");
+        SerializedProperty damageTickIntervalSecondsProperty = laserBeamPayloadProperty.FindPropertyRelative("damageTickIntervalSeconds");
+        SerializedProperty maximumContinuousActiveSecondsProperty = laserBeamPayloadProperty.FindPropertyRelative("maximumContinuousActiveSeconds");
+        SerializedProperty cooldownSecondsProperty = laserBeamPayloadProperty.FindPropertyRelative("cooldownSeconds");
+        SerializedProperty maximumBounceSegmentsProperty = laserBeamPayloadProperty.FindPropertyRelative("maximumBounceSegments");
+        SerializedProperty visualPaletteProperty = laserBeamPayloadProperty.FindPropertyRelative("visualPalette");
+        SerializedProperty bodyProfileProperty = laserBeamPayloadProperty.FindPropertyRelative("bodyProfile");
+        SerializedProperty sourceShapeProperty = laserBeamPayloadProperty.FindPropertyRelative("sourceShape");
+        SerializedProperty impactShapeProperty = laserBeamPayloadProperty.FindPropertyRelative("impactShape");
+        SerializedProperty bodyWidthMultiplierProperty = laserBeamPayloadProperty.FindPropertyRelative("bodyWidthMultiplier");
+        SerializedProperty collisionWidthMultiplierProperty = laserBeamPayloadProperty.FindPropertyRelative("collisionWidthMultiplier");
+        SerializedProperty sourceScaleMultiplierProperty = laserBeamPayloadProperty.FindPropertyRelative("sourceScaleMultiplier");
+        SerializedProperty impactScaleMultiplierProperty = laserBeamPayloadProperty.FindPropertyRelative("impactScaleMultiplier");
+        SerializedProperty bodyOpacityProperty = laserBeamPayloadProperty.FindPropertyRelative("bodyOpacity");
+        SerializedProperty coreBrightnessProperty = laserBeamPayloadProperty.FindPropertyRelative("coreBrightness");
+        SerializedProperty rimBrightnessProperty = laserBeamPayloadProperty.FindPropertyRelative("rimBrightness");
+        SerializedProperty flowScrollSpeedProperty = laserBeamPayloadProperty.FindPropertyRelative("flowScrollSpeed");
+        SerializedProperty flowPulseFrequencyProperty = laserBeamPayloadProperty.FindPropertyRelative("flowPulseFrequency");
+        SerializedProperty wobbleAmplitudeProperty = laserBeamPayloadProperty.FindPropertyRelative("wobbleAmplitude");
+        SerializedProperty bubbleDriftSpeedProperty = laserBeamPayloadProperty.FindPropertyRelative("bubbleDriftSpeed");
+
+        if (damageMultiplierProperty == null ||
+            virtualProjectileSpeedMultiplierProperty == null ||
+            damageTickIntervalSecondsProperty == null ||
+            maximumContinuousActiveSecondsProperty == null ||
+            cooldownSecondsProperty == null ||
+            maximumBounceSegmentsProperty == null ||
+            visualPaletteProperty == null ||
+            bodyProfileProperty == null ||
+            sourceShapeProperty == null ||
+            impactShapeProperty == null ||
+            bodyWidthMultiplierProperty == null ||
+            collisionWidthMultiplierProperty == null ||
+            sourceScaleMultiplierProperty == null ||
+            impactScaleMultiplierProperty == null ||
+            bodyOpacityProperty == null ||
+            coreBrightnessProperty == null ||
+            rimBrightnessProperty == null ||
+            flowScrollSpeedProperty == null ||
+            flowPulseFrequencyProperty == null ||
+            wobbleAmplitudeProperty == null ||
+            bubbleDriftSpeedProperty == null)
+        {
+            HelpBox errorBox = new HelpBox("Laser Beam payload fields are missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(errorBox);
+            return;
+        }
+
+        HelpBox infoBox = new HelpBox("Laser Beam overrides base projectile spawning while the Shoot input is held. It always behaves as hold-to-fire, even if the current controller shooting trigger mode uses single-shot or toggle semantics.", HelpBoxMessageType.Info);
+        payloadContainer.Add(infoBox);
+
+        HelpBox warningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+        payloadContainer.Add(warningBox);
+
+        Foldout gameplayFoldout = PlayerManagementFoldoutStateUtility.CreatePropertyFoldout(laserBeamPayloadProperty,
+                                                                                            "Gameplay",
+                                                                                            "LaserBeamPayloadGameplay",
+                                                                                            true);
+        payloadContainer.Add(gameplayFoldout);
+        AddField(gameplayFoldout, damageMultiplierProperty, "Damage Multiplier");
+        AddField(gameplayFoldout, virtualProjectileSpeedMultiplierProperty, "Virtual Projectile Speed Multiplier");
+        AddField(gameplayFoldout, damageTickIntervalSecondsProperty, "Damage Tick Interval Seconds");
+        AddField(gameplayFoldout, cooldownSecondsProperty, "Cooldown Seconds");
+
+        VisualElement cooldownContainer = new VisualElement();
+        cooldownContainer.style.marginLeft = 12f;
+        gameplayFoldout.Add(cooldownContainer);
+        AddField(cooldownContainer, maximumContinuousActiveSecondsProperty, "Maximum Continuous Active Seconds");
+
+        AddField(gameplayFoldout, maximumBounceSegmentsProperty, "Maximum Bounce Segments");
+
+        Foldout visualsFoldout = PlayerManagementFoldoutStateUtility.CreatePropertyFoldout(laserBeamPayloadProperty,
+                                                                                           "Presentation",
+                                                                                           "LaserBeamPayloadPresentation",
+                                                                                           true);
+        payloadContainer.Add(visualsFoldout);
+        AddField(visualsFoldout, visualPaletteProperty, "Visual Palette");
+        AddField(visualsFoldout, bodyProfileProperty, "Body Profile");
+        AddField(visualsFoldout, sourceShapeProperty, "Source Shape");
+        AddField(visualsFoldout, impactShapeProperty, "Impact Shape");
+        AddField(visualsFoldout, bodyWidthMultiplierProperty, "Body Width Multiplier");
+        AddField(visualsFoldout, collisionWidthMultiplierProperty, "Collision Width Multiplier");
+        AddField(visualsFoldout, sourceScaleMultiplierProperty, "Source Scale Multiplier");
+        AddField(visualsFoldout, impactScaleMultiplierProperty, "Impact Scale Multiplier");
+        AddField(visualsFoldout, bodyOpacityProperty, "Body Opacity");
+        AddField(visualsFoldout, coreBrightnessProperty, "Core Brightness");
+        AddField(visualsFoldout, rimBrightnessProperty, "Rim Brightness");
+        AddField(visualsFoldout, flowScrollSpeedProperty, "Flow Scroll Speed");
+        AddField(visualsFoldout, flowPulseFrequencyProperty, "Flow Pulse Frequency");
+        AddField(visualsFoldout, wobbleAmplitudeProperty, "Wobble Amplitude");
+        AddField(visualsFoldout, bubbleDriftSpeedProperty, "Bubble Drift Speed");
+
+        UpdateLaserBeamCooldownVisibility(cooldownSecondsProperty, cooldownContainer);
+        RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                 damageTickIntervalSecondsProperty,
+                                 maximumContinuousActiveSecondsProperty,
+                                 bodyWidthMultiplierProperty,
+                                 collisionWidthMultiplierProperty,
+                                 sourceScaleMultiplierProperty,
+                                 impactScaleMultiplierProperty,
+                                 bodyOpacityProperty,
+                                 warningBox);
+
+        payloadContainer.TrackPropertyValue(cooldownSecondsProperty, changedProperty =>
+        {
+            UpdateLaserBeamCooldownVisibility(changedProperty, cooldownContainer);
+            RefreshLaserBeamWarnings(changedProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(damageTickIntervalSecondsProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     changedProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(maximumContinuousActiveSecondsProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     changedProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(bodyWidthMultiplierProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     changedProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(collisionWidthMultiplierProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     changedProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(sourceScaleMultiplierProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     changedProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(impactScaleMultiplierProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     changedProperty,
+                                     bodyOpacityProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(bodyOpacityProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     changedProperty,
+                                     warningBox);
+        });
+    }
     #endregion
 
     #region Visibility
@@ -648,6 +859,20 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         }
 
         interruptOptionsContainer.style.display = interruptOtherSlotOnEnterProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    private static void UpdateLaserBeamCooldownVisibility(SerializedProperty cooldownSecondsProperty, VisualElement cooldownContainer)
+    {
+        if (cooldownContainer == null)
+            return;
+
+        if (cooldownSecondsProperty == null)
+        {
+            cooldownContainer.style.display = DisplayStyle.None;
+            return;
+        }
+
+        cooldownContainer.style.display = cooldownSecondsProperty.floatValue > 0f ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private static void UpdateElementalPayloadOptionsVisibility(SerializedProperty applyElementalOnHitProperty, VisualElement elementalPayloadContainer)
@@ -721,6 +946,60 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
 
             warningLines.Add(string.Format("Formula #{0}: {1}", formulaIndex + 1, warningMessage));
         }
+
+        if (warningLines.Count <= 0)
+        {
+            warningBox.text = string.Empty;
+            warningBox.style.display = DisplayStyle.None;
+            return;
+        }
+
+        warningBox.text = string.Join("\n", warningLines);
+        warningBox.style.display = DisplayStyle.Flex;
+    }
+
+    private static void RefreshLaserBeamWarnings(SerializedProperty cooldownSecondsProperty,
+                                                 SerializedProperty damageTickIntervalSecondsProperty,
+                                                 SerializedProperty maximumContinuousActiveSecondsProperty,
+                                                 SerializedProperty bodyWidthMultiplierProperty,
+                                                 SerializedProperty collisionWidthMultiplierProperty,
+                                                 SerializedProperty sourceScaleMultiplierProperty,
+                                                 SerializedProperty impactScaleMultiplierProperty,
+                                                 SerializedProperty bodyOpacityProperty,
+                                                 HelpBox warningBox)
+    {
+        if (warningBox == null)
+            return;
+
+        List<string> warningLines = new List<string>();
+
+        if (damageTickIntervalSecondsProperty != null && damageTickIntervalSecondsProperty.floatValue <= 0f)
+            warningLines.Add("Damage Tick Interval Seconds should be > 0.");
+
+        if (cooldownSecondsProperty != null && cooldownSecondsProperty.floatValue <= 0f)
+        {
+            if (maximumContinuousActiveSecondsProperty != null && maximumContinuousActiveSecondsProperty.floatValue > 0f)
+                warningLines.Add("Maximum Continuous Active Seconds is ignored while Cooldown Seconds is 0.");
+        }
+        else if (maximumContinuousActiveSecondsProperty != null && maximumContinuousActiveSecondsProperty.floatValue <= 0f)
+        {
+            warningLines.Add("Maximum Continuous Active Seconds should be > 0 when Cooldown Seconds is enabled.");
+        }
+
+        if (bodyWidthMultiplierProperty != null && bodyWidthMultiplierProperty.floatValue <= 0f)
+            warningLines.Add("Body Width Multiplier should be > 0.");
+
+        if (collisionWidthMultiplierProperty != null && collisionWidthMultiplierProperty.floatValue <= 0f)
+            warningLines.Add("Collision Width Multiplier should be > 0.");
+
+        if (sourceScaleMultiplierProperty != null && sourceScaleMultiplierProperty.floatValue <= 0f)
+            warningLines.Add("Source Scale Multiplier should be > 0.");
+
+        if (impactScaleMultiplierProperty != null && impactScaleMultiplierProperty.floatValue <= 0f)
+            warningLines.Add("Impact Scale Multiplier should be > 0.");
+
+        if (bodyOpacityProperty != null && bodyOpacityProperty.floatValue <= 0f)
+            warningLines.Add("Body Opacity should be > 0.");
 
         if (warningLines.Count <= 0)
         {

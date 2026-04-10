@@ -1,0 +1,800 @@
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Physics;
+using Unity.Transforms;
+
+/// <summary>
+/// Resolves activation, cooldown and bounced lane geometry for the player Laser Beam passive override.
+/// /params None.
+/// /returns None.
+/// </summary>
+[UpdateInGroup(typeof(PlayerControllerSystemGroup))]
+[UpdateAfter(typeof(PlayerShootingIntentSystem))]
+[UpdateAfter(typeof(PlayerMovementApplySystem))]
+public partial struct PlayerLaserBeamSimulationSystem : ISystem
+{
+    #region Constants
+    private const int MaximumSupportedSplitChildLanes = 24;
+    #endregion
+
+    #region Methods
+
+    #region Lifecycle
+    /// <summary>
+    /// Registers all required runtime dependencies for Laser Beam simulation.
+    /// /params state Mutable system state.
+    /// /returns None.
+    /// </summary>
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<PlayerLaserBeamState>();
+        state.RequireForUpdate<PlayerLaserBeamLaneElement>();
+        state.RequireForUpdate<PlayerInputState>();
+        state.RequireForUpdate<PlayerLookState>();
+        state.RequireForUpdate<PlayerMovementState>();
+        state.RequireForUpdate<PlayerShootingState>();
+        state.RequireForUpdate<PlayerRuntimeShootingConfig>();
+        state.RequireForUpdate<PlayerRuntimeShootingAppliedElementSlot>();
+        state.RequireForUpdate<PlayerPassiveToolsState>();
+        state.RequireForUpdate<LocalTransform>();
+        state.RequireForUpdate<PhysicsWorldSingleton>();
+    }
+
+    /// <summary>
+    /// Updates beam activation timers and rebuilds the current segment buffer for every active player beam.
+    /// /params state Mutable system state.
+    /// /returns None.
+    /// </summary>
+    public void OnUpdate(ref SystemState state)
+    {
+        float deltaTime = SystemAPI.Time.DeltaTime;
+        float globalTime = (float)SystemAPI.Time.ElapsedTime;
+        PhysicsWorldSingleton physicsWorldSingleton = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
+        int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
+
+        if (SystemAPI.TryGetSingleton<PlayerWorldLayersConfig>(out PlayerWorldLayersConfig worldLayersConfig) &&
+            worldLayersConfig.WallsLayerMask != 0)
+        {
+            wallsLayerMask = worldLayersConfig.WallsLayerMask;
+        }
+
+        bool wallsEnabled = wallsLayerMask != 0;
+        CollisionFilter wallsCollisionFilter = wallsEnabled
+            ? WorldWallCollisionUtility.BuildWallsCollisionFilter(wallsLayerMask)
+            : default;
+        ComponentLookup<PlayerPowerUpsState> powerUpsStateLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsState>(true);
+        ComponentLookup<PlayerInputState> inputStateLookup = SystemAPI.GetComponentLookup<PlayerInputState>(true);
+        ComponentLookup<PlayerLookState> lookStateLookup = SystemAPI.GetComponentLookup<PlayerLookState>(true);
+        ComponentLookup<PlayerMovementState> movementStateLookup = SystemAPI.GetComponentLookup<PlayerMovementState>(true);
+        ComponentLookup<PlayerRuntimeShootingConfig> runtimeShootingConfigLookup = SystemAPI.GetComponentLookup<PlayerRuntimeShootingConfig>(true);
+        ComponentLookup<PlayerPassiveToolsState> passiveToolsStateLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
+        ComponentLookup<ShooterMuzzleAnchor> muzzleLookup = SystemAPI.GetComponentLookup<ShooterMuzzleAnchor>(true);
+        ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
+        ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
+        BufferLookup<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlotsLookup = SystemAPI.GetBufferLookup<PlayerRuntimeShootingAppliedElementSlot>(true);
+
+        foreach ((RefRO<LocalTransform> localTransform,
+                  RefRW<PlayerShootingState> shootingState,
+                  RefRW<PlayerLaserBeamState> laserBeamState,
+                  DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                  Entity playerEntity)
+                 in SystemAPI.Query<RefRO<LocalTransform>,
+                                    RefRW<PlayerShootingState>,
+                                    RefRW<PlayerLaserBeamState>,
+                                    DynamicBuffer<PlayerLaserBeamLaneElement>>()
+                             .WithEntityAccess())
+        {
+            if (!inputStateLookup.HasComponent(playerEntity) ||
+                !lookStateLookup.HasComponent(playerEntity) ||
+                !movementStateLookup.HasComponent(playerEntity) ||
+                !runtimeShootingConfigLookup.HasComponent(playerEntity) ||
+                !passiveToolsStateLookup.HasComponent(playerEntity) ||
+                !appliedElementSlotsLookup.HasBuffer(playerEntity))
+            {
+                continue;
+            }
+
+            DynamicBuffer<PlayerLaserBeamLaneElement> mutableLaserBeamLanes = laserBeamLanes;
+            mutableLaserBeamLanes.Clear();
+
+            PlayerLaserBeamState currentLaserBeamState = laserBeamState.ValueRO;
+            PlayerPassiveToolsState currentPassiveToolsState = passiveToolsStateLookup[playerEntity];
+            PlayerInputState currentInputState = inputStateLookup[playerEntity];
+            PlayerLookState currentLookState = lookStateLookup[playerEntity];
+            PlayerMovementState currentMovementState = movementStateLookup[playerEntity];
+            PlayerRuntimeShootingConfig currentRuntimeShootingConfig = runtimeShootingConfigLookup[playerEntity];
+            DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots = appliedElementSlotsLookup[playerEntity];
+            ElementalEffectConfig unusedElementalEffect = default;
+            bool hasLaserBeam = currentPassiveToolsState.HasLaserBeam != 0;
+
+            if (!hasLaserBeam)
+            {
+                ResetBeamState(ref currentLaserBeamState);
+                shootingState.ValueRW.VisualShootingActive = 0;
+                laserBeamState.ValueRW = currentLaserBeamState;
+                continue;
+            }
+
+            LaserBeamPassiveConfig laserBeamConfig = currentPassiveToolsState.LaserBeam;
+            UpdateCooldown(ref currentLaserBeamState, laserBeamConfig, deltaTime);
+            UpdateChargeImpulse(ref currentLaserBeamState, deltaTime);
+            bool isShootPressed = currentInputState.Shoot > 0.5f;
+            bool hasChargeImpulse = currentLaserBeamState.ChargeImpulseRemainingSeconds > 0f;
+            bool isShootingSuppressed = powerUpsStateLookup.HasComponent(playerEntity) &&
+                                        powerUpsStateLookup[playerEntity].IsShootingSuppressed != 0;
+
+            if (isShootingSuppressed || (!isShootPressed && !hasChargeImpulse))
+            {
+                currentLaserBeamState.IsActive = 0;
+                currentLaserBeamState.IsTickReady = 0;
+                currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
+                currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
+                currentLaserBeamState.DamageTickTimer = 0f;
+
+                if (isShootingSuppressed)
+                    ClearChargeImpulse(ref currentLaserBeamState);
+
+                shootingState.ValueRW.VisualShootingActive = 0;
+                laserBeamState.ValueRW = currentLaserBeamState;
+                continue;
+            }
+
+            if (currentLaserBeamState.IsOverheated != 0)
+            {
+                currentLaserBeamState.IsActive = 0;
+                currentLaserBeamState.IsTickReady = 0;
+                currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
+                ClearChargeImpulse(ref currentLaserBeamState);
+                shootingState.ValueRW.VisualShootingActive = 0;
+                laserBeamState.ValueRW = currentLaserBeamState;
+                continue;
+            }
+
+            bool wasActive = currentLaserBeamState.IsActive != 0;
+            currentLaserBeamState.IsActive = 1;
+
+            if (isShootPressed)
+                currentLaserBeamState.ConsecutiveActiveElapsed += math.max(0f, deltaTime);
+            else
+                currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
+
+            if (!wasActive)
+                currentLaserBeamState.DamageTickTimer = 0f;
+            else
+                currentLaserBeamState.DamageTickTimer -= math.max(0f, deltaTime);
+
+            if (isShootPressed && ShouldOverheat(in laserBeamConfig, currentLaserBeamState.ConsecutiveActiveElapsed))
+            {
+                currentLaserBeamState.IsActive = 0;
+                currentLaserBeamState.IsOverheated = 1;
+                currentLaserBeamState.IsTickReady = 0;
+                currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
+                currentLaserBeamState.CooldownRemaining = math.max(0f, laserBeamConfig.CooldownSeconds);
+                currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
+                currentLaserBeamState.DamageTickTimer = math.max(0.0001f, laserBeamConfig.DamageTickIntervalSeconds);
+                ClearChargeImpulse(ref currentLaserBeamState);
+                shootingState.ValueRW.VisualShootingActive = 0;
+                laserBeamState.ValueRW = currentLaserBeamState;
+                continue;
+            }
+
+            currentLaserBeamState.IsTickReady = currentLaserBeamState.DamageTickTimer <= 0f ? (byte)1 : (byte)0;
+            shootingState.ValueRW.VisualShootingActive = 1;
+
+            PlayerProjectileRequestTemplate projectileTemplate = PlayerProjectileRequestUtility.BuildProjectileTemplate(in currentRuntimeShootingConfig,
+                                                                                                                         appliedElementSlots,
+                                                                                                                         in currentPassiveToolsState,
+                                                                                                                         1f,
+                                                                                                                         1f,
+                                                                                                                         1f,
+                                                                                                                         1f,
+                                                                                                                         1f,
+                                                                                                                         false,
+                                                                                                                         in unusedElementalEffect,
+                                                                                                                         0f);
+            bool hasPerfectCircle = currentPassiveToolsState.HasPerfectCircle != 0;
+            float virtualProjectileSpeedMultiplier = math.max(0f, laserBeamConfig.VirtualProjectileSpeedMultiplier);
+            float projectileSpeed = math.max(0f,
+                                             projectileTemplate.Speed * virtualProjectileSpeedMultiplier);
+
+            if (!hasPerfectCircle && projectileSpeed <= 0f)
+            {
+                currentLaserBeamState.IsActive = 0;
+                currentLaserBeamState.IsTickReady = 0;
+                currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
+                shootingState.ValueRW.VisualShootingActive = 0;
+                laserBeamState.ValueRW = currentLaserBeamState;
+                continue;
+            }
+
+            int primaryLaneCount = currentPassiveToolsState.HasShotgun != 0
+                ? math.max(1, currentPassiveToolsState.Shotgun.ProjectileCount)
+                : 1;
+            float coneAngleDegrees = currentPassiveToolsState.HasShotgun != 0
+                ? math.max(0f, currentPassiveToolsState.Shotgun.ConeAngleDegrees)
+                : 0f;
+            float3 spawnPosition = PlayerProjectileRequestUtility.ResolveShootSpawnPosition(playerEntity,
+                                                                                            in localTransform.ValueRO,
+                                                                                            in currentRuntimeShootingConfig,
+                                                                                            in muzzleLookup,
+                                                                                            in transformLookup,
+                                                                                            in localToWorldLookup);
+            float3 baseDirection = PlayerProjectileRequestUtility.ResolveShootDirection(in currentLookState, in localTransform.ValueRO);
+            float travelDistance = hasPerfectCircle
+                ? 0f
+                : PlayerLaserBeamUtility.ResolveTravelDistance(currentLaserBeamState.ConsecutiveActiveElapsed,
+                                                               projectileSpeed,
+                                                               projectileTemplate.Range,
+                                                               projectileTemplate.Lifetime);
+            float chargeImpulseWidthMultiplier = hasChargeImpulse
+                ? math.max(1f, currentLaserBeamState.ChargeImpulseWidthMultiplier)
+                : 1f;
+
+            if (!hasPerfectCircle && hasChargeImpulse)
+                travelDistance = math.max(travelDistance, currentLaserBeamState.ChargeImpulseTravelDistance);
+
+            float collisionRadius = PlayerLaserBeamUtility.ResolveCollisionRadius(projectileTemplate.ScaleMultiplier,
+                                                                                 laserBeamConfig.CollisionWidthMultiplier) * chargeImpulseWidthMultiplier;
+            collisionRadius += math.max(0f, projectileTemplate.ExplosionRadius);
+            float bodyWidth = PlayerLaserBeamUtility.ResolveBodyWidth(projectileTemplate.ScaleMultiplier,
+                                                                     laserBeamConfig.BodyWidthMultiplier) * chargeImpulseWidthMultiplier;
+            int maximumBounceSegments = ResolveMaximumBounceSegments(in currentPassiveToolsState, in laserBeamConfig);
+
+            currentLaserBeamState.LastResolvedPrimaryLaneCount = primaryLaneCount;
+            FixedList512Bytes<byte> primaryLaneReachedVirtualDespawnFlags = default;
+
+            for (int laneIndex = 0; laneIndex < primaryLaneCount; laneIndex++)
+            {
+                float3 laneSpawnPosition = spawnPosition;
+                float3 laneDirection = PlayerLaserBeamUtility.ResolveSpreadDirection(baseDirection,
+                                                                                    laneIndex,
+                                                                                    primaryLaneCount,
+                                                                                    coneAngleDegrees);
+                bool reachedVirtualDespawn;
+                TryAppendLane(ref mutableLaserBeamLanes,
+                              laneIndex,
+                              false,
+                              playerEntity,
+                              localTransform.ValueRO.Position,
+                              currentMovementState.Velocity,
+                              laneSpawnPosition,
+                              laneDirection,
+                              currentLaserBeamState.ConsecutiveActiveElapsed,
+                              globalTime,
+                              travelDistance,
+                              projectileTemplate.Range,
+                              projectileTemplate.Lifetime,
+                              virtualProjectileSpeedMultiplier,
+                              collisionRadius,
+                              bodyWidth,
+                              1f,
+                              maximumBounceSegments,
+                              in currentPassiveToolsState.PerfectCircle,
+                              hasPerfectCircle,
+                              in physicsWorldSingleton,
+                              in wallsCollisionFilter,
+                              out reachedVirtualDespawn,
+                              wallsEnabled);
+                primaryLaneReachedVirtualDespawnFlags.Add(reachedVirtualDespawn ? (byte)1 : (byte)0);
+            }
+
+            if (currentPassiveToolsState.HasSplittingProjectiles != 0 &&
+                currentPassiveToolsState.SplittingProjectiles.TriggerMode == ProjectileSplitTriggerMode.OnProjectileDespawn)
+            {
+                AppendSplitChildLanes(ref mutableLaserBeamLanes,
+                                      playerEntity,
+                                      localTransform.ValueRO.Position,
+                                      currentMovementState.Velocity,
+                                      primaryLaneCount,
+                                      currentLaserBeamState.ConsecutiveActiveElapsed,
+                                      globalTime,
+                                      travelDistance,
+                                      projectileTemplate.Range,
+                                      projectileTemplate.Lifetime,
+                                      virtualProjectileSpeedMultiplier,
+                                      collisionRadius,
+                                      bodyWidth,
+                                      maximumBounceSegments,
+                                      in primaryLaneReachedVirtualDespawnFlags,
+                                      in currentPassiveToolsState.PerfectCircle,
+                                      hasPerfectCircle,
+                                      in currentPassiveToolsState.SplittingProjectiles,
+                                      in physicsWorldSingleton,
+                                      in wallsCollisionFilter,
+                                      wallsEnabled);
+            }
+
+            laserBeamState.ValueRW = currentLaserBeamState;
+        }
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Resets all transient Laser Beam runtime timers and flags to their idle state.
+    /// /params laserBeamState Mutable Laser Beam runtime state.
+    /// /returns None.
+    /// </summary>
+    private static void ResetBeamState(ref PlayerLaserBeamState laserBeamState)
+    {
+        laserBeamState.IsActive = 0;
+        laserBeamState.IsOverheated = 0;
+        laserBeamState.IsTickReady = 0;
+        laserBeamState.LastResolvedPrimaryLaneCount = 0;
+        laserBeamState.CooldownRemaining = 0f;
+        laserBeamState.ConsecutiveActiveElapsed = 0f;
+        laserBeamState.DamageTickTimer = 0f;
+        ClearChargeImpulse(ref laserBeamState);
+    }
+
+    /// <summary>
+    /// Advances the transient Charge Shot impulse timer carried by the Laser Beam runtime state.
+    /// /params laserBeamState Mutable Laser Beam runtime state.
+    /// /params deltaTime Frame delta used to decrease timers.
+    /// /returns None.
+    /// </summary>
+    private static void UpdateChargeImpulse(ref PlayerLaserBeamState laserBeamState,
+                                            float deltaTime)
+    {
+        if (laserBeamState.ChargeImpulseRemainingSeconds > 0f)
+            laserBeamState.ChargeImpulseRemainingSeconds = math.max(0f, laserBeamState.ChargeImpulseRemainingSeconds - math.max(0f, deltaTime));
+
+        if (laserBeamState.ChargeImpulseRemainingSeconds > 0f)
+            return;
+
+        ClearChargeImpulse(ref laserBeamState);
+    }
+
+    /// <summary>
+    /// Clears the transient Charge Shot impulse modifiers applied to the current beam.
+    /// /params laserBeamState Mutable Laser Beam runtime state.
+    /// /returns None.
+    /// </summary>
+    private static void ClearChargeImpulse(ref PlayerLaserBeamState laserBeamState)
+    {
+        laserBeamState.ChargeImpulseRemainingSeconds = 0f;
+        laserBeamState.ChargeImpulseDamageMultiplier = 0f;
+        laserBeamState.ChargeImpulseWidthMultiplier = 0f;
+        laserBeamState.ChargeImpulseTravelDistance = 0f;
+    }
+
+    /// <summary>
+    /// Advances Laser Beam cooldown timers and clears the overheated state once cooldown expires.
+    /// /params laserBeamState Mutable Laser Beam runtime state.
+    /// /params laserBeamConfig Aggregated Laser Beam passive configuration.
+    /// /params deltaTime Frame delta used to decrease timers.
+    /// /returns None.
+    /// </summary>
+    private static void UpdateCooldown(ref PlayerLaserBeamState laserBeamState,
+                                       LaserBeamPassiveConfig laserBeamConfig,
+                                       float deltaTime)
+    {
+        if (laserBeamState.CooldownRemaining > 0f)
+            laserBeamState.CooldownRemaining = math.max(0f, laserBeamState.CooldownRemaining - math.max(0f, deltaTime));
+
+        if (laserBeamState.IsOverheated == 0)
+            return;
+
+        if (math.max(0f, laserBeamConfig.CooldownSeconds) <= 0f || laserBeamState.CooldownRemaining <= 0f)
+            laserBeamState.IsOverheated = 0;
+    }
+
+    /// <summary>
+    /// Evaluates whether the current uninterrupted activation window has reached the configured overheating threshold.
+    /// /params laserBeamConfig Aggregated Laser Beam passive configuration.
+    /// /params consecutiveActiveElapsed Current uninterrupted active time.
+    /// /returns True when Laser Beam must enter cooldown.
+    /// </summary>
+    private static bool ShouldOverheat(in LaserBeamPassiveConfig laserBeamConfig,
+                                       float consecutiveActiveElapsed)
+    {
+        if (math.max(0f, laserBeamConfig.CooldownSeconds) <= 0f)
+            return false;
+
+        float maximumContinuousActiveSeconds = math.max(0f, laserBeamConfig.MaximumContinuousActiveSeconds);
+
+        if (maximumContinuousActiveSeconds <= 0f)
+            return false;
+
+        return consecutiveActiveElapsed >= maximumContinuousActiveSeconds;
+    }
+
+    /// <summary>
+    /// Resolves the effective bounce budget inherited by the beam from the projectile bounce passive.
+    /// /params passiveToolsState Aggregated passive runtime state.
+    /// /params laserBeamConfig Aggregated Laser Beam passive configuration.
+    /// /returns Effective bounce count used to build reflected segments.
+    /// </summary>
+    private static int ResolveMaximumBounceSegments(in PlayerPassiveToolsState passiveToolsState,
+                                                    in LaserBeamPassiveConfig laserBeamConfig)
+    {
+        if (passiveToolsState.HasBouncingProjectiles == 0)
+            return 0;
+
+        int inheritedMaximumBounces = math.max(0, passiveToolsState.BouncingProjectiles.MaxBounces);
+        int laserBeamBounceCap = math.max(0, laserBeamConfig.MaximumBounceSegments);
+
+        if (laserBeamBounceCap <= 0)
+            return inheritedMaximumBounces;
+
+        return math.min(inheritedMaximumBounces, laserBeamBounceCap);
+    }
+
+    /// <summary>
+    /// Appends one beam lane using either the straight-line builder or the Perfect Circle sampler, depending on passive state.
+    /// /params laserBeamLanes Output lane buffer for the current player.
+    /// /params laneIndex Stable lane index assigned to the lane.
+    /// /params isSplitChild True when the lane belongs to one split branch.
+    /// /params shooterEntity Player entity owning the beam.
+    /// /params shooterPosition Current player position.
+    /// /params shooterVelocity Current player velocity.
+    /// /params spawnPosition World-space origin of the lane.
+    /// /params direction World-space forward direction of the lane.
+    /// /params activeSeconds Current uninterrupted active time.
+    /// /params globalTime Current elapsed world time.
+    /// /params travelDistance Straight-line travel budget used when Perfect Circle is disabled.
+    /// /params rangeLimit Effective projectile range inherited by the beam.
+    /// /params lifetimeLimit Effective projectile lifetime inherited by the beam.
+    /// /params speedMultiplier Beam-local speed multiplier applied to motion simulation.
+    /// /params collisionRadius Effective gameplay width of the lane.
+    /// /params bodyWidth Effective visual width of the lane.
+    /// /params damageMultiplier Lane-local damage multiplier.
+    /// /params maximumBounceSegments Maximum reflected wall segments supported by straight-line mode.
+    /// /params perfectCircleConfig Aggregated Perfect Circle passive configuration.
+    /// /params hasPerfectCircle True when the current lane must follow Perfect Circle sampling.
+    /// /params physicsWorldSingleton Physics world used for wall clipping.
+    /// /params wallsCollisionFilter Collision filter used for world walls.
+    /// /params reachedVirtualDespawn True when the simulated lane has reached its despawn condition and can emit split-on-despawn branches.
+    /// /params wallsEnabled True when wall clipping should be evaluated.
+    /// /returns True when at least one lane segment was appended.
+    /// </summary>
+    private static bool TryAppendLane(ref DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                      int laneIndex,
+                                      bool isSplitChild,
+                                      Entity shooterEntity,
+                                      float3 shooterPosition,
+                                      float3 shooterVelocity,
+                                      float3 spawnPosition,
+                                      float3 direction,
+                                      float activeSeconds,
+                                      float globalTime,
+                                      float travelDistance,
+                                      float rangeLimit,
+                                      float lifetimeLimit,
+                                      float speedMultiplier,
+                                      float collisionRadius,
+                                      float bodyWidth,
+                                      float damageMultiplier,
+                                      int maximumBounceSegments,
+                                      in PerfectCirclePassiveConfig perfectCircleConfig,
+                                      bool hasPerfectCircle,
+                                      in PhysicsWorldSingleton physicsWorldSingleton,
+                                      in CollisionFilter wallsCollisionFilter,
+                                      out bool reachedVirtualDespawn,
+                                      bool wallsEnabled)
+    {
+        reachedVirtualDespawn = false;
+
+        if (hasPerfectCircle)
+        {
+            return PlayerLaserBeamPerfectCircleUtility.TryAppendPerfectCircleLaneSegments(ref laserBeamLanes,
+                                                                                          laneIndex,
+                                                                                          isSplitChild,
+                                                                                          shooterEntity,
+                                                                                          shooterPosition,
+                                                                                          shooterVelocity,
+                                                                                          spawnPosition,
+                                                                                          direction,
+                                                                                          activeSeconds,
+                                                                                          globalTime,
+                                                                                          rangeLimit,
+                                                                                          lifetimeLimit,
+                                                                                          speedMultiplier,
+                                                                                          collisionRadius,
+                                                                                          bodyWidth,
+                                                                                          damageMultiplier,
+                                                                                          in perfectCircleConfig,
+                                                                                          in physicsWorldSingleton,
+                                                                                          in wallsCollisionFilter,
+                                                                                          out reachedVirtualDespawn,
+                                                                                          wallsEnabled);
+        }
+
+        if (travelDistance < PlayerLaserBeamUtility.MinimumTravelDistance)
+            return false;
+
+        int laneStartIndex = laserBeamLanes.Length;
+        bool appended = PlayerLaserBeamUtility.TryAppendLaneSegments(ref laserBeamLanes,
+                                                                     laneIndex,
+                                                                     isSplitChild,
+                                                                     spawnPosition,
+                                                                     direction,
+                                                                     travelDistance,
+                                                                     collisionRadius,
+                                                                     bodyWidth,
+                                                                     damageMultiplier,
+                                                                     maximumBounceSegments,
+                                                                     in physicsWorldSingleton,
+                                                                     in wallsCollisionFilter,
+                                                                     wallsEnabled);
+
+        if (!appended)
+            return false;
+
+        bool reachedLifetimeCap = lifetimeLimit > 0f && activeSeconds >= lifetimeLimit;
+        bool reachedRangeCap = rangeLimit > 0f && travelDistance + PlayerLaserBeamUtility.MinimumTravelDistance >= rangeLimit;
+        bool blockedByWall = laserBeamLanes.Length > laneStartIndex &&
+                             laserBeamLanes[laserBeamLanes.Length - 1].TerminalBlockedByWall != 0;
+        reachedVirtualDespawn = blockedByWall || reachedLifetimeCap || reachedRangeCap;
+        return true;
+    }
+
+    /// <summary>
+    /// Appends all split-child lanes emitted from currently resolved primary terminal segments.
+    /// /params laserBeamLanes Output lane buffer containing the already-built primary lanes.
+    /// /params shooterEntity Player entity owning the beam.
+    /// /params shooterPosition Current player position.
+    /// /params shooterVelocity Current player velocity.
+    /// /params primaryLaneCount Number of primary lanes already present in the buffer.
+    /// /params activeSeconds Current uninterrupted active time.
+    /// /params globalTime Current elapsed world time.
+    /// /params travelDistance Straight-line travel budget used when Perfect Circle is disabled.
+    /// /params rangeLimit Effective projectile range inherited by the parent lanes.
+    /// /params lifetimeLimit Effective projectile lifetime inherited by the parent lanes.
+    /// /params speedMultiplier Beam-local speed multiplier inherited by the parent lanes.
+    /// /params collisionRadius Effective gameplay width inherited by the parent lanes.
+    /// /params bodyWidth Effective visual width inherited by the parent lanes.
+    /// /params maximumBounceSegments Maximum reflected wall segments supported by straight-line mode.
+    /// /params primaryLaneReachedVirtualDespawnFlags Per-lane flags telling whether each primary lane reached a virtual despawn condition.
+    /// /params perfectCircleConfig Aggregated Perfect Circle passive configuration.
+    /// /params hasPerfectCircle True when split children must also sample Perfect Circle.
+    /// /params splittingProjectilesConfig Aggregated split-projectile passive configuration.
+    /// /params physicsWorldSingleton Physics world used for wall clipping.
+    /// /params wallsCollisionFilter Collision filter used for world walls.
+    /// /params wallsEnabled True when wall clipping should be evaluated.
+    /// /returns None.
+    /// </summary>
+    private static void AppendSplitChildLanes(ref DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                              Entity shooterEntity,
+                                              float3 shooterPosition,
+                                              float3 shooterVelocity,
+                                              int primaryLaneCount,
+                                              float activeSeconds,
+                                              float globalTime,
+                                              float travelDistance,
+                                              float rangeLimit,
+                                              float lifetimeLimit,
+                                              float speedMultiplier,
+                                              float collisionRadius,
+                                              float bodyWidth,
+                                              int maximumBounceSegments,
+                                              in FixedList512Bytes<byte> primaryLaneReachedVirtualDespawnFlags,
+                                              in PerfectCirclePassiveConfig perfectCircleConfig,
+                                              bool hasPerfectCircle,
+                                              in SplittingProjectilesPassiveConfig splittingProjectilesConfig,
+                                              in PhysicsWorldSingleton physicsWorldSingleton,
+                                              in CollisionFilter wallsCollisionFilter,
+                                              bool wallsEnabled)
+    {
+        int nextLaneIndex = primaryLaneCount;
+        int maximumChildLaneCount = math.min(MaximumSupportedSplitChildLanes,
+                                             math.max(0, primaryLaneCount * math.max(1, splittingProjectilesConfig.SplitProjectileCount)));
+
+        for (int primaryLaneIndex = 0; primaryLaneIndex < primaryLaneCount; primaryLaneIndex++)
+        {
+            if (primaryLaneIndex >= primaryLaneReachedVirtualDespawnFlags.Length ||
+                primaryLaneReachedVirtualDespawnFlags[primaryLaneIndex] == 0)
+            {
+                continue;
+            }
+
+            if (!TryResolveTerminalSegment(laserBeamLanes, primaryLaneIndex, out PlayerLaserBeamLaneElement terminalSegment))
+                continue;
+
+            switch (splittingProjectilesConfig.DirectionMode)
+            {
+                case ProjectileSplitDirectionMode.CustomAngles:
+                    for (int customAngleIndex = 0;
+                         customAngleIndex < splittingProjectilesConfig.CustomAnglesDegrees.Length && nextLaneIndex - primaryLaneCount < maximumChildLaneCount;
+                         customAngleIndex++)
+                    {
+                        float angleDegrees = splittingProjectilesConfig.CustomAnglesDegrees[customAngleIndex] + splittingProjectilesConfig.SplitOffsetDegrees;
+                        float3 childDirection = RotatePlanarDirection(terminalSegment.Direction, angleDegrees);
+                        AppendSplitChildLane(ref laserBeamLanes,
+                                             nextLaneIndex,
+                                             shooterEntity,
+                                             shooterPosition,
+                                             shooterVelocity,
+                                             terminalSegment.EndPoint,
+                                             childDirection,
+                                             activeSeconds,
+                                             globalTime,
+                                             travelDistance,
+                                             rangeLimit,
+                                             lifetimeLimit,
+                                             speedMultiplier,
+                                             collisionRadius,
+                                             bodyWidth,
+                                             maximumBounceSegments,
+                                             in perfectCircleConfig,
+                                             hasPerfectCircle,
+                                             in splittingProjectilesConfig,
+                                             in physicsWorldSingleton,
+                                             in wallsCollisionFilter,
+                                             wallsEnabled);
+                        nextLaneIndex++;
+                    }
+
+                    break;
+                default:
+                    int splitCount = math.max(1, splittingProjectilesConfig.SplitProjectileCount);
+                    float stepDegrees = 360f / splitCount;
+
+                    for (int splitIndex = 0; splitIndex < splitCount && nextLaneIndex - primaryLaneCount < maximumChildLaneCount; splitIndex++)
+                    {
+                        float angleDegrees = splittingProjectilesConfig.SplitOffsetDegrees + stepDegrees * splitIndex;
+                        float3 childDirection = RotatePlanarDirection(terminalSegment.Direction, angleDegrees);
+                        AppendSplitChildLane(ref laserBeamLanes,
+                                             nextLaneIndex,
+                                             shooterEntity,
+                                             shooterPosition,
+                                             shooterVelocity,
+                                             terminalSegment.EndPoint,
+                                             childDirection,
+                                             activeSeconds,
+                                             globalTime,
+                                             travelDistance,
+                                             rangeLimit,
+                                             lifetimeLimit,
+                                             speedMultiplier,
+                                             collisionRadius,
+                                             bodyWidth,
+                                             maximumBounceSegments,
+                                             in perfectCircleConfig,
+                                             hasPerfectCircle,
+                                             in splittingProjectilesConfig,
+                                             in physicsWorldSingleton,
+                                             in wallsCollisionFilter,
+                                             wallsEnabled);
+                        nextLaneIndex++;
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Appends one split-child lane with inherited size, lifetime and speed modifiers from the split passive.
+    /// /params laserBeamLanes Output lane buffer.
+    /// /params laneIndex Stable lane index assigned to the split branch.
+    /// /params shooterEntity Player entity owning the beam.
+    /// /params shooterPosition Current player position.
+    /// /params shooterVelocity Current player velocity.
+    /// /params spawnPosition World-space origin of the split branch.
+    /// /params direction World-space forward direction of the split branch.
+    /// /params activeSeconds Current uninterrupted active time.
+    /// /params globalTime Current elapsed world time.
+    /// /params parentTravelDistance Straight-line travel budget inherited from the parent lane.
+    /// /params parentRangeLimit Effective projectile range inherited from the parent lane.
+    /// /params parentLifetimeLimit Effective projectile lifetime inherited from the parent lane.
+    /// /params speedMultiplier Beam-local speed multiplier inherited from the parent lane.
+    /// /params parentCollisionRadius Effective gameplay width inherited from the parent lane.
+    /// /params parentBodyWidth Effective visual width inherited from the parent lane.
+    /// /params maximumBounceSegments Maximum reflected wall segments supported by straight-line mode.
+    /// /params perfectCircleConfig Aggregated Perfect Circle passive configuration.
+    /// /params hasPerfectCircle True when the split branch must also sample Perfect Circle.
+    /// /params splittingProjectilesConfig Aggregated split-projectile passive configuration.
+    /// /params physicsWorldSingleton Physics world used for wall clipping.
+    /// /params wallsCollisionFilter Collision filter used for world walls.
+    /// /params wallsEnabled True when wall clipping should be evaluated.
+    /// /returns None.
+    /// </summary>
+    private static void AppendSplitChildLane(ref DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                             int laneIndex,
+                                             Entity shooterEntity,
+                                             float3 shooterPosition,
+                                             float3 shooterVelocity,
+                                             float3 spawnPosition,
+                                             float3 direction,
+                                             float activeSeconds,
+                                             float globalTime,
+                                             float parentTravelDistance,
+                                             float parentRangeLimit,
+                                             float parentLifetimeLimit,
+                                             float speedMultiplier,
+                                             float parentCollisionRadius,
+                                             float parentBodyWidth,
+                                             int maximumBounceSegments,
+                                             in PerfectCirclePassiveConfig perfectCircleConfig,
+                                             bool hasPerfectCircle,
+                                             in SplittingProjectilesPassiveConfig splittingProjectilesConfig,
+                                             in PhysicsWorldSingleton physicsWorldSingleton,
+                                             in CollisionFilter wallsCollisionFilter,
+                                             bool wallsEnabled)
+    {
+        float splitLifetimeMultiplier = math.max(0f, splittingProjectilesConfig.SplitLifetimeMultiplier);
+        float splitTravelDistance = math.max(0f,
+                                             parentTravelDistance *
+                                             math.max(0f, splittingProjectilesConfig.SplitSpeedMultiplier) *
+                                             splitLifetimeMultiplier);
+        float splitCollisionRadius = math.max(PlayerLaserBeamUtility.MinimumCollisionRadius,
+                                              parentCollisionRadius * math.max(0.01f, splittingProjectilesConfig.SplitSizeMultiplier));
+        float splitBodyWidth = math.max(0.02f,
+                                        parentBodyWidth * math.max(0.01f, splittingProjectilesConfig.SplitSizeMultiplier));
+        float splitRangeLimit = parentRangeLimit > 0f ? parentRangeLimit * splitLifetimeMultiplier : 0f;
+        float splitLifetimeLimit = parentLifetimeLimit > 0f ? parentLifetimeLimit * splitLifetimeMultiplier : 0f;
+        float splitSpeedMultiplier = math.max(0f, speedMultiplier) * math.max(0f, splittingProjectilesConfig.SplitSpeedMultiplier);
+        TryAppendLane(ref laserBeamLanes,
+                      laneIndex,
+                      true,
+                      shooterEntity,
+                      shooterPosition,
+                      shooterVelocity,
+                      spawnPosition,
+                      direction,
+                      activeSeconds,
+                      globalTime,
+                      splitTravelDistance,
+                      splitRangeLimit,
+                      splitLifetimeLimit,
+                      splitSpeedMultiplier,
+                      splitCollisionRadius,
+                      splitBodyWidth,
+                      math.max(0f, splittingProjectilesConfig.SplitDamageMultiplier),
+                      maximumBounceSegments,
+                      in perfectCircleConfig,
+                      hasPerfectCircle,
+                      in physicsWorldSingleton,
+                      in wallsCollisionFilter,
+                      out _,
+                      wallsEnabled);
+    }
+
+    /// <summary>
+    /// Resolves the last segment currently stored for one lane index.
+    /// /params laserBeamLanes Current lane buffer.
+    /// /params laneIndex Lane index to inspect.
+    /// /params terminalSegment Last segment found for the requested lane.
+    /// /returns True when the requested lane exists in the buffer.
+    /// </summary>
+    private static bool TryResolveTerminalSegment(DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                                  int laneIndex,
+                                                  out PlayerLaserBeamLaneElement terminalSegment)
+    {
+        terminalSegment = default;
+        bool foundLane = false;
+
+        for (int segmentIndex = 0; segmentIndex < laserBeamLanes.Length; segmentIndex++)
+        {
+            PlayerLaserBeamLaneElement currentSegment = laserBeamLanes[segmentIndex];
+
+            if (currentSegment.LaneIndex != laneIndex)
+                continue;
+
+            terminalSegment = currentSegment;
+            foundLane = true;
+        }
+
+        return foundLane;
+    }
+
+    /// <summary>
+    /// Rotates one planar forward direction around the world up axis by the requested angle in degrees.
+    /// /params direction Source forward direction.
+    /// /params angleDegrees Signed planar angle in degrees.
+    /// /returns The normalized rotated planar direction.
+    /// </summary>
+    private static float3 RotatePlanarDirection(float3 direction,
+                                                float angleDegrees)
+    {
+        float radians = math.radians(angleDegrees);
+        quaternion rotationOffset = quaternion.AxisAngle(new float3(0f, 1f, 0f), radians);
+        float3 rotatedDirection = math.rotate(rotationOffset, math.normalizesafe(direction, new float3(0f, 0f, 1f)));
+        return math.normalizesafe(rotatedDirection, new float3(0f, 0f, 1f));
+    }
+    #endregion
+
+    #endregion
+}

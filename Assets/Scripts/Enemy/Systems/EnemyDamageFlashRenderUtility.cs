@@ -151,6 +151,35 @@ public static class EnemyDamageFlashRenderUtility
 
         ResetGpuFlashOnEntity(entityManager, enemyEntity);
     }
+
+    /// <summary>
+    /// Writes the current outline color and thickness to all registered renderer entities of one enemy.
+    /// entityManager: Entity manager used to access outline render targets.
+    /// enemyEntity: Enemy root entity that owns the outline config and render target buffer.
+    /// outlineColor: Linear-space outline color selected for the current state.
+    /// outlineThickness: Outline thickness selected for the current state.
+    /// returns None.
+    /// </summary>
+    public static void ApplyGpuOutline(EntityManager entityManager,
+                                       Entity enemyEntity,
+                                       float4 outlineColor,
+                                       float outlineThickness)
+    {
+        if (!entityManager.Exists(enemyEntity))
+            return;
+
+        if (entityManager.HasBuffer<DamageFlashRenderTargetElement>(enemyEntity))
+        {
+            DynamicBuffer<DamageFlashRenderTargetElement> renderTargets = entityManager.GetBuffer<DamageFlashRenderTargetElement>(enemyEntity);
+
+            for (int targetIndex = 0; targetIndex < renderTargets.Length; targetIndex++)
+                ApplyGpuOutlineToEntity(entityManager, renderTargets[targetIndex].Value, outlineColor, outlineThickness);
+
+            return;
+        }
+
+        ApplyGpuOutlineToEntity(entityManager, enemyEntity, outlineColor, outlineThickness);
+    }
     #endregion
 
     #region Private Methods
@@ -248,6 +277,39 @@ public static class EnemyDamageFlashRenderUtility
             entityManager.SetComponentData(renderEntity, new MaterialHitFlashBlend
             {
                 Value = 0f
+            });
+        }
+    }
+
+    /// <summary>
+    /// Writes outline property overrides to one concrete render entity.
+    /// entityManager: Entity manager used to write component data.
+    /// renderEntity: Concrete renderer entity to update.
+    /// outlineColor: Linear-space outline color selected for the current state.
+    /// outlineThickness: Outline thickness selected for the current state.
+    /// returns None.
+    /// </summary>
+    private static void ApplyGpuOutlineToEntity(EntityManager entityManager,
+                                                Entity renderEntity,
+                                                float4 outlineColor,
+                                                float outlineThickness)
+    {
+        if (!entityManager.Exists(renderEntity))
+            return;
+
+        if (entityManager.HasComponent<MaterialOutlineColor>(renderEntity))
+        {
+            entityManager.SetComponentData(renderEntity, new MaterialOutlineColor
+            {
+                Value = outlineColor
+            });
+        }
+
+        if (entityManager.HasComponent<MaterialOutlineThickness>(renderEntity))
+        {
+            entityManager.SetComponentData(renderEntity, new MaterialOutlineThickness
+            {
+                Value = outlineThickness
             });
         }
     }

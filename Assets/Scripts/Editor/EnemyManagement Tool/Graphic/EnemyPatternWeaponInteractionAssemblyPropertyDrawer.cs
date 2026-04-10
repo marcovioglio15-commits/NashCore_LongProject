@@ -27,6 +27,7 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
         SerializedProperty minimumRangeProperty = property.FindPropertyRelative("minimumRange");
         SerializedProperty useMaximumRangeProperty = property.FindPropertyRelative("useMaximumRange");
         SerializedProperty maximumRangeProperty = property.FindPropertyRelative("maximumRange");
+        SerializedProperty exclusiveLookDirectionControlProperty = property.FindPropertyRelative("exclusiveLookDirectionControl");
         SerializedProperty bindingProperty = property.FindPropertyRelative("binding");
 
         if (enabledProperty == null ||
@@ -34,6 +35,7 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
             minimumRangeProperty == null ||
             useMaximumRangeProperty == null ||
             maximumRangeProperty == null ||
+            exclusiveLookDirectionControlProperty == null ||
             bindingProperty == null)
         {
             Label errorLabel = new Label("Weapon Interaction assembly fields are missing.");
@@ -60,6 +62,10 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
         maximumRangeContainer.style.marginLeft = 12f;
         settingsContainer.Add(maximumRangeContainer);
         EnemyAdvancedPatternDrawerUtility.AddField(maximumRangeContainer, maximumRangeProperty, "Maximum Range");
+
+        EnemyAdvancedPatternDrawerUtility.AddField(settingsContainer,
+                                                   exclusiveLookDirectionControlProperty,
+                                                   "Exclusive Look Direction Control");
 
         PropertyField bindingField = new PropertyField(bindingProperty, "Weapon Module");
         bindingField.BindProperty(bindingProperty);

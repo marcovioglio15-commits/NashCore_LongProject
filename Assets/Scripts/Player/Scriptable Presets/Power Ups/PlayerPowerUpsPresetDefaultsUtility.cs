@@ -25,6 +25,7 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
     internal const string ModuleIdBouncingProjectiles = "Module_BouncingProjectiles";
     internal const string ModuleIdProjectileSplit = "Module_ProjectileSplit";
     internal const string ModuleIdStackable = "Module_Stackable";
+    internal const string ModuleIdLaserBeam = "Module_LaserBeam";
 
     internal const string ActivePowerUpIdShotgun = "ActiveShotgun";
     internal const string ActivePowerUpIdChargeShot = "ActiveChargeShot";
@@ -167,6 +168,7 @@ internal static class PlayerPowerUpsPresetDefaultsUtility
         definitions.Add(CreateModuleDefinition(ModuleIdBouncingProjectiles, "Bouncing Projectiles", PowerUpModuleKind.BouncingProjectiles, PowerUpModuleStage.Hook, "Adds wall bounce behavior to projectiles."));
         definitions.Add(CreateModuleDefinition(ModuleIdProjectileSplit, "Projectile Split", PowerUpModuleKind.ProjectileSplit, PowerUpModuleStage.Hook, "Splits projectiles based on configured trigger mode."));
         definitions.Add(CreateModuleDefinition(ModuleIdStackable, "Stackable", PowerUpModuleKind.Stackable, PowerUpModuleStage.PostExecute, "Allows milestone reacquisition up to a configured total count."));
+        definitions.Add(CreateModuleDefinition(ModuleIdLaserBeam, "Laser Beam", PowerUpModuleKind.LaserBeam, PowerUpModuleStage.Hook, "Overrides base projectile spawning with one or more continuous liquid beam lanes."));
         return definitions;
     }
 

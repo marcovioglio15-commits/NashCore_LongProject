@@ -88,3 +88,58 @@ public partial struct EnemyDamageFlashRenderTargetInitializeSystem : ISystem
 
     #endregion
 }
+
+/// <summary>
+/// Re-synchronizes GPU outline material overrides when one enemy outline config changes after initial render-target setup.
+/// returns None.
+/// </summary>
+[UpdateInGroup(typeof(EnemySystemGroup), OrderFirst = true)]
+[UpdateAfter(typeof(EnemyDamageFlashRenderTargetInitializeSystem))]
+public partial struct EnemyOutlineRenderTargetSyncSystem : ISystem
+{
+    #region Methods
+
+    #region Lifecycle
+    /// <summary>
+    /// Declares the minimum data required to run outline synchronization.
+    /// state: Current ECS system state.
+    /// returns None.
+    /// </summary>
+    public void OnCreate(ref SystemState state)
+    {
+        state.RequireForUpdate<OutlineVisualConfig>();
+        state.RequireForUpdate<DamageFlashRenderTargetElement>();
+        state.RequireForUpdate<EnemyDamageFlashRenderTargetsInitialized>();
+    }
+
+    /// <summary>
+    /// Propagates changed outline config values from enemy roots to all registered renderer entities.
+    /// state: Current ECS system state.
+    /// returns None.
+    /// </summary>
+    public void OnUpdate(ref SystemState state)
+    {
+        EntityManager entityManager = state.EntityManager;
+
+        foreach ((RefRO<OutlineVisualConfig> outlineVisualConfig,
+                  Entity enemyEntity)
+                 in SystemAPI.Query<RefRO<OutlineVisualConfig>>()
+                             .WithAll<DamageFlashRenderTargetElement, EnemyDamageFlashRenderTargetsInitialized>()
+                             .WithChangeFilter<OutlineVisualConfig>()
+                             .WithEntityAccess())
+        {
+            float4 outlineColor = outlineVisualConfig.ValueRO.Color;
+            float outlineThickness = outlineVisualConfig.ValueRO.Enabled != 0
+                ? outlineVisualConfig.ValueRO.Thickness
+                : 0f;
+
+            EnemyDamageFlashRenderUtility.ApplyGpuOutline(entityManager,
+                                                          enemyEntity,
+                                                          outlineColor,
+                                                          outlineThickness);
+        }
+    }
+    #endregion
+
+    #endregion
+}

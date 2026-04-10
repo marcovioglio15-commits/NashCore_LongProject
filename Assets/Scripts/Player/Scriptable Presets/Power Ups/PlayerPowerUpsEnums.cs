@@ -60,7 +60,8 @@ public enum PassiveToolKind
     Explosion = 5,
     ElementalTrail = 6,
     Custom = 7,
-    BulletTime = 8
+    BulletTime = 8,
+    LaserBeam = 9
 }
 
 public enum ProjectileOrbitPathMode

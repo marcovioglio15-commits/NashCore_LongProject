@@ -401,6 +401,7 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
 
         panel.ContentHost.Clear();
         panel.ContentHost.Add(entry.Content);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(panel.ContentHost);
         UpdateTabStyles(panel);
     }
 

@@ -63,3 +63,30 @@ MonoBehaviour:
   maxAttachedElementalVfxPerTarget: 1
   maxActiveOneShotPowerUpVfx: 300
   refreshAttachedElementalVfxLifetimeOnCapHit: 1
+  laserBeam:
+    beamMaterial: {fileID: 2100000, guid: 6a7e9f1c2d0b41ef9c6d7a8b1234abcd, type: 2}
+    sourceBubbleMaterial: {fileID: 2100000, guid: e1a5d3c9c5b24d33a58d5170c5521aa1, type: 2}
+    impactSplashMaterial: {fileID: 2100000, guid: 5f19a92d83e24bcfb22a6e18065c56d2, type: 2}
+    verticalLift: 0.06
+    minimumSegmentLength: 0.02
+    palettes:
+    - visualPalette: 0
+      bodyColorA: {r: 0.19, g: 0.93, b: 1, a: 1}
+      bodyColorB: {r: 0.75, g: 1, b: 1, a: 1}
+      coreColor: {r: 1, g: 1, b: 1, a: 1}
+      rimColor: {r: 0.05, g: 0.41, b: 0.63, a: 1}
+    - visualPalette: 1
+      bodyColorA: {r: 0.22, g: 0.92, b: 0.72, a: 1}
+      bodyColorB: {r: 0.72, g: 1, b: 0.85, a: 1}
+      coreColor: {r: 0.96, g: 1, b: 0.97, a: 1}
+      rimColor: {r: 0.04, g: 0.43, b: 0.28, a: 1}
+    - visualPalette: 2
+      bodyColorA: {r: 0.45, g: 0.98, b: 0.18, a: 1}
+      bodyColorB: {r: 0.85, g: 1, b: 0.46, a: 1}
+      coreColor: {r: 0.98, g: 1, b: 0.88, a: 1}
+      rimColor: {r: 0.21, g: 0.4, b: 0.06, a: 1}
+    - visualPalette: 3
+      bodyColorA: {r: 1, g: 0.82, b: 0.24, a: 1}
+      bodyColorB: {r: 0.98, g: 1, b: 0.72, a: 1}
+      coreColor: {r: 1, g: 1, b: 0.93, a: 1}
+      rimColor: {r: 0.52, g: 0.38, b: 0.08, a: 1}

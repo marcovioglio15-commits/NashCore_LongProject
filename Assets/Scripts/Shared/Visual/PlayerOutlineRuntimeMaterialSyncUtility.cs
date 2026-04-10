@@ -6,7 +6,7 @@ using UnityEditor;
 #endif
 
 /// <summary>
-/// Synchronizes the player outline RenderObjects material with the values authored through player visual presets and ECS outline config.
+/// Synchronizes editor preview outline state for player visuals and keeps the legacy outline material asset in sync when available.
 /// /params None.
 /// /returns None.
 /// </summary>
@@ -105,11 +105,14 @@ public static class PlayerOutlineRuntimeMaterialSyncUtility
     private static bool ApplyToMaterial(bool enabled, Color outlineColor, float outlineThickness)
     {
         Material outlineMaterial = ResolveOutlineMaterial();
+        float effectiveThickness = enabled ? Mathf.Max(0f, outlineThickness) : 0f;
+
+#if UNITY_EDITOR
+        ApplyToLoadedPlayerScenePreview(enabled, outlineColor, effectiveThickness);
+#endif
 
         if (outlineMaterial == null)
             return false;
-
-        float effectiveThickness = enabled ? Mathf.Max(0f, outlineThickness) : 0f;
 
         if (IsAppliedStateUpToDate(enabled, outlineColor, effectiveThickness))
             return true;
@@ -126,6 +129,44 @@ public static class PlayerOutlineRuntimeMaterialSyncUtility
         appliedStateInitialized = true;
         return true;
     }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Applies the current outline state to player authoring instances already loaded in editor scenes so preset editing keeps the scene preview responsive.
+    /// /params enabled When false, outline thickness is forced to zero.
+    /// /params outlineColor Outline color written to loaded player preview renderers.
+    /// /params outlineThickness Outline thickness written to loaded player preview renderers.
+    /// /returns None.
+    /// </summary>
+    private static void ApplyToLoadedPlayerScenePreview(bool enabled, Color outlineColor, float outlineThickness)
+    {
+        PlayerAuthoring[] playerAuthorings = Object.FindObjectsByType<PlayerAuthoring>(FindObjectsInactive.Include,
+                                                                                       FindObjectsSortMode.None);
+
+        for (int playerIndex = 0; playerIndex < playerAuthorings.Length; playerIndex++)
+        {
+            PlayerAuthoring playerAuthoring = playerAuthorings[playerIndex];
+
+            if (playerAuthoring == null)
+                continue;
+
+            Animator animator = playerAuthoring.AnimatorComponent;
+
+            if (animator == null)
+                animator = playerAuthoring.GetComponentInChildren<Animator>(true);
+
+            if (animator == null)
+                continue;
+
+            ManagedOutlineRendererUtility.ApplyToAnimator(animator,
+                                                         enabled,
+                                                         outlineColor,
+                                                         outlineThickness);
+        }
+
+        SceneView.RepaintAll();
+    }
+#endif
 
     /// <summary>
     /// Resolves the outline material used by the player RenderObjects feature.

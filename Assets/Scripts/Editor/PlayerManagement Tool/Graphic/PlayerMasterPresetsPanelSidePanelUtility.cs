@@ -437,6 +437,7 @@ internal static class PlayerMasterPresetsPanelSidePanelUtility
 
         panel.ContentHost.Clear();
         panel.ContentHost.Add(entry.Content);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(panel.ContentHost);
         UpdateTabStyles(panel);
     }
 

@@ -18,7 +18,6 @@ public partial struct PlayerShootingIntentSystem : ISystem
 {
     #region Constants
     private const int MaxAutomaticShotsPerFrame = 4;
-    private const float DirectionLengthEpsilon = 1e-6f;
     #endregion
 
     #region Lifecycle
@@ -74,32 +73,37 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                                    RefRW<PlayerShootingState>,
                                                    DynamicBuffer<ShootRequest>>().WithEntityAccess())
         {
+            DynamicBuffer<ShootRequest> mutableShootRequests = shootRequests;
+
             // if shooting is disabled in the config, skip processing shooting logic for this player
             PlayerRuntimeShootingConfig shootingConfig = runtimeShootingConfig.ValueRO;
             ShootingValuesBlob values = shootingConfig.Values;
-            byte inheritPlayerSpeed = shootingConfig.ProjectilesInheritPlayerSpeed;
             PlayerPassiveToolsState passiveToolsState = ResolvePassiveToolsState(entity, in passiveToolsLookup);
+            ElementalEffectConfig unusedElementalEffect = default;
             bool isShootingSuppressed = false;
 
             if (powerUpsStateLookup.HasComponent(entity))
                 isShootingSuppressed = powerUpsStateLookup[entity].IsShootingSuppressed != 0;
 
-            float projectileScaleMultiplier = math.max(0.01f,
-                                                       values.ProjectileSizeMultiplier * math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier));
-            float projectileSpeed = math.max(0f, values.ShootSpeed * math.max(0f, passiveToolsState.ProjectileSpeedMultiplier));
-            float projectileDamage = math.max(0f, values.Damage * math.max(0f, passiveToolsState.ProjectileDamageMultiplier));
-            float projectileExplosionRadius = math.max(0f, values.ExplosionRadius);
-            float projectileLifetime = ApplyLifetimeMultiplier(values.Lifetime, passiveToolsState.ProjectileLifetimeSecondsMultiplier);
-            float projectileRange = ApplyLifetimeMultiplier(values.Range, passiveToolsState.ProjectileLifetimeRangeMultiplier);
-            ProjectileKnockbackSettingsBlob projectileKnockback = values.Knockback;
+            PlayerProjectileRequestTemplate projectileTemplate = PlayerProjectileRequestUtility.BuildProjectileTemplate(in shootingConfig,
+                                                                                                                         appliedElementSlots,
+                                                                                                                         in passiveToolsState,
+                                                                                                                         1f,
+                                                                                                                         1f,
+                                                                                                                         1f,
+                                                                                                                         1f,
+                                                                                                                         1f,
+                                                                                                                         false,
+                                                                                                                         in unusedElementalEffect,
+                                                                                                                         0f);
             bool hasPassiveShotgunPayload = passiveToolsState.HasShotgun != 0;
             int passiveShotgunProjectileCount = hasPassiveShotgunPayload ? math.max(1, passiveToolsState.Shotgun.ProjectileCount) : 1;
             float passiveShotgunConeAngle = hasPassiveShotgunPayload ? math.max(0f, passiveToolsState.Shotgun.ConeAngleDegrees) : 0f;
-            ProjectilePenetrationMode basePenetrationMode = values.PenetrationMode;
-            int baseMaxPenetrations = math.max(0, values.MaxPenetrations);
-            bool hasDefaultElementalPayload = PlayerProjectileElementUtility.TryBuildDefaultPayload(appliedElementSlots,
-                                                                                                    in values,
-                                                                                                    out ProjectileElementalPayload defaultElementalPayload);
+            PlayerProjectileRequestUtility.ResolvePenetrationSettings(in values,
+                                                                      ProjectilePenetrationMode.None,
+                                                                      0,
+                                                                      out ProjectilePenetrationMode basePenetrationMode,
+                                                                      out int baseMaxPenetrations);
             bool isShootPressed = inputState.ValueRO.Shoot > 0.5f;
             bool usesAutomaticLatch = shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle;
 
@@ -118,7 +122,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
             }
 
             // if rate of fire or shoot speed is zero or negative, treat as shooting disabled and skip shooting logic
-            if (values.RateOfFire <= 0f || projectileSpeed <= 0f)
+            if (values.RateOfFire <= 0f || projectileTemplate.Speed <= 0f)
             {
                 shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
                 shootingState.ValueRW.VisualShootingActive = 0;
@@ -129,6 +133,15 @@ public partial struct PlayerShootingIntentSystem : ISystem
             // determine if the shoot button is currently pressed and if it was just pressed this frame
             bool shootPressedThisFrame = isShootPressed && shootingState.ValueRO.PreviousShootPressed == 0;
             shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
+
+            if (passiveToolsState.HasLaserBeam != 0)
+            {
+                shootingState.ValueRW.AutomaticEnabled = 0;
+                shootingState.ValueRW.VisualShootingActive = isShootPressed ? (byte)1 : (byte)0;
+                ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
+                continue;
+            }
+
             bool automaticWasEnabled = usesAutomaticLatch && shootingState.ValueRO.AutomaticEnabled != 0;
             float shotInterval = 1f / values.RateOfFire;
 
@@ -175,67 +188,27 @@ public partial struct PlayerShootingIntentSystem : ISystem
 
             // compute the shoot direction based on the player's look direction,
             // falling back to their forward direction if the look direction is zero
-            float3 forwardFallback = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.ValueRO.Rotation), new float3(0f, 0f, 1f));
-            float3 shootDirection = PlayerControllerMath.NormalizePlanar(lookState.ValueRO.DesiredDirection, forwardFallback);
-            float3 spawnPosition = PlayerShootOriginUtility.ResolveSpawnPosition(entity,
-                                                                                in localTransform.ValueRO,
-                                                                                in shootingConfig.ShootOffset,
-                                                                                in muzzleLookup,
-                                                                                in transformLookup,
-                                                                                in localToWorldLookup);
+            float3 shootDirection = PlayerProjectileRequestUtility.ResolveShootDirection(in lookState.ValueRO, in localTransform.ValueRO);
+            float3 spawnPosition = PlayerProjectileRequestUtility.ResolveShootSpawnPosition(entity,
+                                                                                           in localTransform.ValueRO,
+                                                                                           in shootingConfig,
+                                                                                           in muzzleLookup,
+                                                                                           in transformLookup,
+                                                                                           in localToWorldLookup);
 
             // enqueue the appropriate number of shoot requests with the resolved spawn position,
             // shoot direction, and shooting parameters from the config
             for (int shotIndex = 0; shotIndex < shotsToFire; shotIndex++)
             {
-                if (passiveShotgunProjectileCount <= 1)
-                {
-                    AddShootRequest(shootRequests,
-                                    spawnPosition,
-                                    shootDirection,
-                                    projectileSpeed,
-                                    projectileExplosionRadius,
-                                    projectileRange,
-                                    projectileLifetime,
-                                    projectileDamage,
-                                    projectileScaleMultiplier,
-                                    in projectileKnockback,
-                                    inheritPlayerSpeed,
-                                    basePenetrationMode,
-                                    baseMaxPenetrations,
-                                    hasDefaultElementalPayload,
-                                    in defaultElementalPayload);
-                    continue;
-                }
-
-                float halfCone = passiveShotgunConeAngle * 0.5f;
-                float spreadStep = passiveShotgunConeAngle / (passiveShotgunProjectileCount - 1);
-
-                for (int projectileIndex = 0; projectileIndex < passiveShotgunProjectileCount; projectileIndex++)
-                {
-                    float spreadAngleDegrees = -halfCone + spreadStep * projectileIndex;
-                    quaternion rotationOffset = quaternion.AxisAngle(new float3(0f, 1f, 0f), math.radians(spreadAngleDegrees));
-                    float3 spreadDirection = math.normalizesafe(math.rotate(rotationOffset, shootDirection), shootDirection);
-
-                    if (math.lengthsq(spreadDirection) <= DirectionLengthEpsilon)
-                        spreadDirection = shootDirection;
-
-                    AddShootRequest(shootRequests,
-                                    spawnPosition,
-                                    spreadDirection,
-                                    projectileSpeed,
-                                    projectileExplosionRadius,
-                                    projectileRange,
-                                    projectileLifetime,
-                                    projectileDamage,
-                                    projectileScaleMultiplier,
-                                    in projectileKnockback,
-                                    inheritPlayerSpeed,
-                                    basePenetrationMode,
-                                    baseMaxPenetrations,
-                                    hasDefaultElementalPayload,
-                                    in defaultElementalPayload);
-                }
+                PlayerProjectileRequestUtility.AddSpreadRequests(ref mutableShootRequests,
+                                                                 passiveShotgunProjectileCount,
+                                                                 passiveShotgunConeAngle,
+                                                                 spawnPosition,
+                                                                 shootDirection,
+                                                                 in projectileTemplate,
+                                                                 basePenetrationMode,
+                                                                 baseMaxPenetrations,
+                                                                 0);
             }
         }
     }
@@ -356,52 +329,5 @@ public partial struct PlayerShootingIntentSystem : ISystem
         };
     }
 
-    private static float ApplyLifetimeMultiplier(float baseLifetimeValue, float lifetimeMultiplier)
-    {
-        if (baseLifetimeValue <= 0f)
-            return baseLifetimeValue;
-
-        return math.max(0f, baseLifetimeValue * math.max(0f, lifetimeMultiplier));
-    }
-
-    private static void AddShootRequest(DynamicBuffer<ShootRequest> shootRequests,
-                                        float3 spawnPosition,
-                                        float3 shootDirection,
-                                        float projectileSpeed,
-                                        float projectileExplosionRadius,
-                                        float projectileRange,
-                                        float projectileLifetime,
-                                        float projectileDamage,
-                                        float projectileScaleMultiplier,
-                                        in ProjectileKnockbackSettingsBlob projectileKnockback,
-                                        byte inheritPlayerSpeed,
-                                        ProjectilePenetrationMode penetrationMode,
-                                        int maxPenetrations,
-                                        bool hasElementalPayloadOverride,
-                                        in ProjectileElementalPayload elementalPayloadOverride)
-    {
-        ShootRequest request = new ShootRequest
-        {
-            Position = spawnPosition,
-            Direction = shootDirection,
-            Speed = projectileSpeed,
-            ExplosionRadius = projectileExplosionRadius,
-            Range = projectileRange,
-            Lifetime = projectileLifetime,
-            Damage = projectileDamage,
-            ProjectileScaleMultiplier = projectileScaleMultiplier,
-            PenetrationMode = penetrationMode,
-            MaxPenetrations = maxPenetrations,
-            KnockbackEnabled = projectileKnockback.Enabled,
-            KnockbackStrength = math.max(0f, projectileKnockback.Strength),
-            KnockbackDurationSeconds = math.max(0f, projectileKnockback.DurationSeconds),
-            KnockbackDirectionMode = projectileKnockback.DirectionMode,
-            KnockbackStackingMode = projectileKnockback.StackingMode,
-            InheritPlayerSpeed = inheritPlayerSpeed,
-            IsSplitChild = 0,
-            ElementalPayloadOverride = hasElementalPayloadOverride ? elementalPayloadOverride : default
-        };
-        shootRequests.Add(request);
-    }
     #endregion
 }

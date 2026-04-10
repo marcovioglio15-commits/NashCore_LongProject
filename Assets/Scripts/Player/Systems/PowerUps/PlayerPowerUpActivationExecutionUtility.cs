@@ -8,21 +8,6 @@ using UnityEngine;
 /// </summary>
 public static class PlayerPowerUpActivationExecutionUtility
 {
-    #region Nested Types
-    private struct ProjectileRequestTemplate
-    {
-        public float Speed;
-        public float Damage;
-        public float ExplosionRadius;
-        public float Range;
-        public float Lifetime;
-        public float ScaleMultiplier;
-        public ProjectileKnockbackSettingsBlob Knockback;
-        public byte InheritPlayerSpeed;
-        public ProjectileElementalPayload ElementalPayloadOverride;
-    }
-    #endregion
-
     #region Methods
 
     #region Execute
@@ -92,8 +77,21 @@ public static class PlayerPowerUpActivationExecutionUtility
                                          in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                          in ComponentLookup<LocalTransform> transformLookup,
                                          in ComponentLookup<LocalToWorld> localToWorldLookup,
+                                         ref PlayerLaserBeamState laserBeamState,
+                                         float normalizedCharge,
                                          DynamicBuffer<ShootRequest> shootRequests)
     {
+        if (passiveToolsState.HasLaserBeam != 0)
+        {
+            ExecuteLaserBeamChargeImpulse(in slotConfig,
+                                          in runtimeShootingConfig,
+                                          appliedElementSlots,
+                                          in passiveToolsState,
+                                          ref laserBeamState,
+                                          normalizedCharge);
+            return;
+        }
+
         bool hasPassiveShotgunPayload = passiveToolsState.HasShotgun != 0;
         int projectileCount = hasPassiveShotgunPayload ? math.max(1, passiveToolsState.Shotgun.ProjectileCount) : 1;
         float coneAngleDegrees = hasPassiveShotgunPayload ? math.max(0f, passiveToolsState.Shotgun.ConeAngleDegrees) : 0f;
@@ -102,34 +100,67 @@ public static class PlayerPowerUpActivationExecutionUtility
                                    slotConfig.ChargeShot.MaxPenetrations,
                                    out ProjectilePenetrationMode penetrationMode,
                                    out int maxPenetrations);
+        float3 shootDirection = PlayerProjectileRequestUtility.ResolveShootDirection(in lookState, in localTransform);
+        float3 spawnPosition = PlayerProjectileRequestUtility.ResolveShootSpawnPosition(playerEntity,
+                                                                                        in localTransform,
+                                                                                        in runtimeShootingConfig,
+                                                                                        in muzzleLookup,
+                                                                                        in transformLookup,
+                                                                                        in localToWorldLookup);
+        PlayerProjectileRequestTemplate template = PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig,
+                                                                                                          appliedElementSlots,
+                                                                                                          in passiveToolsState,
+                                                                                                          slotConfig.ChargeShot.SizeMultiplier,
+                                                                                                          slotConfig.ChargeShot.DamageMultiplier,
+                                                                                                          slotConfig.ChargeShot.SpeedMultiplier,
+                                                                                                          slotConfig.ChargeShot.RangeMultiplier,
+                                                                                                          slotConfig.ChargeShot.LifetimeMultiplier,
+                                                                                                          slotConfig.ChargeShot.HasElementalPayload != 0,
+                                                                                                          in slotConfig.ChargeShot.ElementalEffect,
+                                                                                                          slotConfig.ChargeShot.ElementalStacksPerHit);
 
-        float3 shootDirection = ResolveShootDirection(in lookState, in localTransform);
-        float3 spawnPosition = ResolveShootSpawnPosition(playerEntity,
-                                                         in localTransform,
-                                                         in runtimeShootingConfig,
-                                                         in muzzleLookup,
-                                                         in transformLookup,
-                                                         in localToWorldLookup);
-        ProjectileRequestTemplate template = BuildProjectileTemplate(in runtimeShootingConfig,
-                                                                     appliedElementSlots,
-                                                                     in passiveToolsState,
-                                                                     slotConfig.ChargeShot.SizeMultiplier,
-                                                                     slotConfig.ChargeShot.DamageMultiplier,
-                                                                     slotConfig.ChargeShot.SpeedMultiplier,
-                                                                     slotConfig.ChargeShot.RangeMultiplier,
-                                                                     slotConfig.ChargeShot.LifetimeMultiplier,
-                                                                     slotConfig.ChargeShot.HasElementalPayload != 0,
-                                                                     in slotConfig.ChargeShot.ElementalEffect,
-                                                                     slotConfig.ChargeShot.ElementalStacksPerHit);
+        PlayerProjectileRequestUtility.AddSpreadRequests(ref shootRequests,
+                                                         projectileCount,
+                                                         coneAngleDegrees,
+                                                         spawnPosition,
+                                                         shootDirection,
+                                                         in template,
+                                                         penetrationMode,
+                                                         maxPenetrations,
+                                                         0);
+    }
 
-        AddShotgunBurst(ref shootRequests,
-                        projectileCount,
-                        coneAngleDegrees,
-                        spawnPosition,
-                        shootDirection,
-                        in template,
-                        penetrationMode,
-                        maxPenetrations);
+    private static void ExecuteLaserBeamChargeImpulse(in PlayerPowerUpSlotConfig slotConfig,
+                                                      in PlayerRuntimeShootingConfig runtimeShootingConfig,
+                                                      DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
+                                                      in PlayerPassiveToolsState passiveToolsState,
+                                                      ref PlayerLaserBeamState laserBeamState,
+                                                      float normalizedCharge)
+    {
+        PlayerProjectileRequestTemplate template = PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig,
+                                                                                                          appliedElementSlots,
+                                                                                                          in passiveToolsState,
+                                                                                                          slotConfig.ChargeShot.SizeMultiplier,
+                                                                                                          slotConfig.ChargeShot.DamageMultiplier,
+                                                                                                          slotConfig.ChargeShot.SpeedMultiplier,
+                                                                                                          slotConfig.ChargeShot.RangeMultiplier,
+                                                                                                          slotConfig.ChargeShot.LifetimeMultiplier,
+                                                                                                          slotConfig.ChargeShot.HasElementalPayload != 0,
+                                                                                                          in slotConfig.ChargeShot.ElementalEffect,
+                                                                                                          slotConfig.ChargeShot.ElementalStacksPerHit);
+        float chargeFactor = math.saturate(normalizedCharge);
+        float maximumTravelDistance = PlayerLaserBeamUtility.ResolveMaximumTravelDistance(math.max(0f, template.Speed),
+                                                                                          template.Range,
+                                                                                          template.Lifetime);
+        float travelDistance = maximumTravelDistance * math.lerp(0.55f, 1f, chargeFactor);
+        float damageMultiplier = math.lerp(1f, math.max(1f, slotConfig.ChargeShot.DamageMultiplier), chargeFactor);
+        float widthMultiplier = math.lerp(1f, math.max(1f, slotConfig.ChargeShot.SizeMultiplier), chargeFactor);
+        float impulseDurationSeconds = math.lerp(0.18f, 0.4f, chargeFactor);
+        laserBeamState.ChargeImpulseRemainingSeconds = math.max(laserBeamState.ChargeImpulseRemainingSeconds, impulseDurationSeconds);
+        laserBeamState.ChargeImpulseDamageMultiplier = math.max(laserBeamState.ChargeImpulseDamageMultiplier, damageMultiplier);
+        laserBeamState.ChargeImpulseWidthMultiplier = math.max(laserBeamState.ChargeImpulseWidthMultiplier, widthMultiplier);
+        laserBeamState.ChargeImpulseTravelDistance = math.max(laserBeamState.ChargeImpulseTravelDistance, travelDistance);
+        laserBeamState.DamageTickTimer = 0f;
     }
 
     private static void ExecuteBomb(in PlayerPowerUpSlotConfig slotConfig,
@@ -257,204 +288,49 @@ public static class PlayerPowerUpActivationExecutionUtility
                                    slotConfig.Shotgun.MaxPenetrations,
                                    out ProjectilePenetrationMode penetrationMode,
                                    out int maxPenetrations);
-        float3 shootDirection = ResolveShootDirection(in lookState, in localTransform);
-        float3 spawnPosition = ResolveShootSpawnPosition(playerEntity,
-                                                         in localTransform,
-                                                         in runtimeShootingConfig,
-                                                         in muzzleLookup,
-                                                         in transformLookup,
-                                                         in localToWorldLookup);
-        ProjectileRequestTemplate template = BuildProjectileTemplate(in runtimeShootingConfig,
-                                                                     appliedElementSlots,
-                                                                     in passiveToolsState,
-                                                                     slotConfig.Shotgun.SizeMultiplier,
-                                                                     slotConfig.Shotgun.DamageMultiplier,
-                                                                     slotConfig.Shotgun.SpeedMultiplier,
-                                                                     slotConfig.Shotgun.RangeMultiplier,
-                                                                     slotConfig.Shotgun.LifetimeMultiplier,
-                                                                     slotConfig.Shotgun.HasElementalPayload != 0,
-                                                                     in slotConfig.Shotgun.ElementalEffect,
-                                                                     slotConfig.Shotgun.ElementalStacksPerHit);
+        float3 shootDirection = PlayerProjectileRequestUtility.ResolveShootDirection(in lookState, in localTransform);
+        float3 spawnPosition = PlayerProjectileRequestUtility.ResolveShootSpawnPosition(playerEntity,
+                                                                                        in localTransform,
+                                                                                        in runtimeShootingConfig,
+                                                                                        in muzzleLookup,
+                                                                                        in transformLookup,
+                                                                                        in localToWorldLookup);
+        PlayerProjectileRequestTemplate template = PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig,
+                                                                                                          appliedElementSlots,
+                                                                                                          in passiveToolsState,
+                                                                                                          slotConfig.Shotgun.SizeMultiplier,
+                                                                                                          slotConfig.Shotgun.DamageMultiplier,
+                                                                                                          slotConfig.Shotgun.SpeedMultiplier,
+                                                                                                          slotConfig.Shotgun.RangeMultiplier,
+                                                                                                          slotConfig.Shotgun.LifetimeMultiplier,
+                                                                                                          slotConfig.Shotgun.HasElementalPayload != 0,
+                                                                                                          in slotConfig.Shotgun.ElementalEffect,
+                                                                                                          slotConfig.Shotgun.ElementalStacksPerHit);
 
-        AddShotgunBurst(ref shootRequests,
-                        projectileCount,
-                        coneAngleDegrees,
-                        spawnPosition,
-                        shootDirection,
-                        in template,
-                        penetrationMode,
-                        maxPenetrations);
-    }
-
-    private static void AddShotgunBurst(ref DynamicBuffer<ShootRequest> shootRequests,
-                                        int projectileCount,
-                                        float coneAngleDegrees,
-                                        float3 spawnPosition,
-                                        float3 shootDirection,
-                                        in ProjectileRequestTemplate template,
-                                        ProjectilePenetrationMode penetrationMode,
-                                        int maxPenetrations)
-    {
-        if (projectileCount <= 1)
-        {
-            AddShootRequest(ref shootRequests,
-                            spawnPosition,
-                            shootDirection,
-                            in template,
-                            penetrationMode,
-                            maxPenetrations,
-                            0);
-            return;
-        }
-
-        float halfCone = coneAngleDegrees * 0.5f;
-        float step = coneAngleDegrees / (projectileCount - 1);
-
-        for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
-        {
-            float angle = -halfCone + step * projectileIndex;
-            quaternion rotationOffset = quaternion.AxisAngle(new float3(0f, 1f, 0f), math.radians(angle));
-            float3 spreadDirection = math.rotate(rotationOffset, shootDirection);
-
-            AddShootRequest(ref shootRequests,
-                            spawnPosition,
-                            spreadDirection,
-                            in template,
-                            penetrationMode,
-                            maxPenetrations,
-                            0);
-        }
+        PlayerProjectileRequestUtility.AddSpreadRequests(ref shootRequests,
+                                                         projectileCount,
+                                                         coneAngleDegrees,
+                                                         spawnPosition,
+                                                         shootDirection,
+                                                         in template,
+                                                         penetrationMode,
+                                                         maxPenetrations,
+                                                         0);
     }
     #endregion
 
     #region Projectile Helpers
-    private static float3 ResolveShootDirection(in PlayerLookState lookState, in LocalTransform localTransform)
-    {
-        float3 lookDirection = lookState.DesiredDirection;
-        lookDirection.y = 0f;
-
-        if (math.lengthsq(lookDirection) > PlayerPowerUpActivationUtilityConstants.DirectionLengthEpsilon)
-            return math.normalizesafe(lookDirection, new float3(0f, 0f, 1f));
-
-        float3 fallbackDirection = PlayerControllerMath.NormalizePlanar(math.forward(localTransform.Rotation), new float3(0f, 0f, 1f));
-        return math.normalizesafe(fallbackDirection, new float3(0f, 0f, 1f));
-    }
-
-    private static float3 ResolveShootSpawnPosition(Entity playerEntity,
-                                                    in LocalTransform localTransform,
-                                                    in PlayerRuntimeShootingConfig runtimeShootingConfig,
-                                                    in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
-                                                    in ComponentLookup<LocalTransform> transformLookup,
-                                                    in ComponentLookup<LocalToWorld> localToWorldLookup)
-    {
-        float3 shootOffset = runtimeShootingConfig.ShootOffset;
-        return PlayerShootOriginUtility.ResolveSpawnPosition(playerEntity,
-                                                             in localTransform,
-                                                             in shootOffset,
-                                                             in muzzleLookup,
-                                                             in transformLookup,
-                                                             in localToWorldLookup);
-    }
-
-    private static ProjectileRequestTemplate BuildProjectileTemplate(in PlayerRuntimeShootingConfig runtimeShootingConfig,
-                                                                     DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
-                                                                     in PlayerPassiveToolsState passiveToolsState,
-                                                                     float sizeMultiplier,
-                                                                     float damageMultiplier,
-                                                                     float speedMultiplier,
-                                                                     float rangeMultiplier,
-                                                                     float lifetimeMultiplier,
-                                                                     bool hasElementalPayloadOverride,
-                                                                     in ElementalEffectConfig elementalEffectOverride,
-                                                                     float elementalStacksPerHitOverride)
-    {
-        ShootingValuesBlob values = runtimeShootingConfig.Values;
-        ProjectileElementalPayload resolvedElementalPayloadOverride = default;
-        float scale = math.max(0.01f,
-                               math.max(0.01f, values.ProjectileSizeMultiplier) *
-                               math.max(0.01f, passiveToolsState.ProjectileSizeMultiplier) *
-                               math.max(0.01f, sizeMultiplier));
-        float damage = math.max(0f, values.Damage * math.max(0f, passiveToolsState.ProjectileDamageMultiplier) * math.max(0f, damageMultiplier));
-        float speed = math.max(0f, values.ShootSpeed * math.max(0f, passiveToolsState.ProjectileSpeedMultiplier) * math.max(0f, speedMultiplier));
-        float range = values.Range;
-        float lifetime = values.Lifetime;
-
-        if (range > 0f)
-            range = math.max(0f, range * math.max(0f, passiveToolsState.ProjectileLifetimeRangeMultiplier) * math.max(0f, rangeMultiplier));
-
-        if (lifetime > 0f)
-            lifetime = math.max(0f, lifetime * math.max(0f, passiveToolsState.ProjectileLifetimeSecondsMultiplier) * math.max(0f, lifetimeMultiplier));
-
-        if (hasElementalPayloadOverride)
-        {
-            resolvedElementalPayloadOverride = ProjectileElementalPayloadUtility.BuildSingle(in elementalEffectOverride,
-                                                                                            math.max(0f, elementalStacksPerHitOverride));
-        }
-        else
-        {
-            PlayerProjectileElementUtility.TryBuildDefaultPayload(appliedElementSlots,
-                                                                  in values,
-                                                                  out resolvedElementalPayloadOverride);
-        }
-
-        return new ProjectileRequestTemplate
-        {
-            Speed = speed,
-            Damage = damage,
-            ExplosionRadius = math.max(0f, values.ExplosionRadius),
-            Range = range,
-            Lifetime = lifetime,
-            ScaleMultiplier = scale,
-            Knockback = values.Knockback,
-            InheritPlayerSpeed = runtimeShootingConfig.ProjectilesInheritPlayerSpeed,
-            ElementalPayloadOverride = resolvedElementalPayloadOverride
-        };
-    }
-
     private static void ResolvePenetrationSettings(in ShootingValuesBlob baseShootingValues,
                                                    ProjectilePenetrationMode overrideMode,
                                                    int overrideMaxPenetrations,
                                                    out ProjectilePenetrationMode resolvedMode,
                                                    out int resolvedMaxPenetrations)
     {
-        resolvedMode = baseShootingValues.PenetrationMode;
-        resolvedMaxPenetrations = math.max(0, baseShootingValues.MaxPenetrations);
-
-        if (overrideMode != ProjectilePenetrationMode.None)
-            resolvedMode = (ProjectilePenetrationMode)math.max((int)resolvedMode, (int)overrideMode);
-
-        resolvedMaxPenetrations = math.max(resolvedMaxPenetrations, math.max(0, overrideMaxPenetrations));
-    }
-
-    private static void AddShootRequest(ref DynamicBuffer<ShootRequest> shootRequests,
-                                        float3 position,
-                                        float3 direction,
-                                        in ProjectileRequestTemplate template,
-                                        ProjectilePenetrationMode penetrationMode,
-                                        int maxPenetrations,
-                                        byte isSplitChild)
-    {
-        shootRequests.Add(new ShootRequest
-        {
-            Position = position,
-            Direction = math.normalizesafe(direction, new float3(0f, 0f, 1f)),
-            Speed = math.max(0f, template.Speed),
-            ExplosionRadius = math.max(0f, template.ExplosionRadius),
-            Range = template.Range,
-            Lifetime = template.Lifetime,
-            Damage = math.max(0f, template.Damage),
-            ProjectileScaleMultiplier = math.max(0.01f, template.ScaleMultiplier),
-            PenetrationMode = penetrationMode,
-            MaxPenetrations = math.max(0, maxPenetrations),
-            KnockbackEnabled = template.Knockback.Enabled,
-            KnockbackStrength = math.max(0f, template.Knockback.Strength),
-            KnockbackDurationSeconds = math.max(0f, template.Knockback.DurationSeconds),
-            KnockbackDirectionMode = template.Knockback.DirectionMode,
-            KnockbackStackingMode = template.Knockback.StackingMode,
-            InheritPlayerSpeed = template.InheritPlayerSpeed,
-            IsSplitChild = isSplitChild,
-            ElementalPayloadOverride = template.ElementalPayloadOverride
-        });
+        PlayerProjectileRequestUtility.ResolvePenetrationSettings(in baseShootingValues,
+                                                                  overrideMode,
+                                                                  overrideMaxPenetrations,
+                                                                  out resolvedMode,
+                                                                  out resolvedMaxPenetrations);
     }
     #endregion
 

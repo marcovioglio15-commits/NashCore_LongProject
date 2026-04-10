@@ -1,0 +1,578 @@
+using UnityEngine;
+
+/// <summary>
+/// Stores one deterministic mesh-body prefab definition for the Laser Beam visual rig builder.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal readonly struct PlayerLaserBeamBodyPrefabDefinition
+{
+    #region Fields
+    public readonly string PrefabPath;
+    public readonly string RootName;
+    public readonly Vector3 OuterScale;
+    public readonly Vector3 OuterPosition;
+    public readonly Vector3 InnerScale;
+    public readonly Vector3 InnerPosition;
+    #endregion
+
+    #region Methods
+    /// <summary>
+    /// Stores one deterministic mesh-body prefab definition.
+    /// /params prefabPath Asset path used when saving the prefab.
+    /// /params rootName Root GameObject name stored in the prefab.
+    /// /params outerScale Local scale of the outer liquid shell.
+    /// /params outerPosition Local offset of the outer liquid shell.
+    /// /params innerScale Local scale of the bright inner core.
+    /// /params innerPosition Local offset of the bright inner core.
+    /// /returns None.
+    /// </summary>
+    public PlayerLaserBeamBodyPrefabDefinition(string prefabPath,
+                                               string rootName,
+                                               Vector3 outerScale,
+                                               Vector3 outerPosition,
+                                               Vector3 innerScale,
+                                               Vector3 innerPosition)
+    {
+        PrefabPath = prefabPath;
+        RootName = rootName;
+        OuterScale = outerScale;
+        OuterPosition = outerPosition;
+        InnerScale = innerScale;
+        InnerPosition = innerPosition;
+    }
+    #endregion
+}
+
+/// <summary>
+/// Stores one deterministic particle-emitter definition used by a Laser Beam source or impact prefab.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal readonly struct PlayerLaserBeamParticleEmitterDefinition
+{
+    #region Fields
+    public readonly string ChildName;
+    public readonly Vector3 LocalPosition;
+    public readonly Vector3 LocalEulerAngles;
+    public readonly Vector3 LocalScale;
+    public readonly ParticleSystemShapeType ShapeType;
+    public readonly float ShapeRadius;
+    public readonly float ShapeAngle;
+    public readonly float ShapeLength;
+    public readonly bool Looping;
+    public readonly float Duration;
+    public readonly int MaxParticles;
+    public readonly float EmissionRate;
+    public readonly short BurstMinimum;
+    public readonly short BurstMaximum;
+    public readonly Vector2 LifetimeRange;
+    public readonly Vector2 SpeedRange;
+    public readonly Vector2 SizeRange;
+    public readonly float NoiseStrength;
+    public readonly float NoiseFrequency;
+    public readonly float VelocityLinearZ;
+    public readonly float VelocityOrbitalY;
+    public readonly float RandomDirectionAmount;
+    #endregion
+
+    #region Methods
+    /// <summary>
+    /// Stores one deterministic particle-emitter definition used by a Laser Beam source or impact prefab.
+    /// /params childName Emitter child name stored in the prefab.
+    /// /params localPosition Local emitter offset under the prefab root.
+    /// /params localEulerAngles Local emitter orientation under the prefab root.
+    /// /params localScale Local emitter scale used to sculpt the volumetric silhouette.
+    /// /params shapeType Particle shape module type.
+    /// /params shapeRadius Particle shape radius.
+    /// /params shapeAngle Particle cone angle when applicable.
+    /// /params shapeLength Particle cone or box length when applicable.
+    /// /params looping True when the emitter should keep producing particles while the beam stays active.
+    /// /params duration Particle system duration.
+    /// /params maxParticles Maximum live particles allowed for the emitter.
+    /// /params emissionRate Continuous emission rate.
+    /// /params burstMinimum Minimum burst count spawned at activation.
+    /// /params burstMaximum Maximum burst count spawned at activation.
+    /// /params lifetimeRange Constant min and max particle lifetime.
+    /// /params speedRange Constant min and max particle start speed.
+    /// /params sizeRange Constant min and max particle start size.
+    /// /params noiseStrength Strength of the procedural wobble applied to particles.
+    /// /params noiseFrequency Frequency of the procedural wobble applied to particles.
+    /// /params velocityLinearZ Forward velocity applied over lifetime in local space.
+    /// /params velocityOrbitalY Orbital twist applied around local up.
+    /// /params randomDirectionAmount Random direction blend used by the shape module.
+    /// /returns None.
+    /// </summary>
+    public PlayerLaserBeamParticleEmitterDefinition(string childName,
+                                                    Vector3 localPosition,
+                                                    Vector3 localEulerAngles,
+                                                    Vector3 localScale,
+                                                    ParticleSystemShapeType shapeType,
+                                                    float shapeRadius,
+                                                    float shapeAngle,
+                                                    float shapeLength,
+                                                    bool looping,
+                                                    float duration,
+                                                    int maxParticles,
+                                                    float emissionRate,
+                                                    short burstMinimum,
+                                                    short burstMaximum,
+                                                    Vector2 lifetimeRange,
+                                                    Vector2 speedRange,
+                                                    Vector2 sizeRange,
+                                                    float noiseStrength,
+                                                    float noiseFrequency,
+                                                    float velocityLinearZ,
+                                                    float velocityOrbitalY,
+                                                    float randomDirectionAmount)
+    {
+        ChildName = childName;
+        LocalPosition = localPosition;
+        LocalEulerAngles = localEulerAngles;
+        LocalScale = localScale;
+        ShapeType = shapeType;
+        ShapeRadius = shapeRadius;
+        ShapeAngle = shapeAngle;
+        ShapeLength = shapeLength;
+        Looping = looping;
+        Duration = duration;
+        MaxParticles = maxParticles;
+        EmissionRate = emissionRate;
+        BurstMinimum = burstMinimum;
+        BurstMaximum = burstMaximum;
+        LifetimeRange = lifetimeRange;
+        SpeedRange = speedRange;
+        SizeRange = sizeRange;
+        NoiseStrength = noiseStrength;
+        NoiseFrequency = noiseFrequency;
+        VelocityLinearZ = velocityLinearZ;
+        VelocityOrbitalY = velocityOrbitalY;
+        RandomDirectionAmount = randomDirectionAmount;
+    }
+    #endregion
+}
+
+/// <summary>
+/// Stores one deterministic particle-prefab definition composed of two layered emitters.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal readonly struct PlayerLaserBeamParticlePrefabDefinition
+{
+    #region Fields
+    public readonly string PrefabPath;
+    public readonly string RootName;
+    public readonly PlayerLaserBeamParticleEmitterDefinition PrimaryEmitter;
+    public readonly PlayerLaserBeamParticleEmitterDefinition SecondaryEmitter;
+    #endregion
+
+    #region Methods
+    /// <summary>
+    /// Stores one deterministic particle-prefab definition composed of two layered emitters.
+    /// /params prefabPath Asset path used when saving the prefab.
+    /// /params rootName Root GameObject name stored in the prefab.
+    /// /params primaryEmitter First emitter definition, usually the dense liquid core.
+    /// /params secondaryEmitter Second emitter definition, usually the bloom or splash layer.
+    /// /returns None.
+    /// </summary>
+    public PlayerLaserBeamParticlePrefabDefinition(string prefabPath,
+                                                   string rootName,
+                                                   PlayerLaserBeamParticleEmitterDefinition primaryEmitter,
+                                                   PlayerLaserBeamParticleEmitterDefinition secondaryEmitter)
+    {
+        PrefabPath = prefabPath;
+        RootName = rootName;
+        PrimaryEmitter = primaryEmitter;
+        SecondaryEmitter = secondaryEmitter;
+    }
+    #endregion
+}
+
+/// <summary>
+/// Provides deterministic authored prefab definitions used by the Laser Beam visual rig builder.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal static class PlayerLaserBeamVisualRigPrefabDefinitions
+{
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Creates the rounded tube body prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Rounded tube body definition.
+    /// </summary>
+    public static PlayerLaserBeamBodyPrefabDefinition CreateRoundedTubeBodyDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamBodyPrefabDefinition(prefabPath,
+                                                       "PF_PlayerLaserBeamBody",
+                                                       new Vector3(1.06f, 1.06f, 1.28f),
+                                                       Vector3.zero,
+                                                       new Vector3(0.58f, 0.58f, 0.92f),
+                                                       new Vector3(0f, 0f, 0.03f));
+    }
+
+    /// <summary>
+    /// Creates the tapered jet body prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Tapered jet body definition.
+    /// </summary>
+    public static PlayerLaserBeamBodyPrefabDefinition CreateTaperedJetBodyDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamBodyPrefabDefinition(prefabPath,
+                                                       "PF_PlayerLaserBeamBody_TaperedJet",
+                                                       new Vector3(0.9f, 0.9f, 1.62f),
+                                                       new Vector3(0f, 0f, 0.14f),
+                                                       new Vector3(0.42f, 0.42f, 1.08f),
+                                                       new Vector3(0f, 0f, 0.2f));
+    }
+
+    /// <summary>
+    /// Creates the dense ribbon body prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Dense ribbon body definition.
+    /// </summary>
+    public static PlayerLaserBeamBodyPrefabDefinition CreateDenseRibbonBodyDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamBodyPrefabDefinition(prefabPath,
+                                                       "PF_PlayerLaserBeamBody_DenseRibbon",
+                                                       new Vector3(1.32f, 0.78f, 1.22f),
+                                                       Vector3.zero,
+                                                       new Vector3(0.74f, 0.4f, 0.94f),
+                                                       new Vector3(0f, 0f, 0.02f));
+    }
+
+    /// <summary>
+    /// Creates the bubble-burst source prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Bubble-burst source prefab definition.
+    /// </summary>
+    public static PlayerLaserBeamParticlePrefabDefinition CreateBubbleBurstSourceDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamParticlePrefabDefinition(prefabPath,
+                                                           "PF_PlayerLaserBeamSource_BubbleBurst",
+                                                           new PlayerLaserBeamParticleEmitterDefinition("BubbleCore",
+                                                                                                        Vector3.zero,
+                                                                                                        Vector3.zero,
+                                                                                                        Vector3.one,
+                                                                                                        ParticleSystemShapeType.Sphere,
+                                                                                                        0.055f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1.2f,
+                                                                                                        28,
+                                                                                                        8f,
+                                                                                                        2,
+                                                                                                        4,
+                                                                                                        new Vector2(0.16f, 0.28f),
+                                                                                                        new Vector2(0.02f, 0.09f),
+                                                                                                        new Vector2(0.08f, 0.14f),
+                                                                                                        0.18f,
+                                                                                                        0.42f,
+                                                                                                        0.02f,
+                                                                                                        0.08f,
+                                                                                                        0.45f),
+                                                           new PlayerLaserBeamParticleEmitterDefinition("MuzzleJet",
+                                                                                                        new Vector3(0f, 0f, 0.03f),
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(0.75f, 0.75f, 1.05f),
+                                                                                                        ParticleSystemShapeType.Cone,
+                                                                                                        0.02f,
+                                                                                                        7f,
+                                                                                                        0.05f,
+                                                                                                        true,
+                                                                                                        1.1f,
+                                                                                                        18,
+                                                                                                        4f,
+                                                                                                        1,
+                                                                                                        2,
+                                                                                                        new Vector2(0.12f, 0.18f),
+                                                                                                        new Vector2(0.22f, 0.45f),
+                                                                                                        new Vector2(0.05f, 0.09f),
+                                                                                                        0.08f,
+                                                                                                        0.34f,
+                                                                                                        0.18f,
+                                                                                                        0f,
+                                                                                                        0.08f));
+    }
+
+    /// <summary>
+    /// Creates the star-bloom source prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Star-bloom source prefab definition.
+    /// </summary>
+    public static PlayerLaserBeamParticlePrefabDefinition CreateStarBloomSourceDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamParticlePrefabDefinition(prefabPath,
+                                                           "PF_PlayerLaserBeamSource_StarBloom",
+                                                           new PlayerLaserBeamParticleEmitterDefinition("StarCore",
+                                                                                                        Vector3.zero,
+                                                                                                        Vector3.zero,
+                                                                                                        Vector3.one,
+                                                                                                        ParticleSystemShapeType.Sphere,
+                                                                                                        0.045f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1.1f,
+                                                                                                        24,
+                                                                                                        7f,
+                                                                                                        2,
+                                                                                                        4,
+                                                                                                        new Vector2(0.14f, 0.24f),
+                                                                                                        new Vector2(0.03f, 0.12f),
+                                                                                                        new Vector2(0.07f, 0.12f),
+                                                                                                        0.14f,
+                                                                                                        0.38f,
+                                                                                                        0.03f,
+                                                                                                        0.12f,
+                                                                                                        0.5f),
+                                                           new PlayerLaserBeamParticleEmitterDefinition("StarBloom",
+                                                                                                        new Vector3(0f, 0f, 0.02f),
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(0.95f, 0.95f, 0.9f),
+                                                                                                        ParticleSystemShapeType.Cone,
+                                                                                                        0.04f,
+                                                                                                        18f,
+                                                                                                        0.02f,
+                                                                                                        true,
+                                                                                                        1f,
+                                                                                                        20,
+                                                                                                        3.5f,
+                                                                                                        1,
+                                                                                                        2,
+                                                                                                        new Vector2(0.1f, 0.16f),
+                                                                                                        new Vector2(0.14f, 0.32f),
+                                                                                                        new Vector2(0.05f, 0.08f),
+                                                                                                        0.06f,
+                                                                                                        0.3f,
+                                                                                                        0.08f,
+                                                                                                        0.24f,
+                                                                                                        0.06f));
+    }
+
+    /// <summary>
+    /// Creates the soft-disc source prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Soft-disc source prefab definition.
+    /// </summary>
+    public static PlayerLaserBeamParticlePrefabDefinition CreateSoftDiscSourceDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamParticlePrefabDefinition(prefabPath,
+                                                           "PF_PlayerLaserBeamSource_SoftDisc",
+                                                           new PlayerLaserBeamParticleEmitterDefinition("DiscCore",
+                                                                                                        Vector3.zero,
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(1f, 0.4f, 1f),
+                                                                                                        ParticleSystemShapeType.Circle,
+                                                                                                        0.065f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1.15f,
+                                                                                                        22,
+                                                                                                        6f,
+                                                                                                        2,
+                                                                                                        3,
+                                                                                                        new Vector2(0.12f, 0.2f),
+                                                                                                        new Vector2(0.01f, 0.07f),
+                                                                                                        new Vector2(0.08f, 0.14f),
+                                                                                                        0.12f,
+                                                                                                        0.34f,
+                                                                                                        0.01f,
+                                                                                                        0.08f,
+                                                                                                        0.55f),
+                                                           new PlayerLaserBeamParticleEmitterDefinition("DiscWake",
+                                                                                                        new Vector3(0f, 0f, 0.025f),
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(0.75f, 0.34f, 1.1f),
+                                                                                                        ParticleSystemShapeType.Cone,
+                                                                                                        0.03f,
+                                                                                                        5f,
+                                                                                                        0.04f,
+                                                                                                        true,
+                                                                                                        1f,
+                                                                                                        14,
+                                                                                                        2.5f,
+                                                                                                        1,
+                                                                                                        2,
+                                                                                                        new Vector2(0.1f, 0.16f),
+                                                                                                        new Vector2(0.16f, 0.32f),
+                                                                                                        new Vector2(0.05f, 0.08f),
+                                                                                                        0.05f,
+                                                                                                        0.24f,
+                                                                                                        0.14f,
+                                                                                                        0f,
+                                                                                                        0.05f));
+    }
+
+    /// <summary>
+    /// Creates the bubble-burst impact prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Bubble-burst impact prefab definition.
+    /// </summary>
+    public static PlayerLaserBeamParticlePrefabDefinition CreateBubbleBurstImpactDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamParticlePrefabDefinition(prefabPath,
+                                                           "PF_PlayerLaserBeamImpact_BubbleBurst",
+                                                           new PlayerLaserBeamParticleEmitterDefinition("ImpactPool",
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(90f, 0f, 0f),
+                                                                                                        new Vector3(1.05f, 0.34f, 1.05f),
+                                                                                                        ParticleSystemShapeType.Circle,
+                                                                                                        0.075f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1.2f,
+                                                                                                        26,
+                                                                                                        6f,
+                                                                                                        2,
+                                                                                                        4,
+                                                                                                        new Vector2(0.14f, 0.24f),
+                                                                                                        new Vector2(0.02f, 0.1f),
+                                                                                                        new Vector2(0.08f, 0.14f),
+                                                                                                        0.12f,
+                                                                                                        0.3f,
+                                                                                                        0.02f,
+                                                                                                        0.1f,
+                                                                                                        0.55f),
+                                                           new PlayerLaserBeamParticleEmitterDefinition("ImpactSpray",
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(0f, 0f, 180f),
+                                                                                                        Vector3.one,
+                                                                                                        ParticleSystemShapeType.Hemisphere,
+                                                                                                        0.045f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1.05f,
+                                                                                                        18,
+                                                                                                        3.5f,
+                                                                                                        1,
+                                                                                                        2,
+                                                                                                        new Vector2(0.1f, 0.16f),
+                                                                                                        new Vector2(0.12f, 0.32f),
+                                                                                                        new Vector2(0.05f, 0.09f),
+                                                                                                        0.08f,
+                                                                                                        0.22f,
+                                                                                                        -0.05f,
+                                                                                                        0.18f,
+                                                                                                        0.12f));
+    }
+
+    /// <summary>
+    /// Creates the star-bloom impact prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Star-bloom impact prefab definition.
+    /// </summary>
+    public static PlayerLaserBeamParticlePrefabDefinition CreateStarBloomImpactDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamParticlePrefabDefinition(prefabPath,
+                                                           "PF_PlayerLaserBeamImpact_StarBloom",
+                                                           new PlayerLaserBeamParticleEmitterDefinition("BloomCenter",
+                                                                                                        Vector3.zero,
+                                                                                                        Vector3.zero,
+                                                                                                        Vector3.one,
+                                                                                                        ParticleSystemShapeType.Sphere,
+                                                                                                        0.04f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1.05f,
+                                                                                                        20,
+                                                                                                        4f,
+                                                                                                        2,
+                                                                                                        3,
+                                                                                                        new Vector2(0.1f, 0.16f),
+                                                                                                        new Vector2(0.02f, 0.09f),
+                                                                                                        new Vector2(0.07f, 0.11f),
+                                                                                                        0.1f,
+                                                                                                        0.28f,
+                                                                                                        -0.02f,
+                                                                                                        0.14f,
+                                                                                                        0.4f),
+                                                           new PlayerLaserBeamParticleEmitterDefinition("BloomRing",
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(90f, 0f, 0f),
+                                                                                                        new Vector3(1.1f, 0.28f, 1.1f),
+                                                                                                        ParticleSystemShapeType.Circle,
+                                                                                                        0.085f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1f,
+                                                                                                        18,
+                                                                                                        2.5f,
+                                                                                                        1,
+                                                                                                        2,
+                                                                                                        new Vector2(0.1f, 0.15f),
+                                                                                                        new Vector2(0.18f, 0.44f),
+                                                                                                        new Vector2(0.05f, 0.08f),
+                                                                                                        0.04f,
+                                                                                                        0.16f,
+                                                                                                        0.05f,
+                                                                                                        0.22f,
+                                                                                                        0.04f));
+    }
+
+    /// <summary>
+    /// Creates the soft-disc impact prefab definition.
+    /// /params prefabPath Target prefab asset path.
+    /// /returns Soft-disc impact prefab definition.
+    /// </summary>
+    public static PlayerLaserBeamParticlePrefabDefinition CreateSoftDiscImpactDefinition(string prefabPath)
+    {
+        return new PlayerLaserBeamParticlePrefabDefinition(prefabPath,
+                                                           "PF_PlayerLaserBeamImpact_SoftDisc",
+                                                           new PlayerLaserBeamParticleEmitterDefinition("DiscSheet",
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(90f, 0f, 0f),
+                                                                                                        new Vector3(1.15f, 0.26f, 1.15f),
+                                                                                                        ParticleSystemShapeType.Circle,
+                                                                                                        0.09f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1.1f,
+                                                                                                        22,
+                                                                                                        4.5f,
+                                                                                                        2,
+                                                                                                        4,
+                                                                                                        new Vector2(0.12f, 0.2f),
+                                                                                                        new Vector2(0.03f, 0.11f),
+                                                                                                        new Vector2(0.08f, 0.13f),
+                                                                                                        0.08f,
+                                                                                                        0.24f,
+                                                                                                        0.02f,
+                                                                                                        0.12f,
+                                                                                                        0.6f),
+                                                           new PlayerLaserBeamParticleEmitterDefinition("DiscFizzle",
+                                                                                                        new Vector3(0f, 0f, -0.01f),
+                                                                                                        Vector3.zero,
+                                                                                                        new Vector3(0.9f, 0.42f, 0.9f),
+                                                                                                        ParticleSystemShapeType.Hemisphere,
+                                                                                                        0.04f,
+                                                                                                        0f,
+                                                                                                        0f,
+                                                                                                        true,
+                                                                                                        1f,
+                                                                                                        12,
+                                                                                                        2f,
+                                                                                                        1,
+                                                                                                        2,
+                                                                                                        new Vector2(0.08f, 0.13f),
+                                                                                                        new Vector2(0.1f, 0.24f),
+                                                                                                        new Vector2(0.04f, 0.07f),
+                                                                                                        0.04f,
+                                                                                                        0.18f,
+                                                                                                        -0.04f,
+                                                                                                        0.08f,
+                                                                                                        0.1f));
+    }
+    #endregion
+
+    #endregion
+}

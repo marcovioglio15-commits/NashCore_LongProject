@@ -317,6 +317,69 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
             case "elementalAreaTick.applyIntervalSeconds":
                 passiveToolConfig.ElementalTrail.ApplyIntervalSeconds = math.max(0.01f, resolvedValue);
                 return;
+            case "laserBeam.damageMultiplier":
+                passiveToolConfig.LaserBeam.DamageMultiplier = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.virtualProjectileSpeedMultiplier":
+                passiveToolConfig.LaserBeam.VirtualProjectileSpeedMultiplier = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.damageTickIntervalSeconds":
+                passiveToolConfig.LaserBeam.DamageTickIntervalSeconds = math.max(0.0001f, resolvedValue);
+                return;
+            case "laserBeam.maximumContinuousActiveSeconds":
+                passiveToolConfig.LaserBeam.MaximumContinuousActiveSeconds = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.cooldownSeconds":
+                passiveToolConfig.LaserBeam.CooldownSeconds = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.maximumBounceSegments":
+                passiveToolConfig.LaserBeam.MaximumBounceSegments = math.max(0, (int)resolvedValue);
+                return;
+            case "laserBeam.visualPalette":
+                passiveToolConfig.LaserBeam.VisualPalette = PlayerRuntimeScalingEnumUtility.ResolveLaserBeamVisualPalette(resolvedValue);
+                return;
+            case "laserBeam.bodyProfile":
+                passiveToolConfig.LaserBeam.BodyProfile = PlayerRuntimeScalingEnumUtility.ResolveLaserBeamBodyProfile(resolvedValue);
+                return;
+            case "laserBeam.sourceShape":
+                passiveToolConfig.LaserBeam.SourceShape = PlayerRuntimeScalingEnumUtility.ResolveLaserBeamCapShape(resolvedValue);
+                return;
+            case "laserBeam.impactShape":
+                passiveToolConfig.LaserBeam.ImpactShape = PlayerRuntimeScalingEnumUtility.ResolveLaserBeamCapShape(resolvedValue);
+                return;
+            case "laserBeam.bodyWidthMultiplier":
+                passiveToolConfig.LaserBeam.BodyWidthMultiplier = math.max(0.01f, resolvedValue);
+                return;
+            case "laserBeam.collisionWidthMultiplier":
+                passiveToolConfig.LaserBeam.CollisionWidthMultiplier = math.max(0.01f, resolvedValue);
+                return;
+            case "laserBeam.sourceScaleMultiplier":
+                passiveToolConfig.LaserBeam.SourceScaleMultiplier = math.max(0.01f, resolvedValue);
+                return;
+            case "laserBeam.impactScaleMultiplier":
+                passiveToolConfig.LaserBeam.ImpactScaleMultiplier = math.max(0.01f, resolvedValue);
+                return;
+            case "laserBeam.bodyOpacity":
+                passiveToolConfig.LaserBeam.BodyOpacity = math.max(0.01f, resolvedValue);
+                return;
+            case "laserBeam.coreBrightness":
+                passiveToolConfig.LaserBeam.CoreBrightness = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.rimBrightness":
+                passiveToolConfig.LaserBeam.RimBrightness = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.flowScrollSpeed":
+                passiveToolConfig.LaserBeam.FlowScrollSpeed = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.flowPulseFrequency":
+                passiveToolConfig.LaserBeam.FlowPulseFrequency = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.wobbleAmplitude":
+                passiveToolConfig.LaserBeam.WobbleAmplitude = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.bubbleDriftSpeed":
+                passiveToolConfig.LaserBeam.BubbleDriftSpeed = math.max(0f, resolvedValue);
+                return;
             case "deathExplosion.cooldownSeconds":
                 passiveToolConfig.Explosion.CooldownSeconds = math.max(0f, resolvedValue);
                 return;

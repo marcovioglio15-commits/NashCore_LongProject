@@ -357,6 +357,7 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
         VisualElement container = CreateSubSectionContainer("Power-Ups VFX");
         SerializedObject presetSerializedObject = panel.PresetSerializedObject;
         SerializedProperty elementalEnemyVfxByElementProperty = presetSerializedObject.FindProperty("elementalEnemyVfxByElement");
+        SerializedProperty laserBeamProperty = presetSerializedObject.FindProperty("laserBeam");
 
         AddPropertyField(panel,
                          container,
@@ -413,6 +414,26 @@ internal static class PlayerVisualPresetsPanelSectionsUtility
                          presetSerializedObject.FindProperty("refreshAttachedElementalVfxLifetimeOnCapHit"),
                          "Refresh Attached Elemental VFX Lifetime On Cap Hit",
                          "When enabled, hitting the attached-target cap refreshes lifetime of the existing VFX.");
+
+        if (laserBeamProperty != null)
+        {
+            Label laserBeamHeader = new Label("Laser Beam");
+            laserBeamHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
+            laserBeamHeader.style.marginTop = 6f;
+            laserBeamHeader.style.marginBottom = 2f;
+            container.Add(laserBeamHeader);
+
+            PropertyField laserBeamField = new PropertyField(laserBeamProperty, "Shared Visual Settings");
+            laserBeamField.BindProperty(laserBeamProperty);
+            laserBeamField.tooltip = "Shared editable material, geometric offsets, and palette mappings used by the Laser Beam managed runtime visuals.";
+            laserBeamField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+            {
+                PlayerManagementDraftSession.MarkDirty();
+                panel.RefreshPresetList();
+            });
+            container.Add(laserBeamField);
+        }
+
         return container;
     }
 

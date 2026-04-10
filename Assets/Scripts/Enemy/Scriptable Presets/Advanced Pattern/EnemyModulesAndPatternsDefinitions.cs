@@ -194,6 +194,9 @@ public sealed class EnemyPatternWeaponInteractionAssembly
     [Tooltip("Maximum player distance allowed to activate the weapon interaction when Maximum Range gating is enabled.")]
     [SerializeField] private float maximumRange = DefaultMaximumRange;
 
+    [Tooltip("When enabled, the active weapon interaction controls enemy look direction exclusively while its range gates remain valid.")]
+    [SerializeField] private bool exclusiveLookDirectionControl;
+
     [Tooltip("Weapon interaction module binding resolved from Weapon Interaction definitions.")]
     [SerializeField] private EnemyPatternModuleBinding binding = new EnemyPatternModuleBinding();
     #endregion
@@ -238,6 +241,14 @@ public sealed class EnemyPatternWeaponInteractionAssembly
         get
         {
             return maximumRange;
+        }
+    }
+
+    public bool ExclusiveLookDirectionControl
+    {
+        get
+        {
+            return exclusiveLookDirectionControl;
         }
     }
 

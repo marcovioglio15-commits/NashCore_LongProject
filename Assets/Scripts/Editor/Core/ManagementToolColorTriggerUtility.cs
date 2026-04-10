@@ -33,8 +33,8 @@ internal static class ManagementToolColorTriggerUtility
         if (evt.button != RightMouseButton)
             return;
 
+        evt.StopPropagation();
         evt.StopImmediatePropagation();
-        evt.PreventDefault();
 
         EditorApplication.delayCall += () =>
         {

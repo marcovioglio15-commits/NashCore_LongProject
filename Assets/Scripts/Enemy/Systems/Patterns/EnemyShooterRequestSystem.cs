@@ -148,6 +148,21 @@ public partial struct EnemyShooterRequestSystem : ISystem
                     movementLocked = true;
                 }
 
+                if (runtime.IsPlayerInRange != 0 &&
+                    shooterConfig.ExclusiveLookDirectionControl != 0)
+                {
+                    float3 exclusiveAimDirection = ResolveAimDirection(in shooterConfig,
+                                                                       in runtime,
+                                                                       toPlayer,
+                                                                       enemyTransform.ValueRO.Rotation);
+                    TryCaptureAimDirection(exclusiveAimDirection,
+                                           shooterConfig.MovementPolicy,
+                                           true,
+                                           ref resolvedAimDirection,
+                                           ref hasResolvedAimDirection,
+                                           ref aimPriority);
+                }
+
                 if (runtime.RemainingBurstShots > 0)
                 {
                     float3 activeAimDirection = ResolveAimDirection(in shooterConfig,
@@ -156,6 +171,7 @@ public partial struct EnemyShooterRequestSystem : ISystem
                                                                     enemyTransform.ValueRO.Rotation);
                     TryCaptureAimDirection(activeAimDirection,
                                            shooterConfig.MovementPolicy,
+                                           false,
                                            ref resolvedAimDirection,
                                            ref hasResolvedAimDirection,
                                            ref aimPriority);
@@ -266,12 +282,14 @@ public partial struct EnemyShooterRequestSystem : ISystem
     /// </summary>
     /// <param name="candidateDirection">Current shooter aim direction candidate.</param>
     /// <param name="movementPolicy">Movement policy associated with the current shooter module.</param>
+    /// <param name="exclusiveLookDirectionControl">Whether the current module must override any movement-facing fallback.</param>
     /// <param name="resolvedAimDirection">Best resolved aim direction retained across modules.</param>
     /// <param name="hasResolvedAimDirection">Whether a valid aim direction has already been captured.</param>
     /// <param name="aimPriority">Priority of the currently captured aim direction.</param>
     /// <returns>None.<returns>
     private static void TryCaptureAimDirection(float3 candidateDirection,
                                                EnemyShooterMovementPolicy movementPolicy,
+                                               bool exclusiveLookDirectionControl,
                                                ref float3 resolvedAimDirection,
                                                ref bool hasResolvedAimDirection,
                                                ref int aimPriority)
@@ -279,7 +297,9 @@ public partial struct EnemyShooterRequestSystem : ISystem
         if (math.lengthsq(candidateDirection) <= DirectionEpsilon)
             return;
 
-        int candidatePriority = movementPolicy == EnemyShooterMovementPolicy.StopWhileAiming ? 1 : 0;
+        int candidatePriority = exclusiveLookDirectionControl
+            ? 2
+            : movementPolicy == EnemyShooterMovementPolicy.StopWhileAiming ? 1 : 0;
 
         if (hasResolvedAimDirection && candidatePriority < aimPriority)
             return;

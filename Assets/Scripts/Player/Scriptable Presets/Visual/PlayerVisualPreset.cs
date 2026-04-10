@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 /// <summary>
 /// Stores player outline presentation settings applied to managed renderers.
 /// returns None.
@@ -67,6 +69,223 @@ public sealed class PlayerVisualOutlineSettings
     public void Validate()
     {
         outlineColor.a = Mathf.Clamp01(outlineColor.a);
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Stores the editable colors used by one Laser Beam palette entry.
+/// returns None.
+/// </summary>
+[Serializable]
+public sealed class PlayerLaserBeamPaletteSettings
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Laser Beam palette enum served by this entry.")]
+    [SerializeField] private LaserBeamVisualPalette visualPalette = LaserBeamVisualPalette.AntibioticBlue;
+
+    [Tooltip("Primary liquid body color sent to the beam shader gradient.")]
+    [SerializeField] private Color bodyColorA = Color.white;
+
+    [Tooltip("Secondary liquid body color sent to the beam shader gradient.")]
+    [SerializeField] private Color bodyColorB = Color.white;
+
+    [Tooltip("Bright central highlight color used by the liquid beam core.")]
+    [SerializeField] private Color coreColor = Color.white;
+
+    [Tooltip("Outer contour color used by the beam rim and impact bloom.")]
+    [SerializeField] private Color rimColor = Color.white;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public LaserBeamVisualPalette VisualPalette
+    {
+        get
+        {
+            return visualPalette;
+        }
+    }
+
+    public Color BodyColorA
+    {
+        get
+        {
+            return bodyColorA;
+        }
+    }
+
+    public Color BodyColorB
+    {
+        get
+        {
+            return bodyColorB;
+        }
+    }
+
+    public Color CoreColor
+    {
+        get
+        {
+            return coreColor;
+        }
+    }
+
+    public Color RimColor
+    {
+        get
+        {
+            return rimColor;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Overwrites this entry with one complete palette assignment.
+    /// None.
+    /// returns None.
+    /// </summary>
+    public void Assign(LaserBeamVisualPalette paletteValue,
+                       Color bodyColorAValue,
+                       Color bodyColorBValue,
+                       Color coreColorValue,
+                       Color rimColorValue)
+    {
+        visualPalette = paletteValue;
+        bodyColorA = bodyColorAValue;
+        bodyColorB = bodyColorBValue;
+        coreColor = coreColorValue;
+        rimColor = rimColorValue;
+        Validate();
+    }
+
+    /// <summary>
+    /// Clamps authored palette colors to a valid alpha range.
+    /// None.
+    /// returns None.
+    /// </summary>
+    public void Validate()
+    {
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Stores editable shared assets and palette mappings used by the Laser Beam managed presentation runtime.
+/// returns None.
+/// </summary>
+[Serializable]
+public sealed class PlayerLaserBeamVisualSettings
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Material asset used by Laser Beam body and cap visuals. Assign the NashCore liquid beam material or a compatible replacement exposing the same shader properties.")]
+    [SerializeField] private Material beamMaterial;
+
+    [Tooltip("Material asset used by the bubble cluster visuals rendered near the emission origin.")]
+    [SerializeField] private Material sourceBubbleMaterial;
+
+    [Tooltip("Material asset used by the splash visuals rendered at the terminal point of each lane.")]
+    [SerializeField] private Material impactSplashMaterial;
+
+    [Tooltip("Vertical lift in world units applied to Laser Beam visuals to avoid floor z-fighting.")]
+    [SerializeField] private float verticalLift = PlayerLaserBeamVisualDefaultsUtility.DefaultVerticalLift;
+
+    [Tooltip("Minimum rendered segment length used by the pooled Laser Beam body visuals.")]
+    [SerializeField] private float minimumSegmentLength = PlayerLaserBeamVisualDefaultsUtility.DefaultMinimumSegmentLength;
+
+    [Tooltip("Editable color mappings used to translate Laser Beam palette enums into actual shader colors.")]
+    [SerializeField] private List<PlayerLaserBeamPaletteSettings> palettes = new List<PlayerLaserBeamPaletteSettings>();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public Material BeamMaterial
+    {
+        get
+        {
+            return beamMaterial;
+        }
+    }
+
+    public float VerticalLift
+    {
+        get
+        {
+            return verticalLift;
+        }
+    }
+
+    public float MinimumSegmentLength
+    {
+        get
+        {
+            return minimumSegmentLength;
+        }
+    }
+
+    public IReadOnlyList<PlayerLaserBeamPaletteSettings> Palettes
+    {
+        get
+        {
+            return palettes;
+        }
+    }
+
+    public Material SourceBubbleMaterial
+    {
+        get
+        {
+            return sourceBubbleMaterial;
+        }
+    }
+
+    public Material ImpactSplashMaterial
+    {
+        get
+        {
+            return impactSplashMaterial;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Validates material, distances, and palette coverage for Laser Beam visuals.
+    /// None.
+    /// returns None.
+    /// </summary>
+    public void Validate()
+    {
+        if (palettes == null)
+            palettes = new List<PlayerLaserBeamPaletteSettings>();
+
+#if UNITY_EDITOR
+        if (beamMaterial == null)
+            beamMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultBodyMaterialPath);
+
+        if (sourceBubbleMaterial == null)
+            sourceBubbleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultSourceBubbleMaterialPath);
+
+        if (impactSplashMaterial == null)
+            impactSplashMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultImpactSplashMaterialPath);
+#endif
+
+        PlayerLaserBeamVisualDefaultsUtility.EnsurePaletteCoverage(palettes);
     }
     #endregion
 
@@ -147,6 +366,9 @@ public sealed class PlayerVisualPreset : ScriptableObject
 
     [Tooltip("When enabled, hitting the attached-target cap refreshes lifetime of the existing VFX.")]
     [SerializeField] private bool refreshAttachedElementalVfxLifetimeOnCapHit = true;
+
+    [Tooltip("Shared material and palette settings used by the Laser Beam managed visuals.")]
+    [SerializeField] private PlayerLaserBeamVisualSettings laserBeam = new PlayerLaserBeamVisualSettings();
     #endregion
 
     #endregion
@@ -311,6 +533,14 @@ public sealed class PlayerVisualPreset : ScriptableObject
             return refreshAttachedElementalVfxLifetimeOnCapHit;
         }
     }
+
+    public PlayerLaserBeamVisualSettings LaserBeam
+    {
+        get
+        {
+            return laserBeam;
+        }
+    }
     #endregion
 
     #region Methods
@@ -359,7 +589,11 @@ public sealed class PlayerVisualPreset : ScriptableObject
         if (elementalEnemyVfxByElement == null)
             elementalEnemyVfxByElement = new List<ElementalVfxByElementData>();
 
+        if (laserBeam == null)
+            laserBeam = new PlayerLaserBeamVisualSettings();
+
         outline.Validate();
+        laserBeam.Validate();
         PlayerElementalVfxAssignmentUtility.ValidateAssignments(elementalEnemyVfxByElement);
     }
     #endregion

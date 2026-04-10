@@ -289,12 +289,16 @@ public sealed class EnemyManagementWindow : EditorWindow
 
         // Rebuild content host with currently selected panel root.
         contentRoot.Clear();
+        VisualElement panelContent = null;
 
         if (panelType == PanelType.EnemyMasterPresets)
-        {
-            contentRoot.Add(masterPresetsPanel.Root);
+            panelContent = masterPresetsPanel.Root;
+
+        if (panelContent == null)
             return;
-        }
+
+        contentRoot.Add(panelContent);
+        ManagementToolInteractiveElementColorUtility.RefreshRegisteredSubtree(contentRoot);
     }
 
     /// <summary>

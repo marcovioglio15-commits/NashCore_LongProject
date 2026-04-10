@@ -1,0 +1,237 @@
+using System.Collections.Generic;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine;
+
+/// <summary>
+/// Resolves authored Laser Beam visuals and converts gameplay lanes into render-time samples.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
+{
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Resolves the authored body prefab mapped to the requested body profile.
+    /// /params bodyVariants Baked body variant buffer.
+    /// /params bodyProfile Runtime body profile selector.
+    /// /returns Matching prefab when present, otherwise null.
+    /// </summary>
+    public static GameObject ResolveBodyPrefab(DynamicBuffer<PlayerLaserBeamBodyVariantElement> bodyVariants,
+                                               LaserBeamBodyProfile bodyProfile)
+    {
+        for (int variantIndex = 0; variantIndex < bodyVariants.Length; variantIndex++)
+        {
+            PlayerLaserBeamBodyVariantElement variant = bodyVariants[variantIndex];
+
+            if (variant.BodyProfile != bodyProfile)
+                continue;
+
+            return variant.Prefab.Value;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Resolves the authored source particle prefab mapped to the requested cap shape.
+    /// /params sourceVariants Baked source variant buffer.
+    /// /params shape Runtime source cap-shape selector.
+    /// /returns Matching prefab when present, otherwise null.
+    /// </summary>
+    public static GameObject ResolveSourcePrefab(DynamicBuffer<PlayerLaserBeamSourceVariantElement> sourceVariants,
+                                                 LaserBeamCapShape shape)
+    {
+        for (int variantIndex = 0; variantIndex < sourceVariants.Length; variantIndex++)
+        {
+            PlayerLaserBeamSourceVariantElement variant = sourceVariants[variantIndex];
+
+            if (variant.Shape != shape)
+                continue;
+
+            return variant.Prefab.Value;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Resolves the authored impact particle prefab mapped to the requested cap shape.
+    /// /params impactVariants Baked impact variant buffer.
+    /// /params shape Runtime impact cap-shape selector.
+    /// /returns Matching prefab when present, otherwise null.
+    /// </summary>
+    public static GameObject ResolveImpactPrefab(DynamicBuffer<PlayerLaserBeamImpactVariantElement> impactVariants,
+                                                 LaserBeamCapShape shape)
+    {
+        for (int variantIndex = 0; variantIndex < impactVariants.Length; variantIndex++)
+        {
+            PlayerLaserBeamImpactVariantElement variant = impactVariants[variantIndex];
+
+            if (variant.Shape != shape)
+                continue;
+
+            return variant.Prefab.Value;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Resolves the palette colors used by the current beam from the baked palette buffer.
+    /// /params visualPalette Runtime palette selector.
+    /// /params paletteBuffer Baked palette buffer.
+    /// /returns Resolved palette colors converted back to managed Unity colors.
+    /// </summary>
+    public static PlayerLaserBeamResolvedPalette ResolvePalette(LaserBeamVisualPalette visualPalette,
+                                                                DynamicBuffer<PlayerLaserBeamPaletteElement> paletteBuffer)
+    {
+        for (int paletteIndex = 0; paletteIndex < paletteBuffer.Length; paletteIndex++)
+        {
+            PlayerLaserBeamPaletteElement paletteElement = paletteBuffer[paletteIndex];
+
+            if (paletteElement.VisualPalette != visualPalette)
+                continue;
+
+            return new PlayerLaserBeamResolvedPalette
+            {
+                BodyColorA = ToColor(paletteElement.BodyColorA),
+                BodyColorB = ToColor(paletteElement.BodyColorB),
+                CoreColor = ToColor(paletteElement.CoreColor),
+                RimColor = ToColor(paletteElement.RimColor)
+            };
+        }
+
+        PlayerLaserBeamVisualDefaultsUtility.ResolveDefaultColors(visualPalette,
+                                                                 out Color bodyColorA,
+                                                                 out Color bodyColorB,
+                                                                 out Color coreColor,
+                                                                 out Color rimColor);
+        return new PlayerLaserBeamResolvedPalette
+        {
+            BodyColorA = bodyColorA,
+            BodyColorB = bodyColorB,
+            CoreColor = coreColor,
+            RimColor = rimColor
+        };
+    }
+
+    /// <summary>
+    /// Rebuilds render-time body samples and lane endpoint data from the authoritative gameplay lane buffer.
+    /// /params laserBeamLanes Gameplay lane buffer generated by simulation.
+    /// /params visualConfig Shared visual config used to subdivide long segments.
+    /// /params bodySamples Mutable destination list for 3D body blob samples.
+    /// /params laneEndpoints Mutable destination list for per-lane source and impact anchors.
+    /// /returns True when at least one body sample and one lane endpoint were produced.
+    /// </summary>
+    public static bool BuildLaneVisualData(DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                           in PlayerLaserBeamVisualConfig visualConfig,
+                                           List<PlayerLaserBeamBodySample> bodySamples,
+                                           List<PlayerLaserBeamLaneEndpoint> laneEndpoints)
+    {
+        bodySamples.Clear();
+        laneEndpoints.Clear();
+
+        if (laserBeamLanes.Length <= 0)
+            return false;
+
+        int segmentIndex = 0;
+
+        while (segmentIndex < laserBeamLanes.Length)
+        {
+            PlayerLaserBeamLaneElement firstSegment = laserBeamLanes[segmentIndex];
+            PlayerLaserBeamLaneEndpoint endpoint = new PlayerLaserBeamLaneEndpoint
+            {
+                LaneIndex = firstSegment.LaneIndex,
+                StartPoint = LiftPoint(firstSegment.StartPoint, visualConfig.VerticalLift),
+                StartDirection = firstSegment.Direction,
+                StartWidth = firstSegment.VisualWidth,
+                EndPoint = LiftPoint(firstSegment.EndPoint, visualConfig.VerticalLift),
+                EndDirection = firstSegment.Direction,
+                EndWidth = firstSegment.VisualWidth,
+                TerminalNormal = firstSegment.TerminalNormal
+            };
+
+            while (segmentIndex < laserBeamLanes.Length &&
+                   laserBeamLanes[segmentIndex].LaneIndex == endpoint.LaneIndex)
+            {
+                PlayerLaserBeamLaneElement segment = laserBeamLanes[segmentIndex];
+                AppendBodySamples(segment, in visualConfig, bodySamples);
+                endpoint.EndPoint = LiftPoint(segment.EndPoint, visualConfig.VerticalLift);
+                endpoint.EndDirection = segment.Direction;
+                endpoint.EndWidth = segment.VisualWidth;
+                endpoint.TerminalNormal = segment.TerminalNormal;
+                segmentIndex++;
+            }
+
+            laneEndpoints.Add(endpoint);
+        }
+
+        return bodySamples.Count > 0 && laneEndpoints.Count > 0;
+    }
+    #endregion
+
+    #region Private Methods
+    /// <summary>
+    /// Converts one gameplay lane segment into overlapping mesh-blob render samples.
+    /// /params segment Gameplay segment produced by the simulation path.
+    /// /params visualConfig Shared visual config used to control segment overlap and scale.
+    /// /params bodySamples Mutable destination list for the generated render samples.
+    /// /returns None.
+    /// </summary>
+    private static void AppendBodySamples(PlayerLaserBeamLaneElement segment,
+                                          in PlayerLaserBeamVisualConfig visualConfig,
+                                          List<PlayerLaserBeamBodySample> bodySamples)
+    {
+        float segmentLength = math.max(visualConfig.MinimumSegmentLength, segment.Length);
+        float spacingLength = math.max(visualConfig.MinimumSegmentLength,
+                                       visualConfig.MaximumVisualSegmentLength * math.max(0.01f, visualConfig.BodyBlobSpacingMultiplier));
+        int sampleCount = math.max(1, (int)math.ceil(segmentLength / spacingLength));
+        float logicalSampleLength = segmentLength / sampleCount;
+        float renderedSampleLength = math.max(visualConfig.MinimumSegmentLength,
+                                              logicalSampleLength * math.max(0.01f, visualConfig.BodyBlobLengthMultiplier));
+        float renderedSampleWidth = math.max(0.01f,
+                                             segment.VisualWidth * math.max(0.01f, visualConfig.BodyBlobWidthMultiplier));
+
+        // Subdivide long gameplay segments into dense overlapping body blobs for a thicker liquid look.
+        for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            float centerDistance = logicalSampleLength * (sampleIndex + 0.5f);
+            float3 position = LiftPoint(segment.StartPoint + segment.Direction * centerDistance, visualConfig.VerticalLift);
+            quaternion rotation = quaternion.LookRotationSafe(segment.Direction, math.up());
+            bodySamples.Add(new PlayerLaserBeamBodySample
+            {
+                Position = position,
+                Rotation = rotation,
+                Length = renderedSampleLength,
+                Width = renderedSampleWidth
+            });
+        }
+    }
+
+    /// <summary>
+    /// Applies the beam vertical lift to a world-space point.
+    /// /params point Unlifted world-space point.
+    /// /params verticalLift Shared vertical lift amount.
+    /// /returns Lifted world-space point.
+    /// </summary>
+    private static float3 LiftPoint(float3 point, float verticalLift)
+    {
+        return new float3(point.x, point.y + verticalLift, point.z);
+    }
+
+    /// <summary>
+    /// Converts one baked linear float4 color into a managed Unity color.
+    /// /params value Baked float4 color.
+    /// /returns Managed Unity color.
+    /// </summary>
+    private static Color ToColor(float4 value)
+    {
+        return new Color(value.x, value.y, value.z, value.w);
+    }
+    #endregion
+
+    #endregion
+}
