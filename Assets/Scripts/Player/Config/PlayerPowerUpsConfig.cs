@@ -226,6 +226,10 @@ public struct LaserBeamPassiveConfig
     public float RimBrightness;
     public float FlowScrollSpeed;
     public float FlowPulseFrequency;
+    public float TickPulseTravelSpeed;
+    public float TickPulseLength;
+    public float TickPulseWidthBoost;
+    public float TickPulseBrightnessBoost;
     public float WobbleAmplitude;
     public float BubbleDriftSpeed;
 }

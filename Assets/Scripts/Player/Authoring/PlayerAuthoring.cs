@@ -578,11 +578,9 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             AppliedBlend = 0f
         });
         AddComponent(entity, PlayerLaserBeamVisualBakeUtility.BuildConfig(authoring));
-        DynamicBuffer<PlayerLaserBeamBodyVariantElement> laserBeamBodyVariantBuffer = AddBuffer<PlayerLaserBeamBodyVariantElement>(entity);
         DynamicBuffer<PlayerLaserBeamSourceVariantElement> laserBeamSourceVariantBuffer = AddBuffer<PlayerLaserBeamSourceVariantElement>(entity);
         DynamicBuffer<PlayerLaserBeamImpactVariantElement> laserBeamImpactVariantBuffer = AddBuffer<PlayerLaserBeamImpactVariantElement>(entity);
         DynamicBuffer<PlayerLaserBeamPaletteElement> laserBeamPaletteBuffer = AddBuffer<PlayerLaserBeamPaletteElement>(entity);
-        PlayerLaserBeamVisualBakeUtility.PopulateBodyVariantBuffer(authoring, laserBeamBodyVariantBuffer);
         PlayerLaserBeamVisualBakeUtility.PopulateSourceVariantBuffer(authoring, laserBeamSourceVariantBuffer);
         PlayerLaserBeamVisualBakeUtility.PopulateImpactVariantBuffer(authoring, laserBeamImpactVariantBuffer);
         PlayerLaserBeamVisualBakeUtility.PopulatePaletteBuffer(authoring, laserBeamPaletteBuffer);
@@ -818,9 +816,6 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         if (rigAuthoring == null)
             return;
 
-        DependsOn(rigAuthoring.RoundedTubeBodyPrefab);
-        DependsOn(rigAuthoring.TaperedJetBodyPrefab);
-        DependsOn(rigAuthoring.DenseRibbonBodyPrefab);
         DependsOn(rigAuthoring.BubbleBurstSourcePrefab);
         DependsOn(rigAuthoring.StarBloomSourcePrefab);
         DependsOn(rigAuthoring.SoftDiscSourcePrefab);

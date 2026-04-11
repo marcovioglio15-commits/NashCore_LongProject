@@ -618,6 +618,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         SerializedProperty rimBrightnessProperty = laserBeamPayloadProperty.FindPropertyRelative("rimBrightness");
         SerializedProperty flowScrollSpeedProperty = laserBeamPayloadProperty.FindPropertyRelative("flowScrollSpeed");
         SerializedProperty flowPulseFrequencyProperty = laserBeamPayloadProperty.FindPropertyRelative("flowPulseFrequency");
+        SerializedProperty tickPulseTravelSpeedProperty = laserBeamPayloadProperty.FindPropertyRelative("tickPulseTravelSpeed");
+        SerializedProperty tickPulseLengthProperty = laserBeamPayloadProperty.FindPropertyRelative("tickPulseLength");
+        SerializedProperty tickPulseWidthBoostProperty = laserBeamPayloadProperty.FindPropertyRelative("tickPulseWidthBoost");
+        SerializedProperty tickPulseBrightnessBoostProperty = laserBeamPayloadProperty.FindPropertyRelative("tickPulseBrightnessBoost");
         SerializedProperty wobbleAmplitudeProperty = laserBeamPayloadProperty.FindPropertyRelative("wobbleAmplitude");
         SerializedProperty bubbleDriftSpeedProperty = laserBeamPayloadProperty.FindPropertyRelative("bubbleDriftSpeed");
 
@@ -640,6 +644,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
             rimBrightnessProperty == null ||
             flowScrollSpeedProperty == null ||
             flowPulseFrequencyProperty == null ||
+            tickPulseTravelSpeedProperty == null ||
+            tickPulseLengthProperty == null ||
+            tickPulseWidthBoostProperty == null ||
+            tickPulseBrightnessBoostProperty == null ||
             wobbleAmplitudeProperty == null ||
             bubbleDriftSpeedProperty == null)
         {
@@ -688,8 +696,12 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
         AddField(visualsFoldout, coreBrightnessProperty, "Core Brightness");
         AddField(visualsFoldout, rimBrightnessProperty, "Rim Brightness");
         AddField(visualsFoldout, flowScrollSpeedProperty, "Flow Scroll Speed");
-        AddField(visualsFoldout, flowPulseFrequencyProperty, "Flow Pulse Frequency");
-        AddField(visualsFoldout, wobbleAmplitudeProperty, "Wobble Amplitude");
+        AddField(visualsFoldout, flowPulseFrequencyProperty, "Flow Shimmer Frequency");
+        AddField(visualsFoldout, tickPulseTravelSpeedProperty, "Tick Pulse Travel Speed");
+        AddField(visualsFoldout, tickPulseLengthProperty, "Tick Pulse Length");
+        AddField(visualsFoldout, tickPulseWidthBoostProperty, "Tick Pulse Width Boost");
+        AddField(visualsFoldout, tickPulseBrightnessBoostProperty, "Tick Pulse Brightness Boost");
+        AddField(visualsFoldout, wobbleAmplitudeProperty, "Body Breathing Amplitude");
         AddField(visualsFoldout, bubbleDriftSpeedProperty, "Bubble Drift Speed");
 
         UpdateLaserBeamCooldownVisibility(cooldownSecondsProperty, cooldownContainer);
@@ -701,6 +713,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                  sourceScaleMultiplierProperty,
                                  impactScaleMultiplierProperty,
                                  bodyOpacityProperty,
+                                 tickPulseTravelSpeedProperty,
+                                 tickPulseLengthProperty,
+                                 tickPulseWidthBoostProperty,
+                                 tickPulseBrightnessBoostProperty,
                                  warningBox);
 
         payloadContainer.TrackPropertyValue(cooldownSecondsProperty, changedProperty =>
@@ -714,6 +730,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                      sourceScaleMultiplierProperty,
                                      impactScaleMultiplierProperty,
                                      bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
                                      warningBox);
         });
         payloadContainer.TrackPropertyValue(damageTickIntervalSecondsProperty, changedProperty =>
@@ -726,6 +746,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                      sourceScaleMultiplierProperty,
                                      impactScaleMultiplierProperty,
                                      bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
                                      warningBox);
         });
         payloadContainer.TrackPropertyValue(maximumContinuousActiveSecondsProperty, changedProperty =>
@@ -738,6 +762,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                      sourceScaleMultiplierProperty,
                                      impactScaleMultiplierProperty,
                                      bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
                                      warningBox);
         });
         payloadContainer.TrackPropertyValue(bodyWidthMultiplierProperty, changedProperty =>
@@ -750,6 +778,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                      sourceScaleMultiplierProperty,
                                      impactScaleMultiplierProperty,
                                      bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
                                      warningBox);
         });
         payloadContainer.TrackPropertyValue(collisionWidthMultiplierProperty, changedProperty =>
@@ -762,6 +794,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                      sourceScaleMultiplierProperty,
                                      impactScaleMultiplierProperty,
                                      bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
                                      warningBox);
         });
         payloadContainer.TrackPropertyValue(sourceScaleMultiplierProperty, changedProperty =>
@@ -774,6 +810,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                      changedProperty,
                                      impactScaleMultiplierProperty,
                                      bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
                                      warningBox);
         });
         payloadContainer.TrackPropertyValue(impactScaleMultiplierProperty, changedProperty =>
@@ -786,6 +826,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                      sourceScaleMultiplierProperty,
                                      changedProperty,
                                      bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
                                      warningBox);
         });
         payloadContainer.TrackPropertyValue(bodyOpacityProperty, changedProperty =>
@@ -797,6 +841,74 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                      collisionWidthMultiplierProperty,
                                      sourceScaleMultiplierProperty,
                                      impactScaleMultiplierProperty,
+                                     changedProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(tickPulseTravelSpeedProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     changedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(tickPulseLengthProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     changedProperty,
+                                     tickPulseWidthBoostProperty,
+                                     tickPulseBrightnessBoostProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(tickPulseWidthBoostProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     changedProperty,
+                                     tickPulseBrightnessBoostProperty,
+                                     warningBox);
+        });
+        payloadContainer.TrackPropertyValue(tickPulseBrightnessBoostProperty, changedProperty =>
+        {
+            RefreshLaserBeamWarnings(cooldownSecondsProperty,
+                                     damageTickIntervalSecondsProperty,
+                                     maximumContinuousActiveSecondsProperty,
+                                     bodyWidthMultiplierProperty,
+                                     collisionWidthMultiplierProperty,
+                                     sourceScaleMultiplierProperty,
+                                     impactScaleMultiplierProperty,
+                                     bodyOpacityProperty,
+                                     tickPulseTravelSpeedProperty,
+                                     tickPulseLengthProperty,
+                                     tickPulseWidthBoostProperty,
                                      changedProperty,
                                      warningBox);
         });
@@ -966,6 +1078,10 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
                                                  SerializedProperty sourceScaleMultiplierProperty,
                                                  SerializedProperty impactScaleMultiplierProperty,
                                                  SerializedProperty bodyOpacityProperty,
+                                                 SerializedProperty tickPulseTravelSpeedProperty,
+                                                 SerializedProperty tickPulseLengthProperty,
+                                                 SerializedProperty tickPulseWidthBoostProperty,
+                                                 SerializedProperty tickPulseBrightnessBoostProperty,
                                                  HelpBox warningBox)
     {
         if (warningBox == null)
@@ -1000,6 +1116,18 @@ public static class PowerUpModuleDefinitionPayloadDrawerUtility
 
         if (bodyOpacityProperty != null && bodyOpacityProperty.floatValue <= 0f)
             warningLines.Add("Body Opacity should be > 0.");
+
+        if (tickPulseTravelSpeedProperty != null && tickPulseTravelSpeedProperty.floatValue <= 0f)
+            warningLines.Add("Tick Pulse Travel Speed should be > 0.");
+
+        if (tickPulseLengthProperty != null && tickPulseLengthProperty.floatValue <= 0f)
+            warningLines.Add("Tick Pulse Length should be > 0.");
+
+        if (tickPulseWidthBoostProperty != null && tickPulseWidthBoostProperty.floatValue < 0f)
+            warningLines.Add("Tick Pulse Width Boost should be >= 0.");
+
+        if (tickPulseBrightnessBoostProperty != null && tickPulseBrightnessBoostProperty.floatValue < 0f)
+            warningLines.Add("Tick Pulse Brightness Boost should be >= 0.");
 
         if (warningLines.Count <= 0)
         {

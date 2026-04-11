@@ -76,10 +76,10 @@ public sealed class PowerUpLaserBeamModuleData
     [SerializeField] private LaserBeamVisualPalette visualPalette = LaserBeamVisualPalette.AntibioticBlue;
 
     [Tooltip("Body silhouette profile used by the beam shader and segment scaling.")]
-    [SerializeField] private LaserBeamBodyProfile bodyProfile = LaserBeamBodyProfile.RoundedTube;
+    [SerializeField] private LaserBeamBodyProfile bodyProfile = LaserBeamBodyProfile.DenseRibbon;
 
-    [Tooltip("Shape family used by the source burst effect near the muzzle.")]
-    [SerializeField] private LaserBeamCapShape sourceShape = LaserBeamCapShape.SoftDisc;
+    [Tooltip("Shape family used by the source bubbles near the muzzle.")]
+    [SerializeField] private LaserBeamCapShape sourceShape = LaserBeamCapShape.BubbleBurst;
 
     [Tooltip("Shape family used by the impact effect at the current beam termination point.")]
     [SerializeField] private LaserBeamCapShape impactShape = LaserBeamCapShape.StarBloom;
@@ -108,14 +108,26 @@ public sealed class PowerUpLaserBeamModuleData
     [Tooltip("Scroll speed used by the liquid flow pattern.")]
     [SerializeField] private float flowScrollSpeed = 1.15f;
 
-    [Tooltip("Frequency of the rhythmic pulse applied to the flowing liquid highlight.")]
-    [SerializeField] private float flowPulseFrequency = 0.4f;
+    [Tooltip("Frequency of the secondary internal shimmer that keeps the liquid body alive between damage pulses.")]
+    [SerializeField] private float flowPulseFrequency = 1.6f;
 
-    [Tooltip("Amplitude of the lateral wobble used by the liquid beam body.")]
-    [SerializeField] private float wobbleAmplitude = 0.05f;
+    [Tooltip("World-space speed at which each damage pulse ring travels along the beam after a damage tick is applied.")]
+    [SerializeField] private float tickPulseTravelSpeed = 14f;
+
+    [Tooltip("Minimum world-space length occupied by the travelling damage pulse ring.")]
+    [SerializeField] private float tickPulseLength = 0.6f;
+
+    [Tooltip("Additional width boost applied by the travelling damage pulse ring as it passes over the beam body.")]
+    [SerializeField] private float tickPulseWidthBoost = 0.48f;
+
+    [Tooltip("Additional brightness boost applied by the travelling damage pulse ring as it passes over the beam body.")]
+    [SerializeField] private float tickPulseBrightnessBoost = 1.1f;
+
+    [Tooltip("Amplitude of the secondary body breathing used to keep the beam volume fluid even when no damage pulse is crossing it.")]
+    [SerializeField] private float wobbleAmplitude = 0.08f;
 
     [Tooltip("Speed of the secondary bubble drift pattern used by source and impact effects.")]
-    [SerializeField] private float bubbleDriftSpeed = 1.4f;
+    [SerializeField] private float bubbleDriftSpeed = 1.8f;
     #endregion
 
     #endregion
@@ -270,6 +282,38 @@ public sealed class PowerUpLaserBeamModuleData
         get
         {
             return flowPulseFrequency;
+        }
+    }
+
+    public float TickPulseTravelSpeed
+    {
+        get
+        {
+            return tickPulseTravelSpeed;
+        }
+    }
+
+    public float TickPulseLength
+    {
+        get
+        {
+            return tickPulseLength;
+        }
+    }
+
+    public float TickPulseWidthBoost
+    {
+        get
+        {
+            return tickPulseWidthBoost;
+        }
+    }
+
+    public float TickPulseBrightnessBoost
+    {
+        get
+        {
+            return tickPulseBrightnessBoost;
         }
     }
 

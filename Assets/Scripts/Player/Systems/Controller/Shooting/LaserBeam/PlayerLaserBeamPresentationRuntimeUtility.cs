@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// Owns pooled managed Laser Beam body and particle instances for the 3D presentation path.
@@ -9,6 +10,10 @@ using UnityEngine;
 /// </summary>
 internal static class PlayerLaserBeamPresentationRuntimeUtility
 {
+    #region Constants
+    private const int LaserBeamVisualSortingOrder = 12;
+    #endregion
+
     #region Methods
 
     #region Public Methods
@@ -132,15 +137,13 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
     }
 
     /// <summary>
-    /// Ensures the pooled body visual list can render the requested sample count using the selected prefab.
+    /// Ensures the pooled body visual list can render the requested lane count.
     /// /params managedInstance Instance owning the pooled visuals.
-    /// /params requiredCount Number of body visuals required this frame.
-    /// /params bodyPrefab Resolved body prefab that should back the pooled visuals.
+    /// /params requiredCount Number of lane visuals required this frame.
     /// /returns None.
     /// </summary>
     public static void EnsureBodyVisualCount(PlayerLaserBeamManagedInstance managedInstance,
-                                             int requiredCount,
-                                             GameObject bodyPrefab)
+                                             int requiredCount)
     {
         if (managedInstance == null || managedInstance.RootTransform == null)
             return;
@@ -148,7 +151,8 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
         if (requiredCount < 0)
             requiredCount = 0;
 
-        EnsureBodyVisualCapacity(managedInstance, requiredCount, bodyPrefab);
+        while (managedInstance.BodyVisuals.Count < requiredCount)
+            managedInstance.BodyVisuals.Add(CreateBodyVisual(managedInstance.RootTransform, managedInstance.BodyVisuals.Count));
 
         for (int visualIndex = requiredCount; visualIndex < managedInstance.BodyVisuals.Count; visualIndex++)
         {
@@ -224,39 +228,6 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
 
     #region Private Methods
     /// <summary>
-    /// Ensures the body visual pool matches the required count and prefab source.
-    /// /params managedInstance Instance owning the pooled visuals.
-    /// /params requiredCount Required number of pooled body visuals.
-    /// /params bodyPrefab Prefab that should back every pooled body visual.
-    /// /returns None.
-    /// </summary>
-    private static void EnsureBodyVisualCapacity(PlayerLaserBeamManagedInstance managedInstance,
-                                                 int requiredCount,
-                                                 GameObject bodyPrefab)
-    {
-        while (managedInstance.BodyVisuals.Count < requiredCount)
-        {
-            PlayerLaserBeamManagedBodyVisual createdVisual = CreateBodyVisual(bodyPrefab, managedInstance.RootTransform);
-            managedInstance.BodyVisuals.Add(createdVisual);
-        }
-
-        for (int visualIndex = 0; visualIndex < managedInstance.BodyVisuals.Count; visualIndex++)
-        {
-            PlayerLaserBeamManagedBodyVisual visual = managedInstance.BodyVisuals[visualIndex];
-
-            if (visual != null &&
-                visual.InstanceObject != null &&
-                visual.SourcePrefab == bodyPrefab)
-            {
-                continue;
-            }
-
-            DestroyBodyVisual(visual);
-            managedInstance.BodyVisuals[visualIndex] = CreateBodyVisual(bodyPrefab, managedInstance.RootTransform);
-        }
-    }
-
-    /// <summary>
     /// Ensures the particle visual pool matches the required count and prefab source.
     /// /params visuals Mutable pooled particle visual list.
     /// /params requiredCount Required number of pooled particle visuals.
@@ -294,29 +265,41 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
     }
 
     /// <summary>
-    /// Instantiates one pooled body visual from the resolved body prefab.
-    /// /params bodyPrefab Resolved body prefab to instantiate.
+    /// Creates one pooled ribbon body visual backed by a dedicated dynamic mesh.
     /// /params parentTransform Parent transform that receives the pooled instance.
+    /// /params visualIndex Stable index used to name the created GameObject.
     /// /returns Newly created pooled body visual, or null when creation fails.
     /// </summary>
-    private static PlayerLaserBeamManagedBodyVisual CreateBodyVisual(GameObject bodyPrefab, Transform parentTransform)
+    private static PlayerLaserBeamManagedBodyVisual CreateBodyVisual(Transform parentTransform,
+                                                                     int visualIndex)
     {
-        if (bodyPrefab == null || parentTransform == null)
+        if (parentTransform == null)
             return null;
 
-        GameObject instanceObject = Object.Instantiate(bodyPrefab, parentTransform);
-
-        if (instanceObject == null)
-            return null;
-
-        instanceObject.name = bodyPrefab.name + "_Instance";
-        Renderer[] renderers = instanceObject.GetComponentsInChildren<Renderer>(true);
+        GameObject instanceObject = new GameObject(string.Format("PlayerLaserBeamBody_{0}", visualIndex));
+        instanceObject.transform.SetParent(parentTransform, false);
+        instanceObject.layer = 0;
+        MeshFilter meshFilter = instanceObject.AddComponent<MeshFilter>();
+        MeshRenderer meshRenderer = instanceObject.AddComponent<MeshRenderer>();
+        Mesh dynamicMesh = new Mesh
+        {
+            name = string.Format("PlayerLaserBeamBodyMesh_{0}", visualIndex)
+        };
+        dynamicMesh.MarkDynamic();
+        meshFilter.sharedMesh = dynamicMesh;
+        meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
+        meshRenderer.receiveShadows = false;
+        meshRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+        meshRenderer.lightProbeUsage = LightProbeUsage.Off;
+        meshRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+        meshRenderer.sortingOrder = LaserBeamVisualSortingOrder;
         return new PlayerLaserBeamManagedBodyVisual
         {
-            SourcePrefab = bodyPrefab,
             InstanceObject = instanceObject,
             RootTransform = instanceObject.transform,
-            Renderers = renderers
+            MeshFilter = meshFilter,
+            MeshRenderer = meshRenderer,
+            DynamicMesh = dynamicMesh
         };
     }
 
@@ -385,16 +368,20 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
     }
 
     /// <summary>
-    /// Destroys one pooled body visual instance.
+    /// Destroys one pooled body visual instance and its owned dynamic mesh.
     /// /params visual Pooled body visual to destroy.
     /// /returns None.
     /// </summary>
     private static void DestroyBodyVisual(PlayerLaserBeamManagedBodyVisual visual)
     {
-        if (visual == null || visual.InstanceObject == null)
+        if (visual == null)
             return;
 
-        Object.Destroy(visual.InstanceObject);
+        if (visual.DynamicMesh != null)
+            Object.Destroy(visual.DynamicMesh);
+
+        if (visual.InstanceObject != null)
+            Object.Destroy(visual.InstanceObject);
     }
 
     /// <summary>

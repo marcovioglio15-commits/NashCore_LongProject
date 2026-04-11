@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Stores authored prefab variants and sampling defaults used by the 3D Laser Beam presentation runtime.
+/// Stores authored source and impact prefabs plus ribbon sampling defaults used by the Laser Beam presentation runtime.
 /// /params None.
 /// /returns None.
 /// </summary>
@@ -11,16 +11,6 @@ public sealed class PlayerLaserBeamVisualRigAuthoring : MonoBehaviour
     #region Fields
 
     #region Serialized Fields
-    [Header("Body Variants")]
-    [Tooltip("3D prefab used when the Laser Beam body profile resolves to Rounded Tube.")]
-    [SerializeField] private GameObject roundedTubeBodyPrefab;
-
-    [Tooltip("3D prefab used when the Laser Beam body profile resolves to Tapered Jet.")]
-    [SerializeField] private GameObject taperedJetBodyPrefab;
-
-    [Tooltip("3D prefab used when the Laser Beam body profile resolves to Dense Ribbon.")]
-    [SerializeField] private GameObject denseRibbonBodyPrefab;
-
     [Header("Source Variants")]
     [Tooltip("Particle prefab used at the muzzle when the source shape resolves to Bubble Burst.")]
     [SerializeField] private GameObject bubbleBurstSourcePrefab;
@@ -41,53 +31,26 @@ public sealed class PlayerLaserBeamVisualRigAuthoring : MonoBehaviour
     [Tooltip("Particle prefab used at the beam terminal point when the impact shape resolves to Soft Disc.")]
     [SerializeField] private GameObject softDiscImpactPrefab;
 
-    [Header("Sampling")]
-    [Tooltip("Maximum world-space length of one visual blob segment after gameplay lanes are subdivided for rendering.")]
-    [SerializeField] private float maximumVisualSegmentLength = 0.34f;
+    [Header("Ribbon Sampling")]
+    [Tooltip("Maximum world-space spacing between consecutive ribbon points sampled from the authoritative beam path.")]
+    [SerializeField] private float maximumRibbonSegmentLength = 0.18f;
 
-    [Tooltip("Spacing multiplier applied between consecutive body blobs. Values below 1 create overlap for a thicker liquid look.")]
-    [SerializeField] private float bodyBlobSpacingMultiplier = 0.92f;
+    [Tooltip("Length multiplier applied to the integrated terminal widening near the end of the ribbon.")]
+    [SerializeField] private float terminalSplashLengthMultiplier = 1.2f;
 
-    [Tooltip("Length multiplier applied to each 3D body blob along the beam forward axis.")]
-    [SerializeField] private float bodyBlobLengthMultiplier = 1.04f;
-
-    [Tooltip("Width multiplier applied to each 3D body blob before runtime width scaling is evaluated.")]
-    [SerializeField] private float bodyBlobWidthMultiplier = 0.72f;
+    [Tooltip("Width multiplier applied to the integrated terminal widening near the end of the ribbon.")]
+    [SerializeField] private float terminalSplashWidthMultiplier = 1.7f;
 
     [Tooltip("Forward offset applied to the source particle effect from the first sampled beam point.")]
-    [SerializeField] private float sourceForwardOffset = 0.035f;
+    [SerializeField] private float sourceForwardOffset = 0.02f;
 
     [Tooltip("Forward offset applied to the impact particle effect from the terminal beam point.")]
-    [SerializeField] private float impactForwardOffset = 0.015f;
+    [SerializeField] private float impactForwardOffset = 0f;
     #endregion
 
     #endregion
 
     #region Properties
-    public GameObject RoundedTubeBodyPrefab
-    {
-        get
-        {
-            return roundedTubeBodyPrefab;
-        }
-    }
-
-    public GameObject TaperedJetBodyPrefab
-    {
-        get
-        {
-            return taperedJetBodyPrefab;
-        }
-    }
-
-    public GameObject DenseRibbonBodyPrefab
-    {
-        get
-        {
-            return denseRibbonBodyPrefab;
-        }
-    }
-
     public GameObject BubbleBurstSourcePrefab
     {
         get
@@ -136,35 +99,27 @@ public sealed class PlayerLaserBeamVisualRigAuthoring : MonoBehaviour
         }
     }
 
-    public float MaximumVisualSegmentLength
+    public float MaximumRibbonSegmentLength
     {
         get
         {
-            return maximumVisualSegmentLength;
+            return maximumRibbonSegmentLength;
         }
     }
 
-    public float BodyBlobSpacingMultiplier
+    public float TerminalSplashLengthMultiplier
     {
         get
         {
-            return bodyBlobSpacingMultiplier;
+            return terminalSplashLengthMultiplier;
         }
     }
 
-    public float BodyBlobLengthMultiplier
+    public float TerminalSplashWidthMultiplier
     {
         get
         {
-            return bodyBlobLengthMultiplier;
-        }
-    }
-
-    public float BodyBlobWidthMultiplier
-    {
-        get
-        {
-            return bodyBlobWidthMultiplier;
+            return terminalSplashWidthMultiplier;
         }
     }
 
@@ -195,24 +150,6 @@ public sealed class PlayerLaserBeamVisualRigAuthoring : MonoBehaviour
     #endregion
 
     #region Public Methods
-    /// <summary>
-    /// Resolves the authored body prefab for one runtime body profile.
-    /// /params bodyProfile Runtime body profile selector.
-    /// /returns Matching prefab when configured, otherwise null.
-    /// </summary>
-    public GameObject ResolveBodyPrefab(LaserBeamBodyProfile bodyProfile)
-    {
-        switch (bodyProfile)
-        {
-            case LaserBeamBodyProfile.TaperedJet:
-                return taperedJetBodyPrefab;
-            case LaserBeamBodyProfile.DenseRibbon:
-                return denseRibbonBodyPrefab;
-            default:
-                return roundedTubeBodyPrefab;
-        }
-    }
-
     /// <summary>
     /// Resolves the authored source particle prefab for one runtime cap-shape selector.
     /// /params capShape Runtime cap-shape selector.
@@ -252,27 +189,21 @@ public sealed class PlayerLaserBeamVisualRigAuthoring : MonoBehaviour
 
     #region Private Methods
     /// <summary>
-    /// Emits editor-time warnings for missing prefab variants and invalid sampling values.
+    /// Emits editor-time warnings for missing prefab variants and invalid ribbon settings.
     /// /params None.
     /// /returns None.
     /// </summary>
     private void ValidateAssignments()
     {
-        if (maximumVisualSegmentLength <= 0f)
-            Debug.LogWarning("[PlayerLaserBeamVisualRigAuthoring] Maximum Visual Segment Length should be greater than 0 to avoid degenerate sampling.", this);
+        if (maximumRibbonSegmentLength <= 0f)
+            Debug.LogWarning("[PlayerLaserBeamVisualRigAuthoring] Maximum Ribbon Segment Length should be greater than 0 to keep ribbon sampling stable.", this);
 
-        if (bodyBlobSpacingMultiplier <= 0f)
-            Debug.LogWarning("[PlayerLaserBeamVisualRigAuthoring] Body Blob Spacing Multiplier should be greater than 0 to keep body blobs ordered.", this);
+        if (terminalSplashLengthMultiplier <= 0f)
+            Debug.LogWarning("[PlayerLaserBeamVisualRigAuthoring] Terminal Splash Length Multiplier should be greater than 0 to keep the integrated splash visible.", this);
 
-        if (bodyBlobLengthMultiplier <= 0f)
-            Debug.LogWarning("[PlayerLaserBeamVisualRigAuthoring] Body Blob Length Multiplier should be greater than 0 to keep body blobs visible.", this);
+        if (terminalSplashWidthMultiplier <= 0f)
+            Debug.LogWarning("[PlayerLaserBeamVisualRigAuthoring] Terminal Splash Width Multiplier should be greater than 0 to keep the integrated splash visible.", this);
 
-        if (bodyBlobWidthMultiplier <= 0f)
-            Debug.LogWarning("[PlayerLaserBeamVisualRigAuthoring] Body Blob Width Multiplier should be greater than 0 to keep body blobs visible.", this);
-
-        ValidatePrefabReference(roundedTubeBodyPrefab, "Rounded Tube body");
-        ValidatePrefabReference(taperedJetBodyPrefab, "Tapered Jet body");
-        ValidatePrefabReference(denseRibbonBodyPrefab, "Dense Ribbon body");
         ValidatePrefabReference(bubbleBurstSourcePrefab, "Bubble Burst source");
         ValidatePrefabReference(starBloomSourcePrefab, "Star Bloom source");
         ValidatePrefabReference(softDiscSourcePrefab, "Soft Disc source");

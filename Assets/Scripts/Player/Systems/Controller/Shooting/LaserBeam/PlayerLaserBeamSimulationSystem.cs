@@ -119,6 +119,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
             LaserBeamPassiveConfig laserBeamConfig = currentPassiveToolsState.LaserBeam;
             UpdateCooldown(ref currentLaserBeamState, laserBeamConfig, deltaTime);
             UpdateChargeImpulse(ref currentLaserBeamState, deltaTime);
+            UpdateTickPulseTimers(ref currentLaserBeamState, deltaTime);
             bool isShootPressed = currentInputState.Shoot > 0.5f;
             bool hasChargeImpulse = currentLaserBeamState.ChargeImpulseRemainingSeconds > 0f;
             bool isShootingSuppressed = powerUpsStateLookup.HasComponent(playerEntity) &&
@@ -131,6 +132,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
                 currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
                 currentLaserBeamState.DamageTickTimer = 0f;
+                ClearTickPulses(ref currentLaserBeamState);
 
                 if (isShootingSuppressed)
                     ClearChargeImpulse(ref currentLaserBeamState);
@@ -145,6 +147,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.IsActive = 0;
                 currentLaserBeamState.IsTickReady = 0;
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
+                ClearTickPulses(ref currentLaserBeamState);
                 ClearChargeImpulse(ref currentLaserBeamState);
                 shootingState.ValueRW.VisualShootingActive = 0;
                 laserBeamState.ValueRW = currentLaserBeamState;
@@ -173,6 +176,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.CooldownRemaining = math.max(0f, laserBeamConfig.CooldownSeconds);
                 currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
                 currentLaserBeamState.DamageTickTimer = math.max(0.0001f, laserBeamConfig.DamageTickIntervalSeconds);
+                ClearTickPulses(ref currentLaserBeamState);
                 ClearChargeImpulse(ref currentLaserBeamState);
                 shootingState.ValueRW.VisualShootingActive = 0;
                 laserBeamState.ValueRW = currentLaserBeamState;
@@ -203,6 +207,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.IsActive = 0;
                 currentLaserBeamState.IsTickReady = 0;
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
+                ClearTickPulses(ref currentLaserBeamState);
                 shootingState.ValueRW.VisualShootingActive = 0;
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
@@ -325,7 +330,39 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
         laserBeamState.CooldownRemaining = 0f;
         laserBeamState.ConsecutiveActiveElapsed = 0f;
         laserBeamState.DamageTickTimer = 0f;
+        ClearTickPulses(ref laserBeamState);
         ClearChargeImpulse(ref laserBeamState);
+    }
+
+    /// <summary>
+    /// Advances the travelling tick-pulse timers stored on the Laser Beam runtime state.
+    /// /params laserBeamState Mutable Laser Beam runtime state.
+    /// /params deltaTime Frame delta used to advance pulse ages.
+    /// /returns None.
+    /// </summary>
+    private static void UpdateTickPulseTimers(ref PlayerLaserBeamState laserBeamState,
+                                              float deltaTime)
+    {
+        float safeDeltaTime = math.max(0f, deltaTime);
+
+        if (laserBeamState.HasPrimaryTickPulse != 0)
+            laserBeamState.PrimaryTickPulseElapsedSeconds += safeDeltaTime;
+
+        if (laserBeamState.HasSecondaryTickPulse != 0)
+            laserBeamState.SecondaryTickPulseElapsedSeconds += safeDeltaTime;
+    }
+
+    /// <summary>
+    /// Clears travelling tick-pulse state when the beam stops or resets.
+    /// /params laserBeamState Mutable Laser Beam runtime state.
+    /// /returns None.
+    /// </summary>
+    private static void ClearTickPulses(ref PlayerLaserBeamState laserBeamState)
+    {
+        laserBeamState.HasPrimaryTickPulse = 0;
+        laserBeamState.HasSecondaryTickPulse = 0;
+        laserBeamState.PrimaryTickPulseElapsedSeconds = 0f;
+        laserBeamState.SecondaryTickPulseElapsedSeconds = 0f;
     }
 
     /// <summary>

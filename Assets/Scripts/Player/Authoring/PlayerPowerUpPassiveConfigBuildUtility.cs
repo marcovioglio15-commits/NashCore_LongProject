@@ -256,6 +256,10 @@ public static class PlayerPowerUpPassiveConfigBuildUtility
             RimBrightness = math.max(0f, laserBeamData.RimBrightness),
             FlowScrollSpeed = math.max(0f, laserBeamData.FlowScrollSpeed),
             FlowPulseFrequency = math.max(0f, laserBeamData.FlowPulseFrequency),
+            TickPulseTravelSpeed = math.max(0f, laserBeamData.TickPulseTravelSpeed),
+            TickPulseLength = math.max(0.01f, laserBeamData.TickPulseLength),
+            TickPulseWidthBoost = math.max(0f, laserBeamData.TickPulseWidthBoost),
+            TickPulseBrightnessBoost = math.max(0f, laserBeamData.TickPulseBrightnessBoost),
             WobbleAmplitude = math.max(0f, laserBeamData.WobbleAmplitude),
             BubbleDriftSpeed = math.max(0f, laserBeamData.BubbleDriftSpeed)
         };

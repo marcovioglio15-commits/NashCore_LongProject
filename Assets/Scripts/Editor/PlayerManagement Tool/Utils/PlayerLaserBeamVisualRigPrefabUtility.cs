@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Rebuilds the authored Laser Beam body and particle prefabs, then synchronizes the runtime visual bridge rig.
+/// Rebuilds the authored Laser Beam endpoint particle prefabs, then synchronizes the runtime visual bridge rig.
 /// /params None.
 /// /returns None.
 /// </summary>
@@ -12,16 +12,12 @@ public static class PlayerLaserBeamVisualRigPrefabUtility
 {
     #region Constants
     private const string PlayerVisualPrefabPath = "Assets/Prefabs/Player/PF_PlayerVisual.prefab";
-    private const string RoundedTubeBodyPrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamBody.prefab";
-    private const string TaperedJetBodyPrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamBody_TaperedJet.prefab";
-    private const string DenseRibbonBodyPrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamBody_DenseRibbon.prefab";
     private const string BubbleBurstSourcePrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamSource_BubbleBurst.prefab";
     private const string StarBloomSourcePrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamSource_StarBloom.prefab";
     private const string SoftDiscSourcePrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamSource_SoftDisc.prefab";
     private const string BubbleBurstImpactPrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamImpact_BubbleBurst.prefab";
     private const string StarBloomImpactPrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamImpact_StarBloom.prefab";
     private const string SoftDiscImpactPrefabPath = "Assets/Prefabs/Player/PF_PlayerLaserBeamImpact_SoftDisc.prefab";
-    private const string BodyCapsuleMeshAssetPath = "Assets/3D/Meshes/Player/ME_PlayerLaserBeamBodyCapsule.asset";
     private const string ParticleSphereMeshAssetPath = "Assets/3D/Meshes/Player/ME_PlayerLaserBeamParticleSphere.asset";
     #endregion
 
@@ -33,7 +29,7 @@ public static class PlayerLaserBeamVisualRigPrefabUtility
     /// /params None.
     /// /returns None.
     /// </summary>
-    [MenuItem("Tools/Player/Rebuild Laser Beam Visual Rig Prefabs")]
+    //[MenuItem("Tools/Player/Rebuild Laser Beam Visual Rig Prefabs")]
     public static void RebuildLaserBeamVisualRigPrefabs()
     {
         ExecuteRebuild();
@@ -46,18 +42,11 @@ public static class PlayerLaserBeamVisualRigPrefabUtility
     /// </summary>
     public static void ExecuteRebuild()
     {
-        Material bodyMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultBodyMaterialPath);
         Material bubbleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultSourceBubbleMaterialPath);
         Material splashMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultImpactSplashMaterialPath);
-        Mesh bodyMesh = PlayerLaserBeamVisualRigPrefabBuildUtility.RebuildPrimitiveMeshAsset(BodyCapsuleMeshAssetPath,
-                                                                                              PrimitiveType.Capsule,
-                                                                                              Quaternion.Euler(90f, 0f, 0f));
         Mesh particleMesh = PlayerLaserBeamVisualRigPrefabBuildUtility.RebuildPrimitiveMeshAsset(ParticleSphereMeshAssetPath,
                                                                                                   PrimitiveType.Sphere,
                                                                                                   Quaternion.identity);
-
-        if (bodyMaterial == null)
-            throw new InvalidOperationException(string.Format("Laser Beam body material not found at '{0}'.", PlayerLaserBeamVisualDefaultsUtility.DefaultBodyMaterialPath));
 
         if (bubbleMaterial == null)
             throw new InvalidOperationException(string.Format("Laser Beam source material not found at '{0}'.", PlayerLaserBeamVisualDefaultsUtility.DefaultSourceBubbleMaterialPath));
@@ -65,22 +54,10 @@ public static class PlayerLaserBeamVisualRigPrefabUtility
         if (splashMaterial == null)
             throw new InvalidOperationException(string.Format("Laser Beam impact material not found at '{0}'.", PlayerLaserBeamVisualDefaultsUtility.DefaultImpactSplashMaterialPath));
 
-        if (bodyMesh == null)
-            throw new InvalidOperationException(string.Format("Laser Beam body mesh could not be built at '{0}'.", BodyCapsuleMeshAssetPath));
-
         if (particleMesh == null)
             throw new InvalidOperationException(string.Format("Laser Beam particle mesh could not be built at '{0}'.", ParticleSphereMeshAssetPath));
 
-        PlayerLaserBeamVisualRigPrefabBuildUtility.EnsureFolder(Path.GetDirectoryName(RoundedTubeBodyPrefabPath));
-        GameObject roundedTubeBodyPrefab = PlayerLaserBeamVisualRigPrefabBuildUtility.BuildBodyPrefab(PlayerLaserBeamVisualRigPrefabDefinitions.CreateRoundedTubeBodyDefinition(RoundedTubeBodyPrefabPath),
-                                                                                                      bodyMaterial,
-                                                                                                      bodyMesh);
-        GameObject taperedJetBodyPrefab = PlayerLaserBeamVisualRigPrefabBuildUtility.BuildBodyPrefab(PlayerLaserBeamVisualRigPrefabDefinitions.CreateTaperedJetBodyDefinition(TaperedJetBodyPrefabPath),
-                                                                                                     bodyMaterial,
-                                                                                                     bodyMesh);
-        GameObject denseRibbonBodyPrefab = PlayerLaserBeamVisualRigPrefabBuildUtility.BuildBodyPrefab(PlayerLaserBeamVisualRigPrefabDefinitions.CreateDenseRibbonBodyDefinition(DenseRibbonBodyPrefabPath),
-                                                                                                      bodyMaterial,
-                                                                                                      bodyMesh);
+        PlayerLaserBeamVisualRigPrefabBuildUtility.EnsureFolder(Path.GetDirectoryName(BubbleBurstSourcePrefabPath));
         GameObject bubbleBurstSourcePrefab = PlayerLaserBeamVisualRigPrefabBuildUtility.BuildParticlePrefab(PlayerLaserBeamVisualRigPrefabDefinitions.CreateBubbleBurstSourceDefinition(BubbleBurstSourcePrefabPath),
                                                                                                              bubbleMaterial,
                                                                                                              particleMesh);
@@ -97,12 +74,9 @@ public static class PlayerLaserBeamVisualRigPrefabUtility
                                                                                                            splashMaterial,
                                                                                                            particleMesh);
         GameObject softDiscImpactPrefab = PlayerLaserBeamVisualRigPrefabBuildUtility.BuildParticlePrefab(PlayerLaserBeamVisualRigPrefabDefinitions.CreateSoftDiscImpactDefinition(SoftDiscImpactPrefabPath),
-                                                                                                          splashMaterial,
-                                                                                                          particleMesh);
+                                                                                                             splashMaterial,
+                                                                                                             particleMesh);
         PlayerLaserBeamVisualRigPrefabBuildUtility.SynchronizePlayerVisualBridge(PlayerVisualPrefabPath,
-                                                                                 roundedTubeBodyPrefab,
-                                                                                 taperedJetBodyPrefab,
-                                                                                 denseRibbonBodyPrefab,
                                                                                  bubbleBurstSourcePrefab,
                                                                                  starBloomSourcePrefab,
                                                                                  softDiscSourcePrefab,

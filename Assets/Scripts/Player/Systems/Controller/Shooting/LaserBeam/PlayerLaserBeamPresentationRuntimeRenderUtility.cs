@@ -25,87 +25,103 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderUtility
     private static readonly int CapShapePropertyId = Shader.PropertyToID("_CapShape");
     private static readonly int SegmentLengthPropertyId = Shader.PropertyToID("_SegmentLength");
     private static readonly int WidthScalePropertyId = Shader.PropertyToID("_WidthScale");
+    private static readonly int PrimaryPulseProgressPropertyId = Shader.PropertyToID("_PrimaryPulseProgress");
+    private static readonly int SecondaryPulseProgressPropertyId = Shader.PropertyToID("_SecondaryPulseProgress");
+    private static readonly int PulseLengthNormalizedPropertyId = Shader.PropertyToID("_PulseLengthNormalized");
+    private static readonly int PulseBrightnessBoostPropertyId = Shader.PropertyToID("_PulseBrightnessBoost");
+    private static readonly int TerminalBlockedByWallPropertyId = Shader.PropertyToID("_TerminalBlockedByWall");
     #endregion
 
     #region Fields
     private static readonly MaterialPropertyBlock sharedPropertyBlock = new MaterialPropertyBlock();
+    private static Camera cachedPresentationCamera;
     #endregion
 
     #region Methods
 
     #region Public Methods
     /// <summary>
-    /// Updates one body visual instance to match the requested body sample.
+    /// Resolves the current gameplay camera used to orient ribbon meshes toward the player view.
+    /// /params None.
+    /// /returns Active presentation camera when available.
+    /// </summary>
+    public static Camera ResolvePresentationCamera()
+    {
+        if (cachedPresentationCamera != null)
+            return cachedPresentationCamera;
+
+        cachedPresentationCamera = Camera.main;
+        return cachedPresentationCamera;
+    }
+
+    /// <summary>
+    /// Updates one body visual instance to match the requested lane metadata and body material properties.
     /// /params visual Pooled body visual to update.
-    /// /params sample Render-time body sample.
+    /// /params laneVisual Render-time lane metadata.
     /// /params visualConfig Shared visual config.
     /// /params laserBeamConfig Runtime passive config used for material properties.
+    /// /params laserBeamState Runtime state used to animate travelling tick pulses.
     /// /params palette Resolved palette colors.
     /// /params bodyMaterial Optional shared body material override.
     /// /returns None.
     /// </summary>
     public static void ApplyBodyVisual(PlayerLaserBeamManagedBodyVisual visual,
-                                       in PlayerLaserBeamBodySample sample,
+                                       in PlayerLaserBeamLaneVisual laneVisual,
                                        in PlayerLaserBeamVisualConfig visualConfig,
                                        in LaserBeamPassiveConfig laserBeamConfig,
+                                       in PlayerLaserBeamState laserBeamState,
                                        in PlayerLaserBeamResolvedPalette palette,
                                        Material bodyMaterial)
     {
-        if (visual == null || visual.InstanceObject == null || visual.RootTransform == null)
+        if (visual == null || visual.InstanceObject == null || visual.MeshRenderer == null)
             return;
 
         if (!visual.InstanceObject.activeSelf)
             visual.InstanceObject.SetActive(true);
 
-        float resolvedBodyWidth = ResolveBodyVisualWidth(sample.Width);
-        visual.RootTransform.position = ToVector3(sample.Position);
-        visual.RootTransform.rotation = ToQuaternion(sample.Rotation);
-        visual.RootTransform.localScale = new Vector3(resolvedBodyWidth,
-                                                      resolvedBodyWidth,
-                                                      sample.Length);
+        visual.RootTransform.localPosition = Vector3.zero;
+        visual.RootTransform.localRotation = Quaternion.identity;
+        visual.RootTransform.localScale = Vector3.one;
 
-        if (visual.Renderers == null || visual.Renderers.Length <= 0)
-            return;
+        MeshRenderer renderer = visual.MeshRenderer;
 
-        // Apply layered blob materials for the outer shell and inner core.
-        for (int rendererIndex = 0; rendererIndex < visual.Renderers.Length; rendererIndex++)
-        {
-            Renderer renderer = visual.Renderers[rendererIndex];
+        if (bodyMaterial != null && renderer.sharedMaterial != bodyMaterial)
+            renderer.sharedMaterial = bodyMaterial;
 
-            if (renderer == null)
-                continue;
-
-            if (bodyMaterial != null && renderer.sharedMaterial != bodyMaterial)
-                renderer.sharedMaterial = bodyMaterial;
-
-            sharedPropertyBlock.Clear();
-            sharedPropertyBlock.SetColor(BeamColorAPropertyId, palette.BodyColorA);
-            sharedPropertyBlock.SetColor(BeamColorBPropertyId, palette.BodyColorB);
-            sharedPropertyBlock.SetColor(CoreColorPropertyId, palette.CoreColor);
-            sharedPropertyBlock.SetColor(RimColorPropertyId, palette.RimColor);
-            sharedPropertyBlock.SetFloat(OpacityPropertyId,
-                                         rendererIndex <= 0
-                                             ? math.saturate(laserBeamConfig.BodyOpacity * 0.76f)
-                                             : math.saturate(laserBeamConfig.BodyOpacity * 0.48f));
-            sharedPropertyBlock.SetFloat(CoreBrightnessPropertyId,
-                                         rendererIndex <= 0
-                                             ? math.max(0f, laserBeamConfig.CoreBrightness * 0.92f)
-                                             : math.max(0f, laserBeamConfig.CoreBrightness * 1.45f));
-            sharedPropertyBlock.SetFloat(RimBrightnessPropertyId,
-                                         rendererIndex <= 0
-                                             ? math.max(0f, laserBeamConfig.RimBrightness * 0.82f)
-                                             : math.max(0f, laserBeamConfig.RimBrightness * 0.22f));
-            sharedPropertyBlock.SetFloat(FlowScrollSpeedPropertyId, math.max(0f, laserBeamConfig.FlowScrollSpeed));
-            sharedPropertyBlock.SetFloat(FlowPulseFrequencyPropertyId, math.max(0f, laserBeamConfig.FlowPulseFrequency));
-            sharedPropertyBlock.SetFloat(WobbleAmplitudePropertyId, math.max(0f, laserBeamConfig.WobbleAmplitude));
-            sharedPropertyBlock.SetFloat(BubbleDriftSpeedPropertyId, math.max(0f, laserBeamConfig.BubbleDriftSpeed));
-            sharedPropertyBlock.SetFloat(BodyProfilePropertyId, (float)laserBeamConfig.BodyProfile);
-            sharedPropertyBlock.SetFloat(BeamRolePropertyId, 0f);
-            sharedPropertyBlock.SetFloat(CapShapePropertyId, 0f);
-            sharedPropertyBlock.SetFloat(SegmentLengthPropertyId, math.max(visualConfig.MinimumSegmentLength, sample.Length));
-            sharedPropertyBlock.SetFloat(WidthScalePropertyId, math.max(0.01f, resolvedBodyWidth));
-            renderer.SetPropertyBlock(sharedPropertyBlock);
-        }
+        float laneLength = math.max(visualConfig.MinimumSegmentLength, laneVisual.TotalLength);
+        float maximumWidth = PlayerLaserBeamPresentationRuntimeMeshUtility.ResolveBodyVisualWidth(math.max(laneVisual.StartWidth, laneVisual.EndWidth));
+        sharedPropertyBlock.Clear();
+        sharedPropertyBlock.SetColor(BeamColorAPropertyId, palette.BodyColorA);
+        sharedPropertyBlock.SetColor(BeamColorBPropertyId, palette.BodyColorB);
+        sharedPropertyBlock.SetColor(CoreColorPropertyId, palette.CoreColor);
+        sharedPropertyBlock.SetColor(RimColorPropertyId, palette.RimColor);
+        sharedPropertyBlock.SetFloat(OpacityPropertyId, math.saturate(laserBeamConfig.BodyOpacity));
+        sharedPropertyBlock.SetFloat(CoreBrightnessPropertyId, math.max(0f, laserBeamConfig.CoreBrightness));
+        sharedPropertyBlock.SetFloat(RimBrightnessPropertyId, math.max(0f, laserBeamConfig.RimBrightness));
+        sharedPropertyBlock.SetFloat(FlowScrollSpeedPropertyId, math.max(0f, laserBeamConfig.FlowScrollSpeed));
+        sharedPropertyBlock.SetFloat(FlowPulseFrequencyPropertyId, math.max(0f, laserBeamConfig.FlowPulseFrequency));
+        sharedPropertyBlock.SetFloat(WobbleAmplitudePropertyId, math.max(0f, laserBeamConfig.WobbleAmplitude));
+        sharedPropertyBlock.SetFloat(BubbleDriftSpeedPropertyId, math.max(0f, laserBeamConfig.BubbleDriftSpeed));
+        sharedPropertyBlock.SetFloat(BodyProfilePropertyId, (float)laserBeamConfig.BodyProfile);
+        sharedPropertyBlock.SetFloat(BeamRolePropertyId, 0f);
+        sharedPropertyBlock.SetFloat(CapShapePropertyId, 0f);
+        sharedPropertyBlock.SetFloat(SegmentLengthPropertyId, laneLength);
+        sharedPropertyBlock.SetFloat(WidthScalePropertyId, math.max(0.01f, maximumWidth));
+        sharedPropertyBlock.SetFloat(PrimaryPulseProgressPropertyId,
+                                     ResolvePulseProgress(laserBeamState.HasPrimaryTickPulse != 0,
+                                                          laserBeamState.PrimaryTickPulseElapsedSeconds,
+                                                          laserBeamConfig.TickPulseTravelSpeed,
+                                                          laneLength));
+        sharedPropertyBlock.SetFloat(SecondaryPulseProgressPropertyId,
+                                     ResolvePulseProgress(laserBeamState.HasSecondaryTickPulse != 0,
+                                                          laserBeamState.SecondaryTickPulseElapsedSeconds,
+                                                          laserBeamConfig.TickPulseTravelSpeed,
+                                                          laneLength));
+        sharedPropertyBlock.SetFloat(PulseLengthNormalizedPropertyId,
+                                     math.max(0.0025f, math.max(0.01f, laserBeamConfig.TickPulseLength) / laneLength));
+        sharedPropertyBlock.SetFloat(PulseBrightnessBoostPropertyId, math.max(0f, laserBeamConfig.TickPulseBrightnessBoost));
+        sharedPropertyBlock.SetFloat(TerminalBlockedByWallPropertyId, laneVisual.TerminalBlockedByWall != 0 ? 1f : 0f);
+        renderer.SetPropertyBlock(sharedPropertyBlock);
     }
 
     /// <summary>
@@ -133,8 +149,7 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderUtility
             return;
 
         float3 direction = isImpact ? endpoint.EndDirection : endpoint.StartDirection;
-        float3 referenceNormal = isImpact ? endpoint.TerminalNormal : math.up();
-        quaternion rotation = quaternion.LookRotationSafe(direction, math.normalizesafe(referenceNormal, math.up()));
+        quaternion rotation = ResolveEndpointRotation(in endpoint, direction, isImpact);
         float width = math.max(0.05f, isImpact ? endpoint.EndWidth : endpoint.StartWidth);
         float forwardOffset = isImpact ? visualConfig.ImpactForwardOffset : visualConfig.SourceForwardOffset;
         float authoredScaleMultiplier = isImpact
@@ -159,11 +174,53 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderUtility
                              laserBeamConfig,
                              capShape,
                              width,
+                             endpoint.TerminalBlockedByWall != 0,
                              isImpact);
     }
     #endregion
 
     #region Private Methods
+    /// <summary>
+    /// Resolves a stable normalized pulse progress for shader-side brightness shaping.
+    /// /params hasPulse True when the pulse is currently valid.
+    /// /params elapsedSeconds Pulse age in seconds.
+    /// /params travelSpeed World-space pulse travel speed.
+    /// /params laneLength Total length of the current lane.
+    /// /returns Normalized pulse progress, or -1 when inactive.
+    /// </summary>
+    private static float ResolvePulseProgress(bool hasPulse,
+                                              float elapsedSeconds,
+                                              float travelSpeed,
+                                              float laneLength)
+    {
+        if (!hasPulse || travelSpeed <= 0f || laneLength <= 0f)
+            return -1f;
+
+        return math.max(0f, elapsedSeconds) * travelSpeed / laneLength;
+    }
+
+    /// <summary>
+    /// Resolves the endpoint rotation used by source bubbles and impact splashes.
+    /// /params endpoint Per-lane endpoint metadata.
+    /// /params direction Forward direction used by the current endpoint.
+    /// /params isImpact True when resolving the terminal splash orientation.
+    /// /returns Endpoint world rotation.
+    /// </summary>
+    private static quaternion ResolveEndpointRotation(in PlayerLaserBeamLaneEndpoint endpoint,
+                                                      float3 direction,
+                                                      bool isImpact)
+    {
+        if (isImpact &&
+            endpoint.TerminalBlockedByWall != 0 &&
+            math.lengthsq(endpoint.TerminalNormal) > 1e-5f)
+        {
+            return quaternion.LookRotationSafe(-math.normalizesafe(endpoint.TerminalNormal, direction),
+                                               math.normalizesafe(direction, new float3(0f, 1f, 0f)));
+        }
+
+        return quaternion.LookRotationSafe(direction, new float3(0f, 1f, 0f));
+    }
+
     /// <summary>
     /// Applies the shared material override to all particle renderers of one pooled visual.
     /// /params visual Pooled particle visual that owns the renderers.
@@ -194,6 +251,7 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderUtility
     /// /params laserBeamConfig Runtime passive config that drives the shader response.
     /// /params capShape Shape selector applied to the shader.
     /// /params width Beam width at the endpoint.
+    /// /params terminalBlockedByWall True when the terminal point is a wall hit.
     /// /params isImpact True when configuring the terminal splash path.
     /// /returns None.
     /// </summary>
@@ -202,15 +260,16 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderUtility
                                              in LaserBeamPassiveConfig laserBeamConfig,
                                              LaserBeamCapShape capShape,
                                              float width,
+                                             bool terminalBlockedByWall,
                                              bool isImpact)
     {
         if (visual == null)
             return;
 
-        Color minimumColor = isImpact ? palette.CoreColor : palette.BodyColorA;
-        Color maximumColor = isImpact ? palette.RimColor : palette.BodyColorB;
+        Color minimumColor = isImpact ? palette.BodyColorB : palette.BodyColorA;
+        Color maximumColor = isImpact ? palette.CoreColor : palette.BodyColorB;
         ParticleSystem.MinMaxGradient startGradient = new ParticleSystem.MinMaxGradient(minimumColor, maximumColor);
-        float resolvedEndpointWidth = ResolveBodyVisualWidth(width);
+        float resolvedEndpointWidth = PlayerLaserBeamPresentationRuntimeMeshUtility.ResolveBodyVisualWidth(width);
 
         if (visual.ParticleSystems != null)
         {
@@ -242,33 +301,27 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderUtility
             sharedPropertyBlock.SetColor(CoreColorPropertyId, palette.CoreColor);
             sharedPropertyBlock.SetColor(RimColorPropertyId, palette.RimColor);
             sharedPropertyBlock.SetFloat(OpacityPropertyId,
-                                         math.saturate(laserBeamConfig.BodyOpacity * (isImpact ? 0.55f : 0.42f)));
+                                         math.saturate(laserBeamConfig.BodyOpacity * (isImpact ? 0.68f : 0.5f)));
             sharedPropertyBlock.SetFloat(CoreBrightnessPropertyId,
-                                         math.max(0f, isImpact ? laserBeamConfig.CoreBrightness * 1.2f : laserBeamConfig.CoreBrightness * 0.82f));
+                                         math.max(0f, isImpact ? laserBeamConfig.CoreBrightness * 1.28f : laserBeamConfig.CoreBrightness * 0.95f));
             sharedPropertyBlock.SetFloat(RimBrightnessPropertyId,
-                                         math.max(0f, isImpact ? laserBeamConfig.RimBrightness * 0.72f : laserBeamConfig.RimBrightness * 0.48f));
+                                         math.max(0f, isImpact ? laserBeamConfig.RimBrightness * 0.92f : laserBeamConfig.RimBrightness * 0.55f));
             sharedPropertyBlock.SetFloat(FlowScrollSpeedPropertyId, math.max(0f, laserBeamConfig.FlowScrollSpeed));
             sharedPropertyBlock.SetFloat(FlowPulseFrequencyPropertyId, math.max(0f, laserBeamConfig.FlowPulseFrequency));
             sharedPropertyBlock.SetFloat(WobbleAmplitudePropertyId, math.max(0f, laserBeamConfig.WobbleAmplitude));
             sharedPropertyBlock.SetFloat(BubbleDriftSpeedPropertyId, math.max(0f, laserBeamConfig.BubbleDriftSpeed));
             sharedPropertyBlock.SetFloat(BodyProfilePropertyId, (float)laserBeamConfig.BodyProfile);
-            sharedPropertyBlock.SetFloat(BeamRolePropertyId, 1f);
+            sharedPropertyBlock.SetFloat(BeamRolePropertyId, isImpact ? 2f : 1f);
             sharedPropertyBlock.SetFloat(CapShapePropertyId, (float)capShape);
             sharedPropertyBlock.SetFloat(SegmentLengthPropertyId, math.max(0.05f, resolvedEndpointWidth));
             sharedPropertyBlock.SetFloat(WidthScalePropertyId, math.max(0.01f, resolvedEndpointWidth));
+            sharedPropertyBlock.SetFloat(PrimaryPulseProgressPropertyId, -1f);
+            sharedPropertyBlock.SetFloat(SecondaryPulseProgressPropertyId, -1f);
+            sharedPropertyBlock.SetFloat(PulseLengthNormalizedPropertyId, 0.1f);
+            sharedPropertyBlock.SetFloat(PulseBrightnessBoostPropertyId, 0f);
+            sharedPropertyBlock.SetFloat(TerminalBlockedByWallPropertyId, terminalBlockedByWall ? 1f : 0f);
             renderer.SetPropertyBlock(sharedPropertyBlock);
         }
-    }
-
-    /// <summary>
-    /// Compresses the raw beam width into a readable art width so very large projectile-size stacks do not flood the screen.
-    /// /params rawWidth Raw body width inherited from gameplay lane generation.
-    /// /returns Compressed art width used by the mesh body visuals.
-    /// </summary>
-    private static float ResolveBodyVisualWidth(float rawWidth)
-    {
-        float compressedWidth = 0.42f * math.sqrt(math.max(0.01f, rawWidth));
-        return math.clamp(compressedWidth, 0.1f, 0.32f);
     }
 
     /// <summary>
@@ -280,12 +333,12 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderUtility
     /// </summary>
     private static float ResolveEndpointVisualScale(float rawWidth, float authoredScaleMultiplier, bool isImpact)
     {
-        float baseFactor = isImpact ? 0.34f : 0.26f;
-        float maximumScale = isImpact ? 0.56f : 0.4f;
+        float baseFactor = isImpact ? 0.44f : 0.31f;
+        float maximumScale = isImpact ? 0.82f : 0.52f;
         float compressedScale = baseFactor *
                                 math.sqrt(math.max(0.01f, rawWidth)) *
                                 math.sqrt(math.max(0.01f, authoredScaleMultiplier));
-        return math.clamp(compressedScale, 0.1f, maximumScale);
+        return math.clamp(compressedScale, 0.12f, maximumScale);
     }
 
     /// <summary>

@@ -15,7 +15,8 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
     #region Fields
     private static readonly Dictionary<Entity, PlayerLaserBeamManagedInstance> managedInstances = new Dictionary<Entity, PlayerLaserBeamManagedInstance>(4);
     private static readonly List<Entity> invalidOwnerEntities = new List<Entity>(8);
-    private static readonly List<PlayerLaserBeamBodySample> bodySamples = new List<PlayerLaserBeamBodySample>(128);
+    private static readonly List<PlayerLaserBeamRibbonPoint> ribbonPoints = new List<PlayerLaserBeamRibbonPoint>(160);
+    private static readonly List<PlayerLaserBeamLaneVisual> laneVisuals = new List<PlayerLaserBeamLaneVisual>(16);
     private static readonly List<PlayerLaserBeamLaneEndpoint> laneEndpoints = new List<PlayerLaserBeamLaneEndpoint>(16);
 #if UNITY_EDITOR
     private static readonly HashSet<int> missingVisualRigLogCache = new HashSet<int>();
@@ -36,7 +37,6 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
         state.RequireForUpdate<PlayerLaserBeamLaneElement>();
         state.RequireForUpdate<PlayerPassiveToolsState>();
         state.RequireForUpdate<PlayerLaserBeamVisualConfig>();
-        state.RequireForUpdate<PlayerLaserBeamBodyVariantElement>();
         state.RequireForUpdate<PlayerLaserBeamSourceVariantElement>();
         state.RequireForUpdate<PlayerLaserBeamImpactVariantElement>();
         state.RequireForUpdate<PlayerLaserBeamPaletteElement>();
@@ -57,7 +57,8 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
         enumerator.Dispose();
         managedInstances.Clear();
         invalidOwnerEntities.Clear();
-        bodySamples.Clear();
+        ribbonPoints.Clear();
+        laneVisuals.Clear();
         laneEndpoints.Clear();
 #if UNITY_EDITOR
         missingVisualRigLogCache.Clear();
@@ -75,10 +76,11 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
         PlayerLaserBeamPresentationRuntimeUtility.CleanupInvalidOwnerInstances(state.EntityManager,
                                                                                managedInstances,
                                                                                invalidOwnerEntities);
-        BufferLookup<PlayerLaserBeamBodyVariantElement> bodyVariantLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamBodyVariantElement>(true);
         BufferLookup<PlayerLaserBeamSourceVariantElement> sourceVariantLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamSourceVariantElement>(true);
         BufferLookup<PlayerLaserBeamImpactVariantElement> impactVariantLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamImpactVariantElement>(true);
         BufferLookup<PlayerLaserBeamPaletteElement> paletteLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamPaletteElement>(true);
+        Camera presentationCamera = PlayerLaserBeamPresentationRuntimeRenderUtility.ResolvePresentationCamera();
+        float elapsedTimeSeconds = (float)SystemAPI.Time.ElapsedTime;
 
         foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
                   RefRO<PlayerLaserBeamState> laserBeamState,
@@ -91,8 +93,7 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
                                     RefRO<PlayerLaserBeamVisualConfig>>()
                              .WithEntityAccess())
         {
-            if (!bodyVariantLookup.HasBuffer(playerEntity) ||
-                !sourceVariantLookup.HasBuffer(playerEntity) ||
+            if (!sourceVariantLookup.HasBuffer(playerEntity) ||
                 !impactVariantLookup.HasBuffer(playerEntity) ||
                 !paletteLookup.HasBuffer(playerEntity))
             {
@@ -100,7 +101,6 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
                 continue;
             }
 
-            DynamicBuffer<PlayerLaserBeamBodyVariantElement> bodyVariants = bodyVariantLookup[playerEntity];
             DynamicBuffer<PlayerLaserBeamSourceVariantElement> sourceVariants = sourceVariantLookup[playerEntity];
             DynamicBuffer<PlayerLaserBeamImpactVariantElement> impactVariants = impactVariantLookup[playerEntity];
             DynamicBuffer<PlayerLaserBeamPaletteElement> paletteBuffer = paletteLookup[playerEntity];
@@ -115,15 +115,14 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
             }
 
             LaserBeamPassiveConfig laserBeamConfig = passiveToolsState.ValueRO.LaserBeam;
-            GameObject bodyPrefab = PlayerLaserBeamPresentationRuntimeGeometryUtility.ResolveBodyPrefab(bodyVariants, laserBeamConfig.BodyProfile);
             GameObject sourcePrefab = PlayerLaserBeamPresentationRuntimeGeometryUtility.ResolveSourcePrefab(sourceVariants, laserBeamConfig.SourceShape);
             GameObject impactPrefab = PlayerLaserBeamPresentationRuntimeGeometryUtility.ResolveImpactPrefab(impactVariants, laserBeamConfig.ImpactShape);
 
-            if (bodyPrefab == null || sourcePrefab == null || impactPrefab == null)
+            if (sourcePrefab == null || impactPrefab == null)
             {
 #if UNITY_EDITOR
                 if (missingVisualRigLogCache.Add(playerEntity.Index))
-                    Debug.LogWarning("[PlayerLaserBeamPresentationSystem] Laser Beam rig prefabs are missing on the active runtime visual bridge prefab. Assign PlayerLaserBeamVisualRigAuthoring variants on the visual bridge asset.");
+                    Debug.LogWarning("[PlayerLaserBeamPresentationSystem] Laser Beam endpoint prefabs are missing on the active runtime visual bridge prefab. Assign PlayerLaserBeamVisualRigAuthoring variants on the visual bridge asset.");
 #endif
                 PlayerLaserBeamPresentationRuntimeUtility.DisableManagedInstance(playerEntity, managedInstances);
                 continue;
@@ -131,7 +130,8 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
 
             if (!PlayerLaserBeamPresentationRuntimeGeometryUtility.BuildLaneVisualData(laserBeamLanes,
                                                                                        in visualConfig.ValueRO,
-                                                                                       bodySamples,
+                                                                                       ribbonPoints,
+                                                                                       laneVisuals,
                                                                                        laneEndpoints))
             {
                 PlayerLaserBeamPresentationRuntimeUtility.DisableManagedInstance(playerEntity, managedInstances);
@@ -152,7 +152,7 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
             Material bodyMaterial = visualConfig.ValueRO.BodyMaterial.Value;
             Material sourceMaterial = visualConfig.ValueRO.SourceBubbleMaterial.Value;
             Material impactMaterial = visualConfig.ValueRO.ImpactSplashMaterial.Value;
-            PlayerLaserBeamPresentationRuntimeUtility.EnsureBodyVisualCount(managedInstance, bodySamples.Count, bodyPrefab);
+            PlayerLaserBeamPresentationRuntimeUtility.EnsureBodyVisualCount(managedInstance, laneVisuals.Count);
             PlayerLaserBeamPresentationRuntimeUtility.EnsureParticleVisualCount(managedInstance.SourceVisuals,
                                                                                 laneEndpoints.Count,
                                                                                 sourcePrefab,
@@ -164,15 +164,24 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
                                                                                 managedInstance.RootTransform,
                                                                                 "LaserBeamImpact");
 
-            // Push body blob transforms and liquid shader properties.
-            for (int sampleIndex = 0; sampleIndex < bodySamples.Count; sampleIndex++)
+            // Rebuild one continuous body ribbon per lane and then push body shader properties.
+            for (int laneIndex = 0; laneIndex < laneVisuals.Count; laneIndex++)
             {
-                PlayerLaserBeamManagedBodyVisual bodyVisual = managedInstance.BodyVisuals[sampleIndex];
-                PlayerLaserBeamBodySample sample = bodySamples[sampleIndex];
+                PlayerLaserBeamManagedBodyVisual bodyVisual = managedInstance.BodyVisuals[laneIndex];
+                PlayerLaserBeamLaneVisual laneVisual = laneVisuals[laneIndex];
+                PlayerLaserBeamPresentationRuntimeMeshUtility.BuildBodyRibbonMesh(bodyVisual,
+                                                                                  in laneVisual,
+                                                                                  ribbonPoints,
+                                                                                  in visualConfig.ValueRO,
+                                                                                  in laserBeamConfig,
+                                                                                  in laserBeamState.ValueRO,
+                                                                                  presentationCamera,
+                                                                                  elapsedTimeSeconds);
                 PlayerLaserBeamPresentationRuntimeRenderUtility.ApplyBodyVisual(bodyVisual,
-                                                                                in sample,
+                                                                                in laneVisual,
                                                                                 in visualConfig.ValueRO,
                                                                                 in laserBeamConfig,
+                                                                                in laserBeamState.ValueRO,
                                                                                 in palette,
                                                                                 bodyMaterial);
             }

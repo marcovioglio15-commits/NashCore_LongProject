@@ -81,10 +81,10 @@ MonoBehaviour:
       coreColor: {r: 0.96, g: 1, b: 0.97, a: 1}
       rimColor: {r: 0.04, g: 0.43, b: 0.28, a: 1}
     - visualPalette: 2
-      bodyColorA: {r: 0.45, g: 0.98, b: 0.18, a: 1}
-      bodyColorB: {r: 0.85, g: 1, b: 0.46, a: 1}
-      coreColor: {r: 0.98, g: 1, b: 0.88, a: 1}
-      rimColor: {r: 0.21, g: 0.4, b: 0.06, a: 1}
+      bodyColorA: {r: 0.14509805, g: 0.18431373, b: 1, a: 1}
+      bodyColorB: {r: 0.14509805, g: 0.18431373, b: 1, a: 1}
+      coreColor: {r: 0.1462264, g: 0.18593682, b: 1, a: 1}
+      rimColor: {r: 0.14509805, g: 0.18431373, b: 1, a: 1}
     - visualPalette: 3
       bodyColorA: {r: 1, g: 0.82, b: 0.24, a: 1}
       bodyColorB: {r: 0.98, g: 1, b: 0.72, a: 1}

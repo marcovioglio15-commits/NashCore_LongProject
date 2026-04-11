@@ -32,12 +32,11 @@ public static class PlayerLaserBeamVisualBakeUtility
                 ImpactSplashMaterial = default,
                 VerticalLift = PlayerLaserBeamVisualDefaultsUtility.DefaultVerticalLift,
                 MinimumSegmentLength = PlayerLaserBeamVisualDefaultsUtility.DefaultMinimumSegmentLength,
-                MaximumVisualSegmentLength = 0.32f,
-                BodyBlobSpacingMultiplier = 0.78f,
-                BodyBlobLengthMultiplier = 1.18f,
-                BodyBlobWidthMultiplier = 1.08f,
-                SourceForwardOffset = 0.045f,
-                ImpactForwardOffset = 0.02f
+                MaximumRibbonSegmentLength = 0.18f,
+                TerminalSplashLengthMultiplier = 1.2f,
+                TerminalSplashWidthMultiplier = 1.7f,
+                SourceForwardOffset = 0.02f,
+                ImpactForwardOffset = 0f
             };
         }
 
@@ -48,35 +47,12 @@ public static class PlayerLaserBeamVisualBakeUtility
             ImpactSplashMaterial = visualSettings.ImpactSplashMaterial,
             VerticalLift = math.max(0f, visualSettings.VerticalLift),
             MinimumSegmentLength = math.max(0.001f, visualSettings.MinimumSegmentLength),
-            MaximumVisualSegmentLength = math.max(0.01f, rigAuthoring != null ? rigAuthoring.MaximumVisualSegmentLength : 0.32f),
-            BodyBlobSpacingMultiplier = math.max(0.01f, rigAuthoring != null ? rigAuthoring.BodyBlobSpacingMultiplier : 0.78f),
-            BodyBlobLengthMultiplier = math.max(0.01f, rigAuthoring != null ? rigAuthoring.BodyBlobLengthMultiplier : 1.18f),
-            BodyBlobWidthMultiplier = math.max(0.01f, rigAuthoring != null ? rigAuthoring.BodyBlobWidthMultiplier : 1.08f),
-            SourceForwardOffset = rigAuthoring != null ? rigAuthoring.SourceForwardOffset : 0.045f,
-            ImpactForwardOffset = rigAuthoring != null ? rigAuthoring.ImpactForwardOffset : 0.02f
+            MaximumRibbonSegmentLength = math.max(0.01f, rigAuthoring != null ? rigAuthoring.MaximumRibbonSegmentLength : 0.18f),
+            TerminalSplashLengthMultiplier = math.max(0.01f, rigAuthoring != null ? rigAuthoring.TerminalSplashLengthMultiplier : 1.2f),
+            TerminalSplashWidthMultiplier = math.max(0.01f, rigAuthoring != null ? rigAuthoring.TerminalSplashWidthMultiplier : 1.7f),
+            SourceForwardOffset = rigAuthoring != null ? rigAuthoring.SourceForwardOffset : 0.02f,
+            ImpactForwardOffset = rigAuthoring != null ? rigAuthoring.ImpactForwardOffset : 0f
         };
-    }
-
-    /// <summary>
-    /// Populates the baked body prefab variants resolved from the active visual rig authoring component.
-    /// /params authoring Player authoring used to resolve the active visual rig.
-    /// /params variantBuffer Destination buffer written in-place.
-    /// /returns None.
-    /// </summary>
-    public static void PopulateBodyVariantBuffer(PlayerAuthoring authoring, DynamicBuffer<PlayerLaserBeamBodyVariantElement> variantBuffer)
-    {
-        variantBuffer.Clear();
-        PlayerLaserBeamVisualRigAuthoring rigAuthoring = ResolveRigAuthoring(authoring);
-
-        AddBodyVariant(variantBuffer,
-                       LaserBeamBodyProfile.RoundedTube,
-                       rigAuthoring != null ? rigAuthoring.RoundedTubeBodyPrefab : null);
-        AddBodyVariant(variantBuffer,
-                       LaserBeamBodyProfile.TaperedJet,
-                       rigAuthoring != null ? rigAuthoring.TaperedJetBodyPrefab : null);
-        AddBodyVariant(variantBuffer,
-                       LaserBeamBodyProfile.DenseRibbon,
-                       rigAuthoring != null ? rigAuthoring.DenseRibbonBodyPrefab : null);
     }
 
     /// <summary>
@@ -222,24 +198,6 @@ public static class PlayerLaserBeamVisualBakeUtility
             return null;
 
         return runtimeVisualBridgePrefab.GetComponent<PlayerLaserBeamVisualRigAuthoring>();
-    }
-
-    /// <summary>
-    /// Adds one baked body variant entry to the destination buffer.
-    /// /params variantBuffer Destination buffer written in-place.
-    /// /params bodyProfile Runtime body profile selector stored by the entry.
-    /// /params prefab Authored prefab reference stored by the entry.
-    /// /returns None.
-    /// </summary>
-    private static void AddBodyVariant(DynamicBuffer<PlayerLaserBeamBodyVariantElement> variantBuffer,
-                                       LaserBeamBodyProfile bodyProfile,
-                                       GameObject prefab)
-    {
-        variantBuffer.Add(new PlayerLaserBeamBodyVariantElement
-        {
-            BodyProfile = bodyProfile,
-            Prefab = prefab
-        });
     }
 
     /// <summary>

@@ -125,28 +125,28 @@ public static class PlayerLaserBeamVisualDefaultsUtility
         switch (visualPalette)
         {
             case LaserBeamVisualPalette.SterileMint:
-                bodyColorA = new Color(0.22f, 0.92f, 0.72f, 1f);
-                bodyColorB = new Color(0.72f, 1f, 0.85f, 1f);
-                coreColor = new Color(0.96f, 1f, 0.97f, 1f);
-                rimColor = new Color(0.04f, 0.43f, 0.28f, 1f);
+                bodyColorA = new Color(0.12f, 0.74f, 0.58f, 1f);
+                bodyColorB = new Color(0.39f, 0.95f, 0.73f, 1f);
+                coreColor = new Color(0.78f, 1f, 0.92f, 1f);
+                rimColor = new Color(0.03f, 0.29f, 0.18f, 1f);
                 return;
             case LaserBeamVisualPalette.ToxicLime:
-                bodyColorA = new Color(0.45f, 0.98f, 0.18f, 1f);
-                bodyColorB = new Color(0.85f, 1f, 0.46f, 1f);
-                coreColor = new Color(0.98f, 1f, 0.88f, 1f);
-                rimColor = new Color(0.21f, 0.4f, 0.06f, 1f);
+                bodyColorA = new Color(0.26f, 0.83f, 0.1f, 1f);
+                bodyColorB = new Color(0.63f, 0.98f, 0.24f, 1f);
+                coreColor = new Color(0.9f, 1f, 0.68f, 1f);
+                rimColor = new Color(0.15f, 0.31f, 0.05f, 1f);
                 return;
             case LaserBeamVisualPalette.PlasmaAmber:
-                bodyColorA = new Color(1f, 0.82f, 0.24f, 1f);
-                bodyColorB = new Color(0.98f, 1f, 0.72f, 1f);
-                coreColor = new Color(1f, 1f, 0.93f, 1f);
-                rimColor = new Color(0.52f, 0.38f, 0.08f, 1f);
+                bodyColorA = new Color(0.85f, 0.58f, 0.14f, 1f);
+                bodyColorB = new Color(1f, 0.84f, 0.26f, 1f);
+                coreColor = new Color(1f, 0.97f, 0.72f, 1f);
+                rimColor = new Color(0.4f, 0.24f, 0.05f, 1f);
                 return;
             default:
-                bodyColorA = new Color(0.19f, 0.93f, 1f, 1f);
-                bodyColorB = new Color(0.75f, 1f, 1f, 1f);
-                coreColor = new Color(1f, 1f, 1f, 1f);
-                rimColor = new Color(0.05f, 0.41f, 0.63f, 1f);
+                bodyColorA = new Color(0.04f, 0.28f, 0.77f, 1f);
+                bodyColorB = new Color(0.12f, 0.64f, 0.98f, 1f);
+                coreColor = new Color(0.68f, 0.94f, 1f, 1f);
+                rimColor = new Color(0.01f, 0.11f, 0.42f, 1f);
                 return;
         }
     }

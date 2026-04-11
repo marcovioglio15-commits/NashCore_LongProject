@@ -95,9 +95,6 @@ internal static class PlayerLaserBeamVisualRigPrefabBuildUtility
     /// <summary>
     /// Synchronizes the runtime visual bridge prefab with the newly generated Laser Beam rig assets.
     /// /params playerVisualPrefabPath Runtime visual bridge prefab path.
-    /// /params roundedTubeBodyPrefab Rounded tube body prefab asset.
-    /// /params taperedJetBodyPrefab Tapered jet body prefab asset.
-    /// /params denseRibbonBodyPrefab Dense ribbon body prefab asset.
     /// /params bubbleBurstSourcePrefab Bubble-burst source prefab asset.
     /// /params starBloomSourcePrefab Star-bloom source prefab asset.
     /// /params softDiscSourcePrefab Soft-disc source prefab asset.
@@ -107,9 +104,6 @@ internal static class PlayerLaserBeamVisualRigPrefabBuildUtility
     /// /returns None.
     /// </summary>
     public static void SynchronizePlayerVisualBridge(string playerVisualPrefabPath,
-                                                     GameObject roundedTubeBodyPrefab,
-                                                     GameObject taperedJetBodyPrefab,
-                                                     GameObject denseRibbonBodyPrefab,
                                                      GameObject bubbleBurstSourcePrefab,
                                                      GameObject starBloomSourcePrefab,
                                                      GameObject softDiscSourcePrefab,
@@ -124,21 +118,17 @@ internal static class PlayerLaserBeamVisualRigPrefabBuildUtility
             PlayerLaserBeamVisualRigAuthoring rigAuthoring = GetOrAddComponent<PlayerLaserBeamVisualRigAuthoring>(prefabContentsRoot);
             SerializedObject serializedRig = new SerializedObject(rigAuthoring);
             serializedRig.Update();
-            serializedRig.FindProperty("roundedTubeBodyPrefab").objectReferenceValue = roundedTubeBodyPrefab;
-            serializedRig.FindProperty("taperedJetBodyPrefab").objectReferenceValue = taperedJetBodyPrefab;
-            serializedRig.FindProperty("denseRibbonBodyPrefab").objectReferenceValue = denseRibbonBodyPrefab;
             serializedRig.FindProperty("bubbleBurstSourcePrefab").objectReferenceValue = bubbleBurstSourcePrefab;
             serializedRig.FindProperty("starBloomSourcePrefab").objectReferenceValue = starBloomSourcePrefab;
             serializedRig.FindProperty("softDiscSourcePrefab").objectReferenceValue = softDiscSourcePrefab;
             serializedRig.FindProperty("bubbleBurstImpactPrefab").objectReferenceValue = bubbleBurstImpactPrefab;
             serializedRig.FindProperty("starBloomImpactPrefab").objectReferenceValue = starBloomImpactPrefab;
             serializedRig.FindProperty("softDiscImpactPrefab").objectReferenceValue = softDiscImpactPrefab;
-            serializedRig.FindProperty("maximumVisualSegmentLength").floatValue = 0.34f;
-            serializedRig.FindProperty("bodyBlobSpacingMultiplier").floatValue = 0.92f;
-            serializedRig.FindProperty("bodyBlobLengthMultiplier").floatValue = 1.04f;
-            serializedRig.FindProperty("bodyBlobWidthMultiplier").floatValue = 0.72f;
-            serializedRig.FindProperty("sourceForwardOffset").floatValue = 0.035f;
-            serializedRig.FindProperty("impactForwardOffset").floatValue = 0.015f;
+            serializedRig.FindProperty("maximumRibbonSegmentLength").floatValue = 0.18f;
+            serializedRig.FindProperty("terminalSplashLengthMultiplier").floatValue = 1.2f;
+            serializedRig.FindProperty("terminalSplashWidthMultiplier").floatValue = 1.7f;
+            serializedRig.FindProperty("sourceForwardOffset").floatValue = 0.02f;
+            serializedRig.FindProperty("impactForwardOffset").floatValue = 0f;
             serializedRig.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(rigAuthoring);
             PrefabUtility.SaveAsPrefabAsset(prefabContentsRoot, playerVisualPrefabPath);

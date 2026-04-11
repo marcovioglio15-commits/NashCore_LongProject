@@ -178,10 +178,14 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
             IsActive = 0,
             IsOverheated = 0,
             IsTickReady = 0,
+            HasPrimaryTickPulse = 0,
+            HasSecondaryTickPulse = 0,
             LastResolvedPrimaryLaneCount = 0,
             CooldownRemaining = 0f,
             ConsecutiveActiveElapsed = 0f,
-            DamageTickTimer = 0f
+            DamageTickTimer = 0f,
+            PrimaryTickPulseElapsedSeconds = 0f,
+            SecondaryTickPulseElapsedSeconds = 0f
         };
 
         AddComponentForEntities(ref commandBuffer, in missingLaserBeamStateQuery, initialState);

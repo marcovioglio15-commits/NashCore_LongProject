@@ -403,6 +403,14 @@ public static class PlayerPowerUpPassiveBakeUtility
                                                               candidateLaserBeamConfig.FlowScrollSpeed);
                     laserBeamConfig.FlowPulseFrequency = math.max(laserBeamConfig.FlowPulseFrequency,
                                                                  candidateLaserBeamConfig.FlowPulseFrequency);
+                    laserBeamConfig.TickPulseTravelSpeed = math.max(laserBeamConfig.TickPulseTravelSpeed,
+                                                                   candidateLaserBeamConfig.TickPulseTravelSpeed);
+                    laserBeamConfig.TickPulseLength = math.max(laserBeamConfig.TickPulseLength,
+                                                              candidateLaserBeamConfig.TickPulseLength);
+                    laserBeamConfig.TickPulseWidthBoost = math.max(laserBeamConfig.TickPulseWidthBoost,
+                                                                  candidateLaserBeamConfig.TickPulseWidthBoost);
+                    laserBeamConfig.TickPulseBrightnessBoost = math.max(laserBeamConfig.TickPulseBrightnessBoost,
+                                                                       candidateLaserBeamConfig.TickPulseBrightnessBoost);
                     laserBeamConfig.WobbleAmplitude = math.max(laserBeamConfig.WobbleAmplitude,
                                                               candidateLaserBeamConfig.WobbleAmplitude);
                     laserBeamConfig.BubbleDriftSpeed = math.max(laserBeamConfig.BubbleDriftSpeed,

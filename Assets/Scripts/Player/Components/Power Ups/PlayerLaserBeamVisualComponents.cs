@@ -13,23 +13,11 @@ public struct PlayerLaserBeamVisualConfig : IComponentData
     public UnityObjectRef<Material> ImpactSplashMaterial;
     public float VerticalLift;
     public float MinimumSegmentLength;
-    public float MaximumVisualSegmentLength;
-    public float BodyBlobSpacingMultiplier;
-    public float BodyBlobLengthMultiplier;
-    public float BodyBlobWidthMultiplier;
+    public float MaximumRibbonSegmentLength;
+    public float TerminalSplashLengthMultiplier;
+    public float TerminalSplashWidthMultiplier;
     public float SourceForwardOffset;
     public float ImpactForwardOffset;
-    #endregion
-}
-
-/// <summary>
-/// Stores one authored 3D body prefab mapped to a Laser Beam body profile.
-/// </summary>
-public struct PlayerLaserBeamBodyVariantElement : IBufferElementData
-{
-    #region Fields
-    public LaserBeamBodyProfile BodyProfile;
-    public UnityObjectRef<GameObject> Prefab;
     #endregion
 }
 

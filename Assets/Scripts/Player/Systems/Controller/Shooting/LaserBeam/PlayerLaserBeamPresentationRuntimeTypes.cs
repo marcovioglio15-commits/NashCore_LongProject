@@ -12,24 +12,25 @@ internal sealed class PlayerLaserBeamManagedInstance
     #region Fields
     public GameObject RootObject;
     public Transform RootTransform;
-    public readonly List<PlayerLaserBeamManagedBodyVisual> BodyVisuals = new List<PlayerLaserBeamManagedBodyVisual>(64);
+    public readonly List<PlayerLaserBeamManagedBodyVisual> BodyVisuals = new List<PlayerLaserBeamManagedBodyVisual>(16);
     public readonly List<PlayerLaserBeamManagedParticleVisual> SourceVisuals = new List<PlayerLaserBeamManagedParticleVisual>(8);
     public readonly List<PlayerLaserBeamManagedParticleVisual> ImpactVisuals = new List<PlayerLaserBeamManagedParticleVisual>(8);
     #endregion
 }
 
 /// <summary>
-/// Stores one pooled mesh-based body visual instance.
+/// Stores one pooled mesh-based body ribbon visual instance.
 /// /params None.
 /// /returns None.
 /// </summary>
 internal sealed class PlayerLaserBeamManagedBodyVisual
 {
     #region Fields
-    public GameObject SourcePrefab;
     public GameObject InstanceObject;
     public Transform RootTransform;
-    public Renderer[] Renderers;
+    public MeshFilter MeshFilter;
+    public MeshRenderer MeshRenderer;
+    public Mesh DynamicMesh;
     #endregion
 }
 
@@ -50,17 +51,37 @@ internal sealed class PlayerLaserBeamManagedParticleVisual
 }
 
 /// <summary>
-/// Stores one render-time body blob sample derived from the authoritative gameplay lanes.
+/// Stores one sampled ribbon point derived from the authoritative gameplay lanes.
 /// /params None.
 /// /returns None.
 /// </summary>
-internal struct PlayerLaserBeamBodySample
+internal struct PlayerLaserBeamRibbonPoint
 {
     #region Fields
     public float3 Position;
-    public quaternion Rotation;
-    public float Length;
+    public float Distance;
     public float Width;
+    #endregion
+}
+
+/// <summary>
+/// Stores one render-time ribbon lane built from the authoritative gameplay lanes.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal struct PlayerLaserBeamLaneVisual
+{
+    #region Fields
+    public int LaneIndex;
+    public int PointStartIndex;
+    public int PointCount;
+    public float TotalLength;
+    public float3 StartDirection;
+    public float StartWidth;
+    public float3 EndDirection;
+    public float EndWidth;
+    public float3 TerminalNormal;
+    public byte TerminalBlockedByWall;
     #endregion
 }
 
@@ -80,6 +101,7 @@ internal struct PlayerLaserBeamLaneEndpoint
     public float3 EndDirection;
     public float EndWidth;
     public float3 TerminalNormal;
+    public byte TerminalBlockedByWall;
     #endregion
 }
 

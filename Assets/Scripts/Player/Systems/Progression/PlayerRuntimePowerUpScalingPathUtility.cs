@@ -374,6 +374,18 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
             case "laserBeam.flowPulseFrequency":
                 passiveToolConfig.LaserBeam.FlowPulseFrequency = math.max(0f, resolvedValue);
                 return;
+            case "laserBeam.tickPulseTravelSpeed":
+                passiveToolConfig.LaserBeam.TickPulseTravelSpeed = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.tickPulseLength":
+                passiveToolConfig.LaserBeam.TickPulseLength = math.max(0.01f, resolvedValue);
+                return;
+            case "laserBeam.tickPulseWidthBoost":
+                passiveToolConfig.LaserBeam.TickPulseWidthBoost = math.max(0f, resolvedValue);
+                return;
+            case "laserBeam.tickPulseBrightnessBoost":
+                passiveToolConfig.LaserBeam.TickPulseBrightnessBoost = math.max(0f, resolvedValue);
+                return;
             case "laserBeam.wobbleAmplitude":
                 passiveToolConfig.LaserBeam.WobbleAmplitude = math.max(0f, resolvedValue);
                 return;

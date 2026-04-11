@@ -64,21 +64,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9c5c5d2f96b4d8fab35e9dbb6a01c41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLaserBeamVisualRigAuthoring
-  roundedTubeBodyPrefab: {fileID: 1000000000000000001, guid: 2f1a7dc98f2e4ff9bc55855c5dbb5e91, type: 3}
-  taperedJetBodyPrefab: {fileID: 7864795710370301426, guid: b216673cbf979c04e84372e411194b6d, type: 3}
-  denseRibbonBodyPrefab: {fileID: 7126010792873261544, guid: 1536bf837a6d1f845a3686718cb53e39, type: 3}
   bubbleBurstSourcePrefab: {fileID: 6994017192882111109, guid: 91d1a79cb3adda5499feeef65278167e, type: 3}
   starBloomSourcePrefab: {fileID: 2435452003115214681, guid: 6f01378f9444f544986d1ea020274152, type: 3}
   softDiscSourcePrefab: {fileID: 8363158122624467894, guid: b36a47c470916ff45a884b9474926387, type: 3}
   bubbleBurstImpactPrefab: {fileID: 8421166797310669605, guid: ed4bee8072a19be44bcc72c588731b57, type: 3}
   starBloomImpactPrefab: {fileID: 524226958269574775, guid: adea04bbaa240424f9eff3c5bf782b96, type: 3}
   softDiscImpactPrefab: {fileID: 3006056659376913214, guid: 6836823a59ad5b8458fe8eead3429b5b, type: 3}
-  maximumVisualSegmentLength: 0.34
-  bodyBlobSpacingMultiplier: 0.92
-  bodyBlobLengthMultiplier: 1.04
-  bodyBlobWidthMultiplier: 0.72
-  sourceForwardOffset: 0.035
-  impactForwardOffset: 0.015
+  maximumRibbonSegmentLength: 0.18
+  terminalSplashLengthMultiplier: 1.2
+  terminalSplashWidthMultiplier: 1.7
+  sourceForwardOffset: 0.02
+  impactForwardOffset: 0
 --- !u!1 &8511698552817064094
 GameObject:
   m_ObjectHideFlags: 0

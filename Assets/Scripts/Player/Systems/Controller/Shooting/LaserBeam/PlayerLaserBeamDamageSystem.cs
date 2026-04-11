@@ -128,6 +128,8 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
                 continue;
             }
 
+            NotifyTickPulse(ref currentLaserBeamState, pendingTickCount, damageTickIntervalSeconds);
+
             if (laserBeamLanes.Length <= 0 || passiveToolsState.ValueRO.HasLaserBeam == 0)
             {
                 laserBeamState.ValueRW = currentLaserBeamState;
@@ -283,7 +285,11 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
                 continue;
 
             float tickIntervalSeconds = math.max(0.0001f, passiveToolsState.ValueRO.LaserBeam.DamageTickIntervalSeconds);
-            ResolvePendingTickCount(ref currentLaserBeamState, tickIntervalSeconds);
+            int pendingTickCount = ResolvePendingTickCount(ref currentLaserBeamState, tickIntervalSeconds);
+
+            if (pendingTickCount > 0)
+                NotifyTickPulse(ref currentLaserBeamState, pendingTickCount, tickIntervalSeconds);
+
             currentLaserBeamState.IsTickReady = 0;
             laserBeamState.ValueRW = currentLaserBeamState;
         }
@@ -306,6 +312,44 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
             laserBeamState.DamageTickTimer = safeTickIntervalSeconds;
 
         return pendingTickCount;
+    }
+
+    /// <summary>
+    /// Records one or two travelling pulse ages so the presentation layer can show recent damage ticks moving along the beam body.
+    /// /params laserBeamState Mutable Laser Beam runtime state.
+    /// /params pendingTickCount Number of ticks consumed during the current frame.
+    /// /params tickIntervalSeconds Authored tick cadence used to age the older stored pulse when several ticks were consumed at once.
+    /// /returns None.
+    /// </summary>
+    private static void NotifyTickPulse(ref PlayerLaserBeamState laserBeamState,
+                                        int pendingTickCount,
+                                        float tickIntervalSeconds)
+    {
+        if (pendingTickCount <= 0)
+            return;
+
+        float olderPulseElapsedSeconds = laserBeamState.PrimaryTickPulseElapsedSeconds;
+        bool hasOlderPulse = laserBeamState.HasPrimaryTickPulse != 0;
+
+        if (pendingTickCount > 1)
+        {
+            olderPulseElapsedSeconds = math.max(0f, tickIntervalSeconds) * math.max(1, pendingTickCount - 1);
+            hasOlderPulse = true;
+        }
+
+        if (hasOlderPulse)
+        {
+            laserBeamState.HasSecondaryTickPulse = 1;
+            laserBeamState.SecondaryTickPulseElapsedSeconds = olderPulseElapsedSeconds;
+        }
+        else
+        {
+            laserBeamState.HasSecondaryTickPulse = 0;
+            laserBeamState.SecondaryTickPulseElapsedSeconds = 0f;
+        }
+
+        laserBeamState.HasPrimaryTickPulse = 1;
+        laserBeamState.PrimaryTickPulseElapsedSeconds = 0f;
     }
 
     private static void CollectHitCandidates(DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,

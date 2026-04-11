@@ -373,10 +373,14 @@ public struct PlayerLaserBeamState : IComponentData
     public byte IsActive;
     public byte IsOverheated;
     public byte IsTickReady;
+    public byte HasPrimaryTickPulse;
+    public byte HasSecondaryTickPulse;
     public int LastResolvedPrimaryLaneCount;
     public float CooldownRemaining;
     public float ConsecutiveActiveElapsed;
     public float DamageTickTimer;
+    public float PrimaryTickPulseElapsedSeconds;
+    public float SecondaryTickPulseElapsedSeconds;
     public float ChargeImpulseRemainingSeconds;
     public float ChargeImpulseDamageMultiplier;
     public float ChargeImpulseWidthMultiplier;
