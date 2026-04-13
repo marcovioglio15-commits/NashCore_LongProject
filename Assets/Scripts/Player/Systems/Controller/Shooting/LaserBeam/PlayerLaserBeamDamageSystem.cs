@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 
 /// <summary>
-/// Applies periodic Laser Beam damage ticks against enemies currently intersecting resolved beam segments.
+/// Applies continuous Laser Beam damage and moving tick-packet damage against enemies intersecting resolved beam lanes.
 /// /params None.
 /// /returns None.
 /// </summary>
@@ -13,16 +13,6 @@ using Unity.Transforms;
 [UpdateBefore(typeof(EnemyElementalEffectsSystem))]
 public partial struct PlayerLaserBeamDamageSystem : ISystem
 {
-    #region Nested Types
-    private struct LaserBeamHitCandidate
-    {
-        public int EnemyIndex;
-        public float DistanceAlongLane;
-        public float3 HitPoint;
-        public float3 HitDirection;
-    }
-    #endregion
-
     #region Fields
     private EntityQuery enemyQuery;
     #endregion
@@ -31,7 +21,7 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
 
     #region Lifecycle
     /// <summary>
-    /// Creates the enemy query used by the Laser Beam hit resolution path.
+    /// Creates the enemy query used by the Laser Beam hit-resolution path.
     /// /params state Mutable system state.
     /// /returns None.
     /// </summary>
@@ -47,7 +37,7 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
     }
 
     /// <summary>
-    /// Resolves periodic Laser Beam ticks for every player that has one active and tick-ready beam state.
+    /// Resolves per-frame Laser Beam damage for every player that currently owns an active beam.
     /// /params state Mutable system state.
     /// /returns None.
     /// </summary>
@@ -69,6 +59,7 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
         NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.Temp);
         NativeArray<EnemyKnockbackState> projectedEnemyKnockback = enemyQuery.ToComponentDataArray<EnemyKnockbackState>(Allocator.Temp);
         NativeArray<byte> enemyDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+        NativeArray<byte> enemyFlashDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
         NativeArray<byte> enemyKnockbackDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
         NativeArray<float3> enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
@@ -97,7 +88,8 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
         ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup = SystemAPI.GetComponentLookup<EnemySpawnInactivityLock>(true);
         ComponentLookup<EnemyDespawnRequest> despawnRequestLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-        NativeList<LaserBeamHitCandidate> hitCandidates = new NativeList<LaserBeamHitCandidate>(32, Allocator.Temp);
+        NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> hitCandidates = new NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate>(32, Allocator.Temp);
+        NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> traversedHitCandidates = new NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate>(16, Allocator.Temp);
 
         foreach ((RefRO<PlayerRuntimeShootingConfig> runtimeShootingConfig,
                   DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
@@ -113,63 +105,85 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
                              .WithEntityAccess())
         {
             PlayerLaserBeamState currentLaserBeamState = laserBeamState.ValueRO;
+            PlayerPassiveToolsState effectivePassiveToolsState = PlayerLaserBeamStateUtility.ResolveEffectivePassiveToolsState(in passiveToolsState.ValueRO,
+                                                                                                                                in currentLaserBeamState);
+            bool hasTriggeredActiveLaser = PlayerLaserBeamStateUtility.HasTriggeredActiveLaser(in currentLaserBeamState);
 
-            if (currentLaserBeamState.IsActive == 0 || currentLaserBeamState.IsTickReady == 0)
+            if (currentLaserBeamState.IsActive == 0)
                 continue;
 
-            LaserBeamPassiveConfig laserBeamConfig = passiveToolsState.ValueRO.LaserBeam;
-            float damageTickIntervalSeconds = math.max(0.0001f, laserBeamConfig.DamageTickIntervalSeconds);
-            int pendingTickCount = ResolvePendingTickCount(ref currentLaserBeamState, damageTickIntervalSeconds);
-            currentLaserBeamState.IsTickReady = 0;
+            LaserBeamPassiveConfig laserBeamConfig = effectivePassiveToolsState.LaserBeam;
+            float tickIntervalSeconds = math.max(0.0001f, laserBeamConfig.DamageTickIntervalSeconds);
 
-            if (pendingTickCount <= 0)
+            if (currentLaserBeamState.IsTickReady != 0)
             {
-                laserBeamState.ValueRW = currentLaserBeamState;
-                continue;
+                int pendingTickCount = ResolvePendingTickCount(ref currentLaserBeamState, tickIntervalSeconds);
+                currentLaserBeamState.IsTickReady = 0;
+
+                if (pendingTickCount > 0)
+                    PlayerLaserBeamStateUtility.EnqueueStormTickPulses(ref currentLaserBeamState, in laserBeamConfig, pendingTickCount);
             }
 
-            NotifyTickPulse(ref currentLaserBeamState, pendingTickCount, damageTickIntervalSeconds);
-
-            if (laserBeamLanes.Length <= 0 || passiveToolsState.ValueRO.HasLaserBeam == 0)
+            if (laserBeamLanes.Length <= 0 || effectivePassiveToolsState.HasLaserBeam == 0)
             {
+                PlayerLaserBeamStateUtility.RemoveCompletedStormTickPulses(ref currentLaserBeamState, in laserBeamConfig);
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
             }
 
             ElementalEffectConfig unusedElementalEffect = default;
-            PlayerProjectileRequestTemplate projectileTemplate = PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig.ValueRO,
-                                                                                                                         appliedElementSlots,
-                                                                                                                         in passiveToolsState.ValueRO,
-                                                                                                                         1f,
-                                                                                                                         1f,
-                                                                                                                         1f,
-                                                                                                                         1f,
-                                                                                                                         1f,
-                                                                                                                         false,
-                                                                                                                         in unusedElementalEffect,
-                                                                                                                         0f);
-            float chargeImpulseDamageMultiplier = currentLaserBeamState.ChargeImpulseRemainingSeconds > 0f
+            PlayerProjectileRequestTemplate projectileTemplate = hasTriggeredActiveLaser
+                ? currentLaserBeamState.TriggeredActiveProjectileTemplate
+                : PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig.ValueRO,
+                                                                         appliedElementSlots,
+                                                                         in effectivePassiveToolsState,
+                                                                         1f,
+                                                                         1f,
+                                                                         1f,
+                                                                         1f,
+                                                                         1f,
+                                                                         false,
+                                                                         in unusedElementalEffect,
+                                                                         0f);
+            float chargeImpulseDamageMultiplier = !hasTriggeredActiveLaser && currentLaserBeamState.ChargeImpulseRemainingSeconds > 0f
                 ? math.max(1f, currentLaserBeamState.ChargeImpulseDamageMultiplier)
                 : 1f;
-            float baseDamagePerTick = math.max(0f,
-                                               projectileTemplate.Damage *
-                                               math.max(0f, runtimeShootingConfig.ValueRO.Values.RateOfFire) *
-                                               math.max(0f, laserBeamConfig.DamageMultiplier) *
-                                               damageTickIntervalSeconds *
-                                               chargeImpulseDamageMultiplier *
-                                               pendingTickCount);
+            float baseDamagePerSecond = ResolveBaseDamagePerSecond(projectileTemplate,
+                                                                   runtimeShootingConfig.ValueRO,
+                                                                   chargeImpulseDamageMultiplier);
+            float continuousDamagePerFrame = math.max(0f,
+                                                      baseDamagePerSecond *
+                                                      math.max(0f, laserBeamConfig.ContinuousDamagePerSecondMultiplier) *
+                                                      math.max(0f, SystemAPI.Time.DeltaTime));
+            float tickDamagePerPulse = math.max(0f,
+                                                baseDamagePerSecond *
+                                                math.max(0f, laserBeamConfig.DamageMultiplier) *
+                                                tickIntervalSeconds);
 
-            if (baseDamagePerTick <= 0f)
+            if (continuousDamagePerFrame <= 0f && tickDamagePerPulse <= 0f)
             {
+                PlayerLaserBeamStateUtility.RemoveCompletedStormTickPulses(ref currentLaserBeamState, in laserBeamConfig);
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
             }
 
-            PlayerProjectileRequestUtility.ResolvePenetrationSettings(in runtimeShootingConfig.ValueRO.Values,
-                                                                      ProjectilePenetrationMode.None,
-                                                                      0,
-                                                                      out ProjectilePenetrationMode penetrationMode,
-                                                                      out int maximumPenetrations);
+            ProjectilePenetrationMode penetrationMode;
+            int maximumPenetrations;
+
+            if (hasTriggeredActiveLaser)
+            {
+                penetrationMode = currentLaserBeamState.TriggeredActivePenetrationMode;
+                maximumPenetrations = math.max(0, currentLaserBeamState.TriggeredActiveMaxPenetrations);
+            }
+            else
+            {
+                PlayerProjectileRequestUtility.ResolvePenetrationSettings(in runtimeShootingConfig.ValueRO.Values,
+                                                                          ProjectilePenetrationMode.None,
+                                                                          0,
+                                                                          out penetrationMode,
+                                                                          out maximumPenetrations);
+            }
+
             bool canEnqueueVfxRequests = vfxRequestLookup.HasBuffer(playerEntity);
             DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests = default;
 
@@ -183,62 +197,90 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
                 PlayerLaserBeamLaneElement firstSegment = laserBeamLanes[segmentStartIndex];
                 int laneIndex = firstSegment.LaneIndex;
                 int segmentEndIndex = segmentStartIndex + 1;
+                float laneLength = math.max(0f, firstSegment.Length);
 
                 while (segmentEndIndex < laserBeamLanes.Length &&
                        laserBeamLanes[segmentEndIndex].LaneIndex == laneIndex)
                 {
+                    laneLength += math.max(0f, laserBeamLanes[segmentEndIndex].Length);
                     segmentEndIndex++;
                 }
 
-                CollectHitCandidates(laserBeamLanes,
-                                     segmentStartIndex,
-                                     segmentEndIndex,
-                                     enemyCount,
-                                     in enemyPositions,
-                                     in enemyBodyRadii,
-                                     in enemyCellMap,
-                                     inverseCellSize,
-                                     maximumEnemyRadius,
-                                     ref hitCandidates);
+                PlayerLaserBeamDamageResolutionUtility.CollectHitCandidates(laserBeamLanes,
+                                                                            segmentStartIndex,
+                                                                            segmentEndIndex,
+                                                                            enemyCount,
+                                                                            in enemyPositions,
+                                                                            in enemyBodyRadii,
+                                                                            in enemyCellMap,
+                                                                            inverseCellSize,
+                                                                            maximumEnemyRadius,
+                                                                            ref hitCandidates);
 
                 if (hitCandidates.Length > 0)
                 {
-                    ResolveLaneHits(playerEntity,
-                                    baseDamagePerTick,
-                                    penetrationMode,
-                                    maximumPenetrations,
-                                    projectileTemplate,
-                                    in laserBeamLanes,
-                                    segmentStartIndex,
-                                    in hitCandidates,
-                                    enemyEntities,
-                                    ref projectedEnemyHealth,
-                                    in enemyPositions,
-                                    in enemyRuntimeArray,
-                                    ref projectedEnemyKnockback,
-                                    ref enemyDirtyFlags,
-                                    ref enemyKnockbackDirtyFlags,
-                                    in elementalVfxConfigLookup,
-                                    in elementalVfxAnchorLookup,
-                                    in enemyHitVfxConfigLookup,
-                                    in spawnInactivityLockLookup,
-                                    canEnqueueVfxRequests,
-                                    ref shooterVfxRequests,
-                                    ref elementalStackLookup,
-                                    in despawnRequestLookup,
-                                    ref commandBuffer);
+                    if (continuousDamagePerFrame > 0f)
+                    {
+                        PlayerLaserBeamDamageResolutionUtility.ApplyContinuousLaneHits(continuousDamagePerFrame,
+                                                                                      in firstSegment,
+                                                                                      in hitCandidates,
+                                                                                      enemyEntities,
+                                                                                      ref projectedEnemyHealth,
+                                                                                      ref enemyDirtyFlags,
+                                                                                      in despawnRequestLookup,
+                                                                                      ref commandBuffer);
+                    }
+
+                    if (tickDamagePerPulse > 0f)
+                    {
+                        ApplyStormTickPulseLaneHits(playerEntity,
+                                                    laneLength,
+                                                    tickDamagePerPulse,
+                                                    SystemAPI.Time.DeltaTime,
+                                                    penetrationMode,
+                                                    maximumPenetrations,
+                                                    projectileTemplate,
+                                                    in currentLaserBeamState,
+                                                    in laserBeamConfig,
+                                                    in laserBeamLanes,
+                                                    segmentStartIndex,
+                                                    in hitCandidates,
+                                                    ref traversedHitCandidates,
+                                                    enemyEntities,
+                                                    ref projectedEnemyHealth,
+                                                    in enemyPositions,
+                                                    in enemyRuntimeArray,
+                                                    ref projectedEnemyKnockback,
+                                                    ref enemyDirtyFlags,
+                                                    ref enemyFlashDirtyFlags,
+                                                    ref enemyKnockbackDirtyFlags,
+                                                    in elementalVfxConfigLookup,
+                                                    in elementalVfxAnchorLookup,
+                                                    in enemyHitVfxConfigLookup,
+                                                    in spawnInactivityLockLookup,
+                                                    canEnqueueVfxRequests,
+                                                    ref shooterVfxRequests,
+                                                    ref elementalStackLookup,
+                                                    in despawnRequestLookup,
+                                                    ref commandBuffer);
+                    }
                 }
 
                 segmentStartIndex = segmentEndIndex;
             }
 
+            PlayerLaserBeamStateUtility.RemoveCompletedStormTickPulses(ref currentLaserBeamState, in laserBeamConfig);
             laserBeamState.ValueRW = currentLaserBeamState;
         }
 
         for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
         {
-            if (enemyDirtyFlags[enemyIndex] == 0 && enemyKnockbackDirtyFlags[enemyIndex] == 0)
+            if (enemyDirtyFlags[enemyIndex] == 0 &&
+                enemyFlashDirtyFlags[enemyIndex] == 0 &&
+                enemyKnockbackDirtyFlags[enemyIndex] == 0)
+            {
                 continue;
+            }
 
             Entity enemyEntity = enemyEntities[enemyIndex];
 
@@ -249,15 +291,23 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
                 entityManager.SetComponentData(enemyEntity, projectedEnemyKnockback[enemyIndex]);
 
             if (enemyDirtyFlags[enemyIndex] == 0)
+            {
+                if (enemyFlashDirtyFlags[enemyIndex] != 0)
+                    DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
+
                 continue;
+            }
 
             entityManager.SetComponentData(enemyEntity, projectedEnemyHealth[enemyIndex]);
-            DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
+
+            if (enemyFlashDirtyFlags[enemyIndex] != 0)
+                DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
         }
 
         commandBuffer.Playback(entityManager);
         commandBuffer.Dispose();
         hitCandidates.Dispose();
+        traversedHitCandidates.Dispose();
         enemyEntities.Dispose();
         enemyDataArray.Dispose();
         projectedEnemyHealth.Dispose();
@@ -265,6 +315,7 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
         enemyRuntimeArray.Dispose();
         projectedEnemyKnockback.Dispose();
         enemyDirtyFlags.Dispose();
+        enemyFlashDirtyFlags.Dispose();
         enemyKnockbackDirtyFlags.Dispose();
         enemyPositions.Dispose();
         enemyBodyRadii.Dispose();
@@ -272,7 +323,12 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
     }
     #endregion
 
-    #region Helpers
+    #region Private Methods
+    /// <summary>
+    /// Consumes beam ticks and retires completed traveling packets even when no enemies are currently present.
+    /// /params state Mutable system state.
+    /// /returns None.
+    /// </summary>
     private void ConsumeBeamTicksWithoutTargets(ref SystemState state)
     {
         foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
@@ -280,21 +336,46 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
                  in SystemAPI.Query<RefRO<PlayerPassiveToolsState>, RefRW<PlayerLaserBeamState>>())
         {
             PlayerLaserBeamState currentLaserBeamState = laserBeamState.ValueRO;
+            PlayerPassiveToolsState effectivePassiveToolsState = PlayerLaserBeamStateUtility.ResolveEffectivePassiveToolsState(in passiveToolsState.ValueRO,
+                                                                                                                                in currentLaserBeamState);
 
-            if (currentLaserBeamState.IsActive == 0 || currentLaserBeamState.IsTickReady == 0)
+            if (currentLaserBeamState.IsActive == 0 &&
+                currentLaserBeamState.IsTickReady == 0 &&
+                currentLaserBeamState.StormTickPulses.Length <= 0)
+            {
                 continue;
+            }
 
-            float tickIntervalSeconds = math.max(0.0001f, passiveToolsState.ValueRO.LaserBeam.DamageTickIntervalSeconds);
-            int pendingTickCount = ResolvePendingTickCount(ref currentLaserBeamState, tickIntervalSeconds);
+            if (effectivePassiveToolsState.HasLaserBeam == 0)
+            {
+                laserBeamState.ValueRW = currentLaserBeamState;
+                continue;
+            }
 
-            if (pendingTickCount > 0)
-                NotifyTickPulse(ref currentLaserBeamState, pendingTickCount, tickIntervalSeconds);
+            LaserBeamPassiveConfig laserBeamConfig = effectivePassiveToolsState.LaserBeam;
 
-            currentLaserBeamState.IsTickReady = 0;
+            if (currentLaserBeamState.IsActive != 0 && currentLaserBeamState.IsTickReady != 0)
+            {
+                float tickIntervalSeconds = math.max(0.0001f, laserBeamConfig.DamageTickIntervalSeconds);
+                int pendingTickCount = ResolvePendingTickCount(ref currentLaserBeamState, tickIntervalSeconds);
+
+                if (pendingTickCount > 0)
+                    PlayerLaserBeamStateUtility.EnqueueStormTickPulses(ref currentLaserBeamState, in laserBeamConfig, pendingTickCount);
+
+                currentLaserBeamState.IsTickReady = 0;
+            }
+
+            PlayerLaserBeamStateUtility.RemoveCompletedStormTickPulses(ref currentLaserBeamState, in laserBeamConfig);
             laserBeamState.ValueRW = currentLaserBeamState;
         }
     }
 
+    /// <summary>
+    /// Resolves how many authored beam ticks elapsed since the last damage update and rewinds the timer back into the valid range.
+    /// /params laserBeamState Mutable Laser Beam runtime state.
+    /// /params tickIntervalSeconds Authored tick interval.
+    /// /returns Number of ticks that must be consumed this frame.
+    /// </summary>
     private static int ResolvePendingTickCount(ref PlayerLaserBeamState laserBeamState,
                                                float tickIntervalSeconds)
     {
@@ -315,689 +396,154 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
     }
 
     /// <summary>
-    /// Records one or two travelling pulse ages so the presentation layer can show recent damage ticks moving along the beam body.
-    /// /params laserBeamState Mutable Laser Beam runtime state.
-    /// /params pendingTickCount Number of ticks consumed during the current frame.
-    /// /params tickIntervalSeconds Authored tick cadence used to age the older stored pulse when several ticks were consumed at once.
+    /// Resolves the projectile-derived damage-per-second budget shared by continuous beam damage and moving tick packets.
+    /// /params projectileTemplate Projectile template built from the current shooting config.
+    /// /params runtimeShootingConfig Current runtime shooting config.
+    /// /params chargeImpulseDamageMultiplier Active charge-impulse damage multiplier.
+    /// /returns Base damage-per-second budget before beam-specific multipliers.
+    /// </summary>
+    private static float ResolveBaseDamagePerSecond(PlayerProjectileRequestTemplate projectileTemplate,
+                                                    in PlayerRuntimeShootingConfig runtimeShootingConfig,
+                                                    float chargeImpulseDamageMultiplier)
+    {
+        return math.max(0f,
+                        projectileTemplate.Damage *
+                        math.max(0f, runtimeShootingConfig.Values.RateOfFire) *
+                        math.max(1f, chargeImpulseDamageMultiplier));
+    }
+
+    /// <summary>
+    /// Applies every active traveling tick packet as a moving storm trail that damages the lane portion already traversed during the current frame.
+    /// /params shooterEntity Player entity owning the beam.
+    /// /params laneLength Total length of the current lane.
+    /// /params tickDamagePerPulse Damage carried by one authored tick packet before lane multipliers.
+    /// /params penetrationMode Projectile penetration mode inherited from the current shooting config.
+    /// /params maximumPenetrations Maximum penetration budget inherited from the current shooting config.
+    /// /params projectileTemplate Projectile template used to resolve hit payloads.
+    /// /params laserBeamState Current beam runtime state containing active traveling packets.
+    /// /params laserBeamConfig Aggregated Laser Beam passive configuration.
+    /// /params laserBeamLanes Resolved lane buffer of the current player.
+    /// /params segmentStartIndex First segment index belonging to the current lane.
+    /// /params hitCandidates Sorted lane hit candidates.
+    /// /params traversedHitCandidates Reusable output list used to store the candidates currently covered by one packet trail.
+    /// /params enemyEntities Projected enemy entities.
+    /// /params projectedEnemyHealth Mutable projected enemy health buffer.
+    /// /params enemyPositions Cached world positions of projected enemies.
+    /// /params enemyRuntimeArray Cached runtime states of projected enemies.
+    /// /params projectedEnemyKnockback Mutable projected knockback buffer.
+    /// /params enemyDirtyFlags Per-enemy dirty flags tracking health updates.
+    /// /params enemyKnockbackDirtyFlags Per-enemy dirty flags tracking knockback updates.
+    /// /params elementalVfxConfigLookup Lookup of player-owned elemental VFX config.
+    /// /params elementalVfxAnchorLookup Lookup of enemy-owned elemental VFX anchors.
+    /// /params enemyHitVfxConfigLookup Lookup of enemy hit VFX config.
+    /// /params spawnInactivityLockLookup Lookup used by hit VFX payload spawning.
+    /// /params canEnqueueVfxRequests True when the shooter can enqueue VFX requests this frame.
+    /// /params shooterVfxRequests Mutable shooter VFX buffer.
+    /// /params elementalStackLookup Mutable elemental stack lookup on enemies.
+    /// /params despawnRequestLookup Lookup used to avoid duplicate despawn requests.
+    /// /params commandBuffer ECB used to enqueue despawn requests.
     /// /returns None.
     /// </summary>
-    private static void NotifyTickPulse(ref PlayerLaserBeamState laserBeamState,
-                                        int pendingTickCount,
-                                        float tickIntervalSeconds)
+    private static void ApplyStormTickPulseLaneHits(Entity shooterEntity,
+                                                    float laneLength,
+                                                    float tickDamagePerPulse,
+                                                    float deltaTime,
+                                                    ProjectilePenetrationMode penetrationMode,
+                                                    int maximumPenetrations,
+                                                    PlayerProjectileRequestTemplate projectileTemplate,
+                                                    in PlayerLaserBeamState laserBeamState,
+                                                    in LaserBeamPassiveConfig laserBeamConfig,
+                                                    in DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                                    int segmentStartIndex,
+                                                    in NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> hitCandidates,
+                                                    ref NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> traversedHitCandidates,
+                                                    NativeArray<Entity> enemyEntities,
+                                                    ref NativeArray<EnemyHealth> projectedEnemyHealth,
+                                                    in NativeArray<float3> enemyPositions,
+                                                    in NativeArray<EnemyRuntimeState> enemyRuntimeArray,
+                                                    ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
+                                                    ref NativeArray<byte> enemyDirtyFlags,
+                                                    ref NativeArray<byte> enemyFlashDirtyFlags,
+                                                    ref NativeArray<byte> enemyKnockbackDirtyFlags,
+                                                    in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
+                                                    in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
+                                                    in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
+                                                    in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup,
+                                                    bool canEnqueueVfxRequests,
+                                                    ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
+                                                    ref BufferLookup<EnemyElementStackElement> elementalStackLookup,
+                                                    in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
+                                                    ref EntityCommandBuffer commandBuffer)
     {
-        if (pendingTickCount <= 0)
+        if (tickDamagePerPulse <= 0f || laneLength <= 0f || laserBeamState.StormTickPulses.Length <= 0)
             return;
 
-        float olderPulseElapsedSeconds = laserBeamState.PrimaryTickPulseElapsedSeconds;
-        bool hasOlderPulse = laserBeamState.HasPrimaryTickPulse != 0;
+        float travelSpeed = math.max(0f, laserBeamConfig.StormTickTravelSpeed);
 
-        if (pendingTickCount > 1)
-        {
-            olderPulseElapsedSeconds = math.max(0f, tickIntervalSeconds) * math.max(1, pendingTickCount - 1);
-            hasOlderPulse = true;
-        }
-
-        if (hasOlderPulse)
-        {
-            laserBeamState.HasSecondaryTickPulse = 1;
-            laserBeamState.SecondaryTickPulseElapsedSeconds = olderPulseElapsedSeconds;
-        }
-        else
-        {
-            laserBeamState.HasSecondaryTickPulse = 0;
-            laserBeamState.SecondaryTickPulseElapsedSeconds = 0f;
-        }
-
-        laserBeamState.HasPrimaryTickPulse = 1;
-        laserBeamState.PrimaryTickPulseElapsedSeconds = 0f;
-    }
-
-    private static void CollectHitCandidates(DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
-                                             int segmentStartIndex,
-                                             int segmentEndIndex,
-                                             int enemyCount,
-                                             in NativeArray<float3> enemyPositions,
-                                             in NativeArray<float> enemyBodyRadii,
-                                             in NativeParallelMultiHashMap<int, int> enemyCellMap,
-                                             float inverseCellSize,
-                                             float maximumEnemyRadius,
-                                             ref NativeList<LaserBeamHitCandidate> hitCandidates)
-    {
-        hitCandidates.Clear();
-        float accumulatedDistanceBeforeSegment = 0f;
-
-        for (int segmentIndex = segmentStartIndex; segmentIndex < segmentEndIndex; segmentIndex++)
-        {
-            PlayerLaserBeamLaneElement segment = laserBeamLanes[segmentIndex];
-            float3 midpoint = (segment.StartPoint + segment.EndPoint) * 0.5f;
-            float queryRadius = segment.Length * 0.5f + math.max(0.01f, segment.CollisionRadius + maximumEnemyRadius);
-            EnemySpatialHashUtility.ResolveCellBounds(midpoint,
-                                                      queryRadius,
-                                                      inverseCellSize,
-                                                      out int minCellX,
-                                                      out int maxCellX,
-                                                      out int minCellY,
-                                                      out int maxCellY);
-
-            for (int cellX = minCellX; cellX <= maxCellX; cellX++)
-            {
-                for (int cellY = minCellY; cellY <= maxCellY; cellY++)
-                {
-                    int cellKey = EnemySpatialHashUtility.EncodeCell(cellX, cellY);
-                    NativeParallelMultiHashMapIterator<int> iterator;
-                    int enemyIndex;
-
-                    if (!enemyCellMap.TryGetFirstValue(cellKey, out enemyIndex, out iterator))
-                        continue;
-
-                    do
-                    {
-                        if (enemyIndex < 0 || enemyIndex >= enemyCount)
-                            continue;
-
-                        float3 closestPoint = ClosestPointOnSegment(enemyPositions[enemyIndex], segment.StartPoint, segment.EndPoint);
-                        float3 delta = enemyPositions[enemyIndex] - closestPoint;
-                        delta.y = 0f;
-                        float combinedRadius = math.max(0.01f, segment.CollisionRadius + math.max(0.05f, enemyBodyRadii[enemyIndex]));
-
-                        if (math.lengthsq(delta) > combinedRadius * combinedRadius)
-                            continue;
-
-                        float distanceAlongSegment = math.distance(segment.StartPoint, closestPoint);
-                        AddHitCandidate(ref hitCandidates,
-                                        enemyIndex,
-                                        accumulatedDistanceBeforeSegment + distanceAlongSegment,
-                                        closestPoint,
-                                        segment.Direction);
-                    }
-                    while (enemyCellMap.TryGetNextValue(out enemyIndex, ref iterator));
-                }
-            }
-
-            accumulatedDistanceBeforeSegment += math.max(0f, segment.Length);
-        }
-    }
-
-    private static void AddHitCandidate(ref NativeList<LaserBeamHitCandidate> hitCandidates,
-                                        int enemyIndex,
-                                        float distanceAlongLane,
-                                        float3 hitPoint,
-                                        float3 hitDirection)
-    {
-        for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
-        {
-            if (hitCandidates[candidateIndex].EnemyIndex != enemyIndex)
-                continue;
-
-            if (distanceAlongLane >= hitCandidates[candidateIndex].DistanceAlongLane)
-                return;
-
-            hitCandidates[candidateIndex] = new LaserBeamHitCandidate
-            {
-                EnemyIndex = enemyIndex,
-                DistanceAlongLane = distanceAlongLane,
-                HitPoint = hitPoint,
-                HitDirection = hitDirection
-            };
-            SortCandidates(ref hitCandidates);
-            return;
-        }
-
-        hitCandidates.Add(new LaserBeamHitCandidate
-        {
-            EnemyIndex = enemyIndex,
-            DistanceAlongLane = distanceAlongLane,
-            HitPoint = hitPoint,
-            HitDirection = hitDirection
-        });
-        SortCandidates(ref hitCandidates);
-    }
-
-    private static void SortCandidates(ref NativeList<LaserBeamHitCandidate> hitCandidates)
-    {
-        for (int candidateIndex = hitCandidates.Length - 1; candidateIndex > 0; candidateIndex--)
-        {
-            LaserBeamHitCandidate currentCandidate = hitCandidates[candidateIndex];
-            LaserBeamHitCandidate previousCandidate = hitCandidates[candidateIndex - 1];
-
-            if (previousCandidate.DistanceAlongLane <= currentCandidate.DistanceAlongLane)
-                break;
-
-            hitCandidates[candidateIndex - 1] = currentCandidate;
-            hitCandidates[candidateIndex] = previousCandidate;
-        }
-    }
-
-    private static void ResolveLaneHits(Entity shooterEntity,
-                                        float laneDamagePerTick,
-                                        ProjectilePenetrationMode penetrationMode,
-                                        int maximumPenetrations,
-                                        PlayerProjectileRequestTemplate projectileTemplate,
-                                        in DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
-                                        int segmentStartIndex,
-                                        in NativeList<LaserBeamHitCandidate> hitCandidates,
-                                        NativeArray<Entity> enemyEntities,
-                                        ref NativeArray<EnemyHealth> projectedEnemyHealth,
-                                        in NativeArray<float3> enemyPositions,
-                                        in NativeArray<EnemyRuntimeState> enemyRuntimeArray,
-                                        ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
-                                        ref NativeArray<byte> enemyDirtyFlags,
-                                        ref NativeArray<byte> enemyKnockbackDirtyFlags,
-                                        in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
-                                        in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
-                                        in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
-                                        in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup,
-                                        bool canEnqueueVfxRequests,
-                                        ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
-                                        ref BufferLookup<EnemyElementStackElement> elementalStackLookup,
-                                        in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
-                                        ref EntityCommandBuffer commandBuffer)
-    {
-        PlayerLaserBeamLaneElement referenceSegment = laserBeamLanes[segmentStartIndex];
-        float effectiveLaneDamagePerTick = math.max(0f, laneDamagePerTick * math.max(0f, referenceSegment.DamageMultiplier));
-
-        switch (penetrationMode)
-        {
-            case ProjectilePenetrationMode.FixedHits:
-                ResolveFixedHitMode(shooterEntity,
-                                    effectiveLaneDamagePerTick,
-                                    maximumPenetrations,
-                                    projectileTemplate,
-                                    in referenceSegment,
-                                    in hitCandidates,
-                                    enemyEntities,
-                                    ref projectedEnemyHealth,
-                                    in enemyPositions,
-                                    in enemyRuntimeArray,
-                                    ref projectedEnemyKnockback,
-                                    ref enemyDirtyFlags,
-                                    ref enemyKnockbackDirtyFlags,
-                                    in elementalVfxConfigLookup,
-                                    in elementalVfxAnchorLookup,
-                                    in enemyHitVfxConfigLookup,
-                                    in spawnInactivityLockLookup,
-                                    canEnqueueVfxRequests,
-                                    ref shooterVfxRequests,
-                                    ref elementalStackLookup,
-                                    in despawnRequestLookup,
-                                    ref commandBuffer);
-                return;
-            case ProjectilePenetrationMode.Infinite:
-                ResolveInfiniteHitMode(shooterEntity,
-                                       effectiveLaneDamagePerTick,
-                                       projectileTemplate,
-                                       in referenceSegment,
-                                       in hitCandidates,
-                                       enemyEntities,
-                                       ref projectedEnemyHealth,
-                                       in enemyPositions,
-                                       in enemyRuntimeArray,
-                                       ref projectedEnemyKnockback,
-                                       ref enemyDirtyFlags,
-                                       ref enemyKnockbackDirtyFlags,
-                                       in elementalVfxConfigLookup,
-                                       in elementalVfxAnchorLookup,
-                                       in enemyHitVfxConfigLookup,
-                                       in spawnInactivityLockLookup,
-                                       canEnqueueVfxRequests,
-                                       ref shooterVfxRequests,
-                                       ref elementalStackLookup,
-                                       in despawnRequestLookup,
-                                       ref commandBuffer);
-                return;
-            case ProjectilePenetrationMode.DamageBased:
-                ResolveDamageBasedMode(shooterEntity,
-                                       effectiveLaneDamagePerTick,
-                                       maximumPenetrations,
-                                       projectileTemplate,
-                                       in referenceSegment,
-                                       in hitCandidates,
-                                       enemyEntities,
-                                       ref projectedEnemyHealth,
-                                       in enemyPositions,
-                                       in enemyRuntimeArray,
-                                       ref projectedEnemyKnockback,
-                                       ref enemyDirtyFlags,
-                                       ref enemyKnockbackDirtyFlags,
-                                       in elementalVfxConfigLookup,
-                                       in elementalVfxAnchorLookup,
-                                       in enemyHitVfxConfigLookup,
-                                       in spawnInactivityLockLookup,
-                                       canEnqueueVfxRequests,
-                                       ref shooterVfxRequests,
-                                       ref elementalStackLookup,
-                                       in despawnRequestLookup,
-                                       ref commandBuffer);
-                return;
-            default:
-                ResolveSingleHitMode(shooterEntity,
-                                     effectiveLaneDamagePerTick,
-                                     projectileTemplate,
-                                     in referenceSegment,
-                                     in hitCandidates,
-                                     enemyEntities,
-                                     ref projectedEnemyHealth,
-                                     in enemyPositions,
-                                     in enemyRuntimeArray,
-                                     ref projectedEnemyKnockback,
-                                     ref enemyDirtyFlags,
-                                     ref enemyKnockbackDirtyFlags,
-                                     in elementalVfxConfigLookup,
-                                     in elementalVfxAnchorLookup,
-                                     in enemyHitVfxConfigLookup,
-                                     in spawnInactivityLockLookup,
-                                     canEnqueueVfxRequests,
-                                     ref shooterVfxRequests,
-                                     ref elementalStackLookup,
-                                     in despawnRequestLookup,
-                                     ref commandBuffer);
-                return;
-        }
-    }
-
-    private static void ResolveSingleHitMode(Entity shooterEntity,
-                                             float laneDamagePerTick,
-                                             PlayerProjectileRequestTemplate projectileTemplate,
-                                             in PlayerLaserBeamLaneElement referenceSegment,
-                                             in NativeList<LaserBeamHitCandidate> hitCandidates,
-                                             NativeArray<Entity> enemyEntities,
-                                             ref NativeArray<EnemyHealth> projectedEnemyHealth,
-                                             in NativeArray<float3> enemyPositions,
-                                             in NativeArray<EnemyRuntimeState> enemyRuntimeArray,
-                                             ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
-                                             ref NativeArray<byte> enemyDirtyFlags,
-                                             ref NativeArray<byte> enemyKnockbackDirtyFlags,
-                                             in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
-                                             in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
-                                             in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
-                                             in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup,
-                                             bool canEnqueueVfxRequests,
-                                             ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
-                                             ref BufferLookup<EnemyElementStackElement> elementalStackLookup,
-                                             in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
-                                             ref EntityCommandBuffer commandBuffer)
-    {
-        for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
-        {
-            LaserBeamHitCandidate hitCandidate = hitCandidates[candidateIndex];
-
-            if (!TryApplyFlatDamageHit(ref projectedEnemyHealth,
-                                       hitCandidate.EnemyIndex,
-                                       laneDamagePerTick,
-                                       out bool enemyKilled))
-            {
-                continue;
-            }
-
-            enemyDirtyFlags[hitCandidate.EnemyIndex] = 1;
-            ApplyHitPayloads(shooterEntity,
-                             hitCandidate.EnemyIndex,
-                             hitCandidate.HitPoint,
-                             hitCandidate.HitDirection,
-                             laneDamagePerTick,
-                             projectileTemplate,
-                             in referenceSegment,
-                             enemyEntities,
-                             in enemyPositions,
-                             in enemyRuntimeArray,
-                             ref projectedEnemyKnockback,
-                             ref enemyKnockbackDirtyFlags,
-                             in elementalVfxConfigLookup,
-                             in elementalVfxAnchorLookup,
-                             in enemyHitVfxConfigLookup,
-                             in spawnInactivityLockLookup,
-                             canEnqueueVfxRequests,
-                             ref shooterVfxRequests,
-                             ref elementalStackLookup);
-            TryScheduleDespawn(enemyEntities[hitCandidate.EnemyIndex],
-                               projectedEnemyHealth[hitCandidate.EnemyIndex],
-                               in despawnRequestLookup,
-                               ref commandBuffer);
-            return;
-        }
-    }
-
-    private static void ResolveFixedHitMode(Entity shooterEntity,
-                                            float laneDamagePerTick,
-                                            int maximumPenetrations,
-                                            PlayerProjectileRequestTemplate projectileTemplate,
-                                            in PlayerLaserBeamLaneElement referenceSegment,
-                                            in NativeList<LaserBeamHitCandidate> hitCandidates,
-                                            NativeArray<Entity> enemyEntities,
-                                            ref NativeArray<EnemyHealth> projectedEnemyHealth,
-                                            in NativeArray<float3> enemyPositions,
-                                            in NativeArray<EnemyRuntimeState> enemyRuntimeArray,
-                                            ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
-                                            ref NativeArray<byte> enemyDirtyFlags,
-                                            ref NativeArray<byte> enemyKnockbackDirtyFlags,
-                                            in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
-                                            in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
-                                            in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
-                                            in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup,
-                                            bool canEnqueueVfxRequests,
-                                            ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
-                                            ref BufferLookup<EnemyElementStackElement> elementalStackLookup,
-                                            in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
-                                            ref EntityCommandBuffer commandBuffer)
-    {
-        int maximumHitCount = 1 + math.max(0, maximumPenetrations);
-        int appliedHitCount = 0;
-
-        for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
-        {
-            if (appliedHitCount >= maximumHitCount)
-                return;
-
-            LaserBeamHitCandidate hitCandidate = hitCandidates[candidateIndex];
-
-            if (!TryApplyFlatDamageHit(ref projectedEnemyHealth,
-                                       hitCandidate.EnemyIndex,
-                                       laneDamagePerTick,
-                                       out bool _))
-            {
-                continue;
-            }
-
-            appliedHitCount++;
-            enemyDirtyFlags[hitCandidate.EnemyIndex] = 1;
-            ApplyHitPayloads(shooterEntity,
-                             hitCandidate.EnemyIndex,
-                             hitCandidate.HitPoint,
-                             hitCandidate.HitDirection,
-                             laneDamagePerTick,
-                             projectileTemplate,
-                             in referenceSegment,
-                             enemyEntities,
-                             in enemyPositions,
-                             in enemyRuntimeArray,
-                             ref projectedEnemyKnockback,
-                             ref enemyKnockbackDirtyFlags,
-                             in elementalVfxConfigLookup,
-                             in elementalVfxAnchorLookup,
-                             in enemyHitVfxConfigLookup,
-                             in spawnInactivityLockLookup,
-                             canEnqueueVfxRequests,
-                             ref shooterVfxRequests,
-                             ref elementalStackLookup);
-            TryScheduleDespawn(enemyEntities[hitCandidate.EnemyIndex],
-                               projectedEnemyHealth[hitCandidate.EnemyIndex],
-                               in despawnRequestLookup,
-                               ref commandBuffer);
-        }
-    }
-
-    private static void ResolveInfiniteHitMode(Entity shooterEntity,
-                                               float laneDamagePerTick,
-                                               PlayerProjectileRequestTemplate projectileTemplate,
-                                               in PlayerLaserBeamLaneElement referenceSegment,
-                                               in NativeList<LaserBeamHitCandidate> hitCandidates,
-                                               NativeArray<Entity> enemyEntities,
-                                               ref NativeArray<EnemyHealth> projectedEnemyHealth,
-                                               in NativeArray<float3> enemyPositions,
-                                               in NativeArray<EnemyRuntimeState> enemyRuntimeArray,
-                                               ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
-                                               ref NativeArray<byte> enemyDirtyFlags,
-                                               ref NativeArray<byte> enemyKnockbackDirtyFlags,
-                                               in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
-                                               in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
-                                               in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
-                                               in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup,
-                                               bool canEnqueueVfxRequests,
-                                               ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
-                                               ref BufferLookup<EnemyElementStackElement> elementalStackLookup,
-                                               in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
-                                               ref EntityCommandBuffer commandBuffer)
-    {
-        for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
-        {
-            LaserBeamHitCandidate hitCandidate = hitCandidates[candidateIndex];
-
-            if (!TryApplyFlatDamageHit(ref projectedEnemyHealth,
-                                       hitCandidate.EnemyIndex,
-                                       laneDamagePerTick,
-                                       out bool _))
-            {
-                continue;
-            }
-
-            enemyDirtyFlags[hitCandidate.EnemyIndex] = 1;
-            ApplyHitPayloads(shooterEntity,
-                             hitCandidate.EnemyIndex,
-                             hitCandidate.HitPoint,
-                             hitCandidate.HitDirection,
-                             laneDamagePerTick,
-                             projectileTemplate,
-                             in referenceSegment,
-                             enemyEntities,
-                             in enemyPositions,
-                             in enemyRuntimeArray,
-                             ref projectedEnemyKnockback,
-                             ref enemyKnockbackDirtyFlags,
-                             in elementalVfxConfigLookup,
-                             in elementalVfxAnchorLookup,
-                             in enemyHitVfxConfigLookup,
-                             in spawnInactivityLockLookup,
-                             canEnqueueVfxRequests,
-                             ref shooterVfxRequests,
-                             ref elementalStackLookup);
-            TryScheduleDespawn(enemyEntities[hitCandidate.EnemyIndex],
-                               projectedEnemyHealth[hitCandidate.EnemyIndex],
-                               in despawnRequestLookup,
-                               ref commandBuffer);
-        }
-    }
-
-    private static void ResolveDamageBasedMode(Entity shooterEntity,
-                                               float laneDamagePerTick,
-                                               int maximumPenetrations,
-                                               PlayerProjectileRequestTemplate projectileTemplate,
-                                               in PlayerLaserBeamLaneElement referenceSegment,
-                                               in NativeList<LaserBeamHitCandidate> hitCandidates,
-                                               NativeArray<Entity> enemyEntities,
-                                               ref NativeArray<EnemyHealth> projectedEnemyHealth,
-                                               in NativeArray<float3> enemyPositions,
-                                               in NativeArray<EnemyRuntimeState> enemyRuntimeArray,
-                                               ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
-                                               ref NativeArray<byte> enemyDirtyFlags,
-                                               ref NativeArray<byte> enemyKnockbackDirtyFlags,
-                                               in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
-                                               in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
-                                               in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
-                                               in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup,
-                                               bool canEnqueueVfxRequests,
-                                               ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
-                                               ref BufferLookup<EnemyElementStackElement> elementalStackLookup,
-                                               in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
-                                               ref EntityCommandBuffer commandBuffer)
-    {
-        float remainingDamage = math.max(0f, laneDamagePerTick);
-        int consumedPenetrations = 0;
-
-        for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
-        {
-            if (remainingDamage <= 0f)
-                return;
-
-            LaserBeamHitCandidate hitCandidate = hitCandidates[candidateIndex];
-            bool enemyKilled;
-            float leftoverDamage = ApplyDamageBasedHit(ref projectedEnemyHealth,
-                                                       hitCandidate.EnemyIndex,
-                                                       remainingDamage,
-                                                       out enemyKilled);
-
-            if (leftoverDamage == remainingDamage)
-                continue;
-
-            enemyDirtyFlags[hitCandidate.EnemyIndex] = 1;
-            ApplyHitPayloads(shooterEntity,
-                             hitCandidate.EnemyIndex,
-                             hitCandidate.HitPoint,
-                             hitCandidate.HitDirection,
-                             remainingDamage - leftoverDamage,
-                             projectileTemplate,
-                             in referenceSegment,
-                             enemyEntities,
-                             in enemyPositions,
-                             in enemyRuntimeArray,
-                             ref projectedEnemyKnockback,
-                             ref enemyKnockbackDirtyFlags,
-                             in elementalVfxConfigLookup,
-                             in elementalVfxAnchorLookup,
-                             in enemyHitVfxConfigLookup,
-                             in spawnInactivityLockLookup,
-                             canEnqueueVfxRequests,
-                             ref shooterVfxRequests,
-                             ref elementalStackLookup);
-            TryScheduleDespawn(enemyEntities[hitCandidate.EnemyIndex],
-                               projectedEnemyHealth[hitCandidate.EnemyIndex],
-                               in despawnRequestLookup,
-                               ref commandBuffer);
-
-            if (!enemyKilled)
-                return;
-
-            consumedPenetrations++;
-            remainingDamage = leftoverDamage;
-
-            if (consumedPenetrations > maximumPenetrations)
-                return;
-        }
-    }
-
-    private static void ApplyHitPayloads(Entity shooterEntity,
-                                         int enemyIndex,
-                                         float3 hitPoint,
-                                         float3 hitDirection,
-                                         float appliedDamage,
-                                         PlayerProjectileRequestTemplate projectileTemplate,
-                                         in PlayerLaserBeamLaneElement referenceSegment,
-                                         NativeArray<Entity> enemyEntities,
-                                         in NativeArray<float3> enemyPositions,
-                                         in NativeArray<EnemyRuntimeState> enemyRuntimeArray,
-                                         ref NativeArray<EnemyKnockbackState> projectedEnemyKnockback,
-                                         ref NativeArray<byte> enemyKnockbackDirtyFlags,
-                                         in ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup,
-                                         in ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup,
-                                         in ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup,
-                                         in ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup,
-                                         bool canEnqueueVfxRequests,
-                                         ref DynamicBuffer<PlayerPowerUpVfxSpawnRequest> shooterVfxRequests,
-                                         ref BufferLookup<EnemyElementStackElement> elementalStackLookup)
-    {
-        Projectile projectileForPayloads = new Projectile
-        {
-            Velocity = math.normalizesafe(hitDirection, referenceSegment.Direction) * math.max(0f, projectileTemplate.Speed),
-            Damage = math.max(0f, appliedDamage),
-            ExplosionRadius = math.max(0f, projectileTemplate.ExplosionRadius),
-            MaxRange = 0f,
-            MaxLifetime = 0f,
-            PenetrationMode = ProjectilePenetrationMode.None,
-            RemainingPenetrations = 0,
-            KnockbackEnabled = projectileTemplate.Knockback.Enabled,
-            KnockbackStrength = math.max(0f, projectileTemplate.Knockback.Strength),
-            KnockbackDurationSeconds = math.max(0f, projectileTemplate.Knockback.DurationSeconds),
-            KnockbackDirectionMode = projectileTemplate.Knockback.DirectionMode,
-            KnockbackStackingMode = projectileTemplate.Knockback.StackingMode,
-            InheritPlayerSpeed = projectileTemplate.InheritPlayerSpeed
-        };
-        LocalTransform projectileTransform = LocalTransform.FromPositionRotationScale(hitPoint,
-                                                                                     quaternion.identity,
-                                                                                     math.max(0.01f, referenceSegment.CollisionRadius / PlayerLaserBeamUtility.BaseProjectileRadius));
-
-        if (EnemyHitPayloadRuntimeUtility.ApplyEnemyHitPayloads(enemyIndex,
-                                                                shooterEntity,
-                                                                hitPoint,
-                                                                in projectileForPayloads,
-                                                                in projectileTransform,
-                                                                in projectileTemplate.ElementalPayloadOverride,
-                                                                enemyEntities,
-                                                                enemyPositions,
-                                                                enemyRuntimeArray,
-                                                                ref projectedEnemyKnockback,
-                                                                in elementalVfxConfigLookup,
-                                                                in elementalVfxAnchorLookup,
-                                                                in enemyHitVfxConfigLookup,
-                                                                in spawnInactivityLockLookup,
-                                                                canEnqueueVfxRequests,
-                                                                ref shooterVfxRequests,
-                                                                ref elementalStackLookup))
-        {
-            enemyKnockbackDirtyFlags[enemyIndex] = 1;
-        }
-    }
-
-    private static bool TryApplyFlatDamageHit(ref NativeArray<EnemyHealth> projectedEnemyHealth,
-                                              int enemyIndex,
-                                              float damage,
-                                              out bool enemyKilled)
-    {
-        enemyKilled = false;
-
-        if (enemyIndex < 0 || enemyIndex >= projectedEnemyHealth.Length)
-            return false;
-
-        EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
-
-        if (enemyHealth.Current <= 0f)
-            return false;
-
-        EnemyDamageUtility.ApplyFlatShieldDamage(ref enemyHealth, damage);
-        enemyKilled = enemyHealth.Current <= 0f;
-        projectedEnemyHealth[enemyIndex] = enemyHealth;
-        return true;
-    }
-
-    private static float ApplyDamageBasedHit(ref NativeArray<EnemyHealth> projectedEnemyHealth,
-                                             int enemyIndex,
-                                             float damage,
-                                             out bool enemyKilled)
-    {
-        enemyKilled = false;
-
-        if (enemyIndex < 0 || enemyIndex >= projectedEnemyHealth.Length)
-            return damage;
-
-        EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
-
-        if (enemyHealth.Current <= 0f)
-            return damage;
-
-        float leftoverDamage = EnemyDamageUtility.ConsumeFlatShieldDamage(ref enemyHealth, damage);
-        enemyKilled = enemyHealth.Current <= 0f;
-        projectedEnemyHealth[enemyIndex] = enemyHealth;
-        return leftoverDamage;
-    }
-
-    private static void TryScheduleDespawn(Entity enemyEntity,
-                                           EnemyHealth enemyHealth,
-                                           in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
-                                           ref EntityCommandBuffer commandBuffer)
-    {
-        if (enemyHealth.Current > 0f)
+        if (travelSpeed <= 0f)
             return;
 
-        if (despawnRequestLookup.HasComponent(enemyEntity))
+        float travelDurationSeconds = PlayerLaserBeamStateUtility.ResolveStormTickTravelDurationSeconds(travelSpeed);
+        float totalDurationSeconds = PlayerLaserBeamStateUtility.ResolveStormTickTotalDurationSeconds(in laserBeamConfig);
+        float frameDamagePerPulse = math.max(0f,
+                                             tickDamagePerPulse *
+                                             math.max(0f, deltaTime) /
+                                             math.max(0.0001f, totalDurationSeconds));
+
+        if (frameDamagePerPulse <= 0f)
             return;
 
-        commandBuffer.AddComponent(enemyEntity, new EnemyDespawnRequest
+        float damageLengthTolerance = math.max(0f, laserBeamConfig.StormTickDamageLengthTolerance);
+
+        for (int pulseIndex = 0; pulseIndex < laserBeamState.StormTickPulses.Length; pulseIndex++)
         {
-            Reason = EnemyDespawnReason.Killed
-        });
-    }
+            PlayerLaserBeamStormTickPulse pulse = laserBeamState.StormTickPulses[pulseIndex];
+            
+            if (pulse.CurrentElapsedSeconds < 0f || pulse.CurrentElapsedSeconds >= totalDurationSeconds)
+                continue;
 
-    private static float3 ClosestPointOnSegment(float3 point,
-                                                float3 segmentStart,
-                                                float3 segmentEnd)
-    {
-        float3 segment = segmentEnd - segmentStart;
-        float segmentLengthSquared = math.lengthsq(segment);
+            float headDistance = laneLength * PlayerLaserBeamStateUtility.ResolveNormalizedStormTickProgress(pulse.CurrentElapsedSeconds, travelSpeed);
+            float coverageDistance = pulse.CurrentElapsedSeconds >= travelDurationSeconds
+                ? laneLength
+                : math.min(laneLength, headDistance + damageLengthTolerance);
 
-        if (segmentLengthSquared <= 1e-6f)
-            return segmentStart;
+            if (coverageDistance <= 0f)
+                continue;
 
-        float projection = math.dot(point - segmentStart, segment) / segmentLengthSquared;
-        float clampedProjection = math.clamp(projection, 0f, 1f);
-        return segmentStart + segment * clampedProjection;
+            PlayerLaserBeamDamageResolutionUtility.CollectTraversedHitCandidates(in hitCandidates,
+                                                                                 0f,
+                                                                                 coverageDistance,
+                                                                                 ref traversedHitCandidates);
+
+            if (traversedHitCandidates.Length <= 0)
+                continue;
+
+            PlayerLaserBeamDamageResolutionUtility.ResolveLaneHits(shooterEntity,
+                                                                  frameDamagePerPulse,
+                                                                  penetrationMode,
+                                                                  maximumPenetrations,
+                                                                  projectileTemplate,
+                                                                  in laserBeamLanes,
+                                                                  segmentStartIndex,
+                                                                  in traversedHitCandidates,
+                                                                  enemyEntities,
+                                                                  ref projectedEnemyHealth,
+                                                                  in enemyPositions,
+                                                                  in enemyRuntimeArray,
+                                                                  ref projectedEnemyKnockback,
+                                                                  ref enemyDirtyFlags,
+                                                                  ref enemyFlashDirtyFlags,
+                                                                  ref enemyKnockbackDirtyFlags,
+                                                                  in elementalVfxConfigLookup,
+                                                                  in elementalVfxAnchorLookup,
+                                                                  in enemyHitVfxConfigLookup,
+                                                                  in spawnInactivityLockLookup,
+                                                                  canEnqueueVfxRequests,
+                                                                  ref shooterVfxRequests,
+                                                                  ref elementalStackLookup,
+                                                                  in despawnRequestLookup,
+                                                                  ref commandBuffer);
+        }
     }
     #endregion
 

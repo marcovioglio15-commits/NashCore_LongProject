@@ -28,8 +28,8 @@ public static class PlayerLaserBeamVisualBakeUtility
             return new PlayerLaserBeamVisualConfig
             {
                 BodyMaterial = default,
-                SourceBubbleMaterial = default,
-                ImpactSplashMaterial = default,
+                SourceEffectMaterial = default,
+                TerminalCapMaterial = default,
                 VerticalLift = PlayerLaserBeamVisualDefaultsUtility.DefaultVerticalLift,
                 MinimumSegmentLength = PlayerLaserBeamVisualDefaultsUtility.DefaultMinimumSegmentLength,
                 MaximumRibbonSegmentLength = 0.18f,
@@ -42,9 +42,9 @@ public static class PlayerLaserBeamVisualBakeUtility
 
         return new PlayerLaserBeamVisualConfig
         {
-            BodyMaterial = visualSettings.BeamMaterial,
-            SourceBubbleMaterial = visualSettings.SourceBubbleMaterial,
-            ImpactSplashMaterial = visualSettings.ImpactSplashMaterial,
+            BodyMaterial = visualSettings.BodyMaterial,
+            SourceEffectMaterial = visualSettings.SourceEffectMaterial,
+            TerminalCapMaterial = visualSettings.TerminalCapMaterial,
             VerticalLift = math.max(0f, visualSettings.VerticalLift),
             MinimumSegmentLength = math.max(0.001f, visualSettings.MinimumSegmentLength),
             MaximumRibbonSegmentLength = math.max(0.01f, rigAuthoring != null ? rigAuthoring.MaximumRibbonSegmentLength : 0.18f),
@@ -100,70 +100,67 @@ public static class PlayerLaserBeamVisualBakeUtility
     }
 
     /// <summary>
-    /// Populates the baked palette buffer used by the Laser Beam managed renderer path.
+    /// Populates the baked visual preset buffer used by the Laser Beam managed renderer path.
     /// /params authoring Player authoring used to resolve the active visual preset.
-    /// /params paletteBuffer Destination buffer written in-place.
+    /// /params visualPresetBuffer Destination buffer written in-place.
     /// /returns None.
     /// </summary>
-    public static void PopulatePaletteBuffer(PlayerAuthoring authoring, DynamicBuffer<PlayerLaserBeamPaletteElement> paletteBuffer)
+    public static void PopulateVisualPresetBuffer(PlayerAuthoring authoring, DynamicBuffer<PlayerLaserBeamVisualPresetElement> visualPresetBuffer)
     {
-        paletteBuffer.Clear();
-
-        if (paletteBuffer.Capacity < PlayerLaserBeamVisualDefaultsUtility.SupportedPalettes.Count)
-            paletteBuffer.Capacity = PlayerLaserBeamVisualDefaultsUtility.SupportedPalettes.Count;
-
+        visualPresetBuffer.Clear();
         PlayerLaserBeamVisualSettings visualSettings = ResolveVisualSettings(authoring);
-        IReadOnlyList<PlayerLaserBeamPaletteSettings> authoredPalettes = visualSettings != null
-            ? visualSettings.Palettes
+        IReadOnlyList<PlayerLaserBeamVisualPresetDefinition> authoredVisualPresets = visualSettings != null
+            ? visualSettings.VisualPresets
             : null;
-        HashSet<LaserBeamVisualPalette> coveredPalettes = new HashSet<LaserBeamVisualPalette>();
+        int minimumCapacity = authoredVisualPresets != null && authoredVisualPresets.Count > 0
+            ? authoredVisualPresets.Count
+            : 1;
 
-        if (authoredPalettes != null)
+        if (visualPresetBuffer.Capacity < minimumCapacity)
+            visualPresetBuffer.Capacity = minimumCapacity;
+
+        if (authoredVisualPresets != null)
         {
-            for (int paletteIndex = 0; paletteIndex < authoredPalettes.Count; paletteIndex++)
+            HashSet<int> coveredVisualPresetIds = new HashSet<int>();
+
+            for (int presetIndex = 0; presetIndex < authoredVisualPresets.Count; presetIndex++)
             {
-                PlayerLaserBeamPaletteSettings paletteSettings = authoredPalettes[paletteIndex];
+                PlayerLaserBeamVisualPresetDefinition visualPresetDefinition = authoredVisualPresets[presetIndex];
 
-                if (paletteSettings == null)
+                if (visualPresetDefinition == null)
                     continue;
 
-                if (!coveredPalettes.Add(paletteSettings.VisualPalette))
+                if (!coveredVisualPresetIds.Add(visualPresetDefinition.StableId))
                     continue;
 
-                paletteBuffer.Add(new PlayerLaserBeamPaletteElement
+                visualPresetBuffer.Add(new PlayerLaserBeamVisualPresetElement
                 {
-                    VisualPalette = paletteSettings.VisualPalette,
-                    BodyColorA = DamageFlashRuntimeUtility.ToLinearFloat4(paletteSettings.BodyColorA),
-                    BodyColorB = DamageFlashRuntimeUtility.ToLinearFloat4(paletteSettings.BodyColorB),
-                    CoreColor = DamageFlashRuntimeUtility.ToLinearFloat4(paletteSettings.CoreColor),
-                    RimColor = DamageFlashRuntimeUtility.ToLinearFloat4(paletteSettings.RimColor)
+                    VisualPresetId = math.max(0, visualPresetDefinition.StableId),
+                    CoreColor = DamageFlashRuntimeUtility.ToLinearFloat4(visualPresetDefinition.CoreColor),
+                    FlowColor = DamageFlashRuntimeUtility.ToLinearFloat4(visualPresetDefinition.FlowColor),
+                    StormColor = DamageFlashRuntimeUtility.ToLinearFloat4(visualPresetDefinition.StormColor),
+                    ContactColor = DamageFlashRuntimeUtility.ToLinearFloat4(visualPresetDefinition.ContactColor)
                 });
             }
         }
 
-        IReadOnlyList<LaserBeamVisualPalette> supportedPalettes = PlayerLaserBeamVisualDefaultsUtility.SupportedPalettes;
+        if (visualPresetBuffer.Length > 0)
+            return;
 
-        for (int paletteIndex = 0; paletteIndex < supportedPalettes.Count; paletteIndex++)
+        PlayerLaserBeamVisualDefaultsUtility.ResolveDefaultPreset(PlayerLaserBeamVisualDefaultsUtility.DefaultVisualPresetId,
+                                                                  out string _,
+                                                                  out Color coreColor,
+                                                                  out Color flowColor,
+                                                                  out Color stormColor,
+                                                                  out Color contactColor);
+        visualPresetBuffer.Add(new PlayerLaserBeamVisualPresetElement
         {
-            LaserBeamVisualPalette visualPalette = supportedPalettes[paletteIndex];
-
-            if (coveredPalettes.Contains(visualPalette))
-                continue;
-
-            PlayerLaserBeamVisualDefaultsUtility.ResolveDefaultColors(visualPalette,
-                                                                     out Color bodyColorA,
-                                                                     out Color bodyColorB,
-                                                                     out Color coreColor,
-                                                                     out Color rimColor);
-            paletteBuffer.Add(new PlayerLaserBeamPaletteElement
-            {
-                VisualPalette = visualPalette,
-                BodyColorA = DamageFlashRuntimeUtility.ToLinearFloat4(bodyColorA),
-                BodyColorB = DamageFlashRuntimeUtility.ToLinearFloat4(bodyColorB),
-                CoreColor = DamageFlashRuntimeUtility.ToLinearFloat4(coreColor),
-                RimColor = DamageFlashRuntimeUtility.ToLinearFloat4(rimColor)
-            });
-        }
+            VisualPresetId = PlayerLaserBeamVisualDefaultsUtility.DefaultVisualPresetId,
+            CoreColor = DamageFlashRuntimeUtility.ToLinearFloat4(coreColor),
+            FlowColor = DamageFlashRuntimeUtility.ToLinearFloat4(flowColor),
+            StormColor = DamageFlashRuntimeUtility.ToLinearFloat4(stormColor),
+            ContactColor = DamageFlashRuntimeUtility.ToLinearFloat4(contactColor)
+        });
     }
     #endregion
 

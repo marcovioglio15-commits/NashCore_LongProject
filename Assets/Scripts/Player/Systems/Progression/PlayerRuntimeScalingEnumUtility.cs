@@ -209,16 +209,6 @@ internal static class PlayerRuntimeScalingEnumUtility
     }
 
     /// <summary>
-    /// Resolves a safe LaserBeamVisualPalette from one numeric Add Scaling result.
-    /// </summary>
-    /// <param name="value">Resolved numeric formula result.</param>
-    /// <returns>Clamped enum value.<returns>
-    public static LaserBeamVisualPalette ResolveLaserBeamVisualPalette(float value)
-    {
-        return (LaserBeamVisualPalette)ResolveEnumIndex(value, 3);
-    }
-
-    /// <summary>
     /// Resolves a safe LaserBeamBodyProfile from one numeric Add Scaling result.
     /// </summary>
     /// <param name="value">Resolved numeric formula result.</param>

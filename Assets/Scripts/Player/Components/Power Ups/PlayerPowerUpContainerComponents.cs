@@ -42,6 +42,7 @@ public struct PlayerDroppedPowerUpContainerContent : IComponentData
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpContainerSwapCommand : IBufferElementData
 {
     public Entity ContainerEntity;

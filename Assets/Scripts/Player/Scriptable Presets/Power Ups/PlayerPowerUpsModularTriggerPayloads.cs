@@ -28,6 +28,9 @@ public sealed class PowerUpHoldChargeModuleData
 
     [Tooltip("Percentage of Maximum Charge gained per second while the trigger is not pressed when Passive Charge Gain While Released is enabled.")]
     [SerializeField] private float passiveChargeGainPercentPerSecond = 10f;
+
+    [Tooltip("Seconds for which a Laser Beam triggered by this active charge-shot remains active after release.")]
+    [SerializeField] private float laserDurationSeconds = 0.45f;
     #endregion
 
     #endregion
@@ -88,6 +91,14 @@ public sealed class PowerUpHoldChargeModuleData
             return passiveChargeGainPercentPerSecond;
         }
     }
+
+    public float LaserDurationSeconds
+    {
+        get
+        {
+            return laserDurationSeconds;
+        }
+    }
     #endregion
 
     #region Methods
@@ -101,7 +112,8 @@ public sealed class PowerUpHoldChargeModuleData
                   false,
                   25f,
                   false,
-                  10f);
+                  10f,
+                  0.45f);
     }
 
     public void Configure(float requiredChargeValue,
@@ -110,7 +122,8 @@ public sealed class PowerUpHoldChargeModuleData
                           bool decayAfterReleaseValue,
                           float decayAfterReleasePercentPerSecondValue,
                           bool passiveChargeGainWhileReleasedValue,
-                          float passiveChargeGainPercentPerSecondValue)
+                          float passiveChargeGainPercentPerSecondValue,
+                          float laserDurationSecondsValue)
     {
         requiredCharge = requiredChargeValue;
         maximumCharge = maximumChargeValue;
@@ -119,6 +132,7 @@ public sealed class PowerUpHoldChargeModuleData
         decayAfterReleasePercentPerSecond = decayAfterReleasePercentPerSecondValue;
         passiveChargeGainWhileReleased = passiveChargeGainWhileReleasedValue;
         passiveChargeGainPercentPerSecond = passiveChargeGainPercentPerSecondValue;
+        laserDurationSeconds = laserDurationSecondsValue;
     }
     #endregion
 

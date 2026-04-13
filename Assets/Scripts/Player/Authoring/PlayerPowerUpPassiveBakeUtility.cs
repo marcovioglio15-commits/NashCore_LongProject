@@ -374,6 +374,7 @@ public static class PlayerPowerUpPassiveBakeUtility
                     }
 
                     laserBeamConfig.DamageMultiplier *= math.max(0f, candidateLaserBeamConfig.DamageMultiplier);
+                    laserBeamConfig.ContinuousDamagePerSecondMultiplier *= math.max(0f, candidateLaserBeamConfig.ContinuousDamagePerSecondMultiplier);
                     laserBeamConfig.VirtualProjectileSpeedMultiplier *= math.max(0f, candidateLaserBeamConfig.VirtualProjectileSpeedMultiplier);
                     laserBeamConfig.DamageTickIntervalSeconds = math.min(laserBeamConfig.DamageTickIntervalSeconds,
                                                                         math.max(0.0001f, candidateLaserBeamConfig.DamageTickIntervalSeconds));
@@ -391,10 +392,14 @@ public static class PlayerPowerUpPassiveBakeUtility
                                                                        candidateLaserBeamConfig.CollisionWidthMultiplier);
                     laserBeamConfig.SourceScaleMultiplier = math.max(laserBeamConfig.SourceScaleMultiplier,
                                                                     candidateLaserBeamConfig.SourceScaleMultiplier);
-                    laserBeamConfig.ImpactScaleMultiplier = math.max(laserBeamConfig.ImpactScaleMultiplier,
-                                                                    candidateLaserBeamConfig.ImpactScaleMultiplier);
+                    laserBeamConfig.TerminalCapScaleMultiplier = math.max(laserBeamConfig.TerminalCapScaleMultiplier,
+                                                                         candidateLaserBeamConfig.TerminalCapScaleMultiplier);
+                    laserBeamConfig.ContactFlareScaleMultiplier = math.max(laserBeamConfig.ContactFlareScaleMultiplier,
+                                                                          candidateLaserBeamConfig.ContactFlareScaleMultiplier);
                     laserBeamConfig.BodyOpacity = math.max(laserBeamConfig.BodyOpacity,
                                                           candidateLaserBeamConfig.BodyOpacity);
+                    laserBeamConfig.CoreWidthMultiplier = math.max(laserBeamConfig.CoreWidthMultiplier,
+                                                                   candidateLaserBeamConfig.CoreWidthMultiplier);
                     laserBeamConfig.CoreBrightness = math.max(laserBeamConfig.CoreBrightness,
                                                              candidateLaserBeamConfig.CoreBrightness);
                     laserBeamConfig.RimBrightness = math.max(laserBeamConfig.RimBrightness,
@@ -403,22 +408,40 @@ public static class PlayerPowerUpPassiveBakeUtility
                                                               candidateLaserBeamConfig.FlowScrollSpeed);
                     laserBeamConfig.FlowPulseFrequency = math.max(laserBeamConfig.FlowPulseFrequency,
                                                                  candidateLaserBeamConfig.FlowPulseFrequency);
-                    laserBeamConfig.TickPulseTravelSpeed = math.max(laserBeamConfig.TickPulseTravelSpeed,
-                                                                   candidateLaserBeamConfig.TickPulseTravelSpeed);
-                    laserBeamConfig.TickPulseLength = math.max(laserBeamConfig.TickPulseLength,
-                                                              candidateLaserBeamConfig.TickPulseLength);
-                    laserBeamConfig.TickPulseWidthBoost = math.max(laserBeamConfig.TickPulseWidthBoost,
-                                                                  candidateLaserBeamConfig.TickPulseWidthBoost);
-                    laserBeamConfig.TickPulseBrightnessBoost = math.max(laserBeamConfig.TickPulseBrightnessBoost,
-                                                                       candidateLaserBeamConfig.TickPulseBrightnessBoost);
+                    laserBeamConfig.StormTwistSpeed = math.max(laserBeamConfig.StormTwistSpeed,
+                                                               candidateLaserBeamConfig.StormTwistSpeed);
+                    laserBeamConfig.StormTickPostTravelHoldSeconds = math.max(laserBeamConfig.StormTickPostTravelHoldSeconds,
+                                                                              candidateLaserBeamConfig.StormTickPostTravelHoldSeconds);
+                    laserBeamConfig.StormIdleIntensity = math.max(laserBeamConfig.StormIdleIntensity,
+                                                                  candidateLaserBeamConfig.StormIdleIntensity);
+                    laserBeamConfig.StormBurstIntensity = math.max(laserBeamConfig.StormBurstIntensity,
+                                                                   candidateLaserBeamConfig.StormBurstIntensity);
+                    laserBeamConfig.SourceOffset = math.max(laserBeamConfig.SourceOffset,
+                                                            candidateLaserBeamConfig.SourceOffset);
+                    laserBeamConfig.SourceDischargeIntensity = math.max(laserBeamConfig.SourceDischargeIntensity,
+                                                                       candidateLaserBeamConfig.SourceDischargeIntensity);
+                    laserBeamConfig.StormShellWidthMultiplier = math.max(laserBeamConfig.StormShellWidthMultiplier,
+                                                                        candidateLaserBeamConfig.StormShellWidthMultiplier);
+                    laserBeamConfig.StormShellSeparation = math.max(laserBeamConfig.StormShellSeparation,
+                                                                    candidateLaserBeamConfig.StormShellSeparation);
+                    laserBeamConfig.StormRingFrequency = math.max(laserBeamConfig.StormRingFrequency,
+                                                                  candidateLaserBeamConfig.StormRingFrequency);
+                    laserBeamConfig.StormRingThickness = math.max(laserBeamConfig.StormRingThickness,
+                                                                  candidateLaserBeamConfig.StormRingThickness);
+                    laserBeamConfig.StormTickTravelSpeed = math.max(laserBeamConfig.StormTickTravelSpeed,
+                                                                    candidateLaserBeamConfig.StormTickTravelSpeed);
+                    laserBeamConfig.TerminalCapIntensity = math.max(laserBeamConfig.TerminalCapIntensity,
+                                                                    candidateLaserBeamConfig.TerminalCapIntensity);
+                    laserBeamConfig.ContactFlareIntensity = math.max(laserBeamConfig.ContactFlareIntensity,
+                                                                     candidateLaserBeamConfig.ContactFlareIntensity);
                     laserBeamConfig.WobbleAmplitude = math.max(laserBeamConfig.WobbleAmplitude,
                                                               candidateLaserBeamConfig.WobbleAmplitude);
                     laserBeamConfig.BubbleDriftSpeed = math.max(laserBeamConfig.BubbleDriftSpeed,
                                                                 candidateLaserBeamConfig.BubbleDriftSpeed);
-                    laserBeamConfig.VisualPalette = candidateLaserBeamConfig.VisualPalette;
+                    laserBeamConfig.VisualPresetId = candidateLaserBeamConfig.VisualPresetId;
                     laserBeamConfig.BodyProfile = candidateLaserBeamConfig.BodyProfile;
                     laserBeamConfig.SourceShape = candidateLaserBeamConfig.SourceShape;
-                    laserBeamConfig.ImpactShape = candidateLaserBeamConfig.ImpactShape;
+                    laserBeamConfig.TerminalCapShape = candidateLaserBeamConfig.TerminalCapShape;
                     break;
             }
         }

@@ -62,21 +62,21 @@ public static class PlayerVisualPresetLibraryUtility
 
         if (laserBeamProperty != null)
         {
-            SerializedProperty beamMaterialProperty = laserBeamProperty.FindPropertyRelative("beamMaterial");
-            SerializedProperty sourceBubbleMaterialProperty = laserBeamProperty.FindPropertyRelative("sourceBubbleMaterial");
-            SerializedProperty impactSplashMaterialProperty = laserBeamProperty.FindPropertyRelative("impactSplashMaterial");
+            SerializedProperty bodyMaterialProperty = laserBeamProperty.FindPropertyRelative("bodyMaterial");
+            SerializedProperty sourceEffectMaterialProperty = laserBeamProperty.FindPropertyRelative("sourceEffectMaterial");
+            SerializedProperty terminalCapMaterialProperty = laserBeamProperty.FindPropertyRelative("terminalCapMaterial");
             Material laserBeamMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultBodyMaterialPath);
-            Material sourceBubbleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultSourceBubbleMaterialPath);
-            Material impactSplashMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultImpactSplashMaterialPath);
+            Material sourceEffectMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultSourceEffectMaterialPath);
+            Material terminalCapMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultTerminalCapMaterialPath);
 
-            if (beamMaterialProperty != null && laserBeamMaterial != null)
-                beamMaterialProperty.objectReferenceValue = laserBeamMaterial;
+            if (bodyMaterialProperty != null && laserBeamMaterial != null)
+                bodyMaterialProperty.objectReferenceValue = laserBeamMaterial;
 
-            if (sourceBubbleMaterialProperty != null && sourceBubbleMaterial != null)
-                sourceBubbleMaterialProperty.objectReferenceValue = sourceBubbleMaterial;
+            if (sourceEffectMaterialProperty != null && sourceEffectMaterial != null)
+                sourceEffectMaterialProperty.objectReferenceValue = sourceEffectMaterial;
 
-            if (impactSplashMaterialProperty != null && impactSplashMaterial != null)
-                impactSplashMaterialProperty.objectReferenceValue = impactSplashMaterial;
+            if (terminalCapMaterialProperty != null && terminalCapMaterial != null)
+                terminalCapMaterialProperty.objectReferenceValue = terminalCapMaterial;
         }
 
         serializedPreset.ApplyModifiedPropertiesWithoutUndo();

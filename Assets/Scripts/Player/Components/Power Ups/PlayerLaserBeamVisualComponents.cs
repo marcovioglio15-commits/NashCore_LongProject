@@ -9,8 +9,8 @@ public struct PlayerLaserBeamVisualConfig : IComponentData
 {
     #region Fields
     public UnityObjectRef<Material> BodyMaterial;
-    public UnityObjectRef<Material> SourceBubbleMaterial;
-    public UnityObjectRef<Material> ImpactSplashMaterial;
+    public UnityObjectRef<Material> SourceEffectMaterial;
+    public UnityObjectRef<Material> TerminalCapMaterial;
     public float VerticalLift;
     public float MinimumSegmentLength;
     public float MaximumRibbonSegmentLength;
@@ -24,6 +24,7 @@ public struct PlayerLaserBeamVisualConfig : IComponentData
 /// <summary>
 /// Stores one authored source particle prefab mapped to a Laser Beam cap shape.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerLaserBeamSourceVariantElement : IBufferElementData
 {
     #region Fields
@@ -35,6 +36,7 @@ public struct PlayerLaserBeamSourceVariantElement : IBufferElementData
 /// <summary>
 /// Stores one authored impact particle prefab mapped to a Laser Beam cap shape.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerLaserBeamImpactVariantElement : IBufferElementData
 {
     #region Fields
@@ -44,15 +46,16 @@ public struct PlayerLaserBeamImpactVariantElement : IBufferElementData
 }
 
 /// <summary>
-/// Stores one editable palette entry used by the Laser Beam managed renderer path.
+/// Stores one editable visual preset entry used by the Laser Beam managed renderer path.
 /// </summary>
-public struct PlayerLaserBeamPaletteElement : IBufferElementData
+[InternalBufferCapacity(0)]
+public struct PlayerLaserBeamVisualPresetElement : IBufferElementData
 {
     #region Fields
-    public LaserBeamVisualPalette VisualPalette;
-    public float4 BodyColorA;
-    public float4 BodyColorB;
+    public int VisualPresetId;
     public float4 CoreColor;
-    public float4 RimColor;
+    public float4 FlowColor;
+    public float4 StormColor;
+    public float4 ContactColor;
     #endregion
 }

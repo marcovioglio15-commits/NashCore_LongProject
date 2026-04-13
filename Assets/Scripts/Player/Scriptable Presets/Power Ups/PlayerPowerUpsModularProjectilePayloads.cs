@@ -13,6 +13,9 @@ public sealed class PowerUpProjectilePatternConeModuleData
 
     [Tooltip("Total cone angle in degrees.")]
     [SerializeField] private float coneAngleDegrees = 45f;
+
+    [Tooltip("Seconds for which a Laser Beam triggered by this active cone pattern remains active.")]
+    [SerializeField] private float laserDurationSeconds = 0.35f;
     #endregion
 
     #endregion
@@ -33,6 +36,14 @@ public sealed class PowerUpProjectilePatternConeModuleData
             return coneAngleDegrees;
         }
     }
+
+    public float LaserDurationSeconds
+    {
+        get
+        {
+            return laserDurationSeconds;
+        }
+    }
     #endregion
 
     #region Methods
@@ -42,6 +53,15 @@ public sealed class PowerUpProjectilePatternConeModuleData
     {
         projectileCount = projectileCountValue;
         coneAngleDegrees = coneAngleDegreesValue;
+    }
+
+    public void Configure(int projectileCountValue,
+                          float coneAngleDegreesValue,
+                          float laserDurationSecondsValue)
+    {
+        projectileCount = projectileCountValue;
+        coneAngleDegrees = coneAngleDegreesValue;
+        laserDurationSeconds = laserDurationSecondsValue;
     }
     #endregion
 

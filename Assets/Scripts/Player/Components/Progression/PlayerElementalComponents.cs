@@ -12,6 +12,7 @@ public struct PlayerElementalRuntimeState : IComponentData
 /// <summary>
 /// Elemental stack payload stored per player and per element type.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerElementStackElement : IBufferElementData
 {
     public ElementType ElementType;

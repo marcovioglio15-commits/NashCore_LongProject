@@ -14,7 +14,8 @@ internal sealed class PlayerLaserBeamManagedInstance
     public Transform RootTransform;
     public readonly List<PlayerLaserBeamManagedBodyVisual> BodyVisuals = new List<PlayerLaserBeamManagedBodyVisual>(16);
     public readonly List<PlayerLaserBeamManagedParticleVisual> SourceVisuals = new List<PlayerLaserBeamManagedParticleVisual>(8);
-    public readonly List<PlayerLaserBeamManagedParticleVisual> ImpactVisuals = new List<PlayerLaserBeamManagedParticleVisual>(8);
+    public readonly List<PlayerLaserBeamManagedParticleVisual> TerminalCapVisuals = new List<PlayerLaserBeamManagedParticleVisual>(8);
+    public readonly List<PlayerLaserBeamManagedParticleVisual> ContactFlareVisuals = new List<PlayerLaserBeamManagedParticleVisual>(8);
     #endregion
 }
 
@@ -28,9 +29,24 @@ internal sealed class PlayerLaserBeamManagedBodyVisual
     #region Fields
     public GameObject InstanceObject;
     public Transform RootTransform;
+    public Mesh DynamicMesh;
+    public readonly List<PlayerLaserBeamManagedBodyLayerVisual> LayerVisuals = new List<PlayerLaserBeamManagedBodyLayerVisual>(3);
+    #endregion
+}
+
+/// <summary>
+/// Stores one pooled mesh-renderer layer that shares the lane body mesh but renders a different visual role.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal sealed class PlayerLaserBeamManagedBodyLayerVisual
+{
+    #region Fields
+    public GameObject InstanceObject;
+    public Transform RootTransform;
     public MeshFilter MeshFilter;
     public MeshRenderer MeshRenderer;
-    public Mesh DynamicMesh;
+    public PlayerLaserBeamBodyLayerRole LayerRole;
     #endregion
 }
 
@@ -94,7 +110,8 @@ internal struct PlayerLaserBeamLaneEndpoint
 {
     #region Fields
     public int LaneIndex;
-    public float3 StartPoint;
+    public float3 MuzzlePoint;
+    public float3 VisibleStartPoint;
     public float3 StartDirection;
     public float StartWidth;
     public float3 EndPoint;
@@ -106,16 +123,40 @@ internal struct PlayerLaserBeamLaneEndpoint
 }
 
 /// <summary>
-/// Stores the resolved managed palette colors used by body and particle visuals.
+/// Stores the resolved managed flow and storm colors used by body and particle visuals.
 /// /params None.
 /// /returns None.
 /// </summary>
 internal struct PlayerLaserBeamResolvedPalette
 {
     #region Fields
-    public Color BodyColorA;
-    public Color BodyColorB;
     public Color CoreColor;
-    public Color RimColor;
+    public Color FlowColor;
+    public Color StormColor;
+    public Color ContactColor;
     #endregion
+}
+
+/// <summary>
+/// Identifies the shared mesh-renderer layer used to draw one portion of the beam body.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal enum PlayerLaserBeamBodyLayerRole : byte
+{
+    Core = 0,
+    Flow = 1,
+    Storm = 2
+}
+
+/// <summary>
+/// Identifies the endpoint visual role rendered by the pooled particle prefabs.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal enum PlayerLaserBeamEndpointVisualRole : byte
+{
+    Source = 1,
+    TerminalCap = 2,
+    ContactFlare = 3
 }

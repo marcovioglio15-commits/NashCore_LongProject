@@ -122,6 +122,27 @@ MonoBehaviour:
     maximumValue: 1000000
     defaultBooleanValue: 0
     defaultTokenValue: '"None"'
+  - statName: LaserWidth
+    statType: 0
+    defaultValue: 5
+    minimumValue: -1000000
+    maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
+  - statName: LaserWidth_Small
+    statType: 0
+    defaultValue: 5
+    minimumValue: -1000000
+    maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
+  - statName: LaserWidth_Big
+    statType: 0
+    defaultValue: 12.5
+    minimumValue: -1000000
+    maximumValue: 1000000
+    defaultBooleanValue: 0
+    defaultTokenValue: 
   scalingRules:
   - statKey: gamePhasesDefinition.Array.data[0|phaseID:Phase0].requiredExperienceGrouth
     addScaling: 0
@@ -133,6 +154,11 @@ MonoBehaviour:
     formula: '[this] * [GatheringRadius]'
     debugInConsole: 1
     debugColor: {r: 0.066037714, g: 0.065317914, b: 0.057004254, a: 1}
+  - statKey: gamePhasesDefinition.Array.data[0|phaseID:Phase0].startingRequiredLevelUpExp
+    addScaling: 0
+    formula: 
+    debugInConsole: 0
+    debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   gamePhasesDefinition:
   - phaseID: Phase0
     startsAtLevel: 0

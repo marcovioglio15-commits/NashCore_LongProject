@@ -277,6 +277,7 @@ public static class PlayerPassiveToolsAggregationUtility
         }
 
         passiveToolsState.LaserBeam.DamageMultiplier *= math.max(0f, passiveToolConfig.LaserBeam.DamageMultiplier);
+        passiveToolsState.LaserBeam.ContinuousDamagePerSecondMultiplier *= math.max(0f, passiveToolConfig.LaserBeam.ContinuousDamagePerSecondMultiplier);
         passiveToolsState.LaserBeam.VirtualProjectileSpeedMultiplier *= math.max(0f, passiveToolConfig.LaserBeam.VirtualProjectileSpeedMultiplier);
         passiveToolsState.LaserBeam.DamageTickIntervalSeconds = math.min(passiveToolsState.LaserBeam.DamageTickIntervalSeconds,
                                                                          math.max(0.0001f, passiveToolConfig.LaserBeam.DamageTickIntervalSeconds));
@@ -294,10 +295,14 @@ public static class PlayerPassiveToolsAggregationUtility
                                                                         passiveToolConfig.LaserBeam.CollisionWidthMultiplier);
         passiveToolsState.LaserBeam.SourceScaleMultiplier = math.max(passiveToolsState.LaserBeam.SourceScaleMultiplier,
                                                                      passiveToolConfig.LaserBeam.SourceScaleMultiplier);
-        passiveToolsState.LaserBeam.ImpactScaleMultiplier = math.max(passiveToolsState.LaserBeam.ImpactScaleMultiplier,
-                                                                     passiveToolConfig.LaserBeam.ImpactScaleMultiplier);
+        passiveToolsState.LaserBeam.TerminalCapScaleMultiplier = math.max(passiveToolsState.LaserBeam.TerminalCapScaleMultiplier,
+                                                                          passiveToolConfig.LaserBeam.TerminalCapScaleMultiplier);
+        passiveToolsState.LaserBeam.ContactFlareScaleMultiplier = math.max(passiveToolsState.LaserBeam.ContactFlareScaleMultiplier,
+                                                                           passiveToolConfig.LaserBeam.ContactFlareScaleMultiplier);
         passiveToolsState.LaserBeam.BodyOpacity = math.max(passiveToolsState.LaserBeam.BodyOpacity,
                                                            passiveToolConfig.LaserBeam.BodyOpacity);
+        passiveToolsState.LaserBeam.CoreWidthMultiplier = math.max(passiveToolsState.LaserBeam.CoreWidthMultiplier,
+                                                                   passiveToolConfig.LaserBeam.CoreWidthMultiplier);
         passiveToolsState.LaserBeam.CoreBrightness = math.max(passiveToolsState.LaserBeam.CoreBrightness,
                                                               passiveToolConfig.LaserBeam.CoreBrightness);
         passiveToolsState.LaserBeam.RimBrightness = math.max(passiveToolsState.LaserBeam.RimBrightness,
@@ -306,14 +311,42 @@ public static class PlayerPassiveToolsAggregationUtility
                                                                passiveToolConfig.LaserBeam.FlowScrollSpeed);
         passiveToolsState.LaserBeam.FlowPulseFrequency = math.max(passiveToolsState.LaserBeam.FlowPulseFrequency,
                                                                   passiveToolConfig.LaserBeam.FlowPulseFrequency);
+        passiveToolsState.LaserBeam.StormTwistSpeed = math.max(passiveToolsState.LaserBeam.StormTwistSpeed,
+                                                               passiveToolConfig.LaserBeam.StormTwistSpeed);
+        passiveToolsState.LaserBeam.StormTickPostTravelHoldSeconds = math.max(passiveToolsState.LaserBeam.StormTickPostTravelHoldSeconds,
+                                                                               passiveToolConfig.LaserBeam.StormTickPostTravelHoldSeconds);
+        passiveToolsState.LaserBeam.StormIdleIntensity = math.max(passiveToolsState.LaserBeam.StormIdleIntensity,
+                                                                  passiveToolConfig.LaserBeam.StormIdleIntensity);
+        passiveToolsState.LaserBeam.StormBurstIntensity = math.max(passiveToolsState.LaserBeam.StormBurstIntensity,
+                                                                   passiveToolConfig.LaserBeam.StormBurstIntensity);
+        passiveToolsState.LaserBeam.SourceOffset = math.max(passiveToolsState.LaserBeam.SourceOffset,
+                                                            passiveToolConfig.LaserBeam.SourceOffset);
+        passiveToolsState.LaserBeam.SourceDischargeIntensity = math.max(passiveToolsState.LaserBeam.SourceDischargeIntensity,
+                                                                        passiveToolConfig.LaserBeam.SourceDischargeIntensity);
+        passiveToolsState.LaserBeam.StormShellWidthMultiplier = math.max(passiveToolsState.LaserBeam.StormShellWidthMultiplier,
+                                                                         passiveToolConfig.LaserBeam.StormShellWidthMultiplier);
+        passiveToolsState.LaserBeam.StormShellSeparation = math.max(passiveToolsState.LaserBeam.StormShellSeparation,
+                                                                    passiveToolConfig.LaserBeam.StormShellSeparation);
+        passiveToolsState.LaserBeam.StormRingFrequency = math.max(passiveToolsState.LaserBeam.StormRingFrequency,
+                                                                  passiveToolConfig.LaserBeam.StormRingFrequency);
+        passiveToolsState.LaserBeam.StormRingThickness = math.max(passiveToolsState.LaserBeam.StormRingThickness,
+                                                                  passiveToolConfig.LaserBeam.StormRingThickness);
+        passiveToolsState.LaserBeam.StormTickTravelSpeed = math.max(passiveToolsState.LaserBeam.StormTickTravelSpeed,
+                                                                    passiveToolConfig.LaserBeam.StormTickTravelSpeed);
+        passiveToolsState.LaserBeam.StormTickDamageLengthTolerance = math.max(passiveToolsState.LaserBeam.StormTickDamageLengthTolerance,
+                                                                               passiveToolConfig.LaserBeam.StormTickDamageLengthTolerance);
+        passiveToolsState.LaserBeam.TerminalCapIntensity = math.max(passiveToolsState.LaserBeam.TerminalCapIntensity,
+                                                                    passiveToolConfig.LaserBeam.TerminalCapIntensity);
+        passiveToolsState.LaserBeam.ContactFlareIntensity = math.max(passiveToolsState.LaserBeam.ContactFlareIntensity,
+                                                                     passiveToolConfig.LaserBeam.ContactFlareIntensity);
         passiveToolsState.LaserBeam.WobbleAmplitude = math.max(passiveToolsState.LaserBeam.WobbleAmplitude,
                                                                passiveToolConfig.LaserBeam.WobbleAmplitude);
         passiveToolsState.LaserBeam.BubbleDriftSpeed = math.max(passiveToolsState.LaserBeam.BubbleDriftSpeed,
                                                                 passiveToolConfig.LaserBeam.BubbleDriftSpeed);
-        passiveToolsState.LaserBeam.VisualPalette = passiveToolConfig.LaserBeam.VisualPalette;
+        passiveToolsState.LaserBeam.VisualPresetId = passiveToolConfig.LaserBeam.VisualPresetId;
         passiveToolsState.LaserBeam.BodyProfile = passiveToolConfig.LaserBeam.BodyProfile;
         passiveToolsState.LaserBeam.SourceShape = passiveToolConfig.LaserBeam.SourceShape;
-        passiveToolsState.LaserBeam.ImpactShape = passiveToolConfig.LaserBeam.ImpactShape;
+        passiveToolsState.LaserBeam.TerminalCapShape = passiveToolConfig.LaserBeam.TerminalCapShape;
     }
     #endregion
 

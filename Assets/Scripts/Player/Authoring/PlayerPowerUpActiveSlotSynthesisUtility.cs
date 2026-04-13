@@ -233,6 +233,8 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                                                                  bool suppressBaseShootingWhileCharging,
                                                                  int shotgunProjectileCount,
                                                                  float shotgunConeAngleDegrees,
+                                                                 float shotgunLaserDurationSeconds,
+                                                                 float chargeShotLaserDurationSeconds,
                                                                  float projectileSizeMultiplier,
                                                                  float projectileDamageMultiplier,
                                                                  float projectileSpeedMultiplier,
@@ -248,6 +250,7 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                                                                  float healthPackDurationSeconds,
                                                                  float healthPackTickIntervalSeconds,
                                                                  PowerUpHealStackPolicy healthPackStackPolicy,
+                                                                 in PlayerPassiveToolConfig triggeredProjectilePassiveTool,
                                                                  in PlayerPassiveToolConfig togglePassiveTool,
                                                                  ActiveToolKind resolvedToolKind)
     {
@@ -327,6 +330,7 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
             {
                 ProjectileCount = math.max(1, shotgunProjectileCount),
                 ConeAngleDegrees = math.max(0f, shotgunConeAngleDegrees),
+                LaserDurationSeconds = math.max(0f, shotgunLaserDurationSeconds),
                 SizeMultiplier = shotgunSizeMultiplier,
                 DamageMultiplier = shotgunDamageMultiplier,
                 SpeedMultiplier = shotgunSpeedMultiplier,
@@ -343,6 +347,7 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                 RequiredCharge = chargeShotRequired,
                 MaximumCharge = chargeShotMaximum,
                 ChargeRatePerSecond = chargeShotRate,
+                LaserDurationSeconds = math.max(0f, chargeShotLaserDurationSeconds),
                 DecayAfterRelease = decayAfterRelease ? (byte)1 : (byte)0,
                 DecayAfterReleasePercentPerSecond = math.max(0f, decayAfterReleasePercentPerSecond),
                 PassiveChargeGainWhileReleased = passiveChargeGainWhileReleased ? (byte)1 : (byte)0,
@@ -367,6 +372,7 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                 TickIntervalSeconds = math.max(0.01f, healthPackTickIntervalSeconds),
                 StackPolicy = healthPackStackPolicy
             },
+            TriggeredProjectilePassiveTool = triggeredProjectilePassiveTool,
             TogglePassiveTool = togglePassiveTool
         };
     }

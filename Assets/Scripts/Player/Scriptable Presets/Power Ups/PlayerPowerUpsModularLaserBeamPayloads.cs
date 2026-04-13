@@ -1,20 +1,8 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 #region Enums
-/// <summary>
-/// Selects the predefined liquid-antibiotic palette used by the Laser Beam presentation runtime.
-/// /params None.
-/// /returns None.
-/// </summary>
-public enum LaserBeamVisualPalette
-{
-    AntibioticBlue = 0,
-    SterileMint = 1,
-    ToxicLime = 2,
-    PlasmaAmber = 3
-}
-
 /// <summary>
 /// Selects the body silhouette used by the Laser Beam presentation runtime.
 /// /params None.
@@ -53,8 +41,11 @@ public sealed class PowerUpLaserBeamModuleData
 
     #region Serialized Fields
     [Header("Gameplay")]
-    [Tooltip("Damage multiplier applied on top of the current projectile-derived damage budget used by Laser Beam ticks.")]
+    [Tooltip("Damage multiplier applied by each traveling damage packet emitted by the beam on tick.")]
     [SerializeField] private float damageMultiplier = 1f;
+
+    [Tooltip("Damage-per-second multiplier applied continuously across the whole beam length while the beam is active.")]
+    [SerializeField] private float continuousDamagePerSecondMultiplier = 0.28f;
 
     [Tooltip("Speed multiplier applied to the virtual projectile speed that drives Laser Beam reach growth and throughput.")]
     [SerializeField] private float virtualProjectileSpeedMultiplier = 1f;
@@ -72,17 +63,20 @@ public sealed class PowerUpLaserBeamModuleData
     [SerializeField] private int maximumBounceSegments = 0;
 
     [Header("Presentation")]
-    [Tooltip("Predefined beam palette used by runtime materials and cap effects.")]
-    [SerializeField] private LaserBeamVisualPalette visualPalette = LaserBeamVisualPalette.AntibioticBlue;
+    [Tooltip("Stable Laser Beam visual preset ID resolved against the active Player Visual Preset library at runtime.")]
+    [PlayerLaserBeamVisualPresetSelector]
+    [FormerlySerializedAs("visualPalette")]
+    [SerializeField] private int visualPresetId = PlayerLaserBeamVisualDefaultsUtility.DefaultVisualPresetId;
 
     [Tooltip("Body silhouette profile used by the beam shader and segment scaling.")]
     [SerializeField] private LaserBeamBodyProfile bodyProfile = LaserBeamBodyProfile.DenseRibbon;
 
-    [Tooltip("Shape family used by the source bubbles near the muzzle.")]
+    [Tooltip("Shape family used by the source electrical bloom near the muzzle.")]
     [SerializeField] private LaserBeamCapShape sourceShape = LaserBeamCapShape.BubbleBurst;
 
-    [Tooltip("Shape family used by the impact effect at the current beam termination point.")]
-    [SerializeField] private LaserBeamCapShape impactShape = LaserBeamCapShape.StarBloom;
+    [Tooltip("Shape family used by the impact electrical bloom at the current beam termination point.")]
+    [FormerlySerializedAs("impactShape")]
+    [SerializeField] private LaserBeamCapShape terminalCapShape = LaserBeamCapShape.StarBloom;
 
     [Tooltip("Visual width multiplier applied to the rendered beam body.")]
     [SerializeField] private float bodyWidthMultiplier = 4.25f;
@@ -93,40 +87,82 @@ public sealed class PowerUpLaserBeamModuleData
     [Tooltip("Scale multiplier applied to the source burst effect.")]
     [SerializeField] private float sourceScaleMultiplier = 1.35f;
 
-    [Tooltip("Scale multiplier applied to the impact burst effect.")]
-    [SerializeField] private float impactScaleMultiplier = 1.85f;
+    [Tooltip("Scale multiplier applied to the always-on rounded terminal cap rendered at the end of the beam.")]
+    [FormerlySerializedAs("impactScaleMultiplier")]
+    [SerializeField] private float terminalCapScaleMultiplier = 1.85f;
+
+    [Tooltip("Scale multiplier applied to the conditional wall-contact flare layered on top of the terminal cap.")]
+    [SerializeField] private float contactFlareScaleMultiplier = 1.2f;
 
     [Tooltip("Overall opacity multiplier applied by the beam shader.")]
     [SerializeField] private float bodyOpacity = 0.96f;
 
+    [Tooltip("Relative thickness of the inner white-hot core rendered inside the main beam sheath.")]
+    [SerializeField] private float coreWidthMultiplier = 0.52f;
+
     [Tooltip("Brightness multiplier applied to the inner beam core.")]
     [SerializeField] private float coreBrightness = 1.45f;
 
-    [Tooltip("Brightness multiplier applied to the outer rim and liquid foam band.")]
+    [Tooltip("Brightness multiplier applied to the external storm rim and charged edge accents.")]
     [SerializeField] private float rimBrightness = 1.32f;
 
-    [Tooltip("Scroll speed used by the liquid flow pattern.")]
+    [Tooltip("Speed multiplier applied to the traveling body-flow streaks visible inside the beam.")]
     [SerializeField] private float flowScrollSpeed = 1.15f;
 
-    [Tooltip("Frequency of the secondary internal shimmer that keeps the liquid body alive between damage pulses.")]
+    [Tooltip("Frequency of the secondary shimmer that keeps the beam volume alive between damage bursts.")]
     [SerializeField] private float flowPulseFrequency = 1.6f;
 
-    [Tooltip("World-space speed at which each damage pulse ring travels along the beam after a damage tick is applied.")]
-    [SerializeField] private float tickPulseTravelSpeed = 14f;
+    [Tooltip("Twisting speed of the electrical storm strands orbiting around the beam body.")]
+    [FormerlySerializedAs("tickPulseTravelSpeed")]
+    [SerializeField] private float stormTwistSpeed = 14f;
 
-    [Tooltip("Minimum world-space length occupied by the travelling damage pulse ring.")]
-    [SerializeField] private float tickPulseLength = 0.6f;
+    [Tooltip("Additional seconds for which the storm trail remains active after the tick pulse reaches the end of the beam.")]
+    [FormerlySerializedAs("tickPulseLength")]
+    [FormerlySerializedAs("stormBurstDurationSeconds")]
+    [SerializeField] private float stormTickPostTravelHoldSeconds = 0.6f;
 
-    [Tooltip("Additional width boost applied by the travelling damage pulse ring as it passes over the beam body.")]
-    [SerializeField] private float tickPulseWidthBoost = 0.48f;
+    [Tooltip("Baseline electrical storm intensity visible even while no damage burst is currently active.")]
+    [FormerlySerializedAs("tickPulseWidthBoost")]
+    [SerializeField] private float stormIdleIntensity = 0.48f;
 
-    [Tooltip("Additional brightness boost applied by the travelling damage pulse ring as it passes over the beam body.")]
-    [SerializeField] private float tickPulseBrightnessBoost = 1.1f;
+    [Tooltip("Additional electrical storm intensity layered on top of the idle storm when damage is applied.")]
+    [FormerlySerializedAs("tickPulseBrightnessBoost")]
+    [SerializeField] private float stormBurstIntensity = 1.1f;
+
+    [Tooltip("Additional offset applied from the muzzle before the visible beam opens into the main flow.")]
+    [SerializeField] private float sourceOffset = 0.08f;
+
+    [Tooltip("Intensity multiplier applied to the electrical discharge accents rendered around the source aperture.")]
+    [SerializeField] private float sourceDischargeIntensity = 1.2f;
+
+    [Tooltip("Additional width multiplier applied to the detached outer storm shell rendered around the beam body.")]
+    [SerializeField] private float stormShellWidthMultiplier = 1.12f;
+
+    [Tooltip("World-space separation factor used to pull the detached storm shell away from the main flow.")]
+    [SerializeField] private float stormShellSeparation = 0.32f;
+
+    [Tooltip("Frequency of the looped storm rings distributed along the beam length.")]
+    [SerializeField] private float stormRingFrequency = 5.4f;
+
+    [Tooltip("Thickness of the looped storm rings rendered by the detached shell.")]
+    [SerializeField] private float stormRingThickness = 0.18f;
+
+    [Tooltip("Travel speed of the highlighted storm packet emitted on each damage tick.")]
+    [SerializeField] private float stormTickTravelSpeed = 1f;
+
+    [Tooltip("Additional world-space distance appended to the storm damage front behind each traveling packet.")]
+    [SerializeField] private float stormTickDamageLengthTolerance = 0.18f;
+
+    [Tooltip("Brightness multiplier applied to the rounded terminal cap that closes the beam.")]
+    [SerializeField] private float terminalCapIntensity = 1.12f;
+
+    [Tooltip("Brightness multiplier applied to the conditional wall-contact flare layered on top of the terminal cap.")]
+    [SerializeField] private float contactFlareIntensity = 1.28f;
 
     [Tooltip("Amplitude of the secondary body breathing used to keep the beam volume fluid even when no damage pulse is crossing it.")]
     [SerializeField] private float wobbleAmplitude = 0.08f;
 
-    [Tooltip("Speed of the secondary bubble drift pattern used by source and impact effects.")]
+    [Tooltip("Speed of the secondary drift noise used by source and impact effects.")]
     [SerializeField] private float bubbleDriftSpeed = 1.8f;
     #endregion
 
@@ -138,6 +174,14 @@ public sealed class PowerUpLaserBeamModuleData
         get
         {
             return damageMultiplier;
+        }
+    }
+
+    public float ContinuousDamagePerSecondMultiplier
+    {
+        get
+        {
+            return continuousDamagePerSecondMultiplier;
         }
     }
 
@@ -181,11 +225,11 @@ public sealed class PowerUpLaserBeamModuleData
         }
     }
 
-    public LaserBeamVisualPalette VisualPalette
+    public int VisualPresetId
     {
         get
         {
-            return visualPalette;
+            return visualPresetId;
         }
     }
 
@@ -205,11 +249,11 @@ public sealed class PowerUpLaserBeamModuleData
         }
     }
 
-    public LaserBeamCapShape ImpactShape
+    public LaserBeamCapShape TerminalCapShape
     {
         get
         {
-            return impactShape;
+            return terminalCapShape;
         }
     }
 
@@ -237,11 +281,19 @@ public sealed class PowerUpLaserBeamModuleData
         }
     }
 
-    public float ImpactScaleMultiplier
+    public float TerminalCapScaleMultiplier
     {
         get
         {
-            return impactScaleMultiplier;
+            return terminalCapScaleMultiplier;
+        }
+    }
+
+    public float ContactFlareScaleMultiplier
+    {
+        get
+        {
+            return contactFlareScaleMultiplier;
         }
     }
 
@@ -250,6 +302,14 @@ public sealed class PowerUpLaserBeamModuleData
         get
         {
             return bodyOpacity;
+        }
+    }
+
+    public float CoreWidthMultiplier
+    {
+        get
+        {
+            return coreWidthMultiplier;
         }
     }
 
@@ -285,35 +345,115 @@ public sealed class PowerUpLaserBeamModuleData
         }
     }
 
-    public float TickPulseTravelSpeed
+    public float StormTwistSpeed
     {
         get
         {
-            return tickPulseTravelSpeed;
+            return stormTwistSpeed;
         }
     }
 
-    public float TickPulseLength
+    public float StormTickPostTravelHoldSeconds
     {
         get
         {
-            return tickPulseLength;
+            return stormTickPostTravelHoldSeconds;
         }
     }
 
-    public float TickPulseWidthBoost
+    public float StormIdleIntensity
     {
         get
         {
-            return tickPulseWidthBoost;
+            return stormIdleIntensity;
         }
     }
 
-    public float TickPulseBrightnessBoost
+    public float StormBurstIntensity
     {
         get
         {
-            return tickPulseBrightnessBoost;
+            return stormBurstIntensity;
+        }
+    }
+
+    public float SourceOffset
+    {
+        get
+        {
+            return sourceOffset;
+        }
+    }
+
+    public float SourceDischargeIntensity
+    {
+        get
+        {
+            return sourceDischargeIntensity;
+        }
+    }
+
+    public float StormShellWidthMultiplier
+    {
+        get
+        {
+            return stormShellWidthMultiplier;
+        }
+    }
+
+    public float StormShellSeparation
+    {
+        get
+        {
+            return stormShellSeparation;
+        }
+    }
+
+    public float StormRingFrequency
+    {
+        get
+        {
+            return stormRingFrequency;
+        }
+    }
+
+    public float StormRingThickness
+    {
+        get
+        {
+            return stormRingThickness;
+        }
+    }
+
+    public float StormTickTravelSpeed
+    {
+        get
+        {
+            return stormTickTravelSpeed;
+        }
+    }
+
+    public float StormTickDamageLengthTolerance
+    {
+        get
+        {
+            return stormTickDamageLengthTolerance;
+        }
+    }
+
+    public float TerminalCapIntensity
+    {
+        get
+        {
+            return terminalCapIntensity;
+        }
+    }
+
+    public float ContactFlareIntensity
+    {
+        get
+        {
+            return contactFlareIntensity;
         }
     }
 

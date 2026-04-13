@@ -6,6 +6,7 @@ using Unity.Mathematics;
 /// <summary>
 /// Stores one debug snapshot for a scaled stat, including input [this] value and evaluated final value.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerScalingDebugRuleElement : IBufferElementData
 {
     public FixedString64Bytes PresetTypeLabel;

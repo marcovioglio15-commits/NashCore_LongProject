@@ -580,10 +580,10 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
         AddComponent(entity, PlayerLaserBeamVisualBakeUtility.BuildConfig(authoring));
         DynamicBuffer<PlayerLaserBeamSourceVariantElement> laserBeamSourceVariantBuffer = AddBuffer<PlayerLaserBeamSourceVariantElement>(entity);
         DynamicBuffer<PlayerLaserBeamImpactVariantElement> laserBeamImpactVariantBuffer = AddBuffer<PlayerLaserBeamImpactVariantElement>(entity);
-        DynamicBuffer<PlayerLaserBeamPaletteElement> laserBeamPaletteBuffer = AddBuffer<PlayerLaserBeamPaletteElement>(entity);
+        DynamicBuffer<PlayerLaserBeamVisualPresetElement> laserBeamVisualPresetBuffer = AddBuffer<PlayerLaserBeamVisualPresetElement>(entity);
         PlayerLaserBeamVisualBakeUtility.PopulateSourceVariantBuffer(authoring, laserBeamSourceVariantBuffer);
         PlayerLaserBeamVisualBakeUtility.PopulateImpactVariantBuffer(authoring, laserBeamImpactVariantBuffer);
-        PlayerLaserBeamVisualBakeUtility.PopulatePaletteBuffer(authoring, laserBeamPaletteBuffer);
+        PlayerLaserBeamVisualBakeUtility.PopulateVisualPresetBuffer(authoring, laserBeamVisualPresetBuffer);
 
         if (authoring.SpawnRuntimeVisualBridgeWhenAnimatorMissing &&
             resolvedRuntimeVisualBridgePrefab == null)

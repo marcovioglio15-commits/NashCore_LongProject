@@ -7,7 +7,7 @@ using Unity.Physics;
 /// /params None.
 /// /returns None.
 /// </summary>
-internal static class PlayerLaserBeamUtility
+public static class PlayerLaserBeamUtility
 {
     #region Constants
     internal const float BaseProjectileRadius = 0.05f;
@@ -15,6 +15,10 @@ internal static class PlayerLaserBeamUtility
     internal const float MinimumCollisionRadius = 0.01f;
     internal const float SurfacePushDistance = 0.01f;
     internal const float DefaultUnboundedBeamDistance = 80f;
+    public const float MaximumSupportedTravelDistance = 256f;
+    public const float MaximumSupportedCollisionRadius = 8f;
+    public const float MaximumSupportedBodyWidth = 12f;
+    public const int MaximumSupportedBounceSegments = 12;
     private const float DirectionEpsilon = 1e-6f;
     #endregion
 
@@ -34,7 +38,13 @@ internal static class PlayerLaserBeamUtility
                                                 float rangeLimit,
                                                 float lifetimeLimit)
     {
-        float travelDistance = math.max(0f, activeSeconds) * math.max(0f, projectileSpeed);
+        float safeActiveSeconds = IsFinite(activeSeconds) ? math.max(0f, activeSeconds) : 0f;
+        float safeProjectileSpeed = IsFinite(projectileSpeed) ? math.max(0f, projectileSpeed) : 0f;
+        float travelDistance = safeActiveSeconds * safeProjectileSpeed;
+
+        if (!IsFinite(travelDistance))
+            travelDistance = MaximumSupportedTravelDistance;
+
         float maximumTravelDistance = ResolveMaximumTravelDistance(projectileSpeed, rangeLimit, lifetimeLimit);
         return math.clamp(travelDistance, 0f, maximumTravelDistance);
     }
@@ -49,7 +59,7 @@ internal static class PlayerLaserBeamUtility
                                                  float collisionWidthMultiplier)
     {
         float collisionRadius = BaseProjectileRadius * math.max(0.01f, projectileScaleMultiplier) * math.max(0.01f, collisionWidthMultiplier);
-        return math.max(MinimumCollisionRadius, collisionRadius);
+        return ClampCollisionRadius(collisionRadius);
     }
 
     /// <summary>
@@ -62,7 +72,7 @@ internal static class PlayerLaserBeamUtility
                                            float bodyWidthMultiplier)
     {
         float bodyWidth = BaseProjectileRadius * 2f * math.max(0.01f, projectileScaleMultiplier) * math.max(0.01f, bodyWidthMultiplier);
-        return math.max(0.02f, bodyWidth);
+        return ClampBodyWidth(bodyWidth);
     }
 
     /// <summary>
@@ -96,6 +106,91 @@ internal static class PlayerLaserBeamUtility
     }
 
     /// <summary>
+    /// Clamps one requested straight-lane travel distance to the runtime safety envelope and to the nearest blocking wall when present.
+    /// /params startPoint World-space lane origin.
+    /// /params direction Requested lane direction.
+    /// /params travelDistance Requested travel budget before safety clamping.
+    /// /params collisionRadius Effective wall-query radius used by the lane.
+    /// /params physicsWorldSingleton Physics world used for wall clipping.
+    /// /params wallsCollisionFilter Collision filter used to detect world walls.
+    /// /params wallsEnabled True when wall clipping should be evaluated.
+    /// /returns Safe travel distance used by the straight-lane builder.
+    /// </summary>
+    internal static float ClampStraightLaneTravelDistance(float3 startPoint,
+                                                          float3 direction,
+                                                          float travelDistance,
+                                                          float collisionRadius,
+                                                          in PhysicsWorldSingleton physicsWorldSingleton,
+                                                          in CollisionFilter wallsCollisionFilter,
+                                                          bool wallsEnabled)
+    {
+        float safeTravelDistance = ClampRequestedTravelDistance(travelDistance);
+
+        if (safeTravelDistance < MinimumTravelDistance)
+            return 0f;
+
+        if (!IsFinite(startPoint) || !IsFinite(direction))
+            return 0f;
+
+        if (!wallsEnabled)
+            return safeTravelDistance;
+
+        float3 safeDirection = math.normalizesafe(direction, new float3(0f, 0f, 1f));
+
+        if (WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
+                                                                    startPoint,
+                                                                    safeDirection * safeTravelDistance,
+                                                                    ClampCollisionRadius(collisionRadius),
+                                                                    wallsCollisionFilter,
+                                                                    out float3 allowedDisplacement,
+                                                                    out float3 _))
+        {
+            return math.min(safeTravelDistance, math.length(allowedDisplacement));
+        }
+
+        return safeTravelDistance;
+    }
+
+    /// <summary>
+    /// Clamps one requested travel distance to the runtime safety envelope used by beam geometry and queries.
+    /// /params travelDistance Requested travel distance.
+    /// /returns Safe travel distance.
+    /// </summary>
+    internal static float ClampRequestedTravelDistance(float travelDistance)
+    {
+        if (!IsFinite(travelDistance))
+            return 0f;
+
+        return math.clamp(travelDistance, 0f, MaximumSupportedTravelDistance);
+    }
+
+    /// <summary>
+    /// Clamps one beam collision radius to the runtime safety envelope used by wall queries and hit resolution.
+    /// /params collisionRadius Requested collision radius.
+    /// /returns Safe collision radius.
+    /// </summary>
+    internal static float ClampCollisionRadius(float collisionRadius)
+    {
+        if (!IsFinite(collisionRadius))
+            return MinimumCollisionRadius;
+
+        return math.clamp(collisionRadius, MinimumCollisionRadius, MaximumSupportedCollisionRadius);
+    }
+
+    /// <summary>
+    /// Clamps one beam body width to the runtime safety envelope used by lane storage and presentation.
+    /// /params bodyWidth Requested beam body width.
+    /// /returns Safe beam body width.
+    /// </summary>
+    internal static float ClampBodyWidth(float bodyWidth)
+    {
+        if (!IsFinite(bodyWidth))
+            return 0.02f;
+
+        return math.clamp(bodyWidth, 0.02f, MaximumSupportedBodyWidth);
+    }
+
+    /// <summary>
     /// Resolves one clipped beam segment against walls and returns the final world-space segment data.
     /// /params startPoint Requested world-space segment start.
     /// /params endPoint Requested world-space segment end.
@@ -122,12 +217,23 @@ internal static class PlayerLaserBeamUtility
                                            out bool hitWall,
                                            out float3 wallNormal)
     {
+        if (!IsFinite(startPoint) || !IsFinite(endPoint))
+        {
+            resolvedEndPoint = startPoint;
+            resolvedDirection = new float3(0f, 0f, 1f);
+            resolvedLength = 0f;
+            hitWall = false;
+            wallNormal = float3.zero;
+            return false;
+        }
+
         float3 displacement = endPoint - startPoint;
         resolvedEndPoint = startPoint;
         resolvedDirection = math.normalizesafe(displacement, new float3(0f, 0f, 1f));
         resolvedLength = math.length(displacement);
         hitWall = false;
         wallNormal = float3.zero;
+        collisionRadius = ClampCollisionRadius(collisionRadius);
 
         if (resolvedLength < MinimumTravelDistance)
             return false;
@@ -186,6 +292,9 @@ internal static class PlayerLaserBeamUtility
                                            bool terminalBlockedByWall,
                                            float3 terminalNormal)
     {
+        if (!IsFinite(startPoint) || !IsFinite(endPoint) || !IsFinite(direction))
+            return;
+
         laneBuffer.Add(new PlayerLaserBeamLaneElement
         {
             LaneIndex = laneIndex,
@@ -196,8 +305,8 @@ internal static class PlayerLaserBeamUtility
             EndPoint = endPoint,
             Direction = direction,
             Length = length,
-            CollisionRadius = collisionRadius,
-            VisualWidth = math.max(0.02f, visualWidth),
+            CollisionRadius = ClampCollisionRadius(collisionRadius),
+            VisualWidth = ClampBodyWidth(visualWidth),
             DamageMultiplier = math.max(0f, damageMultiplier),
             TerminalNormal = terminalBlockedByWall ? math.normalizesafe(terminalNormal, float3.zero) : float3.zero
         });
@@ -232,15 +341,20 @@ internal static class PlayerLaserBeamUtility
                                                in CollisionFilter wallsCollisionFilter,
                                                bool wallsEnabled)
     {
-        float remainingDistance = math.max(0f, travelDistance);
+        if (!IsFinite(startPoint) || !IsFinite(direction))
+            return false;
+
+        float remainingDistance = ClampRequestedTravelDistance(travelDistance);
         float3 segmentStart = startPoint;
         float3 segmentDirection = math.normalizesafe(direction, new float3(0f, 0f, 1f));
+        collisionRadius = ClampCollisionRadius(collisionRadius);
+        visualWidth = ClampBodyWidth(visualWidth);
 
         if (remainingDistance < MinimumTravelDistance)
             return false;
 
         int appendedSegments = 0;
-        int remainingBounces = math.max(0, maximumBounceSegments);
+        int remainingBounces = math.clamp(maximumBounceSegments, 0, MaximumSupportedBounceSegments);
 
         while (remainingDistance >= MinimumTravelDistance)
         {
@@ -316,7 +430,29 @@ internal static class PlayerLaserBeamUtility
         if (maximumTravelDistance == float.MaxValue)
             maximumTravelDistance = DefaultUnboundedBeamDistance;
 
-        return math.max(MinimumTravelDistance, maximumTravelDistance);
+        return math.max(MinimumTravelDistance, ClampRequestedTravelDistance(maximumTravelDistance));
+    }
+
+    /// <summary>
+    /// Resolves whether one scalar value can be consumed safely by beam math.
+    /// /params value Scalar value to validate.
+    /// /returns True when the value is finite.
+    /// </summary>
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
+    /// <summary>
+    /// Resolves whether one float3 can be consumed safely by beam math.
+    /// /params value Float3 value to validate.
+    /// /returns True when every component is finite.
+    /// </summary>
+    private static bool IsFinite(float3 value)
+    {
+        return IsFinite(value.x) &&
+               IsFinite(value.y) &&
+               IsFinite(value.z);
     }
     #endregion
 

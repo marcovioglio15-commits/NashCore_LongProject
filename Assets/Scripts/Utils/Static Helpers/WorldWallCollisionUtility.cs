@@ -14,6 +14,8 @@ public static class WorldWallCollisionUtility
     private const float MinimumSweepRadius = 0.001f;
     private const float ContactSkinWidth = 0.02f;
     private const float BlockingDotThreshold = -1e-4f;
+    private const float MaximumSweepChunkDistance = 32f;
+    private const int MaximumSweepIterations = 256;
     #endregion
 
     #region Fields
@@ -38,7 +40,7 @@ public static class WorldWallCollisionUtility
             cachedWallsLayerMask = 0;
 
 #if UNITY_EDITOR
-            if (warnedMissingWallsLayer == false)
+            if (!warnedMissingWallsLayer)
             {
                 warnedMissingWallsLayer = true;
                 Debug.LogWarning("[WorldWallCollisionUtility] Missing 'Walls' layer. Wall collision checks are disabled until the layer is created.");
@@ -153,6 +155,15 @@ public static class WorldWallCollisionUtility
         if (wallCollisionFilter.CollidesWith == 0u)
             return false;
 
+        if (!IsFinite(startPosition) ||
+            !IsFinite(desiredDisplacement) ||
+            !IsFinite(collisionRadius) ||
+            !IsFinite(contactSkinWidth))
+        {
+            allowedDisplacement = float3.zero;
+            return false;
+        }
+
         float distance = math.length(desiredDisplacement);
 
         if (distance <= MinimumTravelDistance)
@@ -161,30 +172,42 @@ public static class WorldWallCollisionUtility
         float3 direction = desiredDisplacement / distance;
         float radius = math.max(MinimumSweepRadius, collisionRadius);
         float clampedContactSkinWidth = math.max(0f, contactSkinWidth);
-        float maxDistance = distance + clampedContactSkinWidth;
+        float remainingDistance = distance;
+        float traveledDistance = 0f;
+        float3 currentStartPosition = startPosition;
 
-        if (physicsWorldSingleton.SphereCast(startPosition,
-                                             radius,
-                                             direction,
-                                             maxDistance,
-                                             out ColliderCastHit hitInfo,
-                                             wallCollisionFilter,
-                                             QueryInteraction.IgnoreTriggers) == false)
+        for (int iteration = 0; iteration < MaximumSweepIterations && remainingDistance > MinimumTravelDistance; iteration++)
         {
-            return false;
+            float chunkDistance = math.min(remainingDistance, MaximumSweepChunkDistance);
+            float castDistance = chunkDistance + clampedContactSkinWidth;
+
+            if (physicsWorldSingleton.SphereCast(currentStartPosition,
+                                                 radius,
+                                                 direction,
+                                                 castDistance,
+                                                 out ColliderCastHit hitInfo,
+                                                 wallCollisionFilter,
+                                                 QueryInteraction.IgnoreTriggers))
+            {
+                float hitDistance = hitInfo.Fraction * castDistance;
+                float approachDot = math.dot(direction, hitInfo.SurfaceNormal);
+
+                if (approachDot < BlockingDotThreshold)
+                {
+                    float travelDistance = traveledDistance + math.max(0f, hitDistance - clampedContactSkinWidth);
+                    float depenetrationDistance = math.max(0f, clampedContactSkinWidth - hitDistance);
+                    allowedDisplacement = direction * travelDistance + hitInfo.SurfaceNormal * depenetrationDistance;
+                    hitNormal = hitInfo.SurfaceNormal;
+                    return true;
+                }
+            }
+
+            currentStartPosition += direction * chunkDistance;
+            traveledDistance += chunkDistance;
+            remainingDistance -= chunkDistance;
         }
 
-        float hitDistance = hitInfo.Fraction * maxDistance;
-        float approachDot = math.dot(direction, hitInfo.SurfaceNormal);
-
-        if (approachDot >= BlockingDotThreshold)
-            return false;
-
-        float travelDistance = math.max(0f, hitDistance - clampedContactSkinWidth);
-        float depenetrationDistance = math.max(0f, clampedContactSkinWidth - hitDistance);
-        allowedDisplacement = direction * travelDistance + hitInfo.SurfaceNormal * depenetrationDistance;
-        hitNormal = hitInfo.SurfaceNormal;
-        return true;
+        return false;
     }
 
     /// <summary>
@@ -320,6 +343,28 @@ public static class WorldWallCollisionUtility
             CollidesWith = collidesWithMask,
             GroupIndex = 0
         };
+    }
+
+    /// <summary>
+    /// Resolves whether one scalar value can be consumed safely by wall-query math.
+    /// /params value Scalar value to validate.
+    /// /returns True when the value is finite.
+    /// </summary>
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
+    /// <summary>
+    /// Resolves whether one float3 can be consumed safely by wall-query math.
+    /// /params value Float3 value to validate.
+    /// /returns True when every component is finite.
+    /// </summary>
+    private static bool IsFinite(float3 value)
+    {
+        return IsFinite(value.x) &&
+               IsFinite(value.y) &&
+               IsFinite(value.z);
     }
     #endregion
 

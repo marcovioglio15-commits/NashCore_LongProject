@@ -53,6 +53,7 @@ public struct PlayerPowerUpSlotConfig
     public ShotgunPowerUpConfig Shotgun;
     public ChargeShotPowerUpConfig ChargeShot;
     public PortableHealthPackPowerUpConfig PortableHealthPack;
+    public PlayerPassiveToolConfig TriggeredProjectilePassiveTool;
     public PlayerPassiveToolConfig TogglePassiveTool;
 }
 
@@ -108,6 +109,7 @@ public struct ShotgunPowerUpConfig
 {
     public int ProjectileCount;
     public float ConeAngleDegrees;
+    public float LaserDurationSeconds;
     public float SizeMultiplier;
     public float DamageMultiplier;
     public float SpeedMultiplier;
@@ -128,6 +130,7 @@ public struct ChargeShotPowerUpConfig
     public float RequiredCharge;
     public float MaximumCharge;
     public float ChargeRatePerSecond;
+    public float LaserDurationSeconds;
     public byte DecayAfterRelease;
     public float DecayAfterReleasePercentPerSecond;
     public byte PassiveChargeGainWhileReleased;
@@ -208,28 +211,41 @@ public struct PassiveBulletTimeConfig
 public struct LaserBeamPassiveConfig
 {
     public float DamageMultiplier;
+    public float ContinuousDamagePerSecondMultiplier;
     public float VirtualProjectileSpeedMultiplier;
     public float DamageTickIntervalSeconds;
     public float MaximumContinuousActiveSeconds;
     public float CooldownSeconds;
     public int MaximumBounceSegments;
-    public LaserBeamVisualPalette VisualPalette;
+    public int VisualPresetId;
     public LaserBeamBodyProfile BodyProfile;
     public LaserBeamCapShape SourceShape;
-    public LaserBeamCapShape ImpactShape;
+    public LaserBeamCapShape TerminalCapShape;
     public float BodyWidthMultiplier;
     public float CollisionWidthMultiplier;
     public float SourceScaleMultiplier;
-    public float ImpactScaleMultiplier;
+    public float TerminalCapScaleMultiplier;
+    public float ContactFlareScaleMultiplier;
     public float BodyOpacity;
+    public float CoreWidthMultiplier;
     public float CoreBrightness;
     public float RimBrightness;
     public float FlowScrollSpeed;
     public float FlowPulseFrequency;
-    public float TickPulseTravelSpeed;
-    public float TickPulseLength;
-    public float TickPulseWidthBoost;
-    public float TickPulseBrightnessBoost;
+    public float StormTwistSpeed;
+    public float StormTickPostTravelHoldSeconds;
+    public float StormIdleIntensity;
+    public float StormBurstIntensity;
+    public float SourceOffset;
+    public float SourceDischargeIntensity;
+    public float StormShellWidthMultiplier;
+    public float StormShellSeparation;
+    public float StormRingFrequency;
+    public float StormRingThickness;
+    public float StormTickTravelSpeed;
+    public float StormTickDamageLengthTolerance;
+    public float TerminalCapIntensity;
+    public float ContactFlareIntensity;
     public float WobbleAmplitude;
     public float BubbleDriftSpeed;
 }
@@ -268,6 +284,7 @@ public struct PlayerPassiveToolConfig
 /// <summary>
 /// Buffer entry representing one equipped passive tool in the player's startup loadout.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct EquippedPassiveToolElement : IBufferElementData
 {
     public FixedString64Bytes PowerUpId;

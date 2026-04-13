@@ -100,55 +100,63 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
 
             PlayerLaserBeamState currentLaserBeamState = laserBeamState.ValueRO;
             PlayerPassiveToolsState currentPassiveToolsState = passiveToolsStateLookup[playerEntity];
+            PlayerLaserBeamStateUtility.UpdateTriggeredActiveLaser(ref currentLaserBeamState, deltaTime);
+            bool hasTriggeredActiveLaser = PlayerLaserBeamStateUtility.HasTriggeredActiveLaser(in currentLaserBeamState);
+            PlayerPassiveToolsState effectivePassiveToolsState = PlayerLaserBeamStateUtility.ResolveEffectivePassiveToolsState(in currentPassiveToolsState,
+                                                                                                                                in currentLaserBeamState);
             PlayerInputState currentInputState = inputStateLookup[playerEntity];
             PlayerLookState currentLookState = lookStateLookup[playerEntity];
             PlayerMovementState currentMovementState = movementStateLookup[playerEntity];
             PlayerRuntimeShootingConfig currentRuntimeShootingConfig = runtimeShootingConfigLookup[playerEntity];
             DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots = appliedElementSlotsLookup[playerEntity];
             ElementalEffectConfig unusedElementalEffect = default;
-            bool hasLaserBeam = currentPassiveToolsState.HasLaserBeam != 0;
+            bool hasLaserBeam = effectivePassiveToolsState.HasLaserBeam != 0;
 
             if (!hasLaserBeam)
             {
-                ResetBeamState(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ResetBeamState(ref currentLaserBeamState);
                 shootingState.ValueRW.VisualShootingActive = 0;
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
             }
 
-            LaserBeamPassiveConfig laserBeamConfig = currentPassiveToolsState.LaserBeam;
-            UpdateCooldown(ref currentLaserBeamState, laserBeamConfig, deltaTime);
-            UpdateChargeImpulse(ref currentLaserBeamState, deltaTime);
-            UpdateTickPulseTimers(ref currentLaserBeamState, deltaTime);
+            LaserBeamPassiveConfig laserBeamConfig = effectivePassiveToolsState.LaserBeam;
+            PlayerLaserBeamStateUtility.UpdateCooldown(ref currentLaserBeamState, in laserBeamConfig, deltaTime);
+            PlayerLaserBeamStateUtility.UpdateChargeImpulse(ref currentLaserBeamState, deltaTime);
+            PlayerLaserBeamStateUtility.AdvanceStormTickPulses(ref currentLaserBeamState, in laserBeamConfig, deltaTime);
+            PlayerLaserBeamStateUtility.UpdateStormBurstTimer(ref currentLaserBeamState, in laserBeamConfig, deltaTime);
             bool isShootPressed = currentInputState.Shoot > 0.5f;
             bool hasChargeImpulse = currentLaserBeamState.ChargeImpulseRemainingSeconds > 0f;
             bool isShootingSuppressed = powerUpsStateLookup.HasComponent(playerEntity) &&
                                         powerUpsStateLookup[playerEntity].IsShootingSuppressed != 0;
+            bool shouldKeepBeamAlive = hasTriggeredActiveLaser || isShootPressed || hasChargeImpulse;
 
-            if (isShootingSuppressed || (!isShootPressed && !hasChargeImpulse))
+            if (!shouldKeepBeamAlive || (isShootingSuppressed && !hasTriggeredActiveLaser))
             {
                 currentLaserBeamState.IsActive = 0;
                 currentLaserBeamState.IsTickReady = 0;
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
                 currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
                 currentLaserBeamState.DamageTickTimer = 0f;
-                ClearTickPulses(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearStormBurst(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearStormTickPulses(ref currentLaserBeamState);
 
                 if (isShootingSuppressed)
-                    ClearChargeImpulse(ref currentLaserBeamState);
+                    PlayerLaserBeamStateUtility.ClearChargeImpulse(ref currentLaserBeamState);
 
                 shootingState.ValueRW.VisualShootingActive = 0;
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
             }
 
-            if (currentLaserBeamState.IsOverheated != 0)
+            if (!hasTriggeredActiveLaser && currentLaserBeamState.IsOverheated != 0)
             {
                 currentLaserBeamState.IsActive = 0;
                 currentLaserBeamState.IsTickReady = 0;
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
-                ClearTickPulses(ref currentLaserBeamState);
-                ClearChargeImpulse(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearStormBurst(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearStormTickPulses(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearChargeImpulse(ref currentLaserBeamState);
                 shootingState.ValueRW.VisualShootingActive = 0;
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
@@ -157,7 +165,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
             bool wasActive = currentLaserBeamState.IsActive != 0;
             currentLaserBeamState.IsActive = 1;
 
-            if (isShootPressed)
+            if (hasTriggeredActiveLaser || isShootPressed)
                 currentLaserBeamState.ConsecutiveActiveElapsed += math.max(0f, deltaTime);
             else
                 currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
@@ -167,7 +175,9 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
             else
                 currentLaserBeamState.DamageTickTimer -= math.max(0f, deltaTime);
 
-            if (isShootPressed && ShouldOverheat(in laserBeamConfig, currentLaserBeamState.ConsecutiveActiveElapsed))
+            if (!hasTriggeredActiveLaser &&
+                isShootPressed &&
+                PlayerLaserBeamStateUtility.ShouldOverheat(in laserBeamConfig, currentLaserBeamState.ConsecutiveActiveElapsed))
             {
                 currentLaserBeamState.IsActive = 0;
                 currentLaserBeamState.IsOverheated = 1;
@@ -176,8 +186,9 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.CooldownRemaining = math.max(0f, laserBeamConfig.CooldownSeconds);
                 currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
                 currentLaserBeamState.DamageTickTimer = math.max(0.0001f, laserBeamConfig.DamageTickIntervalSeconds);
-                ClearTickPulses(ref currentLaserBeamState);
-                ClearChargeImpulse(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearStormBurst(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearStormTickPulses(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearChargeImpulse(ref currentLaserBeamState);
                 shootingState.ValueRW.VisualShootingActive = 0;
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
@@ -186,18 +197,20 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
             currentLaserBeamState.IsTickReady = currentLaserBeamState.DamageTickTimer <= 0f ? (byte)1 : (byte)0;
             shootingState.ValueRW.VisualShootingActive = 1;
 
-            PlayerProjectileRequestTemplate projectileTemplate = PlayerProjectileRequestUtility.BuildProjectileTemplate(in currentRuntimeShootingConfig,
-                                                                                                                         appliedElementSlots,
-                                                                                                                         in currentPassiveToolsState,
-                                                                                                                         1f,
-                                                                                                                         1f,
-                                                                                                                         1f,
-                                                                                                                         1f,
-                                                                                                                         1f,
-                                                                                                                         false,
-                                                                                                                         in unusedElementalEffect,
-                                                                                                                         0f);
-            bool hasPerfectCircle = currentPassiveToolsState.HasPerfectCircle != 0;
+            PlayerProjectileRequestTemplate projectileTemplate = hasTriggeredActiveLaser
+                ? currentLaserBeamState.TriggeredActiveProjectileTemplate
+                : PlayerProjectileRequestUtility.BuildProjectileTemplate(in currentRuntimeShootingConfig,
+                                                                         appliedElementSlots,
+                                                                         in effectivePassiveToolsState,
+                                                                         1f,
+                                                                         1f,
+                                                                         1f,
+                                                                         1f,
+                                                                         1f,
+                                                                         false,
+                                                                         in unusedElementalEffect,
+                                                                         0f);
+            bool hasPerfectCircle = effectivePassiveToolsState.HasPerfectCircle != 0;
             float virtualProjectileSpeedMultiplier = math.max(0f, laserBeamConfig.VirtualProjectileSpeedMultiplier);
             float projectileSpeed = math.max(0f,
                                              projectileTemplate.Speed * virtualProjectileSpeedMultiplier);
@@ -207,17 +220,18 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.IsActive = 0;
                 currentLaserBeamState.IsTickReady = 0;
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
-                ClearTickPulses(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearStormBurst(ref currentLaserBeamState);
+                PlayerLaserBeamStateUtility.ClearStormTickPulses(ref currentLaserBeamState);
                 shootingState.ValueRW.VisualShootingActive = 0;
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
             }
 
-            int primaryLaneCount = currentPassiveToolsState.HasShotgun != 0
-                ? math.max(1, currentPassiveToolsState.Shotgun.ProjectileCount)
+            int primaryLaneCount = effectivePassiveToolsState.HasShotgun != 0
+                ? math.max(1, effectivePassiveToolsState.Shotgun.ProjectileCount)
                 : 1;
-            float coneAngleDegrees = currentPassiveToolsState.HasShotgun != 0
-                ? math.max(0f, currentPassiveToolsState.Shotgun.ConeAngleDegrees)
+            float coneAngleDegrees = effectivePassiveToolsState.HasShotgun != 0
+                ? math.max(0f, effectivePassiveToolsState.Shotgun.ConeAngleDegrees)
                 : 0f;
             float3 spawnPosition = PlayerProjectileRequestUtility.ResolveShootSpawnPosition(playerEntity,
                                                                                             in localTransform.ValueRO,
@@ -228,15 +242,19 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
             float3 baseDirection = PlayerProjectileRequestUtility.ResolveShootDirection(in currentLookState, in localTransform.ValueRO);
             float travelDistance = hasPerfectCircle
                 ? 0f
-                : PlayerLaserBeamUtility.ResolveTravelDistance(currentLaserBeamState.ConsecutiveActiveElapsed,
-                                                               projectileSpeed,
-                                                               projectileTemplate.Range,
-                                                               projectileTemplate.Lifetime);
-            float chargeImpulseWidthMultiplier = hasChargeImpulse
+                : hasTriggeredActiveLaser
+                    ? PlayerLaserBeamUtility.ResolveMaximumTravelDistance(projectileSpeed,
+                                                                         projectileTemplate.Range,
+                                                                         projectileTemplate.Lifetime)
+                    : PlayerLaserBeamUtility.ResolveTravelDistance(currentLaserBeamState.ConsecutiveActiveElapsed,
+                                                                   projectileSpeed,
+                                                                   projectileTemplate.Range,
+                                                                   projectileTemplate.Lifetime);
+            float chargeImpulseWidthMultiplier = !hasTriggeredActiveLaser && hasChargeImpulse
                 ? math.max(1f, currentLaserBeamState.ChargeImpulseWidthMultiplier)
                 : 1f;
 
-            if (!hasPerfectCircle && hasChargeImpulse)
+            if (!hasTriggeredActiveLaser && !hasPerfectCircle && hasChargeImpulse)
                 travelDistance = math.max(travelDistance, currentLaserBeamState.ChargeImpulseTravelDistance);
 
             float collisionRadius = PlayerLaserBeamUtility.ResolveCollisionRadius(projectileTemplate.ScaleMultiplier,
@@ -244,7 +262,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
             collisionRadius += math.max(0f, projectileTemplate.ExplosionRadius);
             float bodyWidth = PlayerLaserBeamUtility.ResolveBodyWidth(projectileTemplate.ScaleMultiplier,
                                                                      laserBeamConfig.BodyWidthMultiplier) * chargeImpulseWidthMultiplier;
-            int maximumBounceSegments = ResolveMaximumBounceSegments(in currentPassiveToolsState, in laserBeamConfig);
+            int maximumBounceSegments = PlayerLaserBeamStateUtility.ResolveMaximumBounceSegments(in effectivePassiveToolsState, in laserBeamConfig);
 
             currentLaserBeamState.LastResolvedPrimaryLaneCount = primaryLaneCount;
             FixedList512Bytes<byte> primaryLaneReachedVirtualDespawnFlags = default;
@@ -275,7 +293,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                               bodyWidth,
                               1f,
                               maximumBounceSegments,
-                              in currentPassiveToolsState.PerfectCircle,
+                              in effectivePassiveToolsState.PerfectCircle,
                               hasPerfectCircle,
                               in physicsWorldSingleton,
                               in wallsCollisionFilter,
@@ -284,8 +302,8 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 primaryLaneReachedVirtualDespawnFlags.Add(reachedVirtualDespawn ? (byte)1 : (byte)0);
             }
 
-            if (currentPassiveToolsState.HasSplittingProjectiles != 0 &&
-                currentPassiveToolsState.SplittingProjectiles.TriggerMode == ProjectileSplitTriggerMode.OnProjectileDespawn)
+            if (effectivePassiveToolsState.HasSplittingProjectiles != 0 &&
+                effectivePassiveToolsState.SplittingProjectiles.TriggerMode == ProjectileSplitTriggerMode.OnProjectileDespawn)
             {
                 AppendSplitChildLanes(ref mutableLaserBeamLanes,
                                       playerEntity,
@@ -302,9 +320,9 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                                       bodyWidth,
                                       maximumBounceSegments,
                                       in primaryLaneReachedVirtualDespawnFlags,
-                                      in currentPassiveToolsState.PerfectCircle,
+                                      in effectivePassiveToolsState.PerfectCircle,
                                       hasPerfectCircle,
-                                      in currentPassiveToolsState.SplittingProjectiles,
+                                      in effectivePassiveToolsState.SplittingProjectiles,
                                       in physicsWorldSingleton,
                                       in wallsCollisionFilter,
                                       wallsEnabled);
@@ -316,148 +334,6 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
     #endregion
 
     #region Helpers
-    /// <summary>
-    /// Resets all transient Laser Beam runtime timers and flags to their idle state.
-    /// /params laserBeamState Mutable Laser Beam runtime state.
-    /// /returns None.
-    /// </summary>
-    private static void ResetBeamState(ref PlayerLaserBeamState laserBeamState)
-    {
-        laserBeamState.IsActive = 0;
-        laserBeamState.IsOverheated = 0;
-        laserBeamState.IsTickReady = 0;
-        laserBeamState.LastResolvedPrimaryLaneCount = 0;
-        laserBeamState.CooldownRemaining = 0f;
-        laserBeamState.ConsecutiveActiveElapsed = 0f;
-        laserBeamState.DamageTickTimer = 0f;
-        ClearTickPulses(ref laserBeamState);
-        ClearChargeImpulse(ref laserBeamState);
-    }
-
-    /// <summary>
-    /// Advances the travelling tick-pulse timers stored on the Laser Beam runtime state.
-    /// /params laserBeamState Mutable Laser Beam runtime state.
-    /// /params deltaTime Frame delta used to advance pulse ages.
-    /// /returns None.
-    /// </summary>
-    private static void UpdateTickPulseTimers(ref PlayerLaserBeamState laserBeamState,
-                                              float deltaTime)
-    {
-        float safeDeltaTime = math.max(0f, deltaTime);
-
-        if (laserBeamState.HasPrimaryTickPulse != 0)
-            laserBeamState.PrimaryTickPulseElapsedSeconds += safeDeltaTime;
-
-        if (laserBeamState.HasSecondaryTickPulse != 0)
-            laserBeamState.SecondaryTickPulseElapsedSeconds += safeDeltaTime;
-    }
-
-    /// <summary>
-    /// Clears travelling tick-pulse state when the beam stops or resets.
-    /// /params laserBeamState Mutable Laser Beam runtime state.
-    /// /returns None.
-    /// </summary>
-    private static void ClearTickPulses(ref PlayerLaserBeamState laserBeamState)
-    {
-        laserBeamState.HasPrimaryTickPulse = 0;
-        laserBeamState.HasSecondaryTickPulse = 0;
-        laserBeamState.PrimaryTickPulseElapsedSeconds = 0f;
-        laserBeamState.SecondaryTickPulseElapsedSeconds = 0f;
-    }
-
-    /// <summary>
-    /// Advances the transient Charge Shot impulse timer carried by the Laser Beam runtime state.
-    /// /params laserBeamState Mutable Laser Beam runtime state.
-    /// /params deltaTime Frame delta used to decrease timers.
-    /// /returns None.
-    /// </summary>
-    private static void UpdateChargeImpulse(ref PlayerLaserBeamState laserBeamState,
-                                            float deltaTime)
-    {
-        if (laserBeamState.ChargeImpulseRemainingSeconds > 0f)
-            laserBeamState.ChargeImpulseRemainingSeconds = math.max(0f, laserBeamState.ChargeImpulseRemainingSeconds - math.max(0f, deltaTime));
-
-        if (laserBeamState.ChargeImpulseRemainingSeconds > 0f)
-            return;
-
-        ClearChargeImpulse(ref laserBeamState);
-    }
-
-    /// <summary>
-    /// Clears the transient Charge Shot impulse modifiers applied to the current beam.
-    /// /params laserBeamState Mutable Laser Beam runtime state.
-    /// /returns None.
-    /// </summary>
-    private static void ClearChargeImpulse(ref PlayerLaserBeamState laserBeamState)
-    {
-        laserBeamState.ChargeImpulseRemainingSeconds = 0f;
-        laserBeamState.ChargeImpulseDamageMultiplier = 0f;
-        laserBeamState.ChargeImpulseWidthMultiplier = 0f;
-        laserBeamState.ChargeImpulseTravelDistance = 0f;
-    }
-
-    /// <summary>
-    /// Advances Laser Beam cooldown timers and clears the overheated state once cooldown expires.
-    /// /params laserBeamState Mutable Laser Beam runtime state.
-    /// /params laserBeamConfig Aggregated Laser Beam passive configuration.
-    /// /params deltaTime Frame delta used to decrease timers.
-    /// /returns None.
-    /// </summary>
-    private static void UpdateCooldown(ref PlayerLaserBeamState laserBeamState,
-                                       LaserBeamPassiveConfig laserBeamConfig,
-                                       float deltaTime)
-    {
-        if (laserBeamState.CooldownRemaining > 0f)
-            laserBeamState.CooldownRemaining = math.max(0f, laserBeamState.CooldownRemaining - math.max(0f, deltaTime));
-
-        if (laserBeamState.IsOverheated == 0)
-            return;
-
-        if (math.max(0f, laserBeamConfig.CooldownSeconds) <= 0f || laserBeamState.CooldownRemaining <= 0f)
-            laserBeamState.IsOverheated = 0;
-    }
-
-    /// <summary>
-    /// Evaluates whether the current uninterrupted activation window has reached the configured overheating threshold.
-    /// /params laserBeamConfig Aggregated Laser Beam passive configuration.
-    /// /params consecutiveActiveElapsed Current uninterrupted active time.
-    /// /returns True when Laser Beam must enter cooldown.
-    /// </summary>
-    private static bool ShouldOverheat(in LaserBeamPassiveConfig laserBeamConfig,
-                                       float consecutiveActiveElapsed)
-    {
-        if (math.max(0f, laserBeamConfig.CooldownSeconds) <= 0f)
-            return false;
-
-        float maximumContinuousActiveSeconds = math.max(0f, laserBeamConfig.MaximumContinuousActiveSeconds);
-
-        if (maximumContinuousActiveSeconds <= 0f)
-            return false;
-
-        return consecutiveActiveElapsed >= maximumContinuousActiveSeconds;
-    }
-
-    /// <summary>
-    /// Resolves the effective bounce budget inherited by the beam from the projectile bounce passive.
-    /// /params passiveToolsState Aggregated passive runtime state.
-    /// /params laserBeamConfig Aggregated Laser Beam passive configuration.
-    /// /returns Effective bounce count used to build reflected segments.
-    /// </summary>
-    private static int ResolveMaximumBounceSegments(in PlayerPassiveToolsState passiveToolsState,
-                                                    in LaserBeamPassiveConfig laserBeamConfig)
-    {
-        if (passiveToolsState.HasBouncingProjectiles == 0)
-            return 0;
-
-        int inheritedMaximumBounces = math.max(0, passiveToolsState.BouncingProjectiles.MaxBounces);
-        int laserBeamBounceCap = math.max(0, laserBeamConfig.MaximumBounceSegments);
-
-        if (laserBeamBounceCap <= 0)
-            return inheritedMaximumBounces;
-
-        return math.min(inheritedMaximumBounces, laserBeamBounceCap);
-    }
-
     /// <summary>
     /// Appends one beam lane using either the straight-line builder or the Perfect Circle sampler, depending on passive state.
     /// /params laserBeamLanes Output lane buffer for the current player.
@@ -512,6 +388,9 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                                       bool wallsEnabled)
     {
         reachedVirtualDespawn = false;
+        float safeCollisionRadius = PlayerLaserBeamUtility.ClampCollisionRadius(collisionRadius);
+        float safeBodyWidth = PlayerLaserBeamUtility.ClampBodyWidth(bodyWidth);
+        float safeDamageMultiplier = math.max(0f, damageMultiplier);
 
         if (hasPerfectCircle)
         {
@@ -528,9 +407,9 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                                                                                           rangeLimit,
                                                                                           lifetimeLimit,
                                                                                           speedMultiplier,
-                                                                                          collisionRadius,
-                                                                                          bodyWidth,
-                                                                                          damageMultiplier,
+                                                                                          safeCollisionRadius,
+                                                                                          safeBodyWidth,
+                                                                                          safeDamageMultiplier,
                                                                                           in perfectCircleConfig,
                                                                                           in physicsWorldSingleton,
                                                                                           in wallsCollisionFilter,
@@ -538,7 +417,15 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                                                                                           wallsEnabled);
         }
 
-        if (travelDistance < PlayerLaserBeamUtility.MinimumTravelDistance)
+        float safeTravelDistance = PlayerLaserBeamUtility.ClampStraightLaneTravelDistance(spawnPosition,
+                                                                                          direction,
+                                                                                          travelDistance,
+                                                                                          safeCollisionRadius,
+                                                                                          in physicsWorldSingleton,
+                                                                                          in wallsCollisionFilter,
+                                                                                          wallsEnabled);
+
+        if (safeTravelDistance < PlayerLaserBeamUtility.MinimumTravelDistance)
             return false;
 
         int laneStartIndex = laserBeamLanes.Length;
@@ -547,10 +434,10 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                                                                      isSplitChild,
                                                                      spawnPosition,
                                                                      direction,
-                                                                     travelDistance,
-                                                                     collisionRadius,
-                                                                     bodyWidth,
-                                                                     damageMultiplier,
+                                                                     safeTravelDistance,
+                                                                     safeCollisionRadius,
+                                                                     safeBodyWidth,
+                                                                     safeDamageMultiplier,
                                                                      maximumBounceSegments,
                                                                      in physicsWorldSingleton,
                                                                      in wallsCollisionFilter,
@@ -560,7 +447,9 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
             return false;
 
         bool reachedLifetimeCap = lifetimeLimit > 0f && activeSeconds >= lifetimeLimit;
-        bool reachedRangeCap = rangeLimit > 0f && travelDistance + PlayerLaserBeamUtility.MinimumTravelDistance >= rangeLimit;
+        bool reachedRangeCap = rangeLimit > 0f &&
+                               safeTravelDistance + PlayerLaserBeamUtility.MinimumTravelDistance >=
+                               PlayerLaserBeamUtility.ClampRequestedTravelDistance(rangeLimit);
         bool blockedByWall = laserBeamLanes.Length > laneStartIndex &&
                              laserBeamLanes[laserBeamLanes.Length - 1].TerminalBlockedByWall != 0;
         reachedVirtualDespawn = blockedByWall || reachedLifetimeCap || reachedRangeCap;
@@ -626,7 +515,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 continue;
             }
 
-            if (!TryResolveTerminalSegment(laserBeamLanes, primaryLaneIndex, out PlayerLaserBeamLaneElement terminalSegment))
+            if (!PlayerLaserBeamStateUtility.TryResolveTerminalSegment(laserBeamLanes, primaryLaneIndex, out PlayerLaserBeamLaneElement terminalSegment))
                 continue;
 
             switch (splittingProjectilesConfig.DirectionMode)
@@ -637,7 +526,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                          customAngleIndex++)
                     {
                         float angleDegrees = splittingProjectilesConfig.CustomAnglesDegrees[customAngleIndex] + splittingProjectilesConfig.SplitOffsetDegrees;
-                        float3 childDirection = RotatePlanarDirection(terminalSegment.Direction, angleDegrees);
+                        float3 childDirection = PlayerLaserBeamStateUtility.RotatePlanarDirection(terminalSegment.Direction, angleDegrees);
                         AppendSplitChildLane(ref laserBeamLanes,
                                              nextLaneIndex,
                                              shooterEntity,
@@ -671,7 +560,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                     for (int splitIndex = 0; splitIndex < splitCount && nextLaneIndex - primaryLaneCount < maximumChildLaneCount; splitIndex++)
                     {
                         float angleDegrees = splittingProjectilesConfig.SplitOffsetDegrees + stepDegrees * splitIndex;
-                        float3 childDirection = RotatePlanarDirection(terminalSegment.Direction, angleDegrees);
+                        float3 childDirection = PlayerLaserBeamStateUtility.RotatePlanarDirection(terminalSegment.Direction, angleDegrees);
                         AppendSplitChildLane(ref laserBeamLanes,
                                              nextLaneIndex,
                                              shooterEntity,
@@ -789,48 +678,6 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                       wallsEnabled);
     }
 
-    /// <summary>
-    /// Resolves the last segment currently stored for one lane index.
-    /// /params laserBeamLanes Current lane buffer.
-    /// /params laneIndex Lane index to inspect.
-    /// /params terminalSegment Last segment found for the requested lane.
-    /// /returns True when the requested lane exists in the buffer.
-    /// </summary>
-    private static bool TryResolveTerminalSegment(DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
-                                                  int laneIndex,
-                                                  out PlayerLaserBeamLaneElement terminalSegment)
-    {
-        terminalSegment = default;
-        bool foundLane = false;
-
-        for (int segmentIndex = 0; segmentIndex < laserBeamLanes.Length; segmentIndex++)
-        {
-            PlayerLaserBeamLaneElement currentSegment = laserBeamLanes[segmentIndex];
-
-            if (currentSegment.LaneIndex != laneIndex)
-                continue;
-
-            terminalSegment = currentSegment;
-            foundLane = true;
-        }
-
-        return foundLane;
-    }
-
-    /// <summary>
-    /// Rotates one planar forward direction around the world up axis by the requested angle in degrees.
-    /// /params direction Source forward direction.
-    /// /params angleDegrees Signed planar angle in degrees.
-    /// /returns The normalized rotated planar direction.
-    /// </summary>
-    private static float3 RotatePlanarDirection(float3 direction,
-                                                float angleDegrees)
-    {
-        float radians = math.radians(angleDegrees);
-        quaternion rotationOffset = quaternion.AxisAngle(new float3(0f, 1f, 0f), radians);
-        float3 rotatedDirection = math.rotate(rotationOffset, math.normalizesafe(direction, new float3(0f, 0f, 1f)));
-        return math.normalizesafe(rotatedDirection, new float3(0f, 0f, 1f));
-    }
     #endregion
 
     #endregion

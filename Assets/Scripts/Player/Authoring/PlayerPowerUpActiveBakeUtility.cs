@@ -176,6 +176,8 @@ public static class PlayerPowerUpActiveBakeUtility
         bool suppressBaseShootingWhileCharging = false;
         int shotgunProjectileCount = 0;
         float shotgunConeAngleDegrees = 0f;
+        float shotgunLaserDurationSeconds = 0f;
+        float chargeShotLaserDurationSeconds = 0f;
         float projectileSizeMultiplier = 1f;
         float projectileDamageMultiplier = 1f;
         float projectileSpeedMultiplier = 1f;
@@ -247,6 +249,8 @@ public static class PlayerPowerUpActiveBakeUtility
                     passiveChargeGainWhileReleased = passiveChargeGainWhileReleased || holdChargeData.PassiveChargeGainWhileReleased;
                     passiveChargeGainPercentPerSecond = math.max(passiveChargeGainPercentPerSecond,
                                                                  math.max(0f, holdChargeData.PassiveChargeGainPercentPerSecond));
+                    chargeShotLaserDurationSeconds = math.max(chargeShotLaserDurationSeconds,
+                                                              math.max(0f, holdChargeData.LaserDurationSeconds));
                     break;
                 case PowerUpModuleKind.TriggerPress:
                     hasTriggerPress = true;
@@ -274,6 +278,8 @@ public static class PlayerPowerUpActiveBakeUtility
                     hasShotgun = true;
                     shotgunProjectileCount += math.max(1, shotgunPatternData.ProjectileCount);
                     shotgunConeAngleDegrees = math.max(shotgunConeAngleDegrees, math.max(0f, shotgunPatternData.ConeAngleDegrees));
+                    shotgunLaserDurationSeconds = math.max(shotgunLaserDurationSeconds,
+                                                           math.max(0f, shotgunPatternData.LaserDurationSeconds));
                     break;
                 case PowerUpModuleKind.CharacterTuning:
                 case PowerUpModuleKind.Stackable:
@@ -359,6 +365,7 @@ public static class PlayerPowerUpActiveBakeUtility
         }
 
         PlayerPassiveToolConfig togglePassiveTool = default;
+        PlayerPassiveToolConfig triggeredProjectilePassiveTool = default;
         ActiveToolKind resolvedToolKind = ActiveToolKind.Custom;
 
         if (isToggleable)
@@ -381,6 +388,14 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                                               hasDash,
                                                                                               hasBulletTime,
                                                                                               hasHealthPack);
+
+            if (resolvedToolKind == ActiveToolKind.ChargeShot || resolvedToolKind == ActiveToolKind.Shotgun)
+            {
+                triggeredProjectilePassiveTool = PlayerPowerUpPassiveBakeUtility.BuildPassiveToolConfigFromModularPowerUp(authoring,
+                                                                                                                           preset,
+                                                                                                                           powerUp,
+                                                                                                                           resolveDynamicPrefabEntity);
+            }
         }
 
         if (resolvedToolKind == ActiveToolKind.Custom)
@@ -481,6 +496,8 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                               suppressBaseShootingWhileCharging,
                                                                               shotgunProjectileCount,
                                                                               shotgunConeAngleDegrees,
+                                                                              shotgunLaserDurationSeconds,
+                                                                              chargeShotLaserDurationSeconds,
                                                                               projectileSizeMultiplier,
                                                                               projectileDamageMultiplier,
                                                                               projectileSpeedMultiplier,
@@ -496,6 +513,7 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                               healthPackDurationSeconds,
                                                                               healthPackTickIntervalSeconds,
                                                                               healthPackStackPolicy,
+                                                                              in triggeredProjectilePassiveTool,
                                                                               in togglePassiveTool,
                                                                               resolvedToolKind);
     }

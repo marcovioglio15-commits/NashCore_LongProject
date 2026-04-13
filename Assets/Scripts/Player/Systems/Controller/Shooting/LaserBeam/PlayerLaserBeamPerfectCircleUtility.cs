@@ -12,9 +12,9 @@ internal static class PlayerLaserBeamPerfectCircleUtility
     #region Constants
     private const float MinimumSimulationDeltaTime = 1f / 240f;
     private const float MaximumSimulationDeltaTime = 1f / 20f;
-    private const float TargetSegmentLength = 0.85f;
-    private const float MaximumAngularStepRadians = 0.22f;
-    private const int MaximumSimulationIterations = 256;
+    private const float TargetSegmentLength = 0.52f;
+    private const float MaximumAngularStepRadians = 0.12f;
+    private const int MaximumSimulationIterations = 384;
     private const float DirectionEpsilon = 1e-6f;
     #endregion
 
@@ -227,13 +227,17 @@ internal static class PlayerLaserBeamPerfectCircleUtility
     private static float ResolveMaximumTravelDistance(float rangeLimit,
                                                       float lifetimeLimit)
     {
+        float maximumTravelDistance;
+
         if (rangeLimit > 0f)
-            return math.max(PlayerLaserBeamUtility.MinimumTravelDistance, rangeLimit);
+            maximumTravelDistance = rangeLimit;
+        else if (lifetimeLimit > 0f)
+            maximumTravelDistance = PlayerLaserBeamUtility.MaximumSupportedTravelDistance;
+        else
+            maximumTravelDistance = PlayerLaserBeamUtility.DefaultUnboundedBeamDistance;
 
-        if (lifetimeLimit > 0f)
-            return float.MaxValue;
-
-        return PlayerLaserBeamUtility.DefaultUnboundedBeamDistance;
+        return math.max(PlayerLaserBeamUtility.MinimumTravelDistance,
+                        PlayerLaserBeamUtility.ClampRequestedTravelDistance(maximumTravelDistance));
     }
 
     /// <summary>
@@ -249,40 +253,14 @@ internal static class PlayerLaserBeamPerfectCircleUtility
                                                     float speedMultiplier,
                                                     float globalTime)
     {
-        float effectiveSpeedMultiplier = math.max(0f, speedMultiplier);
-        float effectiveLinearSpeed = math.max(0.05f, perfectCircleConfig.RadialEntrySpeed * effectiveSpeedMultiplier);
-        float angularSpeedRadiansPerSecond = 0f;
-
-        if (perfectCircleState.HasEnteredOrbit != 0)
-        {
-            switch (perfectCircleConfig.PathMode)
-            {
-                case ProjectileOrbitPathMode.GoldenSpiral:
-                    angularSpeedRadiansPerSecond = math.radians(math.max(0f,
-                                                                         perfectCircleConfig.SpiralAngularSpeedDegreesPerSecond *
-                                                                         effectiveSpeedMultiplier));
-                    effectiveLinearSpeed = math.max(0.05f,
-                                                    angularSpeedRadiansPerSecond *
-                                                    math.max(0.05f,
-                                                             perfectCircleState.CurrentRadius));
-                    break;
-                default:
-                    float orbitRadius = ResolveCircularOrbitRadius(globalTime, in perfectCircleConfig);
-                    effectiveLinearSpeed = math.max(0.05f, perfectCircleConfig.OrbitalSpeed * effectiveSpeedMultiplier);
-
-                    if (orbitRadius > 0.001f)
-                        angularSpeedRadiansPerSecond = effectiveLinearSpeed / orbitRadius;
-
-                    break;
-            }
-        }
-
-        float deltaFromDistance = TargetSegmentLength / effectiveLinearSpeed;
-        float deltaFromAngularStep = angularSpeedRadiansPerSecond > 1e-6f
-            ? MaximumAngularStepRadians / angularSpeedRadiansPerSecond
-            : MaximumSimulationDeltaTime;
-        float resolvedDeltaTime = math.min(deltaFromDistance, deltaFromAngularStep);
-        return math.clamp(resolvedDeltaTime, MinimumSimulationDeltaTime, MaximumSimulationDeltaTime);
+        return ProjectilePerfectCircleTrajectoryUtility.ResolveSuggestedSimulationDeltaTime(in perfectCircleState,
+                                                                                            in perfectCircleConfig,
+                                                                                            speedMultiplier,
+                                                                                            globalTime,
+                                                                                            TargetSegmentLength,
+                                                                                            MaximumAngularStepRadians,
+                                                                                            MinimumSimulationDeltaTime,
+                                                                                            MaximumSimulationDeltaTime);
     }
 
     /// <summary>
@@ -306,201 +284,14 @@ internal static class PlayerLaserBeamPerfectCircleUtility
                                                 float speedMultiplier,
                                                 in PerfectCirclePassiveConfig perfectCircleConfig)
     {
-        if (perfectCircleState.Enabled == 0 || deltaTime <= 0f)
-            return fallbackPosition;
-
-        float3 entryDirection = perfectCircleState.RadialDirection;
-        entryDirection.y = 0f;
-
-        if (math.lengthsq(entryDirection) <= DirectionEpsilon)
-        {
-            entryDirection = fallbackPosition - perfectCircleState.EntryOrigin;
-            entryDirection.y = 0f;
-            entryDirection = math.normalizesafe(entryDirection, new float3(0f, 0f, 1f));
-            perfectCircleState.RadialDirection = entryDirection;
-        }
-
-        float orbitEntryThreshold = ResolveOrbitEntryThreshold(globalTime, in perfectCircleConfig);
-        float radialSpeed = math.max(0f, perfectCircleConfig.RadialEntrySpeed * math.max(0f, speedMultiplier));
-
-        if (perfectCircleState.HasEnteredOrbit == 0)
-        {
-            float entryStepDistance = radialSpeed * deltaTime;
-            perfectCircleState.CurrentRadius += entryStepDistance;
-            perfectCircleState.EntryOrigin += shooterVelocity * deltaTime;
-            float traveledEntryDistance = perfectCircleState.CurrentRadius;
-            float3 entryPosition = perfectCircleState.EntryOrigin + entryDirection * traveledEntryDistance;
-            entryPosition.y = perfectCircleState.EntryOrigin.y + perfectCircleConfig.HeightOffset;
-            perfectCircleState.RadialDirection = entryDirection;
-
-            if (traveledEntryDistance < orbitEntryThreshold)
-                return entryPosition;
-
-            float3 entryOffset = entryPosition - shooterPosition;
-            entryOffset.y = 0f;
-            float entryRadius = math.length(entryOffset);
-            float3 orbitEntryDirection = entryRadius > DirectionEpsilon
-                ? entryOffset / entryRadius
-                : entryDirection;
-            perfectCircleState.HasEnteredOrbit = 1;
-            perfectCircleState.OrbitBlendProgress = 1f;
-            perfectCircleState.CurrentRadius = math.max(0.05f, entryRadius);
-            perfectCircleState.OrbitAngle = math.atan2(orbitEntryDirection.z, orbitEntryDirection.x);
-            perfectCircleState.AccumulatedOrbitRadians = 0f;
-            perfectCircleState.CompletedFullOrbit = 0;
-        }
-
-        perfectCircleState.RadialDirection = entryDirection;
-
-        switch (perfectCircleConfig.PathMode)
-        {
-            case ProjectileOrbitPathMode.GoldenSpiral:
-                return ResolveGoldenSpiralSamplePosition(ref perfectCircleState,
-                                                         shooterPosition,
-                                                         deltaTime,
-                                                         speedMultiplier,
-                                                         in perfectCircleConfig);
-            default:
-                return ResolveCircularOrbitSamplePosition(ref perfectCircleState,
-                                                          shooterPosition,
-                                                          deltaTime,
-                                                          globalTime,
-                                                          speedMultiplier,
-                                                          in perfectCircleConfig);
-        }
-    }
-
-    /// <summary>
-    /// Resolves one circular-orbit sample position using the same pulsing radius logic as projectile simulation.
-    /// /params perfectCircleState Mutable Perfect Circle state advanced by the circular sample.
-    /// /params shooterPosition Current shooter position used as the orbit center.
-    /// /params deltaTime Step delta applied to the trajectory.
-    /// /params globalTime Absolute world time associated with the sample end.
-    /// /params speedMultiplier Beam-local speed multiplier applied to orbit speed.
-    /// /params perfectCircleConfig Aggregated Perfect Circle configuration.
-    /// /returns The sampled circular-orbit world-space position.
-    /// </summary>
-    private static float3 ResolveCircularOrbitSamplePosition(ref ProjectilePerfectCircleState perfectCircleState,
-                                                             float3 shooterPosition,
-                                                             float deltaTime,
-                                                             float globalTime,
-                                                             float speedMultiplier,
-                                                             in PerfectCirclePassiveConfig perfectCircleConfig)
-    {
-        float orbitRadius = ResolveCircularOrbitRadius(globalTime, in perfectCircleConfig);
-        float orbitSpeed = math.max(0f, perfectCircleConfig.OrbitalSpeed * math.max(0f, speedMultiplier));
-        float angularSpeed = orbitRadius > 0.001f ? orbitSpeed / orbitRadius : 0f;
-        float angularStep = angularSpeed * deltaTime;
-        perfectCircleState.CurrentRadius = orbitRadius;
-        perfectCircleState.OrbitAngle += angularStep;
-
-        if (perfectCircleState.CompletedFullOrbit == 0)
-        {
-            perfectCircleState.AccumulatedOrbitRadians += math.abs(angularStep);
-
-            if (perfectCircleState.AccumulatedOrbitRadians >= math.PI * 2f)
-                perfectCircleState.CompletedFullOrbit = 1;
-        }
-
-        float cos = math.cos(perfectCircleState.OrbitAngle);
-        float sin = math.sin(perfectCircleState.OrbitAngle);
-        float3 orbitOffset = new float3(cos * orbitRadius, 0f, sin * orbitRadius);
-        float3 orbitPosition = shooterPosition + orbitOffset;
-        orbitPosition.y = shooterPosition.y + perfectCircleConfig.HeightOffset;
-        return orbitPosition;
-    }
-
-    /// <summary>
-    /// Resolves one golden-spiral sample position using the same exponential radius growth as projectile simulation.
-    /// /params perfectCircleState Mutable Perfect Circle state advanced by the spiral sample.
-    /// /params shooterPosition Current shooter position used as the orbit center.
-    /// /params deltaTime Step delta applied to the trajectory.
-    /// /params speedMultiplier Beam-local speed multiplier applied to spiral angular speed.
-    /// /params perfectCircleConfig Aggregated Perfect Circle configuration.
-    /// /returns The sampled golden-spiral world-space position.
-    /// </summary>
-    private static float3 ResolveGoldenSpiralSamplePosition(ref ProjectilePerfectCircleState perfectCircleState,
-                                                            float3 shooterPosition,
-                                                            float deltaTime,
-                                                            float speedMultiplier,
-                                                            in PerfectCirclePassiveConfig perfectCircleConfig)
-    {
-        const float GoldenRatio = 1.61803398875f;
-        float spiralStartRadius = math.max(0.05f, perfectCircleConfig.SpiralStartRadius);
-        float spiralMaximumRadius = math.max(spiralStartRadius, perfectCircleConfig.SpiralMaximumRadius);
-        float angularSpeedRadiansPerSecond = math.radians(math.max(0f,
-                                                                   perfectCircleConfig.SpiralAngularSpeedDegreesPerSecond *
-                                                                   math.max(0f, speedMultiplier)));
-        float directionSign = perfectCircleConfig.SpiralClockwise != 0 ? -1f : 1f;
-        float angularStep = angularSpeedRadiansPerSecond * deltaTime * directionSign;
-        float growthMultiplier = math.max(0f, perfectCircleConfig.SpiralGrowthMultiplier);
-        float growthExponent = growthMultiplier > 0f ? math.log(GoldenRatio) * (2f / math.PI) * growthMultiplier : 0f;
-        perfectCircleState.OrbitAngle += angularStep;
-        perfectCircleState.AccumulatedOrbitRadians += math.abs(angularStep);
-
-        float orbitRadius = growthExponent > 0f
-            ? spiralStartRadius * math.exp(growthExponent * perfectCircleState.AccumulatedOrbitRadians)
-            : spiralStartRadius;
-
-        if (orbitRadius > spiralMaximumRadius)
-            orbitRadius = spiralMaximumRadius;
-
-        perfectCircleState.CurrentRadius = orbitRadius;
-
-        if (perfectCircleState.CompletedFullOrbit == 0)
-        {
-            float despawnAngleThreshold = math.max(0.1f, perfectCircleConfig.SpiralTurnsBeforeDespawn) * (math.PI * 2f);
-
-            if (perfectCircleState.AccumulatedOrbitRadians >= despawnAngleThreshold ||
-                orbitRadius + 0.001f >= spiralMaximumRadius)
-            {
-                perfectCircleState.CompletedFullOrbit = 1;
-            }
-        }
-
-        float cos = math.cos(perfectCircleState.OrbitAngle);
-        float sin = math.sin(perfectCircleState.OrbitAngle);
-        float3 orbitOffset = new float3(cos * orbitRadius, 0f, sin * orbitRadius);
-        float3 orbitPosition = shooterPosition + orbitOffset;
-        orbitPosition.y = shooterPosition.y + perfectCircleConfig.HeightOffset;
-        return orbitPosition;
-    }
-
-    /// <summary>
-    /// Resolves the orbit-entry threshold used to transition from the radial phase to the orbit phase.
-    /// /params globalTime Absolute world time used by pulsing-circle mode.
-    /// /params perfectCircleConfig Aggregated Perfect Circle configuration.
-    /// /returns The radial distance at which the simulated path enters orbit.
-    /// </summary>
-    private static float ResolveOrbitEntryThreshold(float globalTime,
-                                                    in PerfectCirclePassiveConfig perfectCircleConfig)
-    {
-        switch (perfectCircleConfig.PathMode)
-        {
-            case ProjectileOrbitPathMode.GoldenSpiral:
-                return math.max(0.05f, perfectCircleConfig.SpiralStartRadius);
-            default:
-                float orbitRadius = ResolveCircularOrbitRadius(globalTime, in perfectCircleConfig);
-                float orbitEntryRatio = math.clamp(perfectCircleConfig.OrbitEntryRatio, 0f, 1f);
-                return math.max(0.05f, orbitRadius * orbitEntryRatio);
-        }
-    }
-
-    /// <summary>
-    /// Resolves the pulsing circle radius used by circular Perfect Circle mode.
-    /// /params globalTime Absolute world time used by the pulsing phase.
-    /// /params perfectCircleConfig Aggregated Perfect Circle configuration.
-    /// /returns The resolved circular orbit radius at the sampled world time.
-    /// </summary>
-    private static float ResolveCircularOrbitRadius(float globalTime,
-                                                    in PerfectCirclePassiveConfig perfectCircleConfig)
-    {
-        float minimumRadius = math.max(0f, perfectCircleConfig.OrbitRadiusMin);
-        float maximumRadius = math.max(minimumRadius, perfectCircleConfig.OrbitRadiusMax);
-        float pulseFrequency = math.max(0f, perfectCircleConfig.OrbitPulseFrequency);
-        float pulsePhase = globalTime * pulseFrequency * (math.PI * 2f);
-        float pulse = pulseFrequency > 0f ? math.sin(pulsePhase) * 0.5f + 0.5f : 1f;
-        return math.lerp(minimumRadius, maximumRadius, pulse);
+        return ProjectilePerfectCircleTrajectoryUtility.ResolveNextPosition(ref perfectCircleState,
+                                                                            shooterPosition,
+                                                                            shooterVelocity,
+                                                                            fallbackPosition,
+                                                                            deltaTime,
+                                                                            globalTime,
+                                                                            speedMultiplier,
+                                                                            in perfectCircleConfig);
     }
 
     /// <summary>

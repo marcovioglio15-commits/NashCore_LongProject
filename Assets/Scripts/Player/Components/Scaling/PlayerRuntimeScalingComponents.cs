@@ -126,6 +126,7 @@ public struct PlayerBaseShootingConfig : IComponentData
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerBaseShootingAppliedElementSlot : IBufferElementData
 {
     public PlayerProjectileAppliedElement Value;
@@ -136,6 +137,7 @@ public struct PlayerBaseShootingAppliedElementSlot : IBufferElementData
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerRuntimeShootingAppliedElementSlot : IBufferElementData
 {
     public PlayerProjectileAppliedElement Value;
@@ -176,6 +178,7 @@ public struct PlayerBaseHealthStatisticsConfig : IComponentData
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerBaseGamePhaseElement : IBufferElementData
 {
     public int StartsAtLevel;
@@ -188,6 +191,7 @@ public struct PlayerBaseGamePhaseElement : IBufferElementData
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerRuntimeGamePhaseElement : IBufferElementData
 {
     public int StartsAtLevel;
@@ -202,6 +206,7 @@ public struct PlayerRuntimeGamePhaseElement : IBufferElementData
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpBaseConfigElement : IBufferElementData
 {
     public FixedString64Bytes PowerUpId;
@@ -392,6 +397,7 @@ public enum PlayerRuntimeControllerFieldId : byte
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerRuntimeControllerScalingElement : IBufferElementData
 {
     public PlayerRuntimeControllerFieldId FieldId;
@@ -419,6 +425,7 @@ public enum PlayerRuntimeProgressionFieldId : byte
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerRuntimeProgressionScalingElement : IBufferElementData
 {
     public int PhaseIndex;
@@ -433,6 +440,7 @@ public struct PlayerRuntimeProgressionScalingElement : IBufferElementData
 /// none.
 /// returns none.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerRuntimePowerUpScalingElement : IBufferElementData
 {
     public FixedString64Bytes PowerUpId;

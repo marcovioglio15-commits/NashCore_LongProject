@@ -210,6 +210,7 @@ public static class PlayerPowerUpActivationSlotUtility
                                                             moveInput,
                                                             lastValidMovementDirection,
                                                             playerEntity,
+                                                            ref laserBeamState,
                                                             ref dashState,
                                                             ref bulletTimeState,
                                                             bombRequests,

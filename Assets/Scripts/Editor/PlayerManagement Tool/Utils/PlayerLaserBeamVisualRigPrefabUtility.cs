@@ -42,17 +42,17 @@ public static class PlayerLaserBeamVisualRigPrefabUtility
     /// </summary>
     public static void ExecuteRebuild()
     {
-        Material bubbleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultSourceBubbleMaterialPath);
-        Material splashMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultImpactSplashMaterialPath);
+        Material bubbleMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultSourceEffectMaterialPath);
+        Material splashMaterial = AssetDatabase.LoadAssetAtPath<Material>(PlayerLaserBeamVisualDefaultsUtility.DefaultTerminalCapMaterialPath);
         Mesh particleMesh = PlayerLaserBeamVisualRigPrefabBuildUtility.RebuildPrimitiveMeshAsset(ParticleSphereMeshAssetPath,
                                                                                                   PrimitiveType.Sphere,
                                                                                                   Quaternion.identity);
 
         if (bubbleMaterial == null)
-            throw new InvalidOperationException(string.Format("Laser Beam source material not found at '{0}'.", PlayerLaserBeamVisualDefaultsUtility.DefaultSourceBubbleMaterialPath));
+            throw new InvalidOperationException(string.Format("Laser Beam source material not found at '{0}'.", PlayerLaserBeamVisualDefaultsUtility.DefaultSourceEffectMaterialPath));
 
         if (splashMaterial == null)
-            throw new InvalidOperationException(string.Format("Laser Beam impact material not found at '{0}'.", PlayerLaserBeamVisualDefaultsUtility.DefaultImpactSplashMaterialPath));
+            throw new InvalidOperationException(string.Format("Laser Beam terminal material not found at '{0}'.", PlayerLaserBeamVisualDefaultsUtility.DefaultTerminalCapMaterialPath));
 
         if (particleMesh == null)
             throw new InvalidOperationException(string.Format("Laser Beam particle mesh could not be built at '{0}'.", ParticleSphereMeshAssetPath));

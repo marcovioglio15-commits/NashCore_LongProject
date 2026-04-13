@@ -40,6 +40,7 @@ public struct PlayerPowerUpsState : IComponentData
 /// <summary>
 /// Runtime cheat command queue consumed by PlayerPowerUpCheatSystem.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpCheatCommand : IBufferElementData
 {
     public PlayerPowerUpCheatCommandType CommandType;
@@ -49,6 +50,7 @@ public struct PlayerPowerUpCheatCommand : IBufferElementData
 /// <summary>
 /// Runtime snapshot metadata for one cheat-selectable power-up preset.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpCheatPresetEntry : IBufferElementData
 {
     public byte IsDefined;
@@ -60,6 +62,7 @@ public struct PlayerPowerUpCheatPresetEntry : IBufferElementData
 /// <summary>
 /// Flattened passive-tool payloads referenced by PlayerPowerUpCheatPresetEntry.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpCheatPresetPassiveElement : IBufferElementData
 {
     public PlayerPassiveToolConfig Tool;
@@ -77,6 +80,7 @@ public enum PlayerPowerUpUnlockKind : byte
 /// <summary>
 /// One unlockable modular power-up entry baked for milestone tier extraction.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpUnlockCatalogElement : IBufferElementData
 {
     public FixedString64Bytes PowerUpId;
@@ -96,6 +100,7 @@ public struct PlayerPowerUpUnlockCatalogElement : IBufferElementData
 /// <summary>
 /// Stores one flattened Character Tuning formula referenced by unlock catalog entries.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpCharacterTuningFormulaElement : IBufferElementData
 {
     public FixedString128Bytes Formula;
@@ -116,6 +121,7 @@ public struct PlayerChargeCharacterTuningState : IComponentData
 /// <summary>
 /// Stores one baseline scalable-stat value that must be restored after temporary runtime-scoped Character Tuning ends.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerChargeCharacterTuningBaseStatElement : IBufferElementData
 {
     public FixedString64Bytes Name;
@@ -128,6 +134,7 @@ public struct PlayerChargeCharacterTuningBaseStatElement : IBufferElementData
 /// <summary>
 /// Tier metadata pointing to a contiguous range inside the flattened tier-entry buffer.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpTierDefinitionElement : IBufferElementData
 {
     public FixedString64Bytes TierId;
@@ -138,6 +145,7 @@ public struct PlayerPowerUpTierDefinitionElement : IBufferElementData
 /// <summary>
 /// Flattened weighted tier entry referencing one unlock catalog index.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpTierEntryElement : IBufferElementData
 {
     public int CatalogIndex;
@@ -147,6 +155,7 @@ public struct PlayerPowerUpTierEntryElement : IBufferElementData
 /// <summary>
 /// Optional runtime scaling metadata for one flattened tier-entry weight.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpTierEntryScalingElement : IBufferElementData
 {
     public int TierEntryIndex;
@@ -169,6 +178,7 @@ public struct PlayerMilestonePowerUpSelectionState : IComponentData
 /// <summary>
 /// One rolled power-up option presented to the player at milestone selection time.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerMilestonePowerUpSelectionOfferElement : IBufferElementData
 {
     public int CatalogIndex;
@@ -190,6 +200,7 @@ public enum PlayerMilestoneSelectionCommandType : byte
 /// <summary>
 /// One HUD-to-ECS command selecting a rolled power-up option.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerMilestonePowerUpSelectionCommand : IBufferElementData
 {
     public PlayerMilestoneSelectionCommandType CommandType;
@@ -290,6 +301,7 @@ public struct PlayerHealOverTimeState : IComponentData
 /// <summary>
 /// Enqueued request to spawn a bomb entity for delayed explosion.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerBombSpawnRequest : IBufferElementData
 {
     public Entity OwnerEntity;
@@ -366,6 +378,15 @@ public struct PlayerPassiveBulletTimeState : IComponentData
 }
 
 /// <summary>
+/// Stores one traveling Laser Beam damage packet with previous and current elapsed travel times.
+/// </summary>
+public struct PlayerLaserBeamStormTickPulse
+{
+    public float PreviousElapsedSeconds;
+    public float CurrentElapsedSeconds;
+}
+
+/// <summary>
 /// Holds runtime activation and timing data for the Laser Beam passive shooting override.
 /// </summary>
 public struct PlayerLaserBeamState : IComponentData
@@ -373,14 +394,17 @@ public struct PlayerLaserBeamState : IComponentData
     public byte IsActive;
     public byte IsOverheated;
     public byte IsTickReady;
-    public byte HasPrimaryTickPulse;
-    public byte HasSecondaryTickPulse;
     public int LastResolvedPrimaryLaneCount;
     public float CooldownRemaining;
     public float ConsecutiveActiveElapsed;
     public float DamageTickTimer;
-    public float PrimaryTickPulseElapsedSeconds;
-    public float SecondaryTickPulseElapsedSeconds;
+    public float StormBurstRemainingSeconds;
+    public FixedList512Bytes<PlayerLaserBeamStormTickPulse> StormTickPulses;
+    public float TriggeredActiveRemainingSeconds;
+    public ProjectilePenetrationMode TriggeredActivePenetrationMode;
+    public int TriggeredActiveMaxPenetrations;
+    public PlayerProjectileRequestTemplate TriggeredActiveProjectileTemplate;
+    public PlayerPassiveToolsState TriggeredActivePassiveToolsState;
     public float ChargeImpulseRemainingSeconds;
     public float ChargeImpulseDamageMultiplier;
     public float ChargeImpulseWidthMultiplier;
@@ -390,6 +414,7 @@ public struct PlayerLaserBeamState : IComponentData
 /// <summary>
 /// Stores one resolved Laser Beam lane for the current frame.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerLaserBeamLaneElement : IBufferElementData
 {
     public int LaneIndex;
@@ -429,6 +454,7 @@ public struct PlayerElementalTrailAttachedVfxState : IComponentData
 /// <summary>
 /// Tracks trail segment entities currently owned by one player.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerElementalTrailSegmentElement : IBufferElementData
 {
     public Entity SegmentEntity;
@@ -451,6 +477,7 @@ public struct ElementalTrailSegment : IComponentData
 /// <summary>
 /// Request to apply an explosion payload at a specific world position.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerExplosionRequest : IBufferElementData
 {
     public float3 Position;
@@ -465,6 +492,7 @@ public struct PlayerExplosionRequest : IBufferElementData
 /// <summary>
 /// Request to spawn one-shot VFX entities for passive/elemental feedback.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpVfxSpawnRequest : IBufferElementData
 {
     public Entity PrefabEntity;
@@ -494,6 +522,7 @@ public struct PlayerPowerUpVfxCapConfig : IComponentData
 /// <summary>
 /// Pool slot containing one reusable VFX entity instance.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerPowerUpVfxPoolElement : IBufferElementData
 {
     public Entity PrefabEntity;

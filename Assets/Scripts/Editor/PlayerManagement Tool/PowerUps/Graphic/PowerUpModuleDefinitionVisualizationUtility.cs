@@ -36,8 +36,9 @@ public static class PowerUpModuleDefinitionVisualizationUtility
 
         SerializedProperty projectileCountProperty = conePayloadProperty.FindPropertyRelative("projectileCount");
         SerializedProperty coneAngleDegreesProperty = conePayloadProperty.FindPropertyRelative("coneAngleDegrees");
+        SerializedProperty laserDurationSecondsProperty = conePayloadProperty.FindPropertyRelative("laserDurationSeconds");
 
-        if (projectileCountProperty == null || coneAngleDegreesProperty == null)
+        if (projectileCountProperty == null || coneAngleDegreesProperty == null || laserDurationSecondsProperty == null)
         {
             HelpBox errorBox = new HelpBox("Projectile cone payload fields are missing.", HelpBoxMessageType.Warning);
             payloadContainer.Add(errorBox);
@@ -46,6 +47,7 @@ public static class PowerUpModuleDefinitionVisualizationUtility
 
         PowerUpModuleDefinitionPayloadDrawerUtility.AddField(payloadContainer, projectileCountProperty, "Projectile Count");
         PowerUpModuleDefinitionPayloadDrawerUtility.AddField(payloadContainer, coneAngleDegreesProperty, "Cone Angle Degrees");
+        PowerUpModuleDefinitionPayloadDrawerUtility.AddField(payloadContainer, laserDurationSecondsProperty, "Laser Duration Seconds");
 
         Label chartLabel = new Label("Cone Pattern Preview");
         chartLabel.style.unityFontStyleAndWeight = FontStyle.Bold;

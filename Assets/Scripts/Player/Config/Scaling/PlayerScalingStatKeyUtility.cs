@@ -69,7 +69,8 @@ public static class PlayerScalingStatKeyUtility
         if (string.IsNullOrWhiteSpace(statKey))
             return false;
 
-        SerializedProperty directProperty = serializedObject.FindProperty(statKey);
+        string resolvedStatKey = ApplyKnownAliases(statKey);
+        SerializedProperty directProperty = serializedObject.FindProperty(resolvedStatKey);
 
         if (directProperty != null && IsScalingSupportedProperty(directProperty))
         {
@@ -77,7 +78,7 @@ public static class PlayerScalingStatKeyUtility
             return true;
         }
 
-        if (TryResolveStablePathToProperty(serializedObject, statKey, out SerializedProperty stableProperty) &&
+        if (TryResolveStablePathToProperty(serializedObject, resolvedStatKey, out SerializedProperty stableProperty) &&
             stableProperty != null &&
             IsScalingSupportedProperty(stableProperty))
         {
@@ -85,7 +86,7 @@ public static class PlayerScalingStatKeyUtility
             return true;
         }
 
-        return TryFindPropertyByIteratorScan(serializedObject, statKey, out property);
+        return TryFindPropertyByIteratorScan(serializedObject, resolvedStatKey, out property);
     }
 
     /// <summary>
@@ -191,6 +192,7 @@ public static class PlayerScalingStatKeyUtility
         if (string.IsNullOrWhiteSpace(statKey))
             return string.Empty;
 
+        statKey = ApplyKnownAliases(statKey);
         string[] segments = statKey.Split('.');
         StringBuilder builder = new StringBuilder(statKey.Length);
 
@@ -207,6 +209,26 @@ public static class PlayerScalingStatKeyUtility
     #endregion
 
     #region Helpers
+    /// <summary>
+    /// Applies serialized-path aliases kept for backward compatibility with renamed scalable fields.
+    /// </summary>
+    /// <param name="statKey">Incoming stat key.</param>
+    /// <returns>Aliased stat key when a known rename exists; otherwise the original key.<returns>
+    private static string ApplyKnownAliases(string statKey)
+    {
+        if (string.IsNullOrWhiteSpace(statKey))
+            return string.Empty;
+
+        statKey = statKey.Replace(".visualPalette", ".visualPresetId", StringComparison.Ordinal);
+        statKey = statKey.Replace(".tickPulseTravelSpeed", ".stormTwistSpeed", StringComparison.Ordinal);
+        statKey = statKey.Replace(".tickPulseLength", ".stormTickPostTravelHoldSeconds", StringComparison.Ordinal);
+        statKey = statKey.Replace(".stormBurstDurationSeconds", ".stormTickPostTravelHoldSeconds", StringComparison.Ordinal);
+        statKey = statKey.Replace(".tickPulseWidthBoost", ".stormIdleIntensity", StringComparison.Ordinal);
+        statKey = statKey.Replace(".tickPulseBrightnessBoost", ".stormBurstIntensity", StringComparison.Ordinal);
+        statKey = statKey.Replace(".impactShape", ".terminalCapShape", StringComparison.Ordinal);
+        return statKey.Replace(".impactScaleMultiplier", ".terminalCapScaleMultiplier", StringComparison.Ordinal);
+    }
+
     private static void AppendSegment(StringBuilder builder, string segment)
     {
         if (builder.Length > 0)

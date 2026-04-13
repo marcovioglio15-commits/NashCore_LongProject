@@ -10,6 +10,10 @@ using UnityEngine;
 /// </summary>
 internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
 {
+    #region Constants
+    private const int MaximumRibbonPointsPerLane = 2048;
+    #endregion
+
     #region Methods
 
     #region Public Methods
@@ -58,41 +62,42 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
     }
 
     /// <summary>
-    /// Resolves the palette colors used by the current beam from the baked palette buffer.
-    /// /params visualPalette Runtime palette selector.
-    /// /params paletteBuffer Baked palette buffer.
-    /// /returns Resolved palette colors converted back to managed Unity colors.
+    /// Resolves the flow and storm colors used by the current beam from the baked visual preset buffer.
+    /// /params visualPresetId Runtime visual preset selector.
+    /// /params visualPresetBuffer Baked visual preset buffer.
+    /// /returns Resolved colors converted back to managed Unity colors.
     /// </summary>
-    public static PlayerLaserBeamResolvedPalette ResolvePalette(LaserBeamVisualPalette visualPalette,
-                                                                DynamicBuffer<PlayerLaserBeamPaletteElement> paletteBuffer)
+    public static PlayerLaserBeamResolvedPalette ResolvePalette(int visualPresetId,
+                                                                DynamicBuffer<PlayerLaserBeamVisualPresetElement> visualPresetBuffer)
     {
-        for (int paletteIndex = 0; paletteIndex < paletteBuffer.Length; paletteIndex++)
+        for (int presetIndex = 0; presetIndex < visualPresetBuffer.Length; presetIndex++)
         {
-            PlayerLaserBeamPaletteElement paletteElement = paletteBuffer[paletteIndex];
+            PlayerLaserBeamVisualPresetElement visualPresetElement = visualPresetBuffer[presetIndex];
 
-            if (paletteElement.VisualPalette != visualPalette)
+            if (visualPresetElement.VisualPresetId != visualPresetId)
                 continue;
 
             return new PlayerLaserBeamResolvedPalette
             {
-                BodyColorA = ToColor(paletteElement.BodyColorA),
-                BodyColorB = ToColor(paletteElement.BodyColorB),
-                CoreColor = ToColor(paletteElement.CoreColor),
-                RimColor = ToColor(paletteElement.RimColor)
+                CoreColor = ToColor(visualPresetElement.CoreColor),
+                FlowColor = ToColor(visualPresetElement.FlowColor),
+                StormColor = ToColor(visualPresetElement.StormColor),
+                ContactColor = ToColor(visualPresetElement.ContactColor)
             };
         }
 
-        PlayerLaserBeamVisualDefaultsUtility.ResolveDefaultColors(visualPalette,
-                                                                 out Color bodyColorA,
-                                                                 out Color bodyColorB,
-                                                                 out Color coreColor,
-                                                                 out Color rimColor);
+        PlayerLaserBeamVisualDefaultsUtility.ResolveDefaultPreset(visualPresetId,
+                                                                  out string _,
+                                                                  out Color coreColor,
+                                                                  out Color flowColor,
+                                                                  out Color stormColor,
+                                                                  out Color contactColor);
         return new PlayerLaserBeamResolvedPalette
         {
-            BodyColorA = bodyColorA,
-            BodyColorB = bodyColorB,
             CoreColor = coreColor,
-            RimColor = rimColor
+            FlowColor = flowColor,
+            StormColor = stormColor,
+            ContactColor = contactColor
         };
     }
 
@@ -107,6 +112,7 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
     /// </summary>
     public static bool BuildLaneVisualData(DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
                                            in PlayerLaserBeamVisualConfig visualConfig,
+                                           in LaserBeamPassiveConfig laserBeamConfig,
                                            List<PlayerLaserBeamRibbonPoint> ribbonPoints,
                                            List<PlayerLaserBeamLaneVisual> laneVisuals,
                                            List<PlayerLaserBeamLaneEndpoint> laneEndpoints)
@@ -123,13 +129,20 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
         while (segmentIndex < laserBeamLanes.Length)
         {
             PlayerLaserBeamLaneElement firstSegment = laserBeamLanes[segmentIndex];
+            int laneSegmentStartIndex = segmentIndex;
+            int laneSegmentEndIndex = ResolveLaneSegmentEndIndex(laserBeamLanes, laneSegmentStartIndex);
             int lanePointStartIndex = ribbonPoints.Count;
             float laneLength = 0f;
-            AddLaneStartPoint(firstSegment, visualConfig.VerticalLift, ribbonPoints);
+            float adaptiveMaximumSegmentLength = ResolveAdaptiveMaximumRibbonSegmentLength(in visualConfig,
+                                                                                           laserBeamLanes,
+                                                                                           laneSegmentStartIndex,
+                                                                                           laneSegmentEndIndex,
+                                                                                           laserBeamConfig.SourceOffset);
             PlayerLaserBeamLaneEndpoint endpoint = new PlayerLaserBeamLaneEndpoint
             {
                 LaneIndex = firstSegment.LaneIndex,
-                StartPoint = LiftPoint(firstSegment.StartPoint, visualConfig.VerticalLift),
+                MuzzlePoint = LiftPoint(firstSegment.StartPoint, visualConfig.VerticalLift),
+                VisibleStartPoint = LiftPoint(firstSegment.StartPoint, visualConfig.VerticalLift),
                 StartDirection = firstSegment.Direction,
                 StartWidth = firstSegment.VisualWidth,
                 EndPoint = LiftPoint(firstSegment.EndPoint, visualConfig.VerticalLift),
@@ -138,26 +151,68 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
                 TerminalNormal = firstSegment.TerminalNormal,
                 TerminalBlockedByWall = firstSegment.TerminalBlockedByWall
             };
+            float remainingSourceTrim = math.max(0f, laserBeamConfig.SourceOffset);
+            bool hasVisibleStartPoint = false;
+            int laneSegmentIndex = laneSegmentStartIndex;
 
-            while (segmentIndex < laserBeamLanes.Length &&
-                   laserBeamLanes[segmentIndex].LaneIndex == endpoint.LaneIndex)
+            while (laneSegmentIndex < laneSegmentEndIndex)
             {
-                PlayerLaserBeamLaneElement segment = laserBeamLanes[segmentIndex];
-                AppendLaneSegmentPoints(segment,
-                                        in visualConfig,
-                                        ref laneLength,
-                                        ribbonPoints);
+                PlayerLaserBeamLaneElement segment = laserBeamLanes[laneSegmentIndex];
+                float segmentLength = math.max(0f, segment.Length);
+
+                if (segmentLength <= 0f)
+                {
+                    endpoint.EndPoint = LiftPoint(segment.EndPoint, visualConfig.VerticalLift);
+                    endpoint.EndDirection = segment.Direction;
+                    endpoint.EndWidth = segment.VisualWidth;
+                    endpoint.TerminalNormal = segment.TerminalNormal;
+                    endpoint.TerminalBlockedByWall = segment.TerminalBlockedByWall;
+                    laneSegmentIndex++;
+                    continue;
+                }
+
+                float trimmedDistance = math.min(segmentLength, remainingSourceTrim);
+                remainingSourceTrim -= trimmedDistance;
+
+                if (trimmedDistance < segmentLength)
+                {
+                    float trimInterpolation = trimmedDistance / segmentLength;
+                    PlayerLaserBeamLaneElement presentationSegment = segment;
+                    presentationSegment.StartPoint = math.lerp(segment.StartPoint, segment.EndPoint, trimInterpolation);
+                    presentationSegment.Length = segmentLength - trimmedDistance;
+
+                    if (!hasVisibleStartPoint)
+                    {
+                        endpoint.VisibleStartPoint = LiftPoint(presentationSegment.StartPoint, visualConfig.VerticalLift);
+                        endpoint.StartDirection = presentationSegment.Direction;
+                        endpoint.StartWidth = presentationSegment.VisualWidth;
+                        AddLaneStartPoint(presentationSegment.StartPoint,
+                                          presentationSegment.VisualWidth,
+                                          visualConfig.VerticalLift,
+                                          ribbonPoints);
+                        hasVisibleStartPoint = true;
+                    }
+
+                    AppendLaneSegmentPoints(presentationSegment,
+                                            adaptiveMaximumSegmentLength,
+                                            visualConfig.VerticalLift,
+                                            ref laneLength,
+                                            ribbonPoints);
+                }
+
                 endpoint.EndPoint = LiftPoint(segment.EndPoint, visualConfig.VerticalLift);
                 endpoint.EndDirection = segment.Direction;
                 endpoint.EndWidth = segment.VisualWidth;
                 endpoint.TerminalNormal = segment.TerminalNormal;
                 endpoint.TerminalBlockedByWall = segment.TerminalBlockedByWall;
-                segmentIndex++;
+                laneSegmentIndex++;
             }
+
+            segmentIndex = laneSegmentEndIndex;
 
             int pointCount = ribbonPoints.Count - lanePointStartIndex;
 
-            if (pointCount < 2)
+            if (pointCount < 2 || !hasVisibleStartPoint)
             {
                 ribbonPoints.RemoveRange(lanePointStartIndex, math.max(0, pointCount));
                 continue;
@@ -191,33 +246,35 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
     /// /params ribbonPoints Mutable destination list for ribbon points.
     /// /returns None.
     /// </summary>
-    private static void AddLaneStartPoint(PlayerLaserBeamLaneElement segment,
+    private static void AddLaneStartPoint(float3 startPoint,
+                                          float startWidth,
                                           float verticalLift,
                                           List<PlayerLaserBeamRibbonPoint> ribbonPoints)
     {
         ribbonPoints.Add(new PlayerLaserBeamRibbonPoint
         {
-            Position = LiftPoint(segment.StartPoint, verticalLift),
+            Position = LiftPoint(startPoint, verticalLift),
             Distance = 0f,
-            Width = math.max(0.02f, segment.VisualWidth)
+            Width = math.max(0.02f, startWidth)
         });
     }
 
     /// <summary>
     /// Resamples one gameplay segment into evenly spaced ribbon points while preserving the authoritative path.
     /// /params segment Gameplay segment produced by the simulation path.
-    /// /params visualConfig Shared visual config used to resample long segments.
+    /// /params maximumSegmentLength Maximum spacing allowed between consecutive ribbon points for the current lane.
+    /// /params verticalLift Shared beam vertical lift applied to every sampled point.
     /// /params laneLength Mutable accumulated lane length.
     /// /params ribbonPoints Mutable destination list for ribbon points.
     /// /returns None.
     /// </summary>
     private static void AppendLaneSegmentPoints(PlayerLaserBeamLaneElement segment,
-                                                in PlayerLaserBeamVisualConfig visualConfig,
+                                                float maximumSegmentLength,
+                                                float verticalLift,
                                                 ref float laneLength,
                                                 List<PlayerLaserBeamRibbonPoint> ribbonPoints)
     {
-        float segmentLength = math.max(visualConfig.MinimumSegmentLength, segment.Length);
-        float maximumSegmentLength = math.max(visualConfig.MinimumSegmentLength, visualConfig.MaximumRibbonSegmentLength);
+        float segmentLength = math.max(0.001f, segment.Length);
         int sampleCount = math.max(1, (int)math.ceil(segmentLength / maximumSegmentLength));
         float startDistance = laneLength;
 
@@ -228,7 +285,7 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
             float pointDistance = startDistance + segmentLength * interpolation;
             ribbonPoints.Add(new PlayerLaserBeamRibbonPoint
             {
-                Position = LiftPoint(point, visualConfig.VerticalLift),
+                Position = LiftPoint(point, verticalLift),
                 Distance = pointDistance,
                 Width = math.max(0.02f, segment.VisualWidth)
             });
@@ -246,6 +303,78 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
     private static float3 LiftPoint(float3 point, float verticalLift)
     {
         return new float3(point.x, point.y + verticalLift, point.z);
+    }
+
+    /// <summary>
+    /// Resolves the exclusive segment end index of the current lane.
+    /// /params laserBeamLanes Gameplay lane buffer generated by simulation.
+    /// /params laneSegmentStartIndex First segment index belonging to the lane.
+    /// /returns Exclusive segment end index of the lane.
+    /// </summary>
+    private static int ResolveLaneSegmentEndIndex(DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                                  int laneSegmentStartIndex)
+    {
+        int laneSegmentEndIndex = laneSegmentStartIndex + 1;
+        int laneIndex = laserBeamLanes[laneSegmentStartIndex].LaneIndex;
+
+        while (laneSegmentEndIndex < laserBeamLanes.Length &&
+               laserBeamLanes[laneSegmentEndIndex].LaneIndex == laneIndex)
+        {
+            laneSegmentEndIndex++;
+        }
+
+        return laneSegmentEndIndex;
+    }
+
+    /// <summary>
+    /// Resolves the adaptive segment length used to keep very long beams inside a stable ribbon-point budget.
+    /// /params visualConfig Shared visual config used to determine the authored baseline density.
+    /// /params laserBeamLanes Gameplay lane buffer generated by simulation.
+    /// /params laneSegmentStartIndex First segment index belonging to the lane.
+    /// /params laneSegmentEndIndex Exclusive segment end index belonging to the lane.
+    /// /params sourceOffset Trim applied at the start of the visible beam.
+    /// /returns Adaptive maximum spacing between consecutive ribbon points for the current lane.
+    /// </summary>
+    private static float ResolveAdaptiveMaximumRibbonSegmentLength(in PlayerLaserBeamVisualConfig visualConfig,
+                                                                   DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                                                   int laneSegmentStartIndex,
+                                                                   int laneSegmentEndIndex,
+                                                                   float sourceOffset)
+    {
+        float authoredMaximumSegmentLength = math.max(visualConfig.MinimumSegmentLength, visualConfig.MaximumRibbonSegmentLength);
+        float visibleLaneLength = ResolveVisibleLaneLength(laserBeamLanes,
+                                                           laneSegmentStartIndex,
+                                                           laneSegmentEndIndex,
+                                                           sourceOffset);
+        float budgetDrivenSegmentLength = visibleLaneLength / math.max(1, MaximumRibbonPointsPerLane - 1);
+        return math.max(authoredMaximumSegmentLength, budgetDrivenSegmentLength);
+    }
+
+    /// <summary>
+    /// Resolves the visible lane length after the authored source trim has been removed.
+    /// /params laserBeamLanes Gameplay lane buffer generated by simulation.
+    /// /params laneSegmentStartIndex First segment index belonging to the lane.
+    /// /params laneSegmentEndIndex Exclusive segment end index belonging to the lane.
+    /// /params sourceOffset Trim applied at the start of the visible beam.
+    /// /returns Visible lane length after source trimming.
+    /// </summary>
+    private static float ResolveVisibleLaneLength(DynamicBuffer<PlayerLaserBeamLaneElement> laserBeamLanes,
+                                                  int laneSegmentStartIndex,
+                                                  int laneSegmentEndIndex,
+                                                  float sourceOffset)
+    {
+        float remainingSourceTrim = math.max(0f, sourceOffset);
+        float visibleLaneLength = 0f;
+
+        for (int laneSegmentIndex = laneSegmentStartIndex; laneSegmentIndex < laneSegmentEndIndex; laneSegmentIndex++)
+        {
+            float segmentLength = math.max(0f, laserBeamLanes[laneSegmentIndex].Length);
+            float trimmedDistance = math.min(segmentLength, remainingSourceTrim);
+            remainingSourceTrim -= trimmedDistance;
+            visibleLaneLength += math.max(0f, segmentLength - trimmedDistance);
+        }
+
+        return math.max(0f, visibleLaneLength);
     }
 
     /// <summary>

@@ -39,7 +39,7 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
         state.RequireForUpdate<PlayerLaserBeamVisualConfig>();
         state.RequireForUpdate<PlayerLaserBeamSourceVariantElement>();
         state.RequireForUpdate<PlayerLaserBeamImpactVariantElement>();
-        state.RequireForUpdate<PlayerLaserBeamPaletteElement>();
+        state.RequireForUpdate<PlayerLaserBeamVisualPresetElement>();
     }
 
     /// <summary>
@@ -78,8 +78,7 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
                                                                                invalidOwnerEntities);
         BufferLookup<PlayerLaserBeamSourceVariantElement> sourceVariantLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamSourceVariantElement>(true);
         BufferLookup<PlayerLaserBeamImpactVariantElement> impactVariantLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamImpactVariantElement>(true);
-        BufferLookup<PlayerLaserBeamPaletteElement> paletteLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamPaletteElement>(true);
-        Camera presentationCamera = PlayerLaserBeamPresentationRuntimeRenderUtility.ResolvePresentationCamera();
+        BufferLookup<PlayerLaserBeamVisualPresetElement> visualPresetLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamVisualPresetElement>(true);
         float elapsedTimeSeconds = (float)SystemAPI.Time.ElapsedTime;
 
         foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
@@ -95,7 +94,7 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
         {
             if (!sourceVariantLookup.HasBuffer(playerEntity) ||
                 !impactVariantLookup.HasBuffer(playerEntity) ||
-                !paletteLookup.HasBuffer(playerEntity))
+                !visualPresetLookup.HasBuffer(playerEntity))
             {
                 PlayerLaserBeamPresentationRuntimeUtility.DisableManagedInstance(playerEntity, managedInstances);
                 continue;
@@ -103,8 +102,10 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
 
             DynamicBuffer<PlayerLaserBeamSourceVariantElement> sourceVariants = sourceVariantLookup[playerEntity];
             DynamicBuffer<PlayerLaserBeamImpactVariantElement> impactVariants = impactVariantLookup[playerEntity];
-            DynamicBuffer<PlayerLaserBeamPaletteElement> paletteBuffer = paletteLookup[playerEntity];
-            bool shouldRender = passiveToolsState.ValueRO.HasLaserBeam != 0 &&
+            DynamicBuffer<PlayerLaserBeamVisualPresetElement> visualPresetBuffer = visualPresetLookup[playerEntity];
+            PlayerPassiveToolsState effectivePassiveToolsState = PlayerLaserBeamStateUtility.ResolveEffectivePassiveToolsState(in passiveToolsState.ValueRO,
+                                                                                                                                in laserBeamState.ValueRO);
+            bool shouldRender = effectivePassiveToolsState.HasLaserBeam != 0 &&
                                 laserBeamState.ValueRO.IsActive != 0 &&
                                 laserBeamLanes.Length > 0;
 
@@ -114,9 +115,9 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
                 continue;
             }
 
-            LaserBeamPassiveConfig laserBeamConfig = passiveToolsState.ValueRO.LaserBeam;
+            LaserBeamPassiveConfig laserBeamConfig = effectivePassiveToolsState.LaserBeam;
             GameObject sourcePrefab = PlayerLaserBeamPresentationRuntimeGeometryUtility.ResolveSourcePrefab(sourceVariants, laserBeamConfig.SourceShape);
-            GameObject impactPrefab = PlayerLaserBeamPresentationRuntimeGeometryUtility.ResolveImpactPrefab(impactVariants, laserBeamConfig.ImpactShape);
+            GameObject impactPrefab = PlayerLaserBeamPresentationRuntimeGeometryUtility.ResolveImpactPrefab(impactVariants, laserBeamConfig.TerminalCapShape);
 
             if (sourcePrefab == null || impactPrefab == null)
             {
@@ -130,6 +131,7 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
 
             if (!PlayerLaserBeamPresentationRuntimeGeometryUtility.BuildLaneVisualData(laserBeamLanes,
                                                                                        in visualConfig.ValueRO,
+                                                                                       in laserBeamConfig,
                                                                                        ribbonPoints,
                                                                                        laneVisuals,
                                                                                        laneEndpoints))
@@ -147,35 +149,39 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
             if (!managedInstance.RootObject.activeSelf)
                 managedInstance.RootObject.SetActive(true);
 
-            PlayerLaserBeamResolvedPalette palette = PlayerLaserBeamPresentationRuntimeGeometryUtility.ResolvePalette(laserBeamConfig.VisualPalette,
-                                                                                                                       paletteBuffer);
+            PlayerLaserBeamResolvedPalette palette = PlayerLaserBeamPresentationRuntimeGeometryUtility.ResolvePalette(laserBeamConfig.VisualPresetId,
+                                                                                                                       visualPresetBuffer);
             Material bodyMaterial = visualConfig.ValueRO.BodyMaterial.Value;
-            Material sourceMaterial = visualConfig.ValueRO.SourceBubbleMaterial.Value;
-            Material impactMaterial = visualConfig.ValueRO.ImpactSplashMaterial.Value;
+            Material sourceMaterial = visualConfig.ValueRO.SourceEffectMaterial.Value;
+            Material terminalCapMaterial = visualConfig.ValueRO.TerminalCapMaterial.Value;
             PlayerLaserBeamPresentationRuntimeUtility.EnsureBodyVisualCount(managedInstance, laneVisuals.Count);
             PlayerLaserBeamPresentationRuntimeUtility.EnsureParticleVisualCount(managedInstance.SourceVisuals,
                                                                                 laneEndpoints.Count,
                                                                                 sourcePrefab,
                                                                                 managedInstance.RootTransform,
                                                                                 "LaserBeamSource");
-            PlayerLaserBeamPresentationRuntimeUtility.EnsureParticleVisualCount(managedInstance.ImpactVisuals,
+            PlayerLaserBeamPresentationRuntimeUtility.EnsureParticleVisualCount(managedInstance.TerminalCapVisuals,
                                                                                 laneEndpoints.Count,
                                                                                 impactPrefab,
                                                                                 managedInstance.RootTransform,
-                                                                                "LaserBeamImpact");
+                                                                                "LaserBeamTerminalCap");
+            PlayerLaserBeamPresentationRuntimeUtility.EnsureParticleVisualCount(managedInstance.ContactFlareVisuals,
+                                                                                laneEndpoints.Count,
+                                                                                impactPrefab,
+                                                                                managedInstance.RootTransform,
+                                                                                "LaserBeamContactFlare");
 
             // Rebuild one continuous body ribbon per lane and then push body shader properties.
             for (int laneIndex = 0; laneIndex < laneVisuals.Count; laneIndex++)
             {
                 PlayerLaserBeamManagedBodyVisual bodyVisual = managedInstance.BodyVisuals[laneIndex];
                 PlayerLaserBeamLaneVisual laneVisual = laneVisuals[laneIndex];
-                PlayerLaserBeamPresentationRuntimeMeshUtility.BuildBodyRibbonMesh(bodyVisual,
+                PlayerLaserBeamPresentationRuntimeMeshUtility.BuildBodyVolumeMesh(bodyVisual,
                                                                                   in laneVisual,
                                                                                   ribbonPoints,
                                                                                   in visualConfig.ValueRO,
                                                                                   in laserBeamConfig,
                                                                                   in laserBeamState.ValueRO,
-                                                                                  presentationCamera,
                                                                                   elapsedTimeSeconds);
                 PlayerLaserBeamPresentationRuntimeRenderUtility.ApplyBodyVisual(bodyVisual,
                                                                                 in laneVisual,
@@ -186,28 +192,40 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
                                                                                 bodyMaterial);
             }
 
-            // Update the origin bubble and terminal splash for each active lane.
+            // Update the source discharge, terminal cap, and conditional wall-contact flare for each active lane.
             for (int laneIndex = 0; laneIndex < laneEndpoints.Count; laneIndex++)
             {
                 PlayerLaserBeamManagedParticleVisual sourceVisual = managedInstance.SourceVisuals[laneIndex];
-                PlayerLaserBeamManagedParticleVisual impactVisual = managedInstance.ImpactVisuals[laneIndex];
+                PlayerLaserBeamManagedParticleVisual terminalCapVisual = managedInstance.TerminalCapVisuals[laneIndex];
+                PlayerLaserBeamManagedParticleVisual contactFlareVisual = managedInstance.ContactFlareVisuals[laneIndex];
                 PlayerLaserBeamLaneEndpoint endpoint = laneEndpoints[laneIndex];
                 PlayerLaserBeamPresentationRuntimeRenderUtility.ApplyParticleVisual(sourceVisual,
                                                                                     in endpoint,
                                                                                     in visualConfig.ValueRO,
                                                                                     in laserBeamConfig,
+                                                                                    in laserBeamState.ValueRO,
                                                                                     in palette,
                                                                                     sourceMaterial,
                                                                                     laserBeamConfig.SourceShape,
-                                                                                    false);
-                PlayerLaserBeamPresentationRuntimeRenderUtility.ApplyParticleVisual(impactVisual,
+                                                                                    PlayerLaserBeamEndpointVisualRole.Source);
+                PlayerLaserBeamPresentationRuntimeRenderUtility.ApplyParticleVisual(terminalCapVisual,
                                                                                     in endpoint,
                                                                                     in visualConfig.ValueRO,
                                                                                     in laserBeamConfig,
+                                                                                    in laserBeamState.ValueRO,
                                                                                     in palette,
-                                                                                    impactMaterial,
-                                                                                    laserBeamConfig.ImpactShape,
-                                                                                    true);
+                                                                                    terminalCapMaterial,
+                                                                                    laserBeamConfig.TerminalCapShape,
+                                                                                    PlayerLaserBeamEndpointVisualRole.TerminalCap);
+                PlayerLaserBeamPresentationRuntimeRenderUtility.ApplyParticleVisual(contactFlareVisual,
+                                                                                    in endpoint,
+                                                                                    in visualConfig.ValueRO,
+                                                                                    in laserBeamConfig,
+                                                                                    in laserBeamState.ValueRO,
+                                                                                    in palette,
+                                                                                    terminalCapMaterial,
+                                                                                    laserBeamConfig.TerminalCapShape,
+                                                                                    PlayerLaserBeamEndpointVisualRole.ContactFlare);
             }
         }
     }

@@ -112,7 +112,8 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
             return;
 
         StopParticleVisuals(managedInstance.SourceVisuals);
-        StopParticleVisuals(managedInstance.ImpactVisuals);
+        StopParticleVisuals(managedInstance.TerminalCapVisuals);
+        StopParticleVisuals(managedInstance.ContactFlareVisuals);
 
         if (managedInstance.RootObject.activeSelf)
             managedInstance.RootObject.SetActive(false);
@@ -130,7 +131,8 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
 
         DestroyBodyVisuals(managedInstance.BodyVisuals);
         DestroyParticleVisuals(managedInstance.SourceVisuals);
-        DestroyParticleVisuals(managedInstance.ImpactVisuals);
+        DestroyParticleVisuals(managedInstance.TerminalCapVisuals);
+        DestroyParticleVisuals(managedInstance.ContactFlareVisuals);
 
         if (managedInstance.RootObject != null)
             Object.Destroy(managedInstance.RootObject);
@@ -279,28 +281,34 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
         GameObject instanceObject = new GameObject(string.Format("PlayerLaserBeamBody_{0}", visualIndex));
         instanceObject.transform.SetParent(parentTransform, false);
         instanceObject.layer = 0;
-        MeshFilter meshFilter = instanceObject.AddComponent<MeshFilter>();
-        MeshRenderer meshRenderer = instanceObject.AddComponent<MeshRenderer>();
         Mesh dynamicMesh = new Mesh
         {
             name = string.Format("PlayerLaserBeamBodyMesh_{0}", visualIndex)
         };
+        dynamicMesh.indexFormat = IndexFormat.UInt32;
         dynamicMesh.MarkDynamic();
-        meshFilter.sharedMesh = dynamicMesh;
-        meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
-        meshRenderer.receiveShadows = false;
-        meshRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
-        meshRenderer.lightProbeUsage = LightProbeUsage.Off;
-        meshRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
-        meshRenderer.sortingOrder = LaserBeamVisualSortingOrder;
-        return new PlayerLaserBeamManagedBodyVisual
+        PlayerLaserBeamManagedBodyVisual bodyVisual = new PlayerLaserBeamManagedBodyVisual
         {
             InstanceObject = instanceObject,
             RootTransform = instanceObject.transform,
-            MeshFilter = meshFilter,
-            MeshRenderer = meshRenderer,
             DynamicMesh = dynamicMesh
         };
+        bodyVisual.LayerVisuals.Add(CreateBodyLayerVisual(instanceObject.transform,
+                                                          dynamicMesh,
+                                                          PlayerLaserBeamBodyLayerRole.Core,
+                                                          "Core",
+                                                          LaserBeamVisualSortingOrder));
+        bodyVisual.LayerVisuals.Add(CreateBodyLayerVisual(instanceObject.transform,
+                                                          dynamicMesh,
+                                                          PlayerLaserBeamBodyLayerRole.Flow,
+                                                          "Flow",
+                                                          LaserBeamVisualSortingOrder + 1));
+        bodyVisual.LayerVisuals.Add(CreateBodyLayerVisual(instanceObject.transform,
+                                                          dynamicMesh,
+                                                          PlayerLaserBeamBodyLayerRole.Storm,
+                                                          "Storm",
+                                                          LaserBeamVisualSortingOrder + 2));
+        return bodyVisual;
     }
 
     /// <summary>
@@ -377,6 +385,8 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
         if (visual == null)
             return;
 
+        DestroyBodyLayerVisuals(visual.LayerVisuals);
+
         if (visual.DynamicMesh != null)
             Object.Destroy(visual.DynamicMesh);
 
@@ -437,6 +447,75 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
 
             particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
+    }
+
+    /// <summary>
+    /// Creates one mesh-renderer child that shares the lane body mesh and renders one visual layer role.
+    /// /params parentTransform Parent transform that receives the new child.
+    /// /params sharedMesh Dynamic lane mesh shared across all body layers.
+    /// /params layerRole Visual role rendered by the created child.
+    /// /params childName Readable name appended to the child GameObject.
+    /// /params sortingOrder Renderer sorting order used for the layer.
+    /// /returns Newly created body-layer visual, or null when creation fails.
+    /// </summary>
+    private static PlayerLaserBeamManagedBodyLayerVisual CreateBodyLayerVisual(Transform parentTransform,
+                                                                               Mesh sharedMesh,
+                                                                               PlayerLaserBeamBodyLayerRole layerRole,
+                                                                               string childName,
+                                                                               int sortingOrder)
+    {
+        if (parentTransform == null || sharedMesh == null)
+            return null;
+
+        GameObject childObject = new GameObject(string.Format("LaserBeamBodyLayer_{0}", childName));
+        childObject.transform.SetParent(parentTransform, false);
+        childObject.layer = 0;
+        MeshFilter meshFilter = childObject.AddComponent<MeshFilter>();
+        meshFilter.sharedMesh = sharedMesh;
+        MeshRenderer meshRenderer = childObject.AddComponent<MeshRenderer>();
+        meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
+        meshRenderer.receiveShadows = false;
+        meshRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+        meshRenderer.lightProbeUsage = LightProbeUsage.Off;
+        meshRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+        meshRenderer.sortingOrder = sortingOrder;
+        return new PlayerLaserBeamManagedBodyLayerVisual
+        {
+            InstanceObject = childObject,
+            RootTransform = childObject.transform,
+            MeshFilter = meshFilter,
+            MeshRenderer = meshRenderer,
+            LayerRole = layerRole
+        };
+    }
+
+    /// <summary>
+    /// Destroys all child mesh-renderer layers owned by one body visual.
+    /// /params layerVisuals Mutable layer list to destroy and clear.
+    /// /returns None.
+    /// </summary>
+    private static void DestroyBodyLayerVisuals(List<PlayerLaserBeamManagedBodyLayerVisual> layerVisuals)
+    {
+        if (layerVisuals == null)
+            return;
+
+        for (int layerIndex = 0; layerIndex < layerVisuals.Count; layerIndex++)
+            DestroyBodyLayerVisual(layerVisuals[layerIndex]);
+
+        layerVisuals.Clear();
+    }
+
+    /// <summary>
+    /// Destroys one child mesh-renderer layer owned by a lane body visual.
+    /// /params layerVisual Layer visual to destroy.
+    /// /returns None.
+    /// </summary>
+    private static void DestroyBodyLayerVisual(PlayerLaserBeamManagedBodyLayerVisual layerVisual)
+    {
+        if (layerVisual == null || layerVisual.InstanceObject == null)
+            return;
+
+        Object.Destroy(layerVisual.InstanceObject);
     }
     #endregion
 

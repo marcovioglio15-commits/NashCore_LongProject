@@ -72,6 +72,9 @@ public static class PlayerScalingFormulaEditorUtility
         if (string.IsNullOrWhiteSpace(formula))
             return string.Empty;
 
+        if (PlayerLaserBeamVisualPresetEditorUtility.IsSelectorProperty(targetProperty))
+            return PlayerLaserBeamVisualPresetEditorUtility.NormalizeFormulaTokens(formula, targetProperty, allowedVariables);
+
         if (targetProperty == null || targetProperty.propertyType != SerializedPropertyType.Enum)
             return formula;
 
@@ -130,12 +133,19 @@ public static class PlayerScalingFormulaEditorUtility
                                          SerializedProperty targetProperty)
     {
         string availableVariablesText = BuildAvailableVariablesLabelText(allowedVariables, variableTypes);
+        string laserBeamVisualPresetText = BuildLaserBeamVisualPresetLabelText(targetProperty);
         string enumValuesText = BuildEnumValuesLabelText(targetProperty);
 
-        if (string.IsNullOrWhiteSpace(enumValuesText))
+        if (string.IsNullOrWhiteSpace(laserBeamVisualPresetText) && string.IsNullOrWhiteSpace(enumValuesText))
             return availableVariablesText;
 
-        return availableVariablesText + Environment.NewLine + enumValuesText;
+        if (string.IsNullOrWhiteSpace(laserBeamVisualPresetText))
+            return availableVariablesText + Environment.NewLine + enumValuesText;
+
+        if (string.IsNullOrWhiteSpace(enumValuesText))
+            return availableVariablesText + Environment.NewLine + laserBeamVisualPresetText;
+
+        return availableVariablesText + Environment.NewLine + laserBeamVisualPresetText + Environment.NewLine + enumValuesText;
     }
 
     /// <summary>
@@ -191,6 +201,20 @@ public static class PlayerScalingFormulaEditorUtility
     #endregion
 
     #region Private Methods
+    /// <summary>
+    /// Builds the helper line that exposes Laser Beam visual preset constants for selector fields.
+    /// </summary>
+    /// <param name="targetProperty">Current formula target property.</param>
+    /// <returns>Helper label line, or empty when the target is not a Laser Beam visual preset selector.<returns>
+    private static string BuildLaserBeamVisualPresetLabelText(SerializedProperty targetProperty)
+    {
+        if (!PlayerLaserBeamVisualPresetEditorUtility.IsSelectorProperty(targetProperty))
+            return string.Empty;
+
+        List<PlayerLaserBeamVisualPresetEditorOption> options = PlayerLaserBeamVisualPresetEditorUtility.BuildOptions();
+        return PlayerLaserBeamVisualPresetEditorUtility.BuildHelperText(options);
+    }
+
     private static bool TryResolveEnumConstantValue(SerializedProperty targetProperty,
                                                     string token,
                                                     out int enumValue)

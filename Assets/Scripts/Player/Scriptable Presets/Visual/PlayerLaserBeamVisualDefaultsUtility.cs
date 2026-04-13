@@ -10,143 +10,106 @@ public static class PlayerLaserBeamVisualDefaultsUtility
 {
     #region Constants
     public const string DefaultBodyMaterialPath = "Assets/3D/Materials/M_LiquidAntibioticBeam.mat";
-    public const string DefaultSourceBubbleMaterialPath = "Assets/3D/Materials/M_LiquidAntibioticBeamBubbles.mat";
-    public const string DefaultImpactSplashMaterialPath = "Assets/3D/Materials/M_LiquidAntibioticBeamSplash.mat";
+    public const string DefaultSourceEffectMaterialPath = "Assets/3D/Materials/M_LiquidAntibioticBeamBubbles.mat";
+    public const string DefaultTerminalCapMaterialPath = "Assets/3D/Materials/M_LiquidAntibioticBeamSplash.mat";
     public const float DefaultVerticalLift = 0.06f;
     public const float DefaultMinimumSegmentLength = 0.02f;
-    #endregion
-
-    #region Fields
-    private static readonly LaserBeamVisualPalette[] supportedPalettes =
-    {
-        LaserBeamVisualPalette.AntibioticBlue,
-        LaserBeamVisualPalette.SterileMint,
-        LaserBeamVisualPalette.ToxicLime,
-        LaserBeamVisualPalette.PlasmaAmber
-    };
+    public const int DefaultVisualPresetId = 0;
     #endregion
 
     #region Methods
 
     #region Public Methods
     /// <summary>
-    /// Returns the supported palette list used by Laser Beam visual authoring.
-    /// /params None.
-    /// /returns Stable ordered palette array.
+    /// Creates one authored visual preset entry initialized with a default name and the default colors for the requested ID.
+    /// /params stableId Stable numeric ID to initialize.
+    /// /returns New visual preset definition populated with default colors.
     /// </summary>
-    public static IReadOnlyList<LaserBeamVisualPalette> SupportedPalettes
+    public static PlayerLaserBeamVisualPresetDefinition CreateDefaultVisualPresetDefinition(int stableId = DefaultVisualPresetId)
     {
-        get
-        {
-            return supportedPalettes;
-        }
+        ResolveDefaultPreset(stableId,
+                             out string displayName,
+                             out Color coreColor,
+                             out Color flowColor,
+                             out Color stormColor,
+                             out Color contactColor);
+        PlayerLaserBeamVisualPresetDefinition visualPresetDefinition = new PlayerLaserBeamVisualPresetDefinition();
+        visualPresetDefinition.Assign(stableId,
+                                      displayName,
+                                      coreColor,
+                                      flowColor,
+                                      stormColor,
+                                      contactColor);
+        return visualPresetDefinition;
     }
 
     /// <summary>
-    /// Ensures the authored palette list contains one valid entry for every supported Laser Beam palette.
-    /// /params paletteSettings Mutable palette list authored on the visual preset.
+    /// Validates authored Laser Beam visual preset entries without rewriting designer-authored IDs or names.
+    /// /params visualPresetDefinitions Mutable preset list authored on the visual preset.
     /// /returns None.
     /// </summary>
-    public static void EnsurePaletteCoverage(List<PlayerLaserBeamPaletteSettings> paletteSettings)
+    public static void ValidateVisualPresetDefinitions(List<PlayerLaserBeamVisualPresetDefinition> visualPresetDefinitions)
     {
-        if (paletteSettings == null)
+        if (visualPresetDefinitions == null)
             return;
 
-        HashSet<LaserBeamVisualPalette> coveredPalettes = new HashSet<LaserBeamVisualPalette>();
-
-        for (int paletteIndex = paletteSettings.Count - 1; paletteIndex >= 0; paletteIndex--)
+        for (int presetIndex = 0; presetIndex < visualPresetDefinitions.Count; presetIndex++)
         {
-            PlayerLaserBeamPaletteSettings paletteSetting = paletteSettings[paletteIndex];
+            PlayerLaserBeamVisualPresetDefinition visualPresetDefinition = visualPresetDefinitions[presetIndex];
 
-            if (paletteSetting == null)
-            {
-                paletteSettings.RemoveAt(paletteIndex);
-                continue;
-            }
-
-            LaserBeamVisualPalette visualPalette = paletteSetting.VisualPalette;
-
-            if (coveredPalettes.Add(visualPalette))
-            {
-                paletteSetting.Validate();
-                continue;
-            }
-
-            paletteSettings.RemoveAt(paletteIndex);
-        }
-
-        for (int paletteIndex = 0; paletteIndex < supportedPalettes.Length; paletteIndex++)
-        {
-            LaserBeamVisualPalette visualPalette = supportedPalettes[paletteIndex];
-
-            if (coveredPalettes.Contains(visualPalette))
+            if (visualPresetDefinition == null)
                 continue;
 
-            paletteSettings.Add(CreateDefaultPaletteSettings(visualPalette));
+            visualPresetDefinition.Validate();
         }
     }
 
     /// <summary>
-    /// Creates one authored palette entry initialized with the default colors for the requested enum.
-    /// /params visualPalette Palette enum to initialize.
-    /// /returns New palette settings instance populated with default colors.
-    /// </summary>
-    public static PlayerLaserBeamPaletteSettings CreateDefaultPaletteSettings(LaserBeamVisualPalette visualPalette)
-    {
-        ResolveDefaultColors(visualPalette,
-                             out Color bodyColorA,
-                             out Color bodyColorB,
-                             out Color coreColor,
-                             out Color rimColor);
-        PlayerLaserBeamPaletteSettings paletteSettings = new PlayerLaserBeamPaletteSettings();
-        paletteSettings.Assign(visualPalette,
-                               bodyColorA,
-                               bodyColorB,
-                               coreColor,
-                               rimColor);
-        return paletteSettings;
-    }
-
-    /// <summary>
-    /// Resolves the default editable colors used by one Laser Beam palette enum.
-    /// /params visualPalette Requested palette enum.
-    /// /params bodyColorA Primary liquid gradient color.
-    /// /params bodyColorB Secondary liquid gradient color.
-    /// /params coreColor Bright central streak color.
-    /// /params rimColor Outer contour color.
+    /// Resolves the default label and colors used when no authored visual preset matches the requested stable ID.
+    /// /params stableId Stable numeric preset ID.
+    /// /params displayName Default designer-facing preset name.
+    /// /params coreColor White-hot core color.
+    /// /params flowColor Primary beam flow color.
+    /// /params stormColor Electrical storm color.
+    /// /params contactColor Terminal cap and contact highlight color.
     /// /returns None.
     /// </summary>
-    public static void ResolveDefaultColors(LaserBeamVisualPalette visualPalette,
-                                            out Color bodyColorA,
-                                            out Color bodyColorB,
+    public static void ResolveDefaultPreset(int stableId,
+                                            out string displayName,
                                             out Color coreColor,
-                                            out Color rimColor)
+                                            out Color flowColor,
+                                            out Color stormColor,
+                                            out Color contactColor)
     {
-        switch (visualPalette)
+        switch (stableId)
         {
-            case LaserBeamVisualPalette.SterileMint:
-                bodyColorA = new Color(0.12f, 0.74f, 0.58f, 1f);
-                bodyColorB = new Color(0.39f, 0.95f, 0.73f, 1f);
-                coreColor = new Color(0.78f, 1f, 0.92f, 1f);
-                rimColor = new Color(0.03f, 0.29f, 0.18f, 1f);
+            case 1:
+                displayName = "Sterile Mint";
+                coreColor = new Color(0.97f, 1f, 0.98f, 1f);
+                flowColor = new Color(0.22f, 0.92f, 0.72f, 1f);
+                stormColor = new Color(0.86f, 1f, 0.93f, 1f);
+                contactColor = new Color(0.96f, 1f, 0.97f, 1f);
                 return;
-            case LaserBeamVisualPalette.ToxicLime:
-                bodyColorA = new Color(0.26f, 0.83f, 0.1f, 1f);
-                bodyColorB = new Color(0.63f, 0.98f, 0.24f, 1f);
-                coreColor = new Color(0.9f, 1f, 0.68f, 1f);
-                rimColor = new Color(0.15f, 0.31f, 0.05f, 1f);
+            case 2:
+                displayName = "Deep Azure";
+                coreColor = new Color(0.95f, 0.98f, 1f, 1f);
+                flowColor = new Color(0.14509805f, 0.18431373f, 1f, 1f);
+                stormColor = new Color(0.56f, 0.74f, 1f, 1f);
+                contactColor = new Color(0.92f, 0.97f, 1f, 1f);
                 return;
-            case LaserBeamVisualPalette.PlasmaAmber:
-                bodyColorA = new Color(0.85f, 0.58f, 0.14f, 1f);
-                bodyColorB = new Color(1f, 0.84f, 0.26f, 1f);
-                coreColor = new Color(1f, 0.97f, 0.72f, 1f);
-                rimColor = new Color(0.4f, 0.24f, 0.05f, 1f);
+            case 3:
+                displayName = "Solar Amber";
+                coreColor = new Color(1f, 0.98f, 0.9f, 1f);
+                flowColor = new Color(1f, 0.82f, 0.24f, 1f);
+                stormColor = new Color(1f, 0.97f, 0.72f, 1f);
+                contactColor = new Color(1f, 0.96f, 0.76f, 1f);
                 return;
             default:
-                bodyColorA = new Color(0.04f, 0.28f, 0.77f, 1f);
-                bodyColorB = new Color(0.12f, 0.64f, 0.98f, 1f);
-                coreColor = new Color(0.68f, 0.94f, 1f, 1f);
-                rimColor = new Color(0.01f, 0.11f, 0.42f, 1f);
+                displayName = "Electric Azure";
+                coreColor = new Color(0.97f, 0.99f, 1f, 1f);
+                flowColor = new Color(0.19f, 0.93f, 1f, 1f);
+                stormColor = new Color(0.75f, 1f, 1f, 1f);
+                contactColor = new Color(0.94f, 0.98f, 1f, 1f);
                 return;
         }
     }

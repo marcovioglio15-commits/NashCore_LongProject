@@ -47,6 +47,7 @@ public struct ProjectilePoolState : IComponentData
 /// <summary>
 /// This component represents a shoot request, which is created when a player entity initiates a shooting action.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct ShootRequest : IBufferElementData
 {
     public float3 Position;
@@ -69,6 +70,7 @@ public struct ShootRequest : IBufferElementData
     public ProjectileElementalPayload ElementalPayloadOverride;
 }
 
+[InternalBufferCapacity(0)]
 public struct ProjectilePoolElement : IBufferElementData
 {
     public Entity ProjectileEntity;

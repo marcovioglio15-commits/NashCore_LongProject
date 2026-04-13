@@ -443,6 +443,7 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
                 case PowerUpModuleKind.Dash:
                 case PowerUpModuleKind.TimeDilationEnemies:
                 case PowerUpModuleKind.Heal:
+                case PowerUpModuleKind.LaserBeam:
                 case PowerUpModuleKind.Stackable:
                     return true;
                 default:
@@ -558,9 +559,10 @@ public static class PlayerPowerUpsPresetsPanelEntriesSupportUtility
         bool hasHeal = moduleKinds.Contains(PowerUpModuleKind.Heal);
         bool hasBulletTime = moduleKinds.Contains(PowerUpModuleKind.TimeDilationEnemies);
         bool hasCharacterTuning = moduleKinds.Contains(PowerUpModuleKind.CharacterTuning);
+        bool hasLaserBeam = moduleKinds.Contains(PowerUpModuleKind.LaserBeam);
         bool hasTriggerEvent = moduleKinds.Contains(PowerUpModuleKind.TriggerEvent);
         bool hasTriggerRelease = moduleKinds.Contains(PowerUpModuleKind.TriggerRelease);
-        bool hasPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal || hasBulletTime || hasCharacterTuning;
+        bool hasPassiveRuntimeConsumer = hasTrail || hasExplosion || hasOrbit || hasBounce || hasSplit || hasShotgun || hasHeal || hasBulletTime || hasCharacterTuning || hasLaserBeam;
         List<string> ignoredActiveModules = new List<string>();
 
         if (!hasPassiveRuntimeConsumer)

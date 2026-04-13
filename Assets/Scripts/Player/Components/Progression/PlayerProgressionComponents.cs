@@ -57,6 +57,7 @@ public struct PlayerExperienceCollection : IComponentData
 /// <summary>
 /// Stores one runtime scalable stat value keyed by name.
 /// </summary>
+[InternalBufferCapacity(0)]
 public struct PlayerScalableStatElement : IBufferElementData
 {
     public FixedString64Bytes Name;

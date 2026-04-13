@@ -25,6 +25,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                    float2 moveInput,
                                    float3 lastValidMovementDirection,
                                    Entity playerEntity,
+                                   ref PlayerLaserBeamState laserBeamState,
                                    ref PlayerDashState dashState,
                                    ref PlayerBulletTimeState bulletTimeState,
                                    DynamicBuffer<PlayerBombSpawnRequest> bombRequests,
@@ -58,6 +59,7 @@ public static class PlayerPowerUpActivationExecutionUtility
                                in muzzleLookup,
                                in transformLookup,
                                in localToWorldLookup,
+                               ref laserBeamState,
                                shootRequests);
                 return;
             case ActiveToolKind.PortableHealthPack:
@@ -81,14 +83,41 @@ public static class PlayerPowerUpActivationExecutionUtility
                                          float normalizedCharge,
                                          DynamicBuffer<ShootRequest> shootRequests)
     {
-        if (passiveToolsState.HasLaserBeam != 0)
+        float chargeFactor = math.saturate(normalizedCharge);
+        float resolvedSizeMultiplier = ResolveChargeScaledMultiplier(slotConfig.ChargeShot.SizeMultiplier, chargeFactor);
+        float resolvedDamageMultiplier = ResolveChargeScaledMultiplier(slotConfig.ChargeShot.DamageMultiplier, chargeFactor);
+        float resolvedSpeedMultiplier = ResolveChargeScaledMultiplier(slotConfig.ChargeShot.SpeedMultiplier, chargeFactor);
+        float resolvedRangeMultiplier = ResolveChargeScaledMultiplier(slotConfig.ChargeShot.RangeMultiplier, chargeFactor);
+        float resolvedLifetimeMultiplier = ResolveChargeScaledMultiplier(slotConfig.ChargeShot.LifetimeMultiplier, chargeFactor);
+
+        if (TryResolveTriggeredLaserPassiveToolsState(in slotConfig,
+                                                      in passiveToolsState,
+                                                      out PlayerPassiveToolsState triggeredPassiveToolsState))
         {
-            ExecuteLaserBeamChargeImpulse(in slotConfig,
-                                          in runtimeShootingConfig,
-                                          appliedElementSlots,
-                                          in passiveToolsState,
-                                          ref laserBeamState,
-                                          normalizedCharge);
+            ResolvePenetrationSettings(in runtimeShootingConfig.Values,
+                                       slotConfig.ChargeShot.PenetrationMode,
+                                       slotConfig.ChargeShot.MaxPenetrations,
+                                       out ProjectilePenetrationMode laserPenetrationMode,
+                                       out int laserMaxPenetrations);
+
+            PlayerProjectileRequestTemplate triggeredLaserTemplate = PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig,
+                                                                                                                             appliedElementSlots,
+                                                                                                                             in triggeredPassiveToolsState,
+                                                                                                                             resolvedSizeMultiplier,
+                                                                                                                             resolvedDamageMultiplier,
+                                                                                                                             resolvedSpeedMultiplier,
+                                                                                                                             resolvedRangeMultiplier,
+                                                                                                                             resolvedLifetimeMultiplier,
+                                                                                                                             slotConfig.ChargeShot.HasElementalPayload != 0,
+                                                                                                                             in slotConfig.ChargeShot.ElementalEffect,
+                                                                                                                             slotConfig.ChargeShot.ElementalStacksPerHit);
+
+            PlayerLaserBeamStateUtility.ActivateTriggeredActiveLaser(ref laserBeamState,
+                                                                     slotConfig.ChargeShot.LaserDurationSeconds,
+                                                                     laserPenetrationMode,
+                                                                     laserMaxPenetrations,
+                                                                     in triggeredLaserTemplate,
+                                                                     in triggeredPassiveToolsState);
             return;
         }
 
@@ -110,11 +139,11 @@ public static class PlayerPowerUpActivationExecutionUtility
         PlayerProjectileRequestTemplate template = PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig,
                                                                                                           appliedElementSlots,
                                                                                                           in passiveToolsState,
-                                                                                                          slotConfig.ChargeShot.SizeMultiplier,
-                                                                                                          slotConfig.ChargeShot.DamageMultiplier,
-                                                                                                          slotConfig.ChargeShot.SpeedMultiplier,
-                                                                                                          slotConfig.ChargeShot.RangeMultiplier,
-                                                                                                          slotConfig.ChargeShot.LifetimeMultiplier,
+                                                                                                          resolvedSizeMultiplier,
+                                                                                                          resolvedDamageMultiplier,
+                                                                                                          resolvedSpeedMultiplier,
+                                                                                                          resolvedRangeMultiplier,
+                                                                                                          resolvedLifetimeMultiplier,
                                                                                                           slotConfig.ChargeShot.HasElementalPayload != 0,
                                                                                                           in slotConfig.ChargeShot.ElementalEffect,
                                                                                                           slotConfig.ChargeShot.ElementalStacksPerHit);
@@ -130,37 +159,15 @@ public static class PlayerPowerUpActivationExecutionUtility
                                                          0);
     }
 
-    private static void ExecuteLaserBeamChargeImpulse(in PlayerPowerUpSlotConfig slotConfig,
-                                                      in PlayerRuntimeShootingConfig runtimeShootingConfig,
-                                                      DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
-                                                      in PlayerPassiveToolsState passiveToolsState,
-                                                      ref PlayerLaserBeamState laserBeamState,
-                                                      float normalizedCharge)
+    /// <summary>
+    /// Resolves one charge-scaled projectile multiplier so charge-shot projectiles and triggered lasers share the same growth curve.
+    /// /params authoredMultiplier Authored multiplier resolved from the active slot config.
+    /// /params chargeFactor Normalized charge ratio in the 0-1 range.
+    /// /returns Charge-scaled multiplier applied to the emitted projectile template.
+    /// </summary>
+    private static float ResolveChargeScaledMultiplier(float authoredMultiplier, float chargeFactor)
     {
-        PlayerProjectileRequestTemplate template = PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig,
-                                                                                                          appliedElementSlots,
-                                                                                                          in passiveToolsState,
-                                                                                                          slotConfig.ChargeShot.SizeMultiplier,
-                                                                                                          slotConfig.ChargeShot.DamageMultiplier,
-                                                                                                          slotConfig.ChargeShot.SpeedMultiplier,
-                                                                                                          slotConfig.ChargeShot.RangeMultiplier,
-                                                                                                          slotConfig.ChargeShot.LifetimeMultiplier,
-                                                                                                          slotConfig.ChargeShot.HasElementalPayload != 0,
-                                                                                                          in slotConfig.ChargeShot.ElementalEffect,
-                                                                                                          slotConfig.ChargeShot.ElementalStacksPerHit);
-        float chargeFactor = math.saturate(normalizedCharge);
-        float maximumTravelDistance = PlayerLaserBeamUtility.ResolveMaximumTravelDistance(math.max(0f, template.Speed),
-                                                                                          template.Range,
-                                                                                          template.Lifetime);
-        float travelDistance = maximumTravelDistance * math.lerp(0.55f, 1f, chargeFactor);
-        float damageMultiplier = math.lerp(1f, math.max(1f, slotConfig.ChargeShot.DamageMultiplier), chargeFactor);
-        float widthMultiplier = math.lerp(1f, math.max(1f, slotConfig.ChargeShot.SizeMultiplier), chargeFactor);
-        float impulseDurationSeconds = math.lerp(0.18f, 0.4f, chargeFactor);
-        laserBeamState.ChargeImpulseRemainingSeconds = math.max(laserBeamState.ChargeImpulseRemainingSeconds, impulseDurationSeconds);
-        laserBeamState.ChargeImpulseDamageMultiplier = math.max(laserBeamState.ChargeImpulseDamageMultiplier, damageMultiplier);
-        laserBeamState.ChargeImpulseWidthMultiplier = math.max(laserBeamState.ChargeImpulseWidthMultiplier, widthMultiplier);
-        laserBeamState.ChargeImpulseTravelDistance = math.max(laserBeamState.ChargeImpulseTravelDistance, travelDistance);
-        laserBeamState.DamageTickTimer = 0f;
+        return math.lerp(1f, math.max(1f, authoredMultiplier), math.saturate(chargeFactor));
     }
 
     private static void ExecuteBomb(in PlayerPowerUpSlotConfig slotConfig,
@@ -279,8 +286,40 @@ public static class PlayerPowerUpActivationExecutionUtility
                                        in ComponentLookup<ShooterMuzzleAnchor> muzzleLookup,
                                        in ComponentLookup<LocalTransform> transformLookup,
                                        in ComponentLookup<LocalToWorld> localToWorldLookup,
+                                       ref PlayerLaserBeamState laserBeamState,
                                        DynamicBuffer<ShootRequest> shootRequests)
     {
+        if (TryResolveTriggeredLaserPassiveToolsState(in slotConfig,
+                                                      in passiveToolsState,
+                                                      out PlayerPassiveToolsState triggeredPassiveToolsState))
+        {
+            ResolvePenetrationSettings(in runtimeShootingConfig.Values,
+                                       slotConfig.Shotgun.PenetrationMode,
+                                       slotConfig.Shotgun.MaxPenetrations,
+                                       out ProjectilePenetrationMode laserPenetrationMode,
+                                       out int laserMaxPenetrations);
+
+            PlayerProjectileRequestTemplate triggeredLaserTemplate = PlayerProjectileRequestUtility.BuildProjectileTemplate(in runtimeShootingConfig,
+                                                                                                                             appliedElementSlots,
+                                                                                                                             in triggeredPassiveToolsState,
+                                                                                                                             slotConfig.Shotgun.SizeMultiplier,
+                                                                                                                             slotConfig.Shotgun.DamageMultiplier,
+                                                                                                                             slotConfig.Shotgun.SpeedMultiplier,
+                                                                                                                             slotConfig.Shotgun.RangeMultiplier,
+                                                                                                                             slotConfig.Shotgun.LifetimeMultiplier,
+                                                                                                                             slotConfig.Shotgun.HasElementalPayload != 0,
+                                                                                                                             in slotConfig.Shotgun.ElementalEffect,
+                                                                                                                             slotConfig.Shotgun.ElementalStacksPerHit);
+
+            PlayerLaserBeamStateUtility.ActivateTriggeredActiveLaser(ref laserBeamState,
+                                                                     slotConfig.Shotgun.LaserDurationSeconds,
+                                                                     laserPenetrationMode,
+                                                                     laserMaxPenetrations,
+                                                                     in triggeredLaserTemplate,
+                                                                     in triggeredPassiveToolsState);
+            return;
+        }
+
         int projectileCount = math.max(1, slotConfig.Shotgun.ProjectileCount);
         float coneAngleDegrees = math.max(0f, slotConfig.Shotgun.ConeAngleDegrees);
         ResolvePenetrationSettings(in runtimeShootingConfig.Values,
@@ -316,6 +355,31 @@ public static class PlayerPowerUpActivationExecutionUtility
                                                          penetrationMode,
                                                          maxPenetrations,
                                                          0);
+    }
+
+    private static bool TryResolveTriggeredLaserPassiveToolsState(in PlayerPowerUpSlotConfig slotConfig,
+                                                                  in PlayerPassiveToolsState passiveToolsState,
+                                                                  out PlayerPassiveToolsState triggeredPassiveToolsState)
+    {
+        triggeredPassiveToolsState = passiveToolsState;
+
+        if (slotConfig.TriggeredProjectilePassiveTool.IsDefined != 0)
+            PlayerPassiveToolsAggregationUtility.AccumulatePassiveTool(ref triggeredPassiveToolsState, in slotConfig.TriggeredProjectilePassiveTool);
+
+        if (slotConfig.ToolKind == ActiveToolKind.Shotgun)
+            ApplyShotgunLaneOverride(in slotConfig.Shotgun, ref triggeredPassiveToolsState);
+
+        return triggeredPassiveToolsState.HasLaserBeam != 0;
+    }
+
+    private static void ApplyShotgunLaneOverride(in ShotgunPowerUpConfig shotgunConfig,
+                                                 ref PlayerPassiveToolsState passiveToolsState)
+    {
+        passiveToolsState.HasShotgun = 1;
+        passiveToolsState.Shotgun.ProjectileCount = math.max(1, shotgunConfig.ProjectileCount);
+        passiveToolsState.Shotgun.ConeAngleDegrees = math.max(0f, shotgunConfig.ConeAngleDegrees);
+        passiveToolsState.Shotgun.PenetrationMode = shotgunConfig.PenetrationMode;
+        passiveToolsState.Shotgun.MaxPenetrations = math.max(0, shotgunConfig.MaxPenetrations);
     }
     #endregion
 
