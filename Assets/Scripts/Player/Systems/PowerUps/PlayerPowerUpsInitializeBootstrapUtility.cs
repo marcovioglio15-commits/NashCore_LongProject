@@ -182,6 +182,7 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
             CooldownRemaining = 0f,
             ConsecutiveActiveElapsed = 0f,
             DamageTickTimer = 0f,
+            ContinuousDamageAccumulatorSeconds = 0f,
             StormBurstRemainingSeconds = 0f,
             StormTickPulses = default,
             TriggeredActiveRemainingSeconds = 0f,

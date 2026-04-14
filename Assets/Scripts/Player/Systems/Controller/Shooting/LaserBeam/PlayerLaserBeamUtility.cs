@@ -106,52 +106,6 @@ public static class PlayerLaserBeamUtility
     }
 
     /// <summary>
-    /// Clamps one requested straight-lane travel distance to the runtime safety envelope and to the nearest blocking wall when present.
-    /// /params startPoint World-space lane origin.
-    /// /params direction Requested lane direction.
-    /// /params travelDistance Requested travel budget before safety clamping.
-    /// /params collisionRadius Effective wall-query radius used by the lane.
-    /// /params physicsWorldSingleton Physics world used for wall clipping.
-    /// /params wallsCollisionFilter Collision filter used to detect world walls.
-    /// /params wallsEnabled True when wall clipping should be evaluated.
-    /// /returns Safe travel distance used by the straight-lane builder.
-    /// </summary>
-    internal static float ClampStraightLaneTravelDistance(float3 startPoint,
-                                                          float3 direction,
-                                                          float travelDistance,
-                                                          float collisionRadius,
-                                                          in PhysicsWorldSingleton physicsWorldSingleton,
-                                                          in CollisionFilter wallsCollisionFilter,
-                                                          bool wallsEnabled)
-    {
-        float safeTravelDistance = ClampRequestedTravelDistance(travelDistance);
-
-        if (safeTravelDistance < MinimumTravelDistance)
-            return 0f;
-
-        if (!IsFinite(startPoint) || !IsFinite(direction))
-            return 0f;
-
-        if (!wallsEnabled)
-            return safeTravelDistance;
-
-        float3 safeDirection = math.normalizesafe(direction, new float3(0f, 0f, 1f));
-
-        if (WorldWallCollisionUtility.TryResolveBlockedDisplacement(physicsWorldSingleton,
-                                                                    startPoint,
-                                                                    safeDirection * safeTravelDistance,
-                                                                    ClampCollisionRadius(collisionRadius),
-                                                                    wallsCollisionFilter,
-                                                                    out float3 allowedDisplacement,
-                                                                    out float3 _))
-        {
-            return math.min(safeTravelDistance, math.length(allowedDisplacement));
-        }
-
-        return safeTravelDistance;
-    }
-
-    /// <summary>
     /// Clamps one requested travel distance to the runtime safety envelope used by beam geometry and queries.
     /// /params travelDistance Requested travel distance.
     /// /returns Safe travel distance.

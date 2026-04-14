@@ -13572,6 +13572,7 @@ MonoBehaviour:
   secondaryActivePowerUpId: Active_Shotgun
   equippedPassivePowerUpIds:
   - Passive_LaserBeam
+  - PassiveBouncingProjectiles
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT

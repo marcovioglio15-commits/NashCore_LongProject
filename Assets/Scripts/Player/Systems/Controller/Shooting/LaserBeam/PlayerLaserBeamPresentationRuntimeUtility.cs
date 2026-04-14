@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,6 +13,11 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
 {
     #region Constants
     private const int LaserBeamVisualSortingOrder = 12;
+    private const float ShutdownTailDurationSeconds = 0.12f;
+    #endregion
+
+    #region Fields
+    private static readonly MaterialPropertyBlock sharedFadePropertyBlock = new MaterialPropertyBlock();
     #endregion
 
     #region Methods
@@ -95,7 +101,7 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
     }
 
     /// <summary>
-    /// Hides one pooled beam instance without destroying its owned visuals.
+    /// Starts a short dissipation tail for one pooled beam instance without destroying its owned visuals.
     /// /params playerEntity Owner entity used to resolve the pooled instance.
     /// /params managedInstances Runtime instance dictionary.
     /// /returns None.
@@ -111,12 +117,85 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
         if (managedInstance == null || managedInstance.RootObject == null)
             return;
 
-        StopParticleVisuals(managedInstance.SourceVisuals);
-        StopParticleVisuals(managedInstance.TerminalCapVisuals);
-        StopParticleVisuals(managedInstance.ContactFlareVisuals);
+        if (!managedInstance.RootObject.activeSelf)
+        {
+            managedInstance.ShutdownTailActive = 0;
+            managedInstance.ShutdownTailRemainingSeconds = 0f;
+            managedInstance.ShutdownTailLastFadeNormalized = 1f;
+            return;
+        }
 
-        if (managedInstance.RootObject.activeSelf)
-            managedInstance.RootObject.SetActive(false);
+        if (managedInstance.ShutdownTailActive != 0)
+            return;
+
+        managedInstance.ShutdownTailActive = 1;
+        managedInstance.ShutdownTailRemainingSeconds = ShutdownTailDurationSeconds;
+        managedInstance.ShutdownTailLastFadeNormalized = 1f;
+        StopParticleVisuals(managedInstance.SourceVisuals, false);
+        StopParticleVisuals(managedInstance.TerminalCapVisuals, false);
+        StopParticleVisuals(managedInstance.ContactFlareVisuals, false);
+    }
+
+    /// <summary>
+    /// Cancels the dissipation tail of one managed beam instance because the beam became active again.
+    /// /params managedInstance Managed beam instance that should resume full rendering.
+    /// /returns None.
+    /// </summary>
+    public static void CancelManagedInstanceShutdown(PlayerLaserBeamManagedInstance managedInstance)
+    {
+        if (managedInstance == null)
+            return;
+
+        managedInstance.ShutdownTailActive = 0;
+        managedInstance.ShutdownTailRemainingSeconds = 0f;
+        managedInstance.ShutdownTailLastFadeNormalized = 1f;
+    }
+
+    /// <summary>
+    /// Advances every active dissipation tail and hard-disables pooled instances whose fade reached zero.
+    /// /params managedInstances Runtime instance dictionary.
+    /// /params deltaTimeSeconds Frame delta time used to advance the fade.
+    /// /returns None.
+    /// </summary>
+    public static void AdvanceManagedInstanceShutdownTails(Dictionary<Entity, PlayerLaserBeamManagedInstance> managedInstances,
+                                                           float deltaTimeSeconds)
+    {
+        if (managedInstances.Count <= 0)
+            return;
+
+        float clampedDeltaTimeSeconds = math.max(0f, deltaTimeSeconds);
+        Dictionary<Entity, PlayerLaserBeamManagedInstance>.Enumerator enumerator = managedInstances.GetEnumerator();
+
+        while (enumerator.MoveNext())
+        {
+            PlayerLaserBeamManagedInstance managedInstance = enumerator.Current.Value;
+
+            if (managedInstance == null || managedInstance.ShutdownTailActive == 0)
+                continue;
+
+            if (managedInstance.RootObject == null || !managedInstance.RootObject.activeSelf)
+            {
+                managedInstance.ShutdownTailActive = 0;
+                managedInstance.ShutdownTailRemainingSeconds = 0f;
+                managedInstance.ShutdownTailLastFadeNormalized = 1f;
+                continue;
+            }
+
+            managedInstance.ShutdownTailRemainingSeconds = math.max(0f, managedInstance.ShutdownTailRemainingSeconds - clampedDeltaTimeSeconds);
+
+            if (managedInstance.ShutdownTailRemainingSeconds <= 0f)
+            {
+                HardDisableManagedInstance(managedInstance);
+                continue;
+            }
+
+            float previousFadeNormalized = math.max(1e-5f, managedInstance.ShutdownTailLastFadeNormalized);
+            float fadeNormalized = managedInstance.ShutdownTailRemainingSeconds / ShutdownTailDurationSeconds;
+            ApplyManagedInstanceDissipationFade(managedInstance, previousFadeNormalized, fadeNormalized);
+            managedInstance.ShutdownTailLastFadeNormalized = fadeNormalized;
+        }
+
+        enumerator.Dispose();
     }
 
     /// <summary>
@@ -129,6 +208,7 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
         if (managedInstance == null)
             return;
 
+        HardDisableManagedInstance(managedInstance);
         DestroyBodyVisuals(managedInstance.BodyVisuals);
         DestroyParticleVisuals(managedInstance.SourceVisuals);
         DestroyParticleVisuals(managedInstance.TerminalCapVisuals);
@@ -198,7 +278,7 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
             if (visual == null || visual.InstanceObject == null)
                 continue;
 
-            StopParticleVisual(visual);
+            StopParticleVisual(visual, true);
 
             if (visual.InstanceObject.activeSelf)
                 visual.InstanceObject.SetActive(false);
@@ -408,11 +488,13 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
     }
 
     /// <summary>
-    /// Stops and clears every pooled particle visual in one list.
+    /// Stops every pooled particle visual in one list and optionally clears already spawned particles.
     /// /params visuals Mutable pooled particle visual list.
+    /// /params clearParticles True to clear spawned particles immediately, false to let them fade naturally.
     /// /returns None.
     /// </summary>
-    private static void StopParticleVisuals(List<PlayerLaserBeamManagedParticleVisual> visuals)
+    private static void StopParticleVisuals(List<PlayerLaserBeamManagedParticleVisual> visuals,
+                                            bool clearParticles)
     {
         if (visuals == null)
             return;
@@ -424,16 +506,18 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
             if (visual == null)
                 continue;
 
-            StopParticleVisual(visual);
+            StopParticleVisual(visual, clearParticles);
         }
     }
 
     /// <summary>
-    /// Stops and clears every particle system owned by one pooled particle visual.
+    /// Stops every particle system owned by one pooled particle visual and optionally clears already spawned particles.
     /// /params visual Pooled particle visual to stop.
+    /// /params clearParticles True to clear spawned particles immediately, false to preserve a short residual tail.
     /// /returns None.
     /// </summary>
-    private static void StopParticleVisual(PlayerLaserBeamManagedParticleVisual visual)
+    private static void StopParticleVisual(PlayerLaserBeamManagedParticleVisual visual,
+                                           bool clearParticles)
     {
         if (visual == null || visual.ParticleSystems == null)
             return;
@@ -445,8 +529,130 @@ internal static class PlayerLaserBeamPresentationRuntimeUtility
             if (particleSystem == null)
                 continue;
 
-            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            particleSystem.Stop(true,
+                                clearParticles
+                                    ? ParticleSystemStopBehavior.StopEmittingAndClear
+                                    : ParticleSystemStopBehavior.StopEmitting);
         }
+    }
+
+    /// <summary>
+    /// Hard-disables one managed instance after its dissipation tail finishes or before destruction.
+    /// /params managedInstance Managed beam instance to disable.
+    /// /returns None.
+    /// </summary>
+    private static void HardDisableManagedInstance(PlayerLaserBeamManagedInstance managedInstance)
+    {
+        if (managedInstance == null || managedInstance.RootObject == null)
+            return;
+
+        managedInstance.ShutdownTailActive = 0;
+        managedInstance.ShutdownTailRemainingSeconds = 0f;
+        managedInstance.ShutdownTailLastFadeNormalized = 1f;
+        StopParticleVisuals(managedInstance.SourceVisuals, true);
+        StopParticleVisuals(managedInstance.TerminalCapVisuals, true);
+        StopParticleVisuals(managedInstance.ContactFlareVisuals, true);
+
+        if (managedInstance.RootObject.activeSelf)
+            managedInstance.RootObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Applies the shutdown fade multiplier to all active renderers owned by one managed instance.
+    /// /params managedInstance Managed beam instance that owns the active renderers.
+    /// /params previousFadeNormalized Previously applied remaining fade amount in the 0-1 range.
+    /// /params currentFadeNormalized Current remaining fade amount in the 0-1 range.
+    /// /returns None.
+    /// </summary>
+    private static void ApplyManagedInstanceDissipationFade(PlayerLaserBeamManagedInstance managedInstance,
+                                                            float previousFadeNormalized,
+                                                            float currentFadeNormalized)
+    {
+        ApplyBodyVisualDissipationFade(managedInstance.BodyVisuals, previousFadeNormalized, currentFadeNormalized);
+        ApplyParticleVisualDissipationFade(managedInstance.SourceVisuals, previousFadeNormalized, currentFadeNormalized);
+        ApplyParticleVisualDissipationFade(managedInstance.TerminalCapVisuals, previousFadeNormalized, currentFadeNormalized);
+        ApplyParticleVisualDissipationFade(managedInstance.ContactFlareVisuals, previousFadeNormalized, currentFadeNormalized);
+    }
+
+    /// <summary>
+    /// Applies the shutdown fade multiplier to every active body renderer in the provided list.
+    /// /params visuals Body visual list to fade.
+    /// /params previousFadeNormalized Previously applied remaining fade amount in the 0-1 range.
+    /// /params currentFadeNormalized Current remaining fade amount in the 0-1 range.
+    /// /returns None.
+    /// </summary>
+    private static void ApplyBodyVisualDissipationFade(List<PlayerLaserBeamManagedBodyVisual> visuals,
+                                                       float previousFadeNormalized,
+                                                       float currentFadeNormalized)
+    {
+        if (visuals == null)
+            return;
+
+        for (int visualIndex = 0; visualIndex < visuals.Count; visualIndex++)
+        {
+            PlayerLaserBeamManagedBodyVisual visual = visuals[visualIndex];
+
+            if (visual == null || visual.LayerVisuals == null)
+                continue;
+
+            for (int layerIndex = 0; layerIndex < visual.LayerVisuals.Count; layerIndex++)
+            {
+                PlayerLaserBeamManagedBodyLayerVisual layerVisual = visual.LayerVisuals[layerIndex];
+
+                if (layerVisual == null || layerVisual.MeshRenderer == null)
+                    continue;
+
+                ApplyRendererDissipationFade(layerVisual.MeshRenderer, previousFadeNormalized, currentFadeNormalized);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Applies the shutdown fade multiplier to every active particle renderer in the provided list.
+    /// /params visuals Particle visual list to fade.
+    /// /params previousFadeNormalized Previously applied remaining fade amount in the 0-1 range.
+    /// /params currentFadeNormalized Current remaining fade amount in the 0-1 range.
+    /// /returns None.
+    /// </summary>
+    private static void ApplyParticleVisualDissipationFade(List<PlayerLaserBeamManagedParticleVisual> visuals,
+                                                           float previousFadeNormalized,
+                                                           float currentFadeNormalized)
+    {
+        if (visuals == null)
+            return;
+
+        for (int visualIndex = 0; visualIndex < visuals.Count; visualIndex++)
+        {
+            PlayerLaserBeamManagedParticleVisual visual = visuals[visualIndex];
+
+            if (visual == null || visual.Renderers == null)
+                continue;
+
+            for (int rendererIndex = 0; rendererIndex < visual.Renderers.Length; rendererIndex++)
+                ApplyRendererDissipationFade(visual.Renderers[rendererIndex], previousFadeNormalized, currentFadeNormalized);
+        }
+    }
+
+    /// <summary>
+    /// Applies the shutdown fade multiplier to one active renderer property block.
+    /// /params renderer Renderer that owns the property block.
+    /// /params previousFadeNormalized Previously applied remaining fade amount in the 0-1 range.
+    /// /params currentFadeNormalized Current remaining fade amount in the 0-1 range.
+    /// /returns None.
+    /// </summary>
+    private static void ApplyRendererDissipationFade(Renderer renderer,
+                                                     float previousFadeNormalized,
+                                                     float currentFadeNormalized)
+    {
+        if (renderer == null || !renderer.gameObject.activeInHierarchy)
+            return;
+
+        sharedFadePropertyBlock.Clear();
+        renderer.GetPropertyBlock(sharedFadePropertyBlock);
+        PlayerLaserBeamPresentationRuntimeRenderPropertyUtility.ApplyDissipationFadeStep(sharedFadePropertyBlock,
+                                                                                         previousFadeNormalized,
+                                                                                         currentFadeNormalized);
+        renderer.SetPropertyBlock(sharedFadePropertyBlock);
     }
 
     /// <summary>

@@ -80,6 +80,7 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
         BufferLookup<PlayerLaserBeamImpactVariantElement> impactVariantLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamImpactVariantElement>(true);
         BufferLookup<PlayerLaserBeamVisualPresetElement> visualPresetLookup = SystemAPI.GetBufferLookup<PlayerLaserBeamVisualPresetElement>(true);
         float elapsedTimeSeconds = (float)SystemAPI.Time.ElapsedTime;
+        float deltaTimeSeconds = SystemAPI.Time.DeltaTime;
 
         foreach ((RefRO<PlayerPassiveToolsState> passiveToolsState,
                   RefRO<PlayerLaserBeamState> laserBeamState,
@@ -145,6 +146,8 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
 
             if (managedInstance == null || managedInstance.RootObject == null)
                 continue;
+
+            PlayerLaserBeamPresentationRuntimeUtility.CancelManagedInstanceShutdown(managedInstance);
 
             if (!managedInstance.RootObject.activeSelf)
                 managedInstance.RootObject.SetActive(true);
@@ -228,6 +231,8 @@ public partial struct PlayerLaserBeamPresentationSystem : ISystem
                                                                                     PlayerLaserBeamEndpointVisualRole.ContactFlare);
             }
         }
+
+        PlayerLaserBeamPresentationRuntimeUtility.AdvanceManagedInstanceShutdownTails(managedInstances, deltaTimeSeconds);
     }
     #endregion
 

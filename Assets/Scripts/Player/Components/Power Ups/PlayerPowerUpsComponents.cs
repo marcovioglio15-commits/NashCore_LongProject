@@ -398,6 +398,7 @@ public struct PlayerLaserBeamState : IComponentData
     public float CooldownRemaining;
     public float ConsecutiveActiveElapsed;
     public float DamageTickTimer;
+    public float ContinuousDamageAccumulatorSeconds;
     public float StormBurstRemainingSeconds;
     public FixedList512Bytes<PlayerLaserBeamStormTickPulse> StormTickPulses;
     public float TriggeredActiveRemainingSeconds;

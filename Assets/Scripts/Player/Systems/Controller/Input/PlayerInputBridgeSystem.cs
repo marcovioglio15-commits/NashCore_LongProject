@@ -45,10 +45,11 @@ public partial struct PlayerInputBridgeSystem : ISystem
         float powerUpSecondary = 0f;
         float swapPowerUpSlots = 0f;
         bool isInputReady = PlayerInputRuntime.IsReady;
+        bool isGameplayPaused = PlayerGameplayPauseUtility.IsHardGameplayPauseActive();
         bool useMousePointerLook = PlayerInputRuntime.ShouldUseMousePointerLook();
         ComponentLookup<PlayerRunOutcomeState> runOutcomeLookup = SystemAPI.GetComponentLookup<PlayerRunOutcomeState>(true);
 
-        if (isInputReady)
+        if (isInputReady && !isGameplayPaused)
         {
             if (moveAction != null)
             {
@@ -101,12 +102,30 @@ public partial struct PlayerInputBridgeSystem : ISystem
 
             if (!assignedLocalInput)
             {
-                inputState.ValueRW.Move = isFinalized ? float2.zero : move;
-                inputState.ValueRW.Look = isFinalized ? float2.zero : look;
-                inputState.ValueRW.Shoot = isFinalized ? 0f : shoot;
-                inputState.ValueRW.PowerUpPrimary = isFinalized ? 0f : powerUpPrimary;
-                inputState.ValueRW.PowerUpSecondary = isFinalized ? 0f : powerUpSecondary;
-                inputState.ValueRW.SwapPowerUpSlots = isFinalized ? 0f : swapPowerUpSlots;
+                if (isFinalized)
+                {
+                    inputState.ValueRW.Move = float2.zero;
+                    inputState.ValueRW.Look = float2.zero;
+                    inputState.ValueRW.Shoot = 0f;
+                    inputState.ValueRW.PowerUpPrimary = 0f;
+                    inputState.ValueRW.PowerUpSecondary = 0f;
+                    inputState.ValueRW.SwapPowerUpSlots = 0f;
+                    assignedLocalInput = true;
+                    continue;
+                }
+
+                if (isGameplayPaused)
+                {
+                    assignedLocalInput = true;
+                    continue;
+                }
+
+                inputState.ValueRW.Move = move;
+                inputState.ValueRW.Look = look;
+                inputState.ValueRW.Shoot = shoot;
+                inputState.ValueRW.PowerUpPrimary = powerUpPrimary;
+                inputState.ValueRW.PowerUpSecondary = powerUpSecondary;
+                inputState.ValueRW.SwapPowerUpSlots = swapPowerUpSlots;
                 assignedLocalInput = true;
                 continue;
             }

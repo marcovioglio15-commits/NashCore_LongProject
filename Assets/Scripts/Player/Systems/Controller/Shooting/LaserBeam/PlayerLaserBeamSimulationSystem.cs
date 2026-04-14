@@ -138,6 +138,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
                 currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
                 currentLaserBeamState.DamageTickTimer = 0f;
+                currentLaserBeamState.ContinuousDamageAccumulatorSeconds = 0f;
                 PlayerLaserBeamStateUtility.ClearStormBurst(ref currentLaserBeamState);
                 PlayerLaserBeamStateUtility.ClearStormTickPulses(ref currentLaserBeamState);
 
@@ -154,6 +155,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.IsActive = 0;
                 currentLaserBeamState.IsTickReady = 0;
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
+                currentLaserBeamState.ContinuousDamageAccumulatorSeconds = 0f;
                 PlayerLaserBeamStateUtility.ClearStormBurst(ref currentLaserBeamState);
                 PlayerLaserBeamStateUtility.ClearStormTickPulses(ref currentLaserBeamState);
                 PlayerLaserBeamStateUtility.ClearChargeImpulse(ref currentLaserBeamState);
@@ -186,6 +188,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.CooldownRemaining = math.max(0f, laserBeamConfig.CooldownSeconds);
                 currentLaserBeamState.ConsecutiveActiveElapsed = 0f;
                 currentLaserBeamState.DamageTickTimer = math.max(0.0001f, laserBeamConfig.DamageTickIntervalSeconds);
+                currentLaserBeamState.ContinuousDamageAccumulatorSeconds = 0f;
                 PlayerLaserBeamStateUtility.ClearStormBurst(ref currentLaserBeamState);
                 PlayerLaserBeamStateUtility.ClearStormTickPulses(ref currentLaserBeamState);
                 PlayerLaserBeamStateUtility.ClearChargeImpulse(ref currentLaserBeamState);
@@ -220,6 +223,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                 currentLaserBeamState.IsActive = 0;
                 currentLaserBeamState.IsTickReady = 0;
                 currentLaserBeamState.LastResolvedPrimaryLaneCount = 0;
+                currentLaserBeamState.ContinuousDamageAccumulatorSeconds = 0f;
                 PlayerLaserBeamStateUtility.ClearStormBurst(ref currentLaserBeamState);
                 PlayerLaserBeamStateUtility.ClearStormTickPulses(ref currentLaserBeamState);
                 shootingState.ValueRW.VisualShootingActive = 0;
@@ -417,15 +421,9 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                                                                                           wallsEnabled);
         }
 
-        float safeTravelDistance = PlayerLaserBeamUtility.ClampStraightLaneTravelDistance(spawnPosition,
-                                                                                          direction,
-                                                                                          travelDistance,
-                                                                                          safeCollisionRadius,
-                                                                                          in physicsWorldSingleton,
-                                                                                          in wallsCollisionFilter,
-                                                                                          wallsEnabled);
+        float requestedTravelDistance = PlayerLaserBeamUtility.ClampRequestedTravelDistance(travelDistance);
 
-        if (safeTravelDistance < PlayerLaserBeamUtility.MinimumTravelDistance)
+        if (requestedTravelDistance < PlayerLaserBeamUtility.MinimumTravelDistance)
             return false;
 
         int laneStartIndex = laserBeamLanes.Length;
@@ -434,7 +432,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                                                                      isSplitChild,
                                                                      spawnPosition,
                                                                      direction,
-                                                                     safeTravelDistance,
+                                                                     requestedTravelDistance,
                                                                      safeCollisionRadius,
                                                                      safeBodyWidth,
                                                                      safeDamageMultiplier,
@@ -448,7 +446,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
 
         bool reachedLifetimeCap = lifetimeLimit > 0f && activeSeconds >= lifetimeLimit;
         bool reachedRangeCap = rangeLimit > 0f &&
-                               safeTravelDistance + PlayerLaserBeamUtility.MinimumTravelDistance >=
+                               requestedTravelDistance + PlayerLaserBeamUtility.MinimumTravelDistance >=
                                PlayerLaserBeamUtility.ClampRequestedTravelDistance(rangeLimit);
         bool blockedByWall = laserBeamLanes.Length > laneStartIndex &&
                              laserBeamLanes[laserBeamLanes.Length - 1].TerminalBlockedByWall != 0;

@@ -34,7 +34,7 @@ public partial struct PlayerLookDirectionSystem : ISystem
     {
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
         bool useMousePointerLook = PlayerInputRuntime.ShouldUseMousePointerLook();
-        bool isGameplayPaused = Time.timeScale <= 0.0001f;
+        bool isGameplayPaused = PlayerGameplayPauseUtility.IsHardGameplayPauseActive();
         Camera camera = null;
         float2 mouseScreenPosition = float2.zero;
 

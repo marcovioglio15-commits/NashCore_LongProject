@@ -14,6 +14,7 @@ using Unity.Transforms;
 public partial struct PlayerLaserBeamDamageSystem : ISystem
 {
     #region Fields
+    private const float MaximumContinuousDamageSliceIntervalSeconds = 0.15f;
     private EntityQuery enemyQuery;
     #endregion
 
@@ -37,12 +38,33 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
     }
 
     /// <summary>
-    /// Resolves per-frame Laser Beam damage for every player that currently owns an active beam.
+    /// Resolves Laser Beam damage work only when at least one beam has a fresh tick budget or active storm packets to process.
     /// /params state Mutable system state.
     /// /returns None.
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
+        float deltaTime = SystemAPI.Time.DeltaTime;
+        bool hasBeamWorkToProcess = false;
+
+        foreach (RefRO<PlayerLaserBeamState> laserBeamState in SystemAPI.Query<RefRO<PlayerLaserBeamState>>())
+        {
+            PlayerLaserBeamState currentLaserBeamState = laserBeamState.ValueRO;
+
+            if (currentLaserBeamState.IsActive == 0 &&
+                currentLaserBeamState.IsTickReady == 0 &&
+                currentLaserBeamState.StormTickPulses.Length <= 0)
+            {
+                continue;
+            }
+
+            hasBeamWorkToProcess = true;
+            break;
+        }
+
+        if (!hasBeamWorkToProcess)
+            return;
+
         EntityManager entityManager = state.EntityManager;
         int enemyCount = enemyQuery.CalculateEntityCount();
 
@@ -114,10 +136,11 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
 
             LaserBeamPassiveConfig laserBeamConfig = effectivePassiveToolsState.LaserBeam;
             float tickIntervalSeconds = math.max(0.0001f, laserBeamConfig.DamageTickIntervalSeconds);
+            int pendingTickCount = 0;
 
             if (currentLaserBeamState.IsTickReady != 0)
             {
-                int pendingTickCount = ResolvePendingTickCount(ref currentLaserBeamState, tickIntervalSeconds);
+                pendingTickCount = ResolvePendingTickCount(ref currentLaserBeamState, tickIntervalSeconds);
                 currentLaserBeamState.IsTickReady = 0;
 
                 if (pendingTickCount > 0)
@@ -126,6 +149,7 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
 
             if (laserBeamLanes.Length <= 0 || effectivePassiveToolsState.HasLaserBeam == 0)
             {
+                currentLaserBeamState.ContinuousDamageAccumulatorSeconds = 0f;
                 PlayerLaserBeamStateUtility.RemoveCompletedStormTickPulses(ref currentLaserBeamState, in laserBeamConfig);
                 laserBeamState.ValueRW = currentLaserBeamState;
                 continue;
@@ -151,16 +175,26 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
             float baseDamagePerSecond = ResolveBaseDamagePerSecond(projectileTemplate,
                                                                    runtimeShootingConfig.ValueRO,
                                                                    chargeImpulseDamageMultiplier);
-            float continuousDamagePerFrame = math.max(0f,
-                                                      baseDamagePerSecond *
-                                                      math.max(0f, laserBeamConfig.ContinuousDamagePerSecondMultiplier) *
-                                                      math.max(0f, SystemAPI.Time.DeltaTime));
+            float continuousDamageSliceIntervalSeconds = math.min(tickIntervalSeconds, MaximumContinuousDamageSliceIntervalSeconds);
+            int continuousDamageSliceCount = ResolvePendingContinuousDamageSliceCount(ref currentLaserBeamState,
+                                                                                      deltaTime,
+                                                                                      continuousDamageSliceIntervalSeconds);
+
+            // Quantize the flat continuous channel on a capped internal cadence so average DPS stays stable
+            // without forcing a full-lane health pass every rendered frame, even on beam presets with large tick intervals.
+            float continuousDamagePerTick = math.max(0f,
+                                                     baseDamagePerSecond *
+                                                     math.max(0f, laserBeamConfig.ContinuousDamagePerSecondMultiplier) *
+                                                     continuousDamageSliceIntervalSeconds *
+                                                     continuousDamageSliceCount);
             float tickDamagePerPulse = math.max(0f,
                                                 baseDamagePerSecond *
                                                 math.max(0f, laserBeamConfig.DamageMultiplier) *
                                                 tickIntervalSeconds);
+            bool hasActiveStormTickPulses = tickDamagePerPulse > 0f &&
+                                            currentLaserBeamState.StormTickPulses.Length > 0;
 
-            if (continuousDamagePerFrame <= 0f && tickDamagePerPulse <= 0f)
+            if (continuousDamagePerTick <= 0f && !hasActiveStormTickPulses)
             {
                 PlayerLaserBeamStateUtility.RemoveCompletedStormTickPulses(ref currentLaserBeamState, in laserBeamConfig);
                 laserBeamState.ValueRW = currentLaserBeamState;
@@ -219,24 +253,24 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
 
                 if (hitCandidates.Length > 0)
                 {
-                    if (continuousDamagePerFrame > 0f)
+                    if (continuousDamagePerTick > 0f)
                     {
-                        PlayerLaserBeamDamageResolutionUtility.ApplyContinuousLaneHits(continuousDamagePerFrame,
-                                                                                      in firstSegment,
-                                                                                      in hitCandidates,
-                                                                                      enemyEntities,
-                                                                                      ref projectedEnemyHealth,
-                                                                                      ref enemyDirtyFlags,
-                                                                                      in despawnRequestLookup,
-                                                                                      ref commandBuffer);
+                        PlayerLaserBeamDamageResolutionUtility.ApplyContinuousLaneDamageBudget(continuousDamagePerTick,
+                                                                                               in firstSegment,
+                                                                                               in hitCandidates,
+                                                                                               enemyEntities,
+                                                                                               ref projectedEnemyHealth,
+                                                                                               ref enemyDirtyFlags,
+                                                                                               in despawnRequestLookup,
+                                                                                               ref commandBuffer);
                     }
 
-                    if (tickDamagePerPulse > 0f)
+                    if (hasActiveStormTickPulses)
                     {
                         ApplyStormTickPulseLaneHits(playerEntity,
                                                     laneLength,
                                                     tickDamagePerPulse,
-                                                    SystemAPI.Time.DeltaTime,
+                                                    deltaTime,
                                                     penetrationMode,
                                                     maximumPenetrations,
                                                     projectileTemplate,
@@ -410,6 +444,28 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
                         projectileTemplate.Damage *
                         math.max(0f, runtimeShootingConfig.Values.RateOfFire) *
                         math.max(1f, chargeImpulseDamageMultiplier));
+    }
+
+    /// <summary>
+    /// Accumulates elapsed beam lifetime into a capped continuous-damage cadence and returns how many slices must be applied this frame.
+    /// /params laserBeamState Mutable beam state that stores the running continuous-damage accumulator.
+    /// /params deltaTime Frame delta time added to the accumulator.
+    /// /params sliceIntervalSeconds Maximum interval between two flat continuous-damage applications.
+    /// /returns Number of continuous-damage slices that should be emitted this frame.
+    /// </summary>
+    private static int ResolvePendingContinuousDamageSliceCount(ref PlayerLaserBeamState laserBeamState,
+                                                                float deltaTime,
+                                                                float sliceIntervalSeconds)
+    {
+        float safeSliceIntervalSeconds = math.max(0.0001f, sliceIntervalSeconds);
+        laserBeamState.ContinuousDamageAccumulatorSeconds += math.max(0f, deltaTime);
+
+        if (laserBeamState.ContinuousDamageAccumulatorSeconds < safeSliceIntervalSeconds)
+            return 0;
+
+        int pendingSliceCount = (int)math.floor(laserBeamState.ContinuousDamageAccumulatorSeconds / safeSliceIntervalSeconds);
+        laserBeamState.ContinuousDamageAccumulatorSeconds -= pendingSliceCount * safeSliceIntervalSeconds;
+        return math.max(0, pendingSliceCount);
     }
 
     /// <summary>

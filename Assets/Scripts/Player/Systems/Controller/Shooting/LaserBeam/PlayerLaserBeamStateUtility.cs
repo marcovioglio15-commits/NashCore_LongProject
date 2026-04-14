@@ -27,6 +27,7 @@ internal static class PlayerLaserBeamStateUtility
         laserBeamState.CooldownRemaining = 0f;
         laserBeamState.ConsecutiveActiveElapsed = 0f;
         laserBeamState.DamageTickTimer = 0f;
+        laserBeamState.ContinuousDamageAccumulatorSeconds = 0f;
         ClearStormBurst(ref laserBeamState);
         ClearStormTickPulses(ref laserBeamState);
         ClearTriggeredActiveLaser(ref laserBeamState);
@@ -179,6 +180,7 @@ internal static class PlayerLaserBeamStateUtility
         laserBeamState.TriggeredActiveProjectileTemplate = projectileTemplate;
         laserBeamState.TriggeredActivePassiveToolsState = passiveToolsSnapshot;
         laserBeamState.DamageTickTimer = 0f;
+        laserBeamState.ContinuousDamageAccumulatorSeconds = 0f;
     }
 
     /// <summary>

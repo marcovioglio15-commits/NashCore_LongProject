@@ -12,6 +12,17 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
 {
     #region Constants
     private const int MaximumRibbonPointsPerLane = 2048;
+    private const float PresentationRibbonDensityMultiplier = 0.72f;
+    private const int RibbonSmoothingIterationCount = 2;
+    private const float RibbonSmoothingStrength = 0.42f;
+    private const float MaximumRibbonSmoothingDeviationFactor = 0.45f;
+    private const float MinimumRibbonSmoothingDeviation = 0.015f;
+    private const float TurnSmoothingLockDotThreshold = 0.88f;
+    #endregion
+
+    #region Fields
+    private static readonly List<float3> originalRibbonPositions = new List<float3>(256);
+    private static readonly List<float3> smoothedRibbonPositions = new List<float3>(256);
     #endregion
 
     #region Methods
@@ -193,9 +204,13 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
                         hasVisibleStartPoint = true;
                     }
 
+                    bool lockSegmentTerminalPoint = laneSegmentIndex >= laneSegmentEndIndex - 1 ||
+                                                    ShouldLockLaneTurn(segment.Direction,
+                                                                       laserBeamLanes[laneSegmentIndex + 1].Direction);
                     AppendLaneSegmentPoints(presentationSegment,
                                             adaptiveMaximumSegmentLength,
                                             visualConfig.VerticalLift,
+                                            lockSegmentTerminalPoint,
                                             ref laneLength,
                                             ribbonPoints);
                 }
@@ -217,6 +232,11 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
                 ribbonPoints.RemoveRange(lanePointStartIndex, math.max(0, pointCount));
                 continue;
             }
+
+            laneLength = SmoothLaneRibbonPoints(lanePointStartIndex,
+                                                pointCount,
+                                                ribbonPoints,
+                                                ref endpoint);
 
             laneVisuals.Add(new PlayerLaserBeamLaneVisual
             {
@@ -255,7 +275,8 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
         {
             Position = LiftPoint(startPoint, verticalLift),
             Distance = 0f,
-            Width = math.max(0.02f, startWidth)
+            Width = math.max(0.02f, startWidth),
+            SmoothingLock = 1
         });
     }
 
@@ -271,6 +292,7 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
     private static void AppendLaneSegmentPoints(PlayerLaserBeamLaneElement segment,
                                                 float maximumSegmentLength,
                                                 float verticalLift,
+                                                bool lockTerminalPoint,
                                                 ref float laneLength,
                                                 List<PlayerLaserBeamRibbonPoint> ribbonPoints)
     {
@@ -287,11 +309,58 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
             {
                 Position = LiftPoint(point, verticalLift),
                 Distance = pointDistance,
-                Width = math.max(0.02f, segment.VisualWidth)
+                Width = math.max(0.02f, segment.VisualWidth),
+                SmoothingLock = lockTerminalPoint && sampleIndex == sampleCount ? (byte)1 : (byte)0
             });
         }
 
         laneLength = startDistance + segmentLength;
+    }
+
+    /// <summary>
+    /// Applies a presentation-only smoothing pass to one lane while preserving locked pivots and the authoritative endpoints.
+    /// /params lanePointStartIndex First point index belonging to the lane.
+    /// /params pointCount Number of points belonging to the lane.
+    /// /params ribbonPoints Shared ribbon point list containing the current lane.
+    /// /params endpoint Mutable endpoint metadata that receives the smoothed start and end directions.
+    /// /returns Final lane length after smoothing and distance rebuild.
+    /// </summary>
+    private static float SmoothLaneRibbonPoints(int lanePointStartIndex,
+                                                int pointCount,
+                                                List<PlayerLaserBeamRibbonPoint> ribbonPoints,
+                                                ref PlayerLaserBeamLaneEndpoint endpoint)
+    {
+        CacheOriginalLanePositions(lanePointStartIndex, pointCount, ribbonPoints);
+
+        if (pointCount >= 3)
+        {
+            for (int iterationIndex = 0; iterationIndex < RibbonSmoothingIterationCount; iterationIndex++)
+            {
+                ApplyLaneRibbonSmoothingIteration(lanePointStartIndex,
+                                                  pointCount,
+                                                  ribbonPoints,
+                                                  originalRibbonPositions,
+                                                  smoothedRibbonPositions);
+                CommitSmoothedLanePositions(lanePointStartIndex,
+                                            pointCount,
+                                            ribbonPoints,
+                                            smoothedRibbonPositions);
+            }
+        }
+
+        endpoint.VisibleStartPoint = ribbonPoints[lanePointStartIndex].Position;
+        endpoint.EndPoint = ribbonPoints[lanePointStartIndex + pointCount - 1].Position;
+        endpoint.StartDirection = ResolveLaneDirection(lanePointStartIndex,
+                                                      pointCount,
+                                                      ribbonPoints,
+                                                      true,
+                                                      endpoint.StartDirection);
+        endpoint.EndDirection = ResolveLaneDirection(lanePointStartIndex,
+                                                    pointCount,
+                                                    ribbonPoints,
+                                                    false,
+                                                    endpoint.EndDirection);
+        return RecalculateLaneRibbonDistances(lanePointStartIndex, pointCount, ribbonPoints);
     }
 
     /// <summary>
@@ -341,13 +410,193 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
                                                                    int laneSegmentEndIndex,
                                                                    float sourceOffset)
     {
-        float authoredMaximumSegmentLength = math.max(visualConfig.MinimumSegmentLength, visualConfig.MaximumRibbonSegmentLength);
+        float authoredMaximumSegmentLength = math.max(visualConfig.MinimumSegmentLength,
+                                                      visualConfig.MaximumRibbonSegmentLength * PresentationRibbonDensityMultiplier);
         float visibleLaneLength = ResolveVisibleLaneLength(laserBeamLanes,
                                                            laneSegmentStartIndex,
                                                            laneSegmentEndIndex,
                                                            sourceOffset);
         float budgetDrivenSegmentLength = visibleLaneLength / math.max(1, MaximumRibbonPointsPerLane - 1);
         return math.max(authoredMaximumSegmentLength, budgetDrivenSegmentLength);
+    }
+
+    /// <summary>
+    /// Copies the current lane positions into reusable scratch lists used by the smoothing pass.
+    /// /params lanePointStartIndex First point index belonging to the lane.
+    /// /params pointCount Number of points belonging to the lane.
+    /// /params ribbonPoints Shared ribbon point list containing the current lane.
+    /// /returns None.
+    /// </summary>
+    private static void CacheOriginalLanePositions(int lanePointStartIndex,
+                                                   int pointCount,
+                                                   List<PlayerLaserBeamRibbonPoint> ribbonPoints)
+    {
+        originalRibbonPositions.Clear();
+        smoothedRibbonPositions.Clear();
+
+        for (int localPointIndex = 0; localPointIndex < pointCount; localPointIndex++)
+        {
+            float3 pointPosition = ribbonPoints[lanePointStartIndex + localPointIndex].Position;
+            originalRibbonPositions.Add(pointPosition);
+            smoothedRibbonPositions.Add(pointPosition);
+        }
+    }
+
+    /// <summary>
+    /// Runs one bounded smoothing iteration over the current lane positions.
+    /// /params lanePointStartIndex First point index belonging to the lane.
+    /// /params pointCount Number of points belonging to the lane.
+    /// /params ribbonPoints Shared ribbon point list containing the current lane.
+    /// /params originalPositions Original unsmoothed lane positions used to clamp drift.
+    /// /params smoothedPositions Mutable destination list for smoothed positions.
+    /// /returns None.
+    /// </summary>
+    private static void ApplyLaneRibbonSmoothingIteration(int lanePointStartIndex,
+                                                          int pointCount,
+                                                          List<PlayerLaserBeamRibbonPoint> ribbonPoints,
+                                                          List<float3> originalPositions,
+                                                          List<float3> smoothedPositions)
+    {
+        for (int localPointIndex = 0; localPointIndex < pointCount; localPointIndex++)
+        {
+            int absolutePointIndex = lanePointStartIndex + localPointIndex;
+            PlayerLaserBeamRibbonPoint currentPoint = ribbonPoints[absolutePointIndex];
+
+            if (currentPoint.SmoothingLock != 0 ||
+                localPointIndex <= 0 ||
+                localPointIndex >= pointCount - 1)
+            {
+                smoothedPositions[localPointIndex] = currentPoint.Position;
+                continue;
+            }
+
+            float3 previousPosition = ribbonPoints[absolutePointIndex - 1].Position;
+            float3 currentPosition = currentPoint.Position;
+            float3 nextPosition = ribbonPoints[absolutePointIndex + 1].Position;
+            float3 neighborAverage = (previousPosition + nextPosition) * 0.5f;
+            float smoothingStrength = localPointIndex == 1 || localPointIndex == pointCount - 2
+                ? RibbonSmoothingStrength * 0.68f
+                : RibbonSmoothingStrength;
+            float3 smoothedPosition = math.lerp(currentPosition, neighborAverage, smoothingStrength);
+            float3 originalPosition = originalPositions[localPointIndex];
+            float maximumDeviation = ResolveMaximumRibbonSmoothingDeviation(previousPosition,
+                                                                           currentPosition,
+                                                                           nextPosition,
+                                                                           currentPoint.Width);
+            float3 deviation = smoothedPosition - originalPosition;
+            float deviationLength = math.length(deviation);
+
+            if (deviationLength > maximumDeviation && deviationLength > 1e-5f)
+                smoothedPosition = originalPosition + deviation * (maximumDeviation / deviationLength);
+
+            smoothedPositions[localPointIndex] = smoothedPosition;
+        }
+    }
+
+    /// <summary>
+    /// Writes the smoothed positions back into the shared lane point list.
+    /// /params lanePointStartIndex First point index belonging to the lane.
+    /// /params pointCount Number of points belonging to the lane.
+    /// /params ribbonPoints Shared ribbon point list containing the current lane.
+    /// /params smoothedPositions Source list containing the latest smoothed positions.
+    /// /returns None.
+    /// </summary>
+    private static void CommitSmoothedLanePositions(int lanePointStartIndex,
+                                                    int pointCount,
+                                                    List<PlayerLaserBeamRibbonPoint> ribbonPoints,
+                                                    List<float3> smoothedPositions)
+    {
+        for (int localPointIndex = 0; localPointIndex < pointCount; localPointIndex++)
+        {
+            int absolutePointIndex = lanePointStartIndex + localPointIndex;
+            PlayerLaserBeamRibbonPoint point = ribbonPoints[absolutePointIndex];
+            point.Position = smoothedPositions[localPointIndex];
+            ribbonPoints[absolutePointIndex] = point;
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the cumulative lane distances after presentation-only smoothing changed the point positions.
+    /// /params lanePointStartIndex First point index belonging to the lane.
+    /// /params pointCount Number of points belonging to the lane.
+    /// /params ribbonPoints Shared ribbon point list containing the current lane.
+    /// /returns Final lane length after distance rebuild.
+    /// </summary>
+    private static float RecalculateLaneRibbonDistances(int lanePointStartIndex,
+                                                        int pointCount,
+                                                        List<PlayerLaserBeamRibbonPoint> ribbonPoints)
+    {
+        float laneLength = 0f;
+
+        for (int localPointIndex = 0; localPointIndex < pointCount; localPointIndex++)
+        {
+            int absolutePointIndex = lanePointStartIndex + localPointIndex;
+            PlayerLaserBeamRibbonPoint point = ribbonPoints[absolutePointIndex];
+
+            if (localPointIndex <= 0)
+            {
+                point.Distance = 0f;
+                ribbonPoints[absolutePointIndex] = point;
+                continue;
+            }
+
+            float3 previousPosition = ribbonPoints[absolutePointIndex - 1].Position;
+            laneLength += math.distance(previousPosition, point.Position);
+            point.Distance = laneLength;
+            ribbonPoints[absolutePointIndex] = point;
+        }
+
+        return laneLength;
+    }
+
+    /// <summary>
+    /// Resolves the smoothed lane direction at either the start or the end of the point range.
+    /// /params lanePointStartIndex First point index belonging to the lane.
+    /// /params pointCount Number of points belonging to the lane.
+    /// /params ribbonPoints Shared ribbon point list containing the current lane.
+    /// /params resolveStartDirection True to resolve the start direction, otherwise the end direction.
+    /// /params fallbackDirection Direction used when the lane is too short to derive a stable tangent.
+    /// /returns Smoothed lane direction.
+    /// </summary>
+    private static float3 ResolveLaneDirection(int lanePointStartIndex,
+                                               int pointCount,
+                                               List<PlayerLaserBeamRibbonPoint> ribbonPoints,
+                                               bool resolveStartDirection,
+                                               float3 fallbackDirection)
+    {
+        if (pointCount < 2)
+            return fallbackDirection;
+
+        int fromIndex = resolveStartDirection
+            ? lanePointStartIndex
+            : lanePointStartIndex + pointCount - 2;
+        int toIndex = resolveStartDirection
+            ? lanePointStartIndex + 1
+            : lanePointStartIndex + pointCount - 1;
+        float3 fromPosition = ribbonPoints[fromIndex].Position;
+        float3 toPosition = ribbonPoints[toIndex].Position;
+        return math.normalizesafe(toPosition - fromPosition, fallbackDirection);
+    }
+
+    /// <summary>
+    /// Resolves the maximum presentation-only drift allowed for one smoothed point.
+    /// /params previousPosition Previous lane point position.
+    /// /params currentPosition Current lane point position.
+    /// /params nextPosition Next lane point position.
+    /// /params pointWidth Raw gameplay width at the current point.
+    /// /returns Maximum allowed deviation from the original point position.
+    /// </summary>
+    private static float ResolveMaximumRibbonSmoothingDeviation(float3 previousPosition,
+                                                                float3 currentPosition,
+                                                                float3 nextPosition,
+                                                                float pointWidth)
+    {
+        float previousSpan = math.distance(previousPosition, currentPosition);
+        float nextSpan = math.distance(currentPosition, nextPosition);
+        float localSpan = math.min(previousSpan, nextSpan);
+        float widthBudget = 0.03f + math.max(0.02f, pointWidth) * 0.35f;
+        float spanBudget = localSpan * MaximumRibbonSmoothingDeviationFactor;
+        return math.max(MinimumRibbonSmoothingDeviation, math.min(widthBudget, spanBudget));
     }
 
     /// <summary>
@@ -375,6 +624,21 @@ internal static class PlayerLaserBeamPresentationRuntimeGeometryUtility
         }
 
         return math.max(0f, visibleLaneLength);
+    }
+
+    /// <summary>
+    /// Resolves whether the segment terminal point should remain locked to preserve a deliberate sharp turn.
+    /// /params currentDirection Current segment direction.
+    /// /params nextDirection Following segment direction.
+    /// /returns True when the turn is sharp enough to preserve exactly.
+    /// </summary>
+    private static bool ShouldLockLaneTurn(float3 currentDirection,
+                                           float3 nextDirection)
+    {
+        float3 normalizedCurrentDirection = math.normalizesafe(currentDirection, new float3(0f, 0f, 1f));
+        float3 normalizedNextDirection = math.normalizesafe(nextDirection, normalizedCurrentDirection);
+        float turnDot = math.dot(normalizedCurrentDirection, normalizedNextDirection);
+        return turnDot <= TurnSmoothingLockDotThreshold;
     }
 
     /// <summary>

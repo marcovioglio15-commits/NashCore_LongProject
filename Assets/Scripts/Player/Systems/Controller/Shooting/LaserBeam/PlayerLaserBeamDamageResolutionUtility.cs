@@ -137,8 +137,8 @@ internal static class PlayerLaserBeamDamageResolutionUtility
     }
 
     /// <summary>
-    /// Applies continuous per-frame beam damage to every enemy currently intersecting one lane.
-    /// /params laneDamagePerFrame Damage budget emitted by the lane during the current frame before lane multipliers.
+    /// Applies one continuous-damage budget slice to every enemy currently intersecting one lane.
+    /// /params laneDamageBudget Damage budget emitted by the lane for the current application slice before lane multipliers.
     /// /params referenceSegment First segment of the lane, used to inherit lane-local damage scaling.
     /// /params hitCandidates Sorted lane hit candidates.
     /// /params enemyEntities Projected enemy entities.
@@ -148,18 +148,18 @@ internal static class PlayerLaserBeamDamageResolutionUtility
     /// /params commandBuffer ECB used to enqueue despawn requests.
     /// /returns None.
     /// </summary>
-    public static void ApplyContinuousLaneHits(float laneDamagePerFrame,
-                                               in PlayerLaserBeamLaneElement referenceSegment,
-                                               in NativeList<LaserBeamHitCandidate> hitCandidates,
-                                               NativeArray<Entity> enemyEntities,
-                                               ref NativeArray<EnemyHealth> projectedEnemyHealth,
-                                               ref NativeArray<byte> enemyDirtyFlags,
-                                               in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
-                                               ref EntityCommandBuffer commandBuffer)
+    public static void ApplyContinuousLaneDamageBudget(float laneDamageBudget,
+                                                       in PlayerLaserBeamLaneElement referenceSegment,
+                                                       in NativeList<LaserBeamHitCandidate> hitCandidates,
+                                                       NativeArray<Entity> enemyEntities,
+                                                       ref NativeArray<EnemyHealth> projectedEnemyHealth,
+                                                       ref NativeArray<byte> enemyDirtyFlags,
+                                                       in ComponentLookup<EnemyDespawnRequest> despawnRequestLookup,
+                                                       ref EntityCommandBuffer commandBuffer)
     {
-        float effectiveLaneDamagePerFrame = math.max(0f, laneDamagePerFrame * math.max(0f, referenceSegment.DamageMultiplier));
+        float effectiveLaneDamageBudget = math.max(0f, laneDamageBudget * math.max(0f, referenceSegment.DamageMultiplier));
 
-        if (effectiveLaneDamagePerFrame <= 0f)
+        if (effectiveLaneDamageBudget <= 0f)
             return;
 
         for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
@@ -168,7 +168,7 @@ internal static class PlayerLaserBeamDamageResolutionUtility
 
             if (!TryApplyFlatDamageHit(ref projectedEnemyHealth,
                                        hitCandidate.EnemyIndex,
-                                       effectiveLaneDamagePerFrame,
+                                       effectiveLaneDamageBudget,
                                        out bool _))
             {
                 continue;

@@ -10,10 +10,12 @@ using UnityEngine;
 internal static class PlayerLaserBeamPresentationRuntimeMeshUtility
 {
     #region Constants
-    private const int TubeSideCount = 6;
+    private const int TubeSideCount = 10;
     private const float MinimumTubeRadius = 0.01f;
-    private const float SourceInitialApertureScale = 0.48f;
-    private const float SourceMidApertureScale = 0.82f;
+    private const float SourceInitialApertureScale = 0.42f;
+    private const float SourceMidApertureScale = 0.88f;
+    private const float SourceCollarBulgeStrength = 0.06f;
+    private const float TerminalShoulderBulgeStrength = 0.07f;
     #endregion
 
     #region Fields
@@ -384,15 +386,15 @@ internal static class PlayerLaserBeamPresentationRuntimeMeshUtility
         switch (bodyProfile)
         {
             case LaserBeamBodyProfile.TaperedJet:
-                normalAxisScale = math.lerp(0.78f, 0.62f, normalizedDistance);
-                binormalAxisScale = math.lerp(0.95f, 1.12f, normalizedDistance);
+                normalAxisScale = math.lerp(0.84f, 0.68f, normalizedDistance);
+                binormalAxisScale = math.lerp(0.98f, 1.1f, normalizedDistance);
                 return;
             case LaserBeamBodyProfile.DenseRibbon:
-                normalAxisScale = 0.56f;
-                binormalAxisScale = 1.24f;
+                normalAxisScale = 0.62f;
+                binormalAxisScale = 1.18f;
                 return;
             default:
-                normalAxisScale = 0.82f;
+                normalAxisScale = 0.9f;
                 binormalAxisScale = 1f;
                 return;
         }
@@ -411,14 +413,14 @@ internal static class PlayerLaserBeamPresentationRuntimeMeshUtility
                                                                  float baseDiameter,
                                                                  in LaserBeamPassiveConfig laserBeamConfig)
     {
-        float apertureLength = math.clamp(math.max(baseDiameter * 1.55f, laserBeamConfig.SourceOffset * 1.9f),
+        float apertureLength = math.clamp(math.max(baseDiameter * 1.7f, laserBeamConfig.SourceOffset * 2.05f),
                                           0.08f,
-                                          laneLength * 0.28f);
+                                          laneLength * 0.3f);
 
         if (apertureLength <= 0f || distanceAlongLane >= apertureLength)
             return 1f;
 
-        float fastOpenLength = apertureLength * 0.24f;
+        float fastOpenLength = apertureLength * 0.2f;
 
         if (distanceAlongLane <= fastOpenLength)
         {
@@ -430,7 +432,11 @@ internal static class PlayerLaserBeamPresentationRuntimeMeshUtility
         float apertureInterpolation = math.saturate((distanceAlongLane - fastOpenLength) /
                                                     math.max(0.0001f, apertureLength - fastOpenLength));
         float smoothApertureInterpolation = apertureInterpolation * apertureInterpolation * (3f - 2f * apertureInterpolation);
-        return math.lerp(SourceMidApertureScale, 1f, smoothApertureInterpolation);
+        float collarBulge = math.sin(smoothApertureInterpolation * math.PI) *
+                            SourceCollarBulgeStrength *
+                            math.saturate(math.sqrt(math.max(0.01f, laserBeamConfig.SourceScaleMultiplier)));
+        float collarMultiplier = 1f + collarBulge;
+        return math.lerp(SourceMidApertureScale, 1f, smoothApertureInterpolation) * collarMultiplier;
     }
 
     /// <summary>
@@ -451,9 +457,9 @@ internal static class PlayerLaserBeamPresentationRuntimeMeshUtility
         float tipLength = math.clamp(baseDiameter *
                                      math.sqrt(math.max(0.01f, laserBeamConfig.TerminalCapScaleMultiplier)) *
                                      math.max(1f, visualConfig.TerminalSplashLengthMultiplier) *
-                                     2.65f,
+                                     2.9f,
                                      0.12f,
-                                     laneLength * 0.32f);
+                                     laneLength * 0.34f);
         float tipStartDistance = math.max(0f, laneLength - tipLength);
 
         if (distanceAlongLane <= tipStartDistance)
@@ -461,10 +467,14 @@ internal static class PlayerLaserBeamPresentationRuntimeMeshUtility
 
         float tipInterpolation = math.saturate((distanceAlongLane - tipStartDistance) / math.max(0.0001f, laneLength - tipStartDistance));
         float smoothInterpolation = tipInterpolation * tipInterpolation * (3f - 2f * tipInterpolation);
-        float closureFloor = math.clamp(0.78f + math.max(0f, visualConfig.TerminalSplashWidthMultiplier - 1f) * 0.06f,
-                                        0.72f,
-                                        0.9f);
-        return math.lerp(1f, closureFloor, smoothInterpolation);
+        float shoulderBulge = math.sin(smoothInterpolation * math.PI) *
+                              TerminalShoulderBulgeStrength *
+                              math.saturate(math.sqrt(math.max(0.01f, laserBeamConfig.TerminalCapScaleMultiplier)));
+        float closureFloor = math.clamp(0.74f + math.max(0f, visualConfig.TerminalSplashWidthMultiplier - 1f) * 0.05f,
+                                        0.68f,
+                                        0.86f);
+        float closureInterpolation = smoothInterpolation * smoothInterpolation;
+        return (1f + shoulderBulge) * math.lerp(1f, closureFloor, closureInterpolation);
     }
 
     /// <summary>

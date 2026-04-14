@@ -9,6 +9,11 @@ using UnityEngine;
 internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
 {
     #region Constants
+    private const float SourceAnchorBlend = 0.26f;
+    private const float TerminalCapEmbedDistanceBias = 0.04f;
+    private const float TerminalCapEmbedDistanceFactor = 0.22f;
+    private const float ContactFlareEmbedDistanceBias = 0.02f;
+    private const float ContactFlareEmbedDistanceFactor = 0.1f;
     private static readonly int CoreColorPropertyId = Shader.PropertyToID("_CoreColor");
     private static readonly int FlowColorPropertyId = Shader.PropertyToID("_FlowColor");
     private static readonly int StormColorPropertyId = Shader.PropertyToID("_StormColor");
@@ -135,6 +140,36 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
     }
 
     /// <summary>
+    /// Applies one incremental dissipation step to the currently assigned beam property block.
+    /// /params propertyBlock Property block to modify in place.
+    /// /params previousFadeNormalized Previously applied remaining fade amount in the 0-1 range.
+    /// /params currentFadeNormalized Current remaining fade amount in the 0-1 range.
+    /// /returns None.
+    /// </summary>
+    public static void ApplyDissipationFadeStep(MaterialPropertyBlock propertyBlock,
+                                                float previousFadeNormalized,
+                                                float currentFadeNormalized)
+    {
+        if (propertyBlock == null)
+            return;
+
+        float previousOpacityFade = ResolveOpacityDissipationFactor(previousFadeNormalized);
+        float currentOpacityFade = ResolveOpacityDissipationFactor(currentFadeNormalized);
+        float previousEnergyFade = ResolveEnergyDissipationFactor(previousFadeNormalized);
+        float currentEnergyFade = ResolveEnergyDissipationFactor(currentFadeNormalized);
+        float opacityFadeRatio = previousOpacityFade > 1e-5f ? currentOpacityFade / previousOpacityFade : 0f;
+        float energyFadeRatio = previousEnergyFade > 1e-5f ? currentEnergyFade / previousEnergyFade : 0f;
+        propertyBlock.SetFloat(OpacityPropertyId, propertyBlock.GetFloat(OpacityPropertyId) * opacityFadeRatio);
+        propertyBlock.SetFloat(CoreBrightnessPropertyId, propertyBlock.GetFloat(CoreBrightnessPropertyId) * energyFadeRatio);
+        propertyBlock.SetFloat(RimBrightnessPropertyId, propertyBlock.GetFloat(RimBrightnessPropertyId) * energyFadeRatio);
+        propertyBlock.SetFloat(StormIdleIntensityPropertyId, propertyBlock.GetFloat(StormIdleIntensityPropertyId) * energyFadeRatio);
+        propertyBlock.SetFloat(StormBurstIntensityPropertyId, propertyBlock.GetFloat(StormBurstIntensityPropertyId) * energyFadeRatio);
+        propertyBlock.SetFloat(SourceDischargeIntensityPropertyId, propertyBlock.GetFloat(SourceDischargeIntensityPropertyId) * energyFadeRatio);
+        propertyBlock.SetFloat(TerminalCapIntensityPropertyId, propertyBlock.GetFloat(TerminalCapIntensityPropertyId) * energyFadeRatio);
+        propertyBlock.SetFloat(ContactFlareIntensityPropertyId, propertyBlock.GetFloat(ContactFlareIntensityPropertyId) * energyFadeRatio);
+    }
+
+    /// <summary>
     /// Applies per-layer opacity and intensity adjustments so the body layers stay separated.
     /// /params layerRole Layer role currently being rendered.
     /// /params opacity Mutable opacity multiplier.
@@ -154,9 +189,9 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
         switch (layerRole)
         {
             case PlayerLaserBeamBodyLayerRole.Core:
-                opacity *= 0.58f;
-                coreBrightness *= 0.9f;
-                rimBrightness *= 0.18f;
+                opacity *= 0.62f;
+                coreBrightness *= 0.96f;
+                rimBrightness *= 0.2f;
                 stormIdleIntensity *= 0.05f;
                 stormBurstIntensity *= 0.08f;
                 return;
@@ -168,11 +203,11 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
                 stormBurstIntensity *= 1.58f;
                 return;
             default:
-                opacity *= 1f;
-                coreBrightness *= 0.78f;
-                rimBrightness *= 1.02f;
-                stormIdleIntensity *= 0.82f;
-                stormBurstIntensity *= 0.94f;
+                opacity *= 1.04f;
+                coreBrightness *= 0.82f;
+                rimBrightness *= 1.06f;
+                stormIdleIntensity *= 0.86f;
+                stormBurstIntensity *= 0.98f;
                 return;
         }
     }
@@ -219,11 +254,11 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
         switch (visualRole)
         {
             case PlayerLaserBeamEndpointVisualRole.Source:
-                return laserBeamConfig.BodyOpacity * 0.9f;
+                return laserBeamConfig.BodyOpacity * 0.98f;
             case PlayerLaserBeamEndpointVisualRole.ContactFlare:
                 return laserBeamConfig.BodyOpacity;
             default:
-                return laserBeamConfig.BodyOpacity * 0.94f;
+                return laserBeamConfig.BodyOpacity * 0.99f;
         }
     }
 
@@ -239,11 +274,11 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
         switch (visualRole)
         {
             case PlayerLaserBeamEndpointVisualRole.Source:
-                return laserBeamConfig.CoreBrightness * 1.08f;
+                return laserBeamConfig.CoreBrightness * 1.14f;
             case PlayerLaserBeamEndpointVisualRole.ContactFlare:
                 return laserBeamConfig.CoreBrightness * 1.22f;
             default:
-                return laserBeamConfig.CoreBrightness * 1.14f;
+                return laserBeamConfig.CoreBrightness * 1.2f;
         }
     }
 
@@ -259,11 +294,11 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
         switch (visualRole)
         {
             case PlayerLaserBeamEndpointVisualRole.Source:
-                return laserBeamConfig.RimBrightness * 0.84f;
+                return laserBeamConfig.RimBrightness * 0.96f;
             case PlayerLaserBeamEndpointVisualRole.ContactFlare:
                 return laserBeamConfig.RimBrightness * 1.36f;
             default:
-                return laserBeamConfig.RimBrightness * 1.04f;
+                return laserBeamConfig.RimBrightness * 1.12f;
         }
     }
 
@@ -279,11 +314,11 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
         switch (visualRole)
         {
             case PlayerLaserBeamEndpointVisualRole.Source:
-                return laserBeamConfig.StormIdleIntensity * 0.82f;
+                return laserBeamConfig.StormIdleIntensity * 0.9f;
             case PlayerLaserBeamEndpointVisualRole.ContactFlare:
                 return laserBeamConfig.StormIdleIntensity * 1.18f;
             default:
-                return laserBeamConfig.StormIdleIntensity * 0.96f;
+                return laserBeamConfig.StormIdleIntensity * 1.02f;
         }
     }
 
@@ -299,11 +334,11 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
         switch (visualRole)
         {
             case PlayerLaserBeamEndpointVisualRole.Source:
-                return laserBeamConfig.StormBurstIntensity * 0.74f;
+                return laserBeamConfig.StormBurstIntensity * 0.86f;
             case PlayerLaserBeamEndpointVisualRole.ContactFlare:
                 return laserBeamConfig.StormBurstIntensity * 1.22f;
             default:
-                return laserBeamConfig.StormBurstIntensity * 1.04f;
+                return laserBeamConfig.StormBurstIntensity * 1.08f;
         }
     }
 
@@ -389,9 +424,21 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
         switch (visualRole)
         {
             case PlayerLaserBeamEndpointVisualRole.Source:
-                return endpoint.MuzzlePoint;
+                return math.lerp(endpoint.MuzzlePoint, endpoint.VisibleStartPoint, SourceAnchorBlend);
+            case PlayerLaserBeamEndpointVisualRole.ContactFlare:
+                return endpoint.EndPoint -
+                       math.normalizesafe(endpoint.EndDirection, new float3(0f, 0f, 1f)) *
+                       ResolveEndpointEmbedDistance(endpoint.EndWidth,
+                                                    ContactFlareEmbedDistanceBias,
+                                                    ContactFlareEmbedDistanceFactor,
+                                                    0.08f);
             default:
-                return endpoint.EndPoint;
+                return endpoint.EndPoint -
+                       math.normalizesafe(endpoint.EndDirection, new float3(0f, 0f, 1f)) *
+                       ResolveEndpointEmbedDistance(endpoint.EndWidth,
+                                                    TerminalCapEmbedDistanceBias,
+                                                    TerminalCapEmbedDistanceFactor,
+                                                    0.12f);
         }
     }
 
@@ -491,16 +538,16 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
         switch (visualRole)
         {
             case PlayerLaserBeamEndpointVisualRole.Source:
-                baseFactor = 0.62f;
-                maximumScale = 1.45f;
+                baseFactor = 0.68f;
+                maximumScale = 1.58f;
                 break;
             case PlayerLaserBeamEndpointVisualRole.ContactFlare:
-                baseFactor = 0.92f;
-                maximumScale = 2.05f;
+                baseFactor = 0.96f;
+                maximumScale = 2.1f;
                 break;
             default:
-                baseFactor = 0.76f;
-                maximumScale = 1.72f;
+                baseFactor = 0.82f;
+                maximumScale = 1.84f;
                 break;
         }
 
@@ -561,6 +608,45 @@ internal static class PlayerLaserBeamPresentationRuntimeRenderPropertyUtility
 
         stormTickProgressB = progressVector;
         stormTickActiveB = activeVector;
+    }
+
+    /// <summary>
+    /// Resolves the amount the endpoint visual should sink into the body so the handoff reads as one continuous beam.
+    /// /params endWidth Beam width resolved at the lane endpoint.
+    /// /params distanceBias Minimum embed distance applied even on thin beams.
+    /// /params distanceFactor Additional distance derived from the current endpoint width.
+    /// /params maximumDistance Upper bound used to avoid over-sinking the effect.
+    /// /returns Embed distance in world units.
+    /// </summary>
+    private static float ResolveEndpointEmbedDistance(float endWidth,
+                                                      float distanceBias,
+                                                      float distanceFactor,
+                                                      float maximumDistance)
+    {
+        float resolvedWidth = math.max(0.02f, endWidth);
+        float embedDistance = distanceBias + resolvedWidth * distanceFactor;
+        return math.min(maximumDistance, embedDistance);
+    }
+
+    /// <summary>
+    /// Resolves the target opacity multiplier used by the shutdown dissipation curve.
+    /// /params fadeNormalized Remaining fade amount in the 0-1 range.
+    /// /returns Target opacity multiplier.
+    /// </summary>
+    private static float ResolveOpacityDissipationFactor(float fadeNormalized)
+    {
+        float clampedFade = math.saturate(fadeNormalized);
+        return clampedFade * clampedFade * (3f - 2f * clampedFade);
+    }
+
+    /// <summary>
+    /// Resolves the target energy multiplier used by brightness and endpoint intensities during shutdown dissipation.
+    /// /params fadeNormalized Remaining fade amount in the 0-1 range.
+    /// /returns Target energy multiplier.
+    /// </summary>
+    private static float ResolveEnergyDissipationFactor(float fadeNormalized)
+    {
+        return math.sqrt(ResolveOpacityDissipationFactor(fadeNormalized));
     }
     #endregion
 

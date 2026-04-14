@@ -12,6 +12,9 @@ internal sealed class PlayerLaserBeamManagedInstance
     #region Fields
     public GameObject RootObject;
     public Transform RootTransform;
+    public float ShutdownTailRemainingSeconds;
+    public float ShutdownTailLastFadeNormalized;
+    public byte ShutdownTailActive;
     public readonly List<PlayerLaserBeamManagedBodyVisual> BodyVisuals = new List<PlayerLaserBeamManagedBodyVisual>(16);
     public readonly List<PlayerLaserBeamManagedParticleVisual> SourceVisuals = new List<PlayerLaserBeamManagedParticleVisual>(8);
     public readonly List<PlayerLaserBeamManagedParticleVisual> TerminalCapVisuals = new List<PlayerLaserBeamManagedParticleVisual>(8);
@@ -77,6 +80,7 @@ internal struct PlayerLaserBeamRibbonPoint
     public float3 Position;
     public float Distance;
     public float Width;
+    public byte SmoothingLock;
     #endregion
 }
 
