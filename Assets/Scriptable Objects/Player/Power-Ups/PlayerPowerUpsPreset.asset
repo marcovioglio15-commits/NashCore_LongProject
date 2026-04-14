@@ -3823,7 +3823,7 @@ MonoBehaviour:
         bodyOpacity: 1
         coreWidthMultiplier: 0.5
         coreBrightness: 1.52
-        rimBrightness: 30
+        rimBrightness: 2
         flowScrollSpeed: 14
         flowPulseFrequency: 6
         stormTwistSpeed: 14
@@ -13572,7 +13572,6 @@ MonoBehaviour:
   secondaryActivePowerUpId: Active_Shotgun
   equippedPassivePowerUpIds:
   - Passive_LaserBeam
-  - PassiveBouncingProjectiles
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT

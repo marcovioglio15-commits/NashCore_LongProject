@@ -27,21 +27,44 @@ Material:
     m_Ints: []
     m_Floats:
     - _BeamRole: 0
+    - _BodyLayerRole: 1
     - _BodyProfile: 0
     - _BubbleDriftSpeed: 1.4
     - _CapShape: 0
+    - _ContactFlareIntensity: 1.28
     - _CoreBrightness: 1.75
+    - _CoreWidthMultiplier: 0.52
     - _FlowPulseFrequency: 0.4
     - _FlowScrollSpeed: 1.15
     - _Opacity: 0.96
+    - _PosterizeBlend: 1
+    - _PosterizeSteps: 3
     - _RimBrightness: 1.35
     - _SegmentLength: 1
-    - _WobbleAmplitude: 0.05
+    - _SourceDischargeIntensity: 1.2
+    - _StormBurstIntensity: 1.1
+    - _StormBurstNormalized: 0
+    - _StormIdleIntensity: 0.48
+    - _StormRingFrequency: 5.4
+    - _StormRingThickness: 0.18
+    - _StormShellSeparation: 0.32
+    - _StormShellWidthMultiplier: 1.12
+    - _StormTwistSpeed: 14
+    - _TerminalBlockedByWall: 0
+    - _TerminalCapIntensity: 1.12
     - _WidthScale: 1
+    - _WobbleAmplitude: 0.05
     m_Colors:
     - _BeamColorA: {r: 0.29, g: 0.82, b: 0.96, a: 1}
     - _BeamColorB: {r: 0.66, g: 0.92, b: 1, a: 1}
+    - _ContactColor: {r: 0.96, g: 0.98999995, b: 1, a: 1}
     - _CoreColor: {r: 1, g: 1, b: 1, a: 1}
+    - _FlowColor: {r: 0.13999996, g: 0.86, b: 1, a: 1}
     - _RimColor: {r: 0.07, g: 0.48, b: 0.72, a: 1}
+    - _StormColor: {r: 0.76, g: 0.96999997, b: 1, a: 1}
+    - _StormTickActiveA: {r: 0, g: 0, b: 0, a: 0}
+    - _StormTickActiveB: {r: 0, g: 0, b: 0, a: 0}
+    - _StormTickProgressA: {r: 1, g: 1, b: 1, a: 1}
+    - _StormTickProgressB: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -13,6 +13,8 @@ Shader "Custom/LiquidAntibioticBeam"
         _FlowPulseFrequency("Flow Pulse Frequency", Range(0, 16)) = 1.6
         _WobbleAmplitude("Wobble Amplitude", Range(0, 2)) = 0.08
         _BubbleDriftSpeed("Bubble Drift Speed", Range(0, 16)) = 1.8
+        _PosterizeSteps("Posterize Steps", Range(2, 12)) = 4
+        _PosterizeBlend("Posterize Blend", Range(0, 1)) = 0.0
         _BeamRole("Beam Role", Range(0, 3)) = 0
         _BodyLayerRole("Body Layer Role", Range(0, 2)) = 1
         _CapShape("Cap Shape", Range(0, 2)) = 0
@@ -94,6 +96,8 @@ Shader "Custom/LiquidAntibioticBeam"
                 half _FlowPulseFrequency;
                 half _WobbleAmplitude;
                 half _BubbleDriftSpeed;
+                half _PosterizeSteps;
+                half _PosterizeBlend;
                 half _BeamRole;
                 half _BodyLayerRole;
                 half _CapShape;
@@ -207,6 +211,40 @@ Shader "Custom/LiquidAntibioticBeam"
                 return softDisc;
             }
 
+            float EncodePosterizeEnergy(float energy)
+            {
+                return energy / (1.0 + max(0.0, energy));
+            }
+
+            float DecodePosterizeEnergy(float encodedEnergy)
+            {
+                float safeEncodedEnergy = min(saturate(encodedEnergy), 0.999);
+                return safeEncodedEnergy / max(0.0001, 1.0 - safeEncodedEnergy);
+            }
+
+            float QuantizePosterizeEnergy(float encodedEnergy, float posterizeSteps)
+            {
+                float stepCount = max(2.0, posterizeSteps);
+                float quantizedStepCount = max(1.0, stepCount - 1.0);
+                return floor(saturate(encodedEnergy) * quantizedStepCount + 0.5) / quantizedStepCount;
+            }
+
+            half3 ApplyPosterizeColor(half3 colorValue, half posterizeSteps, half posterizeBlend)
+            {
+                float blendedPosterize = saturate(posterizeBlend);
+
+                if (blendedPosterize <= 0.0)
+                    return colorValue;
+
+                float luminance = max(0.0, dot(colorValue, float3(0.299, 0.587, 0.114)));
+                float encodedLuminance = EncodePosterizeEnergy(luminance);
+                float posterizedEncodedLuminance = QuantizePosterizeEnergy(encodedLuminance, posterizeSteps);
+                float posterizedLuminance = DecodePosterizeEnergy(posterizedEncodedLuminance);
+                float luminanceScale = luminance > 0.0001 ? posterizedLuminance / luminance : 0.0;
+                half3 posterizedColor = colorValue * luminanceScale;
+                return lerp(colorValue, posterizedColor, blendedPosterize);
+            }
+
             float ResolveBodyLayerOffset(float3 normalOS, float widthScale, float bodyLayerRole)
             {
                 float normalLength = max(0.0001, length(normalOS));
@@ -295,6 +333,7 @@ Shader "Custom/LiquidAntibioticBeam"
                     color = lerp(_FlowColor.rgb, _CoreColor.rgb, 0.38h) * corePulse * _CoreBrightness * 0.72h;
                     color += _StormColor.rgb * saturate(tickMask + tickTrailMask * 0.42) * 0.18h * _RimBrightness;
                     alpha = saturate(_Opacity * (0.1h + faceMask * 0.42h));
+                    color = ApplyPosterizeColor(color, _PosterizeSteps, _PosterizeBlend);
                     return half4(color, alpha);
                 }
 
@@ -305,6 +344,7 @@ Shader "Custom/LiquidAntibioticBeam"
                     color += lerp(_FlowColor.rgb, _CoreColor.rgb, 0.22h) * faceMask * _CoreBrightness * 0.24h;
                     color += _StormColor.rgb * saturate(tickMask + tickTrailMask * 0.58) * 0.22h * _RimBrightness;
                     alpha = saturate(_Opacity * (0.28h + faceMask * 0.56h + edgeFresnel * 0.18h));
+                    color = ApplyPosterizeColor(color, _PosterizeSteps, _PosterizeBlend);
                     return half4(color, alpha);
                 }
 
@@ -316,6 +356,7 @@ Shader "Custom/LiquidAntibioticBeam"
                 color += lerp(_StormColor.rgb, _ContactColor.rgb, 0.32h) * saturate(tickMask + tickTrailMask * 0.38) * (0.84h + stormBurstNormalized * 0.46h);
                 color += _CoreColor.rgb * tickMask * 0.16h;
                 alpha = saturate(_Opacity * (stormGlow * 0.68h + tickMask * 0.44h + tickTrailMask * 0.2h));
+                color = ApplyPosterizeColor(color, _PosterizeSteps, _PosterizeBlend);
                 return half4(color, alpha);
             }
 
@@ -340,6 +381,7 @@ Shader "Custom/LiquidAntibioticBeam"
                 color += _StormColor.rgb * electricArc * mask * _SourceDischargeIntensity * (0.54h + stormIntensity * 0.56h);
                 color += _ContactColor.rgb * electricArc * apertureRing * 0.28h * _SourceDischargeIntensity;
                 half alpha = saturate(mask * _Opacity * (0.48h + electricArc * 0.42h + coreFlash * 0.22h));
+                color = ApplyPosterizeColor(color, _PosterizeSteps, _PosterizeBlend);
                 return half4(color, alpha);
             }
 
@@ -364,6 +406,7 @@ Shader "Custom/LiquidAntibioticBeam"
                 color += _StormColor.rgb * capArc * rimRing * _RimBrightness * (0.46h + stormIntensity * 0.52h);
                 color += _ContactColor.rgb * capArc * 0.32h * _TerminalCapIntensity;
                 half alpha = saturate(mask * _Opacity * (0.5h + innerDisc * 0.34h + rimRing * 0.26h));
+                color = ApplyPosterizeColor(color, _PosterizeSteps, _PosterizeBlend);
                 return half4(color, alpha);
             }
 
@@ -386,6 +429,7 @@ Shader "Custom/LiquidAntibioticBeam"
                 color += _StormColor.rgb * electricArc * fanMask * _RimBrightness * wallBoost * 1.1h;
                 color += _CoreColor.rgb * flashBand * fanMask * 0.34h;
                 half alpha = saturate(mask * fanMask * _Opacity * (0.58h + electricArc * 0.32h) * wallBoost);
+                color = ApplyPosterizeColor(color, _PosterizeSteps, _PosterizeBlend);
                 return half4(color, alpha);
             }
 

@@ -50,6 +50,8 @@ Material:
     - _FlowPulseFrequency: 1.6
     - _FlowScrollSpeed: 1.15
     - _Opacity: 0.92
+    - _PosterizeBlend: 0.68
+    - _PosterizeSteps: 4
     - _RimBrightness: 1.35
     - _SegmentLength: 0.3
     - _SourceDischargeIntensity: 0

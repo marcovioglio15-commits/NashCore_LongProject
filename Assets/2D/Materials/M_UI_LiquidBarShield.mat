@@ -29,17 +29,19 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BodyDepth: 2.2
+    - _BodyDepth: 0.1
     - _ColorMask: 15
     - _FillNormalized: 1
-    - _FlowSpeed: 0.24
-    - _GlowStrength: 1.2
+    - _FlowSpeed: 5
+    - _GlowStrength: 0
     - _MovementBlend: 0
     - _MovementDirection: 1
+    - _PosterizeBlend: 0.25
+    - _PosterizeSteps: 2
     - _SheenSpeed: 0.75
     - _SheenStrength: 0.45
     - _SheenVisibility: 0.22
-    - _SheenWidth: 0.11
+    - _SheenWidth: 0.01
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
@@ -48,7 +50,7 @@ Material:
     - _StrataStrength: 1.55
     - _SubsurfaceStrength: 1.25
     - _UseUIAlphaClip: 0
-    - _Viscosity: 0.82
+    - _Viscosity: 1
     - _WaveAmplitude: 0.15
     - _WaveFrequency: 4.8
     m_Colors:

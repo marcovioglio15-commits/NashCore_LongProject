@@ -32,10 +32,12 @@ Material:
     - _BodyDepth: 1.65
     - _ColorMask: 15
     - _FillNormalized: 1
-    - _FlowSpeed: 0.34
+    - _FlowSpeed: 0
     - _GlowStrength: 1.05
     - _MovementBlend: 0
     - _MovementDirection: 1
+    - _PosterizeBlend: 0.34
+    - _PosterizeSteps: 5
     - _SheenSpeed: 0.9
     - _SheenStrength: 0.35
     - _SheenVisibility: 0.12

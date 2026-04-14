@@ -18,6 +18,8 @@ Shader "Custom/UI/LiquidBar"
         _BodyDepth("Body Depth", Range(0, 4)) = 1.8
         _StrataStrength("Strata Strength", Range(0, 4)) = 1.2
         _SubsurfaceStrength("Subsurface Strength", Range(0, 4)) = 1.15
+        _PosterizeSteps("Posterize Steps", Range(2, 12)) = 5
+        _PosterizeBlend("Posterize Blend", Range(0, 1)) = 0.0
         _SheenVisibility("Sheen Visibility", Range(0, 1)) = 1.0
         _SheenStrength("Sheen Strength", Range(0, 4)) = 1.0
         _SheenSpeed("Sheen Speed", Range(0, 8)) = 1.0
@@ -109,6 +111,8 @@ Shader "Custom/UI/LiquidBar"
             float _BodyDepth;
             float _StrataStrength;
             float _SubsurfaceStrength;
+            float _PosterizeSteps;
+            float _PosterizeBlend;
             float _SheenVisibility;
             float _SheenStrength;
             float _SheenSpeed;
@@ -158,6 +162,40 @@ Shader "Custom/UI/LiquidBar"
             {
                 float centeredCoordinate = 1.0 - abs(coordinateY * 2.0 - 1.0);
                 return saturate(pow(saturate(centeredCoordinate), lerp(1.8, 0.48, saturate(bodyDepth * 0.25))));
+            }
+
+            float EncodePosterizeEnergy(float energy)
+            {
+                return energy / (1.0 + max(0.0, energy));
+            }
+
+            float DecodePosterizeEnergy(float encodedEnergy)
+            {
+                float safeEncodedEnergy = min(saturate(encodedEnergy), 0.999);
+                return safeEncodedEnergy / max(0.0001, 1.0 - safeEncodedEnergy);
+            }
+
+            float QuantizePosterizeEnergy(float encodedEnergy, float posterizeSteps)
+            {
+                float stepCount = max(2.0, posterizeSteps);
+                float quantizedStepCount = max(1.0, stepCount - 1.0);
+                return floor(saturate(encodedEnergy) * quantizedStepCount + 0.5) / quantizedStepCount;
+            }
+
+            float3 ApplyPosterizeColor(float3 colorValue, float posterizeSteps, float posterizeBlend)
+            {
+                float blendedPosterize = saturate(posterizeBlend);
+
+                if (blendedPosterize <= 0.0)
+                    return colorValue;
+
+                float luminance = max(0.0, dot(colorValue, float3(0.299, 0.587, 0.114)));
+                float encodedLuminance = EncodePosterizeEnergy(luminance);
+                float posterizedEncodedLuminance = QuantizePosterizeEnergy(encodedLuminance, posterizeSteps);
+                float posterizedLuminance = DecodePosterizeEnergy(posterizedEncodedLuminance);
+                float luminanceScale = luminance > 0.0001 ? posterizedLuminance / luminance : 0.0;
+                float3 posterizedColor = colorValue * luminanceScale;
+                return lerp(colorValue, posterizedColor, blendedPosterize);
             }
 
             fixed4 Frag(v2f input) : SV_Target
@@ -210,6 +248,7 @@ Shader "Custom/UI/LiquidBar"
                 liquidColor += _HighlightColor.rgb * (_SubsurfaceStrength * (subsurface * 0.18 + innerPressure * 0.08 + sloshHighlight * 0.1));
                 liquidColor += _GlowColor.rgb * (_GlowStrength * (edgeGlow * 0.52 + sloshHighlight * 0.22 + strataRibbons * 0.12));
                 liquidColor += _HighlightColor.rgb * rim * 0.05 * _BodyDepth;
+                liquidColor = ApplyPosterizeColor(liquidColor, _PosterizeSteps, _PosterizeBlend);
                 return fixed4(liquidColor, alpha);
             }
             ENDCG
