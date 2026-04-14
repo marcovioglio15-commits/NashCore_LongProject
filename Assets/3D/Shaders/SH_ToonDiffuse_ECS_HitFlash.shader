@@ -14,20 +14,14 @@ Shader "Cel Shader/Toon Diffuse ECS Hit Flash"
         _ShadowRangeMax("Shadow Range Max", Range(-2,2)) = -0.4
         _HitFlashColor("Hit Flash Color", Color) = (1,0.15,0.15,1)
         _HitFlashBlend("Hit Flash Blend", Range(0,1)) = 0
-        _OutlineThickness("Outline Thickness", Range(0,10)) = 1
-        _OutlineColor("Outline Color", Color) = (0,0,0,1)
         [HideInInspector] _ComputeMeshIndex("Compute Mesh Buffer Index Offset", Float) = 0
     }
 
     SubShader
     {
-        Blend SrcAlpha OneMinusSrcAlpha
-
         Tags
         {
-            "Queue" = "Transparent"
-            "IgnoreProjector" = "True"
-            "RenderType" = "Transparent"
+            "RenderType" = "Opaque"
             "RenderPipeline" = "UniversalPipeline"
         }
 
@@ -65,8 +59,6 @@ Shader "Cel Shader/Toon Diffuse ECS Hit Flash"
                 float _ShadowRangeMax;
                 float4 _HitFlashColor;
                 float _HitFlashBlend;
-                float4 _OutlineColor;
-                float _OutlineThickness;
                 float _ComputeMeshIndex;
             CBUFFER_END
 
@@ -81,8 +73,6 @@ Shader "Cel Shader/Toon Diffuse ECS Hit Flash"
                 UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float4, _BaseColor)
                 UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float4, _HitFlashColor)
                 UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float, _HitFlashBlend)
-                UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float4, _OutlineColor)
-                UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float, _OutlineThickness)
             UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
             #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
             #else
@@ -191,118 +181,6 @@ Shader "Cel Shader/Toon Diffuse ECS Hit Flash"
                 finalColor = lerp(finalColor, hitFlashColor.rgb, hitFlashBlend * saturate(hitFlashColor.a));
                 finalColor = MixFog(finalColor, inputValue.fogFactor);
                 return half4(finalColor, albedo.a);
-            }
-            ENDHLSL
-        }
-
-        Pass
-        {
-            Name "ToonOutlineECS"
-            Tags
-            {
-                "LightMode" = "OutlineRender"
-            }
-
-            Cull Front
-            ZWrite Off
-            ZTest LEqual
-
-            HLSLPROGRAM
-            #pragma target 4.5
-            #pragma vertex OutlinePassVertex
-            #pragma fragment OutlinePassFragment
-
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST;
-                float4 _BaseColor;
-                float _BumpScale;
-                float4 _AmbientColor;
-                float _AmbientColorIntensity;
-                float _ShadowSoftness;
-                float _ShadowScatter;
-                float _ShadowRangeMin;
-                float _ShadowRangeMax;
-                float4 _HitFlashColor;
-                float _HitFlashBlend;
-                float4 _OutlineColor;
-                float _OutlineThickness;
-                float _ComputeMeshIndex;
-            CBUFFER_END
-
-            #if defined(DOTS_INSTANCING_ON)
-            UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
-                UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float, _ComputeMeshIndex)
-                UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float4, _OutlineColor)
-                UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float, _OutlineThickness)
-            UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
-            #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
-            #else
-            #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) var
-            #endif
-
-            struct DeformedVertexData
-            {
-                float3 Position;
-                float3 Normal;
-                float3 Tangent;
-            };
-
-            StructuredBuffer<DeformedVertexData> _DeformedMeshData : register(t1);
-
-            struct OutlineAttributes
-            {
-                float3 positionOS : POSITION;
-                float3 normalOS : NORMAL;
-                uint vertexID : SV_VertexID;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            struct OutlineVaryings
-            {
-                float4 positionCS : SV_POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-                UNITY_VERTEX_OUTPUT_STEREO
-            };
-
-            OutlineVaryings OutlinePassVertex(OutlineAttributes inputValue)
-            {
-                OutlineVaryings outputValue = (OutlineVaryings)0;
-                UNITY_SETUP_INSTANCE_ID(inputValue);
-                UNITY_TRANSFER_INSTANCE_ID(inputValue, outputValue);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(outputValue);
-
-                float3 positionOS = inputValue.positionOS;
-                float3 normalOS = inputValue.normalOS;
-
-                #if defined(UNITY_DOTS_INSTANCING_ENABLED)
-                    uint meshStartIndex = asuint(UNITY_ACCESS_HYBRID_INSTANCED_PROP(_ComputeMeshIndex, float));
-
-                    if (meshStartIndex > 0u)
-                    {
-                        DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + inputValue.vertexID];
-                        positionOS = deformedVertex.Position;
-                        normalOS = deformedVertex.Normal;
-                    }
-                #endif
-
-                float outlineThickness = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_OutlineThickness, float) / 250.0;
-                float3 normalDirection = SafeNormalize(normalOS);
-                float3 extrudedPositionOS = positionOS + normalDirection * outlineThickness;
-                VertexPositionInputs vertexPositionInputs = GetVertexPositionInputs(extrudedPositionOS);
-                outputValue.positionCS = vertexPositionInputs.positionCS;
-                return outputValue;
-            }
-
-            half4 OutlinePassFragment(OutlineVaryings inputValue) : SV_Target
-            {
-                UNITY_SETUP_INSTANCE_ID(inputValue);
-                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(inputValue);
-
-                float4 outlineColor = UNITY_ACCESS_HYBRID_INSTANCED_PROP(_OutlineColor, float4);
-                return half4(outlineColor.rgb, outlineColor.a);
             }
             ENDHLSL
         }
