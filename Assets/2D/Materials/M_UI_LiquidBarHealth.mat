@@ -36,8 +36,8 @@ Material:
     - _GlowStrength: 0
     - _MovementBlend: 0
     - _MovementDirection: 1
-    - _PosterizeBlend: 0.25
-    - _PosterizeSteps: 2
+    - _PosterizeBlend: 0.424
+    - _PosterizeSteps: 4.4
     - _SheenSpeed: 0.6
     - _SheenStrength: 0.55
     - _SheenVisibility: 0.35

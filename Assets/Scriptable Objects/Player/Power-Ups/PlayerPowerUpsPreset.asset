@@ -3823,7 +3823,7 @@ MonoBehaviour:
         bodyOpacity: 1
         coreWidthMultiplier: 0.5
         coreBrightness: 1.52
-        rimBrightness: 2
+        rimBrightness: 1
         flowScrollSpeed: 14
         flowPulseFrequency: 6
         stormTwistSpeed: 14
