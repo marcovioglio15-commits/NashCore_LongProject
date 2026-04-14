@@ -22,6 +22,10 @@ public sealed class HUDManager : MonoBehaviour
     [Tooltip("Hide health bar image when no player entity with PlayerHealth is available.")]
     [SerializeField] private bool hideHealthBarWhenPlayerMissing = true;
 
+    [Header("Health Visual FX")]
+    [Tooltip("Optional fluid-shader and syringe-plunger presentation settings for the health bar.")]
+    [SerializeField] private HUDLiquidBarPresentationSettings healthBarPresentation = HUDLiquidBarPresentationSettings.CreateHealthDefaults();
+
     [Header("Shield")]
     [Tooltip("UI Image used as fillable shield bar. Fill method should be Horizontal or Radial.")]
     [SerializeField] private Image playerShieldFillImage;
@@ -31,6 +35,10 @@ public sealed class HUDManager : MonoBehaviour
 
     [Tooltip("Hide shield bar image when no player entity with PlayerShield is available.")]
     [SerializeField] private bool hideShieldBarWhenPlayerMissing = true;
+
+    [Header("Shield Visual FX")]
+    [Tooltip("Optional fluid-shader and syringe-plunger presentation settings for the shield bar.")]
+    [SerializeField] private HUDLiquidBarPresentationSettings shieldBarPresentation = HUDLiquidBarPresentationSettings.CreateShieldDefaults();
 
     [Header("Level & Experience")]
     [Tooltip("UI Text used to display the current player level.")]
@@ -47,6 +55,10 @@ public sealed class HUDManager : MonoBehaviour
 
     [Tooltip("Hide experience bar image when no player entity with progression runtime data is available.")]
     [SerializeField] private bool hideExperienceBarWhenPlayerMissing = true;
+
+    [Header("Experience Visual FX")]
+    [Tooltip("Optional fluid-shader presentation settings for the experience bar.")]
+    [SerializeField] private HUDLiquidBarPresentationSettings experienceBarPresentation = HUDLiquidBarPresentationSettings.CreateExperienceDefaults();
 
     [Header("Power Ups - Energy")]
     [Tooltip("Primary slot energy fill image. Displayed only when the primary slot has an energy module.")]
@@ -117,6 +129,9 @@ public sealed class HUDManager : MonoBehaviour
     private float displayedShieldNormalized;
     private float displayedExperienceNormalized;
     private HUDPowerUpOverlaySection powerUpOverlaySection;
+    private HUDLiquidBarRuntime healthBarRuntime;
+    private HUDLiquidBarRuntime shieldBarRuntime;
+    private HUDLiquidBarRuntime experienceBarRuntime;
     #endregion
 
     #region Methods
@@ -125,7 +140,9 @@ public sealed class HUDManager : MonoBehaviour
     private void Awake()
     {
         ClampSettings();
+        EnsureCoreBarPresentationSettings();
         ValidateShieldOverlayBinding();
+        EnsureCoreBarVisualsInitialized();
         powerUpOverlaySection = new HUDPowerUpOverlaySection(primaryPowerUpIconImage,
                                                              secondaryPowerUpIconImage,
                                                              primaryPowerUpSlotRootObject,
@@ -149,12 +166,15 @@ public sealed class HUDManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        DisposeCoreBarVisuals();
         milestoneSelectionSection.Dispose();
         powerUpContainerInteractionSection.Dispose();
     }
 
     private void Update()
     {
+        EnsureCoreBarVisualsInitialized();
+
         if (!TryInitializeEcsBindings())
         {
             HandleMissingPlayer();
@@ -261,7 +281,7 @@ public sealed class HUDManager : MonoBehaviour
     #region Bars
     private void UpdateHealthBar(Entity playerEntity, bool snapImmediately)
     {
-        if (playerHealthFillImage == null)
+        if (healthBarRuntime == null)
             return;
 
         if (!entityManager.HasComponent<PlayerHealth>(playerEntity))
@@ -276,23 +296,16 @@ public sealed class HUDManager : MonoBehaviour
         if (playerHealth.Max > 0f)
             targetNormalizedValue = Mathf.Clamp01(playerHealth.Current / playerHealth.Max);
 
-        if (snapImmediately)
-        {
-            displayedHealthNormalized = targetNormalizedValue;
-        }
-        else
-        {
-            displayedHealthNormalized = SmoothNormalized(displayedHealthNormalized,
-                                                         targetNormalizedValue,
-                                                         healthBarSmoothingSeconds);
-        }
-
-        ApplyFill(playerHealthFillImage, displayedHealthNormalized);
+        UpdateManagedBar(healthBarRuntime,
+                         ref displayedHealthNormalized,
+                         targetNormalizedValue,
+                         snapImmediately,
+                         healthBarSmoothingSeconds);
     }
 
     private void UpdateShieldBar(Entity playerEntity, bool snapImmediately)
     {
-        if (!TryResolveShieldFillImage(out Image shieldFillImage))
+        if (shieldBarRuntime == null)
             return;
 
         if (!entityManager.HasComponent<PlayerShield>(playerEntity))
@@ -307,18 +320,11 @@ public sealed class HUDManager : MonoBehaviour
         if (playerShield.Max > 0f)
             targetNormalizedValue = Mathf.Clamp01(playerShield.Current / playerShield.Max);
 
-        if (snapImmediately)
-        {
-            displayedShieldNormalized = targetNormalizedValue;
-        }
-        else
-        {
-            displayedShieldNormalized = SmoothNormalized(displayedShieldNormalized,
-                                                         targetNormalizedValue,
-                                                         shieldBarSmoothingSeconds);
-        }
-
-        ApplyFill(shieldFillImage, displayedShieldNormalized);
+        UpdateManagedBar(shieldBarRuntime,
+                         ref displayedShieldNormalized,
+                         targetNormalizedValue,
+                         snapImmediately,
+                         shieldBarSmoothingSeconds);
     }
 
     /// <summary>
@@ -373,7 +379,7 @@ public sealed class HUDManager : MonoBehaviour
     /// <param name="playerLevel">Current player level state used to resolve the next threshold.</param>
     private void UpdateExperienceBar(in PlayerExperience playerExperience, in PlayerLevel playerLevel)
     {
-        if (playerExperienceFillImage == null)
+        if (experienceBarRuntime == null)
             return;
 
         float targetNormalizedValue = 0f;
@@ -382,10 +388,11 @@ public sealed class HUDManager : MonoBehaviour
         if (requiredExperienceForNextLevel > 0f)
             targetNormalizedValue = Mathf.Clamp01(playerExperience.Current / requiredExperienceForNextLevel);
 
-        displayedExperienceNormalized = SmoothNormalized(displayedExperienceNormalized,
-                                                         targetNormalizedValue,
-                                                         experienceBarSmoothingSeconds);
-        ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
+        UpdateManagedBar(experienceBarRuntime,
+                         ref displayedExperienceNormalized,
+                         targetNormalizedValue,
+                         false,
+                         experienceBarSmoothingSeconds);
     }
 
     #endregion
@@ -411,14 +418,17 @@ public sealed class HUDManager : MonoBehaviour
 
     private void ApplyInitialVisualState()
     {
-        if (playerHealthFillImage != null)
-            ApplyFill(playerHealthFillImage, displayedHealthNormalized);
+        EnsureCoreBarVisualsInitialized();
 
-        if (TryResolveShieldFillImage(out Image shieldFillImage))
-            ApplyFill(shieldFillImage, displayedShieldNormalized);
+        if (healthBarRuntime != null)
+            healthBarRuntime.ApplyInitialVisualState(displayedHealthNormalized);
 
-        if (playerExperienceFillImage != null)
-            ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
+        if (shieldBarRuntime != null)
+            shieldBarRuntime.ApplyInitialVisualState(displayedShieldNormalized);
+
+        if (experienceBarRuntime != null)
+            experienceBarRuntime.ApplyInitialVisualState(displayedExperienceNormalized);
+
         powerUpOverlaySection.ApplyInitialVisualState();
         runTimerSection.ApplyInitialVisualState();
 
@@ -442,30 +452,18 @@ public sealed class HUDManager : MonoBehaviour
 
     private void HandleMissingHealthBar()
     {
-        if (playerHealthFillImage == null)
+        if (healthBarRuntime == null)
             return;
 
-        if (hideHealthBarWhenPlayerMissing)
-        {
-            playerHealthFillImage.enabled = false;
-            return;
-        }
-
-        ApplyFill(playerHealthFillImage, displayedHealthNormalized);
+        healthBarRuntime.HandleMissing(hideHealthBarWhenPlayerMissing, displayedHealthNormalized);
     }
 
     private void HandleMissingShieldBar()
     {
-        if (!TryResolveShieldFillImage(out Image shieldFillImage))
+        if (shieldBarRuntime == null)
             return;
 
-        if (hideShieldBarWhenPlayerMissing)
-        {
-            shieldFillImage.enabled = false;
-            return;
-        }
-
-        ApplyFill(shieldFillImage, displayedShieldNormalized);
+        shieldBarRuntime.HandleMissing(hideShieldBarWhenPlayerMissing, displayedShieldNormalized);
     }
 
     /// <summary>
@@ -493,16 +491,10 @@ public sealed class HUDManager : MonoBehaviour
     /// </summary>
     private void HandleMissingExperienceBar()
     {
-        if (playerExperienceFillImage == null)
+        if (experienceBarRuntime == null)
             return;
 
-        if (hideExperienceBarWhenPlayerMissing)
-        {
-            playerExperienceFillImage.enabled = false;
-            return;
-        }
-
-        ApplyFill(playerExperienceFillImage, displayedExperienceNormalized);
+        experienceBarRuntime.HandleMissing(hideExperienceBarWhenPlayerMissing, displayedExperienceNormalized);
     }
 
     /// <summary>
@@ -561,6 +553,93 @@ public sealed class HUDManager : MonoBehaviour
                          playerShieldFillImage);
     }
 
+    /// <summary>
+    /// Ensures the core-bar presentation settings exist even on scenes authored before the liquid-bar extension was added.
+    /// /params None.
+    /// /returns void.
+    /// </summary>
+    private void EnsureCoreBarPresentationSettings()
+    {
+        if (healthBarPresentation == null)
+            healthBarPresentation = HUDLiquidBarPresentationSettings.CreateHealthDefaults();
+
+        if (shieldBarPresentation == null)
+            shieldBarPresentation = HUDLiquidBarPresentationSettings.CreateShieldDefaults();
+
+        if (experienceBarPresentation == null)
+            experienceBarPresentation = HUDLiquidBarPresentationSettings.CreateExperienceDefaults();
+    }
+
+    /// <summary>
+    /// Builds the reusable runtime visuals for health, shield and experience bars when their bindings become available.
+    /// /params None.
+    /// /returns void.
+    /// </summary>
+    private void EnsureCoreBarVisualsInitialized()
+    {
+        EnsureCoreBarPresentationSettings();
+
+        if (healthBarRuntime == null && playerHealthFillImage != null)
+            healthBarRuntime = HUDLiquidBarRuntime.CreateHealth(playerHealthFillImage, healthBarPresentation);
+
+        if (shieldBarRuntime == null && TryResolveShieldFillImage(out Image shieldFillImage))
+            shieldBarRuntime = HUDLiquidBarRuntime.CreateShield(shieldFillImage, shieldBarPresentation);
+
+        if (experienceBarRuntime == null && playerExperienceFillImage != null)
+            experienceBarRuntime = HUDLiquidBarRuntime.CreateExperience(playerExperienceFillImage, experienceBarPresentation);
+    }
+
+    /// <summary>
+    /// Releases runtime materials created for the liquid-bar visuals.
+    /// /params None.
+    /// /returns void.
+    /// </summary>
+    private void DisposeCoreBarVisuals()
+    {
+        if (healthBarRuntime != null)
+            healthBarRuntime.Dispose();
+
+        if (shieldBarRuntime != null)
+            shieldBarRuntime.Dispose();
+
+        if (experienceBarRuntime != null)
+            experienceBarRuntime.Dispose();
+    }
+
+    /// <summary>
+    /// Applies smoothing and visual updates shared by health, shield and experience bars.
+    /// /params barRuntime Reusable runtime visual that owns fill, plunger and shader state.
+    /// /params displayedNormalizedValue Cached displayed normalized value updated in place.
+    /// /params targetNormalizedValue Raw normalized target computed from ECS data.
+    /// /params snapImmediately When true smoothing is bypassed for this update.
+    /// /params smoothingSeconds Seconds used for the fill smoothing step.
+    /// /returns void.
+    /// </summary>
+    private void UpdateManagedBar(HUDLiquidBarRuntime barRuntime,
+                                  ref float displayedNormalizedValue,
+                                  float targetNormalizedValue,
+                                  bool snapImmediately,
+                                  float smoothingSeconds)
+    {
+        if (barRuntime == null)
+            return;
+
+        float clampedTargetNormalizedValue = Mathf.Clamp01(targetNormalizedValue);
+
+        if (snapImmediately)
+        {
+            displayedNormalizedValue = clampedTargetNormalizedValue;
+        }
+        else
+        {
+            displayedNormalizedValue = SmoothNormalized(displayedNormalizedValue,
+                                                        clampedTargetNormalizedValue,
+                                                        smoothingSeconds);
+        }
+
+        barRuntime.Apply(displayedNormalizedValue, clampedTargetNormalizedValue);
+    }
+
     private static float SmoothNormalized(float displayedValue, float targetValue, float smoothingSeconds)
     {
         if (smoothingSeconds <= 0f)
@@ -568,12 +647,6 @@ public sealed class HUDManager : MonoBehaviour
 
         float step = Time.deltaTime / smoothingSeconds;
         return Mathf.MoveTowards(displayedValue, Mathf.Clamp01(targetValue), step);
-    }
-
-    private static void ApplyFill(Image fillImage, float normalizedValue)
-    {
-        fillImage.enabled = true;
-        fillImage.fillAmount = Mathf.Clamp01(normalizedValue);
     }
     #endregion
 

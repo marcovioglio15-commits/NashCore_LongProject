@@ -1,4 +1,4 @@
-Shader "NashCore/LiquidAntibioticBeam"
+Shader "Custom/LiquidAntibioticBeam"
 {
     Properties
     {

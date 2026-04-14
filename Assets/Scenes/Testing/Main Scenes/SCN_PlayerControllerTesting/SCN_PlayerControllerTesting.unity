@@ -1661,7 +1661,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 55da0816779075643baf27fa78a3fbfc, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -2422,7 +2422,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 02a9bec6018519942ba0bb10a4c9a5ff, type: 2}
   m_Color: {r: 0, g: 1, b: 0.84313726, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -7994,7 +7994,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &552555252
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10447,16 +10447,49 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HUDManager
   playerHealthFillImage: {fileID: 132165916}
-  healthBarSmoothingSeconds: 0.2
+  healthBarSmoothingSeconds: 0.5
   hideHealthBarWhenPlayerMissing: 1
+  healthBarPresentation:
+    enableLiquidShader: 1
+    liquidMaterialTemplate: {fileID: 2100000, guid: 55da0816779075643baf27fa78a3fbfc, type: 2}
+    enablePiston: 1
+    pistonRoot: {fileID: 972174206}
+    pistonLocalOffsetX: 0
+    pistonLocalOffsetY: 0
+    enableValueDeltaMotion: 1
+    deltaTriggerThreshold: 0.0075
+    deltaMotionStrength: 1.2
+    deltaMotionDecaySeconds: 0.42
   playerShieldFillImage: {fileID: 1230660166}
-  shieldBarSmoothingSeconds: 0.08
+  shieldBarSmoothingSeconds: 0.5
   hideShieldBarWhenPlayerMissing: 1
+  shieldBarPresentation:
+    enableLiquidShader: 1
+    liquidMaterialTemplate: {fileID: 2100000, guid: ecc13e2c9d4eb504bbf82abf44cacf0e, type: 2}
+    enablePiston: 1
+    pistonRoot: {fileID: 552555252}
+    pistonLocalOffsetX: 0
+    pistonLocalOffsetY: 0
+    enableValueDeltaMotion: 1
+    deltaTriggerThreshold: 0.0065
+    deltaMotionStrength: 1.15
+    deltaMotionDecaySeconds: 0.38
   playerLevelText: {fileID: 1693357402}
   hideLevelTextWhenPlayerMissing: 1
   playerExperienceFillImage: {fileID: 230760640}
   experienceBarSmoothingSeconds: 0.08
   hideExperienceBarWhenPlayerMissing: 1
+  experienceBarPresentation:
+    enableLiquidShader: 1
+    liquidMaterialTemplate: {fileID: 2100000, guid: 02a9bec6018519942ba0bb10a4c9a5ff, type: 2}
+    enablePiston: 0
+    pistonRoot: {fileID: 0}
+    pistonLocalOffsetX: 0
+    pistonLocalOffsetY: 0
+    enableValueDeltaMotion: 1
+    deltaTriggerThreshold: 0.0125
+    deltaMotionStrength: 0.9
+    deltaMotionDecaySeconds: 0.3
   primaryEnergyFillImage: {fileID: 259145677}
   secondaryEnergyFillImage: {fileID: 695505114}
   primaryPowerUpIconImage: {fileID: 259145678}
@@ -13603,7 +13636,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &972174206
 RectTransform:
   m_ObjectHideFlags: 0
@@ -16872,7 +16905,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: ecc13e2c9d4eb504bbf82abf44cacf0e, type: 2}
   m_Color: {r: 0.2, g: 0.85, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
