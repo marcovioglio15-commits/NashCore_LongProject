@@ -135,21 +135,45 @@ internal static class EnemyModulesAndPatternsBakeUtility
 
         EnemyPatternModuleKind moduleKind = EnemyAdvancedPatternBakeUtility.ResolveModuleKind(moduleDefinition.ModuleKind);
 
-        if (moduleKind != EnemyPatternModuleKind.Grunt && moduleKind != EnemyPatternModuleKind.Coward)
+        if (moduleKind != EnemyPatternModuleKind.Grunt &&
+            moduleKind != EnemyPatternModuleKind.Coward &&
+            moduleKind != EnemyPatternModuleKind.ShortRangeDash)
             return;
 
         patternConfig.HasShortRangeInteraction = 1;
-        patternConfig.ShortRangeMovementKind = moduleKind == EnemyPatternModuleKind.Coward
-            ? EnemyCompiledMovementPatternKind.Coward
-            : EnemyCompiledMovementPatternKind.Grunt;
         patternConfig.ShortRangeActivationRange = math.max(0f, shortRangeInteraction.ActivationRange);
         patternConfig.ShortRangeReleaseDistanceBuffer = math.max(0f, shortRangeInteraction.ReleaseDistanceBuffer);
 
-        if (moduleKind != EnemyPatternModuleKind.Coward)
+        switch (moduleKind)
+        {
+            case EnemyPatternModuleKind.Coward:
+                patternConfig.ShortRangeMovementKind = EnemyCompiledMovementPatternKind.Coward;
+                break;
+
+            case EnemyPatternModuleKind.ShortRangeDash:
+                patternConfig.ShortRangeMovementKind = EnemyCompiledMovementPatternKind.ShortRangeDash;
+                break;
+
+            default:
+                patternConfig.ShortRangeMovementKind = EnemyCompiledMovementPatternKind.Grunt;
+                break;
+        }
+
+        if (moduleKind == EnemyPatternModuleKind.Grunt)
             return;
 
         EnemyPatternModulePayloadData resolvedPayload = EnemyAdvancedPatternBakeUtility.ResolveBindingPayload(moduleDefinition, binding);
-        ApplyShortRangeCowardPayload(resolvedPayload, ref patternConfig);
+
+        switch (moduleKind)
+        {
+            case EnemyPatternModuleKind.Coward:
+                ApplyShortRangeCowardPayload(resolvedPayload, ref patternConfig);
+                break;
+
+            case EnemyPatternModuleKind.ShortRangeDash:
+                EnemyAdvancedPatternBakeUtility.ApplyShortRangeDashPayload(resolvedPayload, ref patternConfig);
+                break;
+        }
     }
 
     /// <summary>

@@ -16,6 +16,7 @@ public sealed class EnemyModulesAndPatternsPreset : ScriptableObject
     private const string DefaultCoreWandererModuleId = "Module_Core_Wanderer";
     private const string DefaultShortRangeGruntModuleId = "Module_ShortRange_Grunt";
     private const string DefaultShortRangeCowardModuleId = "Module_ShortRange_Coward";
+    private const string DefaultShortRangeDashModuleId = "Module_ShortRange_Dash";
     private const string DefaultWeaponShooterModuleId = "Module_Weapon_Shooter";
     private const string DefaultDropItemsModuleId = "Module_DropItems";
     private const string DefaultPatternId = "Pattern_DefaultGrunt";
@@ -368,6 +369,10 @@ public sealed class EnemyModulesAndPatternsPreset : ScriptableObject
                                                                  "Coward",
                                                                  EnemyPatternModuleKind.Coward,
                                                                  "Retreats from the player while the short-range band stays active."));
+        shortRangeInteractionDefinitions.Add(CreateDefaultModule(DefaultShortRangeDashModuleId,
+                                                                 "Dash",
+                                                                 EnemyPatternModuleKind.ShortRangeDash,
+                                                                 "Takes aim, then commits to one designer-authored dash path toward the player."));
 
         weaponInteractionDefinitions.Add(CreateDefaultModule(DefaultWeaponShooterModuleId,
                                                              "Shooter",
@@ -522,7 +527,8 @@ public sealed class EnemyModulesAndPatternsPreset : ScriptableObject
 
             case EnemyPatternModuleCatalogSection.ShortRangeInteraction:
                 if (candidateKind == EnemyPatternModuleKind.Grunt ||
-                    candidateKind == EnemyPatternModuleKind.Coward)
+                    candidateKind == EnemyPatternModuleKind.Coward ||
+                    candidateKind == EnemyPatternModuleKind.ShortRangeDash)
                     return candidateKind;
 
                 return EnemyPatternModuleKind.Grunt;
@@ -561,6 +567,9 @@ public sealed class EnemyModulesAndPatternsPreset : ScriptableObject
             case EnemyPatternModuleCatalogSection.ShortRangeInteraction:
                 if (moduleKind == EnemyPatternModuleKind.Coward)
                     return DefaultShortRangeCowardModuleId;
+
+                if (moduleKind == EnemyPatternModuleKind.ShortRangeDash)
+                    return DefaultShortRangeDashModuleId;
 
                 return DefaultShortRangeGruntModuleId;
 

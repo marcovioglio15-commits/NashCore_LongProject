@@ -20,6 +20,9 @@ public sealed class EnemyPatternModulePayloadData
     [Tooltip("Coward payload used when module kind is Coward.")]
     [SerializeField] private EnemyCowardModuleData coward = new EnemyCowardModuleData();
 
+    [Tooltip("ShortRangeDash payload used when module kind is ShortRangeDash.")]
+    [SerializeField] private EnemyShortRangeDashModuleData shortRangeDash = new EnemyShortRangeDashModuleData();
+
     [Tooltip("Shooter payload used when module kind is Shooter.")]
     [SerializeField] private EnemyShooterModuleData shooter = new EnemyShooterModuleData();
 
@@ -51,6 +54,14 @@ public sealed class EnemyPatternModulePayloadData
         get
         {
             return coward;
+        }
+    }
+
+    public EnemyShortRangeDashModuleData ShortRangeDash
+    {
+        get
+        {
+            return shortRangeDash;
         }
     }
 
@@ -88,6 +99,9 @@ public sealed class EnemyPatternModulePayloadData
         if (coward == null)
             coward = new EnemyCowardModuleData();
 
+        if (shortRangeDash == null)
+            shortRangeDash = new EnemyShortRangeDashModuleData();
+
         if (shooter == null)
             shooter = new EnemyShooterModuleData();
 
@@ -97,6 +111,7 @@ public sealed class EnemyPatternModulePayloadData
         stationary.Validate();
         wanderer.Validate();
         coward.Validate();
+        shortRangeDash.Validate();
         shooter.Validate();
         dropItems.Validate();
     }

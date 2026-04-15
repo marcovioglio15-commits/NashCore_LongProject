@@ -65,10 +65,22 @@ public static class EnemyPatternMovementRuntimeUtility
                                                                              in EnemyPatternRuntimeState patternRuntimeState,
                                                                              float playerDistance)
     {
+        if (patternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash &&
+            EnemyPatternShortRangeDashUtility.IsCommitted(in patternRuntimeState))
+        {
+            return EnemyCompiledMovementPatternKind.ShortRangeDash;
+        }
+
         bool shortRangeInteractionActive = ResolveShortRangeInteractionActive(in patternConfig, in patternRuntimeState, playerDistance);
 
         if (!shortRangeInteractionActive)
             return patternConfig.MovementKind;
+
+        if (patternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash &&
+            !EnemyPatternShortRangeDashUtility.IsAvailableForTakeover(in patternRuntimeState))
+        {
+            return patternConfig.MovementKind;
+        }
 
         return patternConfig.ShortRangeMovementKind;
     }
@@ -76,16 +88,28 @@ public static class EnemyPatternMovementRuntimeUtility
     /// <summary>
     /// Returns whether the current frame is driven by a non-grunt short-range interaction override.
     /// patternConfig: Current compiled pattern configuration.
+    /// patternRuntimeState: Current mutable pattern runtime state.
     /// shortRangeInteractionActive: Whether the short-range interaction is active this frame.
     /// returns True when the short-range override currently owns movement decisions.
     /// </summary>
-    public static bool IsShortRangeOverrideDriving(in EnemyPatternConfig patternConfig, bool shortRangeInteractionActive)
+    public static bool IsShortRangeOverrideDriving(in EnemyPatternConfig patternConfig,
+                                                   in EnemyPatternRuntimeState patternRuntimeState,
+                                                   bool shortRangeInteractionActive)
     {
+        if (patternConfig.HasShortRangeInteraction == 0)
+            return false;
+
+        if (patternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash &&
+            EnemyPatternShortRangeDashUtility.IsCommitted(in patternRuntimeState))
+        {
+            return true;
+        }
+
         if (!shortRangeInteractionActive)
             return false;
 
-        if (patternConfig.HasShortRangeInteraction == 0)
-            return false;
+        if (patternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash)
+            return EnemyPatternShortRangeDashUtility.IsAvailableForTakeover(in patternRuntimeState);
 
         return patternConfig.ShortRangeMovementKind != EnemyCompiledMovementPatternKind.Grunt;
     }
@@ -118,10 +142,24 @@ public static class EnemyPatternMovementRuntimeUtility
                                                               in EnemyPatternRuntimeState patternRuntimeState,
                                                               float playerDistance)
     {
+        if (patternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash &&
+            EnemyPatternShortRangeDashUtility.IsCommitted(in patternRuntimeState))
+        {
+            EnemyPatternConfig committedDashPatternConfig = patternConfig;
+            committedDashPatternConfig.MovementKind = EnemyCompiledMovementPatternKind.ShortRangeDash;
+            return committedDashPatternConfig;
+        }
+
         bool shortRangeInteractionActive = ResolveShortRangeInteractionActive(in patternConfig, in patternRuntimeState, playerDistance);
 
         if (!shortRangeInteractionActive)
             return patternConfig;
+
+        if (patternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash &&
+            !EnemyPatternShortRangeDashUtility.IsAvailableForTakeover(in patternRuntimeState))
+        {
+            return patternConfig;
+        }
 
         EnemyPatternConfig activePatternConfig = patternConfig;
 
@@ -129,6 +167,10 @@ public static class EnemyPatternMovementRuntimeUtility
         {
             case EnemyCompiledMovementPatternKind.Coward:
                 ApplyShortRangeCowardOverride(ref activePatternConfig);
+                break;
+
+            case EnemyCompiledMovementPatternKind.ShortRangeDash:
+                activePatternConfig.MovementKind = EnemyCompiledMovementPatternKind.ShortRangeDash;
                 break;
 
             case EnemyCompiledMovementPatternKind.Grunt:

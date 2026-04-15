@@ -189,7 +189,11 @@ internal static class PlayerPowerUpsInitializeBootstrapUtility
             TriggeredActivePenetrationMode = ProjectilePenetrationMode.None,
             TriggeredActiveMaxPenetrations = 0,
             TriggeredActiveProjectileTemplate = default,
-            TriggeredActivePassiveToolsState = default
+            TriggeredActivePassiveToolsState = default,
+            ChargeImpulseRemainingSeconds = 0f,
+            ChargeImpulseDamageMultiplier = 0f,
+            ChargeImpulseWidthMultiplier = 0f,
+            ChargeImpulseTravelDistance = 0f
         };
 
         AddComponentForEntities(ref commandBuffer, in missingLaserBeamStateQuery, initialState);

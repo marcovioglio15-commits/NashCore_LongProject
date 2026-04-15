@@ -95,7 +95,7 @@ public static class EnemyPoolUtility
             entityManager.AddComponentData(enemyEntity, CreateDefaultPatternConfig());
 
         if (!entityManager.HasComponent<EnemyPatternRuntimeState>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, default(EnemyPatternRuntimeState));
+            entityManager.AddComponentData(enemyEntity, CreateDefaultPatternRuntimeState());
 
         if (!entityManager.HasComponent<EnemyShooterControlState>(enemyEntity))
             entityManager.AddComponentData(enemyEntity, default(EnemyShooterControlState));
@@ -362,61 +362,7 @@ public static class EnemyPoolUtility
     /// </summary>
     private static EnemyPatternConfig CreateDefaultPatternConfig()
     {
-        return new EnemyPatternConfig
-        {
-            MovementKind = EnemyCompiledMovementPatternKind.Grunt,
-            HasShortRangeInteraction = 0,
-            ShortRangeMovementKind = EnemyCompiledMovementPatternKind.Grunt,
-            ShortRangeActivationRange = 6f,
-            ShortRangeReleaseDistanceBuffer = 1f,
-            ShortRangeSearchRadius = 8f,
-            ShortRangeMinimumTravelDistance = 2f,
-            ShortRangeMaximumTravelDistance = 8f,
-            ShortRangeArrivalTolerance = 0.35f,
-            ShortRangeCandidateSampleCount = 12,
-            ShortRangeUseInfiniteDirectionSampling = 1,
-            ShortRangeInfiniteDirectionStepDegrees = 8f,
-            ShortRangeMinimumEnemyClearance = 0.25f,
-            ShortRangeTrajectoryPredictionTime = 0.35f,
-            ShortRangeFreeTrajectoryPreference = 0.85f,
-            ShortRangeBlockedPathRetryDelay = 0.2f,
-            ShortRangeRetreatDirectionPreference = 0.65f,
-            ShortRangeOpenSpacePreference = 0.55f,
-            ShortRangeNavigationPreference = 0.6f,
-            ShortRangeRetreatSpeedMultiplierFar = 1f,
-            ShortRangeRetreatSpeedMultiplierNear = 1.4f,
-            StationaryFreezeRotation = 1,
-            BasicSearchRadius = 9f,
-            BasicMinimumTravelDistance = 2f,
-            BasicMaximumTravelDistance = 8f,
-            BasicArrivalTolerance = 0.35f,
-            BasicWaitCooldownSeconds = 0.7f,
-            BasicCandidateSampleCount = 9,
-            BasicUseInfiniteDirectionSampling = 1,
-            BasicInfiniteDirectionStepDegrees = 8f,
-            BasicUnexploredDirectionPreference = 0.65f,
-            BasicTowardPlayerPreference = 0.35f,
-            BasicMinimumEnemyClearance = 0.2f,
-            BasicTrajectoryPredictionTime = 0.35f,
-            BasicFreeTrajectoryPreference = 4.4f,
-            BasicBlockedPathRetryDelay = 0.25f,
-            CowardDetectionRadius = 8f,
-            CowardReleaseDistanceBuffer = 1.5f,
-            CowardRetreatDirectionPreference = 0.65f,
-            CowardOpenSpacePreference = 0.55f,
-            CowardNavigationPreference = 0.6f,
-            CowardPatrolRadius = 3.5f,
-            CowardPatrolWaitSeconds = 0.55f,
-            CowardPatrolSpeedMultiplier = 0.82f,
-            CowardRetreatSpeedMultiplierFar = 1f,
-            CowardRetreatSpeedMultiplierNear = 1.4f,
-            DvdSpeedMultiplier = 1.05f,
-            DvdBounceDamping = 1f,
-            DvdRandomizeInitialDirection = 1,
-            DvdFixedInitialDirectionDegrees = 45f,
-            DvdCornerNudgeDistance = 0.08f,
-            DvdIgnoreSteeringAndPriority = 0
-        };
+        return EnemyPatternDefaultsUtility.CreatePatternConfig();
     }
 
     /// <summary>
@@ -586,20 +532,7 @@ public static class EnemyPoolUtility
     /// </summary>
     private static EnemyPatternRuntimeState CreateDefaultPatternRuntimeState()
     {
-        return new EnemyPatternRuntimeState
-        {
-            ShortRangeInteractionActive = 0,
-            WanderTargetPosition = float3.zero,
-            WanderWaitTimer = 0f,
-            WanderRetryTimer = 0f,
-            LastWanderDirectionAngle = 0f,
-            WanderHasTarget = 0,
-            WanderInitialized = 0,
-            CowardPatrolAnchorPosition = float3.zero,
-            CowardPatrolAnchorInitialized = 0,
-            DvdDirection = float3.zero,
-            DvdInitialized = 0
-        };
+        return EnemyPatternDefaultsUtility.CreatePatternRuntimeState();
     }
 
     /// <summary>

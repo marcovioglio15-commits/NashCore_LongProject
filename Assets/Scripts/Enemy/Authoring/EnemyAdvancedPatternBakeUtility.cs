@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -45,7 +46,7 @@ public static class EnemyAdvancedPatternBakeUtility
                 if (binding == null)
                     continue;
 
-                if (binding.IsEnabled == false)
+                if (!binding.IsEnabled)
                     continue;
 
                 EnemyPatternModuleDefinition moduleDefinition = preset.ResolveModuleDefinitionById(binding.ModuleId);
@@ -101,61 +102,7 @@ public static class EnemyAdvancedPatternBakeUtility
 
     internal static EnemyPatternConfig BuildDefaultPatternConfig()
     {
-        return new EnemyPatternConfig
-        {
-            MovementKind = EnemyCompiledMovementPatternKind.Grunt,
-            HasShortRangeInteraction = 0,
-            ShortRangeMovementKind = EnemyCompiledMovementPatternKind.Grunt,
-            ShortRangeActivationRange = 6f,
-            ShortRangeReleaseDistanceBuffer = 1f,
-            ShortRangeSearchRadius = 8f,
-            ShortRangeMinimumTravelDistance = 2f,
-            ShortRangeMaximumTravelDistance = 8f,
-            ShortRangeArrivalTolerance = 0.35f,
-            ShortRangeCandidateSampleCount = 12,
-            ShortRangeUseInfiniteDirectionSampling = 1,
-            ShortRangeInfiniteDirectionStepDegrees = 8f,
-            ShortRangeMinimumEnemyClearance = 0.25f,
-            ShortRangeTrajectoryPredictionTime = 0.35f,
-            ShortRangeFreeTrajectoryPreference = 0.85f,
-            ShortRangeBlockedPathRetryDelay = 0.2f,
-            ShortRangeRetreatDirectionPreference = 0.65f,
-            ShortRangeOpenSpacePreference = 0.55f,
-            ShortRangeNavigationPreference = 0.6f,
-            ShortRangeRetreatSpeedMultiplierFar = 1f,
-            ShortRangeRetreatSpeedMultiplierNear = 1.4f,
-            StationaryFreezeRotation = 1,
-            BasicSearchRadius = 9f,
-            BasicMinimumTravelDistance = 2f,
-            BasicMaximumTravelDistance = 8f,
-            BasicArrivalTolerance = 0.35f,
-            BasicWaitCooldownSeconds = 0.7f,
-            BasicCandidateSampleCount = 9,
-            BasicUseInfiniteDirectionSampling = 1,
-            BasicInfiniteDirectionStepDegrees = 8f,
-            BasicUnexploredDirectionPreference = 0.65f,
-            BasicTowardPlayerPreference = 0.35f,
-            BasicMinimumEnemyClearance = 0.2f,
-            BasicTrajectoryPredictionTime = 0.35f,
-            BasicFreeTrajectoryPreference = 4.4f,
-            BasicBlockedPathRetryDelay = 0.25f,
-            CowardDetectionRadius = 8f,
-            CowardReleaseDistanceBuffer = 1.5f,
-            CowardRetreatDirectionPreference = 0.65f,
-            CowardOpenSpacePreference = 0.55f,
-            CowardNavigationPreference = 0.6f,
-            CowardPatrolRadius = 3.5f,
-            CowardPatrolWaitSeconds = 0.55f,
-            CowardPatrolSpeedMultiplier = 0.82f,
-            CowardRetreatSpeedMultiplierFar = 1f,
-            CowardRetreatSpeedMultiplierNear = 1.4f,
-            DvdSpeedMultiplier = 1.05f,
-            DvdBounceDamping = 1f,
-            DvdRandomizeInitialDirection = 1,
-            DvdFixedInitialDirectionDegrees = 45f,
-            DvdCornerNudgeDistance = 0.08f,
-            DvdIgnoreSteeringAndPriority = 0
-        };
+        return EnemyPatternDefaultsUtility.CreatePatternConfig();
     }
 
     internal static EnemyDropItemsConfig BuildDefaultDropItemsConfig()
@@ -344,6 +291,55 @@ public static class EnemyAdvancedPatternBakeUtility
                                                                   coward.RetreatSpeedMultiplierNear);
     }
 
+    /// <summary>
+    /// Copies the short-range dash payload into the short-range dash section of the compiled pattern config.
+    /// /params payload Resolved module payload for the short-range dash module.
+    /// /params patternConfig Mutable compiled pattern config.
+    /// /returns None.
+    /// </summary>
+    internal static void ApplyShortRangeDashPayload(EnemyPatternModulePayloadData payload, ref EnemyPatternConfig patternConfig)
+    {
+        patternConfig.ShortRangeMovementKind = EnemyCompiledMovementPatternKind.ShortRangeDash;
+
+        if (payload == null || payload.ShortRangeDash == null)
+            return;
+
+        EnemyShortRangeDashModuleData shortRangeDash = payload.ShortRangeDash;
+        EnemyShortRangeDashAimPayload aim = shortRangeDash.Aim;
+        EnemyShortRangeDashRecoveryPayload recovery = shortRangeDash.Recovery;
+        EnemyShortRangeDashDistancePayload distance = shortRangeDash.Distance;
+        EnemyShortRangeDashPathPayload path = shortRangeDash.Path;
+
+        if (aim != null)
+        {
+            patternConfig.ShortRangeDashAimDuration = math.max(0f, aim.AimDurationSeconds);
+            patternConfig.ShortRangeDashAimMoveSpeedMultiplier = math.max(0f, aim.MoveSpeedMultiplierWhileAiming);
+        }
+
+        if (distance != null)
+        {
+            patternConfig.ShortRangeDashDistanceSource = ResolveShortRangeDashDistanceSource(distance.DistanceSource);
+            patternConfig.ShortRangeDashDistanceMultiplier = math.max(0f, distance.PlayerDistanceMultiplier);
+            patternConfig.ShortRangeDashDistanceOffset = distance.DistanceOffset;
+            patternConfig.ShortRangeDashFixedDistance = math.max(0f, distance.FixedDistance);
+            patternConfig.ShortRangeDashMinimumTravelDistance = math.max(0f, distance.MinimumTravelDistance);
+            patternConfig.ShortRangeDashMaximumTravelDistance = math.max(patternConfig.ShortRangeDashMinimumTravelDistance,
+                                                                        distance.MaximumTravelDistance);
+        }
+
+        if (recovery != null)
+            patternConfig.ShortRangeDashCooldownSeconds = math.max(0f, recovery.CooldownSeconds);
+
+        if (path == null)
+            return;
+
+        patternConfig.ShortRangeDashDuration = math.max(0.01f, path.DashDurationSeconds);
+        patternConfig.ShortRangeDashLateralAmplitude = math.max(0f, path.LateralAmplitude);
+        patternConfig.ShortRangeDashMirrorMode = ResolveShortRangeDashMirrorMode(path.MirrorMode);
+        patternConfig.ShortRangeDashPathSamples = BuildShortRangeDashPathSamples(path.ForwardProgressCurve,
+                                                                                 path.LateralOffsetCurve);
+    }
+
     internal static void TryAddShooterModule(EnemyPatternModulePayloadData payload,
                                              List<EnemyShooterConfigElement> shooterConfigs,
                                              ref EnemyCompiledPatternBakeResult result)
@@ -526,6 +522,7 @@ public static class EnemyAdvancedPatternBakeUtility
             case EnemyPatternModuleKind.Grunt:
             case EnemyPatternModuleKind.Wanderer:
             case EnemyPatternModuleKind.Coward:
+            case EnemyPatternModuleKind.ShortRangeDash:
             case EnemyPatternModuleKind.Shooter:
             case EnemyPatternModuleKind.DropItems:
                 return moduleKind;
@@ -601,6 +598,44 @@ public static class EnemyAdvancedPatternBakeUtility
         }
     }
 
+    /// <summary>
+    /// Resolves one legal short-range dash distance source enum value.
+    /// /params distanceSource Authored distance source candidate.
+    /// /returns Sanitized short-range dash distance source.
+    /// </summary>
+    internal static EnemyShortRangeDashDistanceSource ResolveShortRangeDashDistanceSource(EnemyShortRangeDashDistanceSource distanceSource)
+    {
+        switch (distanceSource)
+        {
+            case EnemyShortRangeDashDistanceSource.PlayerDistance:
+            case EnemyShortRangeDashDistanceSource.FixedDistance:
+                return distanceSource;
+
+            default:
+                return EnemyShortRangeDashDistanceSource.PlayerDistance;
+        }
+    }
+
+    /// <summary>
+    /// Resolves one legal short-range dash mirror mode enum value.
+    /// /params mirrorMode Authored mirror mode candidate.
+    /// /returns Sanitized short-range dash mirror mode.
+    /// </summary>
+    internal static EnemyShortRangeDashMirrorMode ResolveShortRangeDashMirrorMode(EnemyShortRangeDashMirrorMode mirrorMode)
+    {
+        switch (mirrorMode)
+        {
+            case EnemyShortRangeDashMirrorMode.Right:
+            case EnemyShortRangeDashMirrorMode.Left:
+            case EnemyShortRangeDashMirrorMode.Alternate:
+            case EnemyShortRangeDashMirrorMode.Random:
+                return mirrorMode;
+
+            default:
+                return EnemyShortRangeDashMirrorMode.Right;
+        }
+    }
+
     internal static ElementalEffectConfig BuildElementalEffectConfig(ElementalEffectDefinitionData definitionData)
     {
         if (definitionData == null)
@@ -624,6 +659,47 @@ public static class EnemyAdvancedPatternBakeUtility
             ImpedimentMaxSlowPercent = math.clamp(definitionData.ImpedimentMaxSlowPercent, 0f, 100f),
             ImpedimentDurationSeconds = math.max(0.05f, definitionData.ImpedimentDurationSeconds)
         };
+    }
+
+    /// <summary>
+    /// Samples authored dash curves into one compact local path stored directly inside the runtime config.
+    /// /params forwardProgressCurve Authored forward-progression curve.
+    /// /params lateralOffsetCurve Authored lateral-offset curve.
+    /// /returns Fixed-size sampled path where x is normalized lateral offset and y is normalized forward progress.
+    /// </summary>
+    private static FixedList128Bytes<float2> BuildShortRangeDashPathSamples(AnimationCurve forwardProgressCurve,
+                                                                            AnimationCurve lateralOffsetCurve)
+    {
+        FixedList128Bytes<float2> pathSamples = default;
+        AnimationCurve resolvedForwardCurve = forwardProgressCurve ?? new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 1f));
+        AnimationCurve resolvedLateralCurve = lateralOffsetCurve ?? new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 0f));
+        int sampleCount = 12;
+
+        if (sampleCount <= 1)
+            return EnemyPatternDefaultsUtility.BuildDefaultShortRangeDashPathSamples();
+
+        for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+        {
+            float normalizedTime = sampleCount <= 1
+                ? 0f
+                : (float)sampleIndex / (sampleCount - 1);
+            float normalizedForward = math.saturate(resolvedForwardCurve.Evaluate(normalizedTime));
+            float normalizedLateral = resolvedLateralCurve.Evaluate(normalizedTime);
+            pathSamples.Add(new float2(normalizedLateral, normalizedForward));
+        }
+
+        if (pathSamples.Length > 0)
+            pathSamples[0] = new float2(0f, 0f);
+
+        if (pathSamples.Length > 1)
+        {
+            int lastIndex = pathSamples.Length - 1;
+            float2 lastPoint = pathSamples[lastIndex];
+            lastPoint.y = 1f;
+            pathSamples[lastIndex] = lastPoint;
+        }
+
+        return pathSamples;
     }
     #endregion
 

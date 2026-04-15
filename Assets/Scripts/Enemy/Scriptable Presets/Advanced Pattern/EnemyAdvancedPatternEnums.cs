@@ -8,7 +8,8 @@ public enum EnemyPatternModuleKind
     Wanderer = 2,
     Shooter = 3,
     DropItems = 4,
-    Coward = 5
+    Coward = 5,
+    ShortRangeDash = 6
 }
 
 /// <summary>
@@ -47,7 +48,38 @@ public enum EnemyCompiledMovementPatternKind : byte
     Stationary = 1,
     WandererBasic = 2,
     WandererDvd = 3,
-    Coward = 4
+    Coward = 4,
+    ShortRangeDash = 5
+}
+
+/// <summary>
+/// Declares how short-range dash travel distance is resolved.
+/// </summary>
+public enum EnemyShortRangeDashDistanceSource
+{
+    PlayerDistance = 0,
+    FixedDistance = 1
+}
+
+/// <summary>
+/// Declares how the short-range dash picks a lateral side around the locked aim line.
+/// </summary>
+public enum EnemyShortRangeDashMirrorMode
+{
+    Right = 0,
+    Left = 1,
+    Alternate = 2,
+    Random = 3
+}
+
+/// <summary>
+/// Declares runtime phases used by the short-range dash override.
+/// </summary>
+public enum EnemyShortRangeDashPhase : byte
+{
+    Idle = 0,
+    Aiming = 1,
+    Dashing = 2
 }
 
 /// <summary>

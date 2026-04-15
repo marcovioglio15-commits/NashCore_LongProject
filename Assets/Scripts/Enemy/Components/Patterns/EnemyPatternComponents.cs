@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Collections;
 using Unity.Mathematics;
 
 #region Pattern Components
@@ -28,6 +29,19 @@ public struct EnemyPatternConfig : IComponentData
     public float ShortRangeNavigationPreference;
     public float ShortRangeRetreatSpeedMultiplierFar;
     public float ShortRangeRetreatSpeedMultiplierNear;
+    public float ShortRangeDashAimDuration;
+    public float ShortRangeDashAimMoveSpeedMultiplier;
+    public float ShortRangeDashCooldownSeconds;
+    public float ShortRangeDashDuration;
+    public EnemyShortRangeDashDistanceSource ShortRangeDashDistanceSource;
+    public float ShortRangeDashDistanceMultiplier;
+    public float ShortRangeDashDistanceOffset;
+    public float ShortRangeDashFixedDistance;
+    public float ShortRangeDashMinimumTravelDistance;
+    public float ShortRangeDashMaximumTravelDistance;
+    public float ShortRangeDashLateralAmplitude;
+    public EnemyShortRangeDashMirrorMode ShortRangeDashMirrorMode;
+    public FixedList128Bytes<float2> ShortRangeDashPathSamples;
     public byte StationaryFreezeRotation;
     public float BasicSearchRadius;
     public float BasicMinimumTravelDistance;
@@ -67,6 +81,13 @@ public struct EnemyPatternConfig : IComponentData
 public struct EnemyPatternRuntimeState : IComponentData
 {
     public byte ShortRangeInteractionActive;
+    public EnemyShortRangeDashPhase ShortRangeDashPhase;
+    public float ShortRangeDashPhaseElapsed;
+    public float ShortRangeDashCooldownRemaining;
+    public float3 ShortRangeDashOrigin;
+    public float3 ShortRangeDashAimDirection;
+    public float ShortRangeDashTravelDistance;
+    public float ShortRangeDashLateralSign;
     public float3 WanderTargetPosition;
     public float WanderWaitTimer;
     public float WanderRetryTimer;

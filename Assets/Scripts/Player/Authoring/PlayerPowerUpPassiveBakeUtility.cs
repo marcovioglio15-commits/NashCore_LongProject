@@ -430,6 +430,8 @@ public static class PlayerPowerUpPassiveBakeUtility
                                                                   candidateLaserBeamConfig.StormRingThickness);
                     laserBeamConfig.StormTickTravelSpeed = math.max(laserBeamConfig.StormTickTravelSpeed,
                                                                     candidateLaserBeamConfig.StormTickTravelSpeed);
+                    laserBeamConfig.StormTickDamageLengthTolerance = math.max(laserBeamConfig.StormTickDamageLengthTolerance,
+                                                                               candidateLaserBeamConfig.StormTickDamageLengthTolerance);
                     laserBeamConfig.TerminalCapIntensity = math.max(laserBeamConfig.TerminalCapIntensity,
                                                                     candidateLaserBeamConfig.TerminalCapIntensity);
                     laserBeamConfig.ContactFlareIntensity = math.max(laserBeamConfig.ContactFlareIntensity,

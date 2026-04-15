@@ -27,10 +27,13 @@ internal static class EnemyPatternMovementMathUtility
     /// <summary>
     /// Resolves whether current movement pattern ignores steering and priority interactions.
     /// /params patternConfig Current compiled pattern configuration.
-    /// /returns True when DVD movement requests steering and priority bypass.
+    /// /returns True when the active movement explicitly requests steering and priority bypass.
     /// </summary>
     public static bool ShouldIgnoreSteeringAndPriority(in EnemyPatternConfig patternConfig)
     {
+        if (patternConfig.MovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash)
+            return true;
+
         if (patternConfig.MovementKind != EnemyCompiledMovementPatternKind.WandererDvd)
             return false;
 

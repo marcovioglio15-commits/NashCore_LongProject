@@ -1,0 +1,309 @@
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+/// <summary>
+/// Builds the specialized short-range dash payload editor used by advanced-pattern drawers.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal static class EnemyShortRangeDashPayloadDrawerUtility
+{
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Builds the payload editor for the short-range dash module.
+    /// /params payloadDataProperty Serialized payload data root.
+    /// /params payloadContainer Target UI container.
+    /// /returns True when UI is built successfully.
+    /// </summary>
+    public static bool BuildShortRangeDashPayloadEditor(SerializedProperty payloadDataProperty, VisualElement payloadContainer)
+    {
+        SerializedProperty shortRangeDashProperty = payloadDataProperty.FindPropertyRelative("shortRangeDash");
+
+        if (shortRangeDashProperty == null)
+        {
+            HelpBox missingBox = new HelpBox("ShortRangeDash payload data is missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(missingBox);
+            return false;
+        }
+
+        SerializedProperty aimProperty = shortRangeDashProperty.FindPropertyRelative("aim");
+        SerializedProperty recoveryProperty = shortRangeDashProperty.FindPropertyRelative("recovery");
+        SerializedProperty distanceProperty = shortRangeDashProperty.FindPropertyRelative("distance");
+        SerializedProperty pathProperty = shortRangeDashProperty.FindPropertyRelative("path");
+
+        if (aimProperty == null || recoveryProperty == null || distanceProperty == null || pathProperty == null)
+        {
+            HelpBox missingFieldsBox = new HelpBox("ShortRangeDash payload fields are missing.", HelpBoxMessageType.Warning);
+            payloadContainer.Add(missingFieldsBox);
+            return false;
+        }
+
+        HelpBox categorySettingsInfoBox = new HelpBox("Activation range and release buffer are configured on the Short-Range Interaction assembly.", HelpBoxMessageType.Info);
+        payloadContainer.Add(categorySettingsInfoBox);
+
+        Foldout aimFoldout = new Foldout();
+        aimFoldout.text = "Aim";
+        aimFoldout.value = true;
+        payloadContainer.Add(aimFoldout);
+        EnemyAdvancedPatternDrawerUtility.AddField(aimFoldout, aimProperty.FindPropertyRelative("aimDurationSeconds"), "Aim Duration Seconds");
+        EnemyAdvancedPatternDrawerUtility.AddField(aimFoldout, aimProperty.FindPropertyRelative("moveSpeedMultiplierWhileAiming"), "Move Speed Multiplier While Aiming");
+
+        Foldout recoveryFoldout = new Foldout();
+        recoveryFoldout.text = "Recovery";
+        recoveryFoldout.value = true;
+        payloadContainer.Add(recoveryFoldout);
+        EnemyAdvancedPatternDrawerUtility.AddField(recoveryFoldout, recoveryProperty.FindPropertyRelative("cooldownSeconds"), "Cooldown Seconds");
+
+        Foldout distanceFoldout = new Foldout();
+        distanceFoldout.text = "Distance";
+        distanceFoldout.value = true;
+        payloadContainer.Add(distanceFoldout);
+
+        SerializedProperty distanceSourceProperty = distanceProperty.FindPropertyRelative("distanceSource");
+        SerializedProperty playerDistanceMultiplierProperty = distanceProperty.FindPropertyRelative("playerDistanceMultiplier");
+        SerializedProperty distanceOffsetProperty = distanceProperty.FindPropertyRelative("distanceOffset");
+        SerializedProperty fixedDistanceProperty = distanceProperty.FindPropertyRelative("fixedDistance");
+        SerializedProperty minimumTravelDistanceProperty = distanceProperty.FindPropertyRelative("minimumTravelDistance");
+        SerializedProperty maximumTravelDistanceProperty = distanceProperty.FindPropertyRelative("maximumTravelDistance");
+
+        EnemyAdvancedPatternDrawerUtility.AddField(distanceFoldout, distanceSourceProperty, "Distance Source");
+
+        VisualElement playerDistanceContainer = new VisualElement();
+        playerDistanceContainer.style.marginLeft = 12f;
+        distanceFoldout.Add(playerDistanceContainer);
+        EnemyAdvancedPatternDrawerUtility.AddField(playerDistanceContainer, playerDistanceMultiplierProperty, "Player Distance Multiplier");
+        EnemyAdvancedPatternDrawerUtility.AddField(playerDistanceContainer, distanceOffsetProperty, "Distance Offset");
+
+        VisualElement fixedDistanceContainer = new VisualElement();
+        fixedDistanceContainer.style.marginLeft = 12f;
+        distanceFoldout.Add(fixedDistanceContainer);
+        EnemyAdvancedPatternDrawerUtility.AddField(fixedDistanceContainer, fixedDistanceProperty, "Fixed Distance");
+
+        EnemyAdvancedPatternDrawerUtility.AddField(distanceFoldout, minimumTravelDistanceProperty, "Minimum Travel Distance");
+        EnemyAdvancedPatternDrawerUtility.AddField(distanceFoldout, maximumTravelDistanceProperty, "Maximum Travel Distance");
+
+        UpdateDistanceSourceVisibility(distanceSourceProperty, playerDistanceContainer, fixedDistanceContainer);
+        distanceFoldout.TrackPropertyValue(distanceSourceProperty, changedProperty =>
+        {
+            UpdateDistanceSourceVisibility(changedProperty, playerDistanceContainer, fixedDistanceContainer);
+        });
+
+        Foldout pathFoldout = new Foldout();
+        pathFoldout.text = "Path";
+        pathFoldout.value = true;
+        payloadContainer.Add(pathFoldout);
+
+        SerializedProperty dashDurationSecondsProperty = pathProperty.FindPropertyRelative("dashDurationSeconds");
+        SerializedProperty lateralAmplitudeProperty = pathProperty.FindPropertyRelative("lateralAmplitude");
+        SerializedProperty mirrorModeProperty = pathProperty.FindPropertyRelative("mirrorMode");
+        SerializedProperty forwardProgressCurveProperty = pathProperty.FindPropertyRelative("forwardProgressCurve");
+        SerializedProperty lateralOffsetCurveProperty = pathProperty.FindPropertyRelative("lateralOffsetCurve");
+
+        EnemyAdvancedPatternDrawerUtility.AddField(pathFoldout, dashDurationSecondsProperty, "Dash Duration Seconds");
+        EnemyAdvancedPatternDrawerUtility.AddField(pathFoldout, lateralAmplitudeProperty, "Lateral Amplitude");
+        EnemyAdvancedPatternDrawerUtility.AddField(pathFoldout, mirrorModeProperty, "Mirror Mode");
+        EnemyAdvancedPatternDrawerUtility.AddField(pathFoldout, forwardProgressCurveProperty, "Forward Progress Curve");
+        EnemyAdvancedPatternDrawerUtility.AddField(pathFoldout, lateralOffsetCurveProperty, "Lateral Offset Curve");
+
+        HelpBox warningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+        warningBox.style.marginTop = 4f;
+        payloadContainer.Add(warningBox);
+
+        RefreshWarning();
+
+        List<SerializedProperty> trackedProperties = new List<SerializedProperty>
+        {
+            aimProperty.FindPropertyRelative("aimDurationSeconds"),
+            aimProperty.FindPropertyRelative("moveSpeedMultiplierWhileAiming"),
+            recoveryProperty.FindPropertyRelative("cooldownSeconds"),
+            distanceSourceProperty,
+            playerDistanceMultiplierProperty,
+            distanceOffsetProperty,
+            fixedDistanceProperty,
+            minimumTravelDistanceProperty,
+            maximumTravelDistanceProperty,
+            dashDurationSecondsProperty,
+            lateralAmplitudeProperty,
+            forwardProgressCurveProperty,
+            lateralOffsetCurveProperty
+        };
+
+        for (int propertyIndex = 0; propertyIndex < trackedProperties.Count; propertyIndex++)
+        {
+            SerializedProperty trackedProperty = trackedProperties[propertyIndex];
+
+            if (trackedProperty == null)
+                continue;
+
+            payloadContainer.TrackPropertyValue(trackedProperty, changedProperty =>
+            {
+                RefreshWarning();
+            });
+        }
+
+        if (payloadDataProperty.serializedObject != null)
+        {
+            payloadContainer.TrackSerializedObjectValue(payloadDataProperty.serializedObject, changedObject =>
+            {
+                RefreshWarning();
+            });
+        }
+
+        return true;
+
+        void RefreshWarning()
+        {
+            List<string> warnings = CollectWarnings(aimProperty,
+                                                    recoveryProperty,
+                                                    distanceProperty,
+                                                    pathProperty);
+
+            if (warnings.Count <= 0)
+            {
+                warningBox.style.display = DisplayStyle.None;
+                warningBox.text = string.Empty;
+                return;
+            }
+
+            warningBox.style.display = DisplayStyle.Flex;
+            warningBox.text = string.Join("\n", warnings.ToArray());
+        }
+    }
+    #endregion
+
+    #region Private Methods
+    /// <summary>
+    /// Updates distance-field visibility according to the selected travel distance source.
+    /// /params distanceSourceProperty Serialized distance source property.
+    /// /params playerDistanceContainer Container for player-distance controls.
+    /// /params fixedDistanceContainer Container for fixed-distance controls.
+    /// /returns None.
+    /// </summary>
+    private static void UpdateDistanceSourceVisibility(SerializedProperty distanceSourceProperty,
+                                                       VisualElement playerDistanceContainer,
+                                                       VisualElement fixedDistanceContainer)
+    {
+        EnemyShortRangeDashDistanceSource distanceSource = EnemyShortRangeDashDistanceSource.PlayerDistance;
+
+        if (distanceSourceProperty != null && distanceSourceProperty.propertyType == SerializedPropertyType.Enum)
+            distanceSource = (EnemyShortRangeDashDistanceSource)distanceSourceProperty.enumValueIndex;
+
+        if (playerDistanceContainer != null)
+            playerDistanceContainer.style.display = distanceSource == EnemyShortRangeDashDistanceSource.PlayerDistance
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+
+        if (fixedDistanceContainer != null)
+            fixedDistanceContainer.style.display = distanceSource == EnemyShortRangeDashDistanceSource.FixedDistance
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+    }
+
+    /// <summary>
+    /// Collects non-destructive authoring warnings for the short-range dash payload.
+    /// /params aimProperty Serialized aim payload property.
+    /// /params distanceProperty Serialized distance payload property.
+    /// /params pathProperty Serialized path payload property.
+    /// /returns Ordered warning list.
+    /// </summary>
+    private static List<string> CollectWarnings(SerializedProperty aimProperty,
+                                                SerializedProperty recoveryProperty,
+                                                SerializedProperty distanceProperty,
+                                                SerializedProperty pathProperty)
+    {
+        List<string> warnings = new List<string>();
+
+        if (pathProperty != null)
+        {
+            SerializedProperty dashDurationSecondsProperty = pathProperty.FindPropertyRelative("dashDurationSeconds");
+            SerializedProperty forwardProgressCurveProperty = pathProperty.FindPropertyRelative("forwardProgressCurve");
+            SerializedProperty lateralOffsetCurveProperty = pathProperty.FindPropertyRelative("lateralOffsetCurve");
+
+            if (dashDurationSecondsProperty != null && dashDurationSecondsProperty.floatValue <= 0f)
+                warnings.Add("Dash Duration Seconds should be greater than 0 so the dash can advance along its sampled path.");
+
+            if (forwardProgressCurveProperty != null)
+                AddForwardCurveWarnings(forwardProgressCurveProperty.animationCurveValue, warnings);
+
+            if (lateralOffsetCurveProperty != null)
+                AddLateralCurveWarnings(lateralOffsetCurveProperty.animationCurveValue, warnings);
+        }
+
+        if (distanceProperty != null)
+        {
+            SerializedProperty minimumTravelDistanceProperty = distanceProperty.FindPropertyRelative("minimumTravelDistance");
+            SerializedProperty maximumTravelDistanceProperty = distanceProperty.FindPropertyRelative("maximumTravelDistance");
+
+            if (minimumTravelDistanceProperty != null &&
+                maximumTravelDistanceProperty != null &&
+                maximumTravelDistanceProperty.floatValue < minimumTravelDistanceProperty.floatValue)
+            {
+                warnings.Add("Maximum Travel Distance is lower than Minimum Travel Distance. Runtime will clamp to the minimum.");
+            }
+        }
+
+        if (aimProperty != null)
+        {
+            SerializedProperty aimDurationSecondsProperty = aimProperty.FindPropertyRelative("aimDurationSeconds");
+
+            if (aimDurationSecondsProperty != null && aimDurationSecondsProperty.floatValue <= 0f)
+                warnings.Add("Aim Duration Seconds is 0, so the enemy will release the dash instantly without a visible telegraph.");
+        }
+
+        if (recoveryProperty != null)
+        {
+            SerializedProperty cooldownSecondsProperty = recoveryProperty.FindPropertyRelative("cooldownSeconds");
+
+            if (cooldownSecondsProperty != null && cooldownSecondsProperty.floatValue <= 0f)
+                warnings.Add("Cooldown Seconds is 0, so the enemy can begin a new dash aim immediately after the previous committed dash ends.");
+        }
+
+        return warnings;
+    }
+
+    /// <summary>
+    /// Adds authoring warnings for the forward progression curve.
+    /// /params forwardProgressCurve Authored forward progression curve.
+    /// /params warnings Mutable warning list.
+    /// /returns None.
+    /// </summary>
+    private static void AddForwardCurveWarnings(AnimationCurve forwardProgressCurve, List<string> warnings)
+    {
+        if (forwardProgressCurve == null || warnings == null)
+            return;
+
+        float startValue = forwardProgressCurve.Evaluate(0f);
+        float endValue = forwardProgressCurve.Evaluate(1f);
+
+        if (Mathf.Abs(startValue) > 0.02f)
+            warnings.Add("Forward Progress Curve does not start near 0. Runtime will still start the dash from the current position.");
+
+        if (Mathf.Abs(endValue - 1f) > 0.02f)
+            warnings.Add("Forward Progress Curve does not end near 1. Runtime will force the final sample to reach full forward travel distance.");
+    }
+
+    /// <summary>
+    /// Adds authoring warnings for the lateral offset curve.
+    /// /params lateralOffsetCurve Authored lateral offset curve.
+    /// /params warnings Mutable warning list.
+    /// /returns None.
+    /// </summary>
+    private static void AddLateralCurveWarnings(AnimationCurve lateralOffsetCurve, List<string> warnings)
+    {
+        if (lateralOffsetCurve == null || warnings == null)
+            return;
+
+        float startValue = lateralOffsetCurve.Evaluate(0f);
+
+        if (Mathf.Abs(startValue) > 0.02f)
+            warnings.Add("Lateral Offset Curve does not start near 0. Runtime will still force the dash to begin from the enemy current position.");
+    }
+    #endregion
+
+    #endregion
+}

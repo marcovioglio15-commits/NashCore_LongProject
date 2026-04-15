@@ -75,20 +75,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         EnemyCompiledPatternBakeResult compiledPattern = EnemyAdvancedPatternBakeUtility.Compile(authoring.AdvancedPatternPreset);
 
         AddComponent(entity, compiledPattern.PatternConfig);
-        AddComponent(entity, new EnemyPatternRuntimeState
-        {
-            ShortRangeInteractionActive = 0,
-            WanderTargetPosition = float3.zero,
-            WanderWaitTimer = 0f,
-            WanderRetryTimer = 0f,
-            LastWanderDirectionAngle = 0f,
-            WanderHasTarget = 0,
-            WanderInitialized = 0,
-            CowardPatrolAnchorPosition = float3.zero,
-            CowardPatrolAnchorInitialized = 0,
-            DvdDirection = float3.zero,
-            DvdInitialized = 0
-        });
+        AddComponent(entity, EnemyPatternDefaultsUtility.CreatePatternRuntimeState());
         AddComponent(entity, new EnemyShooterControlState
         {
             MovementLocked = 0,

@@ -76,6 +76,71 @@ MonoBehaviour:
         retreatSpeedMultiplierFar: 1
         retreatSpeedMultiplierNear: 1.4
         blockedPathRetryDelay: 0.2
+      shortRangeDash:
+        aim:
+          aimDurationSeconds: 0.4
+          moveSpeedMultiplierWhileAiming: 0.1
+        recovery:
+          cooldownSeconds: 1
+        distance:
+          distanceSource: 0
+          playerDistanceMultiplier: 1
+          distanceOffset: 0
+          fixedDistance: 5
+          minimumTravelDistance: 2
+          maximumTravelDistance: 7
+        path:
+          dashDurationSeconds: 0.28
+          lateralAmplitude: 1.2
+          mirrorMode: 2
+          forwardProgressCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
+          lateralOffsetCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -189,6 +254,71 @@ MonoBehaviour:
         retreatSpeedMultiplierFar: 1
         retreatSpeedMultiplierNear: 1.4
         blockedPathRetryDelay: 0.2
+      shortRangeDash:
+        aim:
+          aimDurationSeconds: 0.4
+          moveSpeedMultiplierWhileAiming: 0.1
+        recovery:
+          cooldownSeconds: 1
+        distance:
+          distanceSource: 0
+          playerDistanceMultiplier: 1
+          distanceOffset: 0
+          fixedDistance: 5
+          minimumTravelDistance: 2
+          maximumTravelDistance: 7
+        path:
+          dashDurationSeconds: 0.28
+          lateralAmplitude: 1.2
+          mirrorMode: 2
+          forwardProgressCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
+          lateralOffsetCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -302,6 +432,71 @@ MonoBehaviour:
         retreatSpeedMultiplierFar: 1
         retreatSpeedMultiplierNear: 1.4
         blockedPathRetryDelay: 0.2
+      shortRangeDash:
+        aim:
+          aimDurationSeconds: 0.4
+          moveSpeedMultiplierWhileAiming: 0.1
+        recovery:
+          cooldownSeconds: 1
+        distance:
+          distanceSource: 0
+          playerDistanceMultiplier: 1
+          distanceOffset: 0
+          fixedDistance: 5
+          minimumTravelDistance: 2
+          maximumTravelDistance: 7
+        path:
+          dashDurationSeconds: 0.28
+          lateralAmplitude: 1.2
+          mirrorMode: 2
+          forwardProgressCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
+          lateralOffsetCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -415,6 +610,71 @@ MonoBehaviour:
         retreatSpeedMultiplierFar: 1
         retreatSpeedMultiplierNear: 1.4
         blockedPathRetryDelay: 0.2
+      shortRangeDash:
+        aim:
+          aimDurationSeconds: 0.4
+          moveSpeedMultiplierWhileAiming: 0.1
+        recovery:
+          cooldownSeconds: 1
+        distance:
+          distanceSource: 0
+          playerDistanceMultiplier: 1
+          distanceOffset: 0
+          fixedDistance: 5
+          minimumTravelDistance: 2
+          maximumTravelDistance: 7
+        path:
+          dashDurationSeconds: 0.28
+          lateralAmplitude: 1.2
+          mirrorMode: 2
+          forwardProgressCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
+          lateralOffsetCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
       shooter:
         aimPolicy: 1
         movementPolicy: 1
@@ -528,6 +788,71 @@ MonoBehaviour:
         retreatSpeedMultiplierFar: 1
         retreatSpeedMultiplierNear: 1.4
         blockedPathRetryDelay: 0.2
+      shortRangeDash:
+        aim:
+          aimDurationSeconds: 0.4
+          moveSpeedMultiplierWhileAiming: 0.1
+        recovery:
+          cooldownSeconds: 1
+        distance:
+          distanceSource: 0
+          playerDistanceMultiplier: 1
+          distanceOffset: 0
+          fixedDistance: 5
+          minimumTravelDistance: 2
+          maximumTravelDistance: 7
+        path:
+          dashDurationSeconds: 0.28
+          lateralAmplitude: 1.2
+          mirrorMode: 2
+          forwardProgressCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
+          lateralOffsetCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 0
+              inSlope: 0
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
       shooter:
         aimPolicy: 0
         movementPolicy: 0
@@ -653,6 +978,71 @@ MonoBehaviour:
           retreatSpeedMultiplierFar: 1
           retreatSpeedMultiplierNear: 1.4
           blockedPathRetryDelay: 0.2
+        shortRangeDash:
+          aim:
+            aimDurationSeconds: 0.4
+            moveSpeedMultiplierWhileAiming: 0.1
+          recovery:
+            cooldownSeconds: 1
+          distance:
+            distanceSource: 0
+            playerDistanceMultiplier: 1
+            distanceOffset: 0
+            fixedDistance: 5
+            minimumTravelDistance: 2
+            maximumTravelDistance: 7
+          path:
+            dashDurationSeconds: 0.28
+            lateralAmplitude: 1.2
+            mirrorMode: 2
+            forwardProgressCurve:
+              serializedVersion: 2
+              m_Curve:
+              - serializedVersion: 3
+                time: 0
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              - serializedVersion: 3
+                time: 1
+                value: 1
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              m_PreInfinity: 2
+              m_PostInfinity: 2
+              m_RotationOrder: 4
+            lateralOffsetCurve:
+              serializedVersion: 2
+              m_Curve:
+              - serializedVersion: 3
+                time: 0
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              - serializedVersion: 3
+                time: 1
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              m_PreInfinity: 2
+              m_PostInfinity: 2
+              m_RotationOrder: 4
         shooter:
           aimPolicy: 0
           movementPolicy: 0
@@ -765,6 +1155,71 @@ MonoBehaviour:
           retreatSpeedMultiplierFar: 1
           retreatSpeedMultiplierNear: 1.4
           blockedPathRetryDelay: 0.2
+        shortRangeDash:
+          aim:
+            aimDurationSeconds: 0.4
+            moveSpeedMultiplierWhileAiming: 0.1
+          recovery:
+            cooldownSeconds: 1
+          distance:
+            distanceSource: 0
+            playerDistanceMultiplier: 1
+            distanceOffset: 0
+            fixedDistance: 5
+            minimumTravelDistance: 2
+            maximumTravelDistance: 7
+          path:
+            dashDurationSeconds: 0.28
+            lateralAmplitude: 1.2
+            mirrorMode: 2
+            forwardProgressCurve:
+              serializedVersion: 2
+              m_Curve:
+              - serializedVersion: 3
+                time: 0
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              - serializedVersion: 3
+                time: 1
+                value: 1
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              m_PreInfinity: 2
+              m_PostInfinity: 2
+              m_RotationOrder: 4
+            lateralOffsetCurve:
+              serializedVersion: 2
+              m_Curve:
+              - serializedVersion: 3
+                time: 0
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              - serializedVersion: 3
+                time: 1
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              m_PreInfinity: 2
+              m_PostInfinity: 2
+              m_RotationOrder: 4
         shooter:
           aimPolicy: 0
           movementPolicy: 0
@@ -877,6 +1332,71 @@ MonoBehaviour:
           retreatSpeedMultiplierFar: 1
           retreatSpeedMultiplierNear: 1.4
           blockedPathRetryDelay: 0.2
+        shortRangeDash:
+          aim:
+            aimDurationSeconds: 0.4
+            moveSpeedMultiplierWhileAiming: 0.1
+          recovery:
+            cooldownSeconds: 1
+          distance:
+            distanceSource: 0
+            playerDistanceMultiplier: 1
+            distanceOffset: 0
+            fixedDistance: 5
+            minimumTravelDistance: 2
+            maximumTravelDistance: 7
+          path:
+            dashDurationSeconds: 0.28
+            lateralAmplitude: 1.2
+            mirrorMode: 2
+            forwardProgressCurve:
+              serializedVersion: 2
+              m_Curve:
+              - serializedVersion: 3
+                time: 0
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              - serializedVersion: 3
+                time: 1
+                value: 1
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              m_PreInfinity: 2
+              m_PostInfinity: 2
+              m_RotationOrder: 4
+            lateralOffsetCurve:
+              serializedVersion: 2
+              m_Curve:
+              - serializedVersion: 3
+                time: 0
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              - serializedVersion: 3
+                time: 1
+                value: 0
+                inSlope: 0
+                outSlope: 0
+                tangentMode: 0
+                weightedMode: 0
+                inWeight: 0
+                outWeight: 0
+              m_PreInfinity: 2
+              m_PostInfinity: 2
+              m_RotationOrder: 4
         shooter:
           aimPolicy: 0
           movementPolicy: 0

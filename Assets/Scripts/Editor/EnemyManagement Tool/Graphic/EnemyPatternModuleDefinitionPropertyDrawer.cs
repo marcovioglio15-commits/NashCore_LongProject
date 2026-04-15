@@ -192,6 +192,7 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
             case EnemyPatternModuleCatalogSection.ShortRangeInteraction:
                 choices.Add(EnemyPatternModuleKind.Grunt);
                 choices.Add(EnemyPatternModuleKind.Coward);
+                choices.Add(EnemyPatternModuleKind.ShortRangeDash);
                 break;
 
             case EnemyPatternModuleCatalogSection.WeaponInteraction:
@@ -254,6 +255,9 @@ public sealed class EnemyPatternModuleDefinitionPropertyDrawer : PropertyDrawer
                 return editorMode == EnemyAdvancedPatternPayloadEditorMode.ShortRangeInteraction
                     ? "Coward: retreats while the Short-Range Interaction category stays active. Detection and release live on the category assembly."
                     : "Coward: retreats from the player while scoring open-space escape routes and respecting wall clearance.";
+
+            case EnemyPatternModuleKind.ShortRangeDash:
+                return "Short-Range Dash: takes aim, locks a target line toward the player, executes one sampled designer-authored dash path, then returns to the core movement module until its recovery cooldown ends.";
 
             case EnemyPatternModuleKind.Shooter:
                 return editorMode == EnemyAdvancedPatternPayloadEditorMode.WeaponInteraction

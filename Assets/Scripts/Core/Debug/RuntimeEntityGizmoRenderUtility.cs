@@ -39,6 +39,7 @@ public static class RuntimeEntityGizmoRenderUtility
     private static readonly Color EnemyAreaRadiusColor = new Color(1f, 0.52f, 0.18f, 0.94f);
     private static readonly Color EnemySeparationRadiusColor = new Color(0.24f, 0.72f, 1f, 0.94f);
     private static readonly Color EnemyWanderTargetColor = new Color(0.36f, 1f, 0.82f, 0.94f);
+    private static readonly Color EnemyShortRangeDashTargetColor = new Color(1f, 0.42f, 0.78f, 0.94f);
     private static readonly Color SpawnerSpawnRadiusColor = new Color(0.2f, 0.9f, 0.42f, 0.94f);
     private static readonly Color SpawnerDespawnRadiusColor = new Color(1f, 0.66f, 0.24f, 0.94f);
     private static readonly Color BombRadiusColor = new Color(1f, 0.4f, 0.12f, 0.94f);
@@ -332,6 +333,30 @@ public static class RuntimeEntityGizmoRenderUtility
                         primitiveDrawer.DrawLink(enemyPosition, targetPosition, EnemyWanderTargetColor);
                         primitiveDrawer.DrawMarker(targetPosition, WanderTargetMarkerRadius, EnemyWanderTargetColor);
                         drewEnemyGizmo = true;
+                    }
+
+                    if (entityManager.HasComponent<EnemyPatternConfig>(enemyEntity) &&
+                        patternRuntimeState.ShortRangeDashPhase != EnemyShortRangeDashPhase.Idle)
+                    {
+                        EnemyPatternConfig patternConfig = entityManager.GetComponentData<EnemyPatternConfig>(enemyEntity);
+
+                        if (patternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash)
+                        {
+                            float normalizedDashProgress = patternRuntimeState.ShortRangeDashPhase == EnemyShortRangeDashPhase.Dashing
+                                ? math.saturate(patternRuntimeState.ShortRangeDashPhaseElapsed /
+                                                math.max(0.01f, patternConfig.ShortRangeDashDuration))
+                                : 0f;
+                            float3 dashCurrentPoint = EnemyPatternShortRangeDashUtility.ResolvePathPoint(in patternConfig,
+                                                                                                        in patternRuntimeState,
+                                                                                                        normalizedDashProgress);
+                            float3 dashEndPoint = EnemyPatternShortRangeDashUtility.ResolvePathPoint(in patternConfig,
+                                                                                                    in patternRuntimeState,
+                                                                                                    1f);
+                            primitiveDrawer.DrawLink(enemyPosition, ToVector3(dashCurrentPoint), EnemyShortRangeDashTargetColor);
+                            primitiveDrawer.DrawLink(ToVector3(dashCurrentPoint), ToVector3(dashEndPoint), EnemyShortRangeDashTargetColor);
+                            primitiveDrawer.DrawMarker(ToVector3(dashEndPoint), WanderTargetMarkerRadius, EnemyShortRangeDashTargetColor);
+                            drewEnemyGizmo = true;
+                        }
                     }
                 }
 

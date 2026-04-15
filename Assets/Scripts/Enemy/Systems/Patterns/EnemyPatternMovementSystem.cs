@@ -229,20 +229,35 @@ public partial struct EnemyPatternMovementSystem : ISystem
             toPlayer.y = 0f;
             float playerDistance = math.length(toPlayer);
             bool wasShortRangeInteractionActive = currentPatternRuntimeState.ShortRangeInteractionActive != 0;
+            bool wasShortRangeOverrideDriving = EnemyPatternMovementRuntimeUtility.IsShortRangeOverrideDriving(in currentPatternConfig,
+                                                                                                                in currentPatternRuntimeState,
+                                                                                                                wasShortRangeInteractionActive);
+
+            if (currentPatternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash)
+                EnemyPatternShortRangeDashUtility.UpdateCooldown(ref currentPatternRuntimeState, deltaTime);
+
             bool shortRangeInteractionActive = EnemyPatternMovementRuntimeUtility.ResolveShortRangeInteractionActive(in currentPatternConfig,
                                                                                                                      in currentPatternRuntimeState,
                                                                                                                      playerDistance);
 
-            if (shortRangeInteractionActive && !wasShortRangeInteractionActive)
-                EnemyPatternMovementRuntimeUtility.PrepareShortRangeTakeover(in currentPatternConfig, ref currentPatternRuntimeState);
+            if (!shortRangeInteractionActive &&
+                currentPatternConfig.ShortRangeMovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash)
+            {
+                EnemyPatternShortRangeDashUtility.HandleShortRangeBandReleased(ref currentPatternRuntimeState);
+            }
 
             currentPatternRuntimeState.ShortRangeInteractionActive = shortRangeInteractionActive ? (byte)1 : (byte)0;
             EnemyPatternConfig activePatternConfig = EnemyPatternMovementRuntimeUtility.BuildActivePatternConfig(in currentPatternConfig,
                                                                                                                  in currentPatternRuntimeState,
                                                                                                                  playerDistance);
             bool shortRangeOverrideDriving = EnemyPatternMovementRuntimeUtility.IsShortRangeOverrideDriving(in currentPatternConfig,
+                                                                                                            in currentPatternRuntimeState,
                                                                                                             shortRangeInteractionActive);
-            bool shortRangeTakeoverThisFrame = shortRangeOverrideDriving && !wasShortRangeInteractionActive;
+
+            if (shortRangeOverrideDriving && !wasShortRangeOverrideDriving)
+                EnemyPatternMovementRuntimeUtility.PrepareShortRangeTakeover(in currentPatternConfig, ref currentPatternRuntimeState);
+
+            bool shortRangeTakeoverThisFrame = shortRangeOverrideDriving && !wasShortRangeOverrideDriving;
             EnemyShooterControlState shooterControlState = default;
 
             if (shooterControlLookup.HasComponent(enemyEntity))
@@ -260,6 +275,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float3 desiredVelocity = float3.zero;
             float priorityYieldUrgency = 0f;
             float priorityYieldGapNormalized = 0f;
+            EnemyShortRangeDashPhase shortRangeDashPhase = EnemyShortRangeDashPhase.Idle;
 
             // Determine desired velocity based on movement pattern kind and configuration.
             switch (activePatternConfig.MovementKind)
@@ -318,10 +334,25 @@ public partial struct EnemyPatternMovementSystem : ISystem
                                                                                                    elapsedTime);
                     break;
 
+                case EnemyCompiledMovementPatternKind.ShortRangeDash:
+                    desiredVelocity = EnemyPatternShortRangeDashUtility.ResolveVelocity(enemyEntity,
+                                                                                       in activePatternConfig,
+                                                                                       ref currentPatternRuntimeState,
+                                                                                       currentEnemyTransform.Position,
+                                                                                       playerPosition,
+                                                                                       moveSpeed,
+                                                                                       deltaTime,
+                                                                                       elapsedTime,
+                                                                                       out shortRangeDashPhase);
+                    break;
+
                 default:
                     desiredVelocity = float3.zero;
                     break;
             }
+
+            if (shortRangeDashPhase != EnemyShortRangeDashPhase.Idle)
+                movementLocked = false;
 
             if (activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
                 activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererDvd ||
@@ -392,6 +423,10 @@ public partial struct EnemyPatternMovementSystem : ISystem
             }
 
             float effectiveMaxSpeed = maxSpeed;
+            float dashDesiredSpeed = math.length(desiredVelocity);
+
+            if (shortRangeDashPhase == EnemyShortRangeDashPhase.Dashing && dashDesiredSpeed > effectiveMaxSpeed)
+                effectiveMaxSpeed = dashDesiredSpeed;
 
             if (!movementLocked && effectiveMaxSpeed > 0f && priorityYieldUrgency > 0f)
             {
@@ -399,7 +434,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
                 effectiveMaxSpeed *= 1f + speedBoost;
             }
 
-            float desiredSpeed = math.length(desiredVelocity);
+            float desiredSpeed = dashDesiredSpeed;
 
             if (effectiveMaxSpeed > 0f && desiredSpeed > effectiveMaxSpeed && desiredSpeed > DirectionEpsilon)
                 desiredVelocity *= effectiveMaxSpeed / desiredSpeed;
@@ -422,7 +457,9 @@ public partial struct EnemyPatternMovementSystem : ISystem
             float maxVelocityDelta = accelerationRate * deltaTime;
             float velocityDeltaMagnitude = math.length(velocityDelta);
 
-            if (velocityDeltaMagnitude > maxVelocityDelta && velocityDeltaMagnitude > DirectionEpsilon)
+            if (shortRangeDashPhase == EnemyShortRangeDashPhase.Dashing)
+                currentEnemyRuntimeState.Velocity = desiredVelocity;
+            else if (velocityDeltaMagnitude > maxVelocityDelta && velocityDeltaMagnitude > DirectionEpsilon)
                 currentEnemyRuntimeState.Velocity += velocityDelta * (maxVelocityDelta / velocityDeltaMagnitude);
             else
                 currentEnemyRuntimeState.Velocity = desiredVelocity;
@@ -498,18 +535,26 @@ public partial struct EnemyPatternMovementSystem : ISystem
                     else
                     {
                         currentEnemyRuntimeState.Velocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(currentEnemyRuntimeState.Velocity, hitNormal);
-                        currentPatternRuntimeState.WanderRetryTimer = math.max(currentPatternRuntimeState.WanderRetryTimer,
-                                                                              activePatternConfig.BasicBlockedPathRetryDelay);
-
-                        if ((activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
-                             activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.Coward) &&
-                            expandedWallClearance)
+                        
+                        if (activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash)
                         {
-                            float allowedDisplacementDistance = math.length(allowedDisplacement);
-                            float blockedDisplacementRatio = EnemyPatternMovementRuntimeUtility.ResolveBlockedDisplacementRatio(requestedDisplacementDistance, allowedDisplacementDistance);
+                            EnemyPatternShortRangeDashUtility.HandleWallHit(in activePatternConfig, ref currentPatternRuntimeState);
+                        }
+                        else
+                        {
+                            currentPatternRuntimeState.WanderRetryTimer = math.max(currentPatternRuntimeState.WanderRetryTimer,
+                                                                                  activePatternConfig.BasicBlockedPathRetryDelay);
 
-                            if (blockedDisplacementRatio >= WallBlockedRepathThreshold)
-                                clearanceReachedTarget = true;
+                            if ((activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
+                                 activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.Coward) &&
+                                expandedWallClearance)
+                            {
+                                float allowedDisplacementDistance = math.length(allowedDisplacement);
+                                float blockedDisplacementRatio = EnemyPatternMovementRuntimeUtility.ResolveBlockedDisplacementRatio(requestedDisplacementDistance, allowedDisplacementDistance);
+
+                                if (blockedDisplacementRatio >= WallBlockedRepathThreshold)
+                                    clearanceReachedTarget = true;
+                            }
                         }
                     }
                 }
@@ -528,8 +573,12 @@ public partial struct EnemyPatternMovementSystem : ISystem
                         nextPosition += clearanceCorrectionDisplacement;
                         currentEnemyRuntimeState.Velocity = WorldWallCollisionUtility.RemoveVelocityIntoSurface(currentEnemyRuntimeState.Velocity, clearanceNormal);
 
-                        if (activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
-                            activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.Coward)
+                        if (activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash)
+                        {
+                            EnemyPatternShortRangeDashUtility.HandleWallHit(in activePatternConfig, ref currentPatternRuntimeState);
+                        }
+                        else if (activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.WandererBasic ||
+                                 activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.Coward)
                         {
                             float clearanceCorrectionDistance = math.length(clearanceCorrectionDisplacement);
                             float clearanceCorrectionRatio = math.saturate(clearanceCorrectionDistance / math.max(0.01f, wallCollisionRadius));
@@ -563,25 +612,39 @@ public partial struct EnemyPatternMovementSystem : ISystem
 
             if (!freezeRotation)
             {
-                float rotationSpeedDegreesPerSecond = currentEnemyData.RotationSpeedDegreesPerSecond;
-                bool hasSelfRotation = math.abs(rotationSpeedDegreesPerSecond) > RotationSpeedEpsilon;
-
-                if (hasSelfRotation)
+                if (activePatternConfig.MovementKind == EnemyCompiledMovementPatternKind.ShortRangeDash &&
+                    EnemyPatternShortRangeDashUtility.TryResolveLookDirection(in currentPatternRuntimeState, out float3 dashLookDirection))
                 {
-                    float deltaYawRadians = math.radians(rotationSpeedDegreesPerSecond) * deltaTime;
-                    quaternion deltaRotation = quaternion.RotateY(deltaYawRadians);
-                    currentEnemyTransform.Rotation = math.normalize(math.mul(currentEnemyTransform.Rotation, deltaRotation));
+                    float lookTurnRateDegrees = EnemySteeringUtility.ResolveAggressivenessScale(steeringAggressiveness,
+                                                                                                 EnemySteeringUtility.LookRotationMinDegreesPerSecond,
+                                                                                                 EnemySteeringUtility.LookRotationMaxDegreesPerSecond);
+                    float maxRadiansDelta = math.radians(lookTurnRateDegrees) * math.max(0f, deltaTime);
+                    currentEnemyTransform.Rotation = EnemySteeringUtility.RotateTowardsPlanar(currentEnemyTransform.Rotation,
+                                                                                               dashLookDirection,
+                                                                                               maxRadiansDelta);
                 }
                 else
                 {
-                    float3 facingVelocity = EnemyKnockbackRuntimeUtility.ResolveCombinedVelocity(currentEnemyRuntimeState.Velocity,
-                                                                                                in currentEnemyKnockbackState);
-                    currentEnemyTransform.Rotation = EnemySteeringUtility.ResolveDynamicLookRotation(currentEnemyTransform.Rotation,
-                                                                                                      facingVelocity,
-                                                                                                      math.max(math.max(moveSpeed, effectiveMaxSpeed), math.length(facingVelocity)),
-                                                                                                      in shooterControlState,
-                                                                                                      steeringAggressiveness,
-                                                                                                      deltaTime);
+                    float rotationSpeedDegreesPerSecond = currentEnemyData.RotationSpeedDegreesPerSecond;
+                    bool hasSelfRotation = math.abs(rotationSpeedDegreesPerSecond) > RotationSpeedEpsilon;
+
+                    if (hasSelfRotation)
+                    {
+                        float deltaYawRadians = math.radians(rotationSpeedDegreesPerSecond) * deltaTime;
+                        quaternion deltaRotation = quaternion.RotateY(deltaYawRadians);
+                        currentEnemyTransform.Rotation = math.normalize(math.mul(currentEnemyTransform.Rotation, deltaRotation));
+                    }
+                    else
+                    {
+                        float3 facingVelocity = EnemyKnockbackRuntimeUtility.ResolveCombinedVelocity(currentEnemyRuntimeState.Velocity,
+                                                                                                    in currentEnemyKnockbackState);
+                        currentEnemyTransform.Rotation = EnemySteeringUtility.ResolveDynamicLookRotation(currentEnemyTransform.Rotation,
+                                                                                                          facingVelocity,
+                                                                                                          math.max(math.max(moveSpeed, effectiveMaxSpeed), math.length(facingVelocity)),
+                                                                                                          in shooterControlState,
+                                                                                                          steeringAggressiveness,
+                                                                                                          deltaTime);
+                    }
                 }
             }
 

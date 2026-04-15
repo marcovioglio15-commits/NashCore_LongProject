@@ -137,6 +137,9 @@ public static class EnemyAdvancedPatternDrawerUtility
                                                                                         payloadContainer,
                                                                                         editorMode == EnemyAdvancedPatternPayloadEditorMode.Full);
 
+            case EnemyPatternModuleKind.ShortRangeDash:
+                return EnemyShortRangeDashPayloadDrawerUtility.BuildShortRangeDashPayloadEditor(payloadDataProperty, payloadContainer);
+
             case EnemyPatternModuleKind.Shooter:
                 return EnemyAdvancedPatternPayloadDrawerUtility.BuildShooterPayloadEditor(payloadDataProperty,
                                                                                          payloadContainer,
@@ -331,7 +334,8 @@ public static class EnemyAdvancedPatternDrawerUtility
 
             case EnemyPatternModuleCatalogSection.ShortRangeInteraction:
                 return moduleKind == EnemyPatternModuleKind.Grunt ||
-                       moduleKind == EnemyPatternModuleKind.Coward;
+                       moduleKind == EnemyPatternModuleKind.Coward ||
+                       moduleKind == EnemyPatternModuleKind.ShortRangeDash;
 
             case EnemyPatternModuleCatalogSection.WeaponInteraction:
                 return moduleKind == EnemyPatternModuleKind.Shooter;
