@@ -25,6 +25,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
         VisualElement root = new VisualElement();
         SerializedProperty isEnabledProperty = property.FindPropertyRelative("isEnabled");
         SerializedProperty comboGainPerKillProperty = property.FindPropertyRelative("comboGainPerKill");
+        SerializedProperty damageBreakModeProperty = property.FindPropertyRelative("damageBreakMode");
         SerializedProperty shieldDamageBreaksComboProperty = property.FindPropertyRelative("shieldDamageBreaksCombo");
         SerializedProperty rankDefinitionsProperty = property.FindPropertyRelative("rankDefinitions");
         SerializedProperty scalingRulesProperty = property.serializedObject != null
@@ -33,6 +34,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
 
         if (isEnabledProperty == null ||
             comboGainPerKillProperty == null ||
+            damageBreakModeProperty == null ||
             shieldDamageBreaksComboProperty == null ||
             rankDefinitionsProperty == null)
         {
@@ -41,7 +43,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
             return root;
         }
 
-        HelpBox infoBox = new HelpBox("Health damage always breaks the combo. Shield damage can optionally break it too, and all combo settings below support Add Scaling where meaningful.", HelpBoxMessageType.Info);
+        HelpBox infoBox = new HelpBox("Health damage always triggers the selected Damage Break Mode. Shield damage uses the same break mode only when Shield Damage Breaks Combo is enabled, and all numeric, boolean, and enum fields below support Add Scaling where applicable.", HelpBoxMessageType.Info);
         root.Add(infoBox);
         root.Add(PlayerScalingFieldElementFactory.CreateField(isEnabledProperty,
                                                               scalingRulesProperty,
@@ -49,6 +51,9 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
         root.Add(PlayerScalingFieldElementFactory.CreateField(comboGainPerKillProperty,
                                                               scalingRulesProperty,
                                                               "Combo Gain Per Kill"));
+        root.Add(PlayerScalingFieldElementFactory.CreateField(damageBreakModeProperty,
+                                                              scalingRulesProperty,
+                                                              "Damage Break Mode"));
         root.Add(PlayerScalingFieldElementFactory.CreateField(shieldDamageBreaksComboProperty,
                                                               scalingRulesProperty,
                                                               "Shield Damage Breaks Combo"));
@@ -65,12 +70,14 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
             PlayerManagementDraftSession.MarkDirty();
             RefreshWarnings(isEnabledProperty,
                             comboGainPerKillProperty,
+                            damageBreakModeProperty,
                             rankDefinitionsProperty,
                             warningBox);
         });
 
         RefreshWarnings(isEnabledProperty,
                         comboGainPerKillProperty,
+                        damageBreakModeProperty,
                         rankDefinitionsProperty,
                         warningBox);
         return root;
@@ -82,12 +89,14 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
     /// Rebuilds the warning message shown for the combo-counter module.
     /// isEnabledProperty Serialized combo enabled property.
     /// comboGainPerKillProperty Serialized kill gain property.
+    /// damageBreakModeProperty Serialized damage-break mode property.
     /// rankDefinitionsProperty Serialized combo-rank list property.
     /// warningBox Warning help box refreshed in place.
     /// returns void.
     /// </summary>
     private static void RefreshWarnings(SerializedProperty isEnabledProperty,
                                         SerializedProperty comboGainPerKillProperty,
+                                        SerializedProperty damageBreakModeProperty,
                                         SerializedProperty rankDefinitionsProperty,
                                         HelpBox warningBox)
     {
@@ -97,6 +106,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
         }
 
         List<string> warningLines = new List<string>();
+        bool usesRankDowngrade = ResolveDamageBreakMode(damageBreakModeProperty) == PlayerComboDamageBreakMode.DowngradeToPreviousRank;
 
         if (isEnabledProperty != null &&
             isEnabledProperty.propertyType == SerializedPropertyType.Boolean &&
@@ -114,6 +124,11 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
         else if (rankDefinitionsProperty.arraySize <= 0)
         {
             warningLines.Add("No ranks configured. The combo counter can still count kills, but it cannot grant rank bonuses.");
+
+            if (usesRankDowngrade)
+            {
+                warningLines.Add("Damage Break Mode is set to Downgrade To Previous Rank, but no ranks are configured. Damage will behave like a full reset.");
+            }
         }
         else
         {
@@ -136,7 +151,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
                 }
                 else if (!visitedRankIds.Add(rankId))
                 {
-                    warningLines.Add(string.Format("Rank ID '{0}' is duplicated. Stable Add Scaling keys and HUD presentation can become ambiguous.", rankId));
+                    warningLines.Add(string.Format("Rank ID '{0}' is duplicated. Stable Add Scaling keys and rank-state labels can become ambiguous.", rankId));
                 }
 
                 if (requiredComboValue < 0)
@@ -149,7 +164,19 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
                     warningLines.Add(string.Format("Rank '{0}' should not require less combo than the previous rank.", string.IsNullOrWhiteSpace(rankId) ? "#" + (rankIndex + 1) : rankId));
                 }
 
+                if (usesRankDowngrade &&
+                    rankIndex > 0 &&
+                    requiredComboValue == previousRequiredValue)
+                {
+                    warningLines.Add(string.Format("Rank '{0}' uses the same Required Combo Value as the previous rank. Downgrade To Previous Rank may not actually change the active rank.", string.IsNullOrWhiteSpace(rankId) ? "#" + (rankIndex + 1) : rankId));
+                }
+
                 previousRequiredValue = requiredComboValue;
+            }
+
+            if (usesRankDowngrade && rankDefinitionsProperty.arraySize < 2)
+            {
+                warningLines.Add("Downgrade To Previous Rank behaves like a full reset until at least two ranks are configured.");
             }
         }
 
@@ -162,6 +189,26 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
 
         warningBox.text = string.Join("\n", warningLines);
         warningBox.style.display = DisplayStyle.Flex;
+    }
+
+    /// <summary>
+    /// Resolves the authored combo damage-break mode with a safe enum fallback.
+    /// damageBreakModeProperty Serialized damage-break mode property.
+    /// returns Resolved authored damage-break mode.
+    /// </summary>
+    private static PlayerComboDamageBreakMode ResolveDamageBreakMode(SerializedProperty damageBreakModeProperty)
+    {
+        if (damageBreakModeProperty == null || damageBreakModeProperty.propertyType != SerializedPropertyType.Enum)
+        {
+            return PlayerComboDamageBreakMode.ResetCombo;
+        }
+
+        if (damageBreakModeProperty.enumValueIndex == (int)PlayerComboDamageBreakMode.DowngradeToPreviousRank)
+        {
+            return PlayerComboDamageBreakMode.DowngradeToPreviousRank;
+        }
+
+        return PlayerComboDamageBreakMode.ResetCombo;
     }
     #endregion
 

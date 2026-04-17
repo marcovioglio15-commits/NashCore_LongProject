@@ -33,6 +33,7 @@ internal static class PlayerRuntimeScalingComboApplyUtility
         {
             Enabled = baseComboConfig.Enabled,
             ComboGainPerKill = baseComboConfig.ComboGainPerKill,
+            DamageBreakMode = baseComboConfig.DamageBreakMode,
             ShieldDamageBreaksCombo = baseComboConfig.ShieldDamageBreaksCombo
         };
 
@@ -204,6 +205,9 @@ internal static class PlayerRuntimeScalingComboApplyUtility
         {
             case PlayerRuntimeComboCounterFieldId.ComboGainPerKill:
                 runtimeComboConfig.ComboGainPerKill = math.max(0, (int)math.round(resolvedValue));
+                break;
+            case PlayerRuntimeComboCounterFieldId.DamageBreakMode:
+                runtimeComboConfig.DamageBreakMode = PlayerRuntimeScalingEnumUtility.ResolveComboDamageBreakMode(resolvedValue);
                 break;
             case PlayerRuntimeComboCounterFieldId.RankRequiredComboValue:
                 if (rankIndex < 0 || rankIndex >= runtimeComboRanks.Length)

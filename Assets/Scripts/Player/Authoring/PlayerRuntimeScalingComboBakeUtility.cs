@@ -53,6 +53,7 @@ internal static class PlayerRuntimeScalingComboBakeUtility
         {
             Enabled = resolvedRuntimeSourceConfig.Enabled,
             ComboGainPerKill = resolvedRuntimeSourceConfig.ComboGainPerKill,
+            DamageBreakMode = resolvedRuntimeSourceConfig.DamageBreakMode,
             ShieldDamageBreaksCombo = resolvedRuntimeSourceConfig.ShieldDamageBreaksCombo
         };
 
@@ -154,7 +155,9 @@ internal static class PlayerRuntimeScalingComboBakeUtility
                 BaseValue = baseValue,
                 BaseBooleanValue = baseBooleanValue,
                 IsInteger = isInteger,
-                Formula = new FixedString512Bytes(scalingRule.Formula)
+                Formula = new FixedString512Bytes(PlayerRuntimeScalingBakeUtility.ResolveStoredFormula(scalingRule.Formula,
+                                                                                                       property,
+                                                                                                       null))
             });
         }
     }
@@ -173,6 +176,7 @@ internal static class PlayerRuntimeScalingComboBakeUtility
         {
             Enabled = comboDefinition != null && comboDefinition.IsEnabled ? (byte)1 : (byte)0,
             ComboGainPerKill = comboDefinition != null ? comboDefinition.ComboGainPerKill : 0,
+            DamageBreakMode = comboDefinition != null ? comboDefinition.DamageBreakMode : PlayerComboDamageBreakMode.ResetCombo,
             ShieldDamageBreaksCombo = comboDefinition != null && comboDefinition.ShieldDamageBreaksCombo ? (byte)1 : (byte)0
         };
     }
@@ -276,6 +280,12 @@ internal static class PlayerRuntimeScalingComboBakeUtility
         if (string.Equals(statKey, "comboCounter.shieldDamageBreaksCombo", StringComparison.Ordinal))
         {
             fieldId = PlayerRuntimeComboCounterFieldId.ShieldDamageBreaksCombo;
+            return true;
+        }
+
+        if (string.Equals(statKey, "comboCounter.damageBreakMode", StringComparison.Ordinal))
+        {
+            fieldId = PlayerRuntimeComboCounterFieldId.DamageBreakMode;
             return true;
         }
 

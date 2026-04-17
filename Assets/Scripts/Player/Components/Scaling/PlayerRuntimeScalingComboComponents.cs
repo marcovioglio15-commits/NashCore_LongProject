@@ -10,6 +10,7 @@ public struct PlayerBaseComboCounterConfig : IComponentData
 {
     public byte Enabled;
     public int ComboGainPerKill;
+    public PlayerComboDamageBreakMode DamageBreakMode;
     public byte ShieldDamageBreaksCombo;
 }
 
@@ -22,6 +23,7 @@ public struct PlayerRuntimeComboCounterConfig : IComponentData
 {
     public byte Enabled;
     public int ComboGainPerKill;
+    public PlayerComboDamageBreakMode DamageBreakMode;
     public byte ShieldDamageBreaksCombo;
 }
 
@@ -63,7 +65,8 @@ public enum PlayerRuntimeComboCounterFieldId : byte
     Enabled = 0,
     ComboGainPerKill = 1,
     ShieldDamageBreaksCombo = 2,
-    RankRequiredComboValue = 3
+    DamageBreakMode = 3,
+    RankRequiredComboValue = 4
 }
 
 /// <summary>

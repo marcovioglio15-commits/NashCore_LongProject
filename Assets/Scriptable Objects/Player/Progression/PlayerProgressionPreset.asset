@@ -366,12 +366,33 @@ MonoBehaviour:
   comboCounter:
     isEnabled: 1
     comboGainPerKill: 1
+    damageBreakMode: 0
     shieldDamageBreaksCombo: 0
     rankDefinitions:
     - rankId: A
       requiredComboValue: 0
+      rankVisuals:
+        badgeSprite: {fileID: 0}
+        badgeTint: {r: 1, g: 1, b: 1, a: 1}
+        rankTextColor: {r: 1, g: 1, b: 1, a: 1}
+        comboValueTextColor: {r: 1, g: 1, b: 1, a: 1}
+        progressFillColor: {r: 1, g: 1, b: 1, a: 1}
+        progressBackgroundColor: {r: 1, g: 1, b: 1, a: 1}
       rankBonuses:
-        formulas: []
+        formulas:
+        - formula: 
+    - rankId: A
+      requiredComboValue: 0
+      rankVisuals:
+        badgeSprite: {fileID: 0}
+        badgeTint: {r: 1, g: 1, b: 1, a: 1}
+        rankTextColor: {r: 1, g: 1, b: 1, a: 1}
+        comboValueTextColor: {r: 1, g: 1, b: 1, a: 1}
+        progressFillColor: {r: 1, g: 1, b: 1, a: 1}
+        progressBackgroundColor: {r: 1, g: 1, b: 1, a: 1}
+      rankBonuses:
+        formulas:
+        - formula: 
   legacyExperienceRequiredPerLevel: 100
   levelCap: 100
   experiencePickupRadius: 1

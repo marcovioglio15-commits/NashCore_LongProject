@@ -7,100 +7,6 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Stores one optional visual theme entry used by the combo HUD when a specific combo rank becomes active.
-/// none.
-/// returns none.
-/// </summary>
-[Serializable]
-public sealed class HUDComboCounterRankVisualDefinition
-{
-    #region Fields
-
-    #region Serialized Fields
-    [Tooltip("Combo rank identifier that activates this visual theme.")]
-    [SerializeField] private string rankId = string.Empty;
-
-    [Tooltip("Optional sprite shown inside the rank badge while this rank is active.")]
-    [SerializeField] private Sprite badgeSprite;
-
-    [Tooltip("Tint applied to the badge image while this rank is active.")]
-    [SerializeField] private Color badgeTint = Color.white;
-
-    [Tooltip("Text color applied to the rank label while this rank is active.")]
-    [SerializeField] private Color rankTextColor = Color.white;
-
-    [Tooltip("Text color applied to the combo numeric label while this rank is active.")]
-    [SerializeField] private Color comboValueTextColor = Color.white;
-
-    [Tooltip("Tint applied to the progress fill while this rank is active.")]
-    [SerializeField] private Color progressFillColor = Color.white;
-
-    [Tooltip("Tint applied to the progress background while this rank is active.")]
-    [SerializeField] private Color progressBackgroundColor = Color.white;
-    #endregion
-
-    #endregion
-
-    #region Properties
-    public string RankId
-    {
-        get
-        {
-            return rankId;
-        }
-    }
-
-    public Sprite BadgeSprite
-    {
-        get
-        {
-            return badgeSprite;
-        }
-    }
-
-    public Color BadgeTint
-    {
-        get
-        {
-            return badgeTint;
-        }
-    }
-
-    public Color RankTextColor
-    {
-        get
-        {
-            return rankTextColor;
-        }
-    }
-
-    public Color ComboValueTextColor
-    {
-        get
-        {
-            return comboValueTextColor;
-        }
-    }
-
-    public Color ProgressFillColor
-    {
-        get
-        {
-            return progressFillColor;
-        }
-    }
-
-    public Color ProgressBackgroundColor
-    {
-        get
-        {
-            return progressBackgroundColor;
-        }
-    }
-    #endregion
-}
-
-/// <summary>
 /// Renders the runtime combo counter, current rank label, and progress toward the next combo rank from ECS data.
 /// none.
 /// returns none.
@@ -169,16 +75,18 @@ public sealed class HUDComboCounterSection
     [Tooltip("Fallback label shown before the first combo rank is reached.")]
     [SerializeField] private string idleRankLabel = "COMBO";
 
-    [Tooltip("Per-rank visual themes keyed by combo Rank ID.")]
+    [Tooltip("Legacy per-rank visual themes kept hidden only as a backward-compatible fallback for existing scene data.")]
+    [HideInInspector]
     [SerializeField] private List<HUDComboCounterRankVisualDefinition> rankVisuals = new List<HUDComboCounterRankVisualDefinition>();
     #endregion
 
     private int displayedComboValue = int.MinValue;
     private float displayedProgressNormalized = -1f;
-    private FixedString64Bytes displayedRankId;
+    private int displayedRankVisualIndex = int.MinValue;
     private string displayedRankLabel = string.Empty;
     private bool displayedVisibleState;
     private bool rankThemeInitialized;
+    private PlayerProgressionPreset progressionPreset;
     #endregion
 
     #region Methods
@@ -203,10 +111,11 @@ public sealed class HUDComboCounterSection
     {
         displayedComboValue = int.MinValue;
         displayedProgressNormalized = -1f;
-        displayedRankId = default;
+        displayedRankVisualIndex = int.MinValue;
         displayedRankLabel = string.Empty;
         displayedVisibleState = false;
         rankThemeInitialized = false;
+        progressionPreset = HUDComboCounterPresetRuntimeUtility.ResolveProgressionPreset();
         HandleMissingPlayer();
     }
 
@@ -219,7 +128,7 @@ public sealed class HUDComboCounterSection
     {
         displayedComboValue = int.MinValue;
         displayedProgressNormalized = -1f;
-        displayedRankId = default;
+        displayedRankVisualIndex = int.MinValue;
         displayedRankLabel = string.Empty;
         rankThemeInitialized = false;
 
@@ -236,6 +145,7 @@ public sealed class HUDComboCounterSection
         }
 
         ApplyVisibleState(0,
+                          -1,
                           default,
                           0f);
     }
@@ -278,6 +188,7 @@ public sealed class HUDComboCounterSection
         }
 
         ApplyVisibleState(comboCounterState.CurrentValue,
+                          comboCounterState.CurrentRankIndex,
                           comboCounterState.CurrentRankId,
                           comboCounterState.ProgressNormalized);
     }
@@ -287,16 +198,18 @@ public sealed class HUDComboCounterSection
     /// <summary>
     /// Applies the current combo state to all authored UI bindings.
     /// comboValue Current combo numeric value.
+    /// currentRankIndex Current combo-rank index.
     /// currentRankId Current combo-rank identifier.
     /// progressNormalized Current normalized progress toward the next rank.
     /// returns void.
     /// </summary>
     private void ApplyVisibleState(int comboValue,
+                                   int currentRankIndex,
                                    FixedString64Bytes currentRankId,
                                    float progressNormalized)
     {
         SetVisible(true);
-        ApplyRankTheme(currentRankId);
+        ApplyRankTheme(currentRankIndex, currentRankId);
         ApplyRankLabel(currentRankId);
         ApplyComboValue(comboValue);
         ApplyProgress(progressNormalized);
@@ -364,50 +277,63 @@ public sealed class HUDComboCounterSection
 
     /// <summary>
     /// Applies the current combo-rank visual theme when the active rank changes.
+    /// currentRankIndex Current combo-rank index.
     /// currentRankId Current combo-rank identifier.
     /// returns void.
     /// </summary>
-    private void ApplyRankTheme(FixedString64Bytes currentRankId)
+    private void ApplyRankTheme(int currentRankIndex, FixedString64Bytes currentRankId)
     {
-        if (rankThemeInitialized && displayedRankId == currentRankId)
+        if (rankThemeInitialized && displayedRankVisualIndex == currentRankIndex)
         {
             return;
         }
 
-        displayedRankId = currentRankId;
+        displayedRankVisualIndex = currentRankIndex;
         rankThemeInitialized = true;
-        HUDComboCounterRankVisualDefinition rankVisual = FindRankVisual(currentRankId);
-        Sprite resolvedBadgeSprite = rankVisual != null && rankVisual.BadgeSprite != null ? rankVisual.BadgeSprite : defaultBadgeSprite;
-        Color resolvedBadgeTint = rankVisual != null ? rankVisual.BadgeTint : defaultBadgeTint;
-        Color resolvedRankTextColor = rankVisual != null ? rankVisual.RankTextColor : defaultRankTextColor;
-        Color resolvedComboValueTextColor = rankVisual != null ? rankVisual.ComboValueTextColor : defaultComboValueTextColor;
-        Color resolvedProgressFillColor = rankVisual != null ? rankVisual.ProgressFillColor : defaultProgressFillColor;
-        Color resolvedProgressBackgroundColor = rankVisual != null ? rankVisual.ProgressBackgroundColor : defaultProgressBackgroundColor;
+
+        if (progressionPreset == null)
+        {
+            progressionPreset = HUDComboCounterPresetRuntimeUtility.ResolveProgressionPreset();
+        }
+
+        PlayerComboRankVisualDefinition rankVisual = HUDComboCounterVisualThemeRuntimeUtility.ResolvePresetRankVisual(progressionPreset,
+                                                                                                                      currentRankIndex);
+        HUDComboCounterRankVisualDefinition legacyRankVisual = rankVisual == null
+            ? HUDComboCounterVisualThemeRuntimeUtility.ResolveLegacyRankVisual(rankVisuals, currentRankId)
+            : null;
+        HUDComboCounterResolvedVisualTheme resolvedTheme = HUDComboCounterVisualThemeRuntimeUtility.ResolveTheme(rankVisual,
+                                                                                                                legacyRankVisual,
+                                                                                                                defaultBadgeSprite,
+                                                                                                                defaultBadgeTint,
+                                                                                                                defaultRankTextColor,
+                                                                                                                defaultComboValueTextColor,
+                                                                                                                defaultProgressFillColor,
+                                                                                                                defaultProgressBackgroundColor);
 
         if (rankBadgeImage != null)
         {
-            rankBadgeImage.sprite = resolvedBadgeSprite;
-            rankBadgeImage.color = resolvedBadgeTint;
+            rankBadgeImage.sprite = resolvedTheme.BadgeSprite;
+            rankBadgeImage.color = resolvedTheme.BadgeTint;
         }
 
         if (rankText != null)
         {
-            rankText.color = resolvedRankTextColor;
+            rankText.color = resolvedTheme.RankTextColor;
         }
 
         if (comboValueText != null)
         {
-            comboValueText.color = resolvedComboValueTextColor;
+            comboValueText.color = resolvedTheme.ComboValueTextColor;
         }
 
         if (progressFillImage != null)
         {
-            progressFillImage.color = resolvedProgressFillColor;
+            progressFillImage.color = resolvedTheme.ProgressFillColor;
         }
 
         if (progressBackgroundImage != null)
         {
-            progressBackgroundImage.color = resolvedProgressBackgroundColor;
+            progressBackgroundImage.color = resolvedTheme.ProgressBackgroundColor;
         }
     }
 
@@ -480,39 +406,6 @@ public sealed class HUDComboCounterSection
         progressFillImage.fillAmount = sanitizedProgress;
     }
 
-    /// <summary>
-    /// Resolves the visual theme entry matching the provided rank identifier.
-    /// currentRankId Current combo-rank identifier.
-    /// returns Matching visual theme, or null when no theme matches.
-    /// </summary>
-    private HUDComboCounterRankVisualDefinition FindRankVisual(FixedString64Bytes currentRankId)
-    {
-        if (currentRankId.Length <= 0 || rankVisuals == null || rankVisuals.Count <= 0)
-        {
-            return null;
-        }
-
-        string currentRankIdText = currentRankId.ToString();
-
-        for (int visualIndex = 0; visualIndex < rankVisuals.Count; visualIndex++)
-        {
-            HUDComboCounterRankVisualDefinition rankVisual = rankVisuals[visualIndex];
-
-            if (rankVisual == null || string.IsNullOrWhiteSpace(rankVisual.RankId))
-            {
-                continue;
-            }
-
-            if (!string.Equals(rankVisual.RankId, currentRankIdText, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            return rankVisual;
-        }
-
-        return null;
-    }
     #endregion
 
     #endregion

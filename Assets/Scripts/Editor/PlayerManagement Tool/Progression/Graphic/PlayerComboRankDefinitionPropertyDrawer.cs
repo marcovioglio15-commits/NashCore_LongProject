@@ -24,24 +24,26 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
         VisualElement root = new VisualElement();
         SerializedProperty rankIdProperty = property.FindPropertyRelative("rankId");
         SerializedProperty requiredComboValueProperty = property.FindPropertyRelative("requiredComboValue");
+        SerializedProperty rankVisualsProperty = property.FindPropertyRelative("rankVisuals");
         SerializedProperty rankBonusesProperty = property.FindPropertyRelative("rankBonuses");
         SerializedProperty scalingRulesProperty = property.serializedObject != null
             ? property.serializedObject.FindProperty("scalingRules")
             : null;
 
-        if (rankIdProperty == null || requiredComboValueProperty == null || rankBonusesProperty == null)
+        if (rankIdProperty == null || requiredComboValueProperty == null || rankVisualsProperty == null || rankBonusesProperty == null)
         {
             HelpBox missingHelpBox = new HelpBox("Combo rank fields are missing.", HelpBoxMessageType.Warning);
             root.Add(missingHelpBox);
             return root;
         }
 
-        HelpBox infoBox = new HelpBox("Each reached rank applies its Character Tuning formulas cumulatively together with all lower ranks that are still reached.", HelpBoxMessageType.Info);
+        HelpBox infoBox = new HelpBox("Each reached rank applies its Character Tuning formulas cumulatively together with all lower ranks that are still reached. Rank visuals authored below are picked automatically by HUDManager using the active rank index, without any extra ID mapping.", HelpBoxMessageType.Info);
         root.Add(infoBox);
         root.Add(CreateBoundField(rankIdProperty, "Rank ID"));
         root.Add(PlayerScalingFieldElementFactory.CreateField(requiredComboValueProperty,
                                                               scalingRulesProperty,
                                                               "Required Combo Value"));
+        root.Add(CreateBoundField(rankVisualsProperty, "Rank Visuals"));
 
         PropertyField rankBonusesField = new PropertyField(rankBonusesProperty, "Rank Bonuses");
         rankBonusesField.BindProperty(rankBonusesProperty);

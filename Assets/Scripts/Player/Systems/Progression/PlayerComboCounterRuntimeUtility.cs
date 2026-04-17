@@ -102,6 +102,27 @@ internal static class PlayerComboCounterRuntimeUtility
     }
 
     /// <summary>
+    /// Resolves the combo value that should remain after a damage event breaks the current combo.
+    /// comboValue: Current combo numeric value before the break.
+    /// runtimeConfig: Current runtime combo config.
+    /// runtimeRanks: Current runtime combo-rank thresholds.
+    /// returns Combo value preserved after the configured damage-break behavior.
+    /// </summary>
+    public static int ResolveDamageBreakComboValue(int comboValue,
+                                                   in PlayerRuntimeComboCounterConfig runtimeConfig,
+                                                   DynamicBuffer<PlayerRuntimeComboRankElement> runtimeRanks)
+    {
+        switch (runtimeConfig.DamageBreakMode)
+        {
+            case PlayerComboDamageBreakMode.DowngradeToPreviousRank:
+                return ResolvePreviousRankRequiredValue(ResolveActiveRankIndex(comboValue, in runtimeConfig, runtimeRanks),
+                                                        runtimeRanks);
+            default:
+                return 0;
+        }
+    }
+
+    /// <summary>
     /// Combines the permanent scalable-stat signature with the currently active combo-rank signature used by runtime bonuses.
     /// scalableStatsHash: Hash built from permanent scalable stats.
     /// activeRankIndex: Currently active combo-rank index, or -1 when no combo bonus is active.
@@ -137,6 +158,30 @@ internal static class PlayerComboCounterRuntimeUtility
         }
 
         return -1;
+    }
+
+    /// <summary>
+    /// Resolves the threshold that should remain when damage downgrades the combo to the previous reached rank.
+    /// activeRankIndex: Highest rank currently reached before the break.
+    /// runtimeRanks: Current runtime combo-rank thresholds.
+    /// returns Previous-rank threshold, or zero when no lower rank exists.
+    /// </summary>
+    private static int ResolvePreviousRankRequiredValue(int activeRankIndex,
+                                                        DynamicBuffer<PlayerRuntimeComboRankElement> runtimeRanks)
+    {
+        if (!runtimeRanks.IsCreated || activeRankIndex <= 0)
+        {
+            return 0;
+        }
+
+        int previousRankIndex = activeRankIndex - 1;
+
+        if (previousRankIndex >= runtimeRanks.Length)
+        {
+            return 0;
+        }
+
+        return math.max(0, runtimeRanks[previousRankIndex].RequiredComboValue);
     }
 
     /// <summary>

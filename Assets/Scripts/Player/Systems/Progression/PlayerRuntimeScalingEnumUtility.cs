@@ -199,6 +199,16 @@ internal static class PlayerRuntimeScalingEnumUtility
     }
 
     /// <summary>
+    /// Resolves a safe PlayerComboDamageBreakMode from one numeric Add Scaling result.
+    /// </summary>
+    /// <param name="value">Resolved numeric formula result.</param>
+    /// <returns>Clamped enum value.<returns>
+    public static PlayerComboDamageBreakMode ResolveComboDamageBreakMode(float value)
+    {
+        return (PlayerComboDamageBreakMode)ResolveEnumIndex(value, 1);
+    }
+
+    /// <summary>
     /// Resolves a safe ProjectileOrbitPathMode from one numeric Add Scaling result.
     /// </summary>
     /// <param name="value">Resolved numeric formula result.</param>

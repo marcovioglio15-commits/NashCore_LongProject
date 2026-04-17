@@ -2,7 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 
 /// <summary>
-/// Tracks consecutive enemy kills and resets the combo when the player takes configured damage types.
+/// Tracks consecutive enemy kills and applies the configured damage-break behavior when the player is hit.
 /// none.
 /// returns none.
 /// </summary>
@@ -29,6 +29,7 @@ public partial struct PlayerComboCounterValueSystem : ISystem
     {
         state.RequireForUpdate<PlayerComboCounterState>();
         state.RequireForUpdate<PlayerRuntimeComboCounterConfig>();
+        state.RequireForUpdate<PlayerRuntimeComboRankElement>();
         state.RequireForUpdate<PlayerHealth>();
         state.RequireForUpdate<PlayerShield>();
     }
@@ -49,15 +50,18 @@ public partial struct PlayerComboCounterValueSystem : ISystem
 
         foreach ((RefRW<PlayerComboCounterState> comboCounterState,
                   RefRO<PlayerRuntimeComboCounterConfig> runtimeComboConfig,
+                  DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
                   RefRO<PlayerHealth> playerHealth,
                   RefRO<PlayerShield> playerShield)
                  in SystemAPI.Query<RefRW<PlayerComboCounterState>,
                                     RefRO<PlayerRuntimeComboCounterConfig>,
+                                    DynamicBuffer<PlayerRuntimeComboRankElement>,
                                     RefRO<PlayerHealth>,
                                     RefRO<PlayerShield>>())
         {
             UpdateComboState(ref comboCounterState.ValueRW,
                              in runtimeComboConfig.ValueRO,
+                             runtimeComboRanks,
                              in playerHealth.ValueRO,
                              in playerShield.ValueRO,
                              killedEnemiesCount);
@@ -70,6 +74,7 @@ public partial struct PlayerComboCounterValueSystem : ISystem
     /// Applies damage-break and kill-gain rules to one player combo state.
     /// comboCounterState: Mutable combo state updated in place.
     /// runtimeComboConfig: Current runtime combo config.
+    /// runtimeComboRanks: Current runtime combo-rank thresholds used for downgrade resolution.
     /// playerHealth: Current player health values.
     /// playerShield: Current player shield values.
     /// killedEnemiesCount: Number of enemies killed during the previous enemy update.
@@ -77,6 +82,7 @@ public partial struct PlayerComboCounterValueSystem : ISystem
     /// </summary>
     private static void UpdateComboState(ref PlayerComboCounterState comboCounterState,
                                          in PlayerRuntimeComboCounterConfig runtimeComboConfig,
+                                         DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
                                          in PlayerHealth playerHealth,
                                          in PlayerShield playerShield,
                                          int killedEnemiesCount)
@@ -103,9 +109,18 @@ public partial struct PlayerComboCounterValueSystem : ISystem
         }
         else
         {
-            if (healthDamageTaken || runtimeComboConfig.ShieldDamageBreaksCombo != 0 && shieldDamageTaken)
+            bool shouldBreakFromDamage = healthDamageTaken;
+
+            if (!shouldBreakFromDamage && runtimeComboConfig.ShieldDamageBreaksCombo != 0)
             {
-                currentComboValue = 0;
+                shouldBreakFromDamage = shieldDamageTaken;
+            }
+
+            if (shouldBreakFromDamage)
+            {
+                currentComboValue = PlayerComboCounterRuntimeUtility.ResolveDamageBreakComboValue(currentComboValue,
+                                                                                                  in runtimeComboConfig,
+                                                                                                  runtimeComboRanks);
             }
 
             if (killedEnemiesCount > 0)
