@@ -109,6 +109,10 @@ public sealed class HUDManager : MonoBehaviour
     [Tooltip("Serialized HUD section that configures and renders the authoritative run timer.")]
     [SerializeField] private HUDRunTimerSection runTimerSection = new HUDRunTimerSection();
 
+    [Header("Combo Counter")]
+    [Tooltip("Serialized HUD section that renders the combo meter, current rank, and next-rank progress.")]
+    [SerializeField] private HUDComboCounterSection comboCounterSection = new HUDComboCounterSection();
+
     [Header("Milestone Power-Up Selection")]
     [Tooltip("Serialized HUD section that renders milestone choices and sends ECS selection commands.")]
     [SerializeField] private HUDMilestoneSelectionSection milestoneSelectionSection = new HUDMilestoneSelectionSection();
@@ -158,6 +162,7 @@ public sealed class HUDManager : MonoBehaviour
                                                              hideChargeBarsWhenPlayerMissing,
                                                              hideChargeBarsWhenModuleMissing);
         runTimerSection.Initialize();
+        comboCounterSection.Initialize();
         milestoneSelectionSection.Initialize();
         powerUpContainerInteractionSection.Initialize();
         TryInitializeEcsBindings();
@@ -193,6 +198,7 @@ public sealed class HUDManager : MonoBehaviour
         UpdateLevelAndExperience(playerEntity);
         powerUpOverlaySection.Update(entityManager, playerEntity);
         runTimerSection.Update(entityManager, playerEntity);
+        comboCounterSection.Update(entityManager, playerEntity);
         milestoneSelectionSection.Update(entityManager, playerEntity);
         powerUpContainerInteractionSection.Update(entityManager, playerEntity);
     }
@@ -431,9 +437,11 @@ public sealed class HUDManager : MonoBehaviour
 
         powerUpOverlaySection.ApplyInitialVisualState();
         runTimerSection.ApplyInitialVisualState();
+        comboCounterSection.ApplyInitialVisualState();
 
         HandleMissingLevelText();
         runTimerSection.HandleMissingPlayer();
+        comboCounterSection.HandleMissingPlayer();
         milestoneSelectionSection.HandleMissingPlayer();
         powerUpContainerInteractionSection.HandleMissingPlayer();
     }
@@ -446,6 +454,7 @@ public sealed class HUDManager : MonoBehaviour
         HandleMissingExperienceBar();
         powerUpOverlaySection.HandleMissingPlayer();
         runTimerSection.HandleMissingPlayer();
+        comboCounterSection.HandleMissingPlayer();
         milestoneSelectionSection.HandleMissingPlayer();
         powerUpContainerInteractionSection.HandleMissingPlayer();
     }

@@ -45,6 +45,10 @@ public sealed class PlayerProgressionPreset : ScriptableObject
     [Tooltip("Schedule ID currently equipped on this progression preset.")]
     [SerializeField] private string equippedScheduleId;
 
+    [Header("Combo Counter")]
+    [Tooltip("Configures the DMC-style combo counter, its rank milestones, and temporary Character Tuning bonuses.")]
+    [SerializeField] private PlayerComboCounterDefinition comboCounter = new PlayerComboCounterDefinition();
+
     [Tooltip("Legacy fallback used to migrate old single-threshold presets into the first game phase.")]
     [FormerlySerializedAs("experienceRequiredPerLevel")]
     [HideInInspector]
@@ -143,6 +147,14 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         }
     }
 
+    public PlayerComboCounterDefinition ComboCounter
+    {
+        get
+        {
+            return comboCounter;
+        }
+    }
+
     public float ExperiencePickupRadius
     {
         get
@@ -226,6 +238,11 @@ public sealed class PlayerProgressionPreset : ScriptableObject
             schedules = new List<PlayerLevelUpScheduleDefinition>();
         }
 
+        if (comboCounter == null)
+        {
+            comboCounter = new PlayerComboCounterDefinition();
+        }
+
         if (legacyBaseStats == null)
         {
             legacyBaseStats = new LegacyPlayerProgressionBaseStats();
@@ -236,6 +253,7 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         ValidateScalingRules();
         ValidateMilestones();
         ValidateSchedules();
+        ValidateComboCounter();
     }
     #endregion
 
@@ -421,6 +439,16 @@ public sealed class PlayerProgressionPreset : ScriptableObject
         }
 
         equippedScheduleId = schedules.Count > 0 ? schedules[0].ScheduleId : string.Empty;
+    }
+
+    private void ValidateComboCounter()
+    {
+        if (comboCounter == null)
+        {
+            comboCounter = new PlayerComboCounterDefinition();
+        }
+
+        comboCounter.Validate();
     }
 
     private HashSet<string> BuildScalableStatNameSet()

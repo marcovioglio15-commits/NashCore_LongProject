@@ -17,7 +17,8 @@ public static class PlayerScalingStatKeyUtility
         "bindingId",
         "presetId",
         "statName",
-        "phaseID"
+        "phaseID",
+        "rankId"
     };
 
     private static readonly string[] StableNestedStringIdPropertyPaths =

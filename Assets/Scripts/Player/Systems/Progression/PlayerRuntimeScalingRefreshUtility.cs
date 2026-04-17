@@ -62,6 +62,13 @@ internal static class PlayerRuntimeScalingRefreshUtility
                                          BufferLookup<PlayerRuntimeProgressionScalingElement> progressionScalingLookup,
                                          BufferLookup<PlayerBaseGamePhaseElement> baseGamePhasesLookup,
                                          BufferLookup<PlayerRuntimeGamePhaseElement> runtimeGamePhasesLookup,
+                                         ComponentLookup<PlayerBaseComboCounterConfig> baseComboConfigLookup,
+                                         ComponentLookup<PlayerRuntimeComboCounterConfig> runtimeComboConfigLookup,
+                                         BufferLookup<PlayerBaseComboRankElement> baseComboRanksLookup,
+                                         BufferLookup<PlayerRuntimeComboRankElement> runtimeComboRanksLookup,
+                                         BufferLookup<PlayerRuntimeComboCounterScalingElement> comboScalingLookup,
+                                         ComponentLookup<PlayerComboCounterState> comboCounterStateLookup,
+                                         BufferLookup<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulaLookup,
                                          BufferLookup<PlayerPowerUpBaseConfigElement> basePowerUpConfigsLookup,
                                          BufferLookup<PlayerRuntimePowerUpScalingElement> powerUpScalingLookup,
                                          ComponentLookup<PlayerPowerUpsConfig> powerUpsConfigLookup,
@@ -94,6 +101,13 @@ internal static class PlayerRuntimeScalingRefreshUtility
             !progressionScalingLookup.HasBuffer(entity) ||
             !baseGamePhasesLookup.HasBuffer(entity) ||
             !runtimeGamePhasesLookup.HasBuffer(entity) ||
+            !baseComboConfigLookup.HasComponent(entity) ||
+            !runtimeComboConfigLookup.HasComponent(entity) ||
+            !baseComboRanksLookup.HasBuffer(entity) ||
+            !runtimeComboRanksLookup.HasBuffer(entity) ||
+            !comboScalingLookup.HasBuffer(entity) ||
+            !comboCounterStateLookup.HasComponent(entity) ||
+            !characterTuningFormulaLookup.HasBuffer(entity) ||
             !basePowerUpConfigsLookup.HasBuffer(entity) ||
             !powerUpScalingLookup.HasBuffer(entity) ||
             !powerUpsConfigLookup.HasComponent(entity) ||
@@ -128,6 +142,13 @@ internal static class PlayerRuntimeScalingRefreshUtility
         DynamicBuffer<PlayerRuntimeProgressionScalingElement> progressionScaling = progressionScalingLookup[entity];
         DynamicBuffer<PlayerBaseGamePhaseElement> baseGamePhases = baseGamePhasesLookup[entity];
         DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases = runtimeGamePhasesLookup[entity];
+        PlayerBaseComboCounterConfig baseComboConfig = baseComboConfigLookup[entity];
+        PlayerRuntimeComboCounterConfig runtimeComboConfig = runtimeComboConfigLookup[entity];
+        DynamicBuffer<PlayerBaseComboRankElement> baseComboRanks = baseComboRanksLookup[entity];
+        DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks = runtimeComboRanksLookup[entity];
+        DynamicBuffer<PlayerRuntimeComboCounterScalingElement> comboScaling = comboScalingLookup[entity];
+        PlayerComboCounterState comboCounterState = comboCounterStateLookup[entity];
+        DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas = characterTuningFormulaLookup[entity];
         DynamicBuffer<PlayerPowerUpBaseConfigElement> basePowerUpConfigs = basePowerUpConfigsLookup[entity];
         DynamicBuffer<PlayerRuntimePowerUpScalingElement> powerUpScaling = powerUpScalingLookup[entity];
         PlayerPowerUpsConfig powerUpsConfig = powerUpsConfigLookup[entity];
@@ -158,6 +179,13 @@ internal static class PlayerRuntimeScalingRefreshUtility
                                                                  progressionScaling,
                                                                  baseGamePhases,
                                                                  runtimeGamePhases,
+                                                                 in baseComboConfig,
+                                                                 ref runtimeComboConfig,
+                                                                 baseComboRanks,
+                                                                 runtimeComboRanks,
+                                                                 comboScaling,
+                                                                 characterTuningFormulas,
+                                                                 ref comboCounterState,
                                                                  basePowerUpConfigs,
                                                                  powerUpScaling,
                                                                  ref powerUpsConfig,
@@ -181,6 +209,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
         runtimeCameraLookup[entity] = runtimeCamera;
         runtimeShootingLookup[entity] = runtimeShooting;
         runtimeHealthLookup[entity] = runtimeHealth;
+        runtimeComboConfigLookup[entity] = runtimeComboConfig;
+        comboCounterStateLookup[entity] = comboCounterState;
         powerUpsConfigLookup[entity] = powerUpsConfig;
         passiveToolsStateLookup[entity] = passiveToolsState;
         healthLookup[entity] = playerHealth;

@@ -363,6 +363,15 @@ MonoBehaviour:
       applyMode: 0
       value: 1
   equippedScheduleId: ScheduleRookie
+  comboCounter:
+    isEnabled: 1
+    comboGainPerKill: 1
+    shieldDamageBreaksCombo: 0
+    rankDefinitions:
+    - rankId: A
+      requiredComboValue: 0
+      rankBonuses:
+        formulas: []
   legacyExperienceRequiredPerLevel: 100
   levelCap: 100
   experiencePickupRadius: 1

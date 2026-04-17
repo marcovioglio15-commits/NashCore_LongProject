@@ -113,6 +113,84 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
     }
 
     /// <summary>
+    /// Applies one flattened Character Tuning formula range to a managed scalable-stat collection without synchronizing dependent progression state.
+    /// startIndex: Inclusive start index inside the flattened formula buffer.
+    /// formulaCount: Number of formulas to evaluate from startIndex.
+    /// characterTuningFormulas: Flattened Character Tuning formula buffer.
+    /// scalableStats: Managed scalable-stat list updated in place.
+    /// appliedFormulaCount: Number of formulas successfully applied.
+    /// returns True when at least one formula changed runtime scalable stats; otherwise false.
+    /// </summary>
+    public static bool TryApplyCharacterTuningRange(int startIndex,
+                                                    int formulaCount,
+                                                    DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
+                                                    List<PlayerScalableStatElement> scalableStats,
+                                                    out int appliedFormulaCount)
+    {
+        appliedFormulaCount = 0;
+
+        if (scalableStats == null || scalableStats.Count <= 0)
+            return false;
+
+        if (!characterTuningFormulas.IsCreated || formulaCount <= 0)
+            return false;
+
+        int clampedStartIndex = math.max(0, startIndex);
+        int endIndex = math.min(characterTuningFormulas.Length, clampedStartIndex + math.max(0, formulaCount));
+
+        if (clampedStartIndex >= endIndex)
+            return false;
+
+        PlayerScalingRuntimeFormulaUtility.FillVariableContext(scalableStats, variableContext);
+
+        for (int formulaIndex = clampedStartIndex; formulaIndex < endIndex; formulaIndex++)
+        {
+            string formula = characterTuningFormulas[formulaIndex].Formula.ToString();
+
+            if (string.IsNullOrWhiteSpace(formula))
+                continue;
+
+            if (!PlayerCharacterTuningFormulaUtility.TryParseAssignmentFormula(formula,
+                                                                               out string targetStatName,
+                                                                               out string expression,
+                                                                               out string _))
+            {
+                continue;
+            }
+
+            int scalableStatIndex = FindScalableStatIndex(scalableStats, targetStatName);
+
+            if (scalableStatIndex < 0)
+                continue;
+
+            PlayerScalableStatElement scalableStat = scalableStats[scalableStatIndex];
+            PlayerFormulaValue currentValue = PlayerScalableStatValueUtility.ResolveRuntimeValue(in scalableStat);
+
+            if (!PlayerScalingRuntimeFormulaUtility.TryEvaluateFormula(expression,
+                                                                       currentValue,
+                                                                       variableContext,
+                                                                       out PlayerFormulaValue evaluatedValue,
+                                                                       out string _,
+                                                                       false))
+            {
+                continue;
+            }
+
+            if (PlayerFormulaValue.AreEqual(in currentValue, in evaluatedValue))
+                continue;
+
+            if (!PlayerScalableStatValueUtility.TryWriteRuntimeValue(ref scalableStat, evaluatedValue, out string _))
+                continue;
+
+            scalableStats[scalableStatIndex] = scalableStat;
+            variableContext[targetStatName] = PlayerScalableStatValueUtility.ResolveRuntimeValue(in scalableStat);
+            appliedFormulaCount += 1;
+        }
+
+        return appliedFormulaCount > 0;
+    }
+
+    /// <summary>
     /// Synchronizes progression runtime components and reserved scalable stats after Character Tuning changes.
     /// scalableStats: Mutable scalable-stat buffer containing the latest values.
     /// progressionConfig: Runtime progression config used to resolve the current level requirement and pickup radius.
@@ -195,6 +273,30 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
     public static int FindScalableStatIndex(DynamicBuffer<PlayerScalableStatElement> scalableStats, string statName)
     {
         for (int statIndex = 0; statIndex < scalableStats.Length; statIndex++)
+        {
+            PlayerScalableStatElement scalableStat = scalableStats[statIndex];
+
+            if (!string.Equals(scalableStat.Name.ToString(), statName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            return statIndex;
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Resolves one scalable-stat list index by name using case-insensitive lookup semantics.
+    /// scalableStats: Managed scalable-stat list to scan.
+    /// statName: Requested scalable-stat identifier.
+    /// returns List index when found; otherwise -1.
+    /// </summary>
+    public static int FindScalableStatIndex(IReadOnlyList<PlayerScalableStatElement> scalableStats, string statName)
+    {
+        if (scalableStats == null)
+            return -1;
+
+        for (int statIndex = 0; statIndex < scalableStats.Count; statIndex++)
         {
             PlayerScalableStatElement scalableStat = scalableStats[statIndex];
 

@@ -44,6 +44,39 @@ internal static class PlayerScalingRuntimeFormulaUtility
     }
 
     /// <summary>
+    /// Rebuilds a case-insensitive typed variable dictionary from a managed scalable-stat collection.
+    /// </summary>
+    /// <param name="scalableStats">Managed scalable-stat list used by temporary runtime overlays.</param>
+    /// <param name="variableContext">Destination dictionary receiving the current typed stat values.</param>
+    /// <returns>Void.<returns>
+    public static void FillVariableContext(IReadOnlyList<PlayerScalableStatElement> scalableStats,
+                                           Dictionary<string, PlayerFormulaValue> variableContext)
+    {
+        if (variableContext == null)
+            return;
+
+        variableContext.Clear();
+
+        if (scalableStats == null)
+            return;
+
+        for (int statIndex = 0; statIndex < scalableStats.Count; statIndex++)
+        {
+            PlayerScalableStatElement scalableStat = scalableStats[statIndex];
+
+            if (scalableStat.Name.Length == 0)
+                continue;
+
+            string variableName = scalableStat.Name.ToString();
+
+            if (string.IsNullOrWhiteSpace(variableName))
+                continue;
+
+            variableContext[variableName] = PlayerScalableStatValueUtility.ResolveRuntimeValue(in scalableStat);
+        }
+    }
+
+    /// <summary>
     /// Rebuilds a case-insensitive numeric variable dictionary from the runtime scalable-stat buffer.
     /// </summary>
     /// <param name="scalableStats">Runtime scalable-stat buffer.</param>

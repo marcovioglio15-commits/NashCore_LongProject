@@ -270,6 +270,36 @@ public static class PlayerProgressionPresetsPanelSectionsUtility
         schedulesField.BindProperty(schedulesProperty);
         schedulesContainer.Add(schedulesField);
     }
+
+    /// <summary>
+    /// Builds the combo-counter section, including scalable runtime toggles, thresholds, and rank bonus formulas.
+    /// panel Panel instance that owns the serialized preset and target UI container.
+    /// returns void
+    /// </summary>
+    public static void BuildComboCounterSection(PlayerProgressionPresetsPanel panel)
+    {
+        if (panel == null || panel.presetSerializedObject == null)
+            return;
+
+        VisualElement comboContainer = panel.CreateSectionContainer("Combo Counter");
+        SerializedProperty comboCounterProperty = panel.presetSerializedObject.FindProperty("comboCounter");
+
+        if (comboCounterProperty == null)
+        {
+            Label missingLabel = new Label("Combo counter data is missing on this preset.");
+            missingLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+            comboContainer.Add(missingLabel);
+            return;
+        }
+
+        PropertyField comboCounterField = new PropertyField(comboCounterProperty, "Combo Counter Settings");
+        comboCounterField.BindProperty(comboCounterProperty);
+        comboCounterField.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+        {
+            PlayerManagementDraftSession.MarkDirty();
+        });
+        comboContainer.Add(comboCounterField);
+    }
     #endregion
 
     #region Private Methods

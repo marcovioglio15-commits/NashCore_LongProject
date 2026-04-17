@@ -10,6 +10,7 @@ internal static class PlayerRuntimeScalingApplyUtility
 {
     #region Fields
     private static readonly Dictionary<string, PlayerFormulaValue> variableContext = new Dictionary<string, PlayerFormulaValue>(64, System.StringComparer.OrdinalIgnoreCase);
+    private static readonly List<PlayerScalableStatElement> effectiveScalableStats = new List<PlayerScalableStatElement>(64);
     #endregion
 
     #region Methods
@@ -67,6 +68,13 @@ internal static class PlayerRuntimeScalingApplyUtility
                                 DynamicBuffer<PlayerRuntimeProgressionScalingElement> progressionScaling,
                                 DynamicBuffer<PlayerBaseGamePhaseElement> baseGamePhases,
                                 DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
+                                in PlayerBaseComboCounterConfig baseComboConfig,
+                                ref PlayerRuntimeComboCounterConfig runtimeComboConfig,
+                                DynamicBuffer<PlayerBaseComboRankElement> baseComboRanks,
+                                DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
+                                DynamicBuffer<PlayerRuntimeComboCounterScalingElement> comboScaling,
+                                DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
+                                ref PlayerComboCounterState comboCounterState,
                                 DynamicBuffer<PlayerPowerUpBaseConfigElement> basePowerUpConfigs,
                                 DynamicBuffer<PlayerRuntimePowerUpScalingElement> powerUpScaling,
                                 ref PlayerPowerUpsConfig powerUpsConfig,
@@ -82,7 +90,10 @@ internal static class PlayerRuntimeScalingApplyUtility
                                 ref PlayerRuntimeScalingState runtimeScalingState,
                                 bool forceApply)
     {
-        uint currentHash = PlayerScalableStatHashUtility.ComputeHash(scalableStats);
+        uint currentHash = PlayerComboCounterRuntimeUtility.ComputeRuntimeScalingHash(PlayerScalableStatHashUtility.ComputeHash(scalableStats),
+                                                                                     PlayerComboCounterRuntimeUtility.ResolveActiveRankIndex(comboCounterState.CurrentValue,
+                                                                                                                                            in runtimeComboConfig,
+                                                                                                                                            runtimeComboRanks));
 
         if (!forceApply &&
             runtimeScalingState.Initialized != 0 &&
@@ -94,6 +105,20 @@ internal static class PlayerRuntimeScalingApplyUtility
         runtimeScalingState.Initialized = 1;
         runtimeScalingState.LastScalableStatsHash = currentHash;
         PlayerScalingRuntimeFormulaUtility.FillVariableContext(scalableStats, variableContext);
+        PlayerRuntimeScalingComboApplyUtility.RebuildRuntimeComboCounter(in baseComboConfig,
+                                                                         ref runtimeComboConfig,
+                                                                         baseComboRanks,
+                                                                         runtimeComboRanks,
+                                                                         comboScaling,
+                                                                         variableContext);
+        PlayerRuntimeScalingComboApplyUtility.CopyBaseScalableStats(scalableStats, effectiveScalableStats);
+        PlayerRuntimeScalingComboApplyUtility.ApplyActiveComboRankBonuses(PlayerComboCounterRuntimeUtility.ResolveActiveRankIndex(comboCounterState.CurrentValue,
+                                                                                                                                  in runtimeComboConfig,
+                                                                                                                                  runtimeComboRanks),
+                                                                          runtimeComboRanks,
+                                                                          characterTuningFormulas,
+                                                                          effectiveScalableStats);
+        PlayerScalingRuntimeFormulaUtility.FillVariableContext(effectiveScalableStats, variableContext);
         runtimeMovement = PlayerRuntimeScalingControllerFieldApplyUtility.CopyMovement(in baseMovement);
         runtimeLook = PlayerRuntimeScalingControllerFieldApplyUtility.CopyLook(in baseLook);
         runtimeCamera = PlayerRuntimeScalingControllerFieldApplyUtility.CopyCamera(in baseCamera);
@@ -111,7 +136,7 @@ internal static class PlayerRuntimeScalingApplyUtility
         SyncPowerUpConfigs(basePowerUpConfigs, powerUpScaling, ref powerUpsConfig, unlockCatalog, equippedPassiveTools);
         passiveToolsState = PlayerPassiveToolsAggregationUtility.BuildPassiveToolsState(equippedPassiveTools);
         SyncHealthAndShield(ref playerHealth, ref playerShield, in runtimeHealth);
-        SyncProgressionRuntimeState(scalableStats,
+        SyncProgressionRuntimeState(effectiveScalableStats,
                                     progressionConfig,
                                     runtimeGamePhases,
                                     ref playerExperience,
@@ -130,7 +155,7 @@ internal static class PlayerRuntimeScalingApplyUtility
     /// playerExperienceCollection: Mutable pickup-radius runtime component.
     /// returns void.
     /// </summary>
-    public static void SyncProgressionRuntimeState(DynamicBuffer<PlayerScalableStatElement> scalableStats,
+    public static void SyncProgressionRuntimeState(IReadOnlyList<PlayerScalableStatElement> scalableStats,
                                                    PlayerProgressionConfig progressionConfig,
                                                    DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhases,
                                                    ref PlayerExperience playerExperience,
@@ -187,9 +212,10 @@ internal static class PlayerRuntimeScalingApplyUtility
 
             if ((PlayerFormulaValueType)scalingElement.ValueType == PlayerFormulaValueType.Boolean)
             {
-                if (!TryEvaluateBooleanValue(scalingElement.Formula.ToString(),
-                                             scalingElement.BaseBooleanValue != 0,
-                                             out bool resolvedBoolean))
+                if (!PlayerRuntimeScalingFormulaEvaluationUtility.TryEvaluateBooleanValue(scalingElement.Formula.ToString(),
+                                                                                          scalingElement.BaseBooleanValue != 0,
+                                                                                          variableContext,
+                                                                                          out bool resolvedBoolean))
                 {
                     continue;
                 }
@@ -204,10 +230,11 @@ internal static class PlayerRuntimeScalingApplyUtility
                 continue;
             }
 
-            if (!TryEvaluateValue(scalingElement.Formula.ToString(),
-                                  scalingElement.BaseValue,
-                                  scalingElement.IsInteger != 0,
-                                  out float resolvedValue))
+            if (!PlayerRuntimeScalingFormulaEvaluationUtility.TryEvaluateNumericValue(scalingElement.Formula.ToString(),
+                                                                                      scalingElement.BaseValue,
+                                                                                      scalingElement.IsInteger != 0,
+                                                                                      variableContext,
+                                                                                      out float resolvedValue))
             {
                 continue;
             }
@@ -256,10 +283,11 @@ internal static class PlayerRuntimeScalingApplyUtility
             if (scalingElement.PhaseIndex < 0 || scalingElement.PhaseIndex >= runtimeGamePhases.Length)
                 continue;
 
-            if (!TryEvaluateValue(scalingElement.Formula.ToString(),
-                                  scalingElement.BaseValue,
-                                  scalingElement.IsInteger != 0,
-                                  out float resolvedValue))
+            if (!PlayerRuntimeScalingFormulaEvaluationUtility.TryEvaluateNumericValue(scalingElement.Formula.ToString(),
+                                                                                      scalingElement.BaseValue,
+                                                                                      scalingElement.IsInteger != 0,
+                                                                                      variableContext,
+                                                                                      out float resolvedValue))
             {
                 continue;
             }
@@ -369,12 +397,13 @@ internal static class PlayerRuntimeScalingApplyUtility
 
             if ((PlayerFormulaValueType)scalingElement.ValueType == PlayerFormulaValueType.Boolean)
             {
-                if (!TryEvaluateBooleanValue(scalingElement.Formula.ToString(),
-                                             scalingElement.BaseBooleanValue != 0,
-                                             out bool resolvedBoolean))
-                {
-                    continue;
-                }
+            if (!PlayerRuntimeScalingFormulaEvaluationUtility.TryEvaluateBooleanValue(scalingElement.Formula.ToString(),
+                                                                                      scalingElement.BaseBooleanValue != 0,
+                                                                                      variableContext,
+                                                                                      out bool resolvedBoolean))
+            {
+                continue;
+            }
 
                 PlayerRuntimePowerUpScalingPathUtility.ApplyBooleanValue(scalingElement.PayloadPath.ToString(),
                                                                          unlockKind,
@@ -384,10 +413,11 @@ internal static class PlayerRuntimeScalingApplyUtility
                 continue;
             }
 
-            if (!TryEvaluateValue(scalingElement.Formula.ToString(),
-                                  scalingElement.BaseValue,
-                                  scalingElement.IsInteger != 0,
-                                  out float resolvedValue))
+            if (!PlayerRuntimeScalingFormulaEvaluationUtility.TryEvaluateNumericValue(scalingElement.Formula.ToString(),
+                                                                                      scalingElement.BaseValue,
+                                                                                      scalingElement.IsInteger != 0,
+                                                                                      variableContext,
+                                                                                      out float resolvedValue))
             {
                 continue;
             }
@@ -429,43 +459,6 @@ internal static class PlayerRuntimeScalingApplyUtility
     #endregion
 
     #region Helpers
-    private static bool TryEvaluateValue(string formula, float baseValue, bool isInteger, out float resolvedValue)
-    {
-        resolvedValue = baseValue;
-
-        if (!PlayerScalingRuntimeFormulaUtility.TryEvaluateFormula(formula,
-                                                                   baseValue,
-                                                                   variableContext,
-                                                                   out float evaluatedValue,
-                                                                   out string _))
-        {
-            return false;
-        }
-
-        resolvedValue = isInteger ? math.round(evaluatedValue) : evaluatedValue;
-        return true;
-    }
-
-    private static bool TryEvaluateBooleanValue(string formula, bool baseValue, out bool resolvedValue)
-    {
-        resolvedValue = baseValue;
-
-        if (!PlayerScalingRuntimeFormulaUtility.TryEvaluateFormula(formula,
-                                                                   PlayerFormulaValue.CreateBoolean(baseValue),
-                                                                   variableContext,
-                                                                   out PlayerFormulaValue evaluatedValue,
-                                                                   out string _))
-        {
-            return false;
-        }
-
-        if (evaluatedValue.Type != PlayerFormulaValueType.Boolean)
-            return false;
-
-        resolvedValue = evaluatedValue.BooleanValue;
-        return true;
-    }
-
     private static void SyncHealthAndShield(ref PlayerHealth playerHealth,
                                             ref PlayerShield playerShield,
                                             in PlayerRuntimeHealthStatisticsConfig runtimeHealth)
@@ -512,12 +505,12 @@ internal static class PlayerRuntimeScalingApplyUtility
         return math.clamp(resolvedCurrentValue, 0f, sanitizedNextMaxValue);
     }
 
-    private static float ResolveReservedStatValue(DynamicBuffer<PlayerScalableStatElement> scalableStats, string statName, float fallbackValue)
+    private static float ResolveReservedStatValue(IReadOnlyList<PlayerScalableStatElement> scalableStats, string statName, float fallbackValue)
     {
-        if (!scalableStats.IsCreated)
+        if (scalableStats == null)
             return fallbackValue;
 
-        for (int statIndex = 0; statIndex < scalableStats.Length; statIndex++)
+        for (int statIndex = 0; statIndex < scalableStats.Count; statIndex++)
         {
             PlayerScalableStatElement scalableStat = scalableStats[statIndex];
 

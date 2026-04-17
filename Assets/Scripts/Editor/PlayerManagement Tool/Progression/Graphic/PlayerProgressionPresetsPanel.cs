@@ -24,6 +24,7 @@ public sealed class PlayerProgressionPresetsPanel
         "scalingRules",
         "schedules",
         "equippedScheduleId",
+        "comboCounter",
         "legacyExperienceRequiredPerLevel",
         "legacyBaseStats"
     };
@@ -545,6 +546,11 @@ public sealed class PlayerProgressionPresetsPanel
         PlayerProgressionPresetsPanelSectionsUtility.BuildSchedulesSection(this);
     }
 
+    private void BuildComboCounterSection()
+    {
+        PlayerProgressionPresetsPanelSectionsUtility.BuildComboCounterSection(this);
+    }
+
     private VisualElement BuildSectionButtons()
     {
         VisualElement buttonsRoot = new VisualElement();
@@ -555,6 +561,7 @@ public sealed class PlayerProgressionPresetsPanel
         AddSectionButton(buttonsRoot, SectionType.Metadata, "Metadata");
         AddSectionButton(buttonsRoot, SectionType.Milestones, "Milestones");
         AddSectionButton(buttonsRoot, SectionType.Schedules, "Schedules");
+        AddSectionButton(buttonsRoot, SectionType.ComboCounter, "Combo Counter");
         AddSectionButton(buttonsRoot, SectionType.ScalableStats, "Scalable Stats");
         return buttonsRoot;
     }
@@ -599,6 +606,9 @@ public sealed class PlayerProgressionPresetsPanel
                 return;
             case SectionType.Schedules:
                 BuildSchedulesSection();
+                return;
+            case SectionType.ComboCounter:
+                BuildComboCounterSection();
                 return;
             case SectionType.ScalableStats:
                 BuildScalableStatsSection();
@@ -722,7 +732,8 @@ public sealed class PlayerProgressionPresetsPanel
         Metadata = 0,
         Milestones = 1,
         Schedules = 2,
-        ScalableStats = 3
+        ComboCounter = 3,
+        ScalableStats = 4
     }
     #endregion
 }

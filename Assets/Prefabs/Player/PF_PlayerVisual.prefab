@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1556271430246556656
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7668028273146848242}
+  m_Layer: 3
+  m_Name: MuzzleAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7668028273146848242
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1556271430246556656}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.6957468, z: 0.3470782}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2244020722241378682}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8300188409459899355
 GameObject:
   m_ObjectHideFlags: 0
@@ -31,7 +62,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5743581312201320375}
+  - {fileID: 1637924605372353515}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6779138888497368028
@@ -46,7 +77,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c78a30fa2636bf64a98e7e8803455181, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerVisualMuzzleAnchor
-  muzzleTransform: {fileID: 1350668956772026819}
+  muzzleTransform: {fileID: 7668028273146848242}
   forwardShotOffset: 0.14
   minimumPlanarDistanceFromPlayer: 0.72
   drawDebugGizmos: 1
@@ -75,38 +106,7 @@ MonoBehaviour:
   terminalSplashWidthMultiplier: 1.7
   sourceForwardOffset: 0.02
   impactForwardOffset: 0
---- !u!1 &8511698552817064094
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1350668956772026819}
-  m_Layer: 3
-  m_Name: MuzzleAnchor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1350668956772026819
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8511698552817064094}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.6957468, z: 0.3470782}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5055857864452846886}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &5206149867888017500
+--- !u!1001 &1238959102817348608
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -403,16 +403,16 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 1014988082278708602, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1350668956772026819}
+      addedObject: {fileID: 7668028273146848242}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
---- !u!4 &5055857864452846886 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1014988082278708602, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
-  m_PrefabInstance: {fileID: 5206149867888017500}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &5743581312201320375 stripped
+--- !u!4 &1637924605372353515 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
-  m_PrefabInstance: {fileID: 5206149867888017500}
+  m_PrefabInstance: {fileID: 1238959102817348608}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2244020722241378682 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1014988082278708602, guid: 5f1fd3e9a35f4834bb8530efc89e19cf, type: 3}
+  m_PrefabInstance: {fileID: 1238959102817348608}
   m_PrefabAsset: {fileID: 0}

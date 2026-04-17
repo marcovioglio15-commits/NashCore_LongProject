@@ -592,6 +592,14 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                            authoring.name),
                              authoring);
         }
+
+        DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulaBuffer = default;
+
+        if (progressionPreset != null || powerUpsPreset != null)
+        {
+            characterTuningFormulaBuffer = AddBuffer<PlayerPowerUpCharacterTuningFormulaElement>(entity);
+        }
+
         if (progressionPreset != null)
         {
             BlobAssetReference<PlayerProgressionConfigBlob> progressionBlob = PlayerProgressionBlobBakeUtility.BuildProgressionConfigBlob(progressionPreset,
@@ -609,12 +617,30 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             DynamicBuffer<PlayerBaseGamePhaseElement> baseGamePhasesBuffer = AddBuffer<PlayerBaseGamePhaseElement>(entity);
             DynamicBuffer<PlayerRuntimeGamePhaseElement> runtimeGamePhasesBuffer = AddBuffer<PlayerRuntimeGamePhaseElement>(entity);
             DynamicBuffer<PlayerRuntimeProgressionScalingElement> progressionScalingBuffer = AddBuffer<PlayerRuntimeProgressionScalingElement>(entity);
+            DynamicBuffer<PlayerBaseComboRankElement> baseComboRanksBuffer = AddBuffer<PlayerBaseComboRankElement>(entity);
+            DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanksBuffer = AddBuffer<PlayerRuntimeComboRankElement>(entity);
+            DynamicBuffer<PlayerRuntimeComboCounterScalingElement> comboScalingBuffer = AddBuffer<PlayerRuntimeComboCounterScalingElement>(entity);
             PlayerRuntimeScalingBakeUtility.PopulateProgressionPhaseBuffers(progressionPreset,
                                                                            sourceProgressionPreset,
                                                                            baseGamePhasesBuffer,
                                                                            runtimeGamePhasesBuffer);
+            PlayerRuntimeScalingComboBakeUtility.PopulateComboCounterRuntimeData(progressionPreset,
+                                                                                sourceProgressionPreset,
+                                                                                baseComboRanksBuffer,
+                                                                                runtimeComboRanksBuffer,
+                                                                                characterTuningFormulaBuffer,
+                                                                                out PlayerBaseComboCounterConfig baseComboConfig,
+                                                                                out PlayerRuntimeComboCounterConfig runtimeComboConfig);
+            AddComponent(entity, baseComboConfig);
+            AddComponent(entity, runtimeComboConfig);
+            AddComponent(entity, new PlayerComboCounterState
+            {
+                CurrentRankIndex = -1,
+                NextRankRequiredValue = -1
+            });
 #if UNITY_EDITOR
             PlayerRuntimeScalingProgressionBakeUtility.PopulateProgressionScalingMetadata(sourceProgressionPreset, progressionScalingBuffer);
+            PlayerRuntimeScalingComboBakeUtility.PopulateComboCounterScalingMetadata(sourceProgressionPreset, comboScalingBuffer);
 #endif
             AddComponent(entity, PlayerPowerUpContainerBakeUtility.BuildInteractionConfig(progressionPreset,
                                                                                          ResolveDynamicPrefabEntity));
@@ -666,7 +692,6 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                                ResolveDynamicPrefabEntity,
                                                                                equippedPassiveToolsBuffer);
             DynamicBuffer<PlayerPowerUpUnlockCatalogElement> powerUpUnlockCatalogBuffer = AddBuffer<PlayerPowerUpUnlockCatalogElement>(entity);
-            DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> powerUpCharacterTuningFormulaBuffer = AddBuffer<PlayerPowerUpCharacterTuningFormulaElement>(entity);
             DynamicBuffer<PlayerPowerUpTierDefinitionElement> powerUpTierDefinitionsBuffer = AddBuffer<PlayerPowerUpTierDefinitionElement>(entity);
             DynamicBuffer<PlayerPowerUpTierEntryElement> powerUpTierEntriesBuffer = AddBuffer<PlayerPowerUpTierEntryElement>(entity);
             DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer = AddBuffer<PlayerPowerUpTierEntryScalingElement>(entity);
@@ -677,7 +702,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                              sourcePowerUpsPreset,
                                                                              ResolveDynamicPrefabEntity,
                                                                              powerUpUnlockCatalogBuffer,
-                                                                             powerUpCharacterTuningFormulaBuffer,
+                                                                             characterTuningFormulaBuffer,
                                                                              powerUpTierDefinitionsBuffer,
                                                                              powerUpTierEntriesBuffer,
                                                                              powerUpTierEntryScalingBuffer);

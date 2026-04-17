@@ -53,6 +53,13 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
                                  .WithAll<PlayerRuntimeProgressionScalingElement>()
                                  .WithAll<PlayerBaseGamePhaseElement>()
                                  .WithAll<PlayerRuntimeGamePhaseElement>()
+                                 .WithAll<PlayerBaseComboCounterConfig>()
+                                 .WithAll<PlayerRuntimeComboCounterConfig>()
+                                 .WithAll<PlayerBaseComboRankElement>()
+                                 .WithAll<PlayerRuntimeComboRankElement>()
+                                 .WithAll<PlayerRuntimeComboCounterScalingElement>()
+                                 .WithAll<PlayerComboCounterState>()
+                                 .WithAll<PlayerPowerUpCharacterTuningFormulaElement>()
                                  .WithAll<PlayerPowerUpBaseConfigElement>()
                                  .WithAll<PlayerRuntimePowerUpScalingElement>()
                                  .WithAll<PlayerPowerUpsConfig>()
@@ -93,6 +100,13 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
         BufferLookup<PlayerRuntimeProgressionScalingElement> progressionScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimeProgressionScalingElement>(true);
         BufferLookup<PlayerBaseGamePhaseElement> baseGamePhasesLookup = SystemAPI.GetBufferLookup<PlayerBaseGamePhaseElement>(true);
         BufferLookup<PlayerRuntimeGamePhaseElement> runtimeGamePhasesLookup = SystemAPI.GetBufferLookup<PlayerRuntimeGamePhaseElement>(false);
+        ComponentLookup<PlayerBaseComboCounterConfig> baseComboConfigLookup = SystemAPI.GetComponentLookup<PlayerBaseComboCounterConfig>(true);
+        ComponentLookup<PlayerRuntimeComboCounterConfig> runtimeComboConfigLookup = SystemAPI.GetComponentLookup<PlayerRuntimeComboCounterConfig>(false);
+        BufferLookup<PlayerBaseComboRankElement> baseComboRanksLookup = SystemAPI.GetBufferLookup<PlayerBaseComboRankElement>(true);
+        BufferLookup<PlayerRuntimeComboRankElement> runtimeComboRanksLookup = SystemAPI.GetBufferLookup<PlayerRuntimeComboRankElement>(false);
+        BufferLookup<PlayerRuntimeComboCounterScalingElement> comboScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimeComboCounterScalingElement>(true);
+        ComponentLookup<PlayerComboCounterState> comboCounterStateLookup = SystemAPI.GetComponentLookup<PlayerComboCounterState>(false);
+        BufferLookup<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulaLookup = SystemAPI.GetBufferLookup<PlayerPowerUpCharacterTuningFormulaElement>(true);
         BufferLookup<PlayerPowerUpBaseConfigElement> basePowerUpConfigsLookup = SystemAPI.GetBufferLookup<PlayerPowerUpBaseConfigElement>(true);
         BufferLookup<PlayerRuntimePowerUpScalingElement> powerUpScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimePowerUpScalingElement>(true);
         ComponentLookup<PlayerPowerUpsConfig> powerUpsConfigLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsConfig>(false);
@@ -128,6 +142,13 @@ public partial struct PlayerRuntimeScalingSyncSystem : ISystem
                                                                  progressionScalingLookup,
                                                                  baseGamePhasesLookup,
                                                                  runtimeGamePhasesLookup,
+                                                                 baseComboConfigLookup,
+                                                                 runtimeComboConfigLookup,
+                                                                 baseComboRanksLookup,
+                                                                 runtimeComboRanksLookup,
+                                                                 comboScalingLookup,
+                                                                 comboCounterStateLookup,
+                                                                 characterTuningFormulaLookup,
                                                                  basePowerUpConfigsLookup,
                                                                  powerUpScalingLookup,
                                                                  powerUpsConfigLookup,
