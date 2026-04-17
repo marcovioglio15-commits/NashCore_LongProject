@@ -20,98 +20,30 @@ MonoBehaviour:
     spawnDurationSeconds: 1
     defaultDistributionCurve:
       serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 0
-      m_PostInfinity: 0
-      m_RotationOrder: 0
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     paintedCells:
-    - cellCoordinate: {x: 7, y: 0}
-      masterPreset: {fileID: 0}
-      enemyCount: 14
-      useWaveDefaultDistribution: 0
-      distributionCurveOverride:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 0
-        m_PostInfinity: 0
-        m_RotationOrder: 0
-    - cellCoordinate: {x: 3, y: 7}
-      masterPreset: {fileID: 0}
-      enemyCount: 14
-      useWaveDefaultDistribution: 0
-      distributionCurveOverride:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 0
-        m_PostInfinity: 0
-        m_RotationOrder: 0
-    - cellCoordinate: {x: 5, y: 4}
-      masterPreset: {fileID: 0}
-      enemyCount: 12
-      useWaveDefaultDistribution: 0
-      distributionCurveOverride:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 0
-        m_PostInfinity: 0
-        m_RotationOrder: 0
-    - cellCoordinate: {x: 9, y: 4}
-      masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
-      enemyCount: 20
-      useWaveDefaultDistribution: 1
-      distributionCurveOverride:
-        serializedVersion: 2
-        m_Curve:
-        - serializedVersion: 3
-          time: 0
-          value: 0
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        - serializedVersion: 3
-          time: 1
-          value: 1
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-    - cellCoordinate: {x: 0, y: 11}
-      masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
-      enemyCount: 30
-      useWaveDefaultDistribution: 1
-      distributionCurveOverride:
-        serializedVersion: 2
-        m_Curve:
-        - serializedVersion: 3
-          time: 0
-          value: 0
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        - serializedVersion: 3
-          time: 1
-          value: 1
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-    - cellCoordinate: {x: 4, y: 9}
+    - cellCoordinate: {x: 1, y: 2}
       masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
       enemyCount: 1
       useWaveDefaultDistribution: 0
@@ -122,34 +54,6 @@ MonoBehaviour:
           time: 0
           value: 0
           inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        - serializedVersion: 3
-          time: 1
-          value: 1
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-    - cellCoordinate: {x: 10, y: 10}
-      masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
-      enemyCount: 3
-      useWaveDefaultDistribution: 0
-      distributionCurveOverride:
-        serializedVersion: 2
-        m_Curve:
-        - serializedVersion: 3
-          time: 0
-          value: 0
-          inSlope: 0
           outSlope: 1
           tangentMode: 0
           weightedMode: 0
@@ -167,36 +71,8 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-    - cellCoordinate: {x: 2, y: 1}
+    - cellCoordinate: {x: 2, y: 2}
       masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
-      enemyCount: 3
-      useWaveDefaultDistribution: 0
-      distributionCurveOverride:
-        serializedVersion: 2
-        m_Curve:
-        - serializedVersion: 3
-          time: 0
-          value: 0
-          inSlope: 0
-          outSlope: 1
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        - serializedVersion: 3
-          time: 1
-          value: 1
-          inSlope: 1
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-    - cellCoordinate: {x: 2, y: 9}
-      masterPreset: {fileID: 11400000, guid: 5281a0b709fc544408ab13483cd552f8, type: 2}
       enemyCount: 1
       useWaveDefaultDistribution: 0
       distributionCurveOverride:
@@ -223,8 +99,8 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-    - cellCoordinate: {x: 10, y: 8}
-      masterPreset: {fileID: 11400000, guid: 5281a0b709fc544408ab13483cd552f8, type: 2}
+    - cellCoordinate: {x: 5, y: 2}
+      masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
       enemyCount: 1
       useWaveDefaultDistribution: 0
       distributionCurveOverride:
@@ -251,8 +127,64 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-    - cellCoordinate: {x: 7, y: 2}
-      masterPreset: {fileID: 11400000, guid: 5281a0b709fc544408ab13483cd552f8, type: 2}
+    - cellCoordinate: {x: 4, y: 2}
+      masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
+      enemyCount: 1
+      useWaveDefaultDistribution: 0
+      distributionCurveOverride:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    - cellCoordinate: {x: 3, y: 2}
+      masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
+      enemyCount: 1
+      useWaveDefaultDistribution: 0
+      distributionCurveOverride:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    - cellCoordinate: {x: 6, y: 2}
+      masterPreset: {fileID: 11400000, guid: c64113c66ddb2374d8f82e66d9000ff2, type: 2}
       enemyCount: 1
       useWaveDefaultDistribution: 0
       distributionCurveOverride:

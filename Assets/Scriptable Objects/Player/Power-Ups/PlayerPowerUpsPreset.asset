@@ -13569,9 +13569,9 @@ MonoBehaviour:
           maxAcquisitions: 2
     unreplaceable: 0
   primaryActivePowerUpId: ActiveChargeShot
-  secondaryActivePowerUpId: Active_Shotgun
+  secondaryActivePowerUpId: ActiveBasicDash
   equippedPassivePowerUpIds:
-  - Passive_LaserBeam
+  - PassiveBouncingProjectiles
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT

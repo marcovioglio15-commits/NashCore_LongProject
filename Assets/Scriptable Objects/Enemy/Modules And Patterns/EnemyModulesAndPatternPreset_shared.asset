@@ -1145,16 +1145,16 @@ MonoBehaviour:
           aimDurationSeconds: 0.4
           moveSpeedMultiplierWhileAiming: 0.1
         recovery:
-          cooldownSeconds: 1
+          cooldownSeconds: 5
         distance:
-          distanceSource: 1
-          playerDistanceMultiplier: 1
+          distanceSource: 0
+          playerDistanceMultiplier: 1.5
           distanceOffset: 0
           fixedDistance: 5
           minimumTravelDistance: 2
           maximumTravelDistance: 7
         path:
-          dashDurationSeconds: 0.28
+          dashDurationSeconds: 0.5
           lateralAmplitude: 1.2
           mirrorMode: 2
           forwardProgressCurve:
@@ -1193,24 +1193,6 @@ MonoBehaviour:
               weightedMode: 0
               inWeight: 0
               outWeight: 0
-            - serializedVersion: 3
-              time: 0.1969697
-              value: 1
-              inSlope: 0
-              outSlope: 0
-              tangentMode: 0
-              weightedMode: 0
-              inWeight: 0.33333334
-              outWeight: 0.33333334
-            - serializedVersion: 3
-              time: 0.69996107
-              value: -1
-              inSlope: -0.07227165
-              outSlope: -0.07227165
-              tangentMode: 0
-              weightedMode: 0
-              inWeight: 0.33333334
-              outWeight: 0.33333334
             - serializedVersion: 3
               time: 1
               value: 0
@@ -1832,11 +1814,11 @@ MonoBehaviour:
                 spawnAnimationMinDuration: 0.08
                 spawnAnimationMaxDuration: 0.16
     shortRangeInteraction:
-      isEnabled: 0
+      isEnabled: 1
       activationRange: 6
       releaseDistanceBuffer: 1
       binding:
-        moduleId: Module_Grunt_ShortRange
+        moduleId: Module_Dash
         isEnabled: 1
         useOverridePayload: 0
         overridePayload:
@@ -4023,12 +4005,12 @@ MonoBehaviour:
                 spawnAnimationMaxDuration: 0.16
     shortRangeInteraction:
       isEnabled: 1
-      activationRange: 3
+      activationRange: 6
       releaseDistanceBuffer: 1.5
       binding:
-        moduleId: Module_Dash
+        moduleId: Module_Coward
         isEnabled: 1
-        useOverridePayload: 0
+        useOverridePayload: 1
         overridePayload:
           stationary:
             freezeRotation: 1
@@ -4083,16 +4065,16 @@ MonoBehaviour:
               aimDurationSeconds: 0.4
               moveSpeedMultiplierWhileAiming: 0.1
             recovery:
-              cooldownSeconds: 1
+              cooldownSeconds: 2
             distance:
               distanceSource: 0
-              playerDistanceMultiplier: 1
+              playerDistanceMultiplier: 1.5
               distanceOffset: 0
               fixedDistance: 5
               minimumTravelDistance: 2
               maximumTravelDistance: 7
             path:
-              dashDurationSeconds: 0.28
+              dashDurationSeconds: 0.5
               lateralAmplitude: 1.2
               mirrorMode: 2
               forwardProgressCurve:
@@ -4125,20 +4107,38 @@ MonoBehaviour:
                 - serializedVersion: 3
                   time: 0
                   value: 0
-                  inSlope: 0
-                  outSlope: 0
-                  tangentMode: 0
+                  inSlope: 3.2248368
+                  outSlope: 3.2248368
+                  tangentMode: 34
                   weightedMode: 0
                   inWeight: 0
-                  outWeight: 0
+                  outWeight: 0.33333334
+                - serializedVersion: 3
+                  time: 0.30492446
+                  value: 0.9833316
+                  inSlope: -1.781035
+                  outSlope: -1.781035
+                  tangentMode: 0
+                  weightedMode: 0
+                  inWeight: 0.33333334
+                  outWeight: 0.45723018
+                - serializedVersion: 3
+                  time: 0.59020114
+                  value: -0.95474017
+                  inSlope: -0.87161434
+                  outSlope: -0.87161434
+                  tangentMode: 0
+                  weightedMode: 0
+                  inWeight: 0.33333334
+                  outWeight: 0.18663767
                 - serializedVersion: 3
                   time: 1
                   value: 0
-                  inSlope: 0
-                  outSlope: 0
-                  tangentMode: 0
+                  inSlope: 2.3297775
+                  outSlope: 2.3297775
+                  tangentMode: 34
                   weightedMode: 0
-                  inWeight: 0
+                  inWeight: 0.33333334
                   outWeight: 0
                 m_PreInfinity: 2
                 m_PostInfinity: 2
