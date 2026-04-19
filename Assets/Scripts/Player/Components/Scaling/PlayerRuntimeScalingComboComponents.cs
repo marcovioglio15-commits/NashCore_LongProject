@@ -28,7 +28,7 @@ public struct PlayerRuntimeComboCounterConfig : IComponentData
 }
 
 /// <summary>
-/// Stores one immutable combo-rank milestone plus the flattened Character Tuning formula range used by that rank.
+/// Stores one immutable combo-rank milestone, point-decay rate, and flattened Character Tuning formula range used by that rank.
 /// none.
 /// returns none.
 /// </summary>
@@ -37,12 +37,13 @@ public struct PlayerBaseComboRankElement : IBufferElementData
 {
     public FixedString64Bytes RankId;
     public int RequiredComboValue;
+    public float PointsDecayPerSecond;
     public int BonusFormulaStartIndex;
     public int BonusFormulaCount;
 }
 
 /// <summary>
-/// Stores one current combo-rank milestone after progression Add Scaling formulas are resolved.
+/// Stores one current combo-rank milestone and point-decay rate after progression Add Scaling formulas are resolved.
 /// none.
 /// returns none.
 /// </summary>
@@ -51,6 +52,7 @@ public struct PlayerRuntimeComboRankElement : IBufferElementData
 {
     public FixedString64Bytes RankId;
     public int RequiredComboValue;
+    public float PointsDecayPerSecond;
     public int BonusFormulaStartIndex;
     public int BonusFormulaCount;
 }
@@ -66,7 +68,8 @@ public enum PlayerRuntimeComboCounterFieldId : byte
     ComboGainPerKill = 1,
     ShieldDamageBreaksCombo = 2,
     DamageBreakMode = 3,
-    RankRequiredComboValue = 4
+    RankRequiredComboValue = 4,
+    RankPointsDecayPerSecond = 5
 }
 
 /// <summary>

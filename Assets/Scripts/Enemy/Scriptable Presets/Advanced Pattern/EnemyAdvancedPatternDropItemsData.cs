@@ -241,6 +241,220 @@ public sealed class EnemyExperienceDropPayload
 }
 
 /// <summary>
+/// Stores one metric-driven combo-points response evaluated when the enemy dies.
+/// </summary>
+[Serializable]
+public sealed class EnemyExtraComboPointsConditionData
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Runtime metric evaluated when the enemy dies to decide whether this multiplier is active.")]
+    [SerializeField] private EnemyExtraComboPointsMetric metric = EnemyExtraComboPointsMetric.LifetimeSinceSpawnSeconds;
+
+    [Tooltip("Inclusive minimum metric value required for this multiplier to match.")]
+    [SerializeField] private float minimumValue;
+
+    [Tooltip("When enabled, this multiplier also requires the metric to stay below Maximum Value.")]
+    [SerializeField] private bool useMaximumValue;
+
+    [Tooltip("Inclusive maximum metric value required for this multiplier when Maximum Value gating is enabled.")]
+    [SerializeField] private float maximumValue = 5f;
+
+    [Tooltip("Multiplier returned when the normalized response curve evaluates to 0.")]
+    [SerializeField] private float minimumMultiplier = 1f;
+
+    [Tooltip("Multiplier returned when the normalized response curve evaluates to 1.")]
+    [FormerlySerializedAs("multiplier")]
+    [SerializeField] private float maximumMultiplier = 2f;
+
+    [Tooltip("Normalized response curve sampled across the metric range. X maps Minimum Value to Maximum Value, Y maps Minimum Multiplier to Maximum Multiplier. Use descending curves to reward quick kills and ascending curves to reward slower kills.")]
+    [SerializeField] private AnimationCurve normalizedMultiplierCurve = CreateDefaultNormalizedMultiplierCurve();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public EnemyExtraComboPointsMetric Metric
+    {
+        get
+        {
+            return metric;
+        }
+    }
+
+    public float MinimumValue
+    {
+        get
+        {
+            return minimumValue;
+        }
+    }
+
+    public bool UseMaximumValue
+    {
+        get
+        {
+            return useMaximumValue;
+        }
+    }
+
+    public float MaximumValue
+    {
+        get
+        {
+            return maximumValue;
+        }
+    }
+
+    public float MinimumMultiplier
+    {
+        get
+        {
+            return minimumMultiplier;
+        }
+    }
+
+    public float MaximumMultiplier
+    {
+        get
+        {
+            return maximumMultiplier;
+        }
+    }
+
+    public AnimationCurve NormalizedMultiplierCurve
+    {
+        get
+        {
+            return normalizedMultiplierCurve;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Validation
+    /// <summary>
+    /// Ensures one Extra Combo Points condition remains structurally valid without snapping authored settings.
+    /// </summary>
+    public void Validate()
+    {
+        if (normalizedMultiplierCurve == null)
+            normalizedMultiplierCurve = CreateDefaultNormalizedMultiplierCurve();
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Creates the default normalized curve used to reward quick kills more than delayed kills.
+    /// /params None.
+    /// /returns Default normalized multiplier curve.
+    /// </summary>
+    private static AnimationCurve CreateDefaultNormalizedMultiplierCurve()
+    {
+        return new AnimationCurve(new Keyframe(0f, 1f),
+                                  new Keyframe(1f, 0f));
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Stores conditional combo-points multiplier settings used by DropItems modules.
+/// </summary>
+[Serializable]
+public sealed class EnemyExtraComboPointsPayload
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Base multiplier applied to the combo points granted by this kill before conditional modifiers are evaluated.")]
+    [SerializeField] private float baseMultiplier = 1f;
+
+    [Tooltip("Strategy used to combine every matching conditional multiplier inside this module.")]
+    [SerializeField] private EnemyExtraComboPointsConditionCombineMode conditionCombineMode = EnemyExtraComboPointsConditionCombineMode.MultiplyMatchingConditions;
+
+    [Tooltip("Minimum final multiplier produced by this module after the base multiplier and matching conditions are combined.")]
+    [SerializeField] private float minimumFinalMultiplier;
+
+    [Tooltip("Maximum final multiplier produced by this module after the base multiplier and matching conditions are combined.")]
+    [SerializeField] private float maximumFinalMultiplier = 4f;
+
+    [Tooltip("Conditional multipliers evaluated against enemy lifetime and damage timing data when the enemy dies.")]
+    [SerializeField] private List<EnemyExtraComboPointsConditionData> conditions = new List<EnemyExtraComboPointsConditionData>();
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public float BaseMultiplier
+    {
+        get
+        {
+            return baseMultiplier;
+        }
+    }
+
+    public EnemyExtraComboPointsConditionCombineMode ConditionCombineMode
+    {
+        get
+        {
+            return conditionCombineMode;
+        }
+    }
+
+    public float MinimumFinalMultiplier
+    {
+        get
+        {
+            return minimumFinalMultiplier;
+        }
+    }
+
+    public float MaximumFinalMultiplier
+    {
+        get
+        {
+            return maximumFinalMultiplier;
+        }
+    }
+
+    public IReadOnlyList<EnemyExtraComboPointsConditionData> Conditions
+    {
+        get
+        {
+            return conditions;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Validation
+    /// <summary>
+    /// Ensures Extra Combo Points payload references remain structurally valid without snapping authored settings.
+    /// </summary>
+    public void Validate()
+    {
+        if (conditions == null)
+            conditions = new List<EnemyExtraComboPointsConditionData>();
+
+        for (int conditionIndex = 0; conditionIndex < conditions.Count; conditionIndex++)
+        {
+            if (conditions[conditionIndex] == null)
+                conditions[conditionIndex] = new EnemyExtraComboPointsConditionData();
+
+            conditions[conditionIndex].Validate();
+        }
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
 /// Groups DropItems module selection and payload settings.
 /// </summary>
 [Serializable]
@@ -254,6 +468,9 @@ public sealed class EnemyDropItemsModuleData
 
     [Tooltip("Experience payload used when Drop Payload Kind is Experience.")]
     [SerializeField] private EnemyExperienceDropPayload experience = new EnemyExperienceDropPayload();
+
+    [Tooltip("Extra Combo Points payload used when Drop Payload Kind is Extra Combo Points.")]
+    [SerializeField] private EnemyExtraComboPointsPayload extraComboPoints = new EnemyExtraComboPointsPayload();
     #endregion
 
     #endregion
@@ -274,6 +491,14 @@ public sealed class EnemyDropItemsModuleData
             return experience;
         }
     }
+
+    public EnemyExtraComboPointsPayload ExtraComboPoints
+    {
+        get
+        {
+            return extraComboPoints;
+        }
+    }
     #endregion
 
     #region Methods
@@ -288,7 +513,11 @@ public sealed class EnemyDropItemsModuleData
         if (experience == null)
             experience = new EnemyExperienceDropPayload();
 
+        if (extraComboPoints == null)
+            extraComboPoints = new EnemyExtraComboPointsPayload();
+
         experience.Validate();
+        extraComboPoints.Validate();
     }
     #endregion
 

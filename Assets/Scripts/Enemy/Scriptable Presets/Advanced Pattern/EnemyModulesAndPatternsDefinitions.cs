@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Declares the catalog subsection that owns one reusable enemy pattern module definition.
@@ -318,8 +320,13 @@ public sealed class EnemyPatternDropItemsAssembly
     [Tooltip("Enables one drop-items module for this pattern.")]
     [SerializeField] private bool isEnabled;
 
-    [Tooltip("Drop-items module binding resolved from Drop Items definitions.")]
-    [SerializeField] private EnemyPatternModuleBinding binding = new EnemyPatternModuleBinding();
+    [Tooltip("Drop-items module bindings resolved from Drop Items definitions. Multiple modules can coexist on the same pattern.")]
+    [SerializeField] private List<EnemyPatternModuleBinding> modules = new List<EnemyPatternModuleBinding>();
+
+    [Tooltip("Hidden legacy single-slot binding preserved only to migrate already-authored patterns into the new modules array.")]
+    [FormerlySerializedAs("binding")]
+    [HideInInspector]
+    [SerializeField] private EnemyPatternModuleBinding legacyBinding = new EnemyPatternModuleBinding();
     #endregion
 
     #endregion
@@ -333,11 +340,11 @@ public sealed class EnemyPatternDropItemsAssembly
         }
     }
 
-    public EnemyPatternModuleBinding Binding
+    public IReadOnlyList<EnemyPatternModuleBinding> Modules
     {
         get
         {
-            return binding;
+            return modules;
         }
     }
     #endregion
@@ -356,16 +363,40 @@ public sealed class EnemyPatternDropItemsAssembly
     }
 
     /// <summary>
-    /// Ensures the drop-items assembly always owns one binding instance.
+    /// Ensures the drop-items assembly always owns a modules list and migrates the hidden legacy single-slot binding when needed.
     /// /params None.
     /// /returns None.
     /// </summary>
     public void Validate()
     {
-        if (binding == null)
-            binding = new EnemyPatternModuleBinding();
+        if (modules == null)
+            modules = new List<EnemyPatternModuleBinding>();
 
-        binding.Validate();
+        MigrateLegacyBindingIfNeeded();
+
+        for (int moduleIndex = 0; moduleIndex < modules.Count; moduleIndex++)
+        {
+            if (modules[moduleIndex] == null)
+                modules[moduleIndex] = new EnemyPatternModuleBinding();
+
+            modules[moduleIndex].Validate();
+        }
+    }
+
+    /// <summary>
+    /// Moves the hidden legacy single-slot binding into the new modules list the first time the pattern is validated after migration.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void MigrateLegacyBindingIfNeeded()
+    {
+        if (legacyBinding == null)
+            return;
+
+        if (modules.Count <= 0)
+            modules.Add(legacyBinding);
+
+        legacyBinding = null;
     }
     #endregion
 

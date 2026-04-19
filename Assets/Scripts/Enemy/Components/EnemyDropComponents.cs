@@ -1,13 +1,26 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
 #region Drop Components
 /// <summary>
-/// Stores baked enemy drop module settings used at runtime.
+/// Stores summary flags for the baked drop-item modules available on one enemy.
 /// </summary>
 public struct EnemyDropItemsConfig : IComponentData
 {
-    public EnemyDropItemsPayloadKind PayloadKind;
+    public byte HasExperienceDrops;
+    public byte HasExtraComboPoints;
+    public int ExperienceModuleCount;
+    public int ExtraComboPointsModuleCount;
+    public int EstimatedDropsPerDeath;
+}
+
+/// <summary>
+/// Stores one baked experience-drop module entry.
+/// Definition indices address a slice inside EnemyExperienceDropDefinitionElement.
+/// </summary>
+public struct EnemyExperienceDropModuleElement : IBufferElementData
+{
     public float MinimumTotalExperienceDrop;
     public float MaximumTotalExperienceDrop;
     public float Distribution;
@@ -17,6 +30,8 @@ public struct EnemyDropItemsConfig : IComponentData
     public float CollectDistancePerPlayerSpeed;
     public float SpawnAnimationMinDuration;
     public float SpawnAnimationMaxDuration;
+    public int DefinitionStartIndex;
+    public int DefinitionCount;
     public int EstimatedDropsPerDeath;
 }
 
@@ -27,6 +42,34 @@ public struct EnemyExperienceDropDefinitionElement : IBufferElementData
 {
     public Entity PrefabEntity;
     public float ExperienceAmount;
+}
+
+/// <summary>
+/// Stores one baked Extra Combo Points module entry.
+/// Condition indices address a slice inside EnemyExtraComboPointsConditionElement.
+/// </summary>
+public struct EnemyExtraComboPointsModuleElement : IBufferElementData
+{
+    public float BaseMultiplier;
+    public float MinimumFinalMultiplier;
+    public float MaximumFinalMultiplier;
+    public EnemyExtraComboPointsConditionCombineMode ConditionCombineMode;
+    public int ConditionStartIndex;
+    public int ConditionCount;
+}
+
+/// <summary>
+/// Stores one baked Extra Combo Points condition entry with a normalized sampled response curve.
+/// </summary>
+public struct EnemyExtraComboPointsConditionElement : IBufferElementData
+{
+    public EnemyExtraComboPointsMetric Metric;
+    public float MinimumValue;
+    public byte UseMaximumValue;
+    public float MaximumValue;
+    public float MinimumMultiplier;
+    public float MaximumMultiplier;
+    public FixedList64Bytes<float> NormalizedMultiplierCurveSamples;
 }
 
 /// <summary>

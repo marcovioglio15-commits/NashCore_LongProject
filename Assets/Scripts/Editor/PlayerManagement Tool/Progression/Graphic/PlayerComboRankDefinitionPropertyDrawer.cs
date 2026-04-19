@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
@@ -11,6 +12,10 @@ using UnityEngine.UIElements;
 [CustomPropertyDrawer(typeof(PlayerComboRankDefinition))]
 public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
 {
+    #region Constants
+    private const float AvailableVariablesBoxHeight = 76f;
+    #endregion
+
     #region Methods
 
     #region Public Methods
@@ -24,30 +29,42 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
         VisualElement root = new VisualElement();
         SerializedProperty rankIdProperty = property.FindPropertyRelative("rankId");
         SerializedProperty requiredComboValueProperty = property.FindPropertyRelative("requiredComboValue");
+        SerializedProperty pointsDecayPerSecondProperty = property.FindPropertyRelative("pointsDecayPerSecond");
         SerializedProperty rankVisualsProperty = property.FindPropertyRelative("rankVisuals");
         SerializedProperty rankBonusesProperty = property.FindPropertyRelative("rankBonuses");
         SerializedProperty scalingRulesProperty = property.serializedObject != null
             ? property.serializedObject.FindProperty("scalingRules")
             : null;
 
-        if (rankIdProperty == null || requiredComboValueProperty == null || rankVisualsProperty == null || rankBonusesProperty == null)
+        if (rankIdProperty == null ||
+            requiredComboValueProperty == null ||
+            pointsDecayPerSecondProperty == null ||
+            rankVisualsProperty == null ||
+            rankBonusesProperty == null)
         {
             HelpBox missingHelpBox = new HelpBox("Combo rank fields are missing.", HelpBoxMessageType.Warning);
             root.Add(missingHelpBox);
             return root;
         }
 
-        HelpBox infoBox = new HelpBox("Each reached rank applies its Character Tuning formulas cumulatively together with all lower ranks that are still reached. Rank visuals authored below are picked automatically by HUDManager using the active rank index, without any extra ID mapping.", HelpBoxMessageType.Info);
+        HelpBox infoBox = new HelpBox("Each reached rank applies its Character Tuning formulas cumulatively together with all lower ranks that are still reached. Rank visuals are picked automatically by HUDManager using the active rank index, and the rank-specific point decay below can naturally downgrade the combo over time.", HelpBoxMessageType.Info);
         root.Add(infoBox);
         root.Add(CreateBoundField(rankIdProperty, "Rank ID"));
         root.Add(PlayerScalingFieldElementFactory.CreateField(requiredComboValueProperty,
                                                               scalingRulesProperty,
                                                               "Required Combo Value"));
+        root.Add(PlayerScalingFieldElementFactory.CreateField(pointsDecayPerSecondProperty,
+                                                              scalingRulesProperty,
+                                                              "Points Decay Per Second"));
         root.Add(CreateBoundField(rankVisualsProperty, "Rank Visuals"));
 
         PropertyField rankBonusesField = new PropertyField(rankBonusesProperty, "Rank Bonuses");
         rankBonusesField.BindProperty(rankBonusesProperty);
         root.Add(rankBonusesField);
+        ScrollView availableVariablesScrollView = CreateAvailableVariablesScrollView();
+        Label availableVariablesLabel = CreateAvailableVariablesLabel();
+        availableVariablesScrollView.Add(availableVariablesLabel);
+        root.Add(availableVariablesScrollView);
 
         HelpBox warningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
         root.Add(warningBox);
@@ -55,16 +72,20 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
         root.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
         {
             PlayerManagementDraftSession.MarkDirty();
+            RefreshAvailableVariables(property.serializedObject, availableVariablesLabel);
             RefreshWarnings(property.serializedObject,
                             rankIdProperty,
                             requiredComboValueProperty,
+                            pointsDecayPerSecondProperty,
                             rankBonusesProperty,
                             warningBox);
         });
 
+        RefreshAvailableVariables(property.serializedObject, availableVariablesLabel);
         RefreshWarnings(property.serializedObject,
                         rankIdProperty,
                         requiredComboValueProperty,
+                        pointsDecayPerSecondProperty,
                         rankBonusesProperty,
                         warningBox);
         return root;
@@ -86,10 +107,62 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
     }
 
     /// <summary>
+    /// Builds the scroll view that hosts the Available Variables helper text for combo rank formulas.
+    /// none.
+    /// returns Configured scroll view used by the inspector.
+    /// </summary>
+    private static ScrollView CreateAvailableVariablesScrollView()
+    {
+        ScrollView scrollView = new ScrollView(ScrollViewMode.Vertical);
+        scrollView.style.marginTop = 2f;
+        scrollView.style.height = AvailableVariablesBoxHeight;
+        scrollView.style.maxHeight = AvailableVariablesBoxHeight;
+        scrollView.style.flexShrink = 0f;
+        return scrollView;
+    }
+
+    /// <summary>
+    /// Builds the label that shows the currently available scalable-stat variables for combo rank formulas.
+    /// none.
+    /// returns Configured label used by the inspector.
+    /// </summary>
+    private static Label CreateAvailableVariablesLabel()
+    {
+        Label label = new Label(string.Empty);
+        label.style.unityFontStyleAndWeight = FontStyle.Italic;
+        label.style.whiteSpace = WhiteSpace.Normal;
+        label.style.flexShrink = 0f;
+        return label;
+    }
+
+    /// <summary>
+    /// Refreshes the helper label that lists the scalable-stat variables available to combo rank formulas.
+    /// serializedObject Serialized object owning the combo rank.
+    /// availableVariablesLabel Label refreshed in place.
+    /// returns void.
+    /// </summary>
+    private static void RefreshAvailableVariables(SerializedObject serializedObject, Label availableVariablesLabel)
+    {
+        if (availableVariablesLabel == null)
+        {
+            return;
+        }
+
+        HashSet<string> allowedVariables = serializedObject != null
+            ? PlayerScalingFormulaValidationUtility.BuildScopedVariableSet(serializedObject)
+            : new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, PlayerScalableStatType> variableTypes = serializedObject != null
+            ? PlayerScalingFormulaValidationUtility.BuildScopedScalableStatTypeMap(serializedObject)
+            : new Dictionary<string, PlayerScalableStatType>(System.StringComparer.OrdinalIgnoreCase);
+        availableVariablesLabel.text = PlayerScalingFormulaValidationUtility.BuildAvailableVariablesLabelText(allowedVariables, variableTypes);
+    }
+
+    /// <summary>
     /// Rebuilds the warning message shown for one combo rank.
     /// serializedObject Serialized object owning the combo rank.
     /// rankIdProperty Serialized rank identifier property.
     /// requiredComboValueProperty Serialized combo threshold property.
+    /// pointsDecayPerSecondProperty Serialized time-based combo point decay property.
     /// rankBonusesProperty Serialized Character Tuning payload property.
     /// warningBox Warning help box refreshed in place.
     /// returns void.
@@ -97,6 +170,7 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
     private static void RefreshWarnings(SerializedObject serializedObject,
                                         SerializedProperty rankIdProperty,
                                         SerializedProperty requiredComboValueProperty,
+                                        SerializedProperty pointsDecayPerSecondProperty,
                                         SerializedProperty rankBonusesProperty,
                                         HelpBox warningBox)
     {
@@ -118,6 +192,11 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
             warningLines.Add("Required Combo Value should be >= 0.");
         }
 
+        if (pointsDecayPerSecondProperty != null && pointsDecayPerSecondProperty.floatValue < 0f)
+        {
+            warningLines.Add("Points Decay Per Second should be >= 0.");
+        }
+
         SerializedProperty formulasProperty = rankBonusesProperty != null
             ? rankBonusesProperty.FindPropertyRelative("formulas")
             : null;
@@ -128,7 +207,10 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
         }
         else if (formulasProperty.arraySize <= 0)
         {
-            warningLines.Add("No Character Tuning formulas configured. This rank currently changes only presentation.");
+            bool hasDecayEffect = pointsDecayPerSecondProperty != null && pointsDecayPerSecondProperty.floatValue > 0f;
+            warningLines.Add(hasDecayEffect
+                ? "No Character Tuning formulas configured. This rank currently changes presentation and point decay only."
+                : "No Character Tuning formulas configured. This rank currently changes only presentation.");
         }
         else
         {

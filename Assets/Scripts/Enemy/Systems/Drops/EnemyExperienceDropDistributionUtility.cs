@@ -36,17 +36,55 @@ public static class EnemyExperienceDropDistributionUtility
                                                 out float definitionExperienceAmount,
                                                 out bool fitsRemaining)
     {
+        return TryResolveNextDefinition(definitions,
+                                        0,
+                                        definitions.Length,
+                                        remainingExperience,
+                                        distribution,
+                                        out definitionIndex,
+                                        out definitionExperienceAmount,
+                                        out fitsRemaining);
+    }
+
+    /// <summary>
+    /// Resolves the next runtime drop-definition choice for one module slice inside a shared definitions buffer.
+    /// </summary>
+    /// <param name="definitions">Shared runtime drop definitions buffer.</param>
+    /// <param name="definitionStartIndex">Inclusive module-slice start index.</param>
+    /// <param name="definitionCount">Definition count owned by the module slice.</param>
+    /// <param name="remainingExperience">Remaining experience budget to distribute.</param>
+    /// <param name="distribution">Distribution bias where 0 favors low values and 1 favors high values.</param>
+    /// <param name="definitionIndex">Resolved absolute definition index when successful.</param>
+    /// <param name="definitionExperienceAmount">Resolved definition experience amount when successful.</param>
+    /// <param name="fitsRemaining">True when selected amount is lower or equal to remaining budget.</param>
+    /// <returns>True when a valid definition is selected, otherwise false.<returns>
+    public static bool TryResolveNextDefinition(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                                int definitionStartIndex,
+                                                int definitionCount,
+                                                float remainingExperience,
+                                                float distribution,
+                                                out int definitionIndex,
+                                                out float definitionExperienceAmount,
+                                                out bool fitsRemaining)
+    {
         definitionIndex = -1;
         definitionExperienceAmount = 0f;
         fitsRemaining = false;
 
-        if (definitions.Length <= 0)
+        int sanitizedDefinitionStartIndex = math.max(0, definitionStartIndex);
+        int definitionEndIndex = math.min(definitions.Length, sanitizedDefinitionStartIndex + math.max(0, definitionCount));
+
+        if (definitionEndIndex <= sanitizedDefinitionStartIndex)
             return false;
 
         float minimumValue;
         float maximumValue;
 
-        if (TryResolveRuntimeBounds(definitions, out minimumValue, out maximumValue) == false)
+        if (TryResolveRuntimeBounds(definitions,
+                                    sanitizedDefinitionStartIndex,
+                                    definitionEndIndex - sanitizedDefinitionStartIndex,
+                                    out minimumValue,
+                                    out maximumValue) == false)
             return false;
 
         float clampedDistribution = math.clamp(distribution, 0f, 1f);
@@ -55,7 +93,7 @@ public static class EnemyExperienceDropDistributionUtility
         float bestAmount = 0f;
         float bestScore = float.MinValue;
 
-        for (int index = 0; index < definitions.Length; index++)
+        for (int index = sanitizedDefinitionStartIndex; index < definitionEndIndex; index++)
         {
             EnemyExperienceDropDefinitionElement definition = definitions[index];
             float amount = definition.ExperienceAmount;
@@ -89,7 +127,7 @@ public static class EnemyExperienceDropDistributionUtility
 
         float bestAbsoluteDifference = float.MaxValue;
 
-        for (int index = 0; index < definitions.Length; index++)
+        for (int index = sanitizedDefinitionStartIndex; index < definitionEndIndex; index++)
         {
             EnemyExperienceDropDefinitionElement definition = definitions[index];
             float amount = definition.ExperienceAmount;
@@ -140,10 +178,41 @@ public static class EnemyExperienceDropDistributionUtility
                                             out float deliveredExperience,
                                             out float absoluteError)
     {
+        return EstimateDropsPerDeath(definitions,
+                                     0,
+                                     definitions.Length,
+                                     totalExperienceDrop,
+                                     distribution,
+                                     out deliveredExperience,
+                                     out absoluteError);
+    }
+
+    /// <summary>
+    /// Estimates drop count and delivery error for one module slice inside a shared runtime definitions buffer.
+    /// </summary>
+    /// <param name="definitions">Shared runtime drop definitions buffer.</param>
+    /// <param name="definitionStartIndex">Inclusive module-slice start index.</param>
+    /// <param name="definitionCount">Definition count owned by the module slice.</param>
+    /// <param name="totalExperienceDrop">Total experience budget to distribute.</param>
+    /// <param name="distribution">Distribution bias where 0 favors low values and 1 favors high values.</param>
+    /// <param name="deliveredExperience">Estimated delivered experience by planned drops.</param>
+    /// <param name="absoluteError">Absolute difference between requested and delivered experience.</param>
+    /// <returns>Estimated planned drop count.<returns>
+    public static int EstimateDropsPerDeath(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                            int definitionStartIndex,
+                                            int definitionCount,
+                                            float totalExperienceDrop,
+                                            float distribution,
+                                            out float deliveredExperience,
+                                            out float absoluteError)
+    {
         deliveredExperience = 0f;
         absoluteError = math.max(0f, totalExperienceDrop);
 
-        if (definitions.Length <= 0)
+        int sanitizedDefinitionStartIndex = math.max(0, definitionStartIndex);
+        int definitionEndIndex = math.min(definitions.Length, sanitizedDefinitionStartIndex + math.max(0, definitionCount));
+
+        if (definitionEndIndex <= sanitizedDefinitionStartIndex)
             return 0;
 
         float remainingExperience = math.max(0f, totalExperienceDrop);
@@ -166,6 +235,8 @@ public static class EnemyExperienceDropDistributionUtility
             bool fitsRemaining;
 
             if (TryResolveNextDefinition(definitions,
+                                         sanitizedDefinitionStartIndex,
+                                         definitionEndIndex - sanitizedDefinitionStartIndex,
                                          remainingExperience,
                                          distribution,
                                          out definitionIndex,
@@ -320,7 +391,40 @@ public static class EnemyExperienceDropDistributionUtility
                                                        uint randomSeed,
                                                        out float resolvedTotal)
     {
+        return TryResolveRandomCompatibleTotal(definitions,
+                                              0,
+                                              definitions.Length,
+                                              minimumTotal,
+                                              maximumTotal,
+                                              distribution,
+                                              randomSeed,
+                                              out resolvedTotal);
+    }
+
+    /// <summary>
+    /// Picks one random compatible total experience value inside the requested runtime range for one module slice.
+    /// </summary>
+    /// <param name="definitions">Shared runtime drop definitions buffer.</param>
+    /// <param name="definitionStartIndex">Inclusive module-slice start index.</param>
+    /// <param name="definitionCount">Definition count owned by the module slice.</param>
+    /// <param name="minimumTotal">Requested minimum total experience.</param>
+    /// <param name="maximumTotal">Requested maximum total experience.</param>
+    /// <param name="distribution">Distribution bias where 0 favors low values and 1 favors high values.</param>
+    /// <param name="randomSeed">Deterministic random seed used for total-value selection.</param>
+    /// <param name="resolvedTotal">Resolved compatible random total when successful.</param>
+    /// <returns>True when a compatible random total is resolved, otherwise false.<returns>
+    public static bool TryResolveRandomCompatibleTotal(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                                       int definitionStartIndex,
+                                                       int definitionCount,
+                                                       float minimumTotal,
+                                                       float maximumTotal,
+                                                       float distribution,
+                                                       uint randomSeed,
+                                                       out float resolvedTotal)
+    {
         return EnemyExperienceDropDistributionCompatibilityUtility.TryResolveRandomCompatibleTotal(definitions,
+                                                                                                   definitionStartIndex,
+                                                                                                   definitionCount,
                                                                                                    minimumTotal,
                                                                                                    maximumTotal,
                                                                                                    distribution,
@@ -334,7 +438,22 @@ public static class EnemyExperienceDropDistributionUtility
                                                  out float minimumValue,
                                                  out float maximumValue)
     {
+        return TryResolveRuntimeBounds(definitions,
+                                       0,
+                                       definitions.Length,
+                                       out minimumValue,
+                                       out maximumValue);
+    }
+
+    internal static bool TryResolveRuntimeBounds(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                                 int definitionStartIndex,
+                                                 int definitionCount,
+                                                 out float minimumValue,
+                                                 out float maximumValue)
+    {
         return EnemyExperienceDropDistributionCompatibilityUtility.TryResolveRuntimeBounds(definitions,
+                                                                                           definitionStartIndex,
+                                                                                           definitionCount,
                                                                                            out minimumValue,
                                                                                            out maximumValue);
     }

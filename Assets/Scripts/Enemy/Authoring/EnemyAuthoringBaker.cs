@@ -60,7 +60,11 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             ContactDamageCooldown = 0f,
             AreaDamageCooldown = 0f,
             SpawnInactivityTimer = 0f,
-            SpawnVersion = 0u
+            LifetimeSeconds = 0f,
+            FirstDamageLifetimeSeconds = 0f,
+            LastDamageLifetimeSeconds = 0f,
+            SpawnVersion = 0u,
+            HasTakenDamage = 0
         });
         AddComponent(entity, new EnemyKnockbackState
         {
@@ -352,7 +356,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
         GameObject projectilePrefabObject = compiledPattern.ShooterProjectilePrefab;
 
-        if (IsInvalidShooterProjectilePrefab(authoring, projectilePrefabObject))
+        if (EnemyAuthoringValidationUtility.IsInvalidShooterProjectilePrefab(authoring, projectilePrefabObject))
         {
 #if UNITY_EDITOR
             if (projectilePrefabObject == null)
@@ -378,26 +382,6 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         AddBuffer<ProjectilePoolElement>(entity);
     }
 
-    private static bool IsInvalidShooterProjectilePrefab(EnemyAuthoring authoring, GameObject projectilePrefabObject)
-    {
-        if (projectilePrefabObject == null)
-            return true;
-
-        if (authoring != null && projectilePrefabObject == authoring.gameObject)
-            return true;
-
-        if (projectilePrefabObject.scene.IsValid())
-            return true;
-
-        if (projectilePrefabObject.GetComponent<EnemyAuthoring>() != null)
-            return true;
-
-        if (projectilePrefabObject.GetComponent<PlayerAuthoring>() != null)
-            return true;
-
-        return false;
-    }
-
     private void TryBakeDropItemsRuntime(EnemyAuthoring authoring, Entity entity, EnemyCompiledPatternBakeResult compiledPattern)
     {
         if (authoring == null)
@@ -406,93 +390,157 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         if (compiledPattern == null)
             return;
 
-        EnemyDropItemsConfig dropItemsConfig = compiledPattern.DropItemsConfig;
+        EnemyDropItemsConfig dropItemsConfig = EnemyDropItemsBakeUtility.CreateDefaultConfig();
+        List<EnemyExperienceDropModuleElement> stagedExperienceModules = new List<EnemyExperienceDropModuleElement>(compiledPattern.ExperienceDropModules.Count);
+        List<EnemyExperienceDropDefinitionElement> stagedExperienceDefinitions = new List<EnemyExperienceDropDefinitionElement>(compiledPattern.ExperienceDropDefinitions.Count);
+        List<EnemyExtraComboPointsModuleElement> stagedExtraComboPointsModules = new List<EnemyExtraComboPointsModuleElement>(compiledPattern.ExtraComboPointsModules.Count);
+        List<EnemyExtraComboPointsConditionElement> stagedExtraComboPointsConditions = new List<EnemyExtraComboPointsConditionElement>(compiledPattern.ExtraComboPointsConditions.Count);
 
-        if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
-            return;
-
-        if (dropItemsConfig.MaximumTotalExperienceDrop <= 0f)
-            return;
-
-        if (compiledPattern.ExperienceDropDefinitions == null || compiledPattern.ExperienceDropDefinitions.Count <= 0)
-            return;
-
-        List<EnemyExperienceDropDefinitionElement> stagedDefinitions = new List<EnemyExperienceDropDefinitionElement>(compiledPattern.ExperienceDropDefinitions.Count);
-        List<float> stagedAmounts = new List<float>(compiledPattern.ExperienceDropDefinitions.Count);
-
-        for (int definitionIndex = 0; definitionIndex < compiledPattern.ExperienceDropDefinitions.Count; definitionIndex++)
+        for (int moduleIndex = 0; moduleIndex < compiledPattern.ExperienceDropModules.Count; moduleIndex++)
         {
-            EnemyCompiledExperienceDropDefinition compiledDefinition = compiledPattern.ExperienceDropDefinitions[definitionIndex];
-            GameObject dropPrefab = compiledDefinition.Prefab;
+            EnemyCompiledExperienceDropModule compiledModule = compiledPattern.ExperienceDropModules[moduleIndex];
 
-            if (dropPrefab == null)
+            if (compiledModule.MaximumTotalExperienceDrop <= 0f)
                 continue;
 
-            if (IsInvalidExperienceDropPrefab(authoring, dropPrefab))
+            int stagedDefinitionStartIndex = stagedExperienceDefinitions.Count;
+            int definitionStartIndex = math.max(0, compiledModule.DefinitionStartIndex);
+            int definitionEndIndex = math.min(compiledPattern.ExperienceDropDefinitions.Count,
+                                              definitionStartIndex + math.max(0, compiledModule.DefinitionCount));
+            List<float> stagedDefinitionAmounts = new List<float>(definitionEndIndex - definitionStartIndex);
+
+            for (int definitionIndex = definitionStartIndex; definitionIndex < definitionEndIndex; definitionIndex++)
             {
+                EnemyCompiledExperienceDropDefinition compiledDefinition = compiledPattern.ExperienceDropDefinitions[definitionIndex];
+                GameObject dropPrefab = compiledDefinition.Prefab;
+
+                if (dropPrefab == null)
+                    continue;
+
+                if (EnemyAuthoringValidationUtility.IsInvalidExperienceDropPrefab(authoring, dropPrefab))
+                {
 #if UNITY_EDITOR
-                Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid experience drop prefab '{0}' on '{1}'. Assign a prefab asset without EnemyAuthoring or PlayerAuthoring components.", dropPrefab.name, authoring.name), authoring);
+                    Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid experience drop prefab '{0}' on '{1}'. Assign a prefab asset without EnemyAuthoring or PlayerAuthoring components.", dropPrefab.name, authoring.name), authoring);
 #endif
-                continue;
+                    continue;
+                }
+
+                float experienceAmount = math.max(0f, compiledDefinition.ExperienceAmount);
+
+                if (experienceAmount <= 0f)
+                    continue;
+
+                Entity dropPrefabEntity = GetEntity(dropPrefab, TransformUsageFlags.Dynamic);
+                stagedExperienceDefinitions.Add(new EnemyExperienceDropDefinitionElement
+                {
+                    PrefabEntity = dropPrefabEntity,
+                    ExperienceAmount = experienceAmount
+                });
+                stagedDefinitionAmounts.Add(experienceAmount);
             }
 
-            float experienceAmount = math.max(0f, compiledDefinition.ExperienceAmount);
+            int stagedDefinitionCount = stagedExperienceDefinitions.Count - stagedDefinitionStartIndex;
 
-            if (experienceAmount <= 0f)
+            if (stagedDefinitionCount <= 0)
                 continue;
 
-            Entity dropPrefabEntity = GetEntity(dropPrefab, TransformUsageFlags.Dynamic);
-            stagedDefinitions.Add(new EnemyExperienceDropDefinitionElement
+            int estimatedDropsPerDeath = math.max(0, compiledModule.EstimatedDropsPerDeath);
+
+            if (estimatedDropsPerDeath <= 0)
             {
-                PrefabEntity = dropPrefabEntity,
-                ExperienceAmount = experienceAmount
+                estimatedDropsPerDeath = math.max(0,
+                                                  EnemyExperienceDropDistributionUtility.EstimateDropsForPreview(stagedDefinitionAmounts,
+                                                                                                                 compiledModule.MaximumTotalExperienceDrop,
+                                                                                                                 compiledModule.Distribution,
+                                                                                                                 out float _,
+                                                                                                                 out float _));
+            }
+
+            stagedExperienceModules.Add(new EnemyExperienceDropModuleElement
+            {
+                MinimumTotalExperienceDrop = math.max(0f, compiledModule.MinimumTotalExperienceDrop),
+                MaximumTotalExperienceDrop = math.max(math.max(0f, compiledModule.MinimumTotalExperienceDrop), compiledModule.MaximumTotalExperienceDrop),
+                Distribution = math.clamp(compiledModule.Distribution, 0f, 1f),
+                DropRadius = math.max(0f, compiledModule.DropRadius),
+                AttractionSpeed = math.max(0f, compiledModule.AttractionSpeed),
+                CollectDistance = math.max(0.01f, compiledModule.CollectDistance),
+                CollectDistancePerPlayerSpeed = math.max(0f, compiledModule.CollectDistancePerPlayerSpeed),
+                SpawnAnimationMinDuration = math.max(0f, compiledModule.SpawnAnimationMinDuration),
+                SpawnAnimationMaxDuration = math.max(math.max(0f, compiledModule.SpawnAnimationMinDuration), compiledModule.SpawnAnimationMaxDuration),
+                DefinitionStartIndex = stagedDefinitionStartIndex,
+                DefinitionCount = stagedDefinitionCount,
+                EstimatedDropsPerDeath = estimatedDropsPerDeath
             });
-            stagedAmounts.Add(experienceAmount);
+            dropItemsConfig.HasExperienceDrops = 1;
+            dropItemsConfig.ExperienceModuleCount = stagedExperienceModules.Count;
+            dropItemsConfig.EstimatedDropsPerDeath = EnemyAuthoringValidationUtility.AddEstimatedCount(dropItemsConfig.EstimatedDropsPerDeath,
+                                                                                                       estimatedDropsPerDeath);
         }
 
-        if (stagedDefinitions.Count <= 0)
+        for (int moduleIndex = 0; moduleIndex < compiledPattern.ExtraComboPointsModules.Count; moduleIndex++)
+        {
+            EnemyCompiledExtraComboPointsModule compiledModule = compiledPattern.ExtraComboPointsModules[moduleIndex];
+            int stagedConditionStartIndex = stagedExtraComboPointsConditions.Count;
+            int conditionStartIndex = math.max(0, compiledModule.ConditionStartIndex);
+            int conditionEndIndex = math.min(compiledPattern.ExtraComboPointsConditions.Count,
+                                             conditionStartIndex + math.max(0, compiledModule.ConditionCount));
+
+            for (int conditionIndex = conditionStartIndex; conditionIndex < conditionEndIndex; conditionIndex++)
+            {
+                EnemyCompiledExtraComboPointsCondition compiledCondition = compiledPattern.ExtraComboPointsConditions[conditionIndex];
+                stagedExtraComboPointsConditions.Add(new EnemyExtraComboPointsConditionElement
+                {
+                    Metric = compiledCondition.Metric,
+                    MinimumValue = compiledCondition.MinimumValue,
+                    UseMaximumValue = compiledCondition.UseMaximumValue,
+                    MaximumValue = compiledCondition.MaximumValue,
+                    MinimumMultiplier = compiledCondition.MinimumMultiplier,
+                    MaximumMultiplier = compiledCondition.MaximumMultiplier,
+                    NormalizedMultiplierCurveSamples = compiledCondition.NormalizedMultiplierCurveSamples
+                });
+            }
+
+            stagedExtraComboPointsModules.Add(new EnemyExtraComboPointsModuleElement
+            {
+                BaseMultiplier = compiledModule.BaseMultiplier,
+                MinimumFinalMultiplier = compiledModule.MinimumFinalMultiplier,
+                MaximumFinalMultiplier = compiledModule.MaximumFinalMultiplier,
+                ConditionCombineMode = compiledModule.ConditionCombineMode,
+                ConditionStartIndex = stagedConditionStartIndex,
+                ConditionCount = stagedExtraComboPointsConditions.Count - stagedConditionStartIndex
+            });
+            dropItemsConfig.HasExtraComboPoints = 1;
+            dropItemsConfig.ExtraComboPointsModuleCount = stagedExtraComboPointsModules.Count;
+        }
+
+        if (dropItemsConfig.HasExperienceDrops == 0 && dropItemsConfig.HasExtraComboPoints == 0)
             return;
 
-        int estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsForPreview(stagedAmounts,
-                                                                                                     dropItemsConfig.MaximumTotalExperienceDrop,
-                                                                                                     dropItemsConfig.Distribution,
-                                                                                                     out float _,
-                                                                                                     out float _);
-        dropItemsConfig.EstimatedDropsPerDeath = math.max(1, estimatedDropsPerDeath);
-        dropItemsConfig.MinimumTotalExperienceDrop = math.max(0f, dropItemsConfig.MinimumTotalExperienceDrop);
-        dropItemsConfig.MaximumTotalExperienceDrop = math.max(dropItemsConfig.MinimumTotalExperienceDrop, dropItemsConfig.MaximumTotalExperienceDrop);
-        dropItemsConfig.DropRadius = math.max(0f, dropItemsConfig.DropRadius);
-        dropItemsConfig.AttractionSpeed = math.max(0f, dropItemsConfig.AttractionSpeed);
-        dropItemsConfig.CollectDistance = math.max(0.01f, dropItemsConfig.CollectDistance);
-        dropItemsConfig.CollectDistancePerPlayerSpeed = math.max(0f, dropItemsConfig.CollectDistancePerPlayerSpeed);
-        dropItemsConfig.SpawnAnimationMinDuration = math.max(0f, dropItemsConfig.SpawnAnimationMinDuration);
-        dropItemsConfig.SpawnAnimationMaxDuration = math.max(dropItemsConfig.SpawnAnimationMinDuration, dropItemsConfig.SpawnAnimationMaxDuration);
-
         AddComponent(entity, dropItemsConfig);
-        DynamicBuffer<EnemyExperienceDropDefinitionElement> definitionsBuffer = AddBuffer<EnemyExperienceDropDefinitionElement>(entity);
 
-        for (int definitionIndex = 0; definitionIndex < stagedDefinitions.Count; definitionIndex++)
-            definitionsBuffer.Add(stagedDefinitions[definitionIndex]);
-    }
+        if (stagedExperienceModules.Count > 0)
+        {
+            DynamicBuffer<EnemyExperienceDropModuleElement> experienceModulesBuffer = AddBuffer<EnemyExperienceDropModuleElement>(entity);
+            DynamicBuffer<EnemyExperienceDropDefinitionElement> experienceDefinitionsBuffer = AddBuffer<EnemyExperienceDropDefinitionElement>(entity);
 
-    private static bool IsInvalidExperienceDropPrefab(EnemyAuthoring authoring, GameObject dropPrefabObject)
-    {
-        if (dropPrefabObject == null)
-            return true;
+            for (int moduleIndex = 0; moduleIndex < stagedExperienceModules.Count; moduleIndex++)
+                experienceModulesBuffer.Add(stagedExperienceModules[moduleIndex]);
 
-        if (authoring != null && dropPrefabObject == authoring.gameObject)
-            return true;
+            for (int definitionIndex = 0; definitionIndex < stagedExperienceDefinitions.Count; definitionIndex++)
+                experienceDefinitionsBuffer.Add(stagedExperienceDefinitions[definitionIndex]);
+        }
 
-        if (dropPrefabObject.scene.IsValid())
-            return true;
+        if (stagedExtraComboPointsModules.Count > 0)
+        {
+            DynamicBuffer<EnemyExtraComboPointsModuleElement> extraComboPointsModulesBuffer = AddBuffer<EnemyExtraComboPointsModuleElement>(entity);
+            DynamicBuffer<EnemyExtraComboPointsConditionElement> extraComboPointsConditionsBuffer = AddBuffer<EnemyExtraComboPointsConditionElement>(entity);
 
-        if (dropPrefabObject.GetComponent<EnemyAuthoring>() != null)
-            return true;
+            for (int moduleIndex = 0; moduleIndex < stagedExtraComboPointsModules.Count; moduleIndex++)
+                extraComboPointsModulesBuffer.Add(stagedExtraComboPointsModules[moduleIndex]);
 
-        if (dropPrefabObject.GetComponent<PlayerAuthoring>() != null)
-            return true;
-
-        return false;
+            for (int conditionIndex = 0; conditionIndex < stagedExtraComboPointsConditions.Count; conditionIndex++)
+                extraComboPointsConditionsBuffer.Add(stagedExtraComboPointsConditions[conditionIndex]);
+        }
     }
 
     private Entity ResolveHitVfxPrefabEntity(EnemyAuthoring authoring)
@@ -505,7 +553,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         if (candidatePrefab == null)
             return Entity.Null;
 
-        if (IsInvalidHitVfxPrefab(authoring, candidatePrefab))
+        if (EnemyAuthoringValidationUtility.IsInvalidHitVfxPrefab(authoring, candidatePrefab))
         {
 #if UNITY_EDITOR
             Debug.LogWarning(string.Format("[EnemyAuthoringBaker] Invalid enemy hit VFX prefab '{0}' on '{1}'. Assign a prefab asset without EnemyAuthoring or PlayerAuthoring components.", candidatePrefab.name, authoring.name), authoring);
@@ -514,26 +562,6 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         }
 
         return GetEntity(candidatePrefab, TransformUsageFlags.Dynamic);
-    }
-
-    private static bool IsInvalidHitVfxPrefab(EnemyAuthoring authoring, GameObject hitVfxPrefabObject)
-    {
-        if (hitVfxPrefabObject == null)
-            return true;
-
-        if (authoring != null && hitVfxPrefabObject == authoring.gameObject)
-            return true;
-
-        if (hitVfxPrefabObject.scene.IsValid())
-            return true;
-
-        if (hitVfxPrefabObject.GetComponent<EnemyAuthoring>() != null)
-            return true;
-
-        if (hitVfxPrefabObject.GetComponent<PlayerAuthoring>() != null)
-            return true;
-
-        return false;
     }
 
     private Entity RegisterStatusBarsViewEntity(EnemyWorldSpaceStatusBarsView statusBarsView)

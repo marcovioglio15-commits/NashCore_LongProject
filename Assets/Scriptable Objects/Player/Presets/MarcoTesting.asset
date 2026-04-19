@@ -231,7 +231,7 @@ MonoBehaviour:
   - statKey: shootingSettings.values.rateOfFire
     addScaling: 1
     formula: '[FireRate]'
-    debugInConsole: 1
+    debugInConsole: 0
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   - statKey: movementSettings.values.baseSpeed
     addScaling: 1
@@ -251,32 +251,32 @@ MonoBehaviour:
   - statKey: shootingSettings.values.damage
     addScaling: 1
     formula: '[this] * [Damage]'
-    debugInConsole: 1
+    debugInConsole: 0
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   - statKey: shootingSettings.values.range
     addScaling: 1
     formula: '[this] * [ShotRange]'
-    debugInConsole: 1
+    debugInConsole: 0
     debugColor: {r: 1, g: 0.12460787, b: 0.015686274, a: 1}
   - statKey: shootingSettings.values.lifetime
     addScaling: 1
     formula: '[this] + [ShotRange]'
-    debugInConsole: 1
+    debugInConsole: 0
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   - statKey: shootingSettings.values.maxPenetrations
     addScaling: 1
     formula: '[BulletPenetration]'
-    debugInConsole: 1
+    debugInConsole: 0
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   - statKey: shootingSettings.values.projectileSizeMultiplier
     addScaling: 1
     formula: '[this] * [BulletSizeMultiplier]'
-    debugInConsole: 1
+    debugInConsole: 0
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   - statKey: shootingSettings.values.explosionRadius
     addScaling: 1
     formula: '[this] * [BulletSizeMultiplier]'
-    debugInConsole: 1
+    debugInConsole: 0
     debugColor: {r: 1, g: 0.1254902, b: 0.015686275, a: 1}
   - statKey: shootingSettings.values.penetrationMode
     addScaling: 1

@@ -2,7 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 
 /// <summary>
-/// Tracks consecutive enemy kills and applies the configured damage-break behavior when the player is hit.
+/// Tracks consecutive enemy kills, rank-based point decay, and the configured damage-break behavior when the player is hit.
 /// none.
 /// returns none.
 /// </summary>
@@ -41,11 +41,12 @@ public partial struct PlayerComboCounterValueSystem : ISystem
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
-        int killedEnemiesCount = 0;
+        float deltaTime = SystemAPI.Time.DeltaTime;
+        float killedEnemyGainMultiplierSum = 0f;
 
         if (SystemAPI.TryGetSingletonBuffer<EnemyKilledEventElement>(out DynamicBuffer<EnemyKilledEventElement> killedEventsBuffer))
         {
-            killedEnemiesCount = killedEventsBuffer.Length;
+            killedEnemyGainMultiplierSum = ResolveKilledEnemyGainMultiplierSum(killedEventsBuffer);
         }
 
         foreach ((RefRW<PlayerComboCounterState> comboCounterState,
@@ -64,20 +65,22 @@ public partial struct PlayerComboCounterValueSystem : ISystem
                              runtimeComboRanks,
                              in playerHealth.ValueRO,
                              in playerShield.ValueRO,
-                             killedEnemiesCount);
+                             deltaTime,
+                             killedEnemyGainMultiplierSum);
         }
     }
     #endregion
 
     #region Private Methods
     /// <summary>
-    /// Applies damage-break and kill-gain rules to one player combo state.
+    /// Applies damage-break, rank-based point decay, and kill-gain rules to one player combo state.
     /// comboCounterState: Mutable combo state updated in place.
     /// runtimeComboConfig: Current runtime combo config.
     /// runtimeComboRanks: Current runtime combo-rank thresholds used for downgrade resolution.
     /// playerHealth: Current player health values.
     /// playerShield: Current player shield values.
-    /// killedEnemiesCount: Number of enemies killed during the previous enemy update.
+    /// deltaTime: Frame delta time in seconds.
+    /// killedEnemyGainMultiplierSum: Sum of combo-point multipliers granted by every enemy killed during the previous enemy update.
     /// returns void.
     /// </summary>
     private static void UpdateComboState(ref PlayerComboCounterState comboCounterState,
@@ -85,14 +88,18 @@ public partial struct PlayerComboCounterValueSystem : ISystem
                                          DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
                                          in PlayerHealth playerHealth,
                                          in PlayerShield playerShield,
-                                         int killedEnemiesCount)
+                                         float deltaTime,
+                                         float killedEnemyGainMultiplierSum)
     {
         float currentHealth = math.max(0f, playerHealth.Current);
         float currentShield = math.max(0f, playerShield.Current);
+        float gainPointsCarry = math.max(0f, comboCounterState.GainPointsCarry);
 
         if (comboCounterState.Initialized == 0)
         {
             comboCounterState.CurrentValue = math.max(0, comboCounterState.CurrentValue);
+            comboCounterState.DecayPointsCarry = 0f;
+            comboCounterState.GainPointsCarry = gainPointsCarry;
             comboCounterState.PreviousObservedHealth = currentHealth;
             comboCounterState.PreviousObservedShield = currentShield;
             comboCounterState.Initialized = 1;
@@ -102,10 +109,13 @@ public partial struct PlayerComboCounterValueSystem : ISystem
         bool healthDamageTaken = currentHealth + DamageComparisonEpsilon < comboCounterState.PreviousObservedHealth;
         bool shieldDamageTaken = currentShield + DamageComparisonEpsilon < comboCounterState.PreviousObservedShield;
         int currentComboValue = math.max(0, comboCounterState.CurrentValue);
+        float decayPointsCarry = math.max(0f, comboCounterState.DecayPointsCarry);
 
         if (runtimeComboConfig.Enabled == 0 || runtimeComboConfig.ComboGainPerKill <= 0 || currentHealth <= 0f)
         {
             currentComboValue = 0;
+            decayPointsCarry = 0f;
+            gainPointsCarry = 0f;
         }
         else
         {
@@ -121,39 +131,86 @@ public partial struct PlayerComboCounterValueSystem : ISystem
                 currentComboValue = PlayerComboCounterRuntimeUtility.ResolveDamageBreakComboValue(currentComboValue,
                                                                                                   in runtimeComboConfig,
                                                                                                   runtimeComboRanks);
+                decayPointsCarry = 0f;
+                gainPointsCarry = 0f;
             }
 
-            if (killedEnemiesCount > 0)
+            comboCounterState.CurrentValue = currentComboValue;
+            comboCounterState.DecayPointsCarry = decayPointsCarry;
+            PlayerComboCounterRuntimeUtility.ApplyRankDecay(ref comboCounterState,
+                                                            in runtimeComboConfig,
+                                                            runtimeComboRanks,
+                                                            deltaTime);
+            currentComboValue = math.max(0, comboCounterState.CurrentValue);
+            decayPointsCarry = math.max(0f, comboCounterState.DecayPointsCarry);
+
+            if (killedEnemyGainMultiplierSum > 0f)
             {
                 currentComboValue = AddKillGain(currentComboValue,
                                                 runtimeComboConfig.ComboGainPerKill,
-                                                killedEnemiesCount);
+                                                killedEnemyGainMultiplierSum,
+                                                ref gainPointsCarry);
             }
         }
 
         comboCounterState.CurrentValue = currentComboValue;
+        comboCounterState.DecayPointsCarry = currentComboValue > 0 ? decayPointsCarry : 0f;
+        comboCounterState.GainPointsCarry = gainPointsCarry;
         comboCounterState.PreviousObservedHealth = currentHealth;
         comboCounterState.PreviousObservedShield = currentShield;
     }
 
     /// <summary>
-    /// Adds combo gain from one kill batch while protecting against integer overflow.
+    /// Sums combo-point multipliers from the enemy killed-events buffer.
+    /// killedEventsBuffer: Singleton killed-events buffer produced by enemy systems.
+    /// returns Sum of non-negative combo-point multipliers granted this frame.
+    /// </summary>
+    private static float ResolveKilledEnemyGainMultiplierSum(DynamicBuffer<EnemyKilledEventElement> killedEventsBuffer)
+    {
+        float killedEnemyGainMultiplierSum = 0f;
+
+        for (int killedEventIndex = 0; killedEventIndex < killedEventsBuffer.Length; killedEventIndex++)
+        {
+            EnemyKilledEventElement killedEvent = killedEventsBuffer[killedEventIndex];
+            killedEnemyGainMultiplierSum += math.max(0f, killedEvent.ComboPointMultiplier);
+        }
+
+        return killedEnemyGainMultiplierSum;
+    }
+
+    /// <summary>
+    /// Adds combo gain from one kill batch while preserving fractional reward carry and protecting against integer overflow.
     /// currentComboValue: Current combo numeric value.
     /// comboGainPerKill: Gain added per enemy kill.
-    /// killedEnemiesCount: Kill batch size.
+    /// killedEnemyGainMultiplierSum: Sum of kill multipliers granted by the killed enemies.
+    /// gainPointsCarry: Fractional carry preserved across kill batches.
     /// returns Saturated combo value after kill gain.
     /// </summary>
     private static int AddKillGain(int currentComboValue,
                                    int comboGainPerKill,
-                                   int killedEnemiesCount)
+                                   float killedEnemyGainMultiplierSum,
+                                   ref float gainPointsCarry)
     {
-        long resolvedValue = (long)math.max(0, currentComboValue) + (long)math.max(0, comboGainPerKill) * math.max(0, killedEnemiesCount);
+        float totalGainPoints = math.max(0, comboGainPerKill) * math.max(0f, killedEnemyGainMultiplierSum) + math.max(0f, gainPointsCarry);
+        int wholeGainPoints = totalGainPoints >= int.MaxValue
+            ? int.MaxValue
+            : (int)math.floor(totalGainPoints);
+
+        if (wholeGainPoints <= 0)
+        {
+            gainPointsCarry = totalGainPoints;
+            return math.max(0, currentComboValue);
+        }
+
+        long resolvedValue = (long)math.max(0, currentComboValue) + wholeGainPoints;
 
         if (resolvedValue >= int.MaxValue)
         {
+            gainPointsCarry = 0f;
             return int.MaxValue;
         }
 
+        gainPointsCarry = totalGainPoints - wholeGainPoints;
         return (int)resolvedValue;
     }
     #endregion

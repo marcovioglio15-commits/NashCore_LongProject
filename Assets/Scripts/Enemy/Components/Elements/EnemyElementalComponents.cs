@@ -52,5 +52,6 @@ public struct EnemyKilledEventElement : IBufferElementData
 {
     public Entity EnemyEntity;
     public float3 Position;
+    public float ComboPointMultiplier;
 }
 #endregion

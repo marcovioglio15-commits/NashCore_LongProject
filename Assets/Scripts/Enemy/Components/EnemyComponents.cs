@@ -49,7 +49,11 @@ public struct EnemyRuntimeState : IComponentData
     public float ContactDamageCooldown;
     public float AreaDamageCooldown;
     public float SpawnInactivityTimer;
+    public float LifetimeSeconds;
+    public float FirstDamageLifetimeSeconds;
+    public float LastDamageLifetimeSeconds;
     public uint SpawnVersion;
+    public byte HasTakenDamage;
 }
 
 /// <summary>

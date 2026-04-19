@@ -332,6 +332,9 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
                 continue;
             }
 
+            EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
+            EnemyExtraComboPointsRuntimeUtility.MarkEnemyDamaged(ref enemyRuntimeState);
+            entityManager.SetComponentData(enemyEntity, enemyRuntimeState);
             entityManager.SetComponentData(enemyEntity, projectedEnemyHealth[enemyIndex]);
 
             if (enemyFlashDirtyFlags[enemyIndex] != 0)

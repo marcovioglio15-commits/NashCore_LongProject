@@ -43,7 +43,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
             return root;
         }
 
-        HelpBox infoBox = new HelpBox("Health damage always triggers the selected Damage Break Mode. Shield damage uses the same break mode only when Shield Damage Breaks Combo is enabled, and all numeric, boolean, and enum fields below support Add Scaling where applicable.", HelpBoxMessageType.Info);
+        HelpBox infoBox = new HelpBox("Health damage always triggers the selected Damage Break Mode. Shield damage uses the same break mode only when Shield Damage Breaks Combo is enabled, and each rank can also define its own point-decay rate that naturally downgrades combo value over time. All numeric, boolean, and enum fields below support Add Scaling where applicable.", HelpBoxMessageType.Info);
         root.Add(infoBox);
         root.Add(PlayerScalingFieldElementFactory.CreateField(isEnabledProperty,
                                                               scalingRulesProperty,

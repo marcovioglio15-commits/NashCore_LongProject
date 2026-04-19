@@ -201,6 +201,12 @@ MonoBehaviour:
             collectDistancePerPlayerSpeed: 0.05
             spawnAnimationMinDuration: 0.08
             spawnAnimationMaxDuration: 0.16
+        extraComboPoints:
+          baseMultiplier: 1
+          conditionCombineMode: 0
+          minimumFinalMultiplier: 0
+          maximumFinalMultiplier: 4
+          conditions: []
   - moduleId: Module_Grunt
     displayName: Grunt
     moduleKind: 1
@@ -379,6 +385,12 @@ MonoBehaviour:
             collectDistancePerPlayerSpeed: 0.05
             spawnAnimationMinDuration: 0.08
             spawnAnimationMaxDuration: 0.16
+        extraComboPoints:
+          baseMultiplier: 1
+          conditionCombineMode: 0
+          minimumFinalMultiplier: 0
+          maximumFinalMultiplier: 4
+          conditions: []
   - moduleId: Module_Wanderer
     displayName: Wanderer
     moduleKind: 2
@@ -557,6 +569,12 @@ MonoBehaviour:
             collectDistancePerPlayerSpeed: 0.05
             spawnAnimationMinDuration: 0.08
             spawnAnimationMaxDuration: 0.16
+        extraComboPoints:
+          baseMultiplier: 1
+          conditionCombineMode: 0
+          minimumFinalMultiplier: 0
+          maximumFinalMultiplier: 4
+          conditions: []
   - moduleId: Module_Shooter
     displayName: Shooter
     moduleKind: 3
@@ -735,6 +753,12 @@ MonoBehaviour:
             collectDistancePerPlayerSpeed: 0.05
             spawnAnimationMinDuration: 0.08
             spawnAnimationMaxDuration: 0.16
+        extraComboPoints:
+          baseMultiplier: 1
+          conditionCombineMode: 0
+          minimumFinalMultiplier: 0
+          maximumFinalMultiplier: 4
+          conditions: []
   - moduleId: Module_DropItems
     displayName: Drop Items
     moduleKind: 4
@@ -919,6 +943,12 @@ MonoBehaviour:
             collectDistancePerPlayerSpeed: 0.05
             spawnAnimationMinDuration: 0.1
             spawnAnimationMaxDuration: 0.2
+        extraComboPoints:
+          baseMultiplier: 1
+          conditionCombineMode: 0
+          minimumFinalMultiplier: 0
+          maximumFinalMultiplier: 4
+          conditions: []
   - moduleId: Module_Coward
     displayName: Coward
     moduleKind: 5
@@ -1103,6 +1133,12 @@ MonoBehaviour:
             collectDistancePerPlayerSpeed: 0.05
             spawnAnimationMinDuration: 0.1
             spawnAnimationMaxDuration: 0.2
+        extraComboPoints:
+          baseMultiplier: 1
+          conditionCombineMode: 0
+          minimumFinalMultiplier: 0
+          maximumFinalMultiplier: 4
+          conditions: []
   patterns:
   - patternId: Pattern_VilDemonio
     displayName: VilDemonio
@@ -1287,6 +1323,12 @@ MonoBehaviour:
               collectDistancePerPlayerSpeed: 0.05
               spawnAnimationMinDuration: 0.08
               spawnAnimationMaxDuration: 0.16
+          extraComboPoints:
+            baseMultiplier: 1
+            conditionCombineMode: 0
+            minimumFinalMultiplier: 0
+            maximumFinalMultiplier: 4
+            conditions: []
     - moduleId: Module_Shooter
       isEnabled: 1
       useOverridePayload: 0
@@ -1464,6 +1506,12 @@ MonoBehaviour:
               collectDistancePerPlayerSpeed: 0.05
               spawnAnimationMinDuration: 0.08
               spawnAnimationMaxDuration: 0.16
+          extraComboPoints:
+            baseMultiplier: 1
+            conditionCombineMode: 0
+            minimumFinalMultiplier: 0
+            maximumFinalMultiplier: 4
+            conditions: []
     - moduleId: Module_DropItems
       isEnabled: 1
       useOverridePayload: 0
@@ -1641,3 +1689,9 @@ MonoBehaviour:
               collectDistancePerPlayerSpeed: 0.05
               spawnAnimationMinDuration: 0.08
               spawnAnimationMaxDuration: 0.16
+          extraComboPoints:
+            baseMultiplier: 1
+            conditionCombineMode: 0
+            minimumFinalMultiplier: 0
+            maximumFinalMultiplier: 4
+            conditions: []

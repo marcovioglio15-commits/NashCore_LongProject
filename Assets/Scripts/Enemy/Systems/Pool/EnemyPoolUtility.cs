@@ -451,6 +451,10 @@ public static class EnemyPoolUtility
             runtimeState.ContactDamageCooldown = 0f;
             runtimeState.AreaDamageCooldown = 0f;
             runtimeState.SpawnInactivityTimer = 0f;
+            runtimeState.LifetimeSeconds = 0f;
+            runtimeState.FirstDamageLifetimeSeconds = 0f;
+            runtimeState.LastDamageLifetimeSeconds = 0f;
+            runtimeState.HasTakenDamage = 0;
 
             unchecked
             {

@@ -619,6 +619,7 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
             DynamicBuffer<PlayerRuntimeProgressionScalingElement> progressionScalingBuffer = AddBuffer<PlayerRuntimeProgressionScalingElement>(entity);
             DynamicBuffer<PlayerBaseComboRankElement> baseComboRanksBuffer = AddBuffer<PlayerBaseComboRankElement>(entity);
             DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanksBuffer = AddBuffer<PlayerRuntimeComboRankElement>(entity);
+            DynamicBuffer<PlayerComboRankVisualElement> comboRankVisualsBuffer = AddBuffer<PlayerComboRankVisualElement>(entity);
             DynamicBuffer<PlayerRuntimeComboCounterScalingElement> comboScalingBuffer = AddBuffer<PlayerRuntimeComboCounterScalingElement>(entity);
             PlayerRuntimeScalingBakeUtility.PopulateProgressionPhaseBuffers(progressionPreset,
                                                                            sourceProgressionPreset,
@@ -631,10 +632,14 @@ public sealed class PlayerAuthoringBaker : Baker<PlayerAuthoring>
                                                                                 characterTuningFormulaBuffer,
                                                                                 out PlayerBaseComboCounterConfig baseComboConfig,
                                                                                 out PlayerRuntimeComboCounterConfig runtimeComboConfig);
+            PlayerRuntimeScalingComboBakeUtility.PopulateComboCounterRankVisuals(sourceProgressionPreset != null ? sourceProgressionPreset : progressionPreset,
+                                                                                 comboRankVisualsBuffer);
             AddComponent(entity, baseComboConfig);
             AddComponent(entity, runtimeComboConfig);
             AddComponent(entity, new PlayerComboCounterState
             {
+                DecayPointsCarry = 0f,
+                GainPointsCarry = 0f,
                 CurrentRankIndex = -1,
                 NextRankRequiredValue = -1
             });

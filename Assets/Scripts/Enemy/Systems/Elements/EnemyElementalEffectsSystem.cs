@@ -35,10 +35,14 @@ public partial struct EnemyElementalEffectsSystem : ISystem
         ComponentLookup<EnemyDespawnRequest> despawnRequestLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
 
         foreach ((RefRW<EnemyHealth> enemyHealth,
+                  RefRW<EnemyRuntimeState> enemyRuntimeState,
                   RefRW<EnemyElementalRuntimeState> elementalRuntimeState,
                   DynamicBuffer<EnemyElementStackElement> elementalStacks,
                   Entity enemyEntity)
-                 in SystemAPI.Query<RefRW<EnemyHealth>, RefRW<EnemyElementalRuntimeState>, DynamicBuffer<EnemyElementStackElement>>()
+                 in SystemAPI.Query<RefRW<EnemyHealth>,
+                                    RefRW<EnemyRuntimeState>,
+                                    RefRW<EnemyElementalRuntimeState>,
+                                    DynamicBuffer<EnemyElementStackElement>>()
                              .WithAll<EnemyActive>()
                              .WithNone<EnemyDespawnRequest>()
                              .WithEntityAccess())
@@ -75,6 +79,9 @@ public partial struct EnemyElementalEffectsSystem : ISystem
             if (!damageApplied)
                 continue;
 
+            EnemyRuntimeState nextRuntimeState = enemyRuntimeState.ValueRO;
+            EnemyExtraComboPointsRuntimeUtility.MarkEnemyDamaged(ref nextRuntimeState);
+            enemyRuntimeState.ValueRW = nextRuntimeState;
             enemyHealth.ValueRW = nextHealth;
             DamageFlashRuntimeUtility.Trigger(state.EntityManager, enemyEntity);
 

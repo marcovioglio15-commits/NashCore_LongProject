@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
@@ -50,8 +52,9 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
 
         SerializedProperty dropPayloadKindProperty = dropItemsProperty.FindPropertyRelative("dropPayloadKind");
         SerializedProperty experienceProperty = dropItemsProperty.FindPropertyRelative("experience");
+        SerializedProperty extraComboPointsProperty = dropItemsProperty.FindPropertyRelative("extraComboPoints");
 
-        if (dropPayloadKindProperty == null || experienceProperty == null)
+        if (dropPayloadKindProperty == null || experienceProperty == null || extraComboPointsProperty == null)
         {
             HelpBox missingFieldsBox = new HelpBox("DropItems payload fields are missing.", HelpBoxMessageType.Warning);
             payloadContainer.Add(missingFieldsBox);
@@ -130,18 +133,72 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
             RefreshDropItemsRangeWarning();
         });
 
+        Foldout extraComboPointsFoldout = new Foldout();
+        extraComboPointsFoldout.text = "Extra Combo Points";
+        extraComboPointsFoldout.value = true;
+        payloadContainer.Add(extraComboPointsFoldout);
+
+        SerializedProperty baseMultiplierProperty = extraComboPointsProperty.FindPropertyRelative("baseMultiplier");
+        SerializedProperty conditionCombineModeProperty = extraComboPointsProperty.FindPropertyRelative("conditionCombineMode");
+        SerializedProperty minimumFinalMultiplierProperty = extraComboPointsProperty.FindPropertyRelative("minimumFinalMultiplier");
+        SerializedProperty maximumFinalMultiplierProperty = extraComboPointsProperty.FindPropertyRelative("maximumFinalMultiplier");
+        SerializedProperty conditionsProperty = extraComboPointsProperty.FindPropertyRelative("conditions");
+
+        if (baseMultiplierProperty == null ||
+            conditionCombineModeProperty == null ||
+            minimumFinalMultiplierProperty == null ||
+            maximumFinalMultiplierProperty == null ||
+            conditionsProperty == null)
+        {
+            HelpBox missingExtraComboPointsFieldsBox = new HelpBox("Extra Combo Points settings are missing.", HelpBoxMessageType.Warning);
+            extraComboPointsFoldout.Add(missingExtraComboPointsFieldsBox);
+            return false;
+        }
+
+        EnemyAdvancedPatternDrawerUtility.AddField(extraComboPointsFoldout, baseMultiplierProperty, "Base Multiplier");
+        EnemyAdvancedPatternDrawerUtility.AddField(extraComboPointsFoldout, conditionCombineModeProperty, "Condition Combine Mode");
+        EnemyAdvancedPatternDrawerUtility.AddField(extraComboPointsFoldout, minimumFinalMultiplierProperty, "Minimum Final Multiplier");
+        EnemyAdvancedPatternDrawerUtility.AddField(extraComboPointsFoldout, maximumFinalMultiplierProperty, "Maximum Final Multiplier");
+        HelpBox extraComboPointsInfoBox = new HelpBox("Each condition samples a normalized response curve across its metric range. X maps Minimum Value to Maximum Value, and Y interpolates from Minimum Multiplier to Maximum Multiplier. Use descending curves to reward quick kills and ascending curves to reward delayed kills.", HelpBoxMessageType.Info);
+        extraComboPointsInfoBox.style.marginTop = 2f;
+        extraComboPointsFoldout.Add(extraComboPointsInfoBox);
+
+        Foldout conditionsFoldout = new Foldout();
+        conditionsFoldout.text = "Conditions";
+        conditionsFoldout.value = true;
+        extraComboPointsFoldout.Add(conditionsFoldout);
+        EnemyAdvancedPatternDrawerUtility.AddField(conditionsFoldout, conditionsProperty, "Conditional Multipliers");
+
+        HelpBox extraComboPointsWarningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+        extraComboPointsWarningBox.style.marginTop = 4f;
+        extraComboPointsFoldout.Add(extraComboPointsWarningBox);
+        RefreshExtraComboPointsWarning(extraComboPointsProperty, extraComboPointsWarningBox);
+        payloadContainer.TrackPropertyValue(baseMultiplierProperty, changedProperty =>
+        {
+            RefreshExtraComboPointsWarning(extraComboPointsProperty, extraComboPointsWarningBox);
+        });
+        payloadContainer.TrackPropertyValue(minimumFinalMultiplierProperty, changedProperty =>
+        {
+            RefreshExtraComboPointsWarning(extraComboPointsProperty, extraComboPointsWarningBox);
+        });
+        payloadContainer.TrackPropertyValue(maximumFinalMultiplierProperty, changedProperty =>
+        {
+            RefreshExtraComboPointsWarning(extraComboPointsProperty, extraComboPointsWarningBox);
+        });
+
         if (payloadDataProperty.serializedObject != null)
         {
             payloadContainer.TrackSerializedObjectValue(payloadDataProperty.serializedObject, changedObject =>
             {
                 RefreshDropItemsRangeWarning();
+                RefreshExtraComboPointsWarning(extraComboPointsProperty, extraComboPointsWarningBox);
             });
         }
 
-        UpdateDropPayloadVisibility(dropPayloadKindProperty, experienceFoldout);
+        UpdateDropPayloadVisibility(dropPayloadKindProperty, experienceFoldout, extraComboPointsFoldout);
         payloadContainer.TrackPropertyValue(dropPayloadKindProperty, changedProperty =>
         {
-            UpdateDropPayloadVisibility(changedProperty, experienceFoldout);
+            UpdateDropPayloadVisibility(changedProperty, experienceFoldout, extraComboPointsFoldout);
         });
 
         return true;
@@ -544,7 +601,9 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     /// <param name="dropPayloadKindProperty">Drop payload kind property.</param>
     /// <param name="experienceFoldout">Experience settings foldout.</param>
 
-    private static void UpdateDropPayloadVisibility(SerializedProperty dropPayloadKindProperty, VisualElement experienceFoldout)
+    private static void UpdateDropPayloadVisibility(SerializedProperty dropPayloadKindProperty,
+                                                    VisualElement experienceFoldout,
+                                                    VisualElement extraComboPointsFoldout)
     {
         EnemyDropItemsPayloadKind payloadKind = EnemyDropItemsPayloadKind.Experience;
 
@@ -553,6 +612,124 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
 
         if (experienceFoldout != null)
             experienceFoldout.style.display = payloadKind == EnemyDropItemsPayloadKind.Experience ? DisplayStyle.Flex : DisplayStyle.None;
+
+        if (extraComboPointsFoldout != null)
+            extraComboPointsFoldout.style.display = payloadKind == EnemyDropItemsPayloadKind.ExtraComboPoints ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    /// <summary>
+    /// Rebuilds validation warnings for the Extra Combo Points payload without mutating authored values.
+    /// </summary>
+    /// <param name="extraComboPointsProperty">Serialized Extra Combo Points payload property.</param>
+    /// <param name="warningBox">Warning help box refreshed in place.</param>
+    private static void RefreshExtraComboPointsWarning(SerializedProperty extraComboPointsProperty, HelpBox warningBox)
+    {
+        if (extraComboPointsProperty == null || warningBox == null)
+            return;
+
+        List<string> warningLines = new List<string>();
+        SerializedProperty baseMultiplierProperty = extraComboPointsProperty.FindPropertyRelative("baseMultiplier");
+        SerializedProperty minimumFinalMultiplierProperty = extraComboPointsProperty.FindPropertyRelative("minimumFinalMultiplier");
+        SerializedProperty maximumFinalMultiplierProperty = extraComboPointsProperty.FindPropertyRelative("maximumFinalMultiplier");
+        SerializedProperty conditionsProperty = extraComboPointsProperty.FindPropertyRelative("conditions");
+
+        if (baseMultiplierProperty != null && baseMultiplierProperty.floatValue < 0f)
+            warningLines.Add("Base Multiplier is negative. Negative combo-point multipliers are ignored at runtime.");
+
+        if (minimumFinalMultiplierProperty != null &&
+            maximumFinalMultiplierProperty != null &&
+            maximumFinalMultiplierProperty.floatValue < minimumFinalMultiplierProperty.floatValue)
+        {
+            warningLines.Add("Maximum Final Multiplier is lower than Minimum Final Multiplier.");
+        }
+
+        if (conditionsProperty != null)
+        {
+            for (int conditionIndex = 0; conditionIndex < conditionsProperty.arraySize; conditionIndex++)
+            {
+                SerializedProperty conditionProperty = conditionsProperty.GetArrayElementAtIndex(conditionIndex);
+
+                if (conditionProperty == null)
+                    continue;
+
+                SerializedProperty minimumValueProperty = conditionProperty.FindPropertyRelative("minimumValue");
+                SerializedProperty maximumValueProperty = conditionProperty.FindPropertyRelative("maximumValue");
+                SerializedProperty minimumMultiplierProperty = conditionProperty.FindPropertyRelative("minimumMultiplier");
+                SerializedProperty maximumMultiplierProperty = conditionProperty.FindPropertyRelative("maximumMultiplier");
+                SerializedProperty normalizedMultiplierCurveProperty = conditionProperty.FindPropertyRelative("normalizedMultiplierCurve");
+
+                if (minimumMultiplierProperty != null && minimumMultiplierProperty.floatValue < 0f)
+                {
+                    warningLines.Add(string.Format("Condition #{0} has a negative Minimum Multiplier. Negative combo-point multipliers are ignored at runtime.", conditionIndex + 1));
+                }
+
+                if (maximumMultiplierProperty != null && maximumMultiplierProperty.floatValue < 0f)
+                {
+                    warningLines.Add(string.Format("Condition #{0} has a negative Maximum Multiplier. Negative combo-point multipliers are ignored at runtime.", conditionIndex + 1));
+                }
+
+                if (minimumValueProperty != null &&
+                    maximumValueProperty != null &&
+                    maximumValueProperty.floatValue < minimumValueProperty.floatValue)
+                {
+                    warningLines.Add(string.Format("Condition #{0} has Maximum Value lower than Minimum Value. The metric range is inverted.", conditionIndex + 1));
+                }
+
+                if (normalizedMultiplierCurveProperty != null)
+                {
+                    AnimationCurve normalizedMultiplierCurve = normalizedMultiplierCurveProperty.animationCurveValue;
+                    AddNormalizedMultiplierCurveWarnings(normalizedMultiplierCurve, conditionIndex + 1, warningLines);
+                }
+            }
+        }
+
+        if (warningLines.Count <= 0)
+        {
+            warningBox.text = string.Empty;
+            warningBox.style.display = DisplayStyle.None;
+            return;
+        }
+
+        warningBox.text = string.Join("\n", warningLines);
+        warningBox.style.display = DisplayStyle.Flex;
+    }
+
+    /// <summary>
+    /// Adds warnings for normalized combo-point response curves that drift outside the supported 0..1 authoring range.
+    /// </summary>
+    /// <param name="normalizedMultiplierCurve">Authored normalized response curve.</param>
+    /// <param name="conditionNumber">One-based condition number shown in the warning text.</param>
+    /// <param name="warningLines">Mutable warning list.</param>
+    private static void AddNormalizedMultiplierCurveWarnings(AnimationCurve normalizedMultiplierCurve,
+                                                             int conditionNumber,
+                                                             List<string> warningLines)
+    {
+        if (normalizedMultiplierCurve == null || warningLines == null)
+            return;
+
+        Keyframe[] curveKeys = normalizedMultiplierCurve.keys;
+
+        for (int keyIndex = 0; keyIndex < curveKeys.Length; keyIndex++)
+        {
+            Keyframe curveKey = curveKeys[keyIndex];
+
+            if (curveKey.time < 0f || curveKey.time > 1f)
+            {
+                warningLines.Add(string.Format("Condition #{0} has curve keys outside the normalized 0..1 time range. Runtime samples the curve only across that range.", conditionNumber));
+                break;
+            }
+        }
+
+        for (int keyIndex = 0; keyIndex < curveKeys.Length; keyIndex++)
+        {
+            Keyframe curveKey = curveKeys[keyIndex];
+
+            if (curveKey.value < 0f || curveKey.value > 1f)
+            {
+                warningLines.Add(string.Format("Condition #{0} has curve values outside the normalized 0..1 range. Runtime clamps sampled values.", conditionNumber));
+                break;
+            }
+        }
     }
     #endregion
 

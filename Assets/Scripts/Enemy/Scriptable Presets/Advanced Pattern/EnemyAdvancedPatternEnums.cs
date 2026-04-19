@@ -87,5 +87,28 @@ public enum EnemyShortRangeDashPhase : byte
 /// </summary>
 public enum EnemyDropItemsPayloadKind
 {
-    Experience = 0
+    Experience = 0,
+    ExtraComboPoints = 1
+}
+
+/// <summary>
+/// Declares the runtime metric inspected by one Extra Combo Points condition.
+/// </summary>
+public enum EnemyExtraComboPointsMetric
+{
+    LifetimeSinceSpawnSeconds = 0,
+    TimeSinceFirstDamageSeconds = 1,
+    TimeSinceLastDamageSeconds = 2,
+    DamageWindowSeconds = 3,
+    SpawnToFirstDamageSeconds = 4
+}
+
+/// <summary>
+/// Declares how matching Extra Combo Points conditions are combined inside one module.
+/// </summary>
+public enum EnemyExtraComboPointsConditionCombineMode
+{
+    MultiplyMatchingConditions = 0,
+    HighestMatchingMultiplier = 1,
+    LowestMatchingMultiplier = 2
 }

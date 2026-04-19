@@ -23,9 +23,9 @@ public sealed class EnemyPatternDropItemsAssemblyPropertyDrawer : PropertyDrawer
     {
         VisualElement root = new VisualElement();
         SerializedProperty enabledProperty = property.FindPropertyRelative("isEnabled");
-        SerializedProperty bindingProperty = property.FindPropertyRelative("binding");
+        SerializedProperty modulesProperty = property.FindPropertyRelative("modules");
 
-        if (enabledProperty == null || bindingProperty == null)
+        if (enabledProperty == null || modulesProperty == null)
         {
             Label errorLabel = new Label("Drop Items assembly fields are missing.");
             errorLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
@@ -34,15 +34,18 @@ public sealed class EnemyPatternDropItemsAssemblyPropertyDrawer : PropertyDrawer
         }
 
         EnemyAdvancedPatternDrawerUtility.AddField(root, enabledProperty, "Enable Drop Items Interaction");
+        HelpBox infoBox = new HelpBox("Drop Items now supports multiple module bindings, so one pattern can combine experience drops and Extra Combo Points at the same time.", HelpBoxMessageType.Info);
+        infoBox.style.marginTop = 2f;
+        root.Add(infoBox);
 
         VisualElement settingsContainer = new VisualElement();
         settingsContainer.style.marginLeft = 12f;
         root.Add(settingsContainer);
 
-        PropertyField bindingField = new PropertyField(bindingProperty, "Drop Items Module");
-        bindingField.BindProperty(bindingProperty);
-        bindingField.tooltip = "Optional drop-items binding resolved from the shared Drop Items catalog.";
-        settingsContainer.Add(bindingField);
+        PropertyField modulesField = new PropertyField(modulesProperty, "Drop Items Modules");
+        modulesField.BindProperty(modulesProperty);
+        modulesField.tooltip = "Optional drop-items bindings resolved from the shared Drop Items catalog. Modules are compiled in list order.";
+        settingsContainer.Add(modulesField);
 
         UpdateVisibility(enabledProperty, settingsContainer);
         root.TrackPropertyValue(enabledProperty, changedProperty =>

@@ -62,6 +62,9 @@ public sealed class HUDComboCounterSectionPropertyDrawer : PropertyDrawer
         root.Add(CreateBoundField(property.FindPropertyRelative("showProgressBar"), "Show Progress Bar"));
         root.Add(CreateBoundField(property.FindPropertyRelative("hideWhenPlayerMissing"), "Hide When Player Missing"));
         root.Add(CreateBoundField(property.FindPropertyRelative("hideWhenZeroCombo"), "Hide When Zero Combo"));
+        root.Add(CreateBoundField(property.FindPropertyRelative("hideWhenNoActiveRank"), "Hide When No Active Rank"));
+        root.Add(CreateBoundField(property.FindPropertyRelative("fadeInDuration"), "Fade In Duration"));
+        root.Add(CreateBoundField(property.FindPropertyRelative("fadeOutDuration"), "Fade Out Duration"));
         root.Add(CreateBoundField(property.FindPropertyRelative("idleRankLabel"), "Idle Rank Label"));
 
         HelpBox warningBox = new HelpBox(string.Empty, HelpBoxMessageType.Warning);

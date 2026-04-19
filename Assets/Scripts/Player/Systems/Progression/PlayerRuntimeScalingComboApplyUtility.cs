@@ -53,6 +53,7 @@ internal static class PlayerRuntimeScalingComboApplyUtility
                 {
                     RankId = baseRank.RankId,
                     RequiredComboValue = baseRank.RequiredComboValue,
+                    PointsDecayPerSecond = baseRank.PointsDecayPerSecond,
                     BonusFormulaStartIndex = baseRank.BonusFormulaStartIndex,
                     BonusFormulaCount = baseRank.BonusFormulaCount
                 });
@@ -218,6 +219,16 @@ internal static class PlayerRuntimeScalingComboApplyUtility
                 PlayerRuntimeComboRankElement runtimeRank = runtimeComboRanks[rankIndex];
                 runtimeRank.RequiredComboValue = math.max(0, (int)math.round(resolvedValue));
                 runtimeComboRanks[rankIndex] = runtimeRank;
+                break;
+            case PlayerRuntimeComboCounterFieldId.RankPointsDecayPerSecond:
+                if (rankIndex < 0 || rankIndex >= runtimeComboRanks.Length)
+                {
+                    return;
+                }
+
+                PlayerRuntimeComboRankElement decayRuntimeRank = runtimeComboRanks[rankIndex];
+                decayRuntimeRank.PointsDecayPerSecond = math.max(0f, resolvedValue);
+                runtimeComboRanks[rankIndex] = decayRuntimeRank;
                 break;
         }
     }

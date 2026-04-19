@@ -124,13 +124,10 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
                                 preset,
                                 warnings,
                                 "Weapon Interaction");
-        AnalyzeOptionalCategory(patternName,
-                                pattern.DropItems != null && pattern.DropItems.IsEnabled,
-                                pattern.DropItems != null ? pattern.DropItems.Binding : null,
-                                EnemyPatternModuleCatalogSection.DropItems,
-                                preset,
-                                warnings,
-                                "Drop Items");
+        AnalyzeDropItemsCategory(patternName,
+                                 pattern.DropItems,
+                                 preset,
+                                 warnings);
     }
 
     /// <summary>
@@ -173,6 +170,57 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
         {
             warnings.Add(string.Format("Shared pattern '{0}' enables {1} with module kind '{2}', which does not belong to that category.", patternName, categoryLabel, definition.ModuleKind));
         }
+    }
+
+    /// <summary>
+    /// Adds warnings for the shared Drop Items category, which now supports multiple module bindings.
+    /// /params patternName Display name of the analyzed pattern.
+    /// /params dropItemsAssembly Shared Drop Items assembly to inspect.
+    /// /params preset Selected advanced-pattern preset.
+    /// /params warnings Mutable warning set.
+    /// /returns None.
+    /// </summary>
+    private static void AnalyzeDropItemsCategory(string patternName,
+                                                 EnemyPatternDropItemsAssembly dropItemsAssembly,
+                                                 EnemyAdvancedPatternPreset preset,
+                                                 HashSet<string> warnings)
+    {
+        if (dropItemsAssembly == null || !dropItemsAssembly.IsEnabled)
+            return;
+
+        IReadOnlyList<EnemyPatternModuleBinding> moduleBindings = dropItemsAssembly.Modules;
+        bool hasEnabledModule = false;
+
+        if (moduleBindings == null)
+        {
+            warnings.Add(string.Format("Shared pattern '{0}' enables Drop Items but no modules list is assigned.", patternName));
+            return;
+        }
+
+        for (int moduleIndex = 0; moduleIndex < moduleBindings.Count; moduleIndex++)
+        {
+            EnemyPatternModuleBinding binding = moduleBindings[moduleIndex];
+
+            if (binding == null || !binding.IsEnabled)
+                continue;
+
+            hasEnabledModule = true;
+            EnemyPatternModuleDefinition definition = preset.ResolveModuleDefinitionById(binding.ModuleId);
+
+            if (definition == null)
+            {
+                warnings.Add(string.Format("Shared pattern '{0}' enables Drop Items module #{1}, but its module ID cannot be resolved.", patternName, moduleIndex + 1));
+                continue;
+            }
+
+            if (!EnemyAdvancedPatternDrawerUtility.IsModuleKindAllowedInCatalogSection(definition.ModuleKind, EnemyPatternModuleCatalogSection.DropItems))
+            {
+                warnings.Add(string.Format("Shared pattern '{0}' enables Drop Items module #{1} with module kind '{2}', which does not belong to that category.", patternName, moduleIndex + 1, definition.ModuleKind));
+            }
+        }
+
+        if (!hasEnabledModule)
+            warnings.Add(string.Format("Shared pattern '{0}' enables Drop Items but no enabled module binding is assigned.", patternName));
     }
 
     /// <summary>
@@ -261,10 +309,6 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
             warnings.Add(string.Format("Legacy pattern '{0}' contains multiple Shooter modules. Shared Weapon Interaction expects one module slot.", patternName));
         }
 
-        if (dropItemsCount > 1)
-        {
-            warnings.Add(string.Format("Legacy pattern '{0}' contains multiple Drop Items modules. Shared Drop Items expects one module slot.", patternName));
-        }
     }
 
     /// <summary>

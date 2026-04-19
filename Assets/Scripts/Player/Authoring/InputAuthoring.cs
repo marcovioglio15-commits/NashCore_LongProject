@@ -93,7 +93,7 @@ public sealed class InputAuthoring : MonoBehaviour
         else
         {
             PlayerPowerUpPresentationRuntime.Shutdown();
-        }
+        }   
 
         if (progressionPreset != null && progressionPreset.PowerUpContainerSettings != null)
         {

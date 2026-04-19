@@ -203,65 +203,80 @@ public partial struct EnemyExperienceDropPoolInitializeSystem : ISystem
 
             EnemyDropItemsConfig dropItemsConfig = entityManager.GetComponentData<EnemyDropItemsConfig>(enemyPrefab);
 
-            if (dropItemsConfig.PayloadKind != EnemyDropItemsPayloadKind.Experience)
+            if (dropItemsConfig.HasExperienceDrops == 0 || dropItemsConfig.ExperienceModuleCount <= 0)
                 continue;
 
-            if (dropItemsConfig.MaximumTotalExperienceDrop <= 0f)
+            if (!entityManager.HasBuffer<EnemyExperienceDropModuleElement>(enemyPrefab))
                 continue;
+
+            DynamicBuffer<EnemyExperienceDropModuleElement> experienceModules = entityManager.GetBuffer<EnemyExperienceDropModuleElement>(enemyPrefab);
 
             if (!entityManager.HasBuffer<EnemyExperienceDropDefinitionElement>(enemyPrefab))
                 continue;
 
             DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions = entityManager.GetBuffer<EnemyExperienceDropDefinitionElement>(enemyPrefab);
 
-            if (definitions.Length <= 0)
+            if (experienceModules.Length <= 0 || definitions.Length <= 0)
                 continue;
 
-            int estimatedDropsPerDeath = math.max(1, dropItemsConfig.EstimatedDropsPerDeath);
-
-            if (dropItemsConfig.EstimatedDropsPerDeath <= 0)
+            for (int moduleIndex = 0; moduleIndex < experienceModules.Length; moduleIndex++)
             {
-                float deliveredExperience;
-                float absoluteError;
-                estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsPerDeath(definitions,
-                                                                                                       dropItemsConfig.MaximumTotalExperienceDrop,
-                                                                                                       dropItemsConfig.Distribution,
-                                                                                                       out deliveredExperience,
-                                                                                                       out absoluteError);
-                estimatedDropsPerDeath = math.max(1, estimatedDropsPerDeath);
-            }
+                EnemyExperienceDropModuleElement experienceModule = experienceModules[moduleIndex];
+                int definitionCount = math.max(0, experienceModule.DefinitionCount);
 
-            int initialCapacityPerPrefab = EstimateInitialCapacity(requirement.TotalPlannedCount, estimatedDropsPerDeath);
-            int expandBatchPerPrefab = EstimateExpandBatch(spawner.ExpandBatchPerPrefab, estimatedDropsPerDeath);
-
-            for (int definitionIndex = 0; definitionIndex < definitions.Length; definitionIndex++)
-            {
-                EnemyExperienceDropDefinitionElement definition = definitions[definitionIndex];
-
-                if (definition.PrefabEntity == Entity.Null)
+                if (definitionCount <= 0 || experienceModule.MaximumTotalExperienceDrop <= 0f)
                     continue;
 
-                if (definition.ExperienceAmount <= 0f)
-                    continue;
+                int estimatedDropsPerDeath = math.max(1, experienceModule.EstimatedDropsPerDeath);
 
-                PoolBuildSettings currentSettings;
-
-                if (poolSettingsByPrefab.TryGetValue(definition.PrefabEntity, out currentSettings))
+                if (experienceModule.EstimatedDropsPerDeath <= 0)
                 {
-                    currentSettings.InitialCapacity += initialCapacityPerPrefab;
-
-                    if (expandBatchPerPrefab > currentSettings.ExpandBatch)
-                        currentSettings.ExpandBatch = expandBatchPerPrefab;
-
-                    poolSettingsByPrefab[definition.PrefabEntity] = currentSettings;
-                    continue;
+                    float deliveredExperience;
+                    float absoluteError;
+                    estimatedDropsPerDeath = EnemyExperienceDropDistributionUtility.EstimateDropsPerDeath(definitions,
+                                                                                                           experienceModule.DefinitionStartIndex,
+                                                                                                           definitionCount,
+                                                                                                           experienceModule.MaximumTotalExperienceDrop,
+                                                                                                           experienceModule.Distribution,
+                                                                                                           out deliveredExperience,
+                                                                                                           out absoluteError);
+                    estimatedDropsPerDeath = math.max(1, estimatedDropsPerDeath);
                 }
 
-                poolSettingsByPrefab[definition.PrefabEntity] = new PoolBuildSettings
+                int initialCapacityPerPrefab = EstimateInitialCapacity(requirement.TotalPlannedCount, estimatedDropsPerDeath);
+                int expandBatchPerPrefab = EstimateExpandBatch(spawner.ExpandBatchPerPrefab, estimatedDropsPerDeath);
+                int definitionStartIndex = math.max(0, experienceModule.DefinitionStartIndex);
+                int definitionEndIndex = math.min(definitions.Length, definitionStartIndex + definitionCount);
+
+                for (int definitionIndex = definitionStartIndex; definitionIndex < definitionEndIndex; definitionIndex++)
                 {
-                    InitialCapacity = initialCapacityPerPrefab,
-                    ExpandBatch = expandBatchPerPrefab
-                };
+                    EnemyExperienceDropDefinitionElement definition = definitions[definitionIndex];
+
+                    if (definition.PrefabEntity == Entity.Null)
+                        continue;
+
+                    if (definition.ExperienceAmount <= 0f)
+                        continue;
+
+                    PoolBuildSettings currentSettings;
+
+                    if (poolSettingsByPrefab.TryGetValue(definition.PrefabEntity, out currentSettings))
+                    {
+                        currentSettings.InitialCapacity += initialCapacityPerPrefab;
+
+                        if (expandBatchPerPrefab > currentSettings.ExpandBatch)
+                            currentSettings.ExpandBatch = expandBatchPerPrefab;
+
+                        poolSettingsByPrefab[definition.PrefabEntity] = currentSettings;
+                        continue;
+                    }
+
+                    poolSettingsByPrefab[definition.PrefabEntity] = new PoolBuildSettings
+                    {
+                        InitialCapacity = initialCapacityPerPrefab,
+                        ExpandBatch = expandBatchPerPrefab
+                    };
+                }
             }
         }
     }

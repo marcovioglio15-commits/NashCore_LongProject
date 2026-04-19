@@ -8,14 +8,15 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Renders the runtime combo counter, current rank label, and progress toward the next combo rank from ECS data.
-/// none.
-/// returns none.
+/// /params None.
+/// /returns None.
 /// </summary>
 [Serializable]
 public sealed class HUDComboCounterSection
 {
     #region Constants
     private const float ProgressComparisonEpsilon = 0.0001f;
+    private const float VisibilityComparisonEpsilon = 0.001f;
     #endregion
 
     #region Fields
@@ -72,6 +73,15 @@ public sealed class HUDComboCounterSection
     [Tooltip("Hides the combo HUD while the current combo value is 0.")]
     [SerializeField] private bool hideWhenZeroCombo = true;
 
+    [Tooltip("Hides the combo HUD whenever the current combo value no longer reaches any authored rank threshold.")]
+    [SerializeField] private bool hideWhenNoActiveRank = true;
+
+    [Tooltip("Seconds used to fade the combo HUD when it becomes visible.")]
+    [SerializeField] private float fadeInDuration = 0.18f;
+
+    [Tooltip("Seconds used to fade the combo HUD when it becomes hidden.")]
+    [SerializeField] private float fadeOutDuration = 0.18f;
+
     [Tooltip("Fallback label shown before the first combo rank is reached.")]
     [SerializeField] private string idleRankLabel = "COMBO";
 
@@ -84,8 +94,12 @@ public sealed class HUDComboCounterSection
     private float displayedProgressNormalized = -1f;
     private int displayedRankVisualIndex = int.MinValue;
     private string displayedRankLabel = string.Empty;
-    private bool displayedVisibleState;
     private bool rankThemeInitialized;
+    private float currentVisibilityAlpha;
+    private float targetVisibilityAlpha;
+    private bool visibilityStateInitialized;
+    private bool resetCachedStateWhenHidden;
+    private CanvasGroup rootCanvasGroup;
     private PlayerProgressionPreset progressionPreset;
     #endregion
 
@@ -94,8 +108,8 @@ public sealed class HUDComboCounterSection
     #region Public Methods
     /// <summary>
     /// Applies the initial authored visual state before runtime ECS data becomes available.
-    /// none.
-    /// returns void.
+    /// /params None.
+    /// /returns void.
     /// </summary>
     public void Initialize()
     {
@@ -104,63 +118,72 @@ public sealed class HUDComboCounterSection
 
     /// <summary>
     /// Applies the initial visual state used before a valid player entity is resolved.
-    /// none.
-    /// returns void.
+    /// /params None.
+    /// /returns void.
     /// </summary>
     public void ApplyInitialVisualState()
     {
-        displayedComboValue = int.MinValue;
-        displayedProgressNormalized = -1f;
-        displayedRankVisualIndex = int.MinValue;
-        displayedRankLabel = string.Empty;
-        displayedVisibleState = false;
-        rankThemeInitialized = false;
-        progressionPreset = HUDComboCounterPresetRuntimeUtility.ResolveProgressionPreset();
-        HandleMissingPlayer();
-    }
-
-    /// <summary>
-    /// Applies the missing-player visual state and clears cached values.
-    /// none.
-    /// returns void.
-    /// </summary>
-    public void HandleMissingPlayer()
-    {
-        displayedComboValue = int.MinValue;
-        displayedProgressNormalized = -1f;
-        displayedRankVisualIndex = int.MinValue;
-        displayedRankLabel = string.Empty;
-        rankThemeInitialized = false;
+        EnsureFadeBindings();
+        ResetCachedPresentationState();
 
         if (!isEnabled)
         {
-            SetVisible(false);
+            InitializeVisibility(false);
+            return;
+        }
+
+        progressionPreset = HUDComboCounterPresetRuntimeUtility.ResolveProgressionPreset();
+
+        if (hideWhenPlayerMissing)
+        {
+            InitializeVisibility(false);
+            return;
+        }
+
+        ApplyFallbackVisibleState();
+        InitializeVisibility(true);
+    }
+
+    /// <summary>
+    /// Applies the missing-player visual state and clears cached values so the next resolved player rebuilds the HUD.
+    /// /params None.
+    /// /returns void.
+    /// </summary>
+    public void HandleMissingPlayer()
+    {
+        ResetCachedPresentationState();
+
+        if (!isEnabled)
+        {
+            RequestVisibility(false, false);
+            AdvanceVisibilityFade(Time.unscaledDeltaTime);
             return;
         }
 
         if (hideWhenPlayerMissing)
         {
-            SetVisible(false);
+            RequestVisibility(false, true);
+            AdvanceVisibilityFade(Time.unscaledDeltaTime);
             return;
         }
 
-        ApplyVisibleState(0,
-                          -1,
-                          default,
-                          0f);
+        ApplyFallbackVisibleState();
+        RequestVisibility(true, false);
+        AdvanceVisibilityFade(Time.unscaledDeltaTime);
     }
 
     /// <summary>
     /// Updates the combo HUD from ECS combo components owned by the current player entity.
-    /// runtimeEntityManager Entity manager used to read combo runtime components.
-    /// playerEntity Player entity currently driving the HUD.
-    /// returns void.
+    /// /params runtimeEntityManager Entity manager used to read combo runtime components.
+    /// /params playerEntity Player entity currently driving the HUD.
+    /// /returns void.
     /// </summary>
     public void Update(EntityManager runtimeEntityManager, Entity playerEntity)
     {
         if (!isEnabled)
         {
-            SetVisible(false);
+            RequestVisibility(false, false);
+            AdvanceVisibilityFade(Time.unscaledDeltaTime);
             return;
         }
 
@@ -176,77 +199,232 @@ public sealed class HUDComboCounterSection
         PlayerComboCounterState comboCounterState = runtimeEntityManager.GetComponentData<PlayerComboCounterState>(playerEntity);
         bool shouldBeVisible = runtimeComboConfig.Enabled != 0;
 
+        if (hideWhenNoActiveRank && comboCounterState.CurrentRankIndex < 0)
+        {
+            shouldBeVisible = false;
+        }
+
         if (hideWhenZeroCombo && comboCounterState.CurrentValue <= 0)
         {
             shouldBeVisible = false;
         }
 
-        if (!shouldBeVisible)
+        if (shouldBeVisible)
         {
-            SetVisible(false);
-            return;
+            ApplyVisibleState(runtimeEntityManager,
+                              playerEntity,
+                              comboCounterState.CurrentValue,
+                              comboCounterState.CurrentRankIndex,
+                              comboCounterState.CurrentRankId,
+                              comboCounterState.ProgressNormalized);
         }
 
-        ApplyVisibleState(comboCounterState.CurrentValue,
-                          comboCounterState.CurrentRankIndex,
-                          comboCounterState.CurrentRankId,
-                          comboCounterState.ProgressNormalized);
+        RequestVisibility(shouldBeVisible, false);
+        AdvanceVisibilityFade(Time.unscaledDeltaTime);
     }
     #endregion
 
     #region Private Methods
     /// <summary>
     /// Applies the current combo state to all authored UI bindings.
-    /// comboValue Current combo numeric value.
-    /// currentRankIndex Current combo-rank index.
-    /// currentRankId Current combo-rank identifier.
-    /// progressNormalized Current normalized progress toward the next rank.
-    /// returns void.
+    /// /params runtimeEntityManager Entity manager used to resolve baked combo-rank visuals.
+    /// /params playerEntity Player entity currently driving the HUD.
+    /// /params comboValue Current combo numeric value.
+    /// /params currentRankIndex Current combo-rank index.
+    /// /params currentRankId Current combo-rank identifier.
+    /// /params progressNormalized Current normalized progress toward the next rank.
+    /// /returns void.
     /// </summary>
-    private void ApplyVisibleState(int comboValue,
+    private void ApplyVisibleState(EntityManager runtimeEntityManager,
+                                   Entity playerEntity,
+                                   int comboValue,
                                    int currentRankIndex,
                                    FixedString64Bytes currentRankId,
                                    float progressNormalized)
     {
-        SetVisible(true);
-        ApplyRankTheme(currentRankIndex, currentRankId);
+        ApplyRankTheme(runtimeEntityManager, playerEntity, currentRankIndex, currentRankId);
         ApplyRankLabel(currentRankId);
         ApplyComboValue(comboValue);
         ApplyProgress(progressNormalized);
     }
 
     /// <summary>
-    /// Shows or hides the combo HUD root.
-    /// visible True when the section should be visible.
-    /// returns void.
+    /// Applies the fallback non-runtime visible state used when the HUD should remain visible without a player entity.
+    /// /params None.
+    /// /returns void.
     /// </summary>
-    private void SetVisible(bool visible)
+    private void ApplyFallbackVisibleState()
     {
-        if (displayedVisibleState == visible)
-        {
-            ApplyStandaloneElementVisibility(visible);
-            return;
-        }
-
-        displayedVisibleState = visible;
-
-        if (rootObject != null)
-        {
-            rootObject.SetActive(visible);
-            ApplyStandaloneElementVisibility(visible);
-            return;
-        }
-
-        ApplyStandaloneElementVisibility(visible);
+        ApplyResolvedTheme(new HUDComboCounterResolvedVisualTheme(defaultBadgeSprite,
+                                                                 defaultBadgeTint,
+                                                                 defaultRankTextColor,
+                                                                 defaultComboValueTextColor,
+                                                                 defaultProgressFillColor,
+                                                                 defaultProgressBackgroundColor));
+        ApplyRankLabel(default);
+        ApplyComboValue(0);
+        ApplyProgress(0f);
     }
 
     /// <summary>
-    /// Applies standalone element visibility for scenes that do not assign a dedicated root object.
-    /// visible True when the section should be visible.
-    /// returns void.
+    /// Requests the target visible state while preserving the currently rendered visuals during fade-out.
+    /// /params visible True when the section should fade toward full visibility.
+    /// /params resetCachedStateAfterHide True when the cached presentation state should be invalidated once fully hidden.
+    /// /returns void.
     /// </summary>
-    private void ApplyStandaloneElementVisibility(bool visible)
+    private void RequestVisibility(bool visible, bool resetCachedStateAfterHide)
     {
+        EnsureFadeBindings();
+
+        if (!visibilityStateInitialized)
+        {
+            InitializeVisibility(visible);
+        }
+
+        if (visible)
+        {
+            resetCachedStateWhenHidden = false;
+            SetVisualPresence(true);
+            targetVisibilityAlpha = 1f;
+            return;
+        }
+
+        if (resetCachedStateAfterHide)
+        {
+            resetCachedStateWhenHidden = true;
+        }
+
+        targetVisibilityAlpha = 0f;
+    }
+
+    /// <summary>
+    /// Initializes the current and target visibility state without performing an animated transition.
+    /// /params visible True when the section should start visible.
+    /// /returns void.
+    /// </summary>
+    private void InitializeVisibility(bool visible)
+    {
+        currentVisibilityAlpha = visible ? 1f : 0f;
+        targetVisibilityAlpha = currentVisibilityAlpha;
+        visibilityStateInitialized = true;
+        ApplyVisibilityAlpha(currentVisibilityAlpha);
+        SetVisualPresence(visible);
+    }
+
+    /// <summary>
+    /// Advances the visibility fade toward the requested alpha target using unscaled time.
+    /// /params deltaTime Unscaled delta time used by the HUD fade.
+    /// /returns void.
+    /// </summary>
+    private void AdvanceVisibilityFade(float deltaTime)
+    {
+        EnsureFadeBindings();
+
+        if (!visibilityStateInitialized)
+        {
+            InitializeVisibility(false);
+        }
+
+        float sanitizedDeltaTime = Mathf.Max(0f, deltaTime);
+        float resolvedTargetAlpha = Mathf.Clamp01(targetVisibilityAlpha);
+        float resolvedFadeDuration = resolvedTargetAlpha > currentVisibilityAlpha
+            ? Mathf.Max(0f, fadeInDuration)
+            : Mathf.Max(0f, fadeOutDuration);
+
+        if (Mathf.Abs(currentVisibilityAlpha - resolvedTargetAlpha) > VisibilityComparisonEpsilon)
+        {
+            if (resolvedFadeDuration <= 0f)
+            {
+                currentVisibilityAlpha = resolvedTargetAlpha;
+            }
+            else
+            {
+                float alphaStep = sanitizedDeltaTime / resolvedFadeDuration;
+                currentVisibilityAlpha = Mathf.MoveTowards(currentVisibilityAlpha, resolvedTargetAlpha, alphaStep);
+            }
+
+            ApplyVisibilityAlpha(currentVisibilityAlpha);
+        }
+
+        bool hasVisiblePresence = currentVisibilityAlpha > VisibilityComparisonEpsilon || resolvedTargetAlpha > VisibilityComparisonEpsilon;
+        SetVisualPresence(hasVisiblePresence);
+
+        if (currentVisibilityAlpha > VisibilityComparisonEpsilon || resolvedTargetAlpha > VisibilityComparisonEpsilon)
+        {
+            return;
+        }
+
+        if (resetCachedStateWhenHidden)
+        {
+            ResetCachedPresentationState();
+            resetCachedStateWhenHidden = false;
+        }
+    }
+
+    /// <summary>
+    /// Ensures the root CanvasGroup used for alpha fades exists when a root object is assigned.
+    /// /params None.
+    /// /returns void.
+    /// </summary>
+    private void EnsureFadeBindings()
+    {
+        if (rootObject == null)
+        {
+            rootCanvasGroup = null;
+            return;
+        }
+
+        if (rootCanvasGroup != null && rootCanvasGroup.gameObject == rootObject)
+        {
+            return;
+        }
+
+        CanvasGroup resolvedCanvasGroup = rootObject.GetComponent<CanvasGroup>();
+
+        if (resolvedCanvasGroup == null)
+        {
+            resolvedCanvasGroup = rootObject.AddComponent<CanvasGroup>();
+        }
+
+        rootCanvasGroup = resolvedCanvasGroup;
+        rootCanvasGroup.interactable = false;
+        rootCanvasGroup.blocksRaycasts = false;
+    }
+
+    /// <summary>
+    /// Applies the current visibility alpha either through the root CanvasGroup or directly through individual graphics.
+    /// /params alpha Normalized visibility alpha in the 0..1 range.
+    /// /returns void.
+    /// </summary>
+    private void ApplyVisibilityAlpha(float alpha)
+    {
+        float clampedAlpha = Mathf.Clamp01(alpha);
+
+        if (rootCanvasGroup != null)
+        {
+            rootCanvasGroup.alpha = clampedAlpha;
+            return;
+        }
+
+        ApplyGraphicAlpha(rankBadgeImage, clampedAlpha);
+        ApplyGraphicAlpha(rankText, clampedAlpha);
+        ApplyGraphicAlpha(comboValueText, clampedAlpha);
+        ApplyGraphicAlpha(progressFillImage, clampedAlpha);
+        ApplyGraphicAlpha(progressBackgroundImage, clampedAlpha);
+    }
+
+    /// <summary>
+    /// Shows or hides the bound visual elements while respecting optional badge and progress toggles.
+    /// /params visible True when the bound UI elements must stay active for rendering or fade.
+    /// /returns void.
+    /// </summary>
+    private void SetVisualPresence(bool visible)
+    {
+        if (rootObject != null)
+        {
+            rootObject.SetActive(visible);
+        }
+
         if (rankBadgeImage != null)
         {
             rankBadgeImage.enabled = visible && showRankBadgeImage;
@@ -277,11 +455,16 @@ public sealed class HUDComboCounterSection
 
     /// <summary>
     /// Applies the current combo-rank visual theme when the active rank changes.
-    /// currentRankIndex Current combo-rank index.
-    /// currentRankId Current combo-rank identifier.
-    /// returns void.
+    /// /params runtimeEntityManager Entity manager used to resolve baked combo-rank visuals.
+    /// /params playerEntity Player entity currently driving the HUD.
+    /// /params currentRankIndex Current combo-rank index.
+    /// /params currentRankId Current combo-rank identifier.
+    /// /returns void.
     /// </summary>
-    private void ApplyRankTheme(int currentRankIndex, FixedString64Bytes currentRankId)
+    private void ApplyRankTheme(EntityManager runtimeEntityManager,
+                                Entity playerEntity,
+                                int currentRankIndex,
+                                FixedString64Bytes currentRankId)
     {
         if (rankThemeInitialized && displayedRankVisualIndex == currentRankIndex)
         {
@@ -290,6 +473,23 @@ public sealed class HUDComboCounterSection
 
         displayedRankVisualIndex = currentRankIndex;
         rankThemeInitialized = true;
+
+        HUDComboCounterResolvedVisualTheme resolvedTheme;
+
+        if (HUDComboCounterVisualThemeRuntimeUtility.TryResolveRuntimeTheme(runtimeEntityManager,
+                                                                           playerEntity,
+                                                                           currentRankIndex,
+                                                                           defaultBadgeSprite,
+                                                                           defaultBadgeTint,
+                                                                           defaultRankTextColor,
+                                                                           defaultComboValueTextColor,
+                                                                           defaultProgressFillColor,
+                                                                           defaultProgressBackgroundColor,
+                                                                           out resolvedTheme))
+        {
+            ApplyResolvedTheme(resolvedTheme);
+            return;
+        }
 
         if (progressionPreset == null)
         {
@@ -301,15 +501,24 @@ public sealed class HUDComboCounterSection
         HUDComboCounterRankVisualDefinition legacyRankVisual = rankVisual == null
             ? HUDComboCounterVisualThemeRuntimeUtility.ResolveLegacyRankVisual(rankVisuals, currentRankId)
             : null;
-        HUDComboCounterResolvedVisualTheme resolvedTheme = HUDComboCounterVisualThemeRuntimeUtility.ResolveTheme(rankVisual,
-                                                                                                                legacyRankVisual,
-                                                                                                                defaultBadgeSprite,
-                                                                                                                defaultBadgeTint,
-                                                                                                                defaultRankTextColor,
-                                                                                                                defaultComboValueTextColor,
-                                                                                                                defaultProgressFillColor,
-                                                                                                                defaultProgressBackgroundColor);
+        resolvedTheme = HUDComboCounterVisualThemeRuntimeUtility.ResolveTheme(rankVisual,
+                                                                              legacyRankVisual,
+                                                                              defaultBadgeSprite,
+                                                                              defaultBadgeTint,
+                                                                              defaultRankTextColor,
+                                                                              defaultComboValueTextColor,
+                                                                              defaultProgressFillColor,
+                                                                              defaultProgressBackgroundColor);
+        ApplyResolvedTheme(resolvedTheme);
+    }
 
+    /// <summary>
+    /// Applies one fully resolved visual theme to the bound HUD elements.
+    /// /params resolvedTheme Fully resolved theme to assign.
+    /// /returns void.
+    /// </summary>
+    private void ApplyResolvedTheme(HUDComboCounterResolvedVisualTheme resolvedTheme)
+    {
         if (rankBadgeImage != null)
         {
             rankBadgeImage.sprite = resolvedTheme.BadgeSprite;
@@ -339,8 +548,8 @@ public sealed class HUDComboCounterSection
 
     /// <summary>
     /// Applies the displayed rank label only when it actually changed.
-    /// currentRankId Current combo-rank identifier.
-    /// returns void.
+    /// /params currentRankId Current combo-rank identifier.
+    /// /returns void.
     /// </summary>
     private void ApplyRankLabel(FixedString64Bytes currentRankId)
     {
@@ -362,8 +571,8 @@ public sealed class HUDComboCounterSection
 
     /// <summary>
     /// Applies the displayed combo numeric label only when it actually changed.
-    /// comboValue Current combo numeric value.
-    /// returns void.
+    /// /params comboValue Current combo numeric value.
+    /// /returns void.
     /// </summary>
     private void ApplyComboValue(int comboValue)
     {
@@ -385,8 +594,8 @@ public sealed class HUDComboCounterSection
 
     /// <summary>
     /// Applies the displayed progress fill only when it actually changed.
-    /// progressNormalized Current normalized progress toward the next rank.
-    /// returns void.
+    /// /params progressNormalized Current normalized progress toward the next rank.
+    /// /returns void.
     /// </summary>
     private void ApplyProgress(float progressNormalized)
     {
@@ -406,6 +615,36 @@ public sealed class HUDComboCounterSection
         progressFillImage.fillAmount = sanitizedProgress;
     }
 
+    /// <summary>
+    /// Resets cached presentation values so the next applied state rebuilds every visual binding.
+    /// /params None.
+    /// /returns void.
+    /// </summary>
+    private void ResetCachedPresentationState()
+    {
+        displayedComboValue = int.MinValue;
+        displayedProgressNormalized = -1f;
+        displayedRankVisualIndex = int.MinValue;
+        displayedRankLabel = string.Empty;
+        rankThemeInitialized = false;
+        progressionPreset = null;
+    }
+
+    /// <summary>
+    /// Applies one alpha value directly to one graphic canvas renderer.
+    /// /params graphic Graphic receiving the alpha.
+    /// /params alpha Alpha value applied to the canvas renderer.
+    /// /returns void.
+    /// </summary>
+    private static void ApplyGraphicAlpha(Graphic graphic, float alpha)
+    {
+        if (graphic == null)
+        {
+            return;
+        }
+
+        graphic.canvasRenderer.SetAlpha(Mathf.Clamp01(alpha));
+    }
     #endregion
 
     #endregion

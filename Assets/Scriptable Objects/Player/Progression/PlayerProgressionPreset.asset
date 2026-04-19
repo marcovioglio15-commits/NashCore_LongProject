@@ -365,34 +365,88 @@ MonoBehaviour:
   equippedScheduleId: ScheduleRookie
   comboCounter:
     isEnabled: 1
-    comboGainPerKill: 1
-    damageBreakMode: 0
+    comboGainPerKill: 300
+    damageBreakMode: 1
     shieldDamageBreaksCombo: 0
     rankDefinitions:
-    - rankId: A
+    - rankId: D
       requiredComboValue: 0
+      pointsDecayPerSecond: 10
       rankVisuals:
-        badgeSprite: {fileID: 0}
+        badgeSprite: {fileID: -715656042, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
         badgeTint: {r: 1, g: 1, b: 1, a: 1}
         rankTextColor: {r: 1, g: 1, b: 1, a: 1}
-        comboValueTextColor: {r: 1, g: 1, b: 1, a: 1}
-        progressFillColor: {r: 1, g: 1, b: 1, a: 1}
-        progressBackgroundColor: {r: 1, g: 1, b: 1, a: 1}
+        comboValueTextColor: {r: 0.9811321, g: 0.8466484, b: 0.71733713, a: 1}
+        progressFillColor: {r: 0, g: 1, b: 0.07073355, a: 1}
+        progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
       rankBonuses:
         formulas:
         - formula: 
-    - rankId: A
-      requiredComboValue: 0
+    - rankId: C
+      requiredComboValue: 1000
+      pointsDecayPerSecond: 50
       rankVisuals:
-        badgeSprite: {fileID: 0}
+        badgeSprite: {fileID: 1984434061, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
         badgeTint: {r: 1, g: 1, b: 1, a: 1}
         rankTextColor: {r: 1, g: 1, b: 1, a: 1}
-        comboValueTextColor: {r: 1, g: 1, b: 1, a: 1}
-        progressFillColor: {r: 1, g: 1, b: 1, a: 1}
-        progressBackgroundColor: {r: 1, g: 1, b: 1, a: 1}
+        comboValueTextColor: {r: 0.9811321, g: 0.8466484, b: 0.71733713, a: 1}
+        progressFillColor: {r: 0, g: 1, b: 0.07073355, a: 1}
+        progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
       rankBonuses:
         formulas:
-        - formula: 
+        - formula: '[ShotRange]=300'
+    - rankId: B
+      requiredComboValue: 2000
+      pointsDecayPerSecond: 100
+      rankVisuals:
+        badgeSprite: {fileID: 139036563, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
+        badgeTint: {r: 1, g: 1, b: 1, a: 1}
+        rankTextColor: {r: 1, g: 1, b: 1, a: 1}
+        comboValueTextColor: {r: 0.9811321, g: 0.8466484, b: 0.71733713, a: 1}
+        progressFillColor: {r: 0, g: 1, b: 0.07073355, a: 1}
+        progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
+      rankBonuses:
+        formulas:
+        - formula: '[MovementSpeed]=[MovementSpeed]*2'
+    - rankId: A
+      requiredComboValue: 4000
+      pointsDecayPerSecond: 500
+      rankVisuals:
+        badgeSprite: {fileID: -158078774, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
+        badgeTint: {r: 1, g: 1, b: 1, a: 1}
+        rankTextColor: {r: 1, g: 1, b: 1, a: 1}
+        comboValueTextColor: {r: 0.9811321, g: 0.8466484, b: 0.71733713, a: 1}
+        progressFillColor: {r: 0, g: 1, b: 0.07073355, a: 1}
+        progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
+      rankBonuses:
+        formulas:
+        - formula: '[InfinitePenetration]=true'
+    - rankId: S
+      requiredComboValue: 8000
+      pointsDecayPerSecond: 1000
+      rankVisuals:
+        badgeSprite: {fileID: 547062901, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
+        badgeTint: {r: 1, g: 1, b: 1, a: 1}
+        rankTextColor: {r: 1, g: 1, b: 1, a: 1}
+        comboValueTextColor: {r: 0.9811321, g: 0.8466484, b: 0.71733713, a: 1}
+        progressFillColor: {r: 0, g: 1, b: 0.07073355, a: 1}
+        progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
+      rankBonuses:
+        formulas:
+        - formula: '[BulletSizeMultiplier]=[BulletSizeMultiplier]*2'
+    - rankId: SS
+      requiredComboValue: 20000
+      pointsDecayPerSecond: 5000
+      rankVisuals:
+        badgeSprite: {fileID: -493794101, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
+        badgeTint: {r: 1, g: 1, b: 1, a: 1}
+        rankTextColor: {r: 1, g: 1, b: 1, a: 1}
+        comboValueTextColor: {r: 0.9811321, g: 0.8466484, b: 0.71733713, a: 1}
+        progressFillColor: {r: 0, g: 1, b: 0.07073355, a: 1}
+        progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
+      rankBonuses:
+        formulas:
+        - formula: '[FireRate]=[FireRate]*10'
   legacyExperienceRequiredPerLevel: 100
   levelCap: 100
   experiencePickupRadius: 1

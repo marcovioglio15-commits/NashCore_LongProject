@@ -75,7 +75,6 @@ public static class PlayerPowerUpCatalogBakeUtility
                                                         DynamicBuffer<PlayerPowerUpTierEntryScalingElement> powerUpTierEntryScalingBuffer)
     {
         powerUpUnlockCatalogBuffer.Clear();
-        powerUpCharacterTuningFormulaBuffer.Clear();
         powerUpTierDefinitionsBuffer.Clear();
         powerUpTierEntriesBuffer.Clear();
         powerUpTierEntryScalingBuffer.Clear();

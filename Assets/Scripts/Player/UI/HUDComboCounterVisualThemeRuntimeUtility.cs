@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
@@ -110,6 +112,66 @@ internal static class HUDComboCounterVisualThemeRuntimeUtility
         }
 
         return rankDefinition.RankVisuals;
+    }
+
+    /// <summary>
+    /// Resolves the active combo-rank visual theme directly from the baked player ECS buffers.
+    /// /params entityManager Runtime entity manager used to inspect combo-rank visual buffers.
+    /// /params playerEntity Current player entity that owns the visual buffer.
+    /// /params currentRankIndex Active combo-rank index reported by ECS presentation state.
+    /// /params defaultBadgeSprite Default HUD badge sprite used when the baked rank has no sprite.
+    /// /params defaultBadgeTint Default HUD badge tint used when the baked rank buffer is unavailable.
+    /// /params defaultRankTextColor Default HUD rank-label color used when the baked rank buffer is unavailable.
+    /// /params defaultComboValueTextColor Default HUD combo-value color used when the baked rank buffer is unavailable.
+    /// /params defaultProgressFillColor Default HUD progress-fill color used when the baked rank buffer is unavailable.
+    /// /params defaultProgressBackgroundColor Default HUD progress-background color used when the baked rank buffer is unavailable.
+    /// /params resolvedTheme Resolved theme returned when the baked visual buffer contains the requested rank.
+    /// /returns True when the baked ECS visual buffer supplied the requested theme; otherwise false.
+    /// </summary>
+    public static bool TryResolveRuntimeTheme(EntityManager entityManager,
+                                              Entity playerEntity,
+                                              int currentRankIndex,
+                                              Sprite defaultBadgeSprite,
+                                              Color defaultBadgeTint,
+                                              Color defaultRankTextColor,
+                                              Color defaultComboValueTextColor,
+                                              Color defaultProgressFillColor,
+                                              Color defaultProgressBackgroundColor,
+                                              out HUDComboCounterResolvedVisualTheme resolvedTheme)
+    {
+        resolvedTheme = new HUDComboCounterResolvedVisualTheme(defaultBadgeSprite,
+                                                               defaultBadgeTint,
+                                                               defaultRankTextColor,
+                                                               defaultComboValueTextColor,
+                                                               defaultProgressFillColor,
+                                                               defaultProgressBackgroundColor);
+
+        if (currentRankIndex < 0)
+        {
+            return false;
+        }
+
+        if (!entityManager.Exists(playerEntity) || !entityManager.HasBuffer<PlayerComboRankVisualElement>(playerEntity))
+        {
+            return false;
+        }
+
+        DynamicBuffer<PlayerComboRankVisualElement> rankVisuals = entityManager.GetBuffer<PlayerComboRankVisualElement>(playerEntity);
+
+        if (currentRankIndex >= rankVisuals.Length)
+        {
+            return false;
+        }
+
+        PlayerComboRankVisualElement rankVisual = rankVisuals[currentRankIndex];
+        Sprite badgeSprite = rankVisual.BadgeSprite.Value != null ? rankVisual.BadgeSprite.Value : defaultBadgeSprite;
+        resolvedTheme = new HUDComboCounterResolvedVisualTheme(badgeSprite,
+                                                               ToColor(rankVisual.BadgeTint),
+                                                               ToColor(rankVisual.RankTextColor),
+                                                               ToColor(rankVisual.ComboValueTextColor),
+                                                               ToColor(rankVisual.ProgressFillColor),
+                                                               ToColor(rankVisual.ProgressBackgroundColor));
+        return true;
     }
 
     /// <summary>
@@ -310,6 +372,16 @@ internal static class HUDComboCounterVisualThemeRuntimeUtility
             default:
                 return Color.white;
         }
+    }
+
+    /// <summary>
+    /// Converts one float4 color stored inside ECS buffers back to UnityEngine.Color.
+    /// /params colorValue Float4 color stored in the runtime buffer.
+    /// /returns Unity color rebuilt from the float4 channels.
+    /// </summary>
+    private static Color ToColor(float4 colorValue)
+    {
+        return new Color(colorValue.x, colorValue.y, colorValue.z, colorValue.w);
     }
     #endregion
 

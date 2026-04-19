@@ -23,7 +23,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
         state.RequireForUpdate<PlayerExplosionRequest>();
 
         enemyQuery = SystemAPI.QueryBuilder()
-            .WithAll<EnemyData, EnemyHealth, LocalTransform, EnemyActive>()
+            .WithAll<EnemyData, EnemyHealth, EnemyRuntimeState, LocalTransform, EnemyActive>()
             .WithNone<EnemyDespawnRequest>()
             .Build();
     }
@@ -42,6 +42,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
         NativeArray<Entity> enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
         NativeArray<EnemyData> enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.Temp);
         NativeArray<EnemyHealth> enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.Temp);
+        NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.Temp);
         NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
         NativeArray<float3> enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
@@ -100,6 +101,9 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
             if (!entityManager.Exists(enemyEntity))
                 continue;
 
+            EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
+            EnemyExtraComboPointsRuntimeUtility.MarkEnemyDamaged(ref enemyRuntimeState);
+            entityManager.SetComponentData(enemyEntity, enemyRuntimeState);
             entityManager.SetComponentData(enemyEntity, enemyHealthArray[enemyIndex]);
             DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
         }
@@ -109,6 +113,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
         enemyEntities.Dispose();
         enemyDataArray.Dispose();
         enemyHealthArray.Dispose();
+        enemyRuntimeArray.Dispose();
         enemyTransforms.Dispose();
         enemyPositions.Dispose();
         enemyBodyRadii.Dispose();

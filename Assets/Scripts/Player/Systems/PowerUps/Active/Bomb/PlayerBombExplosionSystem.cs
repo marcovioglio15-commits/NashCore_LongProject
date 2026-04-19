@@ -25,7 +25,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
             .Build();
 
         enemyQuery = SystemAPI.QueryBuilder()
-            .WithAll<EnemyData, EnemyHealth, LocalTransform, EnemyActive>()
+            .WithAll<EnemyData, EnemyHealth, EnemyRuntimeState, LocalTransform, EnemyActive>()
             .WithNone<EnemyDespawnRequest>()
             .Build();
 
@@ -46,6 +46,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
         NativeArray<Entity> enemyEntities = default;
         NativeArray<EnemyData> enemyDataArray = default;
         NativeArray<EnemyHealth> enemyHealthArray = default;
+        NativeArray<EnemyRuntimeState> enemyRuntimeArray = default;
         NativeArray<LocalTransform> enemyTransforms = default;
         NativeArray<float3> enemyPositions = default;
         NativeArray<float> enemyBodyRadii = default;
@@ -59,6 +60,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
             enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
             enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.Temp);
             enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.Temp);
+            enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.Temp);
             enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
@@ -118,6 +120,9 @@ public partial struct PlayerBombExplosionSystem : ISystem
                 if (!entityManager.Exists(enemyEntity))
                     continue;
 
+                EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
+                EnemyExtraComboPointsRuntimeUtility.MarkEnemyDamaged(ref enemyRuntimeState);
+                entityManager.SetComponentData(enemyEntity, enemyRuntimeState);
                 entityManager.SetComponentData(enemyEntity, enemyHealthArray[enemyIndex]);
                 DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
             }
@@ -125,6 +130,7 @@ public partial struct PlayerBombExplosionSystem : ISystem
             enemyEntities.Dispose();
             enemyDataArray.Dispose();
             enemyHealthArray.Dispose();
+            enemyRuntimeArray.Dispose();
             enemyTransforms.Dispose();
             enemyPositions.Dispose();
             enemyBodyRadii.Dispose();

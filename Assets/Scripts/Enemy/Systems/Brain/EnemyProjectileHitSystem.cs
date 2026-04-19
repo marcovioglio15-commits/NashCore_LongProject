@@ -509,6 +509,9 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 continue;
 
             EnemyHealth enemyHealth = projectedEnemyHealth[enemyIndex];
+            EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
+            EnemyExtraComboPointsRuntimeUtility.MarkEnemyDamaged(ref enemyRuntimeState);
+            entityManager.SetComponentData(enemyEntity, enemyRuntimeState);
             entityManager.SetComponentData(enemyEntity, enemyHealth);
             DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
 

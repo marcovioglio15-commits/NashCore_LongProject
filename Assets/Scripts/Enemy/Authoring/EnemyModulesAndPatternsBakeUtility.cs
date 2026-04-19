@@ -236,20 +236,29 @@ internal static class EnemyModulesAndPatternsBakeUtility
 
         EnemyPatternDropItemsAssembly dropItems = pattern.DropItems;
 
-        if (dropItems == null || !dropItems.IsEnabled || dropItems.Binding == null)
+        if (dropItems == null || !dropItems.IsEnabled || dropItems.Modules == null)
             return;
 
-        EnemyPatternModuleBinding binding = dropItems.Binding;
-        EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(binding.ModuleId);
+        IReadOnlyList<EnemyPatternModuleBinding> moduleBindings = dropItems.Modules;
 
-        if (moduleDefinition == null)
-            return;
+        for (int moduleIndex = 0; moduleIndex < moduleBindings.Count; moduleIndex++)
+        {
+            EnemyPatternModuleBinding binding = moduleBindings[moduleIndex];
 
-        if (EnemyAdvancedPatternBakeUtility.ResolveModuleKind(moduleDefinition.ModuleKind) != EnemyPatternModuleKind.DropItems)
-            return;
+            if (binding == null || !binding.IsEnabled)
+                continue;
 
-        EnemyPatternModulePayloadData resolvedPayload = EnemyAdvancedPatternBakeUtility.ResolveBindingPayload(moduleDefinition, binding);
-        EnemyAdvancedPatternBakeUtility.TryApplyDropItemsModule(resolvedPayload, ref result);
+            EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(binding.ModuleId);
+
+            if (moduleDefinition == null)
+                continue;
+
+            if (EnemyAdvancedPatternBakeUtility.ResolveModuleKind(moduleDefinition.ModuleKind) != EnemyPatternModuleKind.DropItems)
+                continue;
+
+            EnemyPatternModulePayloadData resolvedPayload = EnemyAdvancedPatternBakeUtility.ResolveBindingPayload(moduleDefinition, binding);
+            EnemyDropItemsBakeUtility.TryAppendModule(resolvedPayload, ref result);
+        }
     }
 
     /// <summary>
