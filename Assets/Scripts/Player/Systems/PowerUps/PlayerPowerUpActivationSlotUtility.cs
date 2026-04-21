@@ -46,6 +46,8 @@ public static class PlayerPowerUpActivationSlotUtility
                                         ref PlayerHealOverTimeState healOverTimeState,
                                         DynamicBuffer<PlayerBombSpawnRequest> bombRequests,
                                         DynamicBuffer<ShootRequest> shootRequests,
+                                        DynamicBuffer<GameAudioEventRequest> audioRequests,
+                                        bool canEnqueueAudioRequests,
                                         Entity playerEntity,
                                         ref ComponentLookup<PlayerHealth> healthLookup,
                                         ref PlayerHealth updatedHealth,
@@ -95,7 +97,9 @@ public static class PlayerPowerUpActivationSlotUtility
                                                                                 ref updatedShield,
                                                                                 ref shieldChanged,
                                                                                 ref dashState,
-                                                                                ref bulletTimeState);
+                                                                                ref bulletTimeState,
+                                                                                audioRequests,
+                                                                                canEnqueueAudioRequests);
             return;
         }
 
@@ -194,7 +198,15 @@ public static class PlayerPowerUpActivationSlotUtility
                                                                              ref bulletTimeState);
 
         if (slotConfig.ToolKind == ActiveToolKind.PortableHealthPack)
-            ExecutePortableHealthPack(in slotConfig, playerEntity, ref healthLookup, ref updatedHealth, ref healthChanged, ref healOverTimeState);
+            ExecutePortableHealthPack(in slotConfig,
+                                      playerEntity,
+                                      localTransform.Position,
+                                      ref healthLookup,
+                                      ref updatedHealth,
+                                      ref healthChanged,
+                                      ref healOverTimeState,
+                                      audioRequests,
+                                      canEnqueueAudioRequests);
 
         PlayerPowerUpActivationExecutionUtility.ExecuteTool(in slotConfig,
                                                             in localTransform,
@@ -215,6 +227,9 @@ public static class PlayerPowerUpActivationSlotUtility
                                                             ref bulletTimeState,
                                                             bombRequests,
                                                             shootRequests);
+
+        if (canEnqueueAudioRequests)
+            EnqueueActiveToolAudio(in slotConfig, localTransform.Position, audioRequests);
 
         if (slotConfig.SuppressBaseShootingWhileActive != 0)
             isShootingSuppressed = 1;
@@ -322,13 +337,56 @@ public static class PlayerPowerUpActivationSlotUtility
 
     #endregion
 
+    #region Audio
+    /// <summary>
+    /// Enqueues the active-tool audio event matching a successfully executed non-charge slot.
+    /// /params slotConfig Runtime active-tool slot configuration.
+    /// /params position Player position used for positioned one-shot audio.
+    /// /params audioRequests Audio request buffer on the game audio singleton.
+    /// /returns None.
+    /// </summary>
+    private static void EnqueueActiveToolAudio(in PlayerPowerUpSlotConfig slotConfig,
+                                               float3 position,
+                                               DynamicBuffer<GameAudioEventRequest> audioRequests)
+    {
+        switch (slotConfig.ToolKind)
+        {
+            case ActiveToolKind.Bomb:
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.ActiveThrow, position);
+                break;
+            case ActiveToolKind.Dash:
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.ActiveDash, position);
+                break;
+            case ActiveToolKind.Shotgun:
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerShootProjectile, position);
+                break;
+        }
+    }
+    #endregion
+
     #region Side Effects
+    /// <summary>
+    /// Applies an instant or over-time portable health pack payload and emits immediate recharge audio when health is restored now.
+    /// /params slotConfig Runtime active-tool slot configuration.
+    /// /params playerEntity Player entity receiving the healing payload.
+    /// /params position Player position used for positioned recharge audio.
+    /// /params healthLookup Mutable health lookup used to fetch current health.
+    /// /params updatedHealth Cached mutable health value returned to the caller.
+    /// /params healthChanged True when updatedHealth contains a valid fetched value.
+    /// /params healOverTimeState Mutable heal-over-time state for delayed payloads.
+    /// /params audioRequests Optional audio request buffer.
+    /// /params canEnqueueAudioRequests True when audioRequests is valid.
+    /// /returns None.
+    /// </summary>
     private static void ExecutePortableHealthPack(in PlayerPowerUpSlotConfig slotConfig,
                                                   Entity playerEntity,
+                                                  float3 position,
                                                   ref ComponentLookup<PlayerHealth> healthLookup,
                                                   ref PlayerHealth updatedHealth,
                                                   ref bool healthChanged,
-                                                  ref PlayerHealOverTimeState healOverTimeState)
+                                                  ref PlayerHealOverTimeState healOverTimeState,
+                                                  DynamicBuffer<GameAudioEventRequest> audioRequests,
+                                                  bool canEnqueueAudioRequests)
     {
         if (!healthChanged)
         {
@@ -358,10 +416,14 @@ public static class PlayerPowerUpActivationSlotUtility
             return;
         }
 
+        float previousHealth = updatedHealth.Current;
         updatedHealth.Current += math.min(missingHealth, healAmount);
 
         if (updatedHealth.Current > updatedHealth.Max)
             updatedHealth.Current = updatedHealth.Max;
+
+        if (canEnqueueAudioRequests && updatedHealth.Current > previousHealth)
+            GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerHealthRecharge, position);
     }
 
     private static void ApplyHealOverTime(in PlayerPowerUpSlotConfig slotConfig,

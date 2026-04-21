@@ -33,6 +33,8 @@ public partial struct PlayerRunOutcomeSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
 
         foreach ((RefRW<PlayerRunOutcomeState> runOutcomeState,
                   RefRO<PlayerHealth> playerHealth,
@@ -54,6 +56,10 @@ public partial struct PlayerRunOutcomeSystem : ISystem
                 if (timerConfig.Direction == PlayerRunTimerDirection.Backward && timerState.Expired != 0)
                 {
                     FinalizeOutcome(ref runOutcomeState.ValueRW, PlayerRunOutcome.Defeat);
+
+                    if (canEnqueueAudioRequests)
+                        GameAudioEventRequestUtility.EnqueueGlobal(audioRequests, GameAudioEventId.PlayerDeath);
+
                     continue;
                 }
             }
@@ -61,6 +67,10 @@ public partial struct PlayerRunOutcomeSystem : ISystem
             if (playerHealth.ValueRO.Current <= 0f)
             {
                 FinalizeOutcome(ref runOutcomeState.ValueRW, PlayerRunOutcome.Defeat);
+
+                if (canEnqueueAudioRequests)
+                    GameAudioEventRequestUtility.EnqueueGlobal(audioRequests, GameAudioEventId.PlayerDeath);
+
                 continue;
             }
 
@@ -120,6 +130,9 @@ public partial struct PlayerRunOutcomeSystem : ISystem
                 continue;
 
             FinalizeOutcome(ref runOutcomeState.ValueRW, PlayerRunOutcome.Victory);
+
+            if (canEnqueueAudioRequests)
+                GameAudioEventRequestUtility.EnqueueGlobal(audioRequests, GameAudioEventId.PlayerVictory);
         }
     }
     #endregion

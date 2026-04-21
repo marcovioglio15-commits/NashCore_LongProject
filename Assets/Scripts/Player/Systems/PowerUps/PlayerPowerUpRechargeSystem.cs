@@ -25,6 +25,9 @@ public partial struct PlayerPowerUpRechargeSystem : ISystem
         if (SystemAPI.TryGetSingleton<GlobalEnemyKillCounter>(out GlobalEnemyKillCounter killCounter))
             globalKillCount = killCounter.TotalKilled;
 
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
+
         foreach ((RefRO<PlayerPowerUpsConfig> powerUpsConfig,
                   RefRW<PlayerPowerUpsState> powerUpsState) in SystemAPI.Query<RefRO<PlayerPowerUpsConfig>, RefRW<PlayerPowerUpsState>>())
         {
@@ -38,6 +41,8 @@ public partial struct PlayerPowerUpRechargeSystem : ISystem
 
             float primaryEnergy = powerUpsState.ValueRO.PrimaryEnergy;
             float secondaryEnergy = powerUpsState.ValueRO.SecondaryEnergy;
+            float previousPrimaryEnergy = primaryEnergy;
+            float previousSecondaryEnergy = secondaryEnergy;
             float primaryCooldownRemaining = powerUpsState.ValueRO.PrimaryCooldownRemaining;
             float secondaryCooldownRemaining = powerUpsState.ValueRO.SecondaryCooldownRemaining;
             byte primaryIsActive = powerUpsState.ValueRO.PrimaryIsActive;
@@ -57,6 +62,15 @@ public partial struct PlayerPowerUpRechargeSystem : ISystem
                          secondaryIsActive,
                          deltaTime,
                          killDelta);
+
+            if (canEnqueueAudioRequests)
+            {
+                if (DidReachEnergyRequirement(previousPrimaryEnergy, primaryEnergy, in powerUpsConfig.ValueRO.PrimarySlot) ||
+                    DidReachEnergyRequirement(previousSecondaryEnergy, secondaryEnergy, in powerUpsConfig.ValueRO.SecondarySlot))
+                {
+                    GameAudioEventRequestUtility.EnqueueGlobal(audioRequests, GameAudioEventId.ActiveEnergyFull);
+                }
+            }
 
             powerUpsState.ValueRW.PrimaryEnergy = primaryEnergy;
             powerUpsState.ValueRW.SecondaryEnergy = secondaryEnergy;
@@ -128,6 +142,34 @@ public partial struct PlayerPowerUpRechargeSystem : ISystem
 
         if (currentEnergy > maximumEnergy)
             currentEnergy = maximumEnergy;
+    }
+
+    /// <summary>
+    /// Checks whether a slot crossed its activation energy requirement during the current recharge pass.
+    /// /params previousEnergy Energy value before recharge.
+    /// /params currentEnergy Energy value after recharge.
+    /// /params slotConfig Runtime slot config used to resolve activation threshold.
+    /// /returns True when the threshold was crossed this frame.
+    /// </summary>
+    private static bool DidReachEnergyRequirement(float previousEnergy, float currentEnergy, in PlayerPowerUpSlotConfig slotConfig)
+    {
+        if (slotConfig.IsDefined == 0)
+            return false;
+
+        float maximumEnergy = math.max(0f, slotConfig.MaximumEnergy);
+
+        if (maximumEnergy <= 0f)
+            return false;
+
+        float minimumActivationEnergyPercent = math.clamp(slotConfig.MinimumActivationEnergyPercent, 0f, 100f);
+        float activationCost = math.max(0f, slotConfig.ActivationCost);
+        float requiredEnergy = math.max(activationCost, maximumEnergy * minimumActivationEnergyPercent * 0.01f);
+
+        if (requiredEnergy <= 0f)
+            requiredEnergy = maximumEnergy;
+
+        return previousEnergy + PlayerPowerUpActivationUtilityConstants.EnergyEpsilon < requiredEnergy &&
+               currentEnergy + PlayerPowerUpActivationUtilityConstants.EnergyEpsilon >= requiredEnergy;
     }
     #endregion
 

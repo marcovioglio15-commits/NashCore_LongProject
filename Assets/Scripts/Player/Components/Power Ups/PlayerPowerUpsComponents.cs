@@ -484,6 +484,7 @@ public struct PlayerExplosionRequest : IBufferElementData
     public float3 Position;
     public float Radius;
     public float Damage;
+    public GameAudioEventId AudioEventId;
     public byte AffectAllEnemiesInRadius;
     public Entity ExplosionVfxPrefabEntity;
     public byte ScaleVfxToRadius;

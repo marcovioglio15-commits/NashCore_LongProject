@@ -75,6 +75,8 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
         ComponentLookup<LocalTransform> localTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<PlayerPowerUpContainerInteractionConfig> powerUpContainerConfigLookup = SystemAPI.GetComponentLookup<PlayerPowerUpContainerInteractionConfig>(true);
         BufferLookup<EquippedPassiveToolElement> equippedPassiveToolsLookup = SystemAPI.GetBufferLookup<EquippedPassiveToolElement>(false);
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
         foreach ((DynamicBuffer<PlayerMilestonePowerUpSelectionCommand> selectionCommands,
@@ -147,6 +149,8 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
             if (resolvedCommand.CommandType == PlayerMilestoneSelectionCommandType.Skip)
             {
                 int skippedMilestoneLevel = selectionStateValue.MilestoneLevel;
+                PlayerHealth previousHealthValue = playerHealthValue;
+                PlayerShield previousShieldValue = playerShieldValue;
                 int appliedCompensationCount = PlayerMilestoneSelectionOutcomeUtility.ApplySkipCompensations(progressionConfigValue,
                                                                                                               runtimeGamePhaseBuffer,
                                                                                                               in selectionStateValue,
@@ -161,6 +165,16 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
                 playerShieldLookup[entity] = playerShieldValue;
                 playerExperienceLookup[entity] = playerExperienceValue;
                 powerUpsStateLookup[entity] = powerUpsStateValue;
+
+                if (canEnqueueAudioRequests)
+                    EnqueueSkipCompensationAudio(entity,
+                                                 previousHealthValue,
+                                                 playerHealthValue,
+                                                 previousShieldValue,
+                                                 playerShieldValue,
+                                                 in localTransformLookup,
+                                                 audioRequests);
+
                 FinalizeSelection(progressionConfigValue,
                                   selectionOffersBuffer,
                                   ref selectionStateValue,
@@ -464,6 +478,56 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
                 applyTarget = "UnknownTargetSlot";
                 return false;
         }
+    }
+    #endregion
+
+    #region Audio
+    /// <summary>
+    /// Enqueues recharge sounds produced by skip-compensation resources.
+    /// /params entity Player entity receiving compensation.
+    /// /params previousHealth Health before compensation.
+    /// /params currentHealth Health after compensation.
+    /// /params previousShield Shield before compensation.
+    /// /params currentShield Shield after compensation.
+    /// /params localTransformLookup Lookup used to resolve positioned audio.
+    /// /params audioRequests Audio request buffer on the game audio singleton.
+    /// /returns None.
+    /// </summary>
+    private static void EnqueueSkipCompensationAudio(Entity entity,
+                                                     PlayerHealth previousHealth,
+                                                     PlayerHealth currentHealth,
+                                                     PlayerShield previousShield,
+                                                     PlayerShield currentShield,
+                                                     in ComponentLookup<LocalTransform> localTransformLookup,
+                                                     DynamicBuffer<GameAudioEventRequest> audioRequests)
+    {
+        if (currentHealth.Current > previousHealth.Current)
+            EnqueuePlayerAudio(entity, GameAudioEventId.PlayerHealthRecharge, in localTransformLookup, audioRequests);
+
+        if (currentShield.Current > previousShield.Current)
+            EnqueuePlayerAudio(entity, GameAudioEventId.PlayerShieldRecharge, in localTransformLookup, audioRequests);
+    }
+
+    /// <summary>
+    /// Enqueues a player-scoped audio event with position when a transform is available.
+    /// /params entity Player entity used for optional position lookup.
+    /// /params eventId Audio event to request.
+    /// /params localTransformLookup Lookup used to resolve player position.
+    /// /params audioRequests Audio request buffer on the game audio singleton.
+    /// /returns None.
+    /// </summary>
+    private static void EnqueuePlayerAudio(Entity entity,
+                                           GameAudioEventId eventId,
+                                           in ComponentLookup<LocalTransform> localTransformLookup,
+                                           DynamicBuffer<GameAudioEventRequest> audioRequests)
+    {
+        if (localTransformLookup.HasComponent(entity))
+        {
+            GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, eventId, localTransformLookup[entity].Position);
+            return;
+        }
+
+        GameAudioEventRequestUtility.EnqueueGlobal(audioRequests, eventId);
     }
     #endregion
 

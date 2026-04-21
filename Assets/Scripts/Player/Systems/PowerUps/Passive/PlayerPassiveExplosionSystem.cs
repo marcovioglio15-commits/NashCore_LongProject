@@ -112,11 +112,30 @@ public partial struct PlayerPassiveExplosionSystem : ISystem
             Position = worldPosition,
             Radius = math.max(0f, explosionConfig.Radius),
             Damage = math.max(0f, explosionConfig.Damage),
+            AudioEventId = ResolveExplosionAudioEventId(explosionConfig.TriggerMode),
             AffectAllEnemiesInRadius = explosionConfig.AffectAllEnemiesInRadius,
             ExplosionVfxPrefabEntity = explosionConfig.ExplosionVfxPrefabEntity,
             ScaleVfxToRadius = explosionConfig.ScaleVfxToRadius,
             VfxScaleMultiplier = math.max(0.01f, explosionConfig.VfxScaleMultiplier)
         });
+    }
+
+    /// <summary>
+    /// Maps passive explosion triggers to the audio event that should be played by the resolver.
+    /// /params triggerMode Configured passive explosion trigger mode.
+    /// /returns Audio event reserved for this explosion source.
+    /// </summary>
+    private static GameAudioEventId ResolveExplosionAudioEventId(PassiveExplosionTriggerMode triggerMode)
+    {
+        switch (triggerMode)
+        {
+            case PassiveExplosionTriggerMode.OnEnemyKilled:
+                return GameAudioEventId.ExplosionEnemy;
+            case PassiveExplosionTriggerMode.Periodic:
+            case PassiveExplosionTriggerMode.OnPlayerDamaged:
+            default:
+                return GameAudioEventId.ExplosionPassive;
+        }
     }
 
     /// <summary>

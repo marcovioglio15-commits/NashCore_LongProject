@@ -126,6 +126,8 @@ public partial struct PlayerLevelUpSystem : ISystem
         BufferLookup<PlayerPowerUpTierEntryScalingElement> tierEntryScalingLookup = SystemAPI.GetBufferLookup<PlayerPowerUpTierEntryScalingElement>(true);
         BufferLookup<EquippedPassiveToolElement> equippedPassiveToolsLookup = SystemAPI.GetBufferLookup<EquippedPassiveToolElement>(false);
         ComponentLookup<PlayerMilestoneTimeScaleResumeState> milestoneTimeScaleResumeStateLookup = SystemAPI.GetComponentLookup<PlayerMilestoneTimeScaleResumeState>(false);
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
 
         foreach ((RefRW<PlayerExperience> playerExperience,
                   RefRW<PlayerLevel> playerLevel,
@@ -438,6 +440,12 @@ public partial struct PlayerLevelUpSystem : ISystem
 
             if (gainedLevelsCount <= 0)
                 continue;
+
+            if (canEnqueueAudioRequests)
+            {
+                GameAudioEventId levelAudioEventId = reachedMilestone ? GameAudioEventId.PlayerLevelUpMilestone : GameAudioEventId.PlayerLevelUp;
+                GameAudioEventRequestUtility.EnqueueGlobal(audioRequests, levelAudioEventId);
+            }
 
             string previousPhaseID = PlayerProgressionPhaseUtility.ResolvePhaseID(progressionConfig.ValueRO, startingGamePhaseIndex);
             string activePhaseID = PlayerProgressionPhaseUtility.ResolvePhaseID(progressionConfig.ValueRO, activeGamePhaseIndex);

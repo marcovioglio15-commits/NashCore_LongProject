@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 /// <summary>
 /// Applies heal-over-time payloads configured by active power ups.
@@ -24,8 +25,14 @@ public partial struct PlayerHealOverTimeSystem : ISystem
         if (deltaTime <= 0f)
             return;
 
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
+
         foreach ((RefRW<PlayerHealth> playerHealth,
-                  RefRW<PlayerHealOverTimeState> healOverTimeState) in SystemAPI.Query<RefRW<PlayerHealth>, RefRW<PlayerHealOverTimeState>>())
+                  RefRW<PlayerHealOverTimeState> healOverTimeState,
+                  RefRO<LocalTransform> localTransform) in SystemAPI.Query<RefRW<PlayerHealth>,
+                                                                           RefRW<PlayerHealOverTimeState>,
+                                                                           RefRO<LocalTransform>>())
         {
             if (healOverTimeState.ValueRO.IsActive == 0)
                 continue;
@@ -53,6 +60,7 @@ public partial struct PlayerHealOverTimeSystem : ISystem
             float tickTimer = healOverTimeState.ValueRO.TickTimer + deltaTime;
             float remainingTotalHeal = math.max(0f, healOverTimeState.ValueRO.RemainingTotalHeal);
             float healPerSecond = math.max(0f, healOverTimeState.ValueRO.HealPerSecond);
+            bool appliedAnyHeal = false;
 
             if (healPerSecond <= 0f || remainingTotalHeal <= 0f || remainingDuration <= 0f)
             {
@@ -76,6 +84,7 @@ public partial struct PlayerHealOverTimeSystem : ISystem
                 currentHealth += appliedHeal;
                 remainingTotalHeal -= appliedHeal;
                 missingHealth -= appliedHeal;
+                appliedAnyHeal = appliedAnyHeal || appliedHeal > 0f;
 
                 if (missingHealth <= 0f)
                 {
@@ -85,6 +94,9 @@ public partial struct PlayerHealOverTimeSystem : ISystem
             }
 
             playerHealth.ValueRW.Current = math.clamp(currentHealth, 0f, maxHealth);
+
+            if (appliedAnyHeal && canEnqueueAudioRequests)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerHealthRecharge, localTransform.ValueRO.Position);
 
             if (remainingDuration <= 0f || remainingTotalHeal <= 0f || currentHealth + 1e-6f >= maxHealth)
             {

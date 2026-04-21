@@ -1,0 +1,105 @@
+using System;
+using UnityEngine;
+
+/// <summary>
+/// Game-level master preset that groups global sub-presets shared by gameplay systems.
+/// /params None.
+/// /returns None.
+/// </summary>
+[CreateAssetMenu(fileName = "GameMasterPreset", menuName = "Game/Master Preset", order = 19)]
+public sealed class GameMasterPreset : ScriptableObject
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Header("Metadata")]
+    [Tooltip("Unique ID for this game master preset, used for stable editor references.")]
+    [SerializeField] private string presetId;
+
+    [Tooltip("Game master preset name displayed in Game Management Tool.")]
+    [SerializeField] private string presetName = "New Game Master Preset";
+
+    [Tooltip("Short description of this game-level configuration.")]
+    [SerializeField] private string description;
+
+    [Tooltip("Optional semantic version string for this game preset.")]
+    [SerializeField] private string version = "1.0.0";
+
+    [Header("Sub Presets")]
+    [Tooltip("Audio manager preset used to configure FMOD gameplay event bindings.")]
+    [SerializeField] private GameAudioManagerPreset audioManagerPreset;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public string PresetId
+    {
+        get
+        {
+            return presetId;
+        }
+    }
+
+    public string PresetName
+    {
+        get
+        {
+            return presetName;
+        }
+    }
+
+    public string Description
+    {
+        get
+        {
+            return description;
+        }
+    }
+
+    public string Version
+    {
+        get
+        {
+            return version;
+        }
+    }
+
+    public GameAudioManagerPreset AudioManagerPreset
+    {
+        get
+        {
+            return audioManagerPreset;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Ensures this preset owns stable metadata required by editor tooling.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    public void ValidateValues()
+    {
+        if (string.IsNullOrWhiteSpace(presetId))
+            presetId = Guid.NewGuid().ToString("N");
+    }
+    #endregion
+
+    #region Unity Methods
+    /// <summary>
+    /// Keeps required identifiers initialized when the asset is edited.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void OnValidate()
+    {
+        ValidateValues();
+    }
+    #endregion
+
+    #endregion
+}

@@ -44,6 +44,8 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
     /// shieldChanged: True when updatedShield already contains a fetched runtime value.
     /// dashState: Mutable dash state interrupted by hard slot interruption rules.
     /// bulletTimeState: Mutable bullet-time state interrupted by hard slot interruption rules.
+    /// audioRequests: Optional audio request buffer used when a Game Audio singleton exists.
+    /// canEnqueueAudioRequests: True when audioRequests points to a valid buffer.
     /// returns void.
     /// </summary>
     public static void ProcessChargeShotSlot(in PlayerPowerUpSlotConfig slotConfig,
@@ -82,7 +84,9 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
                                              ref PlayerShield updatedShield,
                                              ref bool shieldChanged,
                                              ref PlayerDashState dashState,
-                                             ref PlayerBulletTimeState bulletTimeState)
+                                             ref PlayerBulletTimeState bulletTimeState,
+                                             DynamicBuffer<GameAudioEventRequest> audioRequests,
+                                             bool canEnqueueAudioRequests)
     {
         isActive = 0;
         maintenanceTickTimer = 0f;
@@ -109,7 +113,12 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
             charge = maximumCharge;
 
         if (pressedThisFrame)
+        {
             isCharging = 1;
+
+            if (canEnqueueAudioRequests)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.ActiveCharge, localTransform.Position);
+        }
 
         if (isCharging != 0 && isPressed && chargeRate > 0f)
         {
@@ -179,6 +188,12 @@ internal static class PlayerPowerUpChargeAndToggleActivationUtility
                                                                           ref laserBeamState,
                                                                           normalizedCharge,
                                                                           shootRequests);
+
+                if (canEnqueueAudioRequests)
+                {
+                    GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.ActiveRelease, localTransform.Position);
+                    GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerShootCannon, localTransform.Position);
+                }
 
                 cooldownRemaining = math.max(0f, slotConfig.CooldownSeconds);
                 charge = 0f;

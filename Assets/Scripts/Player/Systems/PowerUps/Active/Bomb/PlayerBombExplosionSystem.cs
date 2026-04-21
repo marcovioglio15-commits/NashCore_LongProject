@@ -37,6 +37,8 @@ public partial struct PlayerBombExplosionSystem : ISystem
         EntityManager entityManager = state.EntityManager;
         ComponentLookup<LocalTransform> localTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
         NativeArray<Entity> bombEntities = bombQuery.ToEntityArray(Allocator.Temp);
@@ -85,6 +87,9 @@ public partial struct PlayerBombExplosionSystem : ISystem
         for (int bombIndex = 0; bombIndex < bombEntities.Length; bombIndex++)
         {
             BombFuseState fuseState = bombFuseStates[bombIndex];
+
+            if (canEnqueueAudioRequests)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.ExplosionBomb, fuseState.Position);
 
             if (enemyCount > 0)
                 ApplyExplosionToEnemies(entityManager,

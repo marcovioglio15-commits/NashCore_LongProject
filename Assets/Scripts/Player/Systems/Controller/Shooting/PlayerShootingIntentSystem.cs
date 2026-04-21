@@ -54,6 +54,8 @@ public partial struct PlayerShootingIntentSystem : ISystem
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
         ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
         ComponentLookup<PlayerPowerUpsState> powerUpsStateLookup = SystemAPI.GetComponentLookup<PlayerPowerUpsState>(true);
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
 
         // for each player,
         // determine if they should shoot based on their input and shooting mode,
@@ -209,6 +211,9 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                                                  basePenetrationMode,
                                                                  baseMaxPenetrations,
                                                                  0);
+
+                if (canEnqueueAudioRequests)
+                    GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerShootProjectile, spawnPosition);
             }
         }
     }

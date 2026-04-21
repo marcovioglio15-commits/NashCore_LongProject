@@ -123,6 +123,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         ComponentLookup<PlayerComboCounterState> comboCounterStateLookup = SystemAPI.GetComponentLookup<PlayerComboCounterState>(false);
         BufferLookup<PlayerPowerUpBaseConfigElement> basePowerUpConfigsLookup = SystemAPI.GetBufferLookup<PlayerPowerUpBaseConfigElement>(true);
         BufferLookup<PlayerRuntimePowerUpScalingElement> powerUpScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimePowerUpScalingElement>(true);
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
 
         foreach ((RefRO<PlayerInputState> inputState,
                   RefRW<PlayerPowerUpsConfig> powerUpsConfig,
@@ -357,6 +359,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 ref healOverTimeState,
                                                                 bombRequests,
                                                                 shootRequests,
+                                                                audioRequests,
+                                                                canEnqueueAudioRequests,
                                                                 entity,
                                                                 ref healthLookup,
                                                                 ref updatedHealth,
@@ -475,6 +479,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 ref healOverTimeState,
                                                                 bombRequests,
                                                                 shootRequests,
+                                                                audioRequests,
+                                                                canEnqueueAudioRequests,
                                                                 entity,
                                                                 ref healthLookup,
                                                                 ref updatedHealth,

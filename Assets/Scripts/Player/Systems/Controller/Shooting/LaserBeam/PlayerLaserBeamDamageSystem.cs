@@ -109,6 +109,8 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
         ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup = SystemAPI.GetComponentLookup<EnemyHitVfxConfig>(true);
         ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup = SystemAPI.GetComponentLookup<EnemySpawnInactivityLock>(true);
         ComponentLookup<EnemyDespawnRequest> despawnRequestLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
         NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> hitCandidates = new NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate>(32, Allocator.Temp);
         NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> traversedHitCandidates = new NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate>(16, Allocator.Temp);
@@ -331,6 +333,9 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
 
                 continue;
             }
+
+            if (canEnqueueAudioRequests)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerLaserImpact, enemyTransforms[enemyIndex].Position);
 
             EnemyRuntimeState enemyRuntimeState = enemyRuntimeArray[enemyIndex];
             EnemyExtraComboPointsRuntimeUtility.MarkEnemyDamaged(ref enemyRuntimeState);

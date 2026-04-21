@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23b0593a01e1f6748b2981361d04c75e, type: 3}
+  m_Name: GameMasterPreset
+  m_EditorClassIdentifier: Assembly-CSharp::GameMasterPreset
+  presetId: 6062c80e614342888512dd1e7034ba96
+  presetName: GameMasterPreset
+  description: 
+  version: 1.0.0
+  audioManagerPreset: {fileID: 11400000, guid: 4762fb1f960c08e40b031f534d613690, type: 2}

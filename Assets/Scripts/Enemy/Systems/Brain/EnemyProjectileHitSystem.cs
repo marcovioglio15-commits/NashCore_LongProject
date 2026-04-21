@@ -229,6 +229,8 @@ public partial struct EnemyProjectileHitSystem : ISystem
         ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup = SystemAPI.GetComponentLookup<PlayerElementalVfxConfig>(true);
         ComponentLookup<EnemyHitVfxConfig> enemyHitVfxConfigLookup = SystemAPI.GetComponentLookup<EnemyHitVfxConfig>(true);
         ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup = SystemAPI.GetComponentLookup<EnemySpawnInactivityLock>(true);
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
         NativeStream.Reader projectileHitReader = projectileHitStream.AsReader();
         NativeList<ProjectileHitCandidate> hitCandidates = new NativeList<ProjectileHitCandidate>(16, Allocator.Temp);
 
@@ -442,6 +444,9 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
             if (!hasValidHit)
                 continue;
+
+            if (canEnqueueAudioRequests)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.BulletImpactEnemy, projectileTransform.Position);
 
             bool shouldSplitOnHitEvent = ProjectileSplitUtility.ShouldSplitOnHitEvent(in splitState, enemyKilledByProjectile);
 

@@ -70,6 +70,9 @@ public partial struct EnemyShooterRequestSystem : ISystem
         if (deltaTime <= 0f)
             return;
 
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
+
         foreach ((DynamicBuffer<EnemyShooterConfigElement> shooterConfigs,
                   DynamicBuffer<EnemyShooterRuntimeElement> shooterRuntime,
                   DynamicBuffer<ShootRequest> shootRequests,
@@ -188,6 +191,9 @@ public partial struct EnemyShooterRequestSystem : ISystem
                                         enemyPosition,
                                         aimDirection,
                                         in shooterConfig);
+
+                    if (canEnqueueAudioRequests)
+                        GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.EnemyShootProjectile, enemyPosition);
 
                     runtime.RemainingBurstShots -= 1;
                     runtime.ShotsFiredInCurrentBurst += 1;

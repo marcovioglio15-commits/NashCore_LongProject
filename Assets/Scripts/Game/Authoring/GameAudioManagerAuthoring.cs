@@ -1,0 +1,207 @@
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine;
+
+/// <summary>
+/// Scene authoring component that bakes the selected Game Audio Manager preset into an ECS audio singleton.
+/// /params None.
+/// /returns None.
+/// </summary>
+[DisallowMultipleComponent]
+public sealed class GameAudioManagerAuthoring : MonoBehaviour
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Header("Preset")]
+    [Tooltip("Game master preset used to resolve the Audio Manager sub-preset.")]
+    [SerializeField] private GameMasterPreset masterPreset;
+
+    [Tooltip("Direct Audio Manager preset fallback used when Master Preset is missing or has no Audio Manager assigned.")]
+    [SerializeField] private GameAudioManagerPreset audioManagerPreset;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public GameMasterPreset MasterPreset
+    {
+        get
+        {
+            return masterPreset;
+        }
+    }
+
+    public GameAudioManagerPreset AudioManagerPreset
+    {
+        get
+        {
+            return audioManagerPreset;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Resolves the effective Audio Manager preset used by baking.
+    /// /params None.
+    /// /returns Audio Manager preset from MasterPreset or direct fallback.
+    /// </summary>
+    public GameAudioManagerPreset ResolveAudioManagerPreset()
+    {
+        if (masterPreset != null && masterPreset.AudioManagerPreset != null)
+            return masterPreset.AudioManagerPreset;
+
+        return audioManagerPreset;
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
+/// Baker that converts GameAudioManagerAuthoring into singleton audio config and event binding buffers.
+/// /params None.
+/// /returns None.
+/// </summary>
+public sealed class GameAudioManagerAuthoringBaker : Baker<GameAudioManagerAuthoring>
+{
+    #region Methods
+
+    #region Bake
+    /// <summary>
+    /// Bakes global audio config and all event mappings from the selected preset.
+    /// /params authoring Scene authoring component that chooses the preset.
+    /// /returns None.
+    /// </summary>
+    public override void Bake(GameAudioManagerAuthoring authoring)
+    {
+        if (authoring == null)
+            return;
+
+        DeclarePresetDependencies(authoring);
+        GameAudioManagerPreset preset = authoring.ResolveAudioManagerPreset();
+
+        if (preset == null)
+            return;
+
+        Entity entity = GetEntity(TransformUsageFlags.None);
+        AddComponent(entity, BuildRuntimeConfig(preset));
+        DynamicBuffer<GameAudioEventBindingElement> bindingBuffer = AddBuffer<GameAudioEventBindingElement>(entity);
+        DynamicBuffer<GameAudioEventRequest> requestBuffer = AddBuffer<GameAudioEventRequest>(entity);
+        DynamicBuffer<GameAudioRateLimitStateElement> rateLimitStateBuffer = AddBuffer<GameAudioRateLimitStateElement>(entity);
+        PopulateBindingBuffer(preset, bindingBuffer);
+        requestBuffer.Clear();
+        rateLimitStateBuffer.Clear();
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Declares asset dependencies so the audio singleton rebakes when presets change.
+    /// /params authoring Authoring component that contains the preset references.
+    /// /returns None.
+    /// </summary>
+    private void DeclarePresetDependencies(GameAudioManagerAuthoring authoring)
+    {
+        if (authoring.MasterPreset != null)
+        {
+            DependsOn(authoring.MasterPreset);
+
+            if (authoring.MasterPreset.AudioManagerPreset != null)
+                DependsOn(authoring.MasterPreset.AudioManagerPreset);
+        }
+
+        if (authoring.AudioManagerPreset != null)
+            DependsOn(authoring.AudioManagerPreset);
+    }
+
+    /// <summary>
+    /// Builds the runtime singleton config from playback settings.
+    /// /params preset Source audio preset.
+    /// /returns Baked runtime config component.
+    /// </summary>
+    private static GameAudioRuntimeConfig BuildRuntimeConfig(GameAudioManagerPreset preset)
+    {
+        GameAudioPlaybackSettings playbackSettings = preset.PlaybackSettings;
+
+        if (playbackSettings == null)
+        {
+            return new GameAudioRuntimeConfig
+            {
+                Enabled = 0,
+                LogMissingEventPaths = 1,
+                MasterVolume = 0f,
+                DefaultMinimumDistance = 1f,
+                DefaultMaximumDistance = 45f
+            };
+        }
+
+        return new GameAudioRuntimeConfig
+        {
+            Enabled = playbackSettings.Enabled ? (byte)1 : (byte)0,
+            LogMissingEventPaths = playbackSettings.LogMissingEventPaths ? (byte)1 : (byte)0,
+            MasterVolume = math.max(0f, playbackSettings.MasterVolume),
+            DefaultMinimumDistance = math.max(0f, playbackSettings.DefaultMinimumDistance),
+            DefaultMaximumDistance = math.max(playbackSettings.DefaultMinimumDistance, playbackSettings.DefaultMaximumDistance)
+        };
+    }
+
+    /// <summary>
+    /// Populates the baked binding buffer while skipping null or None bindings.
+    /// /params preset Source audio preset.
+    /// /params bindingBuffer Output buffer on the audio singleton.
+    /// /returns None.
+    /// </summary>
+    private static void PopulateBindingBuffer(GameAudioManagerPreset preset, DynamicBuffer<GameAudioEventBindingElement> bindingBuffer)
+    {
+        bindingBuffer.Clear();
+        System.Collections.Generic.IReadOnlyList<GameAudioEventBinding> eventBindings = preset.EventBindings;
+
+        if (eventBindings == null)
+            return;
+
+        for (int index = 0; index < eventBindings.Count; index++)
+        {
+            GameAudioEventBinding binding = eventBindings[index];
+
+            if (binding == null)
+                continue;
+
+            if (binding.EventId == GameAudioEventId.None)
+                continue;
+
+            bindingBuffer.Add(BuildBindingElement(binding));
+        }
+    }
+
+    /// <summary>
+    /// Converts one ScriptableObject binding into an ECS buffer element.
+    /// /params binding Source event binding.
+    /// /returns Baked buffer element.
+    /// </summary>
+    private static GameAudioEventBindingElement BuildBindingElement(GameAudioEventBinding binding)
+    {
+        GameAudioRateLimitSettings rateLimit = binding.RateLimit;
+
+        return new GameAudioEventBindingElement
+        {
+            EventId = binding.EventId,
+            EventCode = new Unity.Collections.FixedString64Bytes(binding.EventCode ?? string.Empty),
+            EventPath = new Unity.Collections.FixedString512Bytes(binding.EventPath ?? string.Empty),
+            Volume = math.max(0f, binding.Volume),
+            Pitch = math.max(0.0001f, binding.Pitch),
+            Spatialize = binding.Spatialize ? (byte)1 : (byte)0,
+            MinimumDistance = math.max(0f, binding.MinimumDistance),
+            MaximumDistance = math.max(binding.MinimumDistance, binding.MaximumDistance),
+            RateLimitEnabled = rateLimit != null && rateLimit.Enabled ? (byte)1 : (byte)0,
+            MaxPlaysPerWindow = rateLimit != null ? math.max(0, rateLimit.MaxPlaysPerWindow) : 0,
+            WindowSeconds = rateLimit != null ? math.max(0f, rateLimit.WindowSeconds) : 0f
+        };
+    }
+    #endregion
+
+    #endregion
+}

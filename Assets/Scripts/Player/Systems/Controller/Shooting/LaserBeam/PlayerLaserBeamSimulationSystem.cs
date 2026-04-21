@@ -73,6 +73,8 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
         ComponentLookup<LocalTransform> transformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         ComponentLookup<LocalToWorld> localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
         BufferLookup<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlotsLookup = SystemAPI.GetBufferLookup<PlayerRuntimeShootingAppliedElementSlot>(true);
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
 
         foreach ((RefRO<LocalTransform> localTransform,
                   RefRW<PlayerShootingState> shootingState,
@@ -166,6 +168,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
 
             bool wasActive = currentLaserBeamState.IsActive != 0;
             currentLaserBeamState.IsActive = 1;
+            bool beamStartedThisFrame = !wasActive;
 
             if (hasTriggeredActiveLaser || isShootPressed)
                 currentLaserBeamState.ConsecutiveActiveElapsed += math.max(0f, deltaTime);
@@ -198,6 +201,7 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
             }
 
             currentLaserBeamState.IsTickReady = currentLaserBeamState.DamageTickTimer <= 0f ? (byte)1 : (byte)0;
+            bool beamTickReadyThisFrame = currentLaserBeamState.IsTickReady != 0;
             shootingState.ValueRW.VisualShootingActive = 1;
 
             PlayerProjectileRequestTemplate projectileTemplate = hasTriggeredActiveLaser
@@ -243,6 +247,15 @@ public partial struct PlayerLaserBeamSimulationSystem : ISystem
                                                                                             in muzzleLookup,
                                                                                             in transformLookup,
                                                                                             in localToWorldLookup);
+            if (canEnqueueAudioRequests)
+            {
+                if (beamStartedThisFrame)
+                    GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerShootLaserContinuous, spawnPosition);
+
+                if (beamTickReadyThisFrame)
+                    GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerShootLaserTick, spawnPosition);
+            }
+
             float3 baseDirection = PlayerProjectileRequestUtility.ResolveShootDirection(in currentLookState, in localTransform.ValueRO);
             float travelDistance = hasPerfectCircle
                 ? 0f

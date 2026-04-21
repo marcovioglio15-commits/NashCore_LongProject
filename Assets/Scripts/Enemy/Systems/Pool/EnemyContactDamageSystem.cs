@@ -40,6 +40,8 @@ public partial struct EnemyContactDamageSystem : ISystem
         PlayerRuntimeHealthStatisticsConfig runtimeHealthConfig = default;
         PlayerDamageGraceState playerDamageGraceState = default;
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
 
         foreach ((RefRO<LocalTransform> candidatePlayerTransform,
                   RefRO<PlayerHealth> candidatePlayerHealth,
@@ -158,6 +160,8 @@ public partial struct EnemyContactDamageSystem : ISystem
         if (totalDamage <= 0f)
             return;
 
+        float previousHealth = playerHealth.Current;
+        float previousShield = playerShield.Current;
         bool damageApplied = PlayerDamageUtility.TryApplyFlatShieldDamage(ref playerHealth,
                                                                           ref playerShield,
                                                                           ref playerDamageGraceState,
@@ -167,6 +171,15 @@ public partial struct EnemyContactDamageSystem : ISystem
 
         if (!damageApplied)
             return;
+
+        if (canEnqueueAudioRequests)
+        {
+            if (playerShield.Current < previousShield)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerShieldDamage, playerPosition);
+
+            if (playerHealth.Current < previousHealth)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerHealthDamage, playerPosition);
+        }
 
         entityManager.SetComponentData(playerEntity, playerHealth);
         entityManager.SetComponentData(playerEntity, playerShield);

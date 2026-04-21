@@ -47,6 +47,8 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
         PlayerRuntimeHealthStatisticsConfig runtimeHealthConfig = default;
         PlayerDamageGraceState playerDamageGraceState = default;
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+        DynamicBuffer<GameAudioEventRequest> audioRequests = default;
+        bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
 
         foreach ((RefRO<LocalTransform> candidatePlayerTransform,
                   RefRO<PlayerHealth> candidatePlayerHealth,
@@ -119,6 +121,9 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
             if (math.lengthsq(delta) > hitRadius * hitRadius)
                 continue;
 
+            if (canEnqueueAudioRequests)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.BulletImpactPlayer, projectileTransform.ValueRO.Position);
+
             accumulatedDamage += math.max(0f, projectile.ValueRO.Damage);
 
             for (int payloadIndex = 0; payloadIndex < elementalPayload.ValueRO.Entries.Length; payloadIndex++)
@@ -145,6 +150,8 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
         if (accumulatedDamage <= 0f)
             return;
 
+        float previousHealth = playerHealth.Current;
+        float previousShield = playerShield.Current;
         bool damageApplied = PlayerDamageUtility.TryApplyFlatShieldDamage(ref playerHealth,
                                                                           ref playerShield,
                                                                           ref playerDamageGraceState,
@@ -154,6 +161,15 @@ public partial struct EnemyProjectileHitPlayerSystem : ISystem
 
         if (!damageApplied)
             return;
+
+        if (canEnqueueAudioRequests)
+        {
+            if (playerShield.Current < previousShield)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerShieldDamage, playerPosition);
+
+            if (playerHealth.Current < previousHealth)
+                GameAudioEventRequestUtility.EnqueuePositioned(audioRequests, GameAudioEventId.PlayerHealthDamage, playerPosition);
+        }
 
         entityManager.SetComponentData(playerEntity, playerHealth);
         entityManager.SetComponentData(playerEntity, playerShield);

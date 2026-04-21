@@ -1,0 +1,384 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a87e73e0b4de1046a0fbd021e8f538f, type: 3}
+  m_Name: GameAudioManagerPreset
+  m_EditorClassIdentifier: Assembly-CSharp::GameAudioManagerPreset
+  presetId: 758fe216b5ad4bb49c133830e6682e5f
+  presetName: GameAudioManagerPreset
+  description: 
+  version: 1.0.0
+  playbackSettings:
+    enabled: 1
+    masterVolume: 1
+    defaultMinimumDistance: 1
+    defaultMaximumDistance: 45
+    logMissingEventPaths: 1
+  routingSettings:
+    masterBusPath: bus:/
+    sfxBusPath: bus:/SFX
+    musicBusPath: bus:/Music
+    sfxVolume: 1
+    musicVolume: 1
+  eventBindings:
+  - eventId: 1
+    eventCode: MC_SFX_Shoot_Projectile_Player
+    displayName: Player Projectile Shot
+    description: Requested when the player emits one projectile shot batch.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 2
+    eventCode: MC_SFX_Shoot_Projectile_Enemy
+    displayName: Enemy Projectile Shot
+    description: Requested when an enemy shooter module emits projectiles; rate-limited
+      by default.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 1
+      maxPlaysPerWindow: 8
+      windowSeconds: 0.25
+  - eventId: 3
+    eventCode: MC_SFX_Shoot_Laser_Continuous
+    displayName: Laser Continuous
+    description: Requested when the player's laser beam enters the active loop.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 4
+    eventCode: MC_SFX_Shoot_Laser_Tick
+    displayName: Laser Tick
+    description: Requested on authored laser damage ticks.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 5
+    eventCode: MC_SFX_Shoot_Cannon
+    displayName: Charged Cannon Shot
+    description: Requested when a charged shot is released successfully.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 6
+    eventCode: MC_SFX_HealthDamage
+    displayName: Player Health Damage
+    description: Requested when accepted damage reaches the player's health bar.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 7
+    eventCode: MC_SFX_ShieldDamage
+    displayName: Player Shield Damage
+    description: Requested when accepted damage is absorbed by the player's shield
+      bar.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 8
+    eventCode: MC_SFX_HealthRecharge
+    displayName: Player Health Recharge
+    description: Requested when runtime healing restores player health.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 9
+    eventCode: MC_SFX_ShieldRecharge
+    displayName: Player Shield Recharge
+    description: Requested when runtime shield compensation restores player shield.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 10
+    eventCode: MC_SFX_LevelUp
+    displayName: Level Up
+    description: Requested after a level-up that does not open a milestone selection.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 11
+    eventCode: MC_SFX_LevelUpMilestone
+    displayName: Milestone Level Up
+    description: Requested after a level-up reaches a milestone.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 12
+    eventCode: MC_SFX_Active_EnergyFull
+    displayName: Active Energy Full
+    description: Requested when an active tool reaches its energy requirement.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 13
+    eventCode: MC_SFX_Active_Charge
+    displayName: Active Charge
+    description: Requested when a charge-bar active tool starts charging.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 14
+    eventCode: MC_SFX_Active_Release
+    displayName: Active Release
+    description: Requested when a charge-bar active tool is released.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 15
+    eventCode: MC_SFX_Active_Dash
+    displayName: Active Dash
+    description: Requested when a dash-type active tool starts dashing.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 16
+    eventCode: MC_SFX_Active_Throw
+    displayName: Active Throw
+    description: Requested when a throw/deploy-type active tool is used.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 17
+    eventCode: MC_SFX_Misc_Death
+    displayName: Player Death
+    description: Requested when the run outcome resolves to defeat.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 18
+    eventCode: MC_SFX_Misc_Spawn
+    displayName: Player Spawn
+    description: Requested when player progression runtime state is initialized.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 19
+    eventCode: MC_SFX_Misc_Victory
+    displayName: Player Victory
+    description: Requested when the run outcome resolves to victory.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 20
+    eventCode: MISC_SFX_BulletImpact_Enemy
+    displayName: Bullet Impact Enemy
+    description: Requested when a player projectile impacts an enemy.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 21
+    eventCode: MISC_SFX_BulletImpact_Player
+    displayName: Bullet Impact Player
+    description: Requested when an enemy projectile impacts the player.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 22
+    eventCode: MISC_SFX_LaserImpact
+    displayName: Laser Impact
+    description: Requested when the player's laser beam damages enemies on its tick
+      cadence.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 23
+    eventCode: MISC_SFX_Explosion_Bomb
+    displayName: Bomb Explosion
+    description: Requested when a bomb active tool explodes.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 24
+    eventCode: MISC_SFX_Explosion_Passive
+    displayName: Passive Explosion
+    description: Requested when passive explosion power-up payloads resolve.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
+  - eventId: 25
+    eventCode: MISC_SFX_Explosion_Enemy
+    displayName: Enemy Explosion
+    description: Reserved for exploding enemy payloads once authored.
+    eventPath: 
+    volume: 1
+    pitch: 1
+    spatialize: 1
+    minimumDistance: 1
+    maximumDistance: 45
+    rateLimit:
+      enabled: 0
+      maxPlaysPerWindow: 0
+      windowSeconds: 1
