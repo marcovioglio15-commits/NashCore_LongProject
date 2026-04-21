@@ -365,13 +365,13 @@ MonoBehaviour:
   equippedScheduleId: ScheduleRookie
   comboCounter:
     isEnabled: 1
-    comboGainPerKill: 300
-    damageBreakMode: 1
+    comboGainPerKill: 10
+    damageBreakMode: 0
     shieldDamageBreaksCombo: 0
     rankDefinitions:
     - rankId: D
-      requiredComboValue: 0
-      pointsDecayPerSecond: 10
+      requiredComboValue: 100
+      pointsDecayPerSecond: 0
       rankVisuals:
         badgeSprite: {fileID: -715656042, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
         badgeTint: {r: 1, g: 1, b: 1, a: 1}
@@ -381,10 +381,10 @@ MonoBehaviour:
         progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
       rankBonuses:
         formulas:
-        - formula: 
+        - formula: '[GatheringRadius]=[GatheringRadius]*1.2'
     - rankId: C
-      requiredComboValue: 1000
-      pointsDecayPerSecond: 50
+      requiredComboValue: 250
+      pointsDecayPerSecond: 0
       rankVisuals:
         badgeSprite: {fileID: 1984434061, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
         badgeTint: {r: 1, g: 1, b: 1, a: 1}
@@ -394,10 +394,10 @@ MonoBehaviour:
         progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
       rankBonuses:
         formulas:
-        - formula: '[ShotRange]=300'
+        - formula: '[MovementSpeed]=[MovementSpeed]*1.2'
     - rankId: B
-      requiredComboValue: 2000
-      pointsDecayPerSecond: 100
+      requiredComboValue: 500
+      pointsDecayPerSecond: 1
       rankVisuals:
         badgeSprite: {fileID: 139036563, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
         badgeTint: {r: 1, g: 1, b: 1, a: 1}
@@ -407,10 +407,10 @@ MonoBehaviour:
         progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
       rankBonuses:
         formulas:
-        - formula: '[MovementSpeed]=[MovementSpeed]*2'
+        - formula: '[ShotRange]=[ShotRange]*1.2'
     - rankId: A
-      requiredComboValue: 4000
-      pointsDecayPerSecond: 500
+      requiredComboValue: 1000
+      pointsDecayPerSecond: 2
       rankVisuals:
         badgeSprite: {fileID: -158078774, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
         badgeTint: {r: 1, g: 1, b: 1, a: 1}
@@ -420,10 +420,10 @@ MonoBehaviour:
         progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
       rankBonuses:
         formulas:
-        - formula: '[InfinitePenetration]=true'
+        - formula: '[FireRate]=[FireRate]*1.2'
     - rankId: S
-      requiredComboValue: 8000
-      pointsDecayPerSecond: 1000
+      requiredComboValue: 1500
+      pointsDecayPerSecond: 5
       rankVisuals:
         badgeSprite: {fileID: 547062901, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
         badgeTint: {r: 1, g: 1, b: 1, a: 1}
@@ -433,20 +433,7 @@ MonoBehaviour:
         progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
       rankBonuses:
         formulas:
-        - formula: '[BulletSizeMultiplier]=[BulletSizeMultiplier]*2'
-    - rankId: SS
-      requiredComboValue: 20000
-      pointsDecayPerSecond: 5000
-      rankVisuals:
-        badgeSprite: {fileID: -493794101, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
-        badgeTint: {r: 1, g: 1, b: 1, a: 1}
-        rankTextColor: {r: 1, g: 1, b: 1, a: 1}
-        comboValueTextColor: {r: 0.9811321, g: 0.8466484, b: 0.71733713, a: 1}
-        progressFillColor: {r: 0, g: 1, b: 0.07073355, a: 1}
-        progressBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
-      rankBonuses:
-        formulas:
-        - formula: '[FireRate]=[FireRate]*10'
+        - formula: '[InfinitePenetration]=true'
   legacyExperienceRequiredPerLevel: 100
   levelCap: 100
   experiencePickupRadius: 1
