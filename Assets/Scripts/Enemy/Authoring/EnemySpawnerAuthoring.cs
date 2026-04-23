@@ -551,6 +551,13 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
     }
     #endregion
 
+    #region Const
+    private const float fillAlpha = 0.95f;
+    private const float cellSizePaddingHorizontal = .82f;
+    private const float cellSizePaddingVertical = 0.04f;
+    private const float cellSizePaddingVertical_Wired = 0.08f;
+    #endregion
+
     #region Methods
 
     #region Unity Methods
@@ -752,9 +759,9 @@ public sealed class EnemySpawnerAuthoring : MonoBehaviour
             Color fillColor = EnemySpawnerWaveBakeUtility.ResolvePaintColor(cell.MasterPreset);
             fillColor.a = 0.35f;
             Gizmos.color = fillColor;
-            Gizmos.DrawCube(localCenter, new Vector3(cellSize * 0.82f, 0.04f, cellSize * 0.82f));
-            Gizmos.color = new Color(fillColor.r, fillColor.g, fillColor.b, 0.95f);
-            Gizmos.DrawWireCube(localCenter, new Vector3(cellSize * 0.82f, 0.08f, cellSize * 0.82f));
+            Gizmos.DrawCube(localCenter, new Vector3(cellSize * cellSizePaddingHorizontal, cellSizePaddingVertical, cellSize * cellSizePaddingHorizontal));
+            Gizmos.color = new Color(fillColor.r, fillColor.g, fillColor.b, fillAlpha);
+            Gizmos.DrawWireCube(localCenter, new Vector3(cellSize * cellSizePaddingHorizontal, cellSizePaddingVertical_Wired, cellSize * cellSizePaddingHorizontal));
         }
     }
 

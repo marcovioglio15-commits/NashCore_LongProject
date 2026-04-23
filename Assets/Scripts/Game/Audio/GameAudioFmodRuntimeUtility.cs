@@ -72,7 +72,7 @@ public static class GameAudioFmodRuntimeUtility
             return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogWarning("[GameAudio] Skipped audio request because the FMOD event path is empty.");
+        UnityEngine.Debug.LogWarning("[GameAudio] Skipped audio request because the FMOD event path is empty.");
 #endif
     }
 
@@ -88,7 +88,7 @@ public static class GameAudioFmodRuntimeUtility
             return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[GameAudio] FMOD backend is disabled. Define NASHCORE_FMOD after installing FMOD Unity integration to play: " + eventPath);
+        UnityEngine.Debug.Log("[GameAudio] FMOD backend is disabled. Define NASHCORE_FMOD after installing FMOD Unity integration to play: " + eventPath);
 #endif
     }
     #endregion

@@ -33,10 +33,10 @@ MonoBehaviour:
     eventCode: MC_SFX_Shoot_Projectile_Player
     displayName: Player Projectile Shot
     description: Requested when the player emits one projectile shot batch.
-    eventPath: 
+    eventPath: event:/SFX/sfx_battery
     volume: 1
     pitch: 1
-    spatialize: 1
+    spatialize: 0
     minimumDistance: 1
     maximumDistance: 45
     rateLimit:
