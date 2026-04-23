@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{fba3c570-b402-48bb-ad85-7bcf299a368e}">
+		<property name="assetPath">
+			<value>timedisplacedindividuals2.wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>48</value>
+		</property>
+		<property name="channelCount">
+			<value>1</value>
+		</property>
+		<property name="length">
+			<value>4.2300208333333336</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{429dc413-3f2e-4779-b48b-7589343f41dd}</destination>
+		</relationship>
+	</object>
+</objects>
