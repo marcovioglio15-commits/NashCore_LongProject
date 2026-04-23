@@ -33,7 +33,7 @@ MonoBehaviour:
     eventCode: MC_SFX_Shoot_Projectile_Player
     displayName: Player Projectile Shot
     description: Requested when the player emits one projectile shot batch.
-    eventPath: event:/SFX/sfx_battery
+    eventPath: event:/SFX/sfx_jump
     volume: 1
     pitch: 1
     spatialize: 0
@@ -41,14 +41,14 @@ MonoBehaviour:
     maximumDistance: 45
     rateLimit:
       enabled: 0
-      maxPlaysPerWindow: 0
+      maxPlaysPerWindow: 1
       windowSeconds: 1
   - eventId: 2
     eventCode: MC_SFX_Shoot_Projectile_Enemy
     displayName: Enemy Projectile Shot
     description: Requested when an enemy shooter module emits projectiles; rate-limited
       by default.
-    eventPath: 
+    eventPath: event:/SFX/sfx_pickup
     volume: 1
     pitch: 1
     spatialize: 1
@@ -62,10 +62,10 @@ MonoBehaviour:
     eventCode: MC_SFX_Shoot_Laser_Continuous
     displayName: Laser Continuous
     description: Requested when the player's laser beam enters the active loop.
-    eventPath: 
+    eventPath: event:/SFX/woosh
     volume: 1
     pitch: 1
-    spatialize: 1
+    spatialize: 0
     minimumDistance: 1
     maximumDistance: 45
     rateLimit:

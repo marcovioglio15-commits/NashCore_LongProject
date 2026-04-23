@@ -13577,7 +13577,6 @@ MonoBehaviour:
   secondaryActivePowerUpId: ActiveBasicDash
   equippedPassivePowerUpIds:
   - PassiveBouncingProjectiles
-  - PassiveOrbitalProjectiles
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT
