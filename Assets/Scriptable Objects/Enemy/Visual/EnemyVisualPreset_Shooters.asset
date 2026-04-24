@@ -29,11 +29,11 @@ MonoBehaviour:
     flashMaximumBlend: 0.6
   outline:
     enableOutline: 1
-    outlineThickness: 1
+    outlineThickness: 12
     outlineColor: {r: 0, g: 0, b: 0, a: 1}
   shooterWarning:
     enableAimPulse: 1
-    aimPulseColor: {r: 0, g: 0.092638016, b: 1, a: 1}
+    aimPulseColor: {r: 1, g: 1, b: 1, a: 1}
     aimPulseLeadTimeSeconds: 0.5
     aimPulseFadeOutSeconds: 0.4
     aimPulseMaximumBlend: 0.8
