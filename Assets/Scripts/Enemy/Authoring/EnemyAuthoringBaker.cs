@@ -92,6 +92,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
         DynamicBuffer<EnemyShooterConfigElement> shooterConfigs = AddBuffer<EnemyShooterConfigElement>(entity);
         DynamicBuffer<EnemyShooterRuntimeElement> shooterRuntime = AddBuffer<EnemyShooterRuntimeElement>(entity);
+        DynamicBuffer<EnemyOffensiveEngagementConfigElement> offensiveEngagementConfigs = AddBuffer<EnemyOffensiveEngagementConfigElement>(entity);
 
         for (int shooterIndex = 0; shooterIndex < compiledPattern.ShooterConfigs.Count; shooterIndex++)
         {
@@ -110,9 +111,12 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         }
 
         if (compiledPattern.ShooterConfigs.Count > 0)
+        {
             TryBakeShooterRuntime(authoring, entity, compiledPattern);
+        }
 
         TryBakeDropItemsRuntime(authoring, entity, compiledPattern);
+        EnemyOffensiveEngagementBakeUtility.AppendConfigs(authoring, offensiveEngagementConfigs);
 
         EnemyVisualMode bakedVisualMode = ResolveBakedVisualMode(authoring, out Animator resolvedAnimatorComponent);
 
@@ -152,19 +156,13 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             RemainingSeconds = 0f,
             AppliedBlend = 0f
         });
-        AddComponent(entity, new EnemyShooterAimPulseVisualConfig
-        {
-            Enabled = authoring.EnableShooterAimPulse ? (byte)1 : (byte)0,
-            Color = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.ShooterAimPulseColor),
-            LeadTimeSeconds = math.max(0f, authoring.ShooterAimPulseLeadTimeSeconds),
-            FadeOutSeconds = math.max(0f, authoring.ShooterAimPulseFadeOutSeconds),
-            MaximumBlend = math.saturate(authoring.ShooterAimPulseMaximumBlend)
-        });
         AddComponent(entity, new EnemyVisualFlashPresentationState
         {
             AppliedBlend = 0f,
             AppliedColor = damageFlashColor,
-            ShooterPulseBlend = 0f
+            OffensiveEngagementColor = damageFlashColor,
+            OffensiveEngagementBlend = 0f,
+            OffensiveEngagementFadeOutSeconds = 0f
         });
         BakeDamageFlashRenderTargets(authoring, entity);
 
@@ -187,6 +185,14 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             default:
                 AddComponent<EnemyVisualGpuBaked>(entity);
                 break;
+        }
+
+        EnemyOffensiveEngagementBillboardView resolvedBillboardView = ResolveOffensiveEngagementBillboardView(authoring);
+
+        if (resolvedBillboardView != null)
+        {
+            resolvedBillboardView.SyncPresetSources(authoring);
+            AddComponentObject(entity, resolvedBillboardView);
         }
 
         EnemyWorldSpaceStatusBarsView resolvedStatusBarsView = ResolveWorldSpaceStatusBarsView(authoring);
@@ -222,7 +228,9 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         Entity anchorEntity = Entity.Null;
 
         if (authoring.ElementalVfxAnchor != null)
+        {
             anchorEntity = GetEntity(authoring.ElementalVfxAnchor, TransformUsageFlags.Dynamic);
+        }
 
         AddComponent(entity, new EnemyElementalVfxAnchor
         {
@@ -341,6 +349,30 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
             fallbackStatusBarsView.gameObject != null)
         {
             return fallbackStatusBarsView;
+        }
+
+        return null;
+    }
+
+    private static EnemyOffensiveEngagementBillboardView ResolveOffensiveEngagementBillboardView(EnemyAuthoring authoring)
+    {
+        if (authoring == null)
+            return null;
+
+        EnemyOffensiveEngagementBillboardView assignedBillboardView = authoring.OffensiveEngagementBillboardView;
+
+        if (assignedBillboardView != null &&
+            assignedBillboardView.gameObject != null)
+        {
+            return assignedBillboardView;
+        }
+
+        EnemyOffensiveEngagementBillboardView fallbackBillboardView = authoring.GetComponentInChildren<EnemyOffensiveEngagementBillboardView>(true);
+
+        if (fallbackBillboardView != null &&
+            fallbackBillboardView.gameObject != null)
+        {
+            return fallbackBillboardView;
         }
 
         return null;

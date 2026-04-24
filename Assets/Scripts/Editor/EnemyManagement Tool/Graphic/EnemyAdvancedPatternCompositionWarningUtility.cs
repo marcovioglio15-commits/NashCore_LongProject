@@ -117,6 +117,14 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
                                 preset,
                                 warnings,
                                 "Short-Range Interaction");
+        AnalyzeOffensiveEngagementTrigger(patternName,
+                                          pattern.ShortRangeInteraction != null && pattern.ShortRangeInteraction.IsEnabled,
+                                          pattern.ShortRangeInteraction != null && pattern.ShortRangeInteraction.DisplayBehaviourEngagementTrigger,
+                                          pattern.ShortRangeInteraction != null ? pattern.ShortRangeInteraction.Binding : null,
+                                          EnemyPatternModuleCatalogSection.ShortRangeInteraction,
+                                          preset,
+                                          warnings,
+                                          "Short-Range Interaction");
         AnalyzeOptionalCategory(patternName,
                                 pattern.WeaponInteraction != null && pattern.WeaponInteraction.IsEnabled,
                                 pattern.WeaponInteraction != null ? pattern.WeaponInteraction.Binding : null,
@@ -124,6 +132,14 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
                                 preset,
                                 warnings,
                                 "Weapon Interaction");
+        AnalyzeOffensiveEngagementTrigger(patternName,
+                                          pattern.WeaponInteraction != null && pattern.WeaponInteraction.IsEnabled,
+                                          pattern.WeaponInteraction != null && pattern.WeaponInteraction.DisplayBehaviourEngagementTrigger,
+                                          pattern.WeaponInteraction != null ? pattern.WeaponInteraction.Binding : null,
+                                          EnemyPatternModuleCatalogSection.WeaponInteraction,
+                                          preset,
+                                          warnings,
+                                          "Weapon Interaction");
         AnalyzeDropItemsCategory(patternName,
                                  pattern.DropItems,
                                  preset,
@@ -170,6 +186,50 @@ internal static class EnemyAdvancedPatternCompositionWarningUtility
         {
             warnings.Add(string.Format("Shared pattern '{0}' enables {1} with module kind '{2}', which does not belong to that category.", patternName, categoryLabel, definition.ModuleKind));
         }
+    }
+
+    /// <summary>
+    /// Adds warnings for enabled engagement triggers that currently point to unsupported predictive module kinds.
+    /// /params patternName Display name of the analyzed pattern.
+    /// /params categoryEnabled Whether the owning category is enabled.
+    /// /params triggerEnabled Whether the engagement trigger is enabled for that category.
+    /// /params binding Optional category binding.
+    /// /params section Expected catalog section for the category.
+    /// /params preset Selected advanced-pattern preset.
+    /// /params warnings Mutable warning set.
+    /// /params categoryLabel Display label of the category.
+    /// /returns None.
+    /// </summary>
+    private static void AnalyzeOffensiveEngagementTrigger(string patternName,
+                                                          bool categoryEnabled,
+                                                          bool triggerEnabled,
+                                                          EnemyPatternModuleBinding binding,
+                                                          EnemyPatternModuleCatalogSection section,
+                                                          EnemyAdvancedPatternPreset preset,
+                                                          HashSet<string> warnings,
+                                                          string categoryLabel)
+    {
+        if (!categoryEnabled || !triggerEnabled || binding == null || !binding.IsEnabled || preset == null)
+        {
+            return;
+        }
+
+        EnemyPatternModuleDefinition definition = preset.ResolveModuleDefinitionById(binding.ModuleId);
+
+        if (definition == null)
+        {
+            return;
+        }
+
+        if (EnemyOffensiveEngagementSupportUtility.SupportsTimingMode(section, definition.ModuleKind))
+        {
+            return;
+        }
+
+        warnings.Add(string.Format("Shared pattern '{0}' enables Display Behaviour Engagement Trigger on {1}, but module kind '{2}' does not currently expose a predictive offensive timing hook in that slot.",
+                                   patternName,
+                                   categoryLabel,
+                                   definition.ModuleKind));
     }
 
     /// <summary>

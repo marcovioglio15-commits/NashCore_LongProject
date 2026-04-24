@@ -91,6 +91,15 @@ public sealed class EnemyPatternShortRangeInteractionAssembly
     [Tooltip("Extra distance added after activation before the short-range interaction releases back to the core movement.")]
     [SerializeField] private float releaseDistanceBuffer = DefaultReleaseDistanceBuffer;
 
+    [Tooltip("When enabled, this short-range interaction emits offensive engagement feedback before each supported behaviour commit.")]
+    [SerializeField] private bool displayBehaviourEngagementTrigger;
+
+    [Tooltip("When enabled, this short-range interaction overrides the generic offensive engagement feedback settings resolved from the visual preset.")]
+    [SerializeField] private bool useEngagementFeedbackOverride;
+
+    [Tooltip("Optional offensive engagement feedback override applied only to this short-range interaction when the display trigger is enabled.")]
+    [SerializeField] private EnemyOffensiveEngagementFeedbackSettings engagementFeedbackOverride = new EnemyOffensiveEngagementFeedbackSettings();
+
     [Tooltip("Short-range interaction module binding resolved from Short-Range Interaction definitions.")]
     [SerializeField] private EnemyPatternModuleBinding binding = new EnemyPatternModuleBinding();
     #endregion
@@ -119,6 +128,30 @@ public sealed class EnemyPatternShortRangeInteractionAssembly
         get
         {
             return releaseDistanceBuffer;
+        }
+    }
+
+    public bool DisplayBehaviourEngagementTrigger
+    {
+        get
+        {
+            return displayBehaviourEngagementTrigger;
+        }
+    }
+
+    public bool UseEngagementFeedbackOverride
+    {
+        get
+        {
+            return useEngagementFeedbackOverride;
+        }
+    }
+
+    public EnemyOffensiveEngagementFeedbackSettings EngagementFeedbackOverride
+    {
+        get
+        {
+            return engagementFeedbackOverride;
         }
     }
 
@@ -155,9 +188,13 @@ public sealed class EnemyPatternShortRangeInteractionAssembly
     /// </summary>
     public void Validate()
     {
+        if (engagementFeedbackOverride == null)
+            engagementFeedbackOverride = new EnemyOffensiveEngagementFeedbackSettings();
+
         if (binding == null)
             binding = new EnemyPatternModuleBinding();
 
+        engagementFeedbackOverride.Validate();
         binding.Validate();
     }
     #endregion
@@ -198,6 +235,15 @@ public sealed class EnemyPatternWeaponInteractionAssembly
 
     [Tooltip("When enabled, the active weapon interaction controls enemy look direction exclusively while its range gates remain valid.")]
     [SerializeField] private bool exclusiveLookDirectionControl;
+
+    [Tooltip("When enabled, this weapon interaction emits offensive engagement feedback before each supported behaviour commit.")]
+    [SerializeField] private bool displayBehaviourEngagementTrigger;
+
+    [Tooltip("When enabled, this weapon interaction overrides the generic offensive engagement feedback settings resolved from the visual preset.")]
+    [SerializeField] private bool useEngagementFeedbackOverride;
+
+    [Tooltip("Optional offensive engagement feedback override applied only to this weapon interaction when the display trigger is enabled.")]
+    [SerializeField] private EnemyOffensiveEngagementFeedbackSettings engagementFeedbackOverride = new EnemyOffensiveEngagementFeedbackSettings();
 
     [Tooltip("Weapon interaction module binding resolved from Weapon Interaction definitions.")]
     [SerializeField] private EnemyPatternModuleBinding binding = new EnemyPatternModuleBinding();
@@ -254,6 +300,30 @@ public sealed class EnemyPatternWeaponInteractionAssembly
         }
     }
 
+    public bool DisplayBehaviourEngagementTrigger
+    {
+        get
+        {
+            return displayBehaviourEngagementTrigger;
+        }
+    }
+
+    public bool UseEngagementFeedbackOverride
+    {
+        get
+        {
+            return useEngagementFeedbackOverride;
+        }
+    }
+
+    public EnemyOffensiveEngagementFeedbackSettings EngagementFeedbackOverride
+    {
+        get
+        {
+            return engagementFeedbackOverride;
+        }
+    }
+
     public EnemyPatternModuleBinding Binding
     {
         get
@@ -295,9 +365,13 @@ public sealed class EnemyPatternWeaponInteractionAssembly
     /// </summary>
     public void Validate()
     {
+        if (engagementFeedbackOverride == null)
+            engagementFeedbackOverride = new EnemyOffensiveEngagementFeedbackSettings();
+
         if (binding == null)
             binding = new EnemyPatternModuleBinding();
 
+        engagementFeedbackOverride.Validate();
         binding.Validate();
     }
     #endregion

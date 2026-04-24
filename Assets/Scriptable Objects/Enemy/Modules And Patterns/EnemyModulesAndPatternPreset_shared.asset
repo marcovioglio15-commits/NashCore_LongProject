@@ -2067,6 +2067,23 @@ MonoBehaviour:
       isEnabled: 1
       activationRange: 6
       releaseDistanceBuffer: 1
+      displayBehaviourEngagementTrigger: 1
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Dash
         isEnabled: 1
@@ -2258,6 +2275,23 @@ MonoBehaviour:
       useMaximumRange: 0
       maximumRange: 20
       exclusiveLookDirectionControl: 0
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -3005,6 +3039,23 @@ MonoBehaviour:
       isEnabled: 0
       activationRange: 6
       releaseDistanceBuffer: 1
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Grunt_ShortRange
         isEnabled: 1
@@ -3196,6 +3247,23 @@ MonoBehaviour:
       useMaximumRange: 0
       maximumRange: 20
       exclusiveLookDirectionControl: 0
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -3943,6 +4011,23 @@ MonoBehaviour:
       isEnabled: 0
       activationRange: 6
       releaseDistanceBuffer: 1
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Grunt_ShortRange
         isEnabled: 1
@@ -4134,6 +4219,23 @@ MonoBehaviour:
       useMaximumRange: 0
       maximumRange: 20
       exclusiveLookDirectionControl: 0
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -4881,6 +4983,23 @@ MonoBehaviour:
       isEnabled: 1
       activationRange: 6
       releaseDistanceBuffer: 1.5
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Coward
         isEnabled: 1
@@ -5090,6 +5209,23 @@ MonoBehaviour:
       useMaximumRange: 0
       maximumRange: 20
       exclusiveLookDirectionControl: 0
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -6051,6 +6187,23 @@ MonoBehaviour:
       isEnabled: 0
       activationRange: 6
       releaseDistanceBuffer: 1
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Grunt_ShortRange
         isEnabled: 1
@@ -6242,6 +6395,23 @@ MonoBehaviour:
       useMaximumRange: 1
       maximumRange: 15
       exclusiveLookDirectionControl: 0
+      displayBehaviourEngagementTrigger: 1
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Shooter
         isEnabled: 1
@@ -6990,6 +7160,23 @@ MonoBehaviour:
       isEnabled: 1
       activationRange: 8
       releaseDistanceBuffer: 1.5
+      displayBehaviourEngagementTrigger: 0
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Coward
         isEnabled: 1
@@ -7181,6 +7368,23 @@ MonoBehaviour:
       useMaximumRange: 1
       maximumRange: 15
       exclusiveLookDirectionControl: 0
+      displayBehaviourEngagementTrigger: 1
+      useEngagementFeedbackOverride: 0
+      engagementFeedbackOverride:
+        enableColorBlend: 1
+        colorBlendColor: {r: 0.35, g: 1, b: 0.95, a: 1}
+        colorBlendLeadTimeSeconds: 0.3
+        colorBlendFadeOutSeconds: 0.18
+        colorBlendMaximumBlend: 0.7
+        enableBillboard: 1
+        billboardSprite: {fileID: 0}
+        billboardColor: {r: 1, g: 1, b: 1, a: 1}
+        billboardLocalOffset: {x: 0, y: 1.85, z: 0}
+        billboardLeadTimeSeconds: 0.3
+        billboardBaseScale: 0.75
+        billboardPulseScaleMultiplier: 1.22
+        billboardPulseExpandDurationSeconds: 0.12
+        billboardPulseContractDurationSeconds: 0.14
       binding:
         moduleId: Module_Shooter
         isEnabled: 1

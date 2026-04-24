@@ -62,7 +62,7 @@ MonoBehaviour:
     eventCode: MC_SFX_Shoot_Laser_Continuous
     displayName: Laser Continuous
     description: Requested when the player's laser beam enters the active loop.
-    eventPath: event:/SFX/woosh
+    eventPath: 
     volume: 1
     pitch: 1
     spatialize: 0

@@ -28,7 +28,11 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
         SerializedProperty useMaximumRangeProperty = property.FindPropertyRelative("useMaximumRange");
         SerializedProperty maximumRangeProperty = property.FindPropertyRelative("maximumRange");
         SerializedProperty exclusiveLookDirectionControlProperty = property.FindPropertyRelative("exclusiveLookDirectionControl");
+        SerializedProperty displayBehaviourEngagementTriggerProperty = property.FindPropertyRelative("displayBehaviourEngagementTrigger");
+        SerializedProperty useEngagementFeedbackOverrideProperty = property.FindPropertyRelative("useEngagementFeedbackOverride");
+        SerializedProperty engagementFeedbackOverrideProperty = property.FindPropertyRelative("engagementFeedbackOverride");
         SerializedProperty bindingProperty = property.FindPropertyRelative("binding");
+        SerializedProperty moduleIdProperty = bindingProperty != null ? bindingProperty.FindPropertyRelative("moduleId") : null;
 
         if (enabledProperty == null ||
             useMinimumRangeProperty == null ||
@@ -36,6 +40,9 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
             useMaximumRangeProperty == null ||
             maximumRangeProperty == null ||
             exclusiveLookDirectionControlProperty == null ||
+            displayBehaviourEngagementTriggerProperty == null ||
+            useEngagementFeedbackOverrideProperty == null ||
+            engagementFeedbackOverrideProperty == null ||
             bindingProperty == null)
         {
             Label errorLabel = new Label("Weapon Interaction assembly fields are missing.");
@@ -71,40 +78,132 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
         bindingField.BindProperty(bindingProperty);
         bindingField.tooltip = "Binding selected after the shared minimum and maximum range gates defined in this assembly evaluate true.";
         settingsContainer.Add(bindingField);
+        EnemyAdvancedPatternDrawerUtility.AddField(settingsContainer,
+                                                   displayBehaviourEngagementTriggerProperty,
+                                                   "Display Behaviour Engagement Trigger");
+
+        HelpBox unsupportedModuleBox = new HelpBox("Display Behaviour Engagement Trigger currently supports only Shooter in the Weapon Interaction slot.", HelpBoxMessageType.Warning);
+        unsupportedModuleBox.style.marginTop = 4f;
+        settingsContainer.Add(unsupportedModuleBox);
+
+        VisualElement feedbackOptionsContainer = new VisualElement();
+        feedbackOptionsContainer.style.marginLeft = 12f;
+        settingsContainer.Add(feedbackOptionsContainer);
+        EnemyAdvancedPatternDrawerUtility.AddField(feedbackOptionsContainer,
+                                                   useEngagementFeedbackOverrideProperty,
+                                                   "Use Engagement Feedback Override");
+
+        VisualElement feedbackOverrideContainer = new VisualElement();
+        feedbackOverrideContainer.style.marginLeft = 12f;
+        feedbackOptionsContainer.Add(feedbackOverrideContainer);
+        feedbackOverrideContainer.Add(EnemyOffensiveEngagementFeedbackDrawerUtility.BuildSettingsEditor(engagementFeedbackOverrideProperty));
 
         UpdateVisibility(enabledProperty,
                          useMinimumRangeProperty,
                          useMaximumRangeProperty,
+                         displayBehaviourEngagementTriggerProperty,
+                         useEngagementFeedbackOverrideProperty,
+                         bindingProperty,
                          settingsContainer,
                          minimumRangeContainer,
-                         maximumRangeContainer);
+                         maximumRangeContainer,
+                         feedbackOptionsContainer,
+                         feedbackOverrideContainer,
+                         unsupportedModuleBox);
         root.TrackPropertyValue(enabledProperty, changedProperty =>
         {
             UpdateVisibility(changedProperty,
                              useMinimumRangeProperty,
                              useMaximumRangeProperty,
+                             displayBehaviourEngagementTriggerProperty,
+                             useEngagementFeedbackOverrideProperty,
+                             bindingProperty,
                              settingsContainer,
                              minimumRangeContainer,
-                             maximumRangeContainer);
+                             maximumRangeContainer,
+                             feedbackOptionsContainer,
+                             feedbackOverrideContainer,
+                             unsupportedModuleBox);
         });
         root.TrackPropertyValue(useMinimumRangeProperty, changedProperty =>
         {
             UpdateVisibility(enabledProperty,
                              changedProperty,
                              useMaximumRangeProperty,
+                             displayBehaviourEngagementTriggerProperty,
+                             useEngagementFeedbackOverrideProperty,
+                             bindingProperty,
                              settingsContainer,
                              minimumRangeContainer,
-                             maximumRangeContainer);
+                             maximumRangeContainer,
+                             feedbackOptionsContainer,
+                             feedbackOverrideContainer,
+                             unsupportedModuleBox);
         });
         root.TrackPropertyValue(useMaximumRangeProperty, changedProperty =>
         {
             UpdateVisibility(enabledProperty,
                              useMinimumRangeProperty,
                              changedProperty,
+                             displayBehaviourEngagementTriggerProperty,
+                             useEngagementFeedbackOverrideProperty,
+                             bindingProperty,
                              settingsContainer,
                              minimumRangeContainer,
-                             maximumRangeContainer);
+                             maximumRangeContainer,
+                             feedbackOptionsContainer,
+                             feedbackOverrideContainer,
+                             unsupportedModuleBox);
         });
+        root.TrackPropertyValue(displayBehaviourEngagementTriggerProperty, changedProperty =>
+        {
+            UpdateVisibility(enabledProperty,
+                             useMinimumRangeProperty,
+                             useMaximumRangeProperty,
+                             changedProperty,
+                             useEngagementFeedbackOverrideProperty,
+                             bindingProperty,
+                             settingsContainer,
+                             minimumRangeContainer,
+                             maximumRangeContainer,
+                             feedbackOptionsContainer,
+                             feedbackOverrideContainer,
+                             unsupportedModuleBox);
+        });
+        root.TrackPropertyValue(useEngagementFeedbackOverrideProperty, changedProperty =>
+        {
+            UpdateVisibility(enabledProperty,
+                             useMinimumRangeProperty,
+                             useMaximumRangeProperty,
+                             displayBehaviourEngagementTriggerProperty,
+                             changedProperty,
+                             bindingProperty,
+                             settingsContainer,
+                             minimumRangeContainer,
+                             maximumRangeContainer,
+                             feedbackOptionsContainer,
+                             feedbackOverrideContainer,
+                             unsupportedModuleBox);
+        });
+
+        if (moduleIdProperty != null)
+        {
+            root.TrackPropertyValue(moduleIdProperty, changedProperty =>
+            {
+                UpdateVisibility(enabledProperty,
+                                 useMinimumRangeProperty,
+                                 useMaximumRangeProperty,
+                                 displayBehaviourEngagementTriggerProperty,
+                                 useEngagementFeedbackOverrideProperty,
+                                 bindingProperty,
+                                 settingsContainer,
+                                 minimumRangeContainer,
+                                 maximumRangeContainer,
+                                 feedbackOptionsContainer,
+                                 feedbackOverrideContainer,
+                                 unsupportedModuleBox);
+            });
+        }
 
         return root;
     }
@@ -112,45 +211,89 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
 
     #region Private Methods
     /// <summary>
-    /// Updates the nested settings and gated range fields visibility from the current toggle values.
+    /// Updates nested settings visibility, range-gated fields, and unsupported-module warnings from the current toggle state.
     /// /params enabledProperty Serialized enabled property.
     /// /params useMinimumRangeProperty Serialized minimum-range toggle.
     /// /params useMaximumRangeProperty Serialized maximum-range toggle.
+    /// /params displayTriggerProperty Serialized trigger toggle.
+    /// /params useOverrideProperty Serialized override toggle.
+    /// /params bindingProperty Serialized module binding.
     /// /params settingsContainer Main nested settings container.
     /// /params minimumRangeContainer Nested minimum-range field container.
     /// /params maximumRangeContainer Nested maximum-range field container.
+    /// /params feedbackOptionsContainer Nested feedback options container.
+    /// /params feedbackOverrideContainer Nested override settings container.
+    /// /params unsupportedModuleBox Warning box shown for unsupported module kinds.
     /// /returns None.
     /// </summary>
     private static void UpdateVisibility(SerializedProperty enabledProperty,
                                          SerializedProperty useMinimumRangeProperty,
                                          SerializedProperty useMaximumRangeProperty,
+                                         SerializedProperty displayTriggerProperty,
+                                         SerializedProperty useOverrideProperty,
+                                         SerializedProperty bindingProperty,
                                          VisualElement settingsContainer,
                                          VisualElement minimumRangeContainer,
-                                         VisualElement maximumRangeContainer)
+                                         VisualElement maximumRangeContainer,
+                                         VisualElement feedbackOptionsContainer,
+                                         VisualElement feedbackOverrideContainer,
+                                         HelpBox unsupportedModuleBox)
     {
+        bool isInteractionEnabled = enabledProperty != null && enabledProperty.boolValue;
+        bool useMinimumRange = isInteractionEnabled &&
+                               useMinimumRangeProperty != null &&
+                               useMinimumRangeProperty.boolValue;
+        bool useMaximumRange = isInteractionEnabled &&
+                               useMaximumRangeProperty != null &&
+                               useMaximumRangeProperty.boolValue;
+        bool isTriggerEnabled = isInteractionEnabled &&
+                                displayTriggerProperty != null &&
+                                displayTriggerProperty.boolValue;
+        bool isOverrideEnabled = isTriggerEnabled &&
+                                 useOverrideProperty != null &&
+                                 useOverrideProperty.boolValue;
+        bool showUnsupportedModuleWarning = isTriggerEnabled &&
+                                            !EnemyOffensiveEngagementFeedbackDrawerUtility.SupportsDisplayTrigger(bindingProperty,
+                                                                                                                 EnemyPatternModuleCatalogSection.WeaponInteraction);
+
         if (settingsContainer != null)
         {
-            settingsContainer.style.display = enabledProperty != null && enabledProperty.boolValue
+            settingsContainer.style.display = isInteractionEnabled
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
         }
 
         if (minimumRangeContainer != null)
         {
-            minimumRangeContainer.style.display = enabledProperty != null &&
-                                                 enabledProperty.boolValue &&
-                                                 useMinimumRangeProperty != null &&
-                                                 useMinimumRangeProperty.boolValue
+            minimumRangeContainer.style.display = useMinimumRange
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
         }
 
         if (maximumRangeContainer != null)
         {
-            maximumRangeContainer.style.display = enabledProperty != null &&
-                                                 enabledProperty.boolValue &&
-                                                 useMaximumRangeProperty != null &&
-                                                 useMaximumRangeProperty.boolValue
+            maximumRangeContainer.style.display = useMaximumRange
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
+
+        if (feedbackOptionsContainer != null)
+        {
+            feedbackOptionsContainer.style.display = isTriggerEnabled
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
+
+        if (feedbackOverrideContainer != null)
+        {
+            feedbackOverrideContainer.style.display = isOverrideEnabled
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
+
+        if (unsupportedModuleBox != null)
+        {
+            unsupportedModuleBox.style.display = showUnsupportedModuleWarning
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
         }

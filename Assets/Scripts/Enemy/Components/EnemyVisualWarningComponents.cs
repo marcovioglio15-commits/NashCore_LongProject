@@ -3,15 +3,45 @@ using Unity.Mathematics;
 
 #region Enemy Visual Warning Components
 /// <summary>
-/// Stores immutable visual settings used while shooter enemies charge the first shot of one burst.
+/// Identifies the offensive interaction source that currently requests engagement feedback.
 /// </summary>
-public struct EnemyShooterAimPulseVisualConfig : IComponentData
+public enum EnemyOffensiveEngagementTriggerSource : byte
 {
-    public byte Enabled;
-    public float4 Color;
-    public float LeadTimeSeconds;
-    public float FadeOutSeconds;
-    public float MaximumBlend;
+    ShortRangeInteraction = 0,
+    WeaponInteraction = 1
+}
+
+/// <summary>
+/// Identifies the runtime timing model used to predict one offensive engagement commit.
+/// </summary>
+public enum EnemyOffensiveEngagementTimingMode : byte
+{
+    None = 0,
+    ShortRangeDashRelease = 1,
+    WeaponShot = 2
+}
+
+/// <summary>
+/// Stores immutable offensive engagement feedback settings compiled for one active interaction slot.
+/// </summary>
+public struct EnemyOffensiveEngagementConfigElement : IBufferElementData
+{
+    public EnemyOffensiveEngagementTriggerSource Source;
+    public EnemyOffensiveEngagementTimingMode TimingMode;
+    public byte UseOverrideVisualSettings;
+    public byte EnableColorBlend;
+    public float4 ColorBlendColor;
+    public float ColorBlendLeadTimeSeconds;
+    public float ColorBlendFadeOutSeconds;
+    public float ColorBlendMaximumBlend;
+    public byte EnableBillboard;
+    public float4 BillboardColor;
+    public float3 BillboardOffset;
+    public float BillboardLeadTimeSeconds;
+    public float BillboardBaseScale;
+    public float BillboardPulseScaleMultiplier;
+    public float BillboardPulseExpandDurationSeconds;
+    public float BillboardPulseContractDurationSeconds;
 }
 
 /// <summary>
@@ -21,6 +51,8 @@ public struct EnemyVisualFlashPresentationState : IComponentData
 {
     public float AppliedBlend;
     public float4 AppliedColor;
-    public float ShooterPulseBlend;
+    public float4 OffensiveEngagementColor;
+    public float OffensiveEngagementBlend;
+    public float OffensiveEngagementFadeOutSeconds;
 }
 #endregion

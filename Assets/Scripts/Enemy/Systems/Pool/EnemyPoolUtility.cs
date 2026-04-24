@@ -106,6 +106,9 @@ public static class EnemyPoolUtility
         if (!entityManager.HasBuffer<EnemyShooterRuntimeElement>(enemyEntity))
             entityManager.AddBuffer<EnemyShooterRuntimeElement>(enemyEntity);
 
+        if (!entityManager.HasBuffer<EnemyOffensiveEngagementConfigElement>(enemyEntity))
+            entityManager.AddBuffer<EnemyOffensiveEngagementConfigElement>(enemyEntity);
+
         if (!entityManager.HasComponent<EnemyHealth>(enemyEntity))
             entityManager.AddComponentData(enemyEntity, new EnemyHealth
             {
@@ -168,22 +171,14 @@ public static class EnemyPoolUtility
                 ScaleMultiplier = 1f
             });
 
-        if (!entityManager.HasComponent<EnemyShooterAimPulseVisualConfig>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyShooterAimPulseVisualConfig
-            {
-                Enabled = 1,
-                Color = new float4(0.35f, 1f, 0.95f, 1f),
-                LeadTimeSeconds = 0.3f,
-                FadeOutSeconds = 0.18f,
-                MaximumBlend = 0.7f
-            });
-
         if (!entityManager.HasComponent<EnemyVisualFlashPresentationState>(enemyEntity))
             entityManager.AddComponentData(enemyEntity, new EnemyVisualFlashPresentationState
             {
                 AppliedBlend = 0f,
                 AppliedColor = new float4(1f, 1f, 1f, 1f),
-                ShooterPulseBlend = 0f
+                OffensiveEngagementColor = new float4(1f, 1f, 1f, 1f),
+                OffensiveEngagementBlend = 0f,
+                OffensiveEngagementFadeOutSeconds = 0f
             });
 
         if (!entityManager.HasBuffer<DamageFlashRenderTargetElement>(enemyEntity))
@@ -505,7 +500,9 @@ public static class EnemyPoolUtility
             EnemyVisualFlashPresentationState visualFlashPresentationState = entityManager.GetComponentData<EnemyVisualFlashPresentationState>(enemyEntity);
             visualFlashPresentationState.AppliedBlend = 0f;
             visualFlashPresentationState.AppliedColor = new float4(1f, 1f, 1f, 1f);
-            visualFlashPresentationState.ShooterPulseBlend = 0f;
+            visualFlashPresentationState.OffensiveEngagementColor = new float4(1f, 1f, 1f, 1f);
+            visualFlashPresentationState.OffensiveEngagementBlend = 0f;
+            visualFlashPresentationState.OffensiveEngagementFadeOutSeconds = 0f;
             entityManager.SetComponentData(enemyEntity, visualFlashPresentationState);
         }
 
@@ -517,6 +514,14 @@ public static class EnemyPoolUtility
 
             if (animator != null)
                 ManagedDamageFlashRendererUtility.ApplyToAnimator(animator, Color.white, 0f);
+        }
+
+        if (entityManager.HasComponent<EnemyOffensiveEngagementBillboardView>(enemyEntity))
+        {
+            EnemyOffensiveEngagementBillboardView billboardView = entityManager.GetComponentObject<EnemyOffensiveEngagementBillboardView>(enemyEntity);
+
+            if (billboardView != null)
+                billboardView.Hide();
         }
 
         if (entityManager.HasBuffer<EnemyElementStackElement>(enemyEntity))

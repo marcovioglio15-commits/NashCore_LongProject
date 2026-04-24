@@ -660,7 +660,7 @@ public sealed class EnemyVisualPresetsPanel
         Outline = 1,
         DamageFeedback = 2,
         Prefabs = 3,
-        ShooterWarning = 4
+        OffensiveEngagementFeedback = 4
     }
 
     internal sealed class VisualSubSectionTabEntry

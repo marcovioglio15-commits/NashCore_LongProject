@@ -1,0 +1,489 @@
+using UnityEngine;
+
+/// <summary>
+/// Renders the billboard sprite used by offensive engagement feedback before supported enemy behaviours commit.
+/// /params None.
+/// /returns None.
+/// </summary>
+[DisallowMultipleComponent]
+public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
+{
+    #region Constants
+    private const float SqrMagnitudeEpsilon = 0.000001f;
+    private const float ScaleEpsilon = 0.0001f;
+    #endregion
+
+    #region Fields
+
+    #region Serialized Fields
+    [Header("References")]
+    [Tooltip("Sprite renderer used to display the offensive engagement billboard.")]
+    [SerializeField] private SpriteRenderer spriteRenderer;
+
+    [Tooltip("Optional root object toggled to show or hide the billboard without disabling the component itself.")]
+    [SerializeField] private GameObject visibilityRoot;
+
+    [Header("Resolved Preset Sources")]
+    [Tooltip("Resolved master preset source used to evaluate offensive engagement assets at runtime.")]
+    [SerializeField]
+    [HideInInspector] private EnemyMasterPreset masterPreset;
+
+    [Tooltip("Resolved visual preset source used to evaluate global offensive engagement assets at runtime.")]
+    [SerializeField]
+    [HideInInspector] private EnemyVisualPreset visualPreset;
+
+    [Tooltip("Resolved advanced pattern preset source used to evaluate per-interaction offensive engagement overrides at runtime.")]
+    [SerializeField]
+    [HideInInspector] private EnemyAdvancedPatternPreset advancedPatternPreset;
+
+    [Header("Behavior")]
+    [Tooltip("Rotate the billboard so it faces the active camera while visible.")]
+    [SerializeField] private bool billboardToCamera = true;
+
+    [Tooltip("When enabled, billboard rotation is constrained to the world Y axis instead of fully facing the camera.")]
+    [SerializeField] private bool billboardYawOnly;
+    #endregion
+
+    private EnemyOffensiveEngagementFeedbackSettings globalSettings;
+    private EnemyPatternShortRangeInteractionAssembly shortRangeInteraction;
+    private EnemyPatternWeaponInteractionAssembly weaponInteraction;
+    private EnemyModulesPatternDefinition selectedPattern;
+    private Sprite cachedSprite;
+    private EnemyOffensiveEngagementTriggerSource cachedSource;
+    private bool cachedUseOverrideVisualSettings;
+    private bool hasCachedSprite;
+    private bool visibilityStateInitialized;
+    private bool lastVisibilityState;
+    private float lastAppliedScale = -1f;
+    #endregion
+
+    #region Methods
+
+    #region Unity Methods
+    private void Awake()
+    {
+        InvalidateResolvedContext();
+        ValidateSerializedFields();
+        Hide();
+    }
+
+    private void OnValidate()
+    {
+        TrySyncPresetSourcesFromParentAuthoring();
+        InvalidateResolvedContext();
+        ValidateSerializedFields();
+
+        if (Application.isPlaying)
+        {
+            return;
+        }
+
+        ResetEditorPreview();
+    }
+
+    private void OnTransformParentChanged()
+    {
+        TrySyncPresetSourcesFromParentAuthoring();
+        InvalidateResolvedContext();
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        EnemyOffensiveEngagementFeedbackSettings settings = ResolveGlobalSettings();
+
+        if (settings == null)
+        {
+            return;
+        }
+
+        Vector3 worldOffset = settings.BillboardLocalOffset;
+        Vector3 origin = transform.parent != null ? transform.parent.position : transform.position;
+        Vector3 target = origin + worldOffset;
+        Gizmos.color = new Color(0.15f, 0.9f, 1f, 0.9f);
+        Gizmos.DrawLine(origin, target);
+        Gizmos.DrawWireSphere(target, 0.08f);
+    }
+    #endregion
+
+    #region Public Methods
+    /// <summary>
+    /// Renders the billboard for the currently selected offensive interaction.
+    /// /params enemyPosition Current enemy world position.
+    /// /params cameraTransform Active camera transform used for billboarding.
+    /// /params source Source interaction that currently owns the billboard.
+    /// /params useOverrideVisualSettings Whether the source interaction resolved its own override settings block.
+    /// /params color Final billboard tint to apply for the current frame.
+    /// /params worldOffset World-space offset from the enemy pivot.
+    /// /params uniformScale Final uniform billboard scale for the current frame.
+    /// /returns None.
+    /// </summary>
+    public void Render(Vector3 enemyPosition,
+                       Transform cameraTransform,
+                       EnemyOffensiveEngagementTriggerSource source,
+                       bool useOverrideVisualSettings,
+                       Color color,
+                       Vector3 worldOffset,
+                       float uniformScale)
+    {
+        ValidateSerializedFields();
+
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        Sprite resolvedSprite = ResolveBillboardSprite(source, useOverrideVisualSettings);
+
+        if (resolvedSprite == null || uniformScale <= 0f)
+        {
+            Hide();
+            return;
+        }
+
+        Transform selfTransform = transform;
+        selfTransform.position = enemyPosition + worldOffset;
+        ApplyBillboardRotation(selfTransform, cameraTransform);
+        ApplySprite(resolvedSprite, color);
+        ApplyScale(selfTransform, uniformScale);
+        ApplyVisibility(true);
+    }
+
+    /// <summary>
+    /// Hides the billboard and clears per-frame transient visual state.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    public void Hide()
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = false;
+            spriteRenderer.sprite = null;
+        }
+
+        cachedSprite = null;
+        hasCachedSprite = false;
+        lastAppliedScale = -1f;
+        ApplyVisibility(false);
+    }
+
+    /// <summary>
+    /// Synchronizes the serialized preset sources used by runtime billboard resolution from the provided enemy authoring component.
+    /// /params authoring Source authoring component that owns the billboard view.
+    /// /returns None.
+    /// </summary>
+    public void SyncPresetSources(EnemyAuthoring authoring)
+    {
+        if (authoring == null)
+        {
+            return;
+        }
+
+        masterPreset = authoring.MasterPreset;
+        visualPreset = authoring.VisualPreset;
+        advancedPatternPreset = authoring.AdvancedPatternPreset;
+        InvalidateResolvedContext();
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Ensures serialized references are resolved after prefab edits or runtime instantiation.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void ValidateSerializedFields()
+    {
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        if (visibilityRoot == null)
+        {
+            visibilityRoot = gameObject;
+        }
+    }
+
+    /// <summary>
+    /// Resolves the owning EnemyAuthoring while editing prefabs and mirrors its preset sources into this billboard view.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void TrySyncPresetSourcesFromParentAuthoring()
+    {
+        EnemyAuthoring parentAuthoring = GetComponentInParent<EnemyAuthoring>(true);
+
+        if (parentAuthoring == null)
+        {
+            return;
+        }
+
+        SyncPresetSources(parentAuthoring);
+    }
+
+    /// <summary>
+    /// Clears editor preview state after prefab changes without toggling the authored GameObject active state.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void ResetEditorPreview()
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = false;
+        }
+
+        cachedSprite = null;
+        hasCachedSprite = false;
+        lastAppliedScale = -1f;
+        visibilityStateInitialized = false;
+    }
+
+    /// <summary>
+    /// Clears cached authoring context so the next resolve pass re-reads presets and shared pattern data.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void InvalidateResolvedContext()
+    {
+        globalSettings = null;
+        shortRangeInteraction = null;
+        weaponInteraction = null;
+        selectedPattern = null;
+        cachedSprite = null;
+        hasCachedSprite = false;
+        lastAppliedScale = -1f;
+    }
+
+    /// <summary>
+    /// Resolves the global visual settings block used as the default billboard source for this enemy prefab.
+    /// /params None.
+    /// /returns The resolved global offensive engagement settings, or null when authoring data is unavailable.
+    /// </summary>
+    private EnemyOffensiveEngagementFeedbackSettings ResolveGlobalSettings()
+    {
+        EnsureResolvedContext();
+        return globalSettings;
+    }
+
+    /// <summary>
+    /// Resolves the sprite that should be displayed for the provided interaction source.
+    /// The per-interaction override falls back to the generic preset sprite when its billboard sprite is left empty.
+    /// /params source Source interaction that currently owns the billboard.
+    /// /params useOverrideVisualSettings Whether the source interaction resolved its own override settings block.
+    /// /returns The resolved sprite, or null when no sprite is configured.
+    /// </summary>
+    private Sprite ResolveBillboardSprite(EnemyOffensiveEngagementTriggerSource source, bool useOverrideVisualSettings)
+    {
+        if (hasCachedSprite &&
+            cachedSource == source &&
+            cachedUseOverrideVisualSettings == useOverrideVisualSettings)
+        {
+            return cachedSprite;
+        }
+
+        EnsureResolvedContext();
+        EnemyOffensiveEngagementFeedbackSettings globalFeedbackSettings = globalSettings;
+        EnemyOffensiveEngagementFeedbackSettings resolvedSettings = ResolveSettings(source, useOverrideVisualSettings);
+        Sprite resolvedSprite = null;
+
+        if (resolvedSettings != null)
+        {
+            resolvedSprite = resolvedSettings.BillboardSprite;
+        }
+
+        if (resolvedSprite == null && globalFeedbackSettings != null)
+        {
+            resolvedSprite = globalFeedbackSettings.BillboardSprite;
+        }
+
+        cachedSource = source;
+        cachedUseOverrideVisualSettings = useOverrideVisualSettings;
+        cachedSprite = resolvedSprite;
+        hasCachedSprite = true;
+        return resolvedSprite;
+    }
+
+    /// <summary>
+    /// Resolves the settings block currently associated with the provided interaction source.
+    /// /params source Source interaction that currently owns the billboard.
+    /// /params useOverrideVisualSettings Whether the source interaction resolved its own override settings block.
+    /// /returns The settings block associated with the provided source, or the generic preset settings when no override applies.
+    /// </summary>
+    private EnemyOffensiveEngagementFeedbackSettings ResolveSettings(EnemyOffensiveEngagementTriggerSource source,
+                                                                     bool useOverrideVisualSettings)
+    {
+        EnemyOffensiveEngagementFeedbackSettings resolvedGlobalSettings = globalSettings;
+
+        if (!useOverrideVisualSettings)
+        {
+            return resolvedGlobalSettings;
+        }
+
+        switch (source)
+        {
+            case EnemyOffensiveEngagementTriggerSource.ShortRangeInteraction:
+                if (shortRangeInteraction != null &&
+                    shortRangeInteraction.UseEngagementFeedbackOverride &&
+                    shortRangeInteraction.EngagementFeedbackOverride != null)
+                {
+                    return shortRangeInteraction.EngagementFeedbackOverride;
+                }
+                break;
+
+            case EnemyOffensiveEngagementTriggerSource.WeaponInteraction:
+                if (weaponInteraction != null &&
+                    weaponInteraction.UseEngagementFeedbackOverride &&
+                    weaponInteraction.EngagementFeedbackOverride != null)
+                {
+                    return weaponInteraction.EngagementFeedbackOverride;
+                }
+                break;
+        }
+
+        return resolvedGlobalSettings;
+    }
+
+    /// <summary>
+    /// Caches the authoring component and the currently selected shared pattern so sprite resolution stays allocation free during presentation updates.
+    /// /params None.
+    /// /returns None.
+    /// </summary>
+    private void EnsureResolvedContext()
+    {
+        if (globalSettings == null)
+        {
+            globalSettings = EnemyAuthoringPresetResolverUtility.ResolveOffensiveEngagementFeedbackSettings(masterPreset, visualPreset);
+        }
+
+        if (selectedPattern != null)
+        {
+            return;
+        }
+
+        EnemyAdvancedPatternPreset resolvedAdvancedPatternPreset = EnemyAuthoringPresetResolverUtility.ResolveAdvancedPatternPreset(masterPreset,
+                                                                                                                                    advancedPatternPreset);
+
+        if (resolvedAdvancedPatternPreset == null)
+        {
+            return;
+        }
+
+        selectedPattern = EnemyModulesAndPatternsSelectionUtility.ResolveSelectedPattern(resolvedAdvancedPatternPreset);
+
+        if (selectedPattern == null)
+        {
+            return;
+        }
+
+        shortRangeInteraction = selectedPattern.ShortRangeInteraction;
+        weaponInteraction = selectedPattern.WeaponInteraction;
+    }
+
+    /// <summary>
+    /// Applies the final sprite asset and tint used by the billboard for the current frame.
+    /// /params targetSprite Resolved sprite for the current engagement source.
+    /// /params color Final tint color.
+    /// /returns None.
+    /// </summary>
+    private void ApplySprite(Sprite targetSprite, Color color)
+    {
+        if (spriteRenderer.sprite != targetSprite)
+        {
+            spriteRenderer.sprite = targetSprite;
+        }
+
+        if (spriteRenderer.color != color)
+        {
+            spriteRenderer.color = color;
+        }
+
+        if (!spriteRenderer.enabled)
+        {
+            spriteRenderer.enabled = true;
+        }
+    }
+
+    /// <summary>
+    /// Applies the current uniform billboard scale only when it changed meaningfully from the last frame.
+    /// /params selfTransform Transform that owns the billboard renderer.
+    /// /params uniformScale Final uniform world scale for the current frame.
+    /// /returns None.
+    /// </summary>
+    private void ApplyScale(Transform selfTransform, float uniformScale)
+    {
+        float clampedScale = Mathf.Max(0f, uniformScale);
+
+        if (Mathf.Abs(lastAppliedScale - clampedScale) <= ScaleEpsilon)
+        {
+            return;
+        }
+
+        selfTransform.localScale = Vector3.one * clampedScale;
+        lastAppliedScale = clampedScale;
+    }
+
+    /// <summary>
+    /// Rotates the billboard toward the active camera using either full billboarding or yaw-only billboarding.
+    /// /params selfTransform Transform that owns the billboard renderer.
+    /// /params cameraTransform Active camera transform used for billboarding.
+    /// /returns None.
+    /// </summary>
+    private void ApplyBillboardRotation(Transform selfTransform, Transform cameraTransform)
+    {
+        if (!billboardToCamera)
+        {
+            return;
+        }
+
+        if (cameraTransform == null)
+        {
+            return;
+        }
+
+        Vector3 toCamera = cameraTransform.position - selfTransform.position;
+
+        if (billboardYawOnly)
+        {
+            toCamera.y = 0f;
+        }
+
+        if (toCamera.sqrMagnitude <= SqrMagnitudeEpsilon)
+        {
+            return;
+        }
+
+        Vector3 up = billboardYawOnly ? Vector3.up : cameraTransform.up;
+        selfTransform.rotation = Quaternion.LookRotation(toCamera.normalized, up);
+    }
+
+    /// <summary>
+    /// Applies the current visibility state without toggling the hierarchy unnecessarily every frame.
+    /// /params shouldBeVisible Whether the billboard should be visible after the update.
+    /// /returns None.
+    /// </summary>
+    private void ApplyVisibility(bool shouldBeVisible)
+    {
+        if (!visibilityStateInitialized)
+        {
+            visibilityStateInitialized = true;
+            lastVisibilityState = !shouldBeVisible;
+        }
+
+        if (lastVisibilityState == shouldBeVisible)
+        {
+            return;
+        }
+
+        lastVisibilityState = shouldBeVisible;
+
+        if (visibilityRoot != null)
+        {
+            visibilityRoot.SetActive(shouldBeVisible);
+        }
+    }
+    #endregion
+
+    #endregion
+}

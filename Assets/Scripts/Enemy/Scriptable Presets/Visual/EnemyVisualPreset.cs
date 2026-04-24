@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Stores visibility-related presentation settings shared by one enemy type.
@@ -186,107 +187,6 @@ public sealed class EnemyVisualDamageFeedbackSettings
 
         if (flashMaximumBlend > 1f)
             flashMaximumBlend = 1f;
-    }
-    #endregion
-
-    #endregion
-}
-
-/// <summary>
-/// Stores visual tuning used while shooter enemies charge one burst before the first projectile is released.
-/// returns None.
-/// </summary>
-[Serializable]
-public sealed class EnemyVisualShooterWarningSettings
-{
-    #region Fields
-
-    #region Serialized Fields
-    [Tooltip("When enabled, shooter enemies pulse while charging the first shot of a burst.")]
-    [SerializeField] private bool enableAimPulse = true;
-
-    [Tooltip("Tint color applied while the shooter aim pulse warning ramps up.")]
-    [SerializeField] private Color aimPulseColor = new Color(0.35f, 1f, 0.95f, 1f);
-
-    [Tooltip("Seconds before burst start where the shooter pulse may already begin while the enemy prepares to fire.")]
-    [Range(0f, 2f)]
-    [SerializeField] private float aimPulseLeadTimeSeconds = 0.3f;
-
-    [Tooltip("Seconds used to softly fade the shooter pulse after the warning intensity drops.")]
-    [Range(0f, 1f)]
-    [SerializeField] private float aimPulseFadeOutSeconds = 0.18f;
-
-    [Tooltip("Maximum overlay strength reached right before the first projectile of the burst is fired.")]
-    [Range(0f, 1f)]
-    [SerializeField] private float aimPulseMaximumBlend = 0.7f;
-    #endregion
-
-    #endregion
-
-    #region Properties
-    public bool EnableAimPulse
-    {
-        get
-        {
-            return enableAimPulse;
-        }
-    }
-
-    public Color AimPulseColor
-    {
-        get
-        {
-            return aimPulseColor;
-        }
-    }
-
-    public float AimPulseMaximumBlend
-    {
-        get
-        {
-            return aimPulseMaximumBlend;
-        }
-    }
-
-    public float AimPulseLeadTimeSeconds
-    {
-        get
-        {
-            return aimPulseLeadTimeSeconds;
-        }
-    }
-
-    public float AimPulseFadeOutSeconds
-    {
-        get
-        {
-            return aimPulseFadeOutSeconds;
-        }
-    }
-    #endregion
-
-    #region Methods
-
-    #region Public Methods
-    /// <summary>
-    /// Sanitizes shooter warning values after asset edits.
-    /// returns None.
-    /// </summary>
-    public void Validate()
-    {
-        aimPulseColor.a = Mathf.Clamp01(aimPulseColor.a);
-
-        if (aimPulseLeadTimeSeconds < 0f)
-            aimPulseLeadTimeSeconds = 0f;
-
-        if (aimPulseFadeOutSeconds < 0f)
-            aimPulseFadeOutSeconds = 0f;
-
-        if (aimPulseMaximumBlend < 0f)
-            aimPulseMaximumBlend = 0f;
-
-        if (aimPulseMaximumBlend > 1f)
-            aimPulseMaximumBlend = 1f;
     }
     #endregion
 
@@ -488,8 +388,9 @@ public sealed class EnemyVisualPreset : ScriptableObject
     [Tooltip("Outline settings block.")]
     [SerializeField] private EnemyVisualOutlineSettings outline = new EnemyVisualOutlineSettings();
 
-    [Tooltip("Shooter aim warning settings block.")]
-    [SerializeField] private EnemyVisualShooterWarningSettings shooterWarning = new EnemyVisualShooterWarningSettings();
+    [Tooltip("Generic visual feedback authored for offensive behaviour engagements.")]
+    [FormerlySerializedAs("shooterWarning")]
+    [SerializeField] private EnemyOffensiveEngagementFeedbackSettings offensiveEngagementFeedback = new EnemyOffensiveEngagementFeedbackSettings();
 
     [Tooltip("Prefab and paint metadata block.")]
     [SerializeField] private EnemyVisualPrefabSettings prefabs = new EnemyVisualPrefabSettings();
@@ -562,11 +463,11 @@ public sealed class EnemyVisualPreset : ScriptableObject
         }
     }
 
-    public EnemyVisualShooterWarningSettings ShooterWarning
+    public EnemyOffensiveEngagementFeedbackSettings OffensiveEngagementFeedback
     {
         get
         {
-            return shooterWarning;
+            return offensiveEngagementFeedback;
         }
     }
     #endregion
@@ -592,8 +493,8 @@ public sealed class EnemyVisualPreset : ScriptableObject
         if (outline == null)
             outline = new EnemyVisualOutlineSettings();
 
-        if (shooterWarning == null)
-            shooterWarning = new EnemyVisualShooterWarningSettings();
+        if (offensiveEngagementFeedback == null)
+            offensiveEngagementFeedback = new EnemyOffensiveEngagementFeedbackSettings();
 
         if (prefabs == null)
             prefabs = new EnemyVisualPrefabSettings();
@@ -601,7 +502,7 @@ public sealed class EnemyVisualPreset : ScriptableObject
         visibility.Validate();
         damageFeedback.Validate();
         outline.Validate();
-        shooterWarning.Validate();
+        offensiveEngagementFeedback.Validate();
         prefabs.Validate();
     }
     #endregion

@@ -28,7 +28,7 @@ internal static class EnemyModulesAndPatternsBakeUtility
         if (sharedPreset == null)
             return result;
 
-        EnemyModulesPatternDefinition selectedPattern = ResolveSelectedPattern(preset, sharedPreset);
+        EnemyModulesPatternDefinition selectedPattern = EnemyModulesAndPatternsSelectionUtility.ResolveSelectedPattern(preset);
 
         if (selectedPattern == null)
             return result;
@@ -43,35 +43,6 @@ internal static class EnemyModulesAndPatternsBakeUtility
     #endregion
 
     #region Private Methods
-    /// <summary>
-    /// Resolves the first valid selected shared pattern from the active loadout.
-    /// /params preset Advanced-pattern preset that stores the active loadout.
-    /// /params sharedPreset Shared preset that owns the assembled patterns.
-    /// /returns The first valid selected shared pattern, or null when none can be resolved.
-    /// </summary>
-    private static EnemyModulesPatternDefinition ResolveSelectedPattern(EnemyAdvancedPatternPreset preset,
-                                                                       EnemyModulesAndPatternsPreset sharedPreset)
-    {
-        if (preset == null || sharedPreset == null)
-            return null;
-
-        IReadOnlyList<string> activePatternIds = preset.ActivePatternIds;
-
-        for (int index = 0; index < activePatternIds.Count; index++)
-        {
-            string patternId = activePatternIds[index];
-            EnemyModulesPatternDefinition pattern = sharedPreset.ResolvePatternById(patternId);
-
-            if (pattern != null)
-                return pattern;
-        }
-
-        if (sharedPreset.Patterns.Count <= 0)
-            return null;
-
-        return sharedPreset.Patterns[0];
-    }
-
     /// <summary>
     /// Applies the core movement selection to the compiled result.
     /// /params pattern Shared pattern definition currently being compiled.

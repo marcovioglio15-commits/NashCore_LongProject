@@ -127,9 +127,9 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
                                "Damage Feedback",
                                BuildDamageFeedbackSubSection(panel));
         AddVisualSubSectionTab(panel,
-                               EnemyVisualPresetsPanel.VisualSubSectionType.ShooterWarning,
-                               "Shooter Warning",
-                               BuildShooterWarningSubSection(panel));
+                               EnemyVisualPresetsPanel.VisualSubSectionType.OffensiveEngagementFeedback,
+                               "Offensive Engagement Feedback",
+                               BuildOffensiveEngagementFeedbackSubSection(panel));
         AddVisualSubSectionTab(panel,
                                EnemyVisualPresetsPanel.VisualSubSectionType.Prefabs,
                                "Prefabs",
@@ -332,16 +332,16 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         return container;
     }
 
-    private static VisualElement BuildShooterWarningSubSection(EnemyVisualPresetsPanel panel)
+    private static VisualElement BuildOffensiveEngagementFeedbackSubSection(EnemyVisualPresetsPanel panel)
     {
-        SerializedProperty shooterWarningProperty = panel.PresetSerializedObject.FindProperty("shooterWarning");
-        VisualElement container = CreateSubSectionContainer("Shooter Warning");
-
-        AddPropertyField(panel, container, shooterWarningProperty, "enableAimPulse", "Enable Aim Pulse", "When enabled, shooter enemies pulse while charging the first shot of a burst.");
-        AddPropertyField(panel, container, shooterWarningProperty, "aimPulseColor", "Aim Pulse Color", "Tint color applied while the shooter aim pulse warning ramps up.");
-        AddPropertyField(panel, container, shooterWarningProperty, "aimPulseLeadTimeSeconds", "Aim Pulse Lead Time Seconds", "Seconds before burst start where the shooter pulse may already begin while the enemy prepares to fire.");
-        AddPropertyField(panel, container, shooterWarningProperty, "aimPulseFadeOutSeconds", "Aim Pulse Fade Out Seconds", "Seconds used to softly fade the shooter pulse after the warning intensity drops.");
-        AddPropertyField(panel, container, shooterWarningProperty, "aimPulseMaximumBlend", "Aim Pulse Maximum Blend", "Maximum overlay strength reached right before the first projectile of the burst is fired.");
+        SerializedProperty feedbackProperty = panel.PresetSerializedObject.FindProperty("offensiveEngagementFeedback");
+        VisualElement container = CreateSubSectionContainer("Offensive Engagement Feedback");
+        VisualElement feedbackEditor = EnemyOffensiveEngagementFeedbackDrawerUtility.BuildSettingsEditor(feedbackProperty, () =>
+        {
+            EnemyManagementDraftSession.MarkDirty();
+            panel.RefreshPresetList();
+        });
+        container.Add(feedbackEditor);
         return container;
     }
     #endregion

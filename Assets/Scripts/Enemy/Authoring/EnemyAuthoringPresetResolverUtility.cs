@@ -101,6 +101,17 @@ public static class EnemyAuthoringPresetResolverUtility
 
         return resolvedVisualPreset.Outline;
     }
+
+    public static EnemyOffensiveEngagementFeedbackSettings ResolveOffensiveEngagementFeedbackSettings(EnemyMasterPreset masterPreset,
+                                                                                                      EnemyVisualPreset fallbackVisualPreset)
+    {
+        EnemyVisualPreset resolvedVisualPreset = ResolveVisualPreset(masterPreset, fallbackVisualPreset);
+
+        if (resolvedVisualPreset == null)
+            return null;
+
+        return resolvedVisualPreset.OffensiveEngagementFeedback;
+    }
     #endregion
 
     #endregion

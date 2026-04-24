@@ -23,10 +23,6 @@ public sealed class EnemyAuthoring : MonoBehaviour
     private const float DefaultDamageFlashDurationSeconds = 0.06f;
     private const float DefaultDamageFlashMaximumBlend = 0.85f;
     private const float DefaultOutlineThickness = 1f;
-    private static readonly Color DefaultShooterAimPulseColor = new Color(0.35f, 1f, 0.95f, 1f);
-    private const float DefaultShooterAimPulseLeadTimeSeconds = 0.3f;
-    private const float DefaultShooterAimPulseFadeOutSeconds = 0.18f;
-    private const float DefaultShooterAimPulseMaximumBlend = 0.7f;
     #endregion
 
     #region Fields
@@ -144,6 +140,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
 
     [Tooltip("Optional world-space status bars view used to display fillable health and shield images above this enemy.")]
     [SerializeField] private EnemyWorldSpaceStatusBarsView worldSpaceStatusBarsView;
+
+    [Tooltip("Optional billboard sprite view used by offensive engagement feedback before short-range or weapon attacks commit.")]
+    [SerializeField] private EnemyOffensiveEngagementBillboardView offensiveEngagementBillboardView;
     #endregion
 
     #endregion
@@ -672,68 +671,11 @@ public sealed class EnemyAuthoring : MonoBehaviour
         }
     }
 
-    public bool EnableShooterAimPulse
+    public EnemyOffensiveEngagementFeedbackSettings OffensiveEngagementFeedbackSettings
     {
         get
         {
-            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
-
-            if (settings == null)
-                return true;
-
-            return settings.EnableAimPulse;
-        }
-    }
-
-    public Color ShooterAimPulseColor
-    {
-        get
-        {
-            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
-
-            if (settings == null)
-                return DefaultShooterAimPulseColor;
-
-            return settings.AimPulseColor;
-        }
-    }
-
-    public float ShooterAimPulseMaximumBlend
-    {
-        get
-        {
-            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
-
-            if (settings == null)
-                return DefaultShooterAimPulseMaximumBlend;
-
-            return settings.AimPulseMaximumBlend;
-        }
-    }
-
-    public float ShooterAimPulseLeadTimeSeconds
-    {
-        get
-        {
-            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
-
-            if (settings == null)
-                return DefaultShooterAimPulseLeadTimeSeconds;
-
-            return settings.AimPulseLeadTimeSeconds;
-        }
-    }
-
-    public float ShooterAimPulseFadeOutSeconds
-    {
-        get
-        {
-            EnemyVisualShooterWarningSettings settings = ResolveShooterWarningSettings();
-
-            if (settings == null)
-                return DefaultShooterAimPulseFadeOutSeconds;
-
-            return settings.AimPulseFadeOutSeconds;
+            return ResolveOffensiveEngagementFeedbackSettings();
         }
     }
 
@@ -758,6 +700,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
         get
         {
             return worldSpaceStatusBarsView;
+        }
+    }
+
+    public EnemyOffensiveEngagementBillboardView OffensiveEngagementBillboardView
+    {
+        get
+        {
+            return offensiveEngagementBillboardView;
         }
     }
     #endregion
@@ -885,17 +835,12 @@ public sealed class EnemyAuthoring : MonoBehaviour
     }
 
     /// <summary>
-    /// Resolves the active shooter aim warning settings source.
-    /// returns Resolved shooter warning settings or null when no preset source is available.
+    /// Resolves the active offensive engagement feedback settings source.
+    /// returns Resolved offensive engagement feedback settings or null when no preset source is available.
     /// </summary>
-    private EnemyVisualShooterWarningSettings ResolveShooterWarningSettings()
+    private EnemyOffensiveEngagementFeedbackSettings ResolveOffensiveEngagementFeedbackSettings()
     {
-        EnemyVisualPreset resolvedVisualPreset = EnemyAuthoringPresetResolverUtility.ResolveVisualPreset(masterPreset, visualPreset);
-
-        if (resolvedVisualPreset == null)
-            return null;
-
-        return resolvedVisualPreset.ShooterWarning;
+        return EnemyAuthoringPresetResolverUtility.ResolveOffensiveEngagementFeedbackSettings(masterPreset, visualPreset);
     }
     #endregion
 
