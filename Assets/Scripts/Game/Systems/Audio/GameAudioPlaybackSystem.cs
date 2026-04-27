@@ -26,6 +26,16 @@ public partial struct GameAudioPlaybackSystem : ISystem
     }
 
     /// <summary>
+    /// Stops managed background music when the ECS audio playback system is destroyed.
+    /// /params state Mutable system state.
+    /// /returns None.
+    /// </summary>
+    public void OnDestroy(ref SystemState state)
+    {
+        GameAudioFmodRuntimeUtility.StopBackgroundMusic();
+    }
+
+    /// <summary>
     /// Resolves queued audio requests, applies per-event caps, and clears consumed requests.
     /// /params state Mutable system state.
     /// /returns None.
@@ -37,14 +47,20 @@ public partial struct GameAudioPlaybackSystem : ISystem
         GameAudioRuntimeConfig runtimeConfig = entityManager.GetComponentData<GameAudioRuntimeConfig>(audioEntity);
         DynamicBuffer<GameAudioEventRequest> requests = entityManager.GetBuffer<GameAudioEventRequest>(audioEntity);
 
-        if (requests.Length <= 0)
-            return;
-
         if (runtimeConfig.Enabled == 0)
         {
+            SyncBackgroundMusic(in runtimeConfig, false, false, 0f);
             requests.Clear();
             return;
         }
+
+        SyncBackgroundMusic(in runtimeConfig,
+                            runtimeConfig.BackgroundMusicEnabled != 0,
+                            runtimeConfig.BackgroundMusicAutoStart != 0,
+                            math.max(0f, runtimeConfig.MasterVolume) * math.max(0f, runtimeConfig.BackgroundMusicVolume));
+
+        if (requests.Length <= 0)
+            return;
 
         DynamicBuffer<GameAudioEventBindingElement> bindings = entityManager.GetBuffer<GameAudioEventBindingElement>(audioEntity);
         DynamicBuffer<GameAudioRateLimitStateElement> rateLimitStates = entityManager.GetBuffer<GameAudioRateLimitStateElement>(audioEntity);
@@ -79,6 +95,29 @@ public partial struct GameAudioPlaybackSystem : ISystem
     #endregion
 
     #region Private Methods
+    /// <summary>
+    /// Forwards the baked background music config to the FMOD runtime bridge.
+    /// /params runtimeConfig Current baked audio singleton config.
+    /// /params enabled True when background music should be active.
+    /// /params autoStart True when music should start automatically.
+    /// /params volume Final music volume after master and routing multipliers.
+    /// /returns None.
+    /// </summary>
+    private static void SyncBackgroundMusic(in GameAudioRuntimeConfig runtimeConfig,
+                                            bool enabled,
+                                            bool autoStart,
+                                            float volume)
+    {
+        GameAudioFmodRuntimeUtility.SyncBackgroundMusic(runtimeConfig.BackgroundMusicEventPath.ToString(),
+                                                        runtimeConfig.BackgroundMusicBankName.ToString(),
+                                                        enabled,
+                                                        autoStart,
+                                                        volume,
+                                                        runtimeConfig.BackgroundMusicRestartWhenPathChanges != 0,
+                                                        runtimeConfig.BackgroundMusicStopWhenDisabled != 0,
+                                                        runtimeConfig.LogMissingEventPaths != 0);
+    }
+
     /// <summary>
     /// Finds the first binding matching a requested event ID.
     /// /params bindings Baked binding buffer.

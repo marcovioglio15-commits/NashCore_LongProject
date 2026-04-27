@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -36,6 +37,10 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
     [SerializeField]
     [HideInInspector] private EnemyAdvancedPatternPreset advancedPatternPreset;
 
+    [Tooltip("Resolved boss pattern preset source used to evaluate boss-specific offensive engagement overrides at runtime.")]
+    [SerializeField]
+    [HideInInspector] private EnemyBossPatternPreset bossPatternPreset;
+
     [Header("Behavior")]
     [Tooltip("Rotate the billboard so it faces the active camera while visible.")]
     [SerializeField] private bool billboardToCamera = true;
@@ -48,10 +53,14 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
     private EnemyPatternShortRangeInteractionAssembly shortRangeInteraction;
     private EnemyPatternWeaponInteractionAssembly weaponInteraction;
     private EnemyModulesPatternDefinition selectedPattern;
+    private EnemyBossPatternAssemblyDefinition bossBasePattern;
+    private IReadOnlyList<EnemyBossPatternInteractionDefinition> bossInteractions;
     private Sprite cachedSprite;
     private EnemyOffensiveEngagementTriggerSource cachedSource;
+    private int cachedVisualSettingsKey;
     private bool cachedUseOverrideVisualSettings;
     private bool hasCachedSprite;
+    private bool bossContextResolved;
     private bool visibilityStateInitialized;
     private bool lastVisibilityState;
     private float lastAppliedScale = -1f;
@@ -111,6 +120,7 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
     /// /params enemyPosition Current enemy world position.
     /// /params cameraTransform Active camera transform used for billboarding.
     /// /params source Source interaction that currently owns the billboard.
+    /// /params visualSettingsKey Boss visual override key baked for the active config, or -1 for base and normal patterns.
     /// /params useOverrideVisualSettings Whether the source interaction resolved its own override settings block.
     /// /params color Final billboard tint to apply for the current frame.
     /// /params worldOffset World-space offset from the enemy pivot.
@@ -120,6 +130,7 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
     public void Render(Vector3 enemyPosition,
                        Transform cameraTransform,
                        EnemyOffensiveEngagementTriggerSource source,
+                       int visualSettingsKey,
                        bool useOverrideVisualSettings,
                        Color color,
                        Vector3 worldOffset,
@@ -132,7 +143,7 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
             return;
         }
 
-        Sprite resolvedSprite = ResolveBillboardSprite(source, useOverrideVisualSettings);
+        Sprite resolvedSprite = ResolveBillboardSprite(source, visualSettingsKey, useOverrideVisualSettings);
 
         if (resolvedSprite == null || uniformScale <= 0f)
         {
@@ -163,6 +174,7 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
 
         cachedSprite = null;
         hasCachedSprite = false;
+        cachedVisualSettingsKey = -1;
         lastAppliedScale = -1f;
         ApplyVisibility(false);
     }
@@ -182,6 +194,26 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
         masterPreset = authoring.MasterPreset;
         visualPreset = authoring.VisualPreset;
         advancedPatternPreset = authoring.AdvancedPatternPreset;
+        bossPatternPreset = authoring.BossPatternPreset;
+        InvalidateResolvedContext();
+    }
+
+    /// <summary>
+    /// Synchronizes serialized preset sources from another baked billboard view when a pooled runtime clone is reused.
+    /// /params sourceView Source billboard view that owns the baked preset references.
+    /// /returns None.
+    /// </summary>
+    public void SyncPresetSources(EnemyOffensiveEngagementBillboardView sourceView)
+    {
+        if (sourceView == null)
+        {
+            return;
+        }
+
+        masterPreset = sourceView.masterPreset;
+        visualPreset = sourceView.visualPreset;
+        advancedPatternPreset = sourceView.advancedPatternPreset;
+        bossPatternPreset = sourceView.bossPatternPreset;
         InvalidateResolvedContext();
     }
     #endregion
@@ -236,6 +268,7 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
 
         cachedSprite = null;
         hasCachedSprite = false;
+        cachedVisualSettingsKey = -1;
         lastAppliedScale = -1f;
         visibilityStateInitialized = false;
     }
@@ -251,8 +284,12 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
         shortRangeInteraction = null;
         weaponInteraction = null;
         selectedPattern = null;
+        bossBasePattern = null;
+        bossInteractions = null;
+        bossContextResolved = false;
         cachedSprite = null;
         hasCachedSprite = false;
+        cachedVisualSettingsKey = -1;
         lastAppliedScale = -1f;
     }
 
@@ -271,13 +308,17 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
     /// Resolves the sprite that should be displayed for the provided interaction source.
     /// The per-interaction override falls back to the generic preset sprite when its billboard sprite is left empty.
     /// /params source Source interaction that currently owns the billboard.
+    /// /params visualSettingsKey Boss visual override key baked for the active config.
     /// /params useOverrideVisualSettings Whether the source interaction resolved its own override settings block.
     /// /returns The resolved sprite, or null when no sprite is configured.
     /// </summary>
-    private Sprite ResolveBillboardSprite(EnemyOffensiveEngagementTriggerSource source, bool useOverrideVisualSettings)
+    private Sprite ResolveBillboardSprite(EnemyOffensiveEngagementTriggerSource source,
+                                          int visualSettingsKey,
+                                          bool useOverrideVisualSettings)
     {
         if (hasCachedSprite &&
             cachedSource == source &&
+            cachedVisualSettingsKey == visualSettingsKey &&
             cachedUseOverrideVisualSettings == useOverrideVisualSettings)
         {
             return cachedSprite;
@@ -285,7 +326,9 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
 
         EnsureResolvedContext();
         EnemyOffensiveEngagementFeedbackSettings globalFeedbackSettings = globalSettings;
-        EnemyOffensiveEngagementFeedbackSettings resolvedSettings = ResolveSettings(source, useOverrideVisualSettings);
+        EnemyOffensiveEngagementFeedbackSettings resolvedSettings = ResolveSettings(source,
+                                                                                   visualSettingsKey,
+                                                                                   useOverrideVisualSettings);
         Sprite resolvedSprite = null;
 
         if (resolvedSettings != null)
@@ -299,6 +342,7 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
         }
 
         cachedSource = source;
+        cachedVisualSettingsKey = visualSettingsKey;
         cachedUseOverrideVisualSettings = useOverrideVisualSettings;
         cachedSprite = resolvedSprite;
         hasCachedSprite = true;
@@ -308,10 +352,12 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
     /// <summary>
     /// Resolves the settings block currently associated with the provided interaction source.
     /// /params source Source interaction that currently owns the billboard.
+    /// /params visualSettingsKey Boss visual override key baked for the active config.
     /// /params useOverrideVisualSettings Whether the source interaction resolved its own override settings block.
     /// /returns The settings block associated with the provided source, or the generic preset settings when no override applies.
     /// </summary>
     private EnemyOffensiveEngagementFeedbackSettings ResolveSettings(EnemyOffensiveEngagementTriggerSource source,
+                                                                     int visualSettingsKey,
                                                                      bool useOverrideVisualSettings)
     {
         EnemyOffensiveEngagementFeedbackSettings resolvedGlobalSettings = globalSettings;
@@ -319,6 +365,13 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
         if (!useOverrideVisualSettings)
         {
             return resolvedGlobalSettings;
+        }
+
+        EnemyOffensiveEngagementFeedbackSettings bossOverrideSettings = ResolveBossOverrideSettings(source, visualSettingsKey);
+
+        if (bossOverrideSettings != null)
+        {
+            return bossOverrideSettings;
         }
 
         switch (source)
@@ -346,6 +399,116 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
     }
 
     /// <summary>
+    /// Resolves the boss-specific override settings associated with the baked visual settings key.
+    /// /params source Source interaction that currently owns the billboard.
+    /// /params visualSettingsKey Boss visual override key baked for the active config.
+    /// /returns Boss override settings, or null when the active config uses global or normal-pattern settings.
+    /// </summary>
+    private EnemyOffensiveEngagementFeedbackSettings ResolveBossOverrideSettings(EnemyOffensiveEngagementTriggerSource source,
+                                                                                int visualSettingsKey)
+    {
+        if (visualSettingsKey >= 0)
+        {
+            return ResolveBossInteractionOverrideSettings(source, visualSettingsKey);
+        }
+
+        return ResolveBossBaseOverrideSettings(source);
+    }
+
+    /// <summary>
+    /// Resolves an override settings block from the base boss pattern.
+    /// /params source Source interaction that currently owns the billboard.
+    /// /returns Base boss override settings, or null when unavailable.
+    /// </summary>
+    private EnemyOffensiveEngagementFeedbackSettings ResolveBossBaseOverrideSettings(EnemyOffensiveEngagementTriggerSource source)
+    {
+        if (bossBasePattern == null)
+        {
+            return null;
+        }
+
+        switch (source)
+        {
+            case EnemyOffensiveEngagementTriggerSource.ShortRangeInteraction:
+                return ResolveShortRangeOverrideSettings(bossBasePattern.ShortRangeInteraction);
+
+            case EnemyOffensiveEngagementTriggerSource.WeaponInteraction:
+                return ResolveWeaponOverrideSettings(bossBasePattern.WeaponInteraction);
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Resolves an override settings block from one authored boss interaction.
+    /// /params source Source interaction that currently owns the billboard.
+    /// /params visualSettingsKey Authored interaction index baked into the active config.
+    /// /returns Boss interaction override settings, or null when unavailable.
+    /// </summary>
+    private EnemyOffensiveEngagementFeedbackSettings ResolveBossInteractionOverrideSettings(EnemyOffensiveEngagementTriggerSource source,
+                                                                                           int visualSettingsKey)
+    {
+        if (bossInteractions == null || visualSettingsKey < 0 || visualSettingsKey >= bossInteractions.Count)
+        {
+            return null;
+        }
+
+        EnemyBossPatternInteractionDefinition interaction = bossInteractions[visualSettingsKey];
+
+        if (interaction == null || !interaction.Enabled)
+        {
+            return null;
+        }
+
+        switch (source)
+        {
+            case EnemyOffensiveEngagementTriggerSource.ShortRangeInteraction:
+                return ResolveShortRangeOverrideSettings(interaction.ShortRangeInteraction);
+
+            case EnemyOffensiveEngagementTriggerSource.WeaponInteraction:
+                return ResolveWeaponOverrideSettings(interaction.WeaponInteraction);
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Resolves a short-range slot override settings block when the slot authored one.
+    /// /params interaction Short-range slot to inspect.
+    /// /returns Override settings, or null when the slot should use global settings.
+    /// </summary>
+    private static EnemyOffensiveEngagementFeedbackSettings ResolveShortRangeOverrideSettings(EnemyPatternShortRangeInteractionAssembly interaction)
+    {
+        if (interaction == null ||
+            !interaction.IsEnabled ||
+            !interaction.UseEngagementFeedbackOverride)
+        {
+            return null;
+        }
+
+        return interaction.EngagementFeedbackOverride;
+    }
+
+    /// <summary>
+    /// Resolves a weapon slot override settings block when the slot authored one.
+    /// /params interaction Weapon slot to inspect.
+    /// /returns Override settings, or null when the slot should use global settings.
+    /// </summary>
+    private static EnemyOffensiveEngagementFeedbackSettings ResolveWeaponOverrideSettings(EnemyPatternWeaponInteractionAssembly interaction)
+    {
+        if (interaction == null ||
+            !interaction.IsEnabled ||
+            !interaction.UseEngagementFeedbackOverride)
+        {
+            return null;
+        }
+
+        return interaction.EngagementFeedbackOverride;
+    }
+
+    /// <summary>
     /// Caches the authoring component and the currently selected shared pattern so sprite resolution stays allocation free during presentation updates.
     /// /params None.
     /// /returns None.
@@ -357,28 +520,39 @@ public sealed class EnemyOffensiveEngagementBillboardView : MonoBehaviour
             globalSettings = EnemyAuthoringPresetResolverUtility.ResolveOffensiveEngagementFeedbackSettings(masterPreset, visualPreset);
         }
 
-        if (selectedPattern != null)
-        {
-            return;
-        }
-
-        EnemyAdvancedPatternPreset resolvedAdvancedPatternPreset = EnemyAuthoringPresetResolverUtility.ResolveAdvancedPatternPreset(masterPreset,
-                                                                                                                                    advancedPatternPreset);
-
-        if (resolvedAdvancedPatternPreset == null)
-        {
-            return;
-        }
-
-        selectedPattern = EnemyModulesAndPatternsSelectionUtility.ResolveSelectedPattern(resolvedAdvancedPatternPreset);
-
         if (selectedPattern == null)
         {
+            EnemyAdvancedPatternPreset resolvedAdvancedPatternPreset = EnemyAuthoringPresetResolverUtility.ResolveAdvancedPatternPreset(masterPreset,
+                                                                                                                                        advancedPatternPreset);
+
+            if (resolvedAdvancedPatternPreset != null)
+            {
+                selectedPattern = EnemyModulesAndPatternsSelectionUtility.ResolveSelectedPattern(resolvedAdvancedPatternPreset);
+
+                if (selectedPattern != null)
+                {
+                    shortRangeInteraction = selectedPattern.ShortRangeInteraction;
+                    weaponInteraction = selectedPattern.WeaponInteraction;
+                }
+            }
+        }
+
+        if (bossContextResolved)
+        {
             return;
         }
 
-        shortRangeInteraction = selectedPattern.ShortRangeInteraction;
-        weaponInteraction = selectedPattern.WeaponInteraction;
+        bossContextResolved = true;
+        EnemyBossPatternPreset resolvedBossPatternPreset = EnemyAuthoringPresetResolverUtility.ResolveBossPatternPreset(masterPreset,
+                                                                                                                        bossPatternPreset);
+
+        if (resolvedBossPatternPreset == null)
+        {
+            return;
+        }
+
+        bossBasePattern = resolvedBossPatternPreset.BasePattern;
+        bossInteractions = resolvedBossPatternPreset.Interactions;
     }
 
     /// <summary>

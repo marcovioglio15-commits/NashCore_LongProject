@@ -211,6 +211,7 @@ internal static class EnemyOffensiveEngagementBillboardRuntimeUtility
             return null;
         }
 
+        acquiredView.SyncPresetSources(resolvedView);
         fallbackViewsByEnemy[enemyEntity] = acquiredView;
         EnsureViewActive(acquiredView);
         return acquiredView;

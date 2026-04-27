@@ -31,6 +31,7 @@ public static class GameAudioManagerPresetValidationUtility
 
         ValidatePlaybackSettings(preset, warnings);
         ValidateRoutingSettings(preset, warnings);
+        ValidateBackgroundMusicSettings(preset, warnings);
         ValidateEventBindings(preset, warnings);
     }
     #endregion
@@ -89,6 +90,35 @@ public static class GameAudioManagerPresetValidationUtility
 
         if (routingSettings.MusicVolume < 0f)
             warnings.Add("Music Volume is negative.");
+    }
+
+    /// <summary>
+    /// Validates background music settings without requiring the FMOD package at edit time.
+    /// /params preset Preset that owns background music settings.
+    /// /params warnings Mutable warning output list.
+    /// /returns None.
+    /// </summary>
+    private static void ValidateBackgroundMusicSettings(GameAudioManagerPreset preset, List<string> warnings)
+    {
+        GameAudioBackgroundMusicSettings backgroundMusicSettings = preset.BackgroundMusicSettings;
+
+        if (backgroundMusicSettings == null)
+        {
+            warnings.Add("Background Music settings are missing.");
+            return;
+        }
+
+        if (!backgroundMusicSettings.Enabled)
+            return;
+
+        if (string.IsNullOrWhiteSpace(backgroundMusicSettings.EventPath))
+            warnings.Add("Background Music is enabled but FMOD Event Path is empty.");
+
+        if (string.IsNullOrWhiteSpace(backgroundMusicSettings.BankName))
+            warnings.Add("Background Music Bank Name is empty. Playback will rely on a bank loaded elsewhere.");
+
+        if (backgroundMusicSettings.Volume < 0f)
+            warnings.Add("Background Music Volume is negative.");
     }
 
     /// <summary>

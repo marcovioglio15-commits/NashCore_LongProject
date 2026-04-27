@@ -277,6 +277,7 @@ public partial struct EnemyDamageFlashPresentationSystem : ISystem
         billboardView.Render(worldPosition,
                              cameraTransform,
                              billboardResult.Source,
+                             billboardResult.VisualSettingsKey,
                              billboardResult.UseOverrideVisualSettings,
                              DamageFlashRuntimeUtility.ToManagedColor(billboardResult.Color),
                              worldOffset,

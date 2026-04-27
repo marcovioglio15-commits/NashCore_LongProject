@@ -28,6 +28,9 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
         SerializedProperty useMaximumRangeProperty = property.FindPropertyRelative("useMaximumRange");
         SerializedProperty maximumRangeProperty = property.FindPropertyRelative("maximumRange");
         SerializedProperty exclusiveLookDirectionControlProperty = property.FindPropertyRelative("exclusiveLookDirectionControl");
+        SerializedProperty activationGatesProperty = property.FindPropertyRelative("activationGates");
+        SerializedProperty maximumActivationSpeedProperty = property.FindPropertyRelative("maximumActivationSpeed");
+        SerializedProperty recentlyDamagedWindowSecondsProperty = property.FindPropertyRelative("recentlyDamagedWindowSeconds");
         SerializedProperty displayBehaviourEngagementTriggerProperty = property.FindPropertyRelative("displayBehaviourEngagementTrigger");
         SerializedProperty useEngagementFeedbackOverrideProperty = property.FindPropertyRelative("useEngagementFeedbackOverride");
         SerializedProperty engagementFeedbackOverrideProperty = property.FindPropertyRelative("engagementFeedbackOverride");
@@ -40,6 +43,9 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
             useMaximumRangeProperty == null ||
             maximumRangeProperty == null ||
             exclusiveLookDirectionControlProperty == null ||
+            activationGatesProperty == null ||
+            maximumActivationSpeedProperty == null ||
+            recentlyDamagedWindowSecondsProperty == null ||
             displayBehaviourEngagementTriggerProperty == null ||
             useEngagementFeedbackOverrideProperty == null ||
             engagementFeedbackOverrideProperty == null ||
@@ -73,6 +79,19 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
         EnemyAdvancedPatternDrawerUtility.AddField(settingsContainer,
                                                    exclusiveLookDirectionControlProperty,
                                                    "Exclusive Look Direction Control");
+        EnemyAdvancedPatternDrawerUtility.AddField(settingsContainer,
+                                                   activationGatesProperty,
+                                                   "Activation Gates");
+
+        VisualElement activationGateDetailsContainer = new VisualElement();
+        activationGateDetailsContainer.style.marginLeft = 12f;
+        settingsContainer.Add(activationGateDetailsContainer);
+        EnemyAdvancedPatternDrawerUtility.AddField(activationGateDetailsContainer,
+                                                   maximumActivationSpeedProperty,
+                                                   "Maximum Activation Speed");
+        EnemyAdvancedPatternDrawerUtility.AddField(activationGateDetailsContainer,
+                                                   recentlyDamagedWindowSecondsProperty,
+                                                   "Recently Damaged Window Seconds");
 
         PropertyField bindingField = new PropertyField(bindingProperty, "Weapon Module");
         bindingField.BindProperty(bindingProperty);
@@ -103,13 +122,17 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                          useMaximumRangeProperty,
                          displayBehaviourEngagementTriggerProperty,
                          useEngagementFeedbackOverrideProperty,
+                         activationGatesProperty,
                          bindingProperty,
                          settingsContainer,
                          minimumRangeContainer,
                          maximumRangeContainer,
                          feedbackOptionsContainer,
                          feedbackOverrideContainer,
-                         unsupportedModuleBox);
+                         unsupportedModuleBox,
+                         activationGateDetailsContainer,
+                         maximumActivationSpeedProperty,
+                         recentlyDamagedWindowSecondsProperty);
         root.TrackPropertyValue(enabledProperty, changedProperty =>
         {
             UpdateVisibility(changedProperty,
@@ -117,13 +140,17 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                              useMaximumRangeProperty,
                              displayBehaviourEngagementTriggerProperty,
                              useEngagementFeedbackOverrideProperty,
+                             activationGatesProperty,
                              bindingProperty,
                              settingsContainer,
                              minimumRangeContainer,
                              maximumRangeContainer,
                              feedbackOptionsContainer,
                              feedbackOverrideContainer,
-                             unsupportedModuleBox);
+                             unsupportedModuleBox,
+                             activationGateDetailsContainer,
+                             maximumActivationSpeedProperty,
+                             recentlyDamagedWindowSecondsProperty);
         });
         root.TrackPropertyValue(useMinimumRangeProperty, changedProperty =>
         {
@@ -132,13 +159,17 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                              useMaximumRangeProperty,
                              displayBehaviourEngagementTriggerProperty,
                              useEngagementFeedbackOverrideProperty,
+                             activationGatesProperty,
                              bindingProperty,
                              settingsContainer,
                              minimumRangeContainer,
                              maximumRangeContainer,
                              feedbackOptionsContainer,
                              feedbackOverrideContainer,
-                             unsupportedModuleBox);
+                             unsupportedModuleBox,
+                             activationGateDetailsContainer,
+                             maximumActivationSpeedProperty,
+                             recentlyDamagedWindowSecondsProperty);
         });
         root.TrackPropertyValue(useMaximumRangeProperty, changedProperty =>
         {
@@ -147,13 +178,36 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                              changedProperty,
                              displayBehaviourEngagementTriggerProperty,
                              useEngagementFeedbackOverrideProperty,
+                             activationGatesProperty,
                              bindingProperty,
                              settingsContainer,
                              minimumRangeContainer,
                              maximumRangeContainer,
                              feedbackOptionsContainer,
                              feedbackOverrideContainer,
-                             unsupportedModuleBox);
+                             unsupportedModuleBox,
+                             activationGateDetailsContainer,
+                             maximumActivationSpeedProperty,
+                             recentlyDamagedWindowSecondsProperty);
+        });
+        root.TrackPropertyValue(activationGatesProperty, changedProperty =>
+        {
+            UpdateVisibility(enabledProperty,
+                             useMinimumRangeProperty,
+                             useMaximumRangeProperty,
+                             displayBehaviourEngagementTriggerProperty,
+                             useEngagementFeedbackOverrideProperty,
+                             activationGatesProperty,
+                             bindingProperty,
+                             settingsContainer,
+                             minimumRangeContainer,
+                             maximumRangeContainer,
+                             feedbackOptionsContainer,
+                             feedbackOverrideContainer,
+                             unsupportedModuleBox,
+                             activationGateDetailsContainer,
+                             maximumActivationSpeedProperty,
+                             recentlyDamagedWindowSecondsProperty);
         });
         root.TrackPropertyValue(displayBehaviourEngagementTriggerProperty, changedProperty =>
         {
@@ -162,13 +216,17 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                              useMaximumRangeProperty,
                              changedProperty,
                              useEngagementFeedbackOverrideProperty,
+                             activationGatesProperty,
                              bindingProperty,
                              settingsContainer,
                              minimumRangeContainer,
                              maximumRangeContainer,
                              feedbackOptionsContainer,
                              feedbackOverrideContainer,
-                             unsupportedModuleBox);
+                             unsupportedModuleBox,
+                             activationGateDetailsContainer,
+                             maximumActivationSpeedProperty,
+                             recentlyDamagedWindowSecondsProperty);
         });
         root.TrackPropertyValue(useEngagementFeedbackOverrideProperty, changedProperty =>
         {
@@ -177,13 +235,17 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                              useMaximumRangeProperty,
                              displayBehaviourEngagementTriggerProperty,
                              changedProperty,
+                             activationGatesProperty,
                              bindingProperty,
                              settingsContainer,
                              minimumRangeContainer,
                              maximumRangeContainer,
                              feedbackOptionsContainer,
                              feedbackOverrideContainer,
-                             unsupportedModuleBox);
+                             unsupportedModuleBox,
+                             activationGateDetailsContainer,
+                             maximumActivationSpeedProperty,
+                             recentlyDamagedWindowSecondsProperty);
         });
 
         if (moduleIdProperty != null)
@@ -195,13 +257,17 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                                  useMaximumRangeProperty,
                                  displayBehaviourEngagementTriggerProperty,
                                  useEngagementFeedbackOverrideProperty,
+                                 activationGatesProperty,
                                  bindingProperty,
                                  settingsContainer,
                                  minimumRangeContainer,
                                  maximumRangeContainer,
                                  feedbackOptionsContainer,
                                  feedbackOverrideContainer,
-                                 unsupportedModuleBox);
+                                 unsupportedModuleBox,
+                                 activationGateDetailsContainer,
+                                 maximumActivationSpeedProperty,
+                                 recentlyDamagedWindowSecondsProperty);
             });
         }
 
@@ -231,13 +297,17 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                                          SerializedProperty useMaximumRangeProperty,
                                          SerializedProperty displayTriggerProperty,
                                          SerializedProperty useOverrideProperty,
+                                         SerializedProperty activationGatesProperty,
                                          SerializedProperty bindingProperty,
                                          VisualElement settingsContainer,
                                          VisualElement minimumRangeContainer,
                                          VisualElement maximumRangeContainer,
                                          VisualElement feedbackOptionsContainer,
                                          VisualElement feedbackOverrideContainer,
-                                         HelpBox unsupportedModuleBox)
+                                         HelpBox unsupportedModuleBox,
+                                         VisualElement activationGateDetailsContainer,
+                                         SerializedProperty maximumActivationSpeedProperty,
+                                         SerializedProperty recentlyDamagedWindowSecondsProperty)
     {
         bool isInteractionEnabled = enabledProperty != null && enabledProperty.boolValue;
         bool useMinimumRange = isInteractionEnabled &&
@@ -255,6 +325,8 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
         bool showUnsupportedModuleWarning = isTriggerEnabled &&
                                             !EnemyOffensiveEngagementFeedbackDrawerUtility.SupportsDisplayTrigger(bindingProperty,
                                                                                                                  EnemyPatternModuleCatalogSection.WeaponInteraction);
+        EnemyWeaponInteractionActivationGate gates = ResolveActivationGates(activationGatesProperty);
+        bool showActivationGateDetails = isInteractionEnabled && gates != EnemyWeaponInteractionActivationGate.Always;
 
         if (settingsContainer != null)
         {
@@ -297,6 +369,26 @@ public sealed class EnemyPatternWeaponInteractionAssemblyPropertyDrawer : Proper
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
         }
+
+        if (activationGateDetailsContainer != null)
+        {
+            activationGateDetailsContainer.style.display = showActivationGateDetails
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
+    }
+
+    /// <summary>
+    /// Resolves activation gates from the serialized enum property.
+    /// /params activationGatesProperty Serialized activation gates property.
+    /// /returns Current activation gate flags.
+    /// </summary>
+    private static EnemyWeaponInteractionActivationGate ResolveActivationGates(SerializedProperty activationGatesProperty)
+    {
+        if (activationGatesProperty == null || activationGatesProperty.propertyType != SerializedPropertyType.Enum)
+            return EnemyWeaponInteractionActivationGate.Always;
+
+        return (EnemyWeaponInteractionActivationGate)activationGatesProperty.intValue;
     }
     #endregion
 

@@ -19,6 +19,7 @@ MonoBehaviour:
   brainPreset: {fileID: 11400000, guid: 3ca2ef3fee091ad479164f92b6d9964b, type: 2}
   visualPreset: {fileID: 11400000, guid: 0d1a4ce76b7d4ff6b644f67dcb0f8421, type: 2}
   advancedPatternPreset: {fileID: 11400000, guid: 384f1f53b06b5594d96f022f18ea4883, type: 2}
+  bossPatternPreset: {fileID: 0}
   testUiSettings:
     worldOffset: {x: 0, y: 1.8, z: 0}
     rootWidthPixels: 120

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03ce30e7ff27e12418b7854dd61a2d7d, type: 3}
+  m_Name: EnemyMasterPreset_BOSS
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyMasterPreset
+  presetId: 0141dd5768a54f2eb55f72fbae69d6f4
+  presetName: EnemyMasterPreset_BOSS
+  description: 
+  version: 1.0.0
+  brainPreset: {fileID: 11400000, guid: 75522fd436f62e746979cfd47236c331, type: 2}
+  visualPreset: {fileID: 11400000, guid: b9f2f692163109b4b9e1baaee524b5eb, type: 2}
+  advancedPatternPreset: {fileID: 11400000, guid: 412dcb19d6a261a4cb6ab2d114739bda, type: 2}
+  bossPatternPreset: {fileID: 11400000, guid: 7bde987180653674d97a4c7f56d583d9, type: 2}
+  testUiSettings:
+    worldOffset: {x: 0, y: 1.8, z: 0}
+    rootWidthPixels: 120
+    rootHeightPixels: 26
+    worldScale: 0.01
+    canvasSortingOrder: 4000
+    healthBarWidthPixels: 108
+    healthBarHeightPixels: 8
+    healthBarYOffsetPixels: 5
+    shieldBarWidthPixels: 108
+    shieldBarHeightPixels: 6
+    shieldBarYOffsetPixels: -5
+    healthFillColor: {r: 0.95, g: 0.2, b: 0.2, a: 1}
+    healthBackgroundColor: {r: 0, g: 0, b: 0, a: 0.55}
+    shieldFillColor: {r: 0.2, g: 0.85, b: 1, a: 1}
+    shieldBackgroundColor: {r: 0, g: 0, b: 0, a: 0.45}
+    hideShieldWhenEmpty: 1
+    hideWhenEnemyInactive: 1
+    hideWhenEnemyCulled: 0
+    smoothingSeconds: 0
+    shieldSmoothingSeconds: 0.08
+    billboardToCamera: 1
+    billboardYawOnly: 0

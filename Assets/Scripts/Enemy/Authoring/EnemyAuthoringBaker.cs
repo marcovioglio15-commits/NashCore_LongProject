@@ -77,6 +77,18 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         SetComponentEnabled<EnemySpawnWarningState>(entity, false);
 
         EnemyCompiledPatternBakeResult compiledPattern = EnemyAdvancedPatternBakeUtility.Compile(authoring.AdvancedPatternPreset);
+        EnemyBossPatternPreset bossPatternPreset = authoring.BossPatternPreset;
+        EnemyCompiledBossPatternBakeResult compiledBossPattern = null;
+
+        if (bossPatternPreset != null)
+        {
+            compiledBossPattern = EnemyBossPatternBakeUtility.Compile(bossPatternPreset,
+                                                                      authoring.OffensiveEngagementFeedbackSettings,
+                                                                      minionPrefab => GetEntity(minionPrefab, TransformUsageFlags.Dynamic));
+
+            if (compiledBossPattern != null)
+                compiledPattern = compiledBossPattern.InitialPattern;
+        }
 
         AddComponent(entity, compiledPattern.PatternConfig);
         AddComponent(entity, EnemyPatternDefaultsUtility.CreatePatternRuntimeState());
@@ -116,7 +128,13 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         }
 
         TryBakeDropItemsRuntime(authoring, entity, compiledPattern);
-        EnemyOffensiveEngagementBakeUtility.AppendConfigs(authoring, offensiveEngagementConfigs);
+
+        if (compiledBossPattern != null)
+            AppendInitialBossOffensiveEngagementConfigs(compiledBossPattern, offensiveEngagementConfigs);
+        else
+            EnemyOffensiveEngagementBakeUtility.AppendConfigs(authoring, offensiveEngagementConfigs);
+
+        TryBakeBossRuntime(authoring, entity, compiledBossPattern);
 
         EnemyVisualMode bakedVisualMode = ResolveBakedVisualMode(authoring, out Animator resolvedAnimatorComponent);
 
@@ -244,6 +262,180 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
     #region Helpers
     /// <summary>
+    /// Writes the base boss offensive engagement configs into the active runtime buffer used immediately after spawn.
+    /// /params compiledBossPattern Compiled boss pattern data.
+    /// /params offensiveEngagementConfigs Active target buffer populated during bake.
+    /// /returns None.
+    /// </summary>
+    private static void AppendInitialBossOffensiveEngagementConfigs(EnemyCompiledBossPatternBakeResult compiledBossPattern,
+                                                                    DynamicBuffer<EnemyOffensiveEngagementConfigElement> offensiveEngagementConfigs)
+    {
+        if (compiledBossPattern == null)
+            return;
+
+        AppendBossOffensiveEngagementConfigSlice(compiledBossPattern.BaseFirstOffensiveEngagementConfigIndex,
+                                                 compiledBossPattern.BaseOffensiveEngagementConfigCount,
+                                                 compiledBossPattern,
+                                                 offensiveEngagementConfigs);
+    }
+
+    /// <summary>
+    /// Copies one boss-owned offensive engagement config slice into an active runtime buffer.
+    /// /params firstConfigIndex First source config index.
+    /// /params configCount Number of configs to copy.
+    /// /params compiledBossPattern Compiled boss source data.
+    /// /params targetConfigs Active target buffer receiving configs.
+    /// /returns None.
+    /// </summary>
+    private static void AppendBossOffensiveEngagementConfigSlice(int firstConfigIndex,
+                                                                 int configCount,
+                                                                 EnemyCompiledBossPatternBakeResult compiledBossPattern,
+                                                                 DynamicBuffer<EnemyOffensiveEngagementConfigElement> targetConfigs)
+    {
+        if (compiledBossPattern == null)
+            return;
+
+        for (int configIndex = 0; configIndex < configCount; configIndex++)
+        {
+            int sourceIndex = firstConfigIndex + configIndex;
+
+            if (sourceIndex < 0 || sourceIndex >= compiledBossPattern.OffensiveEngagementConfigs.Count)
+                continue;
+
+            targetConfigs.Add(compiledBossPattern.OffensiveEngagementConfigs[sourceIndex]);
+        }
+    }
+
+    /// <summary>
+    /// Writes boss-specific ECS buffers and HUD configuration when a Boss Pattern Preset is assigned.
+    /// /params authoring Source authoring component.
+    /// /params entity Enemy entity being baked.
+    /// /params compiledBossPattern Compiled boss data, or null for normal enemies.
+    /// /returns None.
+    /// </summary>
+    private void TryBakeBossRuntime(EnemyAuthoring authoring,
+                                    Entity entity,
+                                    EnemyCompiledBossPatternBakeResult compiledBossPattern)
+    {
+        if (authoring == null || compiledBossPattern == null)
+            return;
+
+        AddComponent<EnemyBossTag>(entity);
+        AddComponent(entity, new EnemyBossPatternBaseConfig
+        {
+            HasCustomMovement = compiledBossPattern.BasePattern.HasCustomMovement ? (byte)1 : (byte)0,
+            FirstShooterConfigIndex = compiledBossPattern.BaseFirstShooterConfigIndex,
+            ShooterConfigCount = compiledBossPattern.BaseShooterConfigCount,
+            FirstOffensiveEngagementConfigIndex = compiledBossPattern.BaseFirstOffensiveEngagementConfigIndex,
+            OffensiveEngagementConfigCount = compiledBossPattern.BaseOffensiveEngagementConfigCount,
+            PatternConfig = compiledBossPattern.BasePattern.PatternConfig
+        });
+        AddComponent(entity, new EnemyBossPatternRuntimeState
+        {
+            ActiveInteractionIndex = -1,
+            ElapsedSeconds = 0f,
+            ActiveInteractionElapsedSeconds = 0f,
+            TravelledDistance = 0f,
+            LastPosition = float3.zero,
+            LastObservedDamageLifetimeSeconds = 0f,
+            Initialized = 0
+        });
+
+        DynamicBuffer<EnemyBossPatternInteractionElement> interactionBuffer = AddBuffer<EnemyBossPatternInteractionElement>(entity);
+
+        for (int interactionIndex = 0; interactionIndex < compiledBossPattern.Interactions.Count; interactionIndex++)
+            interactionBuffer.Add(compiledBossPattern.Interactions[interactionIndex]);
+
+        DynamicBuffer<EnemyBossPatternShooterConfigElement> bossShooterBuffer = AddBuffer<EnemyBossPatternShooterConfigElement>(entity);
+
+        for (int shooterIndex = 0; shooterIndex < compiledBossPattern.ShooterConfigs.Count; shooterIndex++)
+        {
+            bossShooterBuffer.Add(new EnemyBossPatternShooterConfigElement
+            {
+                ShooterConfig = compiledBossPattern.ShooterConfigs[shooterIndex]
+            });
+        }
+
+        DynamicBuffer<EnemyBossPatternOffensiveEngagementConfigElement> bossEngagementBuffer = AddBuffer<EnemyBossPatternOffensiveEngagementConfigElement>(entity);
+
+        for (int configIndex = 0; configIndex < compiledBossPattern.OffensiveEngagementConfigs.Count; configIndex++)
+        {
+            bossEngagementBuffer.Add(new EnemyBossPatternOffensiveEngagementConfigElement
+            {
+                Config = compiledBossPattern.OffensiveEngagementConfigs[configIndex]
+            });
+        }
+
+        DynamicBuffer<EnemyBossMinionSpawnElement> minionSpawnBuffer = AddBuffer<EnemyBossMinionSpawnElement>(entity);
+
+        for (int minionIndex = 0; minionIndex < compiledBossPattern.MinionSpawns.Count; minionIndex++)
+            minionSpawnBuffer.Add(compiledBossPattern.MinionSpawns[minionIndex]);
+
+        AddComponent(entity, BuildBossHudConfig(authoring));
+        TryBakeBossHudManagedConfig(authoring, entity);
+    }
+
+    /// <summary>
+    /// Builds unmanaged boss HUD configuration from the resolved visual preset.
+    /// /params authoring Source authoring component.
+    /// /returns Baked boss HUD config component.
+    /// </summary>
+    private static EnemyBossHudConfig BuildBossHudConfig(EnemyAuthoring authoring)
+    {
+        EnemyVisualPreset visualPreset = authoring != null ? authoring.VisualPreset : null;
+        EnemyBossVisualUiSettings bossUi = visualPreset != null ? visualPreset.BossUi : null;
+        string displayName = "Boss";
+
+        if (bossUi != null && !string.IsNullOrWhiteSpace(bossUi.BossDisplayName))
+            displayName = bossUi.BossDisplayName;
+        else if (visualPreset != null && !string.IsNullOrWhiteSpace(visualPreset.PresetName))
+            displayName = visualPreset.PresetName;
+
+        Color healthFillColor = bossUi != null ? bossUi.HealthFillColor : new Color(0.9f, 0.12f, 0.08f, 1f);
+        Color healthBackgroundColor = bossUi != null ? bossUi.HealthBackgroundColor : new Color(0f, 0f, 0f, 0.7f);
+        Color offscreenIndicatorColor = bossUi != null ? bossUi.OffscreenIndicatorColor : new Color(1f, 0.2f, 0.1f, 0.95f);
+
+        return new EnemyBossHudConfig
+        {
+            Enabled = bossUi == null || bossUi.Enabled ? (byte)1 : (byte)0,
+            DisplayName = new Unity.Collections.FixedString64Bytes(displayName),
+            HealthFillColor = DamageFlashRuntimeUtility.ToLinearFloat4(healthFillColor),
+            HealthBackgroundColor = DamageFlashRuntimeUtility.ToLinearFloat4(healthBackgroundColor),
+            OffscreenIndicatorColor = DamageFlashRuntimeUtility.ToLinearFloat4(offscreenIndicatorColor),
+            BottomOffsetPixels = bossUi != null ? math.max(0f, bossUi.BottomOffsetPixels) : 42f,
+            WidthPixels = bossUi != null ? math.max(1f, bossUi.WidthPixels) : 560f,
+            HeightPixels = bossUi != null ? math.max(1f, bossUi.HeightPixels) : 22f,
+            OffscreenIndicatorSizePixels = bossUi != null ? math.max(1f, bossUi.OffscreenIndicatorSizePixels) : 56f,
+            EdgePaddingPixels = bossUi != null ? math.max(0f, bossUi.EdgePaddingPixels) : 30f
+        };
+    }
+
+    /// <summary>
+    /// Adds managed boss HUD assets such as custom off-screen indicator sprites.
+    /// /params authoring Source authoring component.
+    /// /params entity Enemy entity receiving managed data.
+    /// /returns None.
+    /// </summary>
+    private void TryBakeBossHudManagedConfig(EnemyAuthoring authoring, Entity entity)
+    {
+        if (authoring == null)
+            return;
+
+        EnemyVisualPreset visualPreset = authoring.VisualPreset;
+
+        if (visualPreset == null || visualPreset.BossUi == null)
+            return;
+
+        if (visualPreset.BossUi.OffscreenIndicatorSprite == null)
+            return;
+
+        AddComponentObject(entity, new EnemyBossHudManagedConfig
+        {
+            OffscreenIndicatorSprite = visualPreset.BossUi.OffscreenIndicatorSprite
+        });
+    }
+
+    /// <summary>
     /// Declares preset dependencies consumed during enemy bake so edits on master, sub-preset and shared pattern assets trigger a rebake.
     /// /params authoring Source authoring component used to resolve all preset references.
     /// /returns None.
@@ -257,6 +449,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         EnemyBrainPreset brainPreset = authoring.BrainPreset;
         EnemyVisualPreset visualPreset = authoring.VisualPreset;
         EnemyAdvancedPatternPreset advancedPatternPreset = authoring.AdvancedPatternPreset;
+        EnemyBossPatternPreset bossPatternPreset = authoring.BossPatternPreset;
 
         if (masterPreset != null)
             DependsOn(masterPreset);
@@ -273,6 +466,14 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
 
             if (advancedPatternPreset.ModulesAndPatternsPreset != null)
                 DependsOn(advancedPatternPreset.ModulesAndPatternsPreset);
+        }
+
+        if (bossPatternPreset != null)
+        {
+            DependsOn(bossPatternPreset);
+
+            if (bossPatternPreset.SourcePatternsPreset != null)
+                DependsOn(bossPatternPreset.SourcePatternsPreset);
         }
     }
 

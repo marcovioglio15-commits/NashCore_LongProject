@@ -394,6 +394,12 @@ public sealed class EnemyVisualPreset : ScriptableObject
 
     [Tooltip("Prefab and paint metadata block.")]
     [SerializeField] private EnemyVisualPrefabSettings prefabs = new EnemyVisualPrefabSettings();
+
+    [Tooltip("Enemy-type overrides for spawner-dependent spawn offset and spawn warning settings.")]
+    [SerializeField] private EnemyVisualSpawnOverridesSettings spawnOverrides = new EnemyVisualSpawnOverridesSettings();
+
+    [Tooltip("Boss-specific screen-space UI block used when an enemy has a Boss Pattern Preset.")]
+    [SerializeField] private EnemyBossVisualUiSettings bossUi = new EnemyBossVisualUiSettings();
     #endregion
 
     #endregion
@@ -470,6 +476,22 @@ public sealed class EnemyVisualPreset : ScriptableObject
             return offensiveEngagementFeedback;
         }
     }
+
+    public EnemyBossVisualUiSettings BossUi
+    {
+        get
+        {
+            return bossUi;
+        }
+    }
+
+    public EnemyVisualSpawnOverridesSettings SpawnOverrides
+    {
+        get
+        {
+            return spawnOverrides;
+        }
+    }
     #endregion
 
     #region Methods
@@ -499,11 +521,19 @@ public sealed class EnemyVisualPreset : ScriptableObject
         if (prefabs == null)
             prefabs = new EnemyVisualPrefabSettings();
 
+        if (spawnOverrides == null)
+            spawnOverrides = new EnemyVisualSpawnOverridesSettings();
+
+        if (bossUi == null)
+            bossUi = new EnemyBossVisualUiSettings();
+
         visibility.Validate();
         damageFeedback.Validate();
         outline.Validate();
         offensiveEngagementFeedback.Validate();
         prefabs.Validate();
+        spawnOverrides.Validate();
+        bossUi.Validate();
     }
     #endregion
 

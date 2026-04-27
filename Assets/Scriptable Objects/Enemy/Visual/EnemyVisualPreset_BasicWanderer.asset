@@ -52,3 +52,27 @@ MonoBehaviour:
     hitVfxLifetimeSeconds: 0.35
     hitVfxScaleMultiplier: 1
     spawnPaintColor: {r: 0.24, g: 0.72, b: 0.98, a: 1}
+  spawnOverrides:
+    overrideSpawnOffset: 0
+    spawnOffset: {x: 0, y: 0, z: 0}
+    overrideSpawnWarning: 0
+    enableSpawnWarning: 1
+    spawnWarningLeadTimeSeconds: 0.7
+    spawnWarningRadiusScale: 0.45
+    spawnWarningRingWidth: 0.15
+    spawnWarningHeightOffset: 0.06
+    spawnWarningMaximumAlpha: 0.95
+    spawnWarningFadeOutSeconds: 0.18
+    spawnWarningColor: {r: 1, g: 0.72, b: 0.18, a: 1}
+  bossUi:
+    enabled: 0
+    bossDisplayName: 
+    healthFillColor: {r: 0.9, g: 0.12, b: 0.08, a: 1}
+    healthBackgroundColor: {r: 0, g: 0, b: 0, a: 0.7}
+    offscreenIndicatorSprite: {fileID: 0}
+    offscreenIndicatorColor: {r: 1, g: 0.2, b: 0.1, a: 0.95}
+    offscreenIndicatorSizePixels: 56
+    bottomOffsetPixels: 42
+    widthPixels: 560
+    heightPixels: 22
+    edgePaddingPixels: 30

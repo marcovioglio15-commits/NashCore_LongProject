@@ -643,6 +643,11 @@ public sealed class EnemyVisualPresetsPanel
     {
         EnemyVisualPresetsPanelSectionsUtility.ShowActiveVisualSubSection(this);
     }
+
+    internal void RebuildActiveDetailsSection()
+    {
+        BuildActiveDetailsSection();
+    }
     #endregion
 
     #endregion
@@ -660,7 +665,9 @@ public sealed class EnemyVisualPresetsPanel
         Outline = 1,
         DamageFeedback = 2,
         Prefabs = 3,
-        OffensiveEngagementFeedback = 4
+        OffensiveEngagementFeedback = 4,
+        SpawnOverrides = 5,
+        BossUi = 6
     }
 
     internal sealed class VisualSubSectionTabEntry

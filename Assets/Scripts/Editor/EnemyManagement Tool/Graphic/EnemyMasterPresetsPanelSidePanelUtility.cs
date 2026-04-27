@@ -44,12 +44,13 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
         EnemyBrainPresetsPanel brainPanel;
         EnemyVisualPresetsPanel visualPanel;
         EnemyAdvancedPatternPresetsPanel advancedPatternPanel;
-        VisualElement content = BuildSidePanelContent(panel, panelType, out brainPanel, out visualPanel, out advancedPatternPanel);
+        EnemyBossPatternPresetsPanel bossPatternPanel;
+        VisualElement content = BuildSidePanelContent(panel, panelType, out brainPanel, out visualPanel, out advancedPatternPanel, out bossPatternPanel);
 
         if (content == null)
             return;
 
-        AddTab(panel, panelType, GetPanelTitle(panelType), content, brainPanel, visualPanel, advancedPatternPanel);
+        AddTab(panel, panelType, GetPanelTitle(panelType), content, brainPanel, visualPanel, advancedPatternPanel, bossPatternPanel);
         SetActivePanel(panel, panelType);
         SyncSidePanelSelection(panel, panelType, panel.SidePanels[panelType]);
     }
@@ -99,6 +100,9 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
         if (panelType == EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets)
             return "Enemy Advanced Pattern Presets";
 
+        if (panelType == EnemyManagementWindow.PanelType.EnemyBossPatternPresets)
+            return "Boss Patterns Presets";
+
         return "Enemy Master Presets";
     }
 
@@ -136,6 +140,7 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
                panel.MainContentRoot,
                null,
                null,
+               null,
                null);
         RestoreOpenSidePanels(panel);
 
@@ -160,11 +165,13 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
                                                       EnemyManagementWindow.PanelType panelType,
                                                       out EnemyBrainPresetsPanel brainPanel,
                                                       out EnemyVisualPresetsPanel visualPanel,
-                                                      out EnemyAdvancedPatternPresetsPanel advancedPatternPanel)
+                                                      out EnemyAdvancedPatternPresetsPanel advancedPatternPanel,
+                                                      out EnemyBossPatternPresetsPanel bossPatternPanel)
     {
         brainPanel = null;
         visualPanel = null;
         advancedPatternPanel = null;
+        bossPatternPanel = null;
 
         VisualElement panelRoot = new VisualElement();
         panelRoot.style.flexDirection = FlexDirection.Column;
@@ -209,6 +216,13 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
             return panelRoot;
         }
 
+        if (panelType == EnemyManagementWindow.PanelType.EnemyBossPatternPresets)
+        {
+            bossPatternPanel = new EnemyBossPatternPresetsPanel();
+            panelRoot.Add(bossPatternPanel.Root);
+            return panelRoot;
+        }
+
         VisualElement placeholder = new VisualElement();
         placeholder.style.flexGrow = 1f;
         placeholder.style.minHeight = 220f;
@@ -237,7 +251,8 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
                               VisualElement content,
                               EnemyBrainPresetsPanel brainPanel,
                               EnemyVisualPresetsPanel visualPanel,
-                              EnemyAdvancedPatternPresetsPanel advancedPatternPanel)
+                              EnemyAdvancedPatternPresetsPanel advancedPatternPanel,
+                              EnemyBossPatternPresetsPanel bossPatternPanel)
     {
         if (panel == null)
             return;
@@ -264,6 +279,7 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
         sidePanelEntry.BrainPanel = brainPanel;
         sidePanelEntry.VisualPanel = visualPanel;
         sidePanelEntry.AdvancedPatternPanel = advancedPatternPanel;
+        sidePanelEntry.BossPatternPanel = bossPatternPanel;
         panel.SidePanels[panelType] = sidePanelEntry;
 
         SaveOpenPanelsState(panel);
@@ -328,6 +344,20 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
                 return;
 
             entry.AdvancedPatternPanel.SelectPresetFromExternal(advancedPatternPreset);
+            return;
+        }
+
+        if (panelType == EnemyManagementWindow.PanelType.EnemyBossPatternPresets)
+        {
+            if (entry.BossPatternPanel == null)
+                return;
+
+            EnemyBossPatternPreset bossPatternPreset = panel.SelectedPreset.BossPatternPreset;
+
+            if (bossPatternPreset == null)
+                return;
+
+            entry.BossPatternPanel.SelectPresetFromExternal(bossPatternPreset);
         }
     }
 
@@ -370,6 +400,9 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
 
             if (entry.AdvancedPatternPanel != null)
                 entry.AdvancedPatternPanel.RefreshFromSessionChange();
+
+            if (entry.BossPatternPanel != null)
+                entry.BossPatternPanel.RefreshFromSessionChange();
         }
 
         SyncOpenSidePanels(panel);
@@ -490,6 +523,9 @@ internal static class EnemyMasterPresetsPanelSidePanelUtility
 
         if (panel.SidePanels.ContainsKey(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets))
             openPanels.Add(EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets);
+
+        if (panel.SidePanels.ContainsKey(EnemyManagementWindow.PanelType.EnemyBossPatternPresets))
+            openPanels.Add(EnemyManagementWindow.PanelType.EnemyBossPatternPresets);
 
         ManagementToolStateUtility.SaveEnumList(OpenPanelsStateKey, openPanels);
     }

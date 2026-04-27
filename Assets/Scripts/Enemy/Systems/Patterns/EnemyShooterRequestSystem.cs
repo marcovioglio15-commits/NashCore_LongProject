@@ -77,11 +77,15 @@ public partial struct EnemyShooterRequestSystem : ISystem
                   DynamicBuffer<EnemyShooterRuntimeElement> shooterRuntime,
                   DynamicBuffer<ShootRequest> shootRequests,
                   RefRW<EnemyShooterControlState> shooterControlState,
+                  RefRO<EnemyRuntimeState> enemyRuntimeState,
+                  RefRO<EnemyPatternRuntimeState> patternRuntimeState,
                   RefRO<LocalTransform> enemyTransform)
                  in SystemAPI.Query<DynamicBuffer<EnemyShooterConfigElement>,
                                     DynamicBuffer<EnemyShooterRuntimeElement>,
                                     DynamicBuffer<ShootRequest>,
                                     RefRW<EnemyShooterControlState>,
+                                    RefRO<EnemyRuntimeState>,
+                                    RefRO<EnemyPatternRuntimeState>,
                                     RefRO<LocalTransform>>()
                              .WithAll<EnemyActive>()
                              .WithNone<EnemyDespawnRequest, EnemySpawnInactivityLock>())
@@ -117,7 +121,10 @@ public partial struct EnemyShooterRequestSystem : ISystem
 
                 runtime.NextBurstTimer = math.max(0f, runtime.NextBurstTimer - deltaTime);
                 runtime.NextShotInBurstTimer = math.max(0f, runtime.NextShotInBurstTimer - deltaTime);
-                runtime.IsPlayerInRange = IsInRange(playerDistance, in shooterConfig) ? (byte)1 : (byte)0;
+                runtime.IsPlayerInRange = IsInRange(playerDistance,
+                                                    in shooterConfig,
+                                                    in enemyRuntimeState.ValueRO,
+                                                    in patternRuntimeState.ValueRO) ? (byte)1 : (byte)0;
 
                 if (runtime.IsPlayerInRange == 0)
                 {
@@ -245,12 +252,59 @@ public partial struct EnemyShooterRequestSystem : ISystem
         }
     }
 
-    private static bool IsInRange(float playerDistance, in EnemyShooterConfigElement shooterConfig)
+    private static bool IsInRange(float playerDistance,
+                                  in EnemyShooterConfigElement shooterConfig,
+                                  in EnemyRuntimeState enemyRuntimeState,
+                                  in EnemyPatternRuntimeState patternRuntimeState)
     {
         if (shooterConfig.UseMinimumRange != 0 && playerDistance < math.max(0f, shooterConfig.MinimumRange))
             return false;
 
         if (shooterConfig.UseMaximumRange != 0 && playerDistance > math.max(0f, shooterConfig.MaximumRange))
+            return false;
+
+        if (!AreActivationGatesValid(in shooterConfig, in enemyRuntimeState, in patternRuntimeState))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Evaluates optional activation gates beyond distance checks for one Weapon Interaction.
+    /// /params shooterConfig Shooter config containing gate flags.
+    /// /params enemyRuntimeState Enemy runtime state used for speed and damage checks.
+    /// /params patternRuntimeState Pattern runtime state used for Wanderer wait checks.
+    /// /returns True when every configured gate is satisfied.
+    /// </summary>
+    private static bool AreActivationGatesValid(in EnemyShooterConfigElement shooterConfig,
+                                                in EnemyRuntimeState enemyRuntimeState,
+                                                in EnemyPatternRuntimeState patternRuntimeState)
+    {
+        EnemyWeaponInteractionActivationGate gates = shooterConfig.ActivationGates;
+
+        if (gates == EnemyWeaponInteractionActivationGate.Always)
+            return true;
+
+        if ((gates & EnemyWeaponInteractionActivationGate.RequireBelowSpeed) != 0)
+        {
+            float3 planarVelocity = enemyRuntimeState.Velocity;
+            planarVelocity.y = 0f;
+
+            if (math.length(planarVelocity) > math.max(0f, shooterConfig.MaximumActivationSpeed))
+                return false;
+        }
+
+        if ((gates & EnemyWeaponInteractionActivationGate.RequireRecentlyDamaged) != 0)
+        {
+            float damageAge = enemyRuntimeState.LifetimeSeconds - enemyRuntimeState.LastDamageLifetimeSeconds;
+
+            if (enemyRuntimeState.HasTakenDamage == 0 ||
+                damageAge > math.max(0f, shooterConfig.RecentlyDamagedWindowSeconds))
+                return false;
+        }
+
+        if ((gates & EnemyWeaponInteractionActivationGate.RequireWandererWait) != 0 &&
+            patternRuntimeState.WanderWaitTimer <= 0f)
             return false;
 
         return true;

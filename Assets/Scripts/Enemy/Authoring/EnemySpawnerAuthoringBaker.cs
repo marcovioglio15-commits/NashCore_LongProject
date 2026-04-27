@@ -5,6 +5,8 @@ using UnityEngine;
 
 /// <summary>
 /// Bakes EnemySpawnerAuthoring data into finite wave buffers and prefab-specific pool requirements.
+/// /params None.
+/// /returns None.
 /// </summary>
 public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 {
@@ -13,8 +15,8 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
     #region Bake
     /// <summary>
     /// Converts the authored wave grid into ECS wave definitions, events and pool requirements.
-    /// authoring: Spawner authoring source component.
-    /// returns None.
+    /// /params authoring Spawner authoring source component.
+    /// /returns None.
     /// </summary>
     public override void Bake(EnemySpawnerAuthoring authoring)
     {
@@ -28,8 +30,10 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
         List<EnemySpawnerWaveRuntimeElement> stagedWaveRuntime = new List<EnemySpawnerWaveRuntimeElement>();
         List<EnemySpawnerWaveEventElement> stagedWaveEvents = new List<EnemySpawnerWaveEventElement>();
         Dictionary<Entity, int> plannedCountByPrefab = new Dictionary<Entity, int>();
+        EnemySpawnWarningConfig spawnerWarningConfig = BuildSpawnerWarningConfig(authoring);
 
         StageWaves(authoring,
+                   spawnerWarningConfig,
                    stagedWaveDefinitions,
                    stagedWaveRuntime,
                    stagedWaveEvents,
@@ -43,18 +47,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
             MaximumSpawnDistanceFromCenter = ResolveMaximumSpawnDistanceFromCenter(stagedWaveEvents, authoring.CellSize),
             TotalPlannedEnemyCount = CountTotalPlannedEnemies(plannedCountByPrefab)
         });
-        AddComponent(spawnerEntity, new EnemySpawnWarningConfig
-        {
-            Enabled = authoring.EnableSpawnWarning ? (byte)1 : (byte)0,
-            LeadTimeSeconds = math.max(0f, authoring.SpawnWarningLeadTimeSeconds),
-            FadeOutSeconds = math.max(0f, authoring.SpawnWarningFadeOutSeconds),
-            RadiusScale = math.max(0.01f, authoring.SpawnWarningRadiusScale),
-            RingWidth = math.max(0.01f, authoring.SpawnWarningRingWidth),
-            HeightOffset = math.max(0f, authoring.SpawnWarningHeightOffset),
-            MaximumAlpha = math.saturate(authoring.SpawnWarningMaximumAlpha),
-            Color = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.SpawnWarningColor),
-            CellSize = math.max(0.1f, authoring.CellSize)
-        });
+        AddComponent(spawnerEntity, spawnerWarningConfig);
         AddComponent(spawnerEntity, new EnemySpawnerState
         {
             StartTime = 0f,
@@ -91,14 +84,16 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
     #region Helpers
     /// <summary>
     /// Stages wave definitions, runtime defaults and exact spawn events from the authored spawner data.
-    /// authoring: Spawner authoring source.
-    /// stagedWaveDefinitions: Target wave definition list.
-    /// stagedWaveRuntime: Target wave runtime default list.
-    /// stagedWaveEvents: Target exact spawn event list.
-    /// plannedCountByPrefab: Target prefab usage count map.
-    /// returns None.
+    /// /params authoring Spawner authoring source.
+    /// /params spawnerWarningConfig Spawner-level fallback warning config used when enemy visuals do not override warning settings.
+    /// /params stagedWaveDefinitions Target wave definition list.
+    /// /params stagedWaveRuntime Target wave runtime default list.
+    /// /params stagedWaveEvents Target exact spawn event list.
+    /// /params plannedCountByPrefab Target prefab usage count map.
+    /// /returns None.
     /// </summary>
     private void StageWaves(EnemySpawnerAuthoring authoring,
+                            EnemySpawnWarningConfig spawnerWarningConfig,
                             List<EnemySpawnerWaveDefinitionElement> stagedWaveDefinitions,
                             List<EnemySpawnerWaveRuntimeElement> stagedWaveRuntime,
                             List<EnemySpawnerWaveEventElement> stagedWaveEvents,
@@ -117,9 +112,10 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
                 continue;
 
             List<EnemySpawnerWaveEventElement> stagedEventsForWave = new List<EnemySpawnerWaveEventElement>();
-            StageWaveCells(authoring, wave, waveIndex, stagedEventsForWave, plannedCountByPrefab);
+            StageWaveCells(authoring, wave, waveIndex, spawnerWarningConfig, stagedEventsForWave, plannedCountByPrefab);
             EnemySpawnerWaveBakeUtility.SortWaveEvents(stagedEventsForWave);
             int firstEventIndex = stagedWaveEvents.Count;
+            float maximumSpawnWarningLeadTimeSeconds = ResolveMaximumWaveWarningLeadTime(stagedEventsForWave, spawnerWarningConfig);
 
             for (int eventIndex = 0; eventIndex < stagedEventsForWave.Count; eventIndex++)
                 stagedWaveEvents.Add(stagedEventsForWave[eventIndex]);
@@ -129,6 +125,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
                 StartMode = waveIndex == 0 ? EnemyWaveStartMode.FromSpawnerStart : wave.StartMode,
                 StartDelaySeconds = math.max(0f, wave.StartDelaySeconds),
                 SpawnDurationSeconds = math.max(0f, wave.SpawnDurationSeconds),
+                MaximumSpawnWarningLeadTimeSeconds = maximumSpawnWarningLeadTimeSeconds,
                 FirstEventIndex = firstEventIndex,
                 EventCount = stagedEventsForWave.Count
             });
@@ -138,16 +135,18 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
     /// <summary>
     /// Stages exact spawn events for all painted cells of one wave.
-    /// authoring: Spawner authoring source.
-    /// wave: Wave being converted.
-    /// waveIndex: Current wave index.
-    /// stagedEventsForWave: Target event list for the current wave.
-    /// plannedCountByPrefab: Target prefab usage count map.
-    /// returns None.
+    /// /params authoring Spawner authoring source.
+    /// /params wave Wave being converted.
+    /// /params waveIndex Current wave index.
+    /// /params spawnerWarningConfig Spawner-level fallback warning config used for non-overridden events.
+    /// /params stagedEventsForWave Target event list for the current wave.
+    /// /params plannedCountByPrefab Target prefab usage count map.
+    /// /returns None.
     /// </summary>
     private void StageWaveCells(EnemySpawnerAuthoring authoring,
                                 EnemySpawnWaveAuthoring wave,
                                 int waveIndex,
+                                EnemySpawnWarningConfig spawnerWarningConfig,
                                 List<EnemySpawnerWaveEventElement> stagedEventsForWave,
                                 Dictionary<Entity, int> plannedCountByPrefab)
     {
@@ -172,10 +171,12 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
             if (!TryResolveCellPrefab(authoring, masterPreset, out Entity prefabEntity))
                 continue;
 
-            float3 localSpawnPosition = authoring.ResolveCellLocalCenter(cell.CellCoordinate);
+            EnemyVisualSpawnOverridesSettings spawnOverrides = ResolveSpawnOverrides(masterPreset);
+            float3 localSpawnPosition = authoring.ResolveCellLocalCenter(cell.CellCoordinate) + ResolveSpawnOffset(spawnOverrides);
             AnimationCurve distributionCurve = cell.UseWaveDefaultDistribution
                 ? wave.DefaultDistributionCurve
                 : cell.DistributionCurveOverride;
+            int firstInsertedEventIndex = stagedEventsForWave.Count;
             EnemySpawnerWaveBakeUtility.BuildCellEvents(waveIndex,
                                                        prefabEntity,
                                                        wave.SpawnDurationSeconds,
@@ -185,6 +186,7 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
                                                        enemyCount,
                                                        distributionCurve,
                                                        stagedEventsForWave);
+            ApplySpawnWarningOverrides(stagedEventsForWave, firstInsertedEventIndex, spawnOverrides, spawnerWarningConfig);
 
             int plannedCount;
 
@@ -252,6 +254,128 @@ public sealed class EnemySpawnerAuthoringBaker : Baker<EnemySpawnerAuthoring>
 
         prefabEntity = GetEntity(enemyPrefab, TransformUsageFlags.Dynamic);
         return prefabEntity != Entity.Null;
+    }
+
+    /// <summary>
+    /// Builds the spawner-level fallback warning config from authoring values.
+    /// /params authoring Spawner authoring source component.
+    /// /returns Baked fallback warning config.
+    /// </summary>
+    private static EnemySpawnWarningConfig BuildSpawnerWarningConfig(EnemySpawnerAuthoring authoring)
+    {
+        return new EnemySpawnWarningConfig
+        {
+            Enabled = authoring.EnableSpawnWarning ? (byte)1 : (byte)0,
+            LeadTimeSeconds = math.max(0f, authoring.SpawnWarningLeadTimeSeconds),
+            FadeOutSeconds = math.max(0f, authoring.SpawnWarningFadeOutSeconds),
+            RadiusScale = math.max(0.01f, authoring.SpawnWarningRadiusScale),
+            RingWidth = math.max(0.01f, authoring.SpawnWarningRingWidth),
+            HeightOffset = math.max(0f, authoring.SpawnWarningHeightOffset),
+            MaximumAlpha = math.saturate(authoring.SpawnWarningMaximumAlpha),
+            Color = DamageFlashRuntimeUtility.ToLinearFloat4(authoring.SpawnWarningColor),
+            CellSize = math.max(0.1f, authoring.CellSize)
+        };
+    }
+
+    /// <summary>
+    /// Resolves spawn overrides from the visual preset assigned to a painted enemy type.
+    /// /params masterPreset Painted enemy master preset.
+    /// /returns Spawn overrides block, or null when unavailable.
+    /// </summary>
+    private static EnemyVisualSpawnOverridesSettings ResolveSpawnOverrides(EnemyMasterPreset masterPreset)
+    {
+        if (masterPreset == null || masterPreset.VisualPreset == null)
+            return null;
+
+        return masterPreset.VisualPreset.SpawnOverrides;
+    }
+
+    /// <summary>
+    /// Resolves the local-space spawn offset applied by one enemy visual preset.
+    /// /params spawnOverrides Spawn override settings for the painted enemy type.
+    /// /returns Local-space spawn offset.
+    /// </summary>
+    private static float3 ResolveSpawnOffset(EnemyVisualSpawnOverridesSettings spawnOverrides)
+    {
+        if (spawnOverrides == null || !spawnOverrides.OverrideSpawnOffset)
+            return float3.zero;
+
+        Vector3 offset = spawnOverrides.SpawnOffset;
+        return new float3(offset.x, offset.y, offset.z);
+    }
+
+    /// <summary>
+    /// Writes event-level spawn warning overrides onto newly staged events for one painted cell.
+    /// /params stagedEventsForWave Event list receiving overrides.
+    /// /params firstInsertedEventIndex First event index inserted for the painted cell.
+    /// /params spawnOverrides Spawn override settings for the painted enemy type.
+    /// /params spawnerWarningConfig Spawner-level fallback warning config.
+    /// /returns None.
+    /// </summary>
+    private static void ApplySpawnWarningOverrides(List<EnemySpawnerWaveEventElement> stagedEventsForWave,
+                                                   int firstInsertedEventIndex,
+                                                   EnemyVisualSpawnOverridesSettings spawnOverrides,
+                                                   EnemySpawnWarningConfig spawnerWarningConfig)
+    {
+        if (stagedEventsForWave == null || spawnOverrides == null || !spawnOverrides.OverrideSpawnWarning)
+            return;
+
+        EnemySpawnWarningConfig overrideConfig = BuildSpawnWarningOverrideConfig(spawnOverrides, spawnerWarningConfig.CellSize);
+
+        for (int eventIndex = math.max(0, firstInsertedEventIndex); eventIndex < stagedEventsForWave.Count; eventIndex++)
+        {
+            EnemySpawnerWaveEventElement waveEvent = stagedEventsForWave[eventIndex];
+            waveEvent.HasSpawnWarningOverride = 1;
+            waveEvent.SpawnWarningOverride = overrideConfig;
+            stagedEventsForWave[eventIndex] = waveEvent;
+        }
+    }
+
+    /// <summary>
+    /// Builds an event-level warning config from visual preset override settings.
+    /// /params spawnOverrides Visual preset override settings.
+    /// /params cellSize Baked spawner cell size.
+    /// /returns Event-level warning config.
+    /// </summary>
+    private static EnemySpawnWarningConfig BuildSpawnWarningOverrideConfig(EnemyVisualSpawnOverridesSettings spawnOverrides, float cellSize)
+    {
+        return new EnemySpawnWarningConfig
+        {
+            Enabled = spawnOverrides.EnableSpawnWarning ? (byte)1 : (byte)0,
+            LeadTimeSeconds = math.max(0f, spawnOverrides.SpawnWarningLeadTimeSeconds),
+            FadeOutSeconds = math.max(0f, spawnOverrides.SpawnWarningFadeOutSeconds),
+            RadiusScale = math.max(0.01f, spawnOverrides.SpawnWarningRadiusScale),
+            RingWidth = math.max(0.01f, spawnOverrides.SpawnWarningRingWidth),
+            HeightOffset = math.max(0f, spawnOverrides.SpawnWarningHeightOffset),
+            MaximumAlpha = math.saturate(spawnOverrides.SpawnWarningMaximumAlpha),
+            Color = DamageFlashRuntimeUtility.ToLinearFloat4(spawnOverrides.SpawnWarningColor),
+            CellSize = math.max(0.1f, cellSize)
+        };
+    }
+
+    /// <summary>
+    /// Resolves the largest warning lead time needed before a wave can activate its first spawn event.
+    /// /params stagedEventsForWave Sorted or unsorted events belonging to one wave.
+    /// /params spawnerWarningConfig Spawner-level fallback warning config.
+    /// /returns Maximum effective warning lead time in seconds.
+    /// </summary>
+    private static float ResolveMaximumWaveWarningLeadTime(List<EnemySpawnerWaveEventElement> stagedEventsForWave,
+                                                           EnemySpawnWarningConfig spawnerWarningConfig)
+    {
+        if (stagedEventsForWave == null)
+            return 0f;
+
+        float maximumLeadTimeSeconds = 0f;
+
+        for (int eventIndex = 0; eventIndex < stagedEventsForWave.Count; eventIndex++)
+        {
+            EnemySpawnWarningConfig eventWarningConfig = EnemySpawnWarningConfigUtility.ResolveEventWarningConfig(stagedEventsForWave[eventIndex],
+                                                                                                                 spawnerWarningConfig);
+            maximumLeadTimeSeconds = math.max(maximumLeadTimeSeconds,
+                                              EnemySpawnWarningConfigUtility.ResolveEffectiveLeadTimeSeconds(in eventWarningConfig));
+        }
+
+        return maximumLeadTimeSeconds;
     }
 
     /// <summary>

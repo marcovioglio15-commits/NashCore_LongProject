@@ -1,0 +1,229 @@
+using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+/// <summary>
+/// Builds the boss minion spawn subsection for boss pattern presets.
+/// /params None.
+/// /returns None.
+/// </summary>
+internal static class EnemyBossPatternPresetsPanelMinionUtility
+{
+    #region Constants
+    private const float DefaultMaximumMinionDistance = 160f;
+    #endregion
+
+    #region Methods
+
+    #region Public Methods
+    /// <summary>
+    /// Builds the minion spawning subsection for a boss pattern preset.
+    /// /params panel Owning panel that provides serialized preset context.
+    /// /returns None.
+    /// </summary>
+    public static void BuildMinionSpawnSection(EnemyBossPatternPresetsPanel panel)
+    {
+        if (panel == null)
+            return;
+
+        VisualElement sectionContainer = EnemyBossPatternPresetsPanelSharedUtility.CreateDetailsSectionContainer(panel, "Minion Spawn");
+
+        if (sectionContainer == null)
+            return;
+
+        SerializedObject presetSerializedObject = panel.PresetSerializedObject;
+        SerializedProperty minionSpawnProperty = presetSerializedObject.FindProperty("minionSpawn");
+
+        if (minionSpawnProperty == null)
+            return;
+
+        SerializedProperty enabledProperty = minionSpawnProperty.FindPropertyRelative("enabled");
+        SerializedProperty fallbackIntervalProperty = minionSpawnProperty.FindPropertyRelative("fallbackIntervalSeconds");
+        SerializedProperty poolExpandBatchProperty = minionSpawnProperty.FindPropertyRelative("poolExpandBatch");
+        SerializedProperty rulesProperty = minionSpawnProperty.FindPropertyRelative("rules");
+        VisualElement enabledField = EnemyBossPatternPresetsPanelSharedUtility.CreateReactivePropertyField(panel, enabledProperty, "Enable Minion Spawn", "Allows this boss to spawn normal enemies from automatically sized pools.");
+        sectionContainer.Add(enabledField);
+
+        if (!enabledProperty.boolValue)
+        {
+            sectionContainer.Add(new HelpBox("Minion spawning is disabled for this boss preset.", HelpBoxMessageType.Info));
+            return;
+        }
+
+        EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, sectionContainer, fallbackIntervalProperty, "Fallback Interval Seconds", 0.25f, 60f, "Fallback interval used when a rule has a non-positive interval.");
+        EnemyBossPatternPresetsPanelSharedUtility.AddIntSliderField(panel, sectionContainer, poolExpandBatchProperty, "Pool Expand Batch", 0, 64, "Additional entities created when an automatic minion pool needs to expand.");
+
+        if (rulesProperty == null)
+            return;
+
+        for (int index = 0; index < rulesProperty.arraySize; index++)
+        {
+            SerializedProperty ruleProperty = rulesProperty.GetArrayElementAtIndex(index);
+
+            if (ruleProperty == null)
+                continue;
+
+            BuildMinionRuleCard(panel, rulesProperty, ruleProperty, index, sectionContainer);
+        }
+
+        Button addButton = new Button(() =>
+        {
+            AddMinionRule(panel, rulesProperty);
+        });
+        addButton.text = "Add Minion Rule";
+        addButton.tooltip = "Add one minion spawn rule with automatic pool sizing.";
+        addButton.style.marginTop = 4f;
+        sectionContainer.Add(addButton);
+    }
+    #endregion
+
+    #region Rule Cards
+    /// <summary>
+    /// Builds one editable minion spawn rule card.
+    /// /params panel Owning panel used for rebuild callbacks.
+    /// /params rulesProperty Serialized minion rules array.
+    /// /params ruleProperty Serialized minion rule.
+    /// /params index Rule index.
+    /// /params parent Parent container receiving the card.
+    /// /returns None.
+    /// </summary>
+    private static void BuildMinionRuleCard(EnemyBossPatternPresetsPanel panel,
+                                            SerializedProperty rulesProperty,
+                                            SerializedProperty ruleProperty,
+                                            int index,
+                                            VisualElement parent)
+    {
+        VisualElement card = EnemyBossPatternPresetsPanelSharedUtility.CreateCard();
+        Foldout foldout = ManagementToolFoldoutStateUtility.CreatePropertyFoldout(ruleProperty,
+                                                                                  "Minion Rule " + (index + 1),
+                                                                                  "BossMinionRule",
+                                                                                  index == 0);
+        card.Add(foldout);
+        foldout.Add(EnemyBossPatternPresetsPanelSharedUtility.CreateArrayActionsRow(panel, rulesProperty, index, "Boss Minion Rule"));
+
+        SerializedProperty enabledProperty = ruleProperty.FindPropertyRelative("enabled");
+        SerializedProperty triggerProperty = ruleProperty.FindPropertyRelative("trigger");
+        foldout.Add(EnemyBossPatternPresetsPanelSharedUtility.CreateReactivePropertyField(panel, enabledProperty, "Enabled", "Enables this specific minion spawn rule."));
+
+        if (!enabledProperty.boolValue)
+        {
+            parent.Add(card);
+            return;
+        }
+
+        EnemyBossPatternPresetsPanelSharedUtility.AddTrackedPropertyField(panel, foldout, ruleProperty.FindPropertyRelative("minionPrefab"), "Minion Prefab", "Enemy prefab spawned by this rule. It must contain EnemyAuthoring.");
+        foldout.Add(EnemyBossPatternPresetsPanelSharedUtility.CreateReactivePropertyField(panel, triggerProperty, "Trigger", "Condition that activates this minion spawn rule."));
+
+        EnemyBossMinionSpawnTrigger trigger = EnemyBossPatternPresetsPanelSharedUtility.ResolveMinionTrigger(triggerProperty);
+
+        if (trigger == EnemyBossMinionSpawnTrigger.Interval)
+        {
+            EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, foldout, ruleProperty.FindPropertyRelative("intervalSeconds"), "Interval Seconds", 0.25f, 60f, "Seconds between interval-based minion spawns.");
+        }
+
+        if (trigger == EnemyBossMinionSpawnTrigger.BossDamaged)
+        {
+            EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, foldout, ruleProperty.FindPropertyRelative("bossHitCooldownSeconds"), "Boss Hit Cooldown Seconds", 0f, 60f, "Minimum seconds between minion spawns caused by boss hit events.");
+        }
+
+        if (trigger == EnemyBossMinionSpawnTrigger.HealthBelowPercent)
+        {
+            EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, foldout, ruleProperty.FindPropertyRelative("healthThresholdPercent"), "Health Threshold", 0f, 1f, "Normalized boss health threshold that activates this rule.");
+        }
+
+        EnemyBossPatternPresetsPanelSharedUtility.AddIntSliderField(panel, foldout, ruleProperty.FindPropertyRelative("spawnCount"), "Spawn Count", 0, 32, "Number of minions emitted per trigger activation.");
+        EnemyBossPatternPresetsPanelSharedUtility.AddIntSliderField(panel, foldout, ruleProperty.FindPropertyRelative("maxAliveMinions"), "Max Alive Minions", 0, 256, "Maximum active minions alive at the same time from this rule.");
+        EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, foldout, ruleProperty.FindPropertyRelative("spawnRadius"), "Spawn Radius", 0f, 32f, "Radius around the boss used to place spawned minions.");
+        EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, foldout, ruleProperty.FindPropertyRelative("despawnDistance"), "Despawn Distance", 0f, DefaultMaximumMinionDistance, "Distance from player after which minions are returned to the pool.");
+        EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, foldout, ruleProperty.FindPropertyRelative("experienceDropMultiplier"), "Experience Drop Multiplier", 0f, 1f, "Multiplier applied to experience drops emitted by these minions.");
+        EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, foldout, ruleProperty.FindPropertyRelative("extraComboPointsMultiplier"), "Extra Combo Points Multiplier", 0f, 1f, "Multiplier applied to Extra Combo Points granted by these minions.");
+        EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, foldout, ruleProperty.FindPropertyRelative("futureDropsMultiplier"), "Future Drops Multiplier", 0f, 1f, "Reserved multiplier for future generic drop modules emitted by these minions.");
+
+        foldout.Add(new HelpBox("Automatic pool size: " + CalculateMinionPoolSize(ruleProperty), HelpBoxMessageType.Info));
+        AddMinionRuleWarnings(ruleProperty, foldout);
+        parent.Add(card);
+    }
+    #endregion
+
+    #region Mutations
+    /// <summary>
+    /// Adds one new minion spawn rule to the selected boss preset.
+    /// /params panel Owning panel used for serialized context and rebuild callbacks.
+    /// /params rulesProperty Serialized minion rules array.
+    /// /returns None.
+    /// </summary>
+    private static void AddMinionRule(EnemyBossPatternPresetsPanel panel, SerializedProperty rulesProperty)
+    {
+        if (panel == null || rulesProperty == null)
+            return;
+
+        EnemyBossPatternPresetsPanelSharedUtility.RecordSelectedPreset(panel, "Add Boss Minion Rule");
+        SerializedObject presetSerializedObject = panel.PresetSerializedObject;
+        presetSerializedObject.Update();
+        rulesProperty.InsertArrayElementAtIndex(rulesProperty.arraySize);
+        presetSerializedObject.ApplyModifiedProperties();
+        EnemyBossPatternPresetsPanelSharedUtility.MarkDirtyAndRebuild(panel);
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Adds warnings for one minion rule.
+    /// /params ruleProperty Serialized minion rule.
+    /// /params parent Parent receiving warnings.
+    /// /returns None.
+    /// </summary>
+    private static void AddMinionRuleWarnings(SerializedProperty ruleProperty, VisualElement parent)
+    {
+        if (ruleProperty == null || parent == null)
+            return;
+
+        SerializedProperty prefabProperty = ruleProperty.FindPropertyRelative("minionPrefab");
+        SerializedProperty spawnCountProperty = ruleProperty.FindPropertyRelative("spawnCount");
+        SerializedProperty maxAliveProperty = ruleProperty.FindPropertyRelative("maxAliveMinions");
+        SerializedProperty bossHitCooldownProperty = ruleProperty.FindPropertyRelative("bossHitCooldownSeconds");
+
+        if (prefabProperty != null && prefabProperty.objectReferenceValue == null)
+        {
+            parent.Add(new HelpBox("Assign a minion prefab before this rule can spawn entities.", HelpBoxMessageType.Warning));
+        }
+
+        if (spawnCountProperty != null && maxAliveProperty != null && spawnCountProperty.intValue > maxAliveProperty.intValue && maxAliveProperty.intValue > 0)
+        {
+            parent.Add(new HelpBox("Spawn Count is higher than Max Alive Minions. Runtime will stop when the active cap is reached.", HelpBoxMessageType.Info));
+        }
+
+        if (bossHitCooldownProperty != null && bossHitCooldownProperty.floatValue < 0f)
+        {
+            parent.Add(new HelpBox("Boss Hit Cooldown Seconds is negative. Runtime treats it as 0.", HelpBoxMessageType.Warning));
+        }
+    }
+
+    /// <summary>
+    /// Calculates the editor-facing automatic pool size for one minion rule.
+    /// /params ruleProperty Serialized minion rule.
+    /// /returns Automatic pool capacity shown in the editor.
+    /// </summary>
+    private static int CalculateMinionPoolSize(SerializedProperty ruleProperty)
+    {
+        if (ruleProperty == null)
+            return 0;
+
+        SerializedProperty spawnCountProperty = ruleProperty.FindPropertyRelative("spawnCount");
+        SerializedProperty maxAliveProperty = ruleProperty.FindPropertyRelative("maxAliveMinions");
+        int spawnCount = spawnCountProperty != null ? Mathf.Max(0, spawnCountProperty.intValue) : 0;
+        int maxAlive = maxAliveProperty != null ? Mathf.Max(0, maxAliveProperty.intValue) : 0;
+
+        if (spawnCount <= 0)
+            return 0;
+
+        if (maxAlive <= 0)
+            return spawnCount;
+
+        return Mathf.Max(spawnCount, maxAlive);
+    }
+    #endregion
+
+    #endregion
+}

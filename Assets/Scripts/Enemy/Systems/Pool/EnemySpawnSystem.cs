@@ -101,7 +101,7 @@ public partial struct EnemySpawnSystem : ISystem
                 continue;
 
             TryScheduleWaveStart(spawnerState, waveDefinitions, waveRuntime, waveIndex, ref runtime);
-            TryStartWave(elapsedTime, definition, warningConfig, ref runtime);
+            TryStartWave(elapsedTime, definition, ref runtime);
 
             if (runtime.StartScheduled != 0 && runtime.SpawnFinished == 0)
             {
@@ -177,14 +177,13 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Starts a wave once the current world time reaches its scheduled start timestamp.
-    /// elapsedTime: Current elapsed world time.
-    /// definition: Immutable definition of the wave.
-    /// runtime: Current wave runtime state to update.
-    /// returns None.
+    /// /params elapsedTime Current elapsed world time.
+    /// /params definition Immutable definition of the wave.
+    /// /params runtime Current wave runtime state to update.
+    /// /returns None.
     /// </summary>
     private static void TryStartWave(float elapsedTime,
                                      EnemySpawnerWaveDefinitionElement definition,
-                                     EnemySpawnWarningConfig warningConfig,
                                      ref EnemySpawnerWaveRuntimeElement runtime)
     {
         if (runtime.StartScheduled == 0)
@@ -193,7 +192,7 @@ public partial struct EnemySpawnSystem : ISystem
         if (runtime.Started != 0)
             return;
 
-        float actualSpawnStartTime = ResolveWaveActualSpawnStartTime(runtime, warningConfig);
+        float actualSpawnStartTime = ResolveWaveActualSpawnStartTime(runtime, definition);
 
         if (elapsedTime < actualSpawnStartTime)
             return;
@@ -215,6 +214,7 @@ public partial struct EnemySpawnSystem : ISystem
     /// localToWorld: Current spawner local-to-world matrix.
     /// elapsedTime: Current elapsed world time.
     /// definition: Immutable definition of the wave.
+    /// warningConfig: Spawner-level fallback warning tuning.
     /// runtime: Mutable runtime state for the wave.
     /// spawnerState: Mutable global spawner state.
     /// returns None.
@@ -229,8 +229,7 @@ public partial struct EnemySpawnSystem : ISystem
                                               EnemySpawnWarningConfig warningConfig,
                                               ref EnemySpawnerWaveRuntimeElement runtime)
     {
-        float leadTimeSeconds = ResolveEffectiveLeadTimeSeconds(warningConfig);
-        float actualWaveSpawnStartTime = ResolveWaveActualSpawnStartTime(runtime, warningConfig);
+        float actualWaveSpawnStartTime = ResolveWaveActualSpawnStartTime(runtime, definition);
 
         while (runtime.NextWarningEventIndex < definition.EventCount)
         {
@@ -243,6 +242,8 @@ public partial struct EnemySpawnSystem : ISystem
             }
 
             EnemySpawnerWaveEventElement waveEvent = waveEvents[eventIndex];
+            EnemySpawnWarningConfig eventWarningConfig = EnemySpawnWarningConfigUtility.ResolveEventWarningConfig(in waveEvent, in warningConfig);
+            float leadTimeSeconds = EnemySpawnWarningConfigUtility.ResolveEffectiveLeadTimeSeconds(in eventWarningConfig);
             float spawnTime = actualWaveSpawnStartTime + math.max(0f, waveEvent.RelativeTime);
             float reservationTime = spawnTime - leadTimeSeconds;
 
@@ -270,7 +271,7 @@ public partial struct EnemySpawnSystem : ISystem
                                                                     waveEvent.PrefabEntity,
                                                                     worldPosition,
                                                                     spawnTime,
-                                                                    warningConfig);
+                                                                    eventWarningConfig);
             EnemyPoolUtility.ReserveEnemyForSpawn(entityManager,
                                                   enemyEntity,
                                                   spawnerEntity,
@@ -338,11 +339,12 @@ public partial struct EnemySpawnSystem : ISystem
                 if (!TryAcquireEnemy(entityManager, poolEntity, spawnerEntity, waveEvent.PrefabEntity, out enemyEntity))
                     break;
 
+                EnemySpawnWarningConfig eventWarningConfig = EnemySpawnWarningConfigUtility.ResolveEventWarningConfig(in waveEvent, in warningConfig);
                 EnemySpawnWarningState warningState = CreateWarningState(entityManager,
                                                                         waveEvent.PrefabEntity,
                                                                         worldPosition,
                                                                         dueTime,
-                                                                        warningConfig);
+                                                                        eventWarningConfig);
                 EnemyPoolUtility.ReserveEnemyForSpawn(entityManager,
                                                       enemyEntity,
                                                       spawnerEntity,
@@ -550,7 +552,7 @@ public partial struct EnemySpawnSystem : ISystem
                                                             EnemySpawnWarningConfig warningConfig)
     {
         bool warningEnabled = warningConfig.Enabled != 0;
-        float leadTimeSeconds = ResolveEffectiveLeadTimeSeconds(warningConfig);
+        float leadTimeSeconds = EnemySpawnWarningConfigUtility.ResolveEffectiveLeadTimeSeconds(in warningConfig);
         float fadeOutSeconds = warningEnabled
             ? math.max(0f, warningConfig.FadeOutSeconds)
             : 0f;
@@ -605,29 +607,17 @@ public partial struct EnemySpawnSystem : ISystem
 
     /// <summary>
     /// Resolves the absolute wave start time used by staged events before and after the wave starts.
-    /// runtime: Mutable runtime state of the processed wave.
-    /// returns Scheduled start time before activation, otherwise the effective spawn start time.
+    /// /params runtime Mutable runtime state of the processed wave.
+    /// /params definition Immutable wave definition carrying the maximum event warning lead time.
+    /// /returns Scheduled start time before activation, otherwise the effective spawn start time.
     /// </summary>
     private static float ResolveWaveActualSpawnStartTime(EnemySpawnerWaveRuntimeElement runtime,
-                                                         EnemySpawnWarningConfig warningConfig)
+                                                         EnemySpawnerWaveDefinitionElement definition)
     {
         if (runtime.Started != 0)
             return runtime.SpawnStartTime;
 
-        return runtime.ScheduledStartTime + ResolveEffectiveLeadTimeSeconds(warningConfig);
-    }
-
-    /// <summary>
-    /// Resolves the warning lead time that delays actual spawn activation relative to the authored event time.
-    /// warningConfig: Immutable warning tuning baked from spawner authoring.
-    /// returns Effective lead time in seconds, or zero when warnings are disabled.
-    /// </summary>
-    private static float ResolveEffectiveLeadTimeSeconds(EnemySpawnWarningConfig warningConfig)
-    {
-        if (warningConfig.Enabled == 0)
-            return 0f;
-
-        return math.max(0f, warningConfig.LeadTimeSeconds);
+        return runtime.ScheduledStartTime + math.max(0f, definition.MaximumSpawnWarningLeadTimeSeconds);
     }
     #endregion
 

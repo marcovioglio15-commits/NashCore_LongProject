@@ -102,6 +102,7 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
         SerializedProperty brainProperty = presetSerializedObject.FindProperty("brainPreset");
         SerializedProperty visualProperty = presetSerializedObject.FindProperty("visualPreset");
         SerializedProperty advancedPatternProperty = presetSerializedObject.FindProperty("advancedPatternPreset");
+        SerializedProperty bossPatternProperty = presetSerializedObject.FindProperty("bossPatternPreset");
 
         sectionContainer.Add(BuildSubPresetRow(panel,
                                                "Brain Preset",
@@ -124,6 +125,13 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
                                                panel.CreateAdvancedPatternPreset,
                                                () => EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets),
                                                EnemyManagementWindow.PanelType.EnemyAdvancedPatternPresets));
+        sectionContainer.Add(BuildSubPresetRow(panel,
+                                               "Boss Pattern Preset",
+                                               typeof(EnemyBossPatternPreset),
+                                               bossPatternProperty,
+                                               panel.CreateBossPatternPreset,
+                                               () => EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyBossPatternPresets),
+                                               EnemyManagementWindow.PanelType.EnemyBossPatternPresets));
     }
 
     /// <summary>
@@ -226,6 +234,11 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
         openAdvancedPatternButton.text = "Open Advanced Pattern";
         openAdvancedPatternButton.style.marginLeft = 4f;
         row.Add(openAdvancedPatternButton);
+
+        Button openBossPatternButton = new Button(() => EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyBossPatternPresets));
+        openBossPatternButton.text = "Open Boss Patterns";
+        openBossPatternButton.style.marginLeft = 4f;
+        row.Add(openBossPatternButton);
 
         sectionContainer.Add(row);
     }
@@ -406,6 +419,29 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
     }
 
     /// <summary>
+    /// Creates one new boss pattern preset, registers it in the library, assigns it and opens the related side panel.
+    /// </summary>
+    /// <param name="panel">Owning panel that provides assignment callbacks and selection sync.</param>
+
+    public static void CreateBossPatternPreset(EnemyMasterPresetsPanel panel)
+    {
+        EnemyBossPatternPreset newPreset = EnemyBossPatternPresetLibraryUtility.CreatePresetAsset("EnemyBossPatternPreset");
+
+        if (newPreset == null)
+            return;
+
+        EnemyBossPatternPresetLibrary bossPatternLibrary = EnemyBossPatternPresetLibraryUtility.GetOrCreateLibrary();
+        Undo.RegisterCreatedObjectUndo(newPreset, "Create Enemy Boss Pattern Preset Asset");
+        Undo.RecordObject(bossPatternLibrary, "Add Enemy Boss Pattern Preset");
+        bossPatternLibrary.AddPreset(newPreset);
+        EditorUtility.SetDirty(bossPatternLibrary);
+        EnemyManagementDraftSession.MarkDirty();
+
+        AssignSubPreset(panel, "bossPatternPreset", newPreset);
+        EnemyMasterPresetsPanelSidePanelUtility.OpenSidePanel(panel, EnemyManagementWindow.PanelType.EnemyBossPatternPresets);
+    }
+
+    /// <summary>
     /// Creates one new enemy visual preset, registers it in the library, assigns it and opens the related side panel.
     /// </summary>
     /// <param name="panel">Owning panel that provides assignment callbacks and selection sync.</param>
@@ -532,9 +568,21 @@ internal static class EnemyMasterPresetsPanelSectionsUtility
 
         ObjectField presetField = new ObjectField(label);
         presetField.objectType = presetType;
-        presetField.BindProperty(presetProperty);
+        presetField.allowSceneObjects = false;
+
+        if (presetProperty != null)
+            presetField.SetValueWithoutNotify(presetProperty.objectReferenceValue);
+
         presetField.RegisterValueChangedCallback(evt =>
         {
+            if (panel == null || panel.SelectedPreset == null || presetProperty == null)
+                return;
+
+            Undo.RecordObject(panel.SelectedPreset, "Assign Enemy Sub Preset");
+            panel.PresetSerializedObject.Update();
+            presetProperty.objectReferenceValue = evt.newValue;
+            panel.PresetSerializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(panel.SelectedPreset);
             EnemyManagementDraftSession.MarkDirty();
 
             if (panelType != EnemyManagementWindow.PanelType.EnemyMasterPresets)

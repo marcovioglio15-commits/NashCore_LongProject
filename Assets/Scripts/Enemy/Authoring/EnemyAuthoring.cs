@@ -41,6 +41,9 @@ public sealed class EnemyAuthoring : MonoBehaviour
     [Tooltip("Direct advanced pattern preset fallback used when MasterPreset is missing or has no Advanced Pattern preset assigned.")]
     [SerializeField] private EnemyAdvancedPatternPreset advancedPatternPreset;
 
+    [Tooltip("Direct boss pattern preset fallback used when MasterPreset is missing or has no Boss Pattern preset assigned.")]
+    [SerializeField] private EnemyBossPatternPreset bossPatternPreset;
+
     [Tooltip("Fallback move speed used when MasterPreset and BrainPreset are missing.")]
     [SerializeField]
     [HideInInspector] private float moveSpeed = 3f;
@@ -177,6 +180,14 @@ public sealed class EnemyAuthoring : MonoBehaviour
         get
         {
             return EnemyAuthoringPresetResolverUtility.ResolveAdvancedPatternPreset(masterPreset, advancedPatternPreset);
+        }
+    }
+
+    public EnemyBossPatternPreset BossPatternPreset
+    {
+        get
+        {
+            return EnemyAuthoringPresetResolverUtility.ResolveBossPatternPreset(masterPreset, bossPatternPreset);
         }
     }
 

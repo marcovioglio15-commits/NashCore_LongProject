@@ -153,11 +153,12 @@ internal static class EnemyMasterPresetsPanelPrefabActivationUtility
         SerializedProperty brainPresetProperty = serializedAuthoring.FindProperty("brainPreset");
         SerializedProperty visualPresetProperty = serializedAuthoring.FindProperty("visualPreset");
         SerializedProperty advancedPatternPresetProperty = serializedAuthoring.FindProperty("advancedPatternPreset");
+        SerializedProperty bossPatternPresetProperty = serializedAuthoring.FindProperty("bossPatternPreset");
 
-        if (masterPresetProperty == null || brainPresetProperty == null || visualPresetProperty == null || advancedPatternPresetProperty == null)
+        if (masterPresetProperty == null || brainPresetProperty == null || visualPresetProperty == null || advancedPatternPresetProperty == null || bossPatternPresetProperty == null)
         {
             EditorUtility.DisplayDialog("Set Active Preset",
-                                        "One or more preset properties are missing on EnemyAuthoring (masterPreset, brainPreset, visualPreset, advancedPatternPreset).",
+                                        "One or more preset properties are missing on EnemyAuthoring (masterPreset, brainPreset, visualPreset, advancedPatternPreset, bossPatternPreset).",
                                         "OK");
             return;
         }
@@ -168,6 +169,7 @@ internal static class EnemyMasterPresetsPanelPrefabActivationUtility
         brainPresetProperty.objectReferenceValue = panel.SelectedPreset.BrainPreset;
         visualPresetProperty.objectReferenceValue = panel.SelectedPreset.VisualPreset;
         advancedPatternPresetProperty.objectReferenceValue = panel.SelectedPreset.AdvancedPatternPreset;
+        bossPatternPresetProperty.objectReferenceValue = panel.SelectedPreset.BossPatternPreset;
         serializedAuthoring.ApplyModifiedProperties();
         EditorUtility.SetDirty(authoring);
 

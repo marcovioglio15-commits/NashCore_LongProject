@@ -465,6 +465,12 @@ public static class EnemyPoolUtility
         if (entityManager.HasComponent<EnemyPatternRuntimeState>(enemyEntity))
             entityManager.SetComponentData(enemyEntity, CreateDefaultPatternRuntimeState());
 
+        if (entityManager.HasComponent<EnemyBossPatternRuntimeState>(enemyEntity))
+            entityManager.SetComponentData(enemyEntity, CreateDefaultBossPatternRuntimeState());
+
+        if (entityManager.HasBuffer<EnemyBossMinionSpawnElement>(enemyEntity))
+            ResetBossMinionRuntime(entityManager, enemyEntity);
+
         if (entityManager.HasComponent<EnemyKnockbackState>(enemyEntity))
         {
             EnemyKnockbackState knockbackState = entityManager.GetComponentData<EnemyKnockbackState>(enemyEntity);
@@ -542,6 +548,46 @@ public static class EnemyPoolUtility
     private static EnemyPatternRuntimeState CreateDefaultPatternRuntimeState()
     {
         return EnemyPatternDefaultsUtility.CreatePatternRuntimeState();
+    }
+
+    /// <summary>
+    /// Returns the default boss pattern runtime state for a freshly activated pooled boss.
+    /// /params None.
+    /// /returns Default boss pattern runtime state value.
+    /// </summary>
+    private static EnemyBossPatternRuntimeState CreateDefaultBossPatternRuntimeState()
+    {
+        return new EnemyBossPatternRuntimeState
+        {
+            ActiveInteractionIndex = -2,
+            ElapsedSeconds = 0f,
+            ActiveInteractionElapsedSeconds = 0f,
+            TravelledDistance = 0f,
+            LastPosition = float3.zero,
+            LastObservedDamageLifetimeSeconds = 0f,
+            Initialized = 0
+        };
+    }
+
+    /// <summary>
+    /// Resets per-activation boss minion spawn counters while preserving any already created pools.
+    /// /params entityManager Entity manager used to mutate the minion spawn buffer.
+    /// /params enemyEntity Boss entity whose minion rules are reset.
+    /// /returns None.
+    /// </summary>
+    private static void ResetBossMinionRuntime(EntityManager entityManager, Entity enemyEntity)
+    {
+        DynamicBuffer<EnemyBossMinionSpawnElement> minionSpawns = entityManager.GetBuffer<EnemyBossMinionSpawnElement>(enemyEntity);
+
+        for (int index = 0; index < minionSpawns.Length; index++)
+        {
+            EnemyBossMinionSpawnElement minionSpawn = minionSpawns[index];
+            minionSpawn.NextSpawnTime = 0f;
+            minionSpawn.LastObservedDamageLifetimeSeconds = 0f;
+            minionSpawn.Triggered = 0;
+            minionSpawn.Initialized = 0;
+            minionSpawns[index] = minionSpawn;
+        }
     }
 
     /// <summary>

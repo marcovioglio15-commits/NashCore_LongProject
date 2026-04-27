@@ -33,87 +33,105 @@ internal static class EnemyModulesAndPatternsBakeUtility
         if (selectedPattern == null)
             return result;
 
-        ApplyCoreMovement(selectedPattern, sharedPreset, ref result);
-        ApplyShortRangeInteraction(selectedPattern, sharedPreset, ref result.PatternConfig);
-        ApplyWeaponInteraction(selectedPattern, sharedPreset, ref result);
-        ApplyDropItems(selectedPattern, sharedPreset, ref result);
-        result.HasCustomMovement = ResolveHasCustomMovement(result.PatternConfig);
-        return result;
+        return CompilePattern(sharedPreset, selectedPattern, result);
     }
-    #endregion
 
-    #region Private Methods
     /// <summary>
-    /// Applies the core movement selection to the compiled result.
-    /// /params pattern Shared pattern definition currently being compiled.
-    /// /params sharedPreset Shared preset used to resolve module definitions.
-    /// /params result Mutable compiled result.
-    /// /returns None.
+    /// Compiles one explicit shared pattern by ID so boss presets can reuse normal enemy pattern assemblies.
+    /// /params sharedPreset Source normal enemy Modules & Patterns preset.
+    /// /params patternId Pattern ID to compile.
+    /// /returns The compiled bake result, or a default result when the pattern is unavailable.
     /// </summary>
-    private static void ApplyCoreMovement(EnemyModulesPatternDefinition pattern,
-                                          EnemyModulesAndPatternsPreset sharedPreset,
-                                          ref EnemyCompiledPatternBakeResult result)
+    public static EnemyCompiledPatternBakeResult CompilePatternById(EnemyModulesAndPatternsPreset sharedPreset, string patternId)
     {
-        if (pattern == null || sharedPreset == null)
-            return;
+        EnemyCompiledPatternBakeResult result = EnemyAdvancedPatternBakeUtility.CreateDefaultResult(null);
 
-        EnemyPatternCoreMovementAssembly coreMovement = pattern.CoreMovement;
+        if (sharedPreset == null)
+            return result;
 
-        if (coreMovement == null || coreMovement.Binding == null)
-            return;
+        EnemyModulesPatternDefinition selectedPattern = sharedPreset.ResolvePatternById(patternId);
 
-        EnemyPatternModuleBinding binding = coreMovement.Binding;
+        if (selectedPattern == null)
+            return result;
+
+        return CompilePattern(sharedPreset, selectedPattern, result);
+    }
+
+    /// <summary>
+    /// Applies one core movement module binding to a compiled pattern result.
+    /// /params sharedPreset Shared preset used to resolve module definitions.
+    /// /params binding Module binding being compiled.
+    /// /params result Mutable compiled result.
+    /// /returns True when a legal core movement module was applied.
+    /// </summary>
+    internal static bool TryApplyCoreMovementModule(EnemyModulesAndPatternsPreset sharedPreset,
+                                                    EnemyPatternModuleBinding binding,
+                                                    ref EnemyCompiledPatternBakeResult result)
+    {
+        if (sharedPreset == null || binding == null)
+            return false;
+
         EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(binding.ModuleId);
 
         if (moduleDefinition == null)
-            return;
+            return false;
+
+        EnemyPatternModuleKind moduleKind = EnemyAdvancedPatternBakeUtility.ResolveModuleKind(moduleDefinition.ModuleKind);
+
+        if (moduleKind != EnemyPatternModuleKind.Stationary &&
+            moduleKind != EnemyPatternModuleKind.Grunt &&
+            moduleKind != EnemyPatternModuleKind.Wanderer)
+        {
+            return false;
+        }
 
         EnemyPatternModulePayloadData resolvedPayload = EnemyAdvancedPatternBakeUtility.ResolveBindingPayload(moduleDefinition, binding);
         int selectedPriority = 0;
         bool hasCustomMovement = result.HasCustomMovement;
-        EnemyAdvancedPatternBakeUtility.TryApplyMovementModule(moduleDefinition.ModuleKind,
+        EnemyAdvancedPatternBakeUtility.TryApplyMovementModule(moduleKind,
                                                                resolvedPayload,
                                                                ref result.PatternConfig,
                                                                ref selectedPriority,
                                                                ref hasCustomMovement);
         result.HasCustomMovement = hasCustomMovement;
+        return true;
     }
 
     /// <summary>
-    /// Applies the optional short-range interaction selection to the compiled pattern config.
-    /// /params pattern Shared pattern definition currently being compiled.
+    /// Applies one short-range interaction module binding to a compiled pattern config.
     /// /params sharedPreset Shared preset used to resolve module definitions.
+    /// /params binding Module binding being compiled.
+    /// /params activationRange Player distance that activates the interaction.
+    /// /params releaseDistanceBuffer Extra release buffer added after activation.
     /// /params patternConfig Mutable compiled pattern config.
-    /// /returns None.
+    /// /returns True when a legal short-range interaction module was applied.
     /// </summary>
-    private static void ApplyShortRangeInteraction(EnemyModulesPatternDefinition pattern,
-                                                   EnemyModulesAndPatternsPreset sharedPreset,
-                                                   ref EnemyPatternConfig patternConfig)
+    internal static bool TryApplyShortRangeInteractionModule(EnemyModulesAndPatternsPreset sharedPreset,
+                                                             EnemyPatternModuleBinding binding,
+                                                             float activationRange,
+                                                             float releaseDistanceBuffer,
+                                                             ref EnemyPatternConfig patternConfig)
     {
-        if (pattern == null || sharedPreset == null)
-            return;
+        if (sharedPreset == null || binding == null)
+            return false;
 
-        EnemyPatternShortRangeInteractionAssembly shortRangeInteraction = pattern.ShortRangeInteraction;
-
-        if (shortRangeInteraction == null || !shortRangeInteraction.IsEnabled || shortRangeInteraction.Binding == null)
-            return;
-
-        EnemyPatternModuleBinding binding = shortRangeInteraction.Binding;
         EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(binding.ModuleId);
 
         if (moduleDefinition == null)
-            return;
+            return false;
 
         EnemyPatternModuleKind moduleKind = EnemyAdvancedPatternBakeUtility.ResolveModuleKind(moduleDefinition.ModuleKind);
 
         if (moduleKind != EnemyPatternModuleKind.Grunt &&
             moduleKind != EnemyPatternModuleKind.Coward &&
             moduleKind != EnemyPatternModuleKind.ShortRangeDash)
-            return;
+        {
+            return false;
+        }
 
         patternConfig.HasShortRangeInteraction = 1;
-        patternConfig.ShortRangeActivationRange = math.max(0f, shortRangeInteraction.ActivationRange);
-        patternConfig.ShortRangeReleaseDistanceBuffer = math.max(0f, shortRangeInteraction.ReleaseDistanceBuffer);
+        patternConfig.ShortRangeActivationRange = math.max(0f, activationRange);
+        patternConfig.ShortRangeReleaseDistanceBuffer = math.max(0f, releaseDistanceBuffer);
 
         switch (moduleKind)
         {
@@ -131,7 +149,7 @@ internal static class EnemyModulesAndPatternsBakeUtility
         }
 
         if (moduleKind == EnemyPatternModuleKind.Grunt)
-            return;
+            return true;
 
         EnemyPatternModulePayloadData resolvedPayload = EnemyAdvancedPatternBakeUtility.ResolveBindingPayload(moduleDefinition, binding);
 
@@ -145,6 +163,136 @@ internal static class EnemyModulesAndPatternsBakeUtility
                 EnemyAdvancedPatternBakeUtility.ApplyShortRangeDashPayload(resolvedPayload, ref patternConfig);
                 break;
         }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Adds one weapon interaction module binding to a compiled pattern result.
+    /// /params sharedPreset Shared preset used to resolve module definitions.
+    /// /params binding Module binding being compiled.
+    /// /params useMinimumRange True when minimum range gating should be applied.
+    /// /params minimumRange Authored minimum player range.
+    /// /params useMaximumRange True when maximum range gating should be applied.
+    /// /params maximumRange Authored maximum player range.
+    /// /params exclusiveLookDirectionControl True when this weapon controls look direction while active.
+    /// /params activationGates Additional non-range activation gates.
+    /// /params maximumActivationSpeed Maximum enemy speed allowed by speed gating.
+    /// /params recentlyDamagedWindowSeconds Recent damage window used by damage gating.
+    /// /params result Mutable compiled result.
+    /// /returns True when a legal weapon interaction module was applied.
+    /// </summary>
+    internal static bool TryAddWeaponInteractionModule(EnemyModulesAndPatternsPreset sharedPreset,
+                                                       EnemyPatternModuleBinding binding,
+                                                       bool useMinimumRange,
+                                                       float minimumRange,
+                                                       bool useMaximumRange,
+                                                       float maximumRange,
+                                                       bool exclusiveLookDirectionControl,
+                                                       EnemyWeaponInteractionActivationGate activationGates,
+                                                       float maximumActivationSpeed,
+                                                       float recentlyDamagedWindowSeconds,
+                                                       ref EnemyCompiledPatternBakeResult result)
+    {
+        if (sharedPreset == null || binding == null)
+            return false;
+
+        EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(binding.ModuleId);
+
+        if (moduleDefinition == null)
+            return false;
+
+        if (EnemyAdvancedPatternBakeUtility.ResolveModuleKind(moduleDefinition.ModuleKind) != EnemyPatternModuleKind.Shooter)
+            return false;
+
+        int previousConfigCount = result.ShooterConfigs.Count;
+        EnemyPatternModulePayloadData resolvedPayload = EnemyAdvancedPatternBakeUtility.ResolveBindingPayload(moduleDefinition, binding);
+        EnemyAdvancedPatternBakeUtility.TryAddShooterModule(resolvedPayload, result.ShooterConfigs, ref result);
+
+        for (int shooterIndex = previousConfigCount; shooterIndex < result.ShooterConfigs.Count; shooterIndex++)
+        {
+            EnemyShooterConfigElement shooterConfig = result.ShooterConfigs[shooterIndex];
+            shooterConfig.UseMinimumRange = useMinimumRange ? (byte)1 : (byte)0;
+            shooterConfig.MinimumRange = math.max(0f, minimumRange);
+            shooterConfig.UseMaximumRange = useMaximumRange ? (byte)1 : (byte)0;
+            shooterConfig.MaximumRange = math.max(shooterConfig.MinimumRange, maximumRange);
+            shooterConfig.ExclusiveLookDirectionControl = exclusiveLookDirectionControl ? (byte)1 : (byte)0;
+            shooterConfig.ActivationGates = ResolveWeaponActivationGates(activationGates);
+            shooterConfig.MaximumActivationSpeed = math.max(0f, maximumActivationSpeed);
+            shooterConfig.RecentlyDamagedWindowSeconds = math.max(0f, recentlyDamagedWindowSeconds);
+            result.ShooterConfigs[shooterIndex] = shooterConfig;
+        }
+
+        return result.ShooterConfigs.Count > previousConfigCount;
+    }
+    #endregion
+
+    #region Private Methods
+    /// <summary>
+    /// Compiles one shared pattern definition into movement, shooter and drop buffers.
+    /// /params sharedPreset Shared preset used to resolve module definitions.
+    /// /params selectedPattern Shared assembled pattern to compile.
+    /// /params result Existing result object that receives compiled values.
+    /// /returns Compiled bake result.
+    /// </summary>
+    private static EnemyCompiledPatternBakeResult CompilePattern(EnemyModulesAndPatternsPreset sharedPreset,
+                                                                 EnemyModulesPatternDefinition selectedPattern,
+                                                                 EnemyCompiledPatternBakeResult result)
+    {
+        ApplyCoreMovement(selectedPattern, sharedPreset, ref result);
+        ApplyShortRangeInteraction(selectedPattern, sharedPreset, ref result.PatternConfig);
+        ApplyWeaponInteraction(selectedPattern, sharedPreset, ref result);
+        ApplyDropItems(selectedPattern, sharedPreset, ref result);
+        result.HasCustomMovement = ResolveHasCustomMovement(result.PatternConfig);
+        return result;
+    }
+
+    /// <summary>
+    /// Applies the core movement selection to the compiled result.
+    /// /params pattern Shared pattern definition currently being compiled.
+    /// /params sharedPreset Shared preset used to resolve module definitions.
+    /// /params result Mutable compiled result.
+    /// /returns None.
+    /// </summary>
+    private static void ApplyCoreMovement(EnemyModulesPatternDefinition pattern,
+                                          EnemyModulesAndPatternsPreset sharedPreset,
+                                          ref EnemyCompiledPatternBakeResult result)
+    {
+        if (pattern == null)
+            return;
+
+        EnemyPatternCoreMovementAssembly coreMovement = pattern.CoreMovement;
+
+        if (coreMovement == null)
+            return;
+
+        TryApplyCoreMovementModule(sharedPreset, coreMovement.Binding, ref result);
+    }
+
+    /// <summary>
+    /// Applies the optional short-range interaction selection to the compiled pattern config.
+    /// /params pattern Shared pattern definition currently being compiled.
+    /// /params sharedPreset Shared preset used to resolve module definitions.
+    /// /params patternConfig Mutable compiled pattern config.
+    /// /returns None.
+    /// </summary>
+    private static void ApplyShortRangeInteraction(EnemyModulesPatternDefinition pattern,
+                                                   EnemyModulesAndPatternsPreset sharedPreset,
+                                                   ref EnemyPatternConfig patternConfig)
+    {
+        if (pattern == null)
+            return;
+
+        EnemyPatternShortRangeInteractionAssembly shortRangeInteraction = pattern.ShortRangeInteraction;
+
+        if (shortRangeInteraction == null || !shortRangeInteraction.IsEnabled)
+            return;
+
+        TryApplyShortRangeInteractionModule(sharedPreset,
+                                            shortRangeInteraction.Binding,
+                                            shortRangeInteraction.ActivationRange,
+                                            shortRangeInteraction.ReleaseDistanceBuffer,
+                                            ref patternConfig);
     }
 
     /// <summary>
@@ -158,37 +306,38 @@ internal static class EnemyModulesAndPatternsBakeUtility
                                                EnemyModulesAndPatternsPreset sharedPreset,
                                                ref EnemyCompiledPatternBakeResult result)
     {
-        if (pattern == null || sharedPreset == null)
+        if (pattern == null)
             return;
 
         EnemyPatternWeaponInteractionAssembly weaponInteraction = pattern.WeaponInteraction;
 
-        if (weaponInteraction == null || !weaponInteraction.IsEnabled || weaponInteraction.Binding == null)
+        if (weaponInteraction == null || !weaponInteraction.IsEnabled)
             return;
 
-        EnemyPatternModuleBinding binding = weaponInteraction.Binding;
-        EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(binding.ModuleId);
+        TryAddWeaponInteractionModule(sharedPreset,
+                                      weaponInteraction.Binding,
+                                      weaponInteraction.UseMinimumRange,
+                                      weaponInteraction.MinimumRange,
+                                      weaponInteraction.UseMaximumRange,
+                                      weaponInteraction.MaximumRange,
+                                      weaponInteraction.ExclusiveLookDirectionControl,
+                                      weaponInteraction.ActivationGates,
+                                      weaponInteraction.MaximumActivationSpeed,
+                                      weaponInteraction.RecentlyDamagedWindowSeconds,
+                                      ref result);
+    }
 
-        if (moduleDefinition == null)
-            return;
-
-        if (EnemyAdvancedPatternBakeUtility.ResolveModuleKind(moduleDefinition.ModuleKind) != EnemyPatternModuleKind.Shooter)
-            return;
-
-        int previousConfigCount = result.ShooterConfigs.Count;
-        EnemyPatternModulePayloadData resolvedPayload = EnemyAdvancedPatternBakeUtility.ResolveBindingPayload(moduleDefinition, binding);
-        EnemyAdvancedPatternBakeUtility.TryAddShooterModule(resolvedPayload, result.ShooterConfigs, ref result);
-
-        for (int shooterIndex = previousConfigCount; shooterIndex < result.ShooterConfigs.Count; shooterIndex++)
-        {
-            EnemyShooterConfigElement shooterConfig = result.ShooterConfigs[shooterIndex];
-            shooterConfig.UseMinimumRange = weaponInteraction.UseMinimumRange ? (byte)1 : (byte)0;
-            shooterConfig.MinimumRange = math.max(0f, weaponInteraction.MinimumRange);
-            shooterConfig.UseMaximumRange = weaponInteraction.UseMaximumRange ? (byte)1 : (byte)0;
-            shooterConfig.MaximumRange = math.max(shooterConfig.MinimumRange, weaponInteraction.MaximumRange);
-            shooterConfig.ExclusiveLookDirectionControl = weaponInteraction.ExclusiveLookDirectionControl ? (byte)1 : (byte)0;
-            result.ShooterConfigs[shooterIndex] = shooterConfig;
-        }
+    /// <summary>
+    /// Resolves legal Weapon Interaction activation gate flags authored by the shared pattern assembly.
+    /// /params gates Authored gate flags.
+    /// /returns Sanitized gate flags.
+    /// </summary>
+    internal static EnemyWeaponInteractionActivationGate ResolveWeaponActivationGates(EnemyWeaponInteractionActivationGate gates)
+    {
+        EnemyWeaponInteractionActivationGate legalMask = EnemyWeaponInteractionActivationGate.RequireBelowSpeed |
+                                                         EnemyWeaponInteractionActivationGate.RequireRecentlyDamaged |
+                                                         EnemyWeaponInteractionActivationGate.RequireWandererWait;
+        return gates & legalMask;
     }
 
     /// <summary>

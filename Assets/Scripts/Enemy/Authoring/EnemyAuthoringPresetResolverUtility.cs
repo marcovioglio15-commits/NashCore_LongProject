@@ -24,6 +24,14 @@ public static class EnemyAuthoringPresetResolverUtility
         return fallbackAdvancedPatternPreset;
     }
 
+    public static EnemyBossPatternPreset ResolveBossPatternPreset(EnemyMasterPreset masterPreset, EnemyBossPatternPreset fallbackBossPatternPreset)
+    {
+        if (masterPreset != null && masterPreset.BossPatternPreset != null)
+            return masterPreset.BossPatternPreset;
+
+        return fallbackBossPatternPreset;
+    }
+
     public static EnemyVisualPreset ResolveVisualPreset(EnemyMasterPreset masterPreset, EnemyVisualPreset fallbackVisualPreset)
     {
         if (masterPreset != null && masterPreset.VisualPreset != null)

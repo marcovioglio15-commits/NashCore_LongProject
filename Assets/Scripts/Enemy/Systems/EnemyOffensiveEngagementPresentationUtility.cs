@@ -112,6 +112,7 @@ internal static class EnemyOffensiveEngagementPresentationUtility
             bestPriority = candidatePriority;
             bestResult.IsActive = true;
             bestResult.Source = config.Source;
+            bestResult.VisualSettingsKey = config.VisualSettingsKey;
             bestResult.UseOverrideVisualSettings = config.UseOverrideVisualSettings != 0;
             bestResult.Color = config.BillboardColor;
             bestResult.Offset = config.BillboardOffset;
@@ -402,6 +403,7 @@ internal struct EnemyOffensiveEngagementBillboardResult
 {
     public bool IsActive;
     public EnemyOffensiveEngagementTriggerSource Source;
+    public int VisualSettingsKey;
     public bool UseOverrideVisualSettings;
     public float4 Color;
     public float3 Offset;

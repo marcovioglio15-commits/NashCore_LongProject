@@ -279,6 +279,7 @@ MonoBehaviour:
   brainPreset: {fileID: 11400000, guid: 10f8dfbe1b0cf5348a18692f49e1c340, type: 2}
   visualPreset: {fileID: 11400000, guid: c50a5bc332bca5a419a122fec8fa2192, type: 2}
   advancedPatternPreset: {fileID: 11400000, guid: 80935fecf6cac434aacb1091af2a28d4, type: 2}
+  bossPatternPreset: {fileID: 0}
   moveSpeed: 3
   maxSpeed: 4
   acceleration: 8
@@ -596,7 +597,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4356723220362064980
 Transform:
   m_ObjectHideFlags: 0

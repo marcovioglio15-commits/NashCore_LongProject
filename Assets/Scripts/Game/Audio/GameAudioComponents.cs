@@ -11,7 +11,14 @@ public struct GameAudioRuntimeConfig : IComponentData
 {
     public byte Enabled;
     public byte LogMissingEventPaths;
+    public byte BackgroundMusicEnabled;
+    public byte BackgroundMusicAutoStart;
+    public byte BackgroundMusicRestartWhenPathChanges;
+    public byte BackgroundMusicStopWhenDisabled;
+    public FixedString512Bytes BackgroundMusicEventPath;
+    public FixedString64Bytes BackgroundMusicBankName;
     public float MasterVolume;
+    public float BackgroundMusicVolume;
     public float DefaultMinimumDistance;
     public float DefaultMaximumDistance;
 }

@@ -28,6 +28,7 @@ public struct EnemyOffensiveEngagementConfigElement : IBufferElementData
 {
     public EnemyOffensiveEngagementTriggerSource Source;
     public EnemyOffensiveEngagementTimingMode TimingMode;
+    public int VisualSettingsKey;
     public byte UseOverrideVisualSettings;
     public byte EnableColorBlend;
     public float4 ColorBlendColor;

@@ -126,6 +126,8 @@ public sealed class GameAudioManagerAuthoringBaker : Baker<GameAudioManagerAutho
     private static GameAudioRuntimeConfig BuildRuntimeConfig(GameAudioManagerPreset preset)
     {
         GameAudioPlaybackSettings playbackSettings = preset.PlaybackSettings;
+        GameAudioRoutingSettings routingSettings = preset.RoutingSettings;
+        GameAudioBackgroundMusicSettings backgroundMusicSettings = preset.BackgroundMusicSettings;
 
         if (playbackSettings == null)
         {
@@ -133,17 +135,36 @@ public sealed class GameAudioManagerAuthoringBaker : Baker<GameAudioManagerAutho
             {
                 Enabled = 0,
                 LogMissingEventPaths = 1,
+                BackgroundMusicEnabled = 0,
+                BackgroundMusicAutoStart = 0,
+                BackgroundMusicRestartWhenPathChanges = 0,
+                BackgroundMusicStopWhenDisabled = 1,
+                BackgroundMusicEventPath = default,
+                BackgroundMusicBankName = default,
                 MasterVolume = 0f,
+                BackgroundMusicVolume = 0f,
                 DefaultMinimumDistance = 1f,
                 DefaultMaximumDistance = 45f
             };
         }
 
+        float musicRoutingVolume = routingSettings != null ? math.max(0f, routingSettings.MusicVolume) : 1f;
+        string backgroundMusicPath = backgroundMusicSettings != null ? backgroundMusicSettings.EventPath : string.Empty;
+        string backgroundMusicBankName = backgroundMusicSettings != null ? backgroundMusicSettings.BankName : string.Empty;
+        float backgroundMusicVolume = backgroundMusicSettings != null ? math.max(0f, backgroundMusicSettings.Volume) * musicRoutingVolume : 0f;
+
         return new GameAudioRuntimeConfig
         {
             Enabled = playbackSettings.Enabled ? (byte)1 : (byte)0,
             LogMissingEventPaths = playbackSettings.LogMissingEventPaths ? (byte)1 : (byte)0,
+            BackgroundMusicEnabled = backgroundMusicSettings != null && backgroundMusicSettings.Enabled ? (byte)1 : (byte)0,
+            BackgroundMusicAutoStart = backgroundMusicSettings != null && backgroundMusicSettings.AutoStart ? (byte)1 : (byte)0,
+            BackgroundMusicRestartWhenPathChanges = backgroundMusicSettings != null && backgroundMusicSettings.RestartWhenPathChanges ? (byte)1 : (byte)0,
+            BackgroundMusicStopWhenDisabled = backgroundMusicSettings == null || backgroundMusicSettings.StopWhenDisabled ? (byte)1 : (byte)0,
+            BackgroundMusicEventPath = new Unity.Collections.FixedString512Bytes(backgroundMusicPath ?? string.Empty),
+            BackgroundMusicBankName = new Unity.Collections.FixedString64Bytes(backgroundMusicBankName ?? string.Empty),
             MasterVolume = math.max(0f, playbackSettings.MasterVolume),
+            BackgroundMusicVolume = backgroundMusicVolume,
             DefaultMinimumDistance = math.max(0f, playbackSettings.DefaultMinimumDistance),
             DefaultMaximumDistance = math.max(playbackSettings.DefaultMinimumDistance, playbackSettings.DefaultMaximumDistance)
         };

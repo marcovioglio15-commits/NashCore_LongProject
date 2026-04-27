@@ -28,6 +28,14 @@ MonoBehaviour:
     musicBusPath: bus:/Music
     sfxVolume: 1
     musicVolume: 1
+  backgroundMusicSettings:
+    enabled: 1
+    eventPath: event:/MUSIC/mus_past
+    bankName: BankMusic
+    volume: 1
+    autoStart: 1
+    restartWhenPathChanges: 1
+    stopWhenDisabled: 1
   eventBindings:
   - eventId: 1
     eventCode: MC_SFX_Shoot_Projectile_Player

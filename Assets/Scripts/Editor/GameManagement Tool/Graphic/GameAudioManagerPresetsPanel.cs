@@ -338,9 +338,10 @@ public sealed class GameAudioManagerPresetsPanel
         Metadata = 0,
         Playback = 1,
         Routing = 2,
-        EventMap = 3,
-        RateLimits = 4,
-        Validation = 5
+        BackgroundMusic = 3,
+        EventMap = 4,
+        RateLimits = 5,
+        Validation = 6
     }
     #endregion
 }

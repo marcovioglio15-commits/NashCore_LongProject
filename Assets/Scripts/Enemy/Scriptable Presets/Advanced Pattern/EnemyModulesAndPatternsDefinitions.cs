@@ -236,6 +236,15 @@ public sealed class EnemyPatternWeaponInteractionAssembly
     [Tooltip("When enabled, the active weapon interaction controls enemy look direction exclusively while its range gates remain valid.")]
     [SerializeField] private bool exclusiveLookDirectionControl;
 
+    [Tooltip("Optional activation gates evaluated in addition to range. Always means only range gates are used.")]
+    [SerializeField] private EnemyWeaponInteractionActivationGate activationGates = EnemyWeaponInteractionActivationGate.Always;
+
+    [Tooltip("Maximum planar enemy speed allowed when Require Below Speed is enabled.")]
+    [SerializeField] private float maximumActivationSpeed = 0.15f;
+
+    [Tooltip("Seconds after receiving damage during which Require Recently Damaged is considered true.")]
+    [SerializeField] private float recentlyDamagedWindowSeconds = 1f;
+
     [Tooltip("When enabled, this weapon interaction emits offensive engagement feedback before each supported behaviour commit.")]
     [SerializeField] private bool displayBehaviourEngagementTrigger;
 
@@ -297,6 +306,30 @@ public sealed class EnemyPatternWeaponInteractionAssembly
         get
         {
             return exclusiveLookDirectionControl;
+        }
+    }
+
+    public EnemyWeaponInteractionActivationGate ActivationGates
+    {
+        get
+        {
+            return activationGates;
+        }
+    }
+
+    public float MaximumActivationSpeed
+    {
+        get
+        {
+            return maximumActivationSpeed;
+        }
+    }
+
+    public float RecentlyDamagedWindowSeconds
+    {
+        get
+        {
+            return recentlyDamagedWindowSeconds;
         }
     }
 

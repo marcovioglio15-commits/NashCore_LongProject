@@ -50,6 +50,72 @@ internal static class EnemyOffensiveEngagementBakeUtility
         AppendShortRangeConfig(selectedPattern, sharedPreset, globalSettings, configs);
         AppendWeaponConfig(selectedPattern, sharedPreset, globalSettings, configs);
     }
+
+    /// <summary>
+    /// Builds one short-range offensive engagement config from an explicit pattern assemble slot.
+    /// /params interaction Short-range interaction slot being compiled.
+    /// /params sharedPreset Shared source preset used to resolve the selected module kind.
+    /// /params globalSettings Generic visual feedback settings resolved from the visual preset.
+    /// /params config Output baked offensive engagement config.
+    /// /returns True when the slot exposes a supported predictive warning config.
+    /// </summary>
+    internal static bool TryBuildShortRangeConfig(EnemyPatternShortRangeInteractionAssembly interaction,
+                                                  EnemyModulesAndPatternsPreset sharedPreset,
+                                                  EnemyOffensiveEngagementFeedbackSettings globalSettings,
+                                                  out EnemyOffensiveEngagementConfigElement config)
+    {
+        config = default;
+
+        if (interaction == null ||
+            !interaction.IsEnabled ||
+            !interaction.DisplayBehaviourEngagementTrigger ||
+            interaction.Binding == null)
+        {
+            return false;
+        }
+
+        return TryBuildConfig(interaction.Binding,
+                              sharedPreset,
+                              globalSettings,
+                              interaction.UseEngagementFeedbackOverride,
+                              interaction.EngagementFeedbackOverride,
+                              EnemyPatternModuleCatalogSection.ShortRangeInteraction,
+                              EnemyOffensiveEngagementTriggerSource.ShortRangeInteraction,
+                              out config);
+    }
+
+    /// <summary>
+    /// Builds one weapon offensive engagement config from an explicit pattern assemble slot.
+    /// /params interaction Weapon interaction slot being compiled.
+    /// /params sharedPreset Shared source preset used to resolve the selected module kind.
+    /// /params globalSettings Generic visual feedback settings resolved from the visual preset.
+    /// /params config Output baked offensive engagement config.
+    /// /returns True when the slot exposes a supported predictive warning config.
+    /// </summary>
+    internal static bool TryBuildWeaponConfig(EnemyPatternWeaponInteractionAssembly interaction,
+                                              EnemyModulesAndPatternsPreset sharedPreset,
+                                              EnemyOffensiveEngagementFeedbackSettings globalSettings,
+                                              out EnemyOffensiveEngagementConfigElement config)
+    {
+        config = default;
+
+        if (interaction == null ||
+            !interaction.IsEnabled ||
+            !interaction.DisplayBehaviourEngagementTrigger ||
+            interaction.Binding == null)
+        {
+            return false;
+        }
+
+        return TryBuildConfig(interaction.Binding,
+                              sharedPreset,
+                              globalSettings,
+                              interaction.UseEngagementFeedbackOverride,
+                              interaction.EngagementFeedbackOverride,
+                              EnemyPatternModuleCatalogSection.WeaponInteraction,
+                              EnemyOffensiveEngagementTriggerSource.WeaponInteraction,
+                              out config);
+    }
     #endregion
 
     #region Private Methods
@@ -71,33 +137,10 @@ internal static class EnemyOffensiveEngagementBakeUtility
 
         EnemyPatternShortRangeInteractionAssembly interaction = pattern.ShortRangeInteraction;
 
-        if (interaction == null ||
-            !interaction.IsEnabled ||
-            !interaction.DisplayBehaviourEngagementTrigger ||
-            interaction.Binding == null)
-        {
-            return;
-        }
-
-        EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(interaction.Binding.ModuleId);
-
-        if (moduleDefinition == null)
+        if (!TryBuildShortRangeConfig(interaction, sharedPreset, globalSettings, out EnemyOffensiveEngagementConfigElement config))
             return;
 
-        EnemyOffensiveEngagementTimingMode timingMode = EnemyOffensiveEngagementSupportUtility.ResolveTimingMode(EnemyPatternModuleCatalogSection.ShortRangeInteraction,
-                                                                                                                 moduleDefinition.ModuleKind);
-
-        if (timingMode == EnemyOffensiveEngagementTimingMode.None)
-            return;
-
-        EnemyOffensiveEngagementFeedbackSettings settings = ResolveSettings(globalSettings,
-                                                                           interaction.UseEngagementFeedbackOverride,
-                                                                           interaction.EngagementFeedbackOverride);
-        AppendConfig(EnemyOffensiveEngagementTriggerSource.ShortRangeInteraction,
-                     timingMode,
-                     interaction.UseEngagementFeedbackOverride,
-                     settings,
-                     configs);
+        configs.Add(config);
     }
 
     /// <summary>
@@ -118,33 +161,10 @@ internal static class EnemyOffensiveEngagementBakeUtility
 
         EnemyPatternWeaponInteractionAssembly interaction = pattern.WeaponInteraction;
 
-        if (interaction == null ||
-            !interaction.IsEnabled ||
-            !interaction.DisplayBehaviourEngagementTrigger ||
-            interaction.Binding == null)
-        {
-            return;
-        }
-
-        EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(interaction.Binding.ModuleId);
-
-        if (moduleDefinition == null)
+        if (!TryBuildWeaponConfig(interaction, sharedPreset, globalSettings, out EnemyOffensiveEngagementConfigElement config))
             return;
 
-        EnemyOffensiveEngagementTimingMode timingMode = EnemyOffensiveEngagementSupportUtility.ResolveTimingMode(EnemyPatternModuleCatalogSection.WeaponInteraction,
-                                                                                                                 moduleDefinition.ModuleKind);
-
-        if (timingMode == EnemyOffensiveEngagementTimingMode.None)
-            return;
-
-        EnemyOffensiveEngagementFeedbackSettings settings = ResolveSettings(globalSettings,
-                                                                           interaction.UseEngagementFeedbackOverride,
-                                                                           interaction.EngagementFeedbackOverride);
-        AppendConfig(EnemyOffensiveEngagementTriggerSource.WeaponInteraction,
-                     timingMode,
-                     interaction.UseEngagementFeedbackOverride,
-                     settings,
-                     configs);
+        configs.Add(config);
     }
 
     /// <summary>
@@ -168,34 +188,80 @@ internal static class EnemyOffensiveEngagementBakeUtility
     }
 
     /// <summary>
+    /// Resolves one module binding and authored feedback block into a baked offensive engagement config.
+    /// /params binding Module binding being compiled.
+    /// /params sharedPreset Shared source preset used to resolve the selected module kind.
+    /// /params globalSettings Generic visual feedback settings resolved from the visual preset.
+    /// /params useOverrideSettings True when the interaction-specific override is enabled.
+    /// /params overrideSettings Optional interaction-specific override settings.
+    /// /params section Source module catalog section.
+    /// /params source Interaction source currently being compiled.
+    /// /params config Output baked offensive engagement config.
+    /// /returns True when a supported and visible config was produced.
+    /// </summary>
+    private static bool TryBuildConfig(EnemyPatternModuleBinding binding,
+                                       EnemyModulesAndPatternsPreset sharedPreset,
+                                       EnemyOffensiveEngagementFeedbackSettings globalSettings,
+                                       bool useOverrideSettings,
+                                       EnemyOffensiveEngagementFeedbackSettings overrideSettings,
+                                       EnemyPatternModuleCatalogSection section,
+                                       EnemyOffensiveEngagementTriggerSource source,
+                                       out EnemyOffensiveEngagementConfigElement config)
+    {
+        config = default;
+
+        if (binding == null || sharedPreset == null)
+            return false;
+
+        EnemyPatternModuleDefinition moduleDefinition = sharedPreset.ResolveModuleDefinitionById(binding.ModuleId);
+
+        if (moduleDefinition == null)
+            return false;
+
+        EnemyOffensiveEngagementTimingMode timingMode = EnemyOffensiveEngagementSupportUtility.ResolveTimingMode(section,
+                                                                                                                 moduleDefinition.ModuleKind);
+
+        if (timingMode == EnemyOffensiveEngagementTimingMode.None)
+            return false;
+
+        EnemyOffensiveEngagementFeedbackSettings settings = ResolveSettings(globalSettings,
+                                                                           useOverrideSettings,
+                                                                           overrideSettings);
+        return TryCreateConfig(source, timingMode, useOverrideSettings, settings, out config);
+    }
+
+    /// <summary>
     /// Converts one authored settings block into a baked offensive engagement buffer entry.
     /// /params source Interaction source currently being compiled.
     /// /params timingMode Supported timing model used to predict the behaviour commit.
     /// /params useOverrideVisualSettings True when the interaction-specific override provided the baked settings.
     /// /params settings Resolved authored settings block.
-    /// /params configs Target dynamic buffer populated during bake.
-    /// /returns None.
+    /// /params config Output baked offensive engagement config.
+    /// /returns True when the settings expose at least one visible feedback channel.
     /// </summary>
-    private static void AppendConfig(EnemyOffensiveEngagementTriggerSource source,
-                                     EnemyOffensiveEngagementTimingMode timingMode,
-                                     bool useOverrideVisualSettings,
-                                     EnemyOffensiveEngagementFeedbackSettings settings,
-                                     DynamicBuffer<EnemyOffensiveEngagementConfigElement> configs)
+    private static bool TryCreateConfig(EnemyOffensiveEngagementTriggerSource source,
+                                        EnemyOffensiveEngagementTimingMode timingMode,
+                                        bool useOverrideVisualSettings,
+                                        EnemyOffensiveEngagementFeedbackSettings settings,
+                                        out EnemyOffensiveEngagementConfigElement config)
     {
+        config = default;
+
         if (settings == null)
             settings = DefaultSettings;
 
         bool hasVisibleChannel = settings.EnableColorBlend || settings.EnableBillboard;
 
         if (!hasVisibleChannel)
-            return;
+            return false;
 
         Vector3 billboardOffset = settings.BillboardLocalOffset;
 
-        configs.Add(new EnemyOffensiveEngagementConfigElement
+        config = new EnemyOffensiveEngagementConfigElement
         {
             Source = source,
             TimingMode = timingMode,
+            VisualSettingsKey = -1,
             UseOverrideVisualSettings = useOverrideVisualSettings ? (byte)1 : (byte)0,
             EnableColorBlend = settings.EnableColorBlend ? (byte)1 : (byte)0,
             ColorBlendColor = DamageFlashRuntimeUtility.ToLinearFloat4(settings.ColorBlendColor),
@@ -210,7 +276,8 @@ internal static class EnemyOffensiveEngagementBakeUtility
             BillboardPulseScaleMultiplier = math.max(0f, settings.BillboardPulseScaleMultiplier),
             BillboardPulseExpandDurationSeconds = math.max(0f, settings.BillboardPulseExpandDurationSeconds),
             BillboardPulseContractDurationSeconds = math.max(0f, settings.BillboardPulseContractDurationSeconds)
-        });
+        };
+        return true;
     }
     #endregion
 

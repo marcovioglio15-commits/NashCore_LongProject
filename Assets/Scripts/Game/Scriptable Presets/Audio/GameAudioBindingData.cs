@@ -148,6 +148,102 @@ public sealed class GameAudioRoutingSettings
 }
 
 /// <summary>
+/// Background music settings baked into the global audio singleton.
+/// /params None.
+/// /returns None.
+/// </summary>
+[Serializable]
+public sealed class GameAudioBackgroundMusicSettings
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Header("Background Music")]
+    [Tooltip("Enables background music management from the Audio Manager preset.")]
+    [SerializeField] private bool enabled;
+
+    [Tooltip("FMOD event path for the background music loop, for example event:/Music/Stage01.")]
+    [SerializeField] private string eventPath;
+
+    [Tooltip("FMOD bank that contains the background music event. Leave empty only when the bank is loaded elsewhere before playback.")]
+    [SerializeField] private string bankName = "BankMusic";
+
+    [Tooltip("Volume scalar applied to background music before routing music volume.")]
+    [Range(0f, 2f)]
+    [SerializeField] private float volume = 1f;
+
+    [Tooltip("Starts background music automatically when runtime audio becomes available.")]
+    [SerializeField] private bool autoStart = true;
+
+    [Tooltip("When enabled, runtime playback restarts the music if the event path changes after rebake or config reload.")]
+    [SerializeField] private bool restartWhenPathChanges = true;
+
+    [Tooltip("Stops the currently playing background music when this section or global audio playback is disabled.")]
+    [SerializeField] private bool stopWhenDisabled = true;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public bool Enabled
+    {
+        get
+        {
+            return enabled;
+        }
+    }
+
+    public string EventPath
+    {
+        get
+        {
+            return eventPath;
+        }
+    }
+
+    public string BankName
+    {
+        get
+        {
+            return bankName;
+        }
+    }
+
+    public float Volume
+    {
+        get
+        {
+            return volume;
+        }
+    }
+
+    public bool AutoStart
+    {
+        get
+        {
+            return autoStart;
+        }
+    }
+
+    public bool RestartWhenPathChanges
+    {
+        get
+        {
+            return restartWhenPathChanges;
+        }
+    }
+
+    public bool StopWhenDisabled
+    {
+        get
+        {
+            return stopWhenDisabled;
+        }
+    }
+    #endregion
+}
+
+/// <summary>
 /// Per-event cap used to avoid flooding FMOD with dense ECS gameplay events.
 /// /params None.
 /// /returns None.

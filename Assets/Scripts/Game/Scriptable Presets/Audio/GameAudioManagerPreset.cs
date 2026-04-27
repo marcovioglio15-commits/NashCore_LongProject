@@ -39,6 +39,10 @@ public sealed class GameAudioManagerPreset : ScriptableObject
     [Tooltip("FMOD bus paths and mix defaults reserved for game-wide audio routing.")]
     [SerializeField] private GameAudioRoutingSettings routingSettings = new GameAudioRoutingSettings();
 
+    [Header("Background Music")]
+    [Tooltip("Background music event and runtime control settings.")]
+    [SerializeField] private GameAudioBackgroundMusicSettings backgroundMusicSettings = new GameAudioBackgroundMusicSettings();
+
     [Header("Event Sound Map")]
     [Tooltip("Gameplay event to FMOD event-path bindings baked into ECS.")]
     [SerializeField] private List<GameAudioEventBinding> eventBindings = new List<GameAudioEventBinding>();
@@ -95,6 +99,14 @@ public sealed class GameAudioManagerPreset : ScriptableObject
         }
     }
 
+    public GameAudioBackgroundMusicSettings BackgroundMusicSettings
+    {
+        get
+        {
+            return backgroundMusicSettings;
+        }
+    }
+
     public IReadOnlyList<GameAudioEventBinding> EventBindings
     {
         get
@@ -122,6 +134,9 @@ public sealed class GameAudioManagerPreset : ScriptableObject
 
         if (routingSettings == null)
             routingSettings = new GameAudioRoutingSettings();
+
+        if (backgroundMusicSettings == null)
+            backgroundMusicSettings = new GameAudioBackgroundMusicSettings();
 
         if (eventBindings == null)
             eventBindings = new List<GameAudioEventBinding>();

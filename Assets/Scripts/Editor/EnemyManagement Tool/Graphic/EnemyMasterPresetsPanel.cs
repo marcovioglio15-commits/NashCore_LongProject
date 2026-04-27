@@ -506,6 +506,11 @@ public sealed class EnemyMasterPresetsPanel
         EnemyMasterPresetsPanelSectionsUtility.CreateAdvancedPatternPreset(this);
     }
 
+    internal void CreateBossPatternPreset()
+    {
+        EnemyMasterPresetsPanelSectionsUtility.CreateBossPatternPreset(this);
+    }
+
     internal void AssignSubPreset(string propertyName, UnityEngine.Object preset)
     {
         EnemyMasterPresetsPanelSectionsUtility.AssignSubPreset(this, propertyName, preset);
@@ -635,6 +640,7 @@ public sealed class EnemyMasterPresetsPanel
         public EnemyBrainPresetsPanel BrainPanel;
         public EnemyVisualPresetsPanel VisualPanel;
         public EnemyAdvancedPatternPresetsPanel AdvancedPatternPanel;
+        public EnemyBossPatternPresetsPanel BossPatternPanel;
     }
     #endregion
 }

@@ -44,6 +44,7 @@ public struct EnemySpawnerWaveDefinitionElement : IBufferElementData
     public EnemyWaveStartMode StartMode;
     public float StartDelaySeconds;
     public float SpawnDurationSeconds;
+    public float MaximumSpawnWarningLeadTimeSeconds;
     public int FirstEventIndex;
     public int EventCount;
 }
@@ -79,6 +80,8 @@ public struct EnemySpawnerWaveEventElement : IBufferElementData
     public float3 LocalSpawnPosition;
     public Entity PrefabEntity;
     public Entity ReservedEnemyEntity;
+    public byte HasSpawnWarningOverride;
+    public EnemySpawnWarningConfig SpawnWarningOverride;
 }
 
 /// <summary>

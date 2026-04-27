@@ -126,6 +126,9 @@ public struct EnemyShooterConfigElement : IBufferElementData
     public byte UseMaximumRange;
     public float MaximumRange;
     public byte ExclusiveLookDirectionControl;
+    public EnemyWeaponInteractionActivationGate ActivationGates;
+    public float MaximumActivationSpeed;
+    public float RecentlyDamagedWindowSeconds;
     public int ProjectilesPerShot;
     public float SpreadAngleDegrees;
     public float ProjectileSpeed;

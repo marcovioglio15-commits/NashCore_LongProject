@@ -37,12 +37,12 @@ MonoBehaviour:
     colorBlendLeadTimeSeconds: 0.3
     colorBlendFadeOutSeconds: 0.18
     colorBlendMaximumBlend: 0.7
-    enableBillboard: 0
-    billboardSprite: {fileID: 0}
+    enableBillboard: 1
+    billboardSprite: {fileID: 21300000, guid: bd1a9df158626b746933d61fd6845978, type: 3}
     billboardColor: {r: 1, g: 1, b: 1, a: 1}
     billboardLocalOffset: {x: 0, y: 1.85, z: 0}
     billboardLeadTimeSeconds: 0.3
-    billboardBaseScale: 0.75
+    billboardBaseScale: 0.25
     billboardPulseScaleMultiplier: 1.22
     billboardPulseExpandDurationSeconds: 0.12
     billboardPulseContractDurationSeconds: 0.14
@@ -52,3 +52,27 @@ MonoBehaviour:
     hitVfxLifetimeSeconds: 0.35
     hitVfxScaleMultiplier: 1
     spawnPaintColor: {r: 0.6037736, g: 0.36293578, b: 0, a: 1}
+  spawnOverrides:
+    overrideSpawnOffset: 0
+    spawnOffset: {x: 0, y: 0, z: 0}
+    overrideSpawnWarning: 0
+    enableSpawnWarning: 1
+    spawnWarningLeadTimeSeconds: 0.7
+    spawnWarningRadiusScale: 0.45
+    spawnWarningRingWidth: 0.15
+    spawnWarningHeightOffset: 0.06
+    spawnWarningMaximumAlpha: 0.95
+    spawnWarningFadeOutSeconds: 0.18
+    spawnWarningColor: {r: 1, g: 0.72, b: 0.18, a: 1}
+  bossUi:
+    enabled: 0
+    bossDisplayName: 
+    healthFillColor: {r: 0.9, g: 0.12, b: 0.08, a: 1}
+    healthBackgroundColor: {r: 0, g: 0, b: 0, a: 0.7}
+    offscreenIndicatorSprite: {fileID: 0}
+    offscreenIndicatorColor: {r: 1, g: 0.2, b: 0.1, a: 0.95}
+    offscreenIndicatorSizePixels: 56
+    bottomOffsetPixels: 42
+    widthPixels: 560
+    heightPixels: 22
+    edgePaddingPixels: 30

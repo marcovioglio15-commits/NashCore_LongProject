@@ -1,3 +1,5 @@
+using System;
+
 /// <summary>
 /// Declares supported enemy pattern module categories.
 /// </summary>
@@ -111,4 +113,44 @@ public enum EnemyExtraComboPointsConditionCombineMode
     MultiplyMatchingConditions = 0,
     HighestMatchingMultiplier = 1,
     LowestMatchingMultiplier = 2
+}
+
+/// <summary>
+/// Declares optional runtime gates that can further restrict Weapon Interaction activation.
+/// /params None.
+/// /returns None.
+/// </summary>
+[Flags]
+public enum EnemyWeaponInteractionActivationGate
+{
+    Always = 0,
+    RequireBelowSpeed = 1,
+    RequireRecentlyDamaged = 2,
+    RequireWandererWait = 4
+}
+
+/// <summary>
+/// Declares boss-only interaction triggers layered above the base pattern assemble.
+/// /params None.
+/// /returns None.
+/// </summary>
+public enum EnemyBossPatternInteractionType
+{
+    MissingHealth = 0,
+    ElapsedTime = 1,
+    TravelledDistance = 2,
+    PlayerDistance = 3,
+    RecentlyDamaged = 4
+}
+
+/// <summary>
+/// Declares how one boss minion spawn rule is activated at runtime.
+/// /params None.
+/// /returns None.
+/// </summary>
+public enum EnemyBossMinionSpawnTrigger
+{
+    Interval = 0,
+    BossDamaged = 1,
+    HealthBelowPercent = 2
 }

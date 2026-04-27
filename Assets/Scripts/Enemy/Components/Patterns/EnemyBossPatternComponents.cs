@@ -1,0 +1,175 @@
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine;
+
+#region Boss Pattern Components
+/// <summary>
+/// Tags an enemy entity as a boss controlled by a boss pattern preset.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossTag : IComponentData
+{
+}
+
+/// <summary>
+/// Stores immutable boss HUD text and color configuration baked from the visual preset.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossHudConfig : IComponentData
+{
+    public byte Enabled;
+    public FixedString64Bytes DisplayName;
+    public float4 HealthFillColor;
+    public float4 HealthBackgroundColor;
+    public float4 OffscreenIndicatorColor;
+    public float BottomOffsetPixels;
+    public float WidthPixels;
+    public float HeightPixels;
+    public float OffscreenIndicatorSizePixels;
+    public float EdgePaddingPixels;
+}
+
+/// <summary>
+/// Managed boss visual data for UI assets that cannot be stored in unmanaged ECS components.
+/// /params None.
+/// /returns None.
+/// </summary>
+public sealed class EnemyBossHudManagedConfig : IComponentData
+{
+    #region Fields
+    public Sprite OffscreenIndicatorSprite;
+    #endregion
+}
+
+/// <summary>
+/// Tracks mutable boss interaction switching state.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossPatternRuntimeState : IComponentData
+{
+    public int ActiveInteractionIndex;
+    public float ElapsedSeconds;
+    public float ActiveInteractionElapsedSeconds;
+    public float TravelledDistance;
+    public float3 LastPosition;
+    public float LastObservedDamageLifetimeSeconds;
+    public byte Initialized;
+}
+
+/// <summary>
+/// Stores the base boss pattern used when no boss-specific interaction is active.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossPatternBaseConfig : IComponentData
+{
+    public byte HasCustomMovement;
+    public int FirstShooterConfigIndex;
+    public int ShooterConfigCount;
+    public int FirstOffensiveEngagementConfigIndex;
+    public int OffensiveEngagementConfigCount;
+    public EnemyPatternConfig PatternConfig;
+}
+
+/// <summary>
+/// Stores one compiled boss-specific interaction layer.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossPatternInteractionElement : IBufferElementData
+{
+    public int InteractionIndex;
+    public EnemyBossPatternInteractionType InteractionType;
+    public float MinimumActiveSeconds;
+    public float MinimumMissingHealthPercent;
+    public float MaximumMissingHealthPercent;
+    public float MinimumElapsedSeconds;
+    public float MaximumElapsedSeconds;
+    public float MinimumTravelledDistance;
+    public float MaximumTravelledDistance;
+    public float MinimumPlayerDistance;
+    public float MaximumPlayerDistance;
+    public float RecentlyDamagedWindowSeconds;
+    public byte HasCustomMovement;
+    public int FirstShooterConfigIndex;
+    public int ShooterConfigCount;
+    public int FirstOffensiveEngagementConfigIndex;
+    public int OffensiveEngagementConfigCount;
+    public EnemyPatternConfig PatternConfig;
+}
+
+/// <summary>
+/// Stores shooter configs referenced by the base boss pattern and boss-specific interactions.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossPatternShooterConfigElement : IBufferElementData
+{
+    public EnemyShooterConfigElement ShooterConfig;
+}
+
+/// <summary>
+/// Stores offensive engagement configs referenced by the base boss pattern and boss-specific interactions.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossPatternOffensiveEngagementConfigElement : IBufferElementData
+{
+    public EnemyOffensiveEngagementConfigElement Config;
+}
+
+/// <summary>
+/// Stores one boss-owned minion spawn rule and its runtime pool state.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossMinionSpawnElement : IBufferElementData
+{
+    public Entity PrefabEntity;
+    public EnemyBossMinionSpawnTrigger Trigger;
+    public float IntervalSeconds;
+    public float BossHitCooldownSeconds;
+    public float HealthThresholdPercent;
+    public int SpawnCount;
+    public int MaxAliveMinions;
+    public float SpawnRadius;
+    public float DespawnDistance;
+    public float ExperienceDropMultiplier;
+    public float ExtraComboPointsMultiplier;
+    public float FutureDropsMultiplier;
+    public int AutomaticPoolSize;
+    public int PoolExpandBatch;
+    public Entity PoolEntity;
+    public float NextSpawnTime;
+    public float LastObservedDamageLifetimeSeconds;
+    public byte Triggered;
+    public byte Initialized;
+}
+
+/// <summary>
+/// Marks minions spawned by a boss and stores the source rule for alive-count throttling.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyBossMinionOwner : IComponentData
+{
+    public Entity BossEntity;
+    public int RuleIndex;
+}
+
+/// <summary>
+/// Scales rewards emitted by special enemies such as boss-spawned minions.
+/// /params None.
+/// /returns None.
+/// </summary>
+public struct EnemyDropRewardMultiplier : IComponentData
+{
+    public float ExperienceMultiplier;
+    public float ExtraComboPointsMultiplier;
+    public float FutureDropsMultiplier;
+}
+#endregion

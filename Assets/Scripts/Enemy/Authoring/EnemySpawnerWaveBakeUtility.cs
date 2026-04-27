@@ -142,7 +142,9 @@ public static class EnemySpawnerWaveBakeUtility
                 RelativeTime = sanitizedDuration * normalizedTime,
                 LocalSpawnPosition = resolvedLocalSpawnPosition,
                 PrefabEntity = prefabEntity,
-                ReservedEnemyEntity = Unity.Entities.Entity.Null
+                ReservedEnemyEntity = Unity.Entities.Entity.Null,
+                HasSpawnWarningOverride = 0,
+                SpawnWarningOverride = default
             });
         }
     }

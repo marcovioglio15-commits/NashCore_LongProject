@@ -86,6 +86,9 @@ internal static class GameAudioManagerPresetsPanelSectionsUtility
             case GameAudioManagerPresetsPanel.DetailsSectionType.Routing:
                 BuildPropertySection(panel, "FMOD Routing", "routingSettings", "FMOD bus paths and default mix values.");
                 break;
+            case GameAudioManagerPresetsPanel.DetailsSectionType.BackgroundMusic:
+                BuildBackgroundMusicSection(panel);
+                break;
             case GameAudioManagerPresetsPanel.DetailsSectionType.EventMap:
                 BuildEventMapSection(panel);
                 break;
@@ -166,6 +169,79 @@ internal static class GameAudioManagerPresetsPanelSectionsUtility
         field.BindProperty(property);
         field.RegisterCallback<SerializedPropertyChangeEvent>(evt => panel.MarkSelectedPresetDirty());
         section.Add(field);
+    }
+
+    /// <summary>
+    /// Builds background music controls with dependent options shown only while music management is enabled.
+    /// /params panel Owning panel with serialized preset context.
+    /// /returns None.
+    /// </summary>
+    private static void BuildBackgroundMusicSection(GameAudioManagerPresetsPanel panel)
+    {
+        VisualElement section = CreateSection(panel, "Background Music");
+        SerializedProperty musicProperty = panel.PresetSerializedObject.FindProperty("backgroundMusicSettings");
+
+        if (musicProperty == null)
+        {
+            panel.SelectedPreset.EnsureInitialized();
+            EditorUtility.SetDirty(panel.SelectedPreset);
+            panel.PresetSerializedObject.Update();
+            musicProperty = panel.PresetSerializedObject.FindProperty("backgroundMusicSettings");
+        }
+
+        if (musicProperty == null)
+        {
+            HelpBox missingSettingsBox = new HelpBox("Background music settings could not be resolved on this Audio Manager preset.", HelpBoxMessageType.Error);
+            section.Add(missingSettingsBox);
+            return;
+        }
+
+        SerializedProperty enabledProperty = musicProperty.FindPropertyRelative("enabled");
+
+        if (enabledProperty == null)
+            return;
+
+        AddBooleanToggleProperty(panel,
+                                 section,
+                                 enabledProperty,
+                                 "Enabled",
+                                 "Enables background music management from the Audio Manager preset.",
+                                 true);
+        AddBooleanToggleProperty(panel,
+                                 section,
+                                 musicProperty.FindPropertyRelative("stopWhenDisabled"),
+                                 "Stop When Disabled",
+                                 "Stops the currently playing background music when this section or global audio playback is disabled.",
+                                 false);
+
+        if (!enabledProperty.boolValue)
+        {
+            HelpBox disabledBox = new HelpBox("Background music management is disabled. Runtime will stop existing music when Stop When Disabled is enabled.", HelpBoxMessageType.Info);
+            section.Add(disabledBox);
+            return;
+        }
+
+        AddDelayedStringProperty(panel, section, musicProperty.FindPropertyRelative("eventPath"), "FMOD Event Path", "FMOD event path for the background music loop, for example event:/Music/Stage01.");
+        AddDelayedStringProperty(panel, section, musicProperty.FindPropertyRelative("bankName"), "FMOD Bank Name", "FMOD bank containing the background music event, for example BankMusic.");
+        AddFloatSliderProperty(panel, section, musicProperty.FindPropertyRelative("volume"), "Volume", 0f, 2f, "Volume scalar applied to background music before routing music volume.");
+        SerializedProperty autoStartProperty = musicProperty.FindPropertyRelative("autoStart");
+
+        AddBooleanToggleProperty(panel,
+                                 section,
+                                 autoStartProperty,
+                                 "Auto Start",
+                                 "Starts background music automatically when runtime audio becomes available.",
+                                 true);
+
+        if (autoStartProperty != null && autoStartProperty.boolValue)
+        {
+            AddBooleanToggleProperty(panel,
+                                     section,
+                                     musicProperty.FindPropertyRelative("restartWhenPathChanges"),
+                                     "Restart When Path Changes",
+                                     "Restarts background music when the event path changes after rebake or config reload.",
+                                     false);
+        }
     }
 
     /// <summary>
@@ -291,6 +367,7 @@ internal static class GameAudioManagerPresetsPanelSectionsUtility
         AddSectionButton(panel, buttonsRoot, GameAudioManagerPresetsPanel.DetailsSectionType.Metadata, "Metadata");
         AddSectionButton(panel, buttonsRoot, GameAudioManagerPresetsPanel.DetailsSectionType.Playback, "Playback");
         AddSectionButton(panel, buttonsRoot, GameAudioManagerPresetsPanel.DetailsSectionType.Routing, "FMOD Routing");
+        AddSectionButton(panel, buttonsRoot, GameAudioManagerPresetsPanel.DetailsSectionType.BackgroundMusic, "Background Music");
         AddSectionButton(panel, buttonsRoot, GameAudioManagerPresetsPanel.DetailsSectionType.EventMap, "Event Sound Map");
         AddSectionButton(panel, buttonsRoot, GameAudioManagerPresetsPanel.DetailsSectionType.RateLimits, "Rate Limits");
         AddSectionButton(panel, buttonsRoot, GameAudioManagerPresetsPanel.DetailsSectionType.Validation, "Validation");
@@ -366,6 +443,8 @@ internal static class GameAudioManagerPresetsPanelSectionsUtility
         {
             case GameAudioManagerPresetsPanel.DetailsSectionType.Routing:
                 return 104f;
+            case GameAudioManagerPresetsPanel.DetailsSectionType.BackgroundMusic:
+                return 148f;
             case GameAudioManagerPresetsPanel.DetailsSectionType.EventMap:
                 return 136f;
             case GameAudioManagerPresetsPanel.DetailsSectionType.RateLimits:
@@ -436,6 +515,114 @@ internal static class GameAudioManagerPresetsPanelSectionsUtility
                 panel.RefreshPresetList();
         });
         parent.Add(field);
+    }
+
+    /// <summary>
+    /// Adds one delayed string property field.
+    /// /params panel Owning panel with selected preset context.
+    /// /params parent Parent section.
+    /// /params property Serialized string property.
+    /// /params label Display label.
+    /// /params tooltip Field tooltip.
+    /// /returns None.
+    /// </summary>
+    private static void AddDelayedStringProperty(GameAudioManagerPresetsPanel panel,
+                                                 VisualElement parent,
+                                                 SerializedProperty property,
+                                                 string label,
+                                                 string tooltip)
+    {
+        if (property == null)
+            return;
+
+        TextField field = new TextField(label);
+        field.tooltip = tooltip;
+        field.isDelayed = true;
+        field.SetValueWithoutNotify(property.stringValue);
+        field.RegisterValueChangedCallback(evt =>
+        {
+            Undo.RecordObject(panel.SelectedPreset, "Edit Background Music");
+            panel.PresetSerializedObject.Update();
+            property.stringValue = evt.newValue;
+            panel.PresetSerializedObject.ApplyModifiedProperties();
+            panel.MarkSelectedPresetDirty();
+        });
+        parent.Add(field);
+    }
+
+    /// <summary>
+    /// Adds one explicit boolean toggle and optionally rebuilds the active section after edits.
+    /// /params panel Owning panel with selected preset context.
+    /// /params parent Parent section.
+    /// /params property Serialized boolean property.
+    /// /params label Display label.
+    /// /params tooltip Field tooltip.
+    /// /params rebuildOnChange True when dependent controls must refresh immediately.
+    /// /returns None.
+    /// </summary>
+    private static void AddBooleanToggleProperty(GameAudioManagerPresetsPanel panel,
+                                                 VisualElement parent,
+                                                 SerializedProperty property,
+                                                 string label,
+                                                 string tooltip,
+                                                 bool rebuildOnChange)
+    {
+        if (property == null)
+            return;
+
+        Toggle toggle = new Toggle(label);
+        toggle.tooltip = tooltip;
+        toggle.SetValueWithoutNotify(property.boolValue);
+        toggle.RegisterValueChangedCallback(evt =>
+        {
+            Undo.RecordObject(panel.SelectedPreset, "Edit Background Music");
+            panel.PresetSerializedObject.Update();
+            property.boolValue = evt.newValue;
+            panel.PresetSerializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(panel.SelectedPreset);
+            GameManagementDraftSession.MarkDirty();
+
+            if (rebuildOnChange)
+                panel.BuildActiveSection();
+        });
+        parent.Add(toggle);
+    }
+
+    /// <summary>
+    /// Adds one float slider property field.
+    /// /params panel Owning panel with selected preset context.
+    /// /params parent Parent section.
+    /// /params property Serialized float property.
+    /// /params label Display label.
+    /// /params lowValue Lower slider value.
+    /// /params highValue Upper slider value.
+    /// /params tooltip Field tooltip.
+    /// /returns None.
+    /// </summary>
+    private static void AddFloatSliderProperty(GameAudioManagerPresetsPanel panel,
+                                               VisualElement parent,
+                                               SerializedProperty property,
+                                               string label,
+                                               float lowValue,
+                                               float highValue,
+                                               string tooltip)
+    {
+        if (property == null)
+            return;
+
+        Slider slider = new Slider(label, lowValue, highValue);
+        slider.showInputField = true;
+        slider.tooltip = tooltip;
+        slider.SetValueWithoutNotify(property.floatValue);
+        slider.RegisterValueChangedCallback(evt =>
+        {
+            Undo.RecordObject(panel.SelectedPreset, "Edit Background Music");
+            panel.PresetSerializedObject.Update();
+            property.floatValue = evt.newValue;
+            panel.PresetSerializedObject.ApplyModifiedProperties();
+            panel.MarkSelectedPresetDirty();
+        });
+        parent.Add(slider);
     }
     #endregion
 

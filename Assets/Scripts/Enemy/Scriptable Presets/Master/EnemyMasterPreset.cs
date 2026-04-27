@@ -30,6 +30,9 @@ public sealed class EnemyMasterPreset : ScriptableObject
     [Tooltip("Advanced pattern preset reference used by this enemy master preset.")]
     [SerializeField] private EnemyAdvancedPatternPreset advancedPatternPreset;
 
+    [Tooltip("Optional boss pattern preset reference. When assigned, this enemy is baked as a boss and can switch between normal enemy patterns.")]
+    [SerializeField] private EnemyBossPatternPreset bossPatternPreset;
+
     [Header("Test UI Settings")]
     [Tooltip("Editor-only settings used by Enemy Management Tool to generate world-space health and shield bars on enemy prefabs.")]
     [SerializeField] private EnemyTestUiSettings testUiSettings = new EnemyTestUiSettings();
@@ -94,6 +97,14 @@ public sealed class EnemyMasterPreset : ScriptableObject
         }
     }
 
+    public EnemyBossPatternPreset BossPatternPreset
+    {
+        get
+        {
+            return bossPatternPreset;
+        }
+    }
+
     public EnemyTestUiSettings TestUiSettings
     {
         get
@@ -124,6 +135,9 @@ public sealed class EnemyMasterPreset : ScriptableObject
 
         if (advancedPatternPreset != null)
             advancedPatternPreset.ValidateValues();
+
+        if (bossPatternPreset != null)
+            bossPatternPreset.ValidateValues();
     }
     #endregion
 

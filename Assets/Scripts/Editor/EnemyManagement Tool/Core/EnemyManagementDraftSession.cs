@@ -266,6 +266,8 @@ public static class EnemyManagementDraftSession
         AddAssetPathsOfType<EnemyAdvancedPatternPresetLibrary>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyAdvancedPatternPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddAssetPathsOfType<EnemyModulesAndPatternsPreset>(uniquePaths, TrackedEnemyAssetsRoot);
+        AddAssetPathsOfType<EnemyBossPatternPresetLibrary>(uniquePaths, TrackedEnemyAssetsRoot);
+        AddAssetPathsOfType<EnemyBossPatternPreset>(uniquePaths, TrackedEnemyAssetsRoot);
         AddEnemyPrefabPaths(uniquePaths);
 
         List<string> paths = new List<string>(uniquePaths);
@@ -449,6 +451,9 @@ public static class EnemyManagementDraftSession
         if (assetObject is EnemyModulesAndPatternsPreset)
             return true;
 
+        if (assetObject is EnemyBossPatternPreset)
+            return true;
+
         return false;
     }
 
@@ -539,7 +544,12 @@ public static class EnemyManagementDraftSession
             return true;
 
         EnemyAdvancedPatternPresetLibrary advancedPatternLibrary = EnemyAdvancedPatternPresetLibraryUtility.GetOrCreateLibrary();
-        return LibraryContainsPath(advancedPatternLibrary.Presets, assetPath);
+
+        if (LibraryContainsPath(advancedPatternLibrary.Presets, assetPath))
+            return true;
+
+        EnemyBossPatternPresetLibrary bossPatternLibrary = EnemyBossPatternPresetLibraryUtility.GetOrCreateLibrary();
+        return LibraryContainsPath(bossPatternLibrary.Presets, assetPath);
     }
 
     private static bool LibraryContainsPath<TAsset>(IReadOnlyList<TAsset> presets, string assetPath) where TAsset : UnityEngine.Object

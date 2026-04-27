@@ -253,12 +253,12 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
         basicFoldout.value = true;
         payloadContainer.Add(basicFoldout);
 
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("searchRadius"), "Search Radius");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("minimumTravelDistance"), "Minimum Travel Distance");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("maximumTravelDistance"), "Maximum Travel Distance");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("arrivalTolerance"), "Arrival Tolerance");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("waitCooldownSeconds"), "Wait Cooldown Seconds");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("candidateSampleCount"), "Candidate Sample Count");
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("searchRadius"), "Search Radius", 0.5f, 32f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("minimumTravelDistance"), "Minimum Travel Distance", 0f, 16f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("maximumTravelDistance"), "Maximum Travel Distance", 0.5f, 32f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("arrivalTolerance"), "Arrival Tolerance", 0.05f, 2f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("waitCooldownSeconds"), "Wait Cooldown Seconds", 0f, 6f);
+        AddIntSliderField(basicFoldout, basicProperty.FindPropertyRelative("candidateSampleCount"), "Candidate Sample Count", 1, 32);
         SerializedProperty useInfiniteDirectionSamplingProperty = basicProperty.FindPropertyRelative("useInfiniteDirectionSampling");
         SerializedProperty infiniteDirectionStepDegreesProperty = basicProperty.FindPropertyRelative("infiniteDirectionStepDegrees");
         EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, useInfiniteDirectionSamplingProperty, "Use Infinite Direction Sampling");
@@ -266,7 +266,7 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
         VisualElement infiniteDirectionContainer = new VisualElement();
         infiniteDirectionContainer.style.marginLeft = 12f;
         basicFoldout.Add(infiniteDirectionContainer);
-        EnemyAdvancedPatternDrawerUtility.AddField(infiniteDirectionContainer, infiniteDirectionStepDegreesProperty, "Infinite Direction Step Degrees");
+        AddFloatSliderField(infiniteDirectionContainer, infiniteDirectionStepDegreesProperty, "Infinite Direction Step Degrees", 0.5f, 45f);
 
         UpdateToggleContainerVisibility(useInfiniteDirectionSamplingProperty, infiniteDirectionContainer);
         basicFoldout.TrackPropertyValue(useInfiniteDirectionSamplingProperty, changedProperty =>
@@ -274,23 +274,23 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
             UpdateToggleContainerVisibility(changedProperty, infiniteDirectionContainer);
         });
 
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("unexploredDirectionPreference"), "Unexplored Direction Preference");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("towardPlayerPreference"), "Toward Player Preference");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("minimumEnemyClearance"), "Minimum Enemy Clearance");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("trajectoryPredictionTime"), "Trajectory Prediction Time");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("freeTrajectoryPreference"), "Free Trajectory Preference");
-        EnemyAdvancedPatternDrawerUtility.AddField(basicFoldout, basicProperty.FindPropertyRelative("blockedPathRetryDelay"), "Blocked Path Retry Delay");
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("unexploredDirectionPreference"), "Unexplored Direction Preference", 0f, 1f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("towardPlayerPreference"), "Toward Player Preference", 0f, 1f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("minimumEnemyClearance"), "Minimum Enemy Clearance", 0f, 3f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("trajectoryPredictionTime"), "Trajectory Prediction Time", 0f, 2f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("freeTrajectoryPreference"), "Free Trajectory Preference", 0f, 8f);
+        AddFloatSliderField(basicFoldout, basicProperty.FindPropertyRelative("blockedPathRetryDelay"), "Blocked Path Retry Delay", 0f, 2f);
 
         Foldout dvdFoldout = new Foldout();
         dvdFoldout.text = "DVD";
         dvdFoldout.value = true;
         payloadContainer.Add(dvdFoldout);
 
-        EnemyAdvancedPatternDrawerUtility.AddField(dvdFoldout, dvdProperty.FindPropertyRelative("speedMultiplier"), "Speed Multiplier");
-        EnemyAdvancedPatternDrawerUtility.AddField(dvdFoldout, dvdProperty.FindPropertyRelative("bounceDamping"), "Bounce Damping");
+        AddFloatSliderField(dvdFoldout, dvdProperty.FindPropertyRelative("speedMultiplier"), "Speed Multiplier", 0f, 4f);
+        AddFloatSliderField(dvdFoldout, dvdProperty.FindPropertyRelative("bounceDamping"), "Bounce Damping", 0f, 1f);
         EnemyAdvancedPatternDrawerUtility.AddField(dvdFoldout, dvdProperty.FindPropertyRelative("randomizeInitialDirection"), "Randomize Initial Direction");
-        EnemyAdvancedPatternDrawerUtility.AddField(dvdFoldout, dvdProperty.FindPropertyRelative("fixedInitialDirectionDegrees"), "Fixed Initial Direction Degrees");
-        EnemyAdvancedPatternDrawerUtility.AddField(dvdFoldout, dvdProperty.FindPropertyRelative("cornerNudgeDistance"), "Corner Nudge Distance");
+        AddFloatSliderField(dvdFoldout, dvdProperty.FindPropertyRelative("fixedInitialDirectionDegrees"), "Fixed Initial Direction Degrees", 0f, 360f);
+        AddFloatSliderField(dvdFoldout, dvdProperty.FindPropertyRelative("cornerNudgeDistance"), "Corner Nudge Distance", 0f, 1f);
         EnemyAdvancedPatternDrawerUtility.AddField(dvdFoldout, dvdProperty.FindPropertyRelative("ignoreSteeringAndPriority"), "Ignore Steering And Priority");
 
         UpdateWandererModeVisibility(modeProperty, basicFoldout, dvdFoldout);
@@ -554,6 +554,56 @@ internal static class EnemyAdvancedPatternPayloadDrawerUtility
     #endregion
 
     #region Private Methods
+    /// <summary>
+    /// Adds a bound float slider so dense movement-bias values remain readable in the tool.
+    /// /params parent Parent visual element receiving the slider.
+    /// /params property Float serialized property to bind.
+    /// /params label Slider label.
+    /// /params lowValue Minimum slider value.
+    /// /params highValue Maximum slider value.
+    /// /returns True when the slider is added.
+    /// </summary>
+    private static bool AddFloatSliderField(VisualElement parent,
+                                            SerializedProperty property,
+                                            string label,
+                                            float lowValue,
+                                            float highValue)
+    {
+        if (parent == null || property == null)
+            return false;
+
+        Slider slider = new Slider(label, lowValue, highValue);
+        slider.showInputField = true;
+        slider.BindProperty(property);
+        parent.Add(slider);
+        return true;
+    }
+
+    /// <summary>
+    /// Adds a bound integer slider for count settings with fixed expected ranges.
+    /// /params parent Parent visual element receiving the slider.
+    /// /params property Integer serialized property to bind.
+    /// /params label Slider label.
+    /// /params lowValue Minimum slider value.
+    /// /params highValue Maximum slider value.
+    /// /returns True when the slider is added.
+    /// </summary>
+    private static bool AddIntSliderField(VisualElement parent,
+                                          SerializedProperty property,
+                                          string label,
+                                          int lowValue,
+                                          int highValue)
+    {
+        if (parent == null || property == null)
+            return false;
+
+        SliderInt slider = new SliderInt(label, lowValue, highValue);
+        slider.showInputField = true;
+        slider.BindProperty(property);
+        parent.Add(slider);
+        return true;
+    }
+
     /// <summary>
     /// Updates Wanderer payload foldout visibility from selected mode.
     /// </summary>

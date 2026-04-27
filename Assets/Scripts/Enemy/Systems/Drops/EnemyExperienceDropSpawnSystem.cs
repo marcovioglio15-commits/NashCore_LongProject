@@ -168,6 +168,11 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         if (experienceModules.Length <= 0 || definitions.Length <= 0)
             return 0f;
 
+        float rewardMultiplier = ResolveExperienceRewardMultiplier(entityManager, enemyEntity);
+
+        if (rewardMultiplier <= PrecisionEpsilon)
+            return 0f;
+
         float spawnedExperience = 0f;
 
         for (int moduleIndex = 0; moduleIndex < experienceModules.Length; moduleIndex++)
@@ -184,6 +189,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
                                                                moduleIndex,
                                                                experienceModules[moduleIndex],
                                                                definitions,
+                                                               rewardMultiplier,
                                                                remainingModuleSpawnBudget);
         }
 
@@ -197,6 +203,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
                                                        int moduleIndex,
                                                        EnemyExperienceDropModuleElement experienceModule,
                                                        DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                                       float rewardMultiplier,
                                                        float remainingSpawnBudget)
     {
         int definitionCount = math.max(0, experienceModule.DefinitionCount);
@@ -204,8 +211,9 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         if (definitionCount <= 0)
             return 0f;
 
-        float minimumTotalExperienceDrop = math.max(0f, experienceModule.MinimumTotalExperienceDrop);
-        float maximumTotalExperienceDrop = math.max(minimumTotalExperienceDrop, experienceModule.MaximumTotalExperienceDrop);
+        float minimumTotalExperienceDrop = math.max(0f, experienceModule.MinimumTotalExperienceDrop) * math.max(0f, rewardMultiplier);
+        float maximumTotalExperienceDrop = math.max(experienceModule.MinimumTotalExperienceDrop, experienceModule.MaximumTotalExperienceDrop) * math.max(0f, rewardMultiplier);
+        maximumTotalExperienceDrop = math.max(minimumTotalExperienceDrop, maximumTotalExperienceDrop);
         maximumTotalExperienceDrop = math.min(maximumTotalExperienceDrop, math.max(0f, remainingSpawnBudget));
         minimumTotalExperienceDrop = math.min(minimumTotalExperienceDrop, maximumTotalExperienceDrop);
 
@@ -308,6 +316,21 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
     #endregion
 
     #region Helpers
+    /// <summary>
+    /// Resolves the experience reward multiplier attached to special enemies such as boss-spawned minions.
+    /// /params entityManager Entity manager used to read optional reward component.
+    /// /params enemyEntity Enemy entity being killed.
+    /// /returns Non-negative experience multiplier.
+    /// </summary>
+    private static float ResolveExperienceRewardMultiplier(EntityManager entityManager, Entity enemyEntity)
+    {
+        if (!entityManager.HasComponent<EnemyDropRewardMultiplier>(enemyEntity))
+            return 1f;
+
+        EnemyDropRewardMultiplier rewardMultiplier = entityManager.GetComponentData<EnemyDropRewardMultiplier>(enemyEntity);
+        return math.max(0f, rewardMultiplier.ExperienceMultiplier);
+    }
+
     private static uint ResolveDropTotalRandomSeed(Entity enemyEntity, int killEventIndex, int moduleIndex)
     {
         int sanitizedKillEventIndex = math.max(0, killEventIndex);

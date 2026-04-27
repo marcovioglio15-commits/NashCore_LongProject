@@ -6,6 +6,8 @@ using UnityEngine.UIElements;
 
 /// <summary>
 /// Builds detail sections and subsection tabs for enemy visual preset panels.
+/// /params None.
+/// /returns None.
 /// </summary>
 internal static class EnemyVisualPresetsPanelSectionsUtility
 {
@@ -134,6 +136,14 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
                                EnemyVisualPresetsPanel.VisualSubSectionType.Prefabs,
                                "Prefabs",
                                BuildPrefabsSubSection(panel));
+        AddVisualSubSectionTab(panel,
+                               EnemyVisualPresetsPanel.VisualSubSectionType.SpawnOverrides,
+                               "Spawn Overrides",
+                               BuildSpawnOverridesSubSection(panel));
+        AddVisualSubSectionTab(panel,
+                               EnemyVisualPresetsPanel.VisualSubSectionType.BossUi,
+                               "Boss UI",
+                               BuildBossUiSubSection(panel));
 
         if (!panel.VisualSubSectionTabs.ContainsKey(panel.ActiveVisualSubSection))
             panel.ActiveVisualSubSection = EnemyVisualPresetsPanel.VisualSubSectionType.Visibility;
@@ -321,6 +331,53 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         return container;
     }
 
+    /// <summary>
+    /// Builds the spawn override subsection with dependent offset and warning controls.
+    /// /params panel Visual preset panel that owns the serialized preset context.
+    /// /returns Spawn override subsection content.
+    /// </summary>
+    private static VisualElement BuildSpawnOverridesSubSection(EnemyVisualPresetsPanel panel)
+    {
+        // Resolve the optional override block before showing dependent controls.
+        SerializedProperty spawnOverridesProperty = panel.PresetSerializedObject.FindProperty("spawnOverrides");
+        VisualElement container = CreateSubSectionContainer("Spawn Overrides");
+
+        if (spawnOverridesProperty == null)
+            return container;
+
+        SerializedProperty overrideSpawnOffsetProperty = spawnOverridesProperty.FindPropertyRelative("overrideSpawnOffset");
+        SerializedProperty overrideSpawnWarningProperty = spawnOverridesProperty.FindPropertyRelative("overrideSpawnWarning");
+        SerializedProperty enableSpawnWarningProperty = spawnOverridesProperty.FindPropertyRelative("enableSpawnWarning");
+
+        AddReactiveToggleField(panel, container, overrideSpawnOffsetProperty, "Override Spawn Offset", "When enabled, this enemy type adds its own local-space offset to spawner-authored spawn positions.");
+
+        if (overrideSpawnOffsetProperty != null && overrideSpawnOffsetProperty.boolValue)
+            AddPropertyField(panel, container, spawnOverridesProperty, "spawnOffset", "Spawn Offset", "Local-space offset added after spawner grid and cell placement.");
+
+        AddReactiveToggleField(panel, container, overrideSpawnWarningProperty, "Override Spawn Warning", "When enabled, this enemy type replaces the owning spawner warning settings for its own spawn events.");
+
+        if (overrideSpawnWarningProperty == null || !overrideSpawnWarningProperty.boolValue)
+            return container;
+
+        AddReactiveToggleField(panel, container, enableSpawnWarningProperty, "Enable Spawn Warning", "Enables warning rings for this enemy type when Spawn Warning override is active.");
+
+        if (enableSpawnWarningProperty != null && !enableSpawnWarningProperty.boolValue)
+        {
+            container.Add(new HelpBox("Spawn warnings are disabled for this enemy type override.", HelpBoxMessageType.Info));
+            return container;
+        }
+
+        AddSliderField(panel, container, spawnOverridesProperty.FindPropertyRelative("spawnWarningLeadTimeSeconds"), "Lead Time Seconds", 0f, 3f, "Seconds of anticipation shown before this enemy type becomes active.");
+        AddSliderField(panel, container, spawnOverridesProperty.FindPropertyRelative("spawnWarningRadiusScale"), "Radius Scale", 0.1f, 2f, "Ring world radius resolved as Cell Size multiplied by this scale.");
+        AddSliderField(panel, container, spawnOverridesProperty.FindPropertyRelative("spawnWarningRingWidth"), "Ring Width", 0.02f, 1f, "World-space line width used by this enemy type warning ring.");
+        AddSliderField(panel, container, spawnOverridesProperty.FindPropertyRelative("spawnWarningHeightOffset"), "Height Offset", 0f, 1f, "Extra vertical lift applied to the warning ring above the spawn plane.");
+        AddSliderField(panel, container, spawnOverridesProperty.FindPropertyRelative("spawnWarningMaximumAlpha"), "Maximum Alpha", 0f, 1f, "Maximum opacity reached by the warning ring right before spawning.");
+        AddSliderField(panel, container, spawnOverridesProperty.FindPropertyRelative("spawnWarningFadeOutSeconds"), "Fade Out Seconds", 0f, 1f, "Seconds used to softly fade the ring after the enemy has spawned.");
+        AddPropertyField(panel, container, spawnOverridesProperty, "spawnWarningColor", "Warning Color", "Tint color used by this enemy type spawn warning ring.");
+        AddSpawnOverrideWarnings(spawnOverridesProperty, container);
+        return container;
+    }
+
     private static VisualElement BuildDamageFeedbackSubSection(EnemyVisualPresetsPanel panel)
     {
         SerializedProperty damageFeedbackProperty = panel.PresetSerializedObject.FindProperty("damageFeedback");
@@ -343,6 +400,227 @@ internal static class EnemyVisualPresetsPanelSectionsUtility
         });
         container.Add(feedbackEditor);
         return container;
+    }
+
+    private static VisualElement BuildBossUiSubSection(EnemyVisualPresetsPanel panel)
+    {
+        SerializedProperty bossUiProperty = panel.PresetSerializedObject.FindProperty("bossUi");
+        VisualElement container = CreateSubSectionContainer("Boss UI");
+
+        if (bossUiProperty == null)
+            return container;
+
+        SerializedProperty enabledProperty = bossUiProperty.FindPropertyRelative("enabled");
+
+        if (enabledProperty == null)
+            return container;
+
+        Toggle enabledField = new Toggle("Enabled");
+        enabledField.tooltip = "Enables the dedicated boss HUD for enemies using a Boss Pattern Preset.";
+        enabledField.SetValueWithoutNotify(enabledProperty.boolValue);
+        enabledField.RegisterValueChangedCallback(evt =>
+        {
+            Object targetObject = panel.PresetSerializedObject.targetObject;
+            Undo.RecordObject(targetObject, "Edit Enemy Boss UI Settings");
+            panel.PresetSerializedObject.Update();
+            enabledProperty.boolValue = evt.newValue;
+            panel.PresetSerializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(targetObject);
+            EnemyManagementDraftSession.MarkDirty();
+            panel.RefreshPresetList();
+            panel.RebuildActiveDetailsSection();
+        });
+        container.Add(enabledField);
+
+        if (!enabledProperty.boolValue)
+        {
+            container.Add(new HelpBox("Boss UI is disabled for this visual preset.", HelpBoxMessageType.Info));
+            return container;
+        }
+
+        AddSectionLabel(container, "Health Bar");
+        AddPropertyField(panel, container, bossUiProperty, "bossDisplayName", "Boss Display Name", "Optional boss name shown above the bottom health bar. Empty falls back to the visual preset name.");
+        AddPropertyField(panel, container, bossUiProperty, "healthFillColor", "Health Fill Color", "Screen-space health fill color used by the bottom boss bar.");
+        AddPropertyField(panel, container, bossUiProperty, "healthBackgroundColor", "Health Background Color", "Screen-space background color used behind the bottom boss bar.");
+        AddSliderField(panel, container, bossUiProperty.FindPropertyRelative("bottomOffsetPixels"), "Health Bar Bottom Offset", 0f, 220f, "Bottom offset in pixels for the boss health bar root.");
+        AddSliderField(panel, container, bossUiProperty.FindPropertyRelative("widthPixels"), "Health Bar Width", 180f, 1200f, "Target width in pixels for the boss health bar.");
+        AddSliderField(panel, container, bossUiProperty.FindPropertyRelative("heightPixels"), "Health Bar Height", 8f, 72f, "Target height in pixels for the boss health bar fill.");
+
+        AddSectionLabel(container, "Offscreen Indicator");
+        AddPropertyField(panel, container, bossUiProperty, "offscreenIndicatorSprite", "Offscreen Indicator Sprite", "Sprite used by the off-screen indicator that slides along screen edges.");
+        AddPropertyField(panel, container, bossUiProperty, "offscreenIndicatorColor", "Offscreen Indicator Color", "Tint color applied to the off-screen boss indicator.");
+        AddSliderField(panel, container, bossUiProperty.FindPropertyRelative("offscreenIndicatorSizePixels"), "Indicator Size", 16f, 192f, "Square size in pixels used by the off-screen boss indicator image.");
+        AddSliderField(panel, container, bossUiProperty.FindPropertyRelative("edgePaddingPixels"), "Screen Margin", 0f, 160f, "Extra screen-edge margin in pixels kept outside the off-screen indicator half size.");
+        return container;
+    }
+
+    /// <summary>
+    /// Adds a compact section label used to separate dense boss UI controls inside the visual preset tool.
+    /// /params target Parent receiving the label.
+    /// /params label User-facing label text.
+    /// /returns None.
+    /// </summary>
+    private static void AddSectionLabel(VisualElement target, string label)
+    {
+        if (target == null)
+            return;
+
+        Label sectionLabel = new Label(label);
+        sectionLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        sectionLabel.style.marginTop = 6f;
+        sectionLabel.style.marginBottom = 2f;
+        target.Add(sectionLabel);
+    }
+
+    private static void AddSliderField(EnemyVisualPresetsPanel panel,
+                                       VisualElement target,
+                                       SerializedProperty property,
+                                       string label,
+                                       float lowValue,
+                                       float highValue,
+                                       string tooltip)
+    {
+        if (panel == null)
+            return;
+
+        if (target == null)
+            return;
+
+        if (property == null)
+            return;
+
+        Slider slider = new Slider(label, lowValue, highValue);
+        slider.showInputField = true;
+        slider.tooltip = tooltip;
+        slider.SetValueWithoutNotify(property.floatValue);
+        slider.RegisterValueChangedCallback(evt =>
+        {
+            Object targetObject = panel.PresetSerializedObject.targetObject;
+            Undo.RecordObject(targetObject, "Edit Enemy Boss UI Settings");
+            panel.PresetSerializedObject.Update();
+            property.floatValue = evt.newValue;
+            panel.PresetSerializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(targetObject);
+            EnemyManagementDraftSession.MarkDirty();
+            panel.RefreshPresetList();
+        });
+        target.Add(slider);
+    }
+
+    /// <summary>
+    /// Adds a toggle that rebuilds the active details section when dependent settings should appear or hide.
+    /// /params panel Visual preset panel that owns the serialized preset context.
+    /// /params target Parent element receiving the toggle.
+    /// /params property Serialized boolean property.
+    /// /params label Visible control label.
+    /// /params tooltip Tooltip explaining the setting.
+    /// /returns None.
+    /// </summary>
+    private static void AddReactiveToggleField(EnemyVisualPresetsPanel panel,
+                                               VisualElement target,
+                                               SerializedProperty property,
+                                               string label,
+                                               string tooltip)
+    {
+        if (panel == null || target == null || property == null)
+            return;
+
+        Toggle toggle = new Toggle(label);
+        toggle.tooltip = tooltip;
+        toggle.SetValueWithoutNotify(property.boolValue);
+        toggle.RegisterValueChangedCallback(evt =>
+        {
+            Object targetObject = panel.PresetSerializedObject.targetObject;
+            Undo.RecordObject(targetObject, "Edit Enemy Visual Spawn Overrides");
+            panel.PresetSerializedObject.Update();
+            property.boolValue = evt.newValue;
+            panel.PresetSerializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(targetObject);
+            EnemyManagementDraftSession.MarkDirty();
+            panel.RefreshPresetList();
+            panel.RebuildActiveDetailsSection();
+        });
+        target.Add(toggle);
+    }
+
+    /// <summary>
+    /// Adds authored-value warnings for spawn warning overrides without mutating the serialized values.
+    /// /params spawnOverridesProperty Serialized spawn override settings.
+    /// /params container Parent element receiving warning boxes.
+    /// /returns None.
+    /// </summary>
+    private static void AddSpawnOverrideWarnings(SerializedProperty spawnOverridesProperty, VisualElement container)
+    {
+        if (spawnOverridesProperty == null || container == null)
+            return;
+
+        AddNegativeValueWarning(spawnOverridesProperty, container, "spawnWarningLeadTimeSeconds", "Lead Time Seconds must be zero or positive.");
+        AddNonPositiveValueWarning(spawnOverridesProperty, container, "spawnWarningRadiusScale", "Radius Scale should be greater than zero.");
+        AddNonPositiveValueWarning(spawnOverridesProperty, container, "spawnWarningRingWidth", "Ring Width should be greater than zero.");
+        AddNegativeValueWarning(spawnOverridesProperty, container, "spawnWarningHeightOffset", "Height Offset must be zero or positive.");
+        AddRangeWarning(spawnOverridesProperty, container, "spawnWarningMaximumAlpha", 0f, 1f, "Maximum Alpha should stay between 0 and 1.");
+        AddNegativeValueWarning(spawnOverridesProperty, container, "spawnWarningFadeOutSeconds", "Fade Out Seconds must be zero or positive.");
+    }
+
+    /// <summary>
+    /// Adds a warning when a float property contains a negative value.
+    /// /params parentProperty Serialized parent object.
+    /// /params container Parent element receiving warning boxes.
+    /// /params relativePropertyName Relative float property name.
+    /// /params message Warning text.
+    /// /returns None.
+    /// </summary>
+    private static void AddNegativeValueWarning(SerializedProperty parentProperty,
+                                                VisualElement container,
+                                                string relativePropertyName,
+                                                string message)
+    {
+        SerializedProperty property = parentProperty.FindPropertyRelative(relativePropertyName);
+
+        if (property != null && property.floatValue < 0f)
+            container.Add(new HelpBox(message, HelpBoxMessageType.Warning));
+    }
+
+    /// <summary>
+    /// Adds a warning when a float property contains a zero or negative value.
+    /// /params parentProperty Serialized parent object.
+    /// /params container Parent element receiving warning boxes.
+    /// /params relativePropertyName Relative float property name.
+    /// /params message Warning text.
+    /// /returns None.
+    /// </summary>
+    private static void AddNonPositiveValueWarning(SerializedProperty parentProperty,
+                                                   VisualElement container,
+                                                   string relativePropertyName,
+                                                   string message)
+    {
+        SerializedProperty property = parentProperty.FindPropertyRelative(relativePropertyName);
+
+        if (property != null && property.floatValue <= 0f)
+            container.Add(new HelpBox(message, HelpBoxMessageType.Warning));
+    }
+
+    /// <summary>
+    /// Adds a warning when a float property falls outside the expected authored range.
+    /// /params parentProperty Serialized parent object.
+    /// /params container Parent element receiving warning boxes.
+    /// /params relativePropertyName Relative float property name.
+    /// /params minimum Expected inclusive minimum.
+    /// /params maximum Expected inclusive maximum.
+    /// /params message Warning text.
+    /// /returns None.
+    /// </summary>
+    private static void AddRangeWarning(SerializedProperty parentProperty,
+                                        VisualElement container,
+                                        string relativePropertyName,
+                                        float minimum,
+                                        float maximum,
+                                        string message)
+    {
+        SerializedProperty property = parentProperty.FindPropertyRelative(relativePropertyName);
+
+        if (property != null && (property.floatValue < minimum || property.floatValue > maximum))
+            container.Add(new HelpBox(message, HelpBoxMessageType.Warning));
     }
     #endregion
 
