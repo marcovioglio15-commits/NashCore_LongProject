@@ -624,6 +624,8 @@ MonoBehaviour:
     enabled: 1
     fallbackIntervalSeconds: 8
     poolExpandBatch: 4
+    killMinionsOnBossDeath: 1
+    requireMinionsKilledForRunCompletion: 1
     rules:
     - enabled: 1
       minionPrefab: {fileID: 3091458169621715366, guid: 65af5c6d3a3173f498a19033f08c547d, type: 3}

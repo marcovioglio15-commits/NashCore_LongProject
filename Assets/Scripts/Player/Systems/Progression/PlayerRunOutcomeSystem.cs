@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 
 /// <summary>
@@ -10,6 +11,10 @@ using Unity.Entities;
 [UpdateAfter(typeof(EnemySystemGroup))]
 public partial struct PlayerRunOutcomeSystem : ISystem
 {
+    #region Fields
+    private EntityQuery activeBossMinionQuery;
+    #endregion
+
     #region Methods
 
     #region Lifecycle
@@ -20,6 +25,11 @@ public partial struct PlayerRunOutcomeSystem : ISystem
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
+        activeBossMinionQuery = new EntityQueryBuilder(Allocator.Temp)
+            .WithAll<EnemyBossMinionOwner, EnemyActive>()
+            .WithNone<EnemyDespawnRequest>()
+            .Build(ref state);
+
         state.RequireForUpdate<PlayerControllerConfig>();
         state.RequireForUpdate<PlayerHealth>();
         state.RequireForUpdate<PlayerRunOutcomeState>();
@@ -129,6 +139,9 @@ public partial struct PlayerRunOutcomeSystem : ISystem
             if (!allSpawnersCompleted)
                 continue;
 
+            if (HasCompletionBlockingBossMinions(activeBossMinionQuery))
+                continue;
+
             FinalizeOutcome(ref runOutcomeState.ValueRW, PlayerRunOutcome.Victory);
 
             if (canEnqueueAudioRequests)
@@ -149,6 +162,35 @@ public partial struct PlayerRunOutcomeSystem : ISystem
         runOutcomeState.Outcome = outcome;
         runOutcomeState.IsFinalized = 1;
         runOutcomeState.RuntimeFreezeApplied = 0;
+    }
+
+    /// <summary>
+    /// Resolves whether any active boss minion is configured to delay run completion after its boss dies.
+    /// /params activeBossMinionQuery Query matching active boss-owned minions without despawn requests.
+    /// /returns True when at least one active minion blocks victory.
+    /// </summary>
+    private static bool HasCompletionBlockingBossMinions(EntityQuery activeBossMinionQuery)
+    {
+        if (activeBossMinionQuery.IsEmptyIgnoreFilter)
+            return false;
+
+        NativeArray<EnemyBossMinionOwner> minionOwners = activeBossMinionQuery.ToComponentDataArray<EnemyBossMinionOwner>(Allocator.Temp);
+
+        try
+        {
+            for (int index = 0; index < minionOwners.Length; index++)
+            {
+                if (minionOwners[index].BlocksRunCompletion != 0)
+                    return true;
+            }
+        }
+        finally
+        {
+            if (minionOwners.IsCreated)
+                minionOwners.Dispose();
+        }
+
+        return false;
     }
     #endregion
 

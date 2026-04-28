@@ -225,6 +225,12 @@ public sealed class EnemyBossMinionSpawnSettings
     [Tooltip("Fallback expand batch used by automatically created minion pools.")]
     [SerializeField] private int poolExpandBatch = 4;
 
+    [Tooltip("When enabled, active minions spawned by this boss are killed automatically when the boss dies.")]
+    [SerializeField] private bool killMinionsOnBossDeath = true;
+
+    [Tooltip("When Kill Minions On Boss Death is disabled, surviving active minions must be killed before the run can complete.")]
+    [SerializeField] private bool requireMinionsKilledForRunCompletion = true;
+
     [Tooltip("Minion spawn rules evaluated by the boss runtime system.")]
     [SerializeField] private List<EnemyBossMinionSpawnRule> rules = new List<EnemyBossMinionSpawnRule>();
     #endregion
@@ -253,6 +259,22 @@ public sealed class EnemyBossMinionSpawnSettings
         get
         {
             return poolExpandBatch;
+        }
+    }
+
+    public bool KillMinionsOnBossDeath
+    {
+        get
+        {
+            return killMinionsOnBossDeath;
+        }
+    }
+
+    public bool RequireMinionsKilledForRunCompletion
+    {
+        get
+        {
+            return requireMinionsKilledForRunCompletion;
         }
     }
 

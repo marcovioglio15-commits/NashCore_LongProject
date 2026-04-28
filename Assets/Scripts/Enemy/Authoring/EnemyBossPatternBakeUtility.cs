@@ -543,6 +543,11 @@ internal static class EnemyBossPatternBakeUtility
                 FutureDropsMultiplier = math.max(0f, rule.FutureDropsMultiplier),
                 AutomaticPoolSize = math.max(0, rule.CalculateAutomaticPoolSize()),
                 PoolExpandBatch = math.max(1, minionSpawn.PoolExpandBatch),
+                KillMinionsOnBossDeath = minionSpawn.KillMinionsOnBossDeath ? (byte)1 : (byte)0,
+                RequireMinionsKilledForRunCompletion = !minionSpawn.KillMinionsOnBossDeath &&
+                                                        minionSpawn.RequireMinionsKilledForRunCompletion
+                    ? (byte)1
+                    : (byte)0,
                 PoolEntity = Entity.Null,
                 NextSpawnTime = 0f,
                 LastObservedDamageLifetimeSeconds = 0f,

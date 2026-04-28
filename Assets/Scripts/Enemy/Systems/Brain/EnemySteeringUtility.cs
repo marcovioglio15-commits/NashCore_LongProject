@@ -354,6 +354,7 @@ internal static class EnemySteeringUtility
         [ReadOnly] public NativeArray<float> SteeringAggressiveness;
         [ReadOnly] public NativeArray<float3> Velocities;
         [ReadOnly] public NativeArray<byte> WandererMovementFlags;
+        [ReadOnly] public NativeArray<int> OwnedBossIndices;
         [ReadOnly] public NativeArray<float> SeparationRadii;
         [ReadOnly] public NativeArray<int2> CellCoordinates;
         [ReadOnly] public NativeParallelMultiHashMap<int, int> CellMap;
@@ -546,6 +547,30 @@ internal static class EnemySteeringUtility
                     }
                     while (CellMap.TryGetNextValue(out neighborIndex, ref iterator));
                 }
+            }
+
+            int ownedBossIndex = OwnedBossIndices[enemyIndex];
+
+            if (ownedBossIndex >= 0 &&
+                ownedBossIndex < Positions.Length &&
+                EnemyBossMinionSteeringUtility.TryResolveBossAvoidance(enemyIndex,
+                                                                       ownedBossIndex,
+                                                                       position,
+                                                                       selfVelocity,
+                                                                       bodyRadius,
+                                                                       separationRadius,
+                                                                       selfSteeringAggressiveness,
+                                                                       Positions[ownedBossIndex],
+                                                                       Velocities[ownedBossIndex],
+                                                                       math.max(0.01f, BodyRadii[ownedBossIndex]),
+                                                                       out float3 bossAvoidance,
+                                                                       out float bossAvoidanceUrgency,
+                                                                       out float bossYieldUrgency))
+            {
+                separation += bossAvoidance;
+                highestUrgency = math.max(highestUrgency, bossAvoidanceUrgency);
+                highestYieldUrgency = math.max(highestYieldUrgency, bossYieldUrgency);
+                highestYieldPriorityGap = math.max(highestYieldPriorityGap, 1f);
             }
 
             Results[index] = separation;

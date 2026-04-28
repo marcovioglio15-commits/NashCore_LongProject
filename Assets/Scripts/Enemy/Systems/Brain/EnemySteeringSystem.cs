@@ -83,19 +83,25 @@ public partial struct EnemySteeringSystem : ISystem
         NativeArray<byte> spawnInactivityLockFlags = new NativeArray<byte>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<byte> shooterMovementLockedFlags = new NativeArray<byte>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<float> separationRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<int> ownedBossIndices = new NativeArray<int>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
         NativeArray<int2> cellCoordinates = default;
         NativeArray<int> enemyToEvaluatedIndex = new NativeArray<int>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeParallelHashMap<Entity, int> enemyIndexByEntity = new NativeParallelHashMap<Entity, int>(enemyCount, Allocator.TempJob);
 
         NativeList<int> evaluatedEnemyIndices = new NativeList<int>(enemyCount, Allocator.TempJob);
         ComponentLookup<EnemyCustomPatternMovementTag> customPatternMovementTagLookup = SystemAPI.GetComponentLookup<EnemyCustomPatternMovementTag>(true);
         ComponentLookup<EnemyPatternConfig> patternConfigLookup = SystemAPI.GetComponentLookup<EnemyPatternConfig>(true);
         ComponentLookup<EnemyPatternRuntimeState> patternRuntimeStateLookup = SystemAPI.GetComponentLookup<EnemyPatternRuntimeState>(true);
         ComponentLookup<EnemySpawnInactivityLock> spawnInactivityLockLookup = SystemAPI.GetComponentLookup<EnemySpawnInactivityLock>(true);
+        ComponentLookup<EnemyBossMinionOwner> bossMinionOwnerLookup = SystemAPI.GetComponentLookup<EnemyBossMinionOwner>(true);
 
         float maxSeparationRadius = 0.25f;
         float maxBodyRadius = 0.05f;
         float maxSteeringAggressiveness = EnemySteeringUtility.DefaultSteeringAggressiveness;
         int frameCount = Time.frameCount;
+
+        for (int index = 0; index < enemyCount; index++)
+            enemyIndexByEntity.TryAdd(enemyEntities[index], index);
 
         for (int index = 0; index < enemyCount; index++)
         {
@@ -118,6 +124,7 @@ public partial struct EnemySteeringSystem : ISystem
                                                                                         in currentKnockbackState);
             planarVelocity.y = 0f;
             planarVelocities[index] = planarVelocity;
+            ownedBossIndices[index] = ResolveOwnedBossIndex(enemyEntity, in bossMinionOwnerLookup, enemyIndexByEntity);
             wandererMovementFlags[index] = 0;
             spawnInactivityLockFlags[index] = spawnInactivityLockLookup.HasComponent(enemyEntity) && spawnInactivityLockLookup.IsComponentEnabled(enemyEntity)
                 ? (byte)1
@@ -172,6 +179,17 @@ public partial struct EnemySteeringSystem : ISystem
             // LOD gating reduces per-frame steering cost for far enemies while keeping a stable cadence.
             EnemySteeringUtility.SteeringLodLevel lodLevel = EnemySteeringUtility.EvaluateLod(playerPosition, enemyTransform.Position);
             bool shouldEvaluate = EnemySteeringUtility.ShouldEvaluateLod(lodLevel, frameCount, enemyEntity.Index);
+
+            if (!shouldEvaluate && ownedBossIndices[index] >= 0)
+            {
+                int ownedBossIndex = ownedBossIndices[index];
+                shouldEvaluate = EnemyBossMinionSteeringUtility.ShouldForceBossAvoidanceEvaluation(enemyTransform.Position,
+                                                                                                   enemyTransforms[ownedBossIndex].Position,
+                                                                                                   enemyData.BodyRadius,
+                                                                                                   enemyData.SeparationRadius,
+                                                                                                   enemySteeringAggressiveness);
+            }
+
             if (shouldEvaluate && customPatternMovementFlags[index] == 0 && spawnInactivityLockFlags[index] == 0)
             {
                 int evaluatedIndex = evaluatedEnemyIndices.Length;
@@ -234,6 +252,7 @@ public partial struct EnemySteeringSystem : ISystem
                 SteeringAggressiveness = steeringAggressiveness,
                 Velocities = planarVelocities,
                 WandererMovementFlags = wandererMovementFlags,
+                OwnedBossIndices = ownedBossIndices,
                 SeparationRadii = separationRadii,
                 CellCoordinates = cellCoordinates,
                 CellMap = cellMap,
@@ -468,11 +487,13 @@ public partial struct EnemySteeringSystem : ISystem
         steeringAggressiveness.Dispose();
         planarVelocities.Dispose();
         wandererMovementFlags.Dispose();
+        ownedBossIndices.Dispose();
         customPatternMovementFlags.Dispose();
         spawnInactivityLockFlags.Dispose();
         shooterMovementLockedFlags.Dispose();
         separationRadii.Dispose();
         enemyToEvaluatedIndex.Dispose();
+        enemyIndexByEntity.Dispose();
         evaluatedEnemyIndices.Dispose();
 
         if (cellCoordinates.IsCreated)
@@ -495,6 +516,33 @@ public partial struct EnemySteeringSystem : ISystem
 
         if (cellMap.IsCreated)
             cellMap.Dispose();
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Resolves the active-array index of the boss that owns one minion.
+    /// /params enemyEntity Enemy entity to inspect.
+    /// /params bossMinionOwnerLookup Lookup used to read boss-minion ownership.
+    /// /params enemyIndexByEntity Active enemy entity-to-array-index map.
+    /// /returns Owning boss index, or -1 when the enemy is not an active boss-owned minion.
+    /// </summary>
+    private static int ResolveOwnedBossIndex(Entity enemyEntity,
+                                             in ComponentLookup<EnemyBossMinionOwner> bossMinionOwnerLookup,
+                                             NativeParallelHashMap<Entity, int> enemyIndexByEntity)
+    {
+        if (!bossMinionOwnerLookup.HasComponent(enemyEntity))
+            return -1;
+
+        EnemyBossMinionOwner owner = bossMinionOwnerLookup[enemyEntity];
+
+        if (owner.BossEntity == Entity.Null)
+            return -1;
+
+        if (!enemyIndexByEntity.TryGetValue(owner.BossEntity, out int bossIndex))
+            return -1;
+
+        return bossIndex;
     }
     #endregion
 

@@ -41,6 +41,8 @@ internal static class EnemyBossPatternPresetsPanelMinionUtility
         SerializedProperty enabledProperty = minionSpawnProperty.FindPropertyRelative("enabled");
         SerializedProperty fallbackIntervalProperty = minionSpawnProperty.FindPropertyRelative("fallbackIntervalSeconds");
         SerializedProperty poolExpandBatchProperty = minionSpawnProperty.FindPropertyRelative("poolExpandBatch");
+        SerializedProperty killMinionsOnBossDeathProperty = minionSpawnProperty.FindPropertyRelative("killMinionsOnBossDeath");
+        SerializedProperty requireMinionsKilledForRunCompletionProperty = minionSpawnProperty.FindPropertyRelative("requireMinionsKilledForRunCompletion");
         SerializedProperty rulesProperty = minionSpawnProperty.FindPropertyRelative("rules");
         VisualElement enabledField = EnemyBossPatternPresetsPanelSharedUtility.CreateReactivePropertyField(panel, enabledProperty, "Enable Minion Spawn", "Allows this boss to spawn normal enemies from automatically sized pools.");
         sectionContainer.Add(enabledField);
@@ -53,6 +55,13 @@ internal static class EnemyBossPatternPresetsPanelMinionUtility
 
         EnemyBossPatternPresetsPanelSharedUtility.AddFloatSliderField(panel, sectionContainer, fallbackIntervalProperty, "Fallback Interval Seconds", 0.25f, 60f, "Fallback interval used when a rule has a non-positive interval.");
         EnemyBossPatternPresetsPanelSharedUtility.AddIntSliderField(panel, sectionContainer, poolExpandBatchProperty, "Pool Expand Batch", 0, 64, "Additional entities created when an automatic minion pool needs to expand.");
+        sectionContainer.Add(EnemyBossPatternPresetsPanelSharedUtility.CreateReactivePropertyField(panel, killMinionsOnBossDeathProperty, "Kill Minions On Boss Death", "When enabled, active minions spawned by this boss are killed automatically when the boss dies."));
+
+        if (killMinionsOnBossDeathProperty != null && !killMinionsOnBossDeathProperty.boolValue)
+        {
+            sectionContainer.Add(EnemyBossPatternPresetsPanelSharedUtility.CreateReactivePropertyField(panel, requireMinionsKilledForRunCompletionProperty, "Require Minions For Run Completion", "When enabled, surviving boss minions block victory until they are killed."));
+            AddMinionLifecycleWarnings(requireMinionsKilledForRunCompletionProperty, sectionContainer);
+        }
 
         if (rulesProperty == null)
             return;
@@ -198,6 +207,27 @@ internal static class EnemyBossPatternPresetsPanelMinionUtility
         {
             parent.Add(new HelpBox("Boss Hit Cooldown Seconds is negative. Runtime treats it as 0.", HelpBoxMessageType.Warning));
         }
+    }
+
+    /// <summary>
+    /// Adds lifecycle warnings for boss-owned minions after the boss has died.
+    /// /params requireMinionsKilledForRunCompletionProperty Serialized completion-blocking toggle.
+    /// /params parent Parent receiving warnings.
+    /// /returns None.
+    /// </summary>
+    private static void AddMinionLifecycleWarnings(SerializedProperty requireMinionsKilledForRunCompletionProperty, VisualElement parent)
+    {
+        if (parent == null)
+            return;
+
+        if (requireMinionsKilledForRunCompletionProperty != null &&
+            requireMinionsKilledForRunCompletionProperty.boolValue)
+        {
+            parent.Add(new HelpBox("Surviving minions stay active after the boss dies and must be killed before victory can finalize.", HelpBoxMessageType.Info));
+            return;
+        }
+
+        parent.Add(new HelpBox("Surviving minions stay active after victory finalizes. Use this only for post-boss cleanup or scripted encounters.", HelpBoxMessageType.Info));
     }
 
     /// <summary>

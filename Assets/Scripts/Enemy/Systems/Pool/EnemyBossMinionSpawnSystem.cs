@@ -1,6 +1,7 @@
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 using Unity.Transforms;
 
 /// <summary>
@@ -13,10 +14,6 @@ using Unity.Transforms;
 [UpdateBefore(typeof(EnemyShooterRequestSystem))]
 public partial struct EnemyBossMinionSpawnSystem : ISystem
 {
-    #region Constants
-    private const float TwoPi = 6.283185307179586f;
-    #endregion
-
     #region Nested Types
     /// <summary>
     /// Stores one pool initialization request collected while iterating boss entities.
@@ -68,6 +65,18 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
         NativeList<RuleInitializationRequest> initializationRequests = new NativeList<RuleInitializationRequest>(Allocator.Temp);
         NativeList<MinionSpawnRequest> spawnRequests = new NativeList<MinionSpawnRequest>(Allocator.Temp);
+        NativeArray<EnemyNavigationCellElement> navigationCellSnapshot = default;
+        PhysicsWorldSingleton physicsWorldSingleton = default;
+        bool hasPhysicsWorld = SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out physicsWorldSingleton);
+        int wallsLayerMask = WorldWallCollisionUtility.ResolveWallsLayerMask();
+        EnemyNavigationGridState navigationGridState = default;
+        bool navigationReady = false;
+
+        if (SystemAPI.TryGetSingleton<PlayerWorldLayersConfig>(out PlayerWorldLayersConfig worldLayersConfig) &&
+            worldLayersConfig.WallsLayerMask != 0)
+        {
+            wallsLayerMask = worldLayersConfig.WallsLayerMask;
+        }
 
         try
         {
@@ -90,20 +99,25 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
 
                     if (rule.Initialized == 0)
                     {
-                        QueueRuleInitialization(initializationRequests, bossEntity, ruleIndex, ref rule, elapsedTime);
+                        QueueRuleInitialization(initializationRequests,
+                                                bossEntity,
+                                                ruleIndex,
+                                                ref rule,
+                                                in bossRuntime.ValueRO,
+                                                elapsedTime);
                         minionRules[ruleIndex] = rule;
                         continue;
                     }
 
-                    if (ShouldTriggerRule(entityManager,
-                                          bossEntity,
-                                          ruleIndex,
-                                          in rule,
-                                          in bossHealth.ValueRO,
-                                          in bossRuntime.ValueRO,
-                                          elapsedTime))
+                    if (EnemyBossMinionSpawnTriggerUtility.ShouldTriggerRule(entityManager,
+                                                                             bossEntity,
+                                                                             ruleIndex,
+                                                                             ref rule,
+                                                                             in bossHealth.ValueRO,
+                                                                             in bossRuntime.ValueRO,
+                                                                             elapsedTime))
                     {
-                        MarkRuleTriggered(ref rule, in bossRuntime.ValueRO, elapsedTime);
+                        EnemyBossMinionSpawnTriggerUtility.MarkRuleTriggered(ref rule, in bossRuntime.ValueRO, elapsedTime);
                         QueueMinionSpawn(spawnRequests,
                                          bossEntity,
                                          ruleIndex,
@@ -116,7 +130,26 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
             }
 
             ProcessRuleInitializationRequests(entityManager, initializationRequests);
-            ProcessMinionSpawnRequests(entityManager, spawnRequests);
+
+            if (spawnRequests.Length > 0 &&
+                SystemAPI.TryGetSingleton<EnemyNavigationGridState>(out navigationGridState) &&
+                SystemAPI.TryGetSingletonBuffer<EnemyNavigationCellElement>(out DynamicBuffer<EnemyNavigationCellElement> navigationCells) &&
+                navigationGridState.Initialized != 0 &&
+                navigationGridState.FlowReady != 0 &&
+                navigationCells.Length > 0)
+            {
+                navigationCellSnapshot = navigationCells.ToNativeArray(Allocator.Temp);
+                navigationReady = navigationCellSnapshot.IsCreated && navigationCellSnapshot.Length > 0;
+            }
+
+            ProcessMinionSpawnRequests(entityManager,
+                                       spawnRequests,
+                                       hasPhysicsWorld,
+                                       in physicsWorldSingleton,
+                                       wallsLayerMask,
+                                       navigationReady,
+                                       in navigationGridState,
+                                       navigationCellSnapshot);
         }
         finally
         {
@@ -125,6 +158,9 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
 
             if (spawnRequests.IsCreated)
                 spawnRequests.Dispose();
+
+            if (navigationCellSnapshot.IsCreated)
+                navigationCellSnapshot.Dispose();
         }
     }
     #endregion
@@ -136,6 +172,7 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
     /// /params bossEntity Boss that owns the rule.
     /// /params ruleIndex Rule index on the boss buffer.
     /// /params rule Mutable rule state.
+    /// /params bossRuntime Boss runtime state used by damage-trigger cooldowns.
     /// /params elapsedTime Current world elapsed time.
     /// /returns None.
     /// </summary>
@@ -143,10 +180,11 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
                                                 Entity bossEntity,
                                                 int ruleIndex,
                                                 ref EnemyBossMinionSpawnElement rule,
+                                                in EnemyRuntimeState bossRuntime,
                                                 float elapsedTime)
     {
         rule.Initialized = 1;
-        rule.NextSpawnTime = ResolveInitialNextSpawnTime(in rule, elapsedTime);
+        rule.NextSpawnTime = EnemyBossMinionSpawnTriggerUtility.ResolveInitialNextSpawnTime(in rule, in bossRuntime, elapsedTime);
         rule.LastObservedDamageLifetimeSeconds = 0f;
 
         initializationRequests.Add(new RuleInitializationRequest
@@ -255,10 +293,22 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
     /// Performs queued minion activations after boss entity iteration has completed.
     /// /params entityManager Entity manager used to mutate pooled minions.
     /// /params spawnRequests Requests collected during the simulation pass.
+    /// /params hasPhysicsWorld True when wall queries can be evaluated.
+    /// /params physicsWorldSingleton Physics world used for spawn safety checks.
+    /// /params wallsLayerMask Wall layer mask used by spawn safety checks.
+    /// /params navigationReady True when the shared navigation grid can project spawn positions.
+    /// /params navigationGridState Shared navigation grid state.
+    /// /params navigationCells Stable navigation cell snapshot safe across structural changes.
     /// /returns None.
     /// </summary>
     private static void ProcessMinionSpawnRequests(EntityManager entityManager,
-                                                   NativeList<MinionSpawnRequest> spawnRequests)
+                                                   NativeList<MinionSpawnRequest> spawnRequests,
+                                                   bool hasPhysicsWorld,
+                                                   in PhysicsWorldSingleton physicsWorldSingleton,
+                                                   int wallsLayerMask,
+                                                   bool navigationReady,
+                                                   in EnemyNavigationGridState navigationGridState,
+                                                   NativeArray<EnemyNavigationCellElement> navigationCells)
     {
         for (int requestIndex = 0; requestIndex < spawnRequests.Length; requestIndex++)
         {
@@ -282,7 +332,13 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
                          request.BossEntity,
                          request.RuleIndex,
                          request.BossPosition,
-                         ref rule);
+                         ref rule,
+                         hasPhysicsWorld,
+                         in physicsWorldSingleton,
+                         wallsLayerMask,
+                         navigationReady,
+                         in navigationGridState,
+                         navigationCells);
 
             WriteCurrentRule(entityManager, request.BossEntity, request.RuleIndex, in rule);
         }
@@ -337,123 +393,34 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
     }
 
     /// <summary>
-    /// Evaluates the configured trigger and alive cap for one minion rule.
-    /// /params entityManager Entity manager used to count active minions.
-    /// /params bossEntity Boss that owns the rule.
-    /// /params ruleIndex Rule index being evaluated.
-    /// /params rule Rule runtime data.
-    /// /params bossHealth Boss health state.
-    /// /params bossRuntime Boss runtime state.
-    /// /params elapsedTime Current world elapsed time.
-    /// /returns True when the rule should spawn minions now.
-    /// </summary>
-    private static bool ShouldTriggerRule(EntityManager entityManager,
-                                          Entity bossEntity,
-                                          int ruleIndex,
-                                          in EnemyBossMinionSpawnElement rule,
-                                          in EnemyHealth bossHealth,
-                                          in EnemyRuntimeState bossRuntime,
-                                          float elapsedTime)
-    {
-        if (rule.PoolEntity == Entity.Null || rule.SpawnCount <= 0)
-        {
-            return false;
-        }
-
-        if (rule.MaxAliveMinions > 0 &&
-            CountAliveMinions(entityManager, bossEntity, ruleIndex) >= rule.MaxAliveMinions)
-        {
-            return false;
-        }
-
-        switch (rule.Trigger)
-        {
-            case EnemyBossMinionSpawnTrigger.BossDamaged:
-                if (elapsedTime < rule.NextSpawnTime)
-                {
-                    return false;
-                }
-
-                return bossRuntime.HasTakenDamage != 0 &&
-                       bossRuntime.LastDamageLifetimeSeconds > rule.LastObservedDamageLifetimeSeconds;
-
-            case EnemyBossMinionSpawnTrigger.HealthBelowPercent:
-                if (rule.Triggered != 0)
-                {
-                    return false;
-                }
-
-                if (bossHealth.Max <= 0f)
-                {
-                    return false;
-                }
-
-                return math.saturate(bossHealth.Current / bossHealth.Max) <= math.saturate(rule.HealthThresholdPercent);
-
-            default:
-                return elapsedTime >= rule.NextSpawnTime;
-        }
-    }
-
-    /// <summary>
-    /// Counts active minions currently owned by one boss rule.
-    /// /params entityManager Entity manager used to inspect component-enabled state.
-    /// /params bossEntity Boss that owns the minions.
-    /// /params ruleIndex Rule index to count.
-    /// /returns Active minion count.
-    /// </summary>
-    private static int CountAliveMinions(EntityManager entityManager, Entity bossEntity, int ruleIndex)
-    {
-        int count = 0;
-        EntityQuery query = entityManager.CreateEntityQuery(typeof(EnemyBossMinionOwner), typeof(EnemyActive));
-        Unity.Collections.NativeArray<Entity> minionEntities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
-
-        try
-        {
-            for (int index = 0; index < minionEntities.Length; index++)
-            {
-                Entity minionEntity = minionEntities[index];
-
-                if (!entityManager.Exists(minionEntity))
-                    continue;
-
-                if (!entityManager.IsComponentEnabled<EnemyActive>(minionEntity))
-                    continue;
-
-                EnemyBossMinionOwner owner = entityManager.GetComponentData<EnemyBossMinionOwner>(minionEntity);
-
-                if (owner.BossEntity == bossEntity && owner.RuleIndex == ruleIndex)
-                    count++;
-            }
-        }
-        finally
-        {
-            if (minionEntities.IsCreated)
-                minionEntities.Dispose();
-
-            query.Dispose();
-        }
-
-        return count;
-    }
-
-    /// <summary>
     /// Activates up to the configured spawn count from the rule pool.
     /// /params entityManager Entity manager used to mutate pooled minions.
     /// /params bossEntity Boss that owns the minions.
     /// /params ruleIndex Rule index being spawned.
     /// /params bossPosition Current boss position.
     /// /params rule Mutable rule runtime data.
+    /// /params hasPhysicsWorld True when wall queries can be evaluated.
+    /// /params physicsWorldSingleton Physics world used for spawn safety checks.
+    /// /params wallsLayerMask Wall layer mask used by spawn safety checks.
+    /// /params navigationReady True when the shared navigation grid can project spawn positions.
+    /// /params navigationGridState Shared navigation grid state.
+    /// /params navigationCells Stable navigation cell snapshot safe across structural changes.
     /// /returns None.
     /// </summary>
     private static void SpawnMinions(EntityManager entityManager,
                                      Entity bossEntity,
                                      int ruleIndex,
                                      float3 bossPosition,
-                                     ref EnemyBossMinionSpawnElement rule)
+                                     ref EnemyBossMinionSpawnElement rule,
+                                     bool hasPhysicsWorld,
+                                     in PhysicsWorldSingleton physicsWorldSingleton,
+                                     int wallsLayerMask,
+                                     bool navigationReady,
+                                     in EnemyNavigationGridState navigationGridState,
+                                     NativeArray<EnemyNavigationCellElement> navigationCells)
     {
         int availableSlots = rule.MaxAliveMinions > 0
-            ? math.max(0, rule.MaxAliveMinions - CountAliveMinions(entityManager, bossEntity, ruleIndex))
+            ? math.max(0, rule.MaxAliveMinions - EnemyBossMinionSpawnTriggerUtility.CountAliveMinions(entityManager, bossEntity, ruleIndex))
             : rule.SpawnCount;
         int spawnCount = math.min(math.max(0, rule.SpawnCount), availableSlots);
 
@@ -462,7 +429,21 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
             if (!TryAcquireMinion(entityManager, rule.PoolEntity, rule.PrefabEntity, out Entity minionEntity))
                 return;
 
-            float3 spawnPosition = ResolveSpawnPosition(bossPosition, rule.SpawnRadius, bossEntity, ruleIndex, spawnIndex);
+            EnemyData minionData = entityManager.HasComponent<EnemyData>(minionEntity)
+                ? entityManager.GetComponentData<EnemyData>(minionEntity)
+                : default;
+            float3 spawnPosition = EnemyBossMinionSpawnPositionUtility.ResolveSpawnPosition(bossPosition,
+                                                                                            rule.SpawnRadius,
+                                                                                            bossEntity,
+                                                                                            ruleIndex,
+                                                                                            spawnIndex,
+                                                                                            in minionData,
+                                                                                            hasPhysicsWorld,
+                                                                                            in physicsWorldSingleton,
+                                                                                            wallsLayerMask,
+                                                                                            navigationReady,
+                                                                                            in navigationGridState,
+                                                                                            navigationCells);
             EnemyPoolUtility.ActivateEnemy(entityManager,
                                            minionEntity,
                                            rule.PoolEntity,
@@ -539,7 +520,9 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
         EnemyBossMinionOwner owner = new EnemyBossMinionOwner
         {
             BossEntity = bossEntity,
-            RuleIndex = ruleIndex
+            RuleIndex = ruleIndex,
+            KillOnBossDeath = rule.KillMinionsOnBossDeath,
+            BlocksRunCompletion = rule.RequireMinionsKilledForRunCompletion
         };
 
         if (entityManager.HasComponent<EnemyBossMinionOwner>(minionEntity))
@@ -560,89 +543,6 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
             entityManager.AddComponentData(minionEntity, rewardMultiplier);
     }
 
-    /// <summary>
-    /// Updates trigger bookkeeping after a rule spawns.
-    /// /params rule Mutable rule state.
-    /// /params bossRuntime Boss runtime state.
-    /// /params elapsedTime Current world elapsed time.
-    /// /returns None.
-    /// </summary>
-    private static void MarkRuleTriggered(ref EnemyBossMinionSpawnElement rule,
-                                          in EnemyRuntimeState bossRuntime,
-                                          float elapsedTime)
-    {
-        rule.NextSpawnTime = ResolveNextSpawnTime(in rule, elapsedTime);
-        rule.LastObservedDamageLifetimeSeconds = bossRuntime.LastDamageLifetimeSeconds;
-
-        if (rule.Trigger == EnemyBossMinionSpawnTrigger.HealthBelowPercent)
-        {
-            rule.Triggered = 1;
-        }
-    }
-
-    /// <summary>
-    /// Resolves the first allowed spawn time for one freshly initialized rule.
-    /// /params rule Rule being initialized.
-    /// /params elapsedTime Current world elapsed time.
-    /// /returns Initial spawn-ready timestamp.
-    /// </summary>
-    private static float ResolveInitialNextSpawnTime(in EnemyBossMinionSpawnElement rule, float elapsedTime)
-    {
-        switch (rule.Trigger)
-        {
-            case EnemyBossMinionSpawnTrigger.Interval:
-                return elapsedTime + math.max(0.01f, rule.IntervalSeconds);
-
-            default:
-                return elapsedTime;
-        }
-    }
-
-    /// <summary>
-    /// Resolves the next allowed spawn time after one trigger activation.
-    /// /params rule Rule that just spawned minions.
-    /// /params elapsedTime Current world elapsed time.
-    /// /returns Next spawn-ready timestamp.
-    /// </summary>
-    private static float ResolveNextSpawnTime(in EnemyBossMinionSpawnElement rule, float elapsedTime)
-    {
-        switch (rule.Trigger)
-        {
-            case EnemyBossMinionSpawnTrigger.BossDamaged:
-                return elapsedTime + math.max(0f, rule.BossHitCooldownSeconds);
-
-            default:
-                return elapsedTime + math.max(0.01f, rule.IntervalSeconds);
-        }
-    }
-
-    /// <summary>
-    /// Resolves a deterministic spawn point around the boss.
-    /// /params bossPosition Boss world position.
-    /// /params radius Spawn radius.
-    /// /params bossEntity Boss entity used for deterministic variation.
-    /// /params ruleIndex Source rule index.
-    /// /params spawnIndex Current spawn index.
-    /// /returns World spawn position.
-    /// </summary>
-    private static float3 ResolveSpawnPosition(float3 bossPosition,
-                                               float radius,
-                                               Entity bossEntity,
-                                               int ruleIndex,
-                                               int spawnIndex)
-    {
-        uint seed = math.hash(new int4(bossEntity.Index,
-                                       bossEntity.Version,
-                                       ruleIndex + 17,
-                                       spawnIndex + 113));
-        float normalized = (seed & 0x00FFFFFFu) / 16777215f;
-        float angle = normalized * TwoPi;
-        float resolvedRadius = math.max(0f, radius);
-        float3 position = bossPosition;
-        position.x += math.cos(angle) * resolvedRadius;
-        position.z += math.sin(angle) * resolvedRadius;
-        return position;
-    }
     #endregion
 
     #endregion

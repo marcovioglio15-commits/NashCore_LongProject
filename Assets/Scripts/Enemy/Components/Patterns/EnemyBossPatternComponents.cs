@@ -143,6 +143,8 @@ public struct EnemyBossMinionSpawnElement : IBufferElementData
     public float FutureDropsMultiplier;
     public int AutomaticPoolSize;
     public int PoolExpandBatch;
+    public byte KillMinionsOnBossDeath;
+    public byte RequireMinionsKilledForRunCompletion;
     public Entity PoolEntity;
     public float NextSpawnTime;
     public float LastObservedDamageLifetimeSeconds;
@@ -159,6 +161,8 @@ public struct EnemyBossMinionOwner : IComponentData
 {
     public Entity BossEntity;
     public int RuleIndex;
+    public byte KillOnBossDeath;
+    public byte BlocksRunCompletion;
 }
 
 /// <summary>
