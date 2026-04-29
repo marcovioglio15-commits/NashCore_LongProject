@@ -42,7 +42,7 @@ MonoBehaviour:
     billboardColor: {r: 1, g: 1, b: 1, a: 1}
     billboardLocalOffset: {x: 0, y: 2.1, z: 0}
     billboardLeadTimeSeconds: 0.5
-    billboardBaseScale: 0.06
+    billboardBaseScale: 0.05
     billboardPulseScaleMultiplier: 2
     billboardPulseExpandDurationSeconds: 0.15
     billboardPulseContractDurationSeconds: 0.35
