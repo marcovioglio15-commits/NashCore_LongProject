@@ -26,6 +26,11 @@
 # Visual Studio cache directory
 .vs/
 
+# OS-generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
 # Gradle cache directory
 .gradle/
 
@@ -70,20 +75,29 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
-# Never ignore DLLs in the FMOD subfolder.
+# Never ignore runtime libraries in the FMOD integration.
 !/[Aa]ssets/Plugins/FMOD/**/lib/*
+!/[Aa]ssets/Plugins/FMOD/**/platforms/**/lib/*
 
 # Don't ignore images and gizmos used by FMOD in the Unity Editor.
 !/[Aa]ssets/Gizmos/FMOD/*
 !/[Aa]ssets/Editor Default Resources/FMOD/*
 
-# Ignore the Cache folder since it is updated locally.
-/[Aa]ssets/Plugins/FMOD/Cache/*
+# Ignore FMOD Unity integration cache since it is generated locally.
+/[Aa]ssets/Plugins/FMOD/Cache/
 
-# Ignore bank files in the StreamingAssets folder.
+# Ignore FMOD Studio project local state. Keep the .fspro, Metadata, source
+# audio assets, and Build banks under version control.
+/[Aa]ssets/**/.cache/
+/[Aa]ssets/**/.user/
+/[Aa]ssets/**/.unsaved/
+*.fspro.user
+*.fspro.lock
+
+# Ignore bank files copied/generated in StreamingAssets. The authoritative
+# source banks are under the FMOD Studio project Build folder.
 /[Aa]ssets/StreamingAssets/**/*.bank
 /[Aa]ssets/StreamingAssets/**/*.bank.meta
 
-# If the source bank files are kept outside of the StreamingAssets folder then these can be ignored.
 # Log files can be ignored.
 fmod_editor.log
