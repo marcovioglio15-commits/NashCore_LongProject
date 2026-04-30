@@ -21,7 +21,10 @@ Shader "Cel Shader/Toon Diffuse ECS Hit Flash"
     {
         Tags
         {
-            "RenderType" = "Opaque"
+            //"Queue" = "Opaque"
+            "Queue" = "Transparent" //changed 30/04/2026 because outline was not showing on the enemies (I copied it from the SH_ToonDiffuse_ECS shader)
+            "IgnoreProjector" = "True" //added 30/04/2026
+            "RenderType" = "Transparent" //added 30/04/2026
             "RenderPipeline" = "UniversalPipeline"
         }
 
