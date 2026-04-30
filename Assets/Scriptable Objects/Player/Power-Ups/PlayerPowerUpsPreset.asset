@@ -5236,7 +5236,7 @@ MonoBehaviour:
           laserDurationSeconds: 0.35
         characterTuning:
           formulas:
-          - formula: '[InfinitePenetration]=true'
+          - formula: '[BulletPenetration]=5'
           - formula: '[BulletSizeMultiplier]=[BulletSizeMultiplier]*3'
           - formula: '[ShotRange]=[ShotRange]+999'
           - formula: '[LaserWidth]=[LaserWidth_Big]'

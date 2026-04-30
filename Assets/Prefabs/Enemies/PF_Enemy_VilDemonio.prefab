@@ -687,7 +687,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8727828910335555641
 Transform:
   m_ObjectHideFlags: 0
@@ -779,5 +779,6 @@ MonoBehaviour:
   masterPreset: {fileID: 11400000, guid: 44859ebceb11b7141aff6e15845c89d2, type: 2}
   visualPreset: {fileID: 11400000, guid: 26f44b59526a83f40a82bb2cbd9deed4, type: 2}
   advancedPatternPreset: {fileID: 11400000, guid: 412dcb19d6a261a4cb6ab2d114739bda, type: 2}
+  bossPatternPreset: {fileID: 0}
   billboardToCamera: 1
   billboardYawOnly: 0

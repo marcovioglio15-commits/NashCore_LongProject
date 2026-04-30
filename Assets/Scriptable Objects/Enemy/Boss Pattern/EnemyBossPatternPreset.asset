@@ -568,7 +568,7 @@ MonoBehaviour:
               projectilesPerShot: 1
               spreadAngleDegrees: 0
               projectileSpeed: 28
-              projectileDamage: 6
+              projectileDamage: 1
               projectileRange: 28
               projectileLifetime: 4
               projectileExplosionRadius: 0
@@ -628,27 +628,14 @@ MonoBehaviour:
     requireMinionsKilledForRunCompletion: 1
     rules:
     - enabled: 1
-      minionPrefab: {fileID: 3091458169621715366, guid: 65af5c6d3a3173f498a19033f08c547d, type: 3}
-      trigger: 1
+      minionPrefab: {fileID: 3091458169621715366, guid: 627ac925ed20cbc4195ee3b0888612c9, type: 3}
+      trigger: 2
       intervalSeconds: 0
       bossHitCooldownSeconds: 5
-      healthThresholdPercent: 0
-      spawnCount: 5
+      healthThresholdPercent: 0.5
+      spawnCount: 15
       maxAliveMinions: 20
-      spawnRadius: 3
-      despawnDistance: 160
-      experienceDropMultiplier: 0
-      extraComboPointsMultiplier: 0
-      futureDropsMultiplier: 0
-    - enabled: 1
-      minionPrefab: {fileID: 3091458169621715366, guid: 627ac925ed20cbc4195ee3b0888612c9, type: 3}
-      trigger: 0
-      intervalSeconds: 1
-      bossHitCooldownSeconds: 0
-      healthThresholdPercent: 0
-      spawnCount: 5
-      maxAliveMinions: 20
-      spawnRadius: 3
+      spawnRadius: 10
       despawnDistance: 160
       experienceDropMultiplier: 0
       extraComboPointsMultiplier: 0
