@@ -4093,8 +4093,8 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 0
-          maximumEnergy: 100
-          activationCost: 100
+          maximumEnergy: 15
+          activationCost: 15
           maintenanceCostPerSecond: 0
           isToggleable: 0
           maintenanceTicksPerSecond: 4
@@ -5603,14 +5603,14 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 200
-          activationCost: 200
+          maximumEnergy: 30
+          activationCost: 30
           maintenanceCostPerSecond: 0
           isToggleable: 0
           maintenanceTicksPerSecond: 4
           minimumActivationEnergyPercent: 100
           chargeType: 1
-          chargePerTrigger: 25
+          chargePerTrigger: 1
           cooldownSeconds: 5
           allowRechargeDuringToggleStartupLock: 0
         suppressShooting:
@@ -6171,14 +6171,14 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 50
-          activationCost: 50
+          maximumEnergy: 10
+          activationCost: 10
           maintenanceCostPerSecond: 0
           isToggleable: 0
           maintenanceTicksPerSecond: 4
           minimumActivationEnergyPercent: 100
           chargeType: 1
-          chargePerTrigger: 25
+          chargePerTrigger: 1
           cooldownSeconds: 1
           allowRechargeDuringToggleStartupLock: 0
         suppressShooting:
@@ -6739,14 +6739,14 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 100
-          activationCost: 45
+          maximumEnergy: 20
+          activationCost: 20
           maintenanceCostPerSecond: 0
           isToggleable: 0
           maintenanceTicksPerSecond: 4
           minimumActivationEnergyPercent: 0
           chargeType: 0
-          chargePerTrigger: 20
+          chargePerTrigger: 1
           cooldownSeconds: 1
           allowRechargeDuringToggleStartupLock: 0
         suppressShooting:
@@ -7307,9 +7307,9 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 150
-          activationCost: 30
-          maintenanceCostPerSecond: 30
+          maximumEnergy: 30
+          activationCost: 5
+          maintenanceCostPerSecond: 5
           isToggleable: 1
           maintenanceTicksPerSecond: 5
           minimumActivationEnergyPercent: 0
@@ -7872,9 +7872,9 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 100
-          activationCost: 10
-          maintenanceCostPerSecond: 10
+          maximumEnergy: 20
+          activationCost: 2
+          maintenanceCostPerSecond: 2
           isToggleable: 1
           maintenanceTicksPerSecond: 5
           minimumActivationEnergyPercent: 0
@@ -8437,15 +8437,15 @@ MonoBehaviour:
         resourceGate:
           activationResource: 1
           maintenanceResource: 1
-          maximumEnergy: 100
-          activationCost: 10
+          maximumEnergy: 30
+          activationCost: 5
           maintenanceCostPerSecond: 5
           isToggleable: 1
           maintenanceTicksPerSecond: 1
           minimumActivationEnergyPercent: 50
           chargeType: 1
-          chargePerTrigger: 5
-          cooldownSeconds: 0.5
+          chargePerTrigger: 1
+          cooldownSeconds: 1
           allowRechargeDuringToggleStartupLock: 1
         suppressShooting:
           suppressBaseShootingWhileActive: 0
