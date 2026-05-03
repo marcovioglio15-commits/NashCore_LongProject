@@ -185,6 +185,7 @@ internal static class PlayerComboCounterRuntimeUtility
 
             int pointsToLeaveRank = ResolvePointsToLeaveCurrentRank(currentComboValue,
                                                                     activeRankIndex,
+                                                                    in runtimeConfig,
                                                                     runtimeRanks);
 
             if (pointsToLeaveRank <= 0)
@@ -237,6 +238,73 @@ internal static class PlayerComboCounterRuntimeUtility
     {
         uint sanitizedActiveRankSignature = (uint)(math.max(-1, activeRankIndex) + 1);
         return math.hash(new uint2(scalableStatsHash, sanitizedActiveRankSignature));
+    }
+
+    /// <summary>
+    /// Combines the permanent scalable-stat signature with combo rank and progressive boost progress signatures.
+    /// /params scalableStatsHash Hash built from permanent scalable stats.
+    /// /params activeRankIndex Currently active combo-rank index, or -1 when no combo bonus is active.
+    /// /params comboValue Current combo value used only when the next rank exposes progressive boost.
+    /// /params runtimeRanks Current runtime combo-rank thresholds and progressive boost settings.
+    /// /returns Combined runtime-scaling signature.
+    /// </summary>
+    public static uint ComputeRuntimeScalingHash(uint scalableStatsHash,
+                                                 int activeRankIndex,
+                                                 int comboValue,
+                                                 DynamicBuffer<PlayerRuntimeComboRankElement> runtimeRanks)
+    {
+        uint baseHash = ComputeRuntimeScalingHash(scalableStatsHash, activeRankIndex);
+        int nextRankIndex = activeRankIndex + 1;
+
+        if (!runtimeRanks.IsCreated || nextRankIndex < 0 || nextRankIndex >= runtimeRanks.Length)
+        {
+            return baseHash;
+        }
+
+        if (runtimeRanks[nextRankIndex].ProgressiveBoostPercent <= 0f)
+        {
+            return baseHash;
+        }
+
+        uint progressSignature = (uint)math.max(0, comboValue);
+        return math.hash(new uint2(baseHash, progressSignature));
+    }
+
+    /// <summary>
+    /// Resolves normalized progress from the previous rank threshold toward the requested target rank.
+    /// /params comboValue Current combo numeric value.
+    /// /params activeRankIndex Currently active combo-rank index, or -1 before the first rank.
+    /// /params targetRankIndex Rank whose bonuses are being progressively approached.
+    /// /params runtimeRanks Current runtime combo-rank thresholds.
+    /// /returns Normalized progress in the 0..1 range.
+    /// </summary>
+    public static float ResolveProgressToRank(int comboValue,
+                                              int activeRankIndex,
+                                              int targetRankIndex,
+                                              DynamicBuffer<PlayerRuntimeComboRankElement> runtimeRanks)
+    {
+        if (!runtimeRanks.IsCreated || targetRankIndex < 0 || targetRankIndex >= runtimeRanks.Length)
+        {
+            return 0f;
+        }
+
+        int sanitizedComboValue = math.max(0, comboValue);
+        int startRequiredValue = 0;
+
+        if (activeRankIndex >= 0 && activeRankIndex < runtimeRanks.Length)
+        {
+            startRequiredValue = math.max(0, runtimeRanks[activeRankIndex].RequiredComboValue);
+        }
+
+        int targetRequiredValue = math.max(0, runtimeRanks[targetRankIndex].RequiredComboValue);
+        int range = targetRequiredValue - startRequiredValue;
+
+        if (range <= 0)
+        {
+            return sanitizedComboValue >= targetRequiredValue ? 1f : 0f;
+        }
+
+        return math.saturate((float)(sanitizedComboValue - startRequiredValue) / range);
     }
     #endregion
 
@@ -298,6 +366,7 @@ internal static class PlayerComboCounterRuntimeUtility
     /// </summary>
     private static int ResolvePointsToLeaveCurrentRank(int comboValue,
                                                        int activeRankIndex,
+                                                       in PlayerRuntimeComboCounterConfig runtimeConfig,
                                                        DynamicBuffer<PlayerRuntimeComboRankElement> runtimeRanks)
     {
         if (!runtimeRanks.IsCreated || activeRankIndex < 0 || activeRankIndex >= runtimeRanks.Length)
@@ -313,7 +382,37 @@ internal static class PlayerComboCounterRuntimeUtility
             return 0;
         }
 
+        if (ShouldPreserveCurrentRankFloor(activeRankIndex, in runtimeConfig, runtimeRanks))
+        {
+            return sanitizedComboValue - currentRankRequiredValue;
+        }
+
         return sanitizedComboValue - currentRankRequiredValue + 1;
+    }
+
+    /// <summary>
+    /// Resolves whether decay should stop at the current rank threshold because the lower rank has no point decay.
+    /// /params activeRankIndex Current active rank index.
+    /// /params runtimeConfig Current runtime combo config.
+    /// /params runtimeRanks Current runtime combo-rank thresholds and decay rates.
+    /// /returns True when decay must preserve the current rank threshold.
+    /// </summary>
+    private static bool ShouldPreserveCurrentRankFloor(int activeRankIndex,
+                                                       in PlayerRuntimeComboCounterConfig runtimeConfig,
+                                                       DynamicBuffer<PlayerRuntimeComboRankElement> runtimeRanks)
+    {
+        if (runtimeConfig.PreventDecayIntoNonDecayingRanks == 0)
+        {
+            return false;
+        }
+
+        if (!runtimeRanks.IsCreated || activeRankIndex <= 0 || activeRankIndex >= runtimeRanks.Length)
+        {
+            return false;
+        }
+
+        PlayerRuntimeComboRankElement previousRank = runtimeRanks[activeRankIndex - 1];
+        return previousRank.PointsDecayPerSecond <= 0f;
     }
 
     /// <summary>

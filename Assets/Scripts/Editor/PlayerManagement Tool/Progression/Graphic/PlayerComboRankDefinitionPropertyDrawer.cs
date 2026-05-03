@@ -30,8 +30,10 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
         SerializedProperty rankIdProperty = property.FindPropertyRelative("rankId");
         SerializedProperty requiredComboValueProperty = property.FindPropertyRelative("requiredComboValue");
         SerializedProperty pointsDecayPerSecondProperty = property.FindPropertyRelative("pointsDecayPerSecond");
+        SerializedProperty progressiveBoostPercentProperty = property.FindPropertyRelative("progressiveBoostPercent");
         SerializedProperty rankVisualsProperty = property.FindPropertyRelative("rankVisuals");
         SerializedProperty rankBonusesProperty = property.FindPropertyRelative("rankBonuses");
+        SerializedProperty passivePowerUpUnlocksProperty = property.FindPropertyRelative("passivePowerUpUnlocks");
         SerializedProperty scalingRulesProperty = property.serializedObject != null
             ? property.serializedObject.FindProperty("scalingRules")
             : null;
@@ -39,15 +41,17 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
         if (rankIdProperty == null ||
             requiredComboValueProperty == null ||
             pointsDecayPerSecondProperty == null ||
+            progressiveBoostPercentProperty == null ||
             rankVisualsProperty == null ||
-            rankBonusesProperty == null)
+            rankBonusesProperty == null ||
+            passivePowerUpUnlocksProperty == null)
         {
             HelpBox missingHelpBox = new HelpBox("Combo rank fields are missing.", HelpBoxMessageType.Warning);
             root.Add(missingHelpBox);
             return root;
         }
 
-        HelpBox infoBox = new HelpBox("Each reached rank applies its Character Tuning formulas cumulatively together with all lower ranks that are still reached. Rank visuals are picked automatically by HUDManager using the active rank index, and the rank-specific point decay below can naturally downgrade the combo over time.", HelpBoxMessageType.Info);
+        HelpBox infoBox = new HelpBox("Each reached rank applies its Character Tuning formulas cumulatively together with all lower ranks that are still reached. Progressive Boost Percent distributes part of this rank's numeric formulas before the threshold is reached, while passive unlocks stay active only while the owning rank remains reached.", HelpBoxMessageType.Info);
         root.Add(infoBox);
         root.Add(CreateBoundField(rankIdProperty, "Rank ID"));
         root.Add(PlayerScalingFieldElementFactory.CreateField(requiredComboValueProperty,
@@ -56,11 +60,19 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
         root.Add(PlayerScalingFieldElementFactory.CreateField(pointsDecayPerSecondProperty,
                                                               scalingRulesProperty,
                                                               "Points Decay Per Second"));
+        root.Add(PlayerScalingFieldElementFactory.CreateField(progressiveBoostPercentProperty,
+                                                              scalingRulesProperty,
+                                                              "Progressive Boost Percent"));
         root.Add(CreateBoundField(rankVisualsProperty, "Rank Visuals"));
 
         PropertyField rankBonusesField = new PropertyField(rankBonusesProperty, "Rank Bonuses");
         rankBonusesField.BindProperty(rankBonusesProperty);
         root.Add(rankBonusesField);
+
+        PropertyField passiveUnlocksField = new PropertyField(passivePowerUpUnlocksProperty, "Passive Power-Up Unlocks");
+        passiveUnlocksField.BindProperty(passivePowerUpUnlocksProperty);
+        root.Add(passiveUnlocksField);
+
         ScrollView availableVariablesScrollView = CreateAvailableVariablesScrollView();
         Label availableVariablesLabel = CreateAvailableVariablesLabel();
         availableVariablesScrollView.Add(availableVariablesLabel);
@@ -77,7 +89,9 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
                             rankIdProperty,
                             requiredComboValueProperty,
                             pointsDecayPerSecondProperty,
+                            progressiveBoostPercentProperty,
                             rankBonusesProperty,
+                            passivePowerUpUnlocksProperty,
                             warningBox);
         });
 
@@ -86,7 +100,9 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
                         rankIdProperty,
                         requiredComboValueProperty,
                         pointsDecayPerSecondProperty,
+                        progressiveBoostPercentProperty,
                         rankBonusesProperty,
+                        passivePowerUpUnlocksProperty,
                         warningBox);
         return root;
     }
@@ -163,7 +179,9 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
     /// rankIdProperty Serialized rank identifier property.
     /// requiredComboValueProperty Serialized combo threshold property.
     /// pointsDecayPerSecondProperty Serialized time-based combo point decay property.
+    /// progressiveBoostPercentProperty Serialized progressive boost distribution percentage.
     /// rankBonusesProperty Serialized Character Tuning payload property.
+    /// passivePowerUpUnlocksProperty Serialized passive power-up unlock list property.
     /// warningBox Warning help box refreshed in place.
     /// returns void.
     /// </summary>
@@ -171,7 +189,9 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
                                         SerializedProperty rankIdProperty,
                                         SerializedProperty requiredComboValueProperty,
                                         SerializedProperty pointsDecayPerSecondProperty,
+                                        SerializedProperty progressiveBoostPercentProperty,
                                         SerializedProperty rankBonusesProperty,
+                                        SerializedProperty passivePowerUpUnlocksProperty,
                                         HelpBox warningBox)
     {
         if (warningBox == null)
@@ -197,9 +217,16 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
             warningLines.Add("Points Decay Per Second should be >= 0.");
         }
 
+        if (progressiveBoostPercentProperty != null &&
+            (progressiveBoostPercentProperty.floatValue < 0f || progressiveBoostPercentProperty.floatValue > 100f))
+        {
+            warningLines.Add("Progressive Boost Percent should stay between 0 and 100. Runtime clamps the applied share, but the authored value is not snapped.");
+        }
+
         SerializedProperty formulasProperty = rankBonusesProperty != null
             ? rankBonusesProperty.FindPropertyRelative("formulas")
             : null;
+        bool hasRankBonusFormulas = formulasProperty != null && formulasProperty.isArray && formulasProperty.arraySize > 0;
 
         if (serializedObject == null || formulasProperty == null || !formulasProperty.isArray)
         {
@@ -216,6 +243,8 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
         {
             HashSet<string> allowedVariables = PlayerScalingFormulaValidationUtility.BuildScopedVariableSet(serializedObject);
             Dictionary<string, PlayerFormulaValueType> variableTypes = PlayerScalingFormulaValidationUtility.BuildScopedVariableTypeMap(serializedObject);
+            Dictionary<string, PlayerScalableStatType> scalableStatTypes = PlayerScalingFormulaValidationUtility.BuildScopedScalableStatTypeMap(serializedObject);
+            bool progressiveBoostEnabled = progressiveBoostPercentProperty != null && progressiveBoostPercentProperty.floatValue > 0f;
 
             for (int formulaIndex = 0; formulaIndex < formulasProperty.arraySize; formulaIndex++)
             {
@@ -238,6 +267,17 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
                     continue;
                 }
 
+                if (progressiveBoostEnabled &&
+                    PlayerCharacterTuningFormulaUtility.TryParseAssignmentFormula(formulaValue,
+                                                                                  out string targetStatName,
+                                                                                  out string _,
+                                                                                  out string _) &&
+                    scalableStatTypes.TryGetValue(targetStatName, out PlayerScalableStatType targetStatType) &&
+                    (targetStatType == PlayerScalableStatType.Boolean || targetStatType == PlayerScalableStatType.Token))
+                {
+                    warningLines.Add(string.Format("Formula #{0} targets non-numeric stat '{1}'. Progressive Boost Percent affects numeric Character Tuning formulas only; this formula applies at the actual rank-up.", formulaIndex + 1, targetStatName));
+                }
+
                 if (PlayerCharacterTuningFormulaValidationUtility.TryValidateAssignmentFormula(formulaValue,
                                                                                               allowedVariables,
                                                                                               variableTypes,
@@ -250,6 +290,15 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
             }
         }
 
+        if (progressiveBoostPercentProperty != null &&
+            progressiveBoostPercentProperty.floatValue > 0f &&
+            !hasRankBonusFormulas)
+        {
+            warningLines.Add("Progressive Boost Percent is above 0, but this rank has no Character Tuning formulas to distribute.");
+        }
+
+        AppendPassiveUnlockWarnings(passivePowerUpUnlocksProperty, warningLines);
+
         if (warningLines.Count <= 0)
         {
             warningBox.text = string.Empty;
@@ -259,6 +308,96 @@ public sealed class PlayerComboRankDefinitionPropertyDrawer : PropertyDrawer
 
         warningBox.text = string.Join("\n", warningLines);
         warningBox.style.display = DisplayStyle.Flex;
+    }
+
+    /// <summary>
+    /// Adds warnings for passive unlock entries that cannot resolve against the scoped Power-Ups preset.
+    /// passivePowerUpUnlocksProperty Serialized passive unlock list property.
+    /// warningLines Destination warning line list.
+    /// returns void.
+    /// </summary>
+    private static void AppendPassiveUnlockWarnings(SerializedProperty passivePowerUpUnlocksProperty, List<string> warningLines)
+    {
+        if (passivePowerUpUnlocksProperty == null || !passivePowerUpUnlocksProperty.isArray)
+        {
+            warningLines.Add("Passive Power-Up Unlocks are not available.");
+            return;
+        }
+
+        if (passivePowerUpUnlocksProperty.arraySize <= 0)
+        {
+            return;
+        }
+
+        HashSet<string> passivePowerUpIds = BuildScopedPassivePowerUpIdSet();
+
+        if (passivePowerUpIds.Count <= 0)
+        {
+            warningLines.Add("Passive unlocks are configured, but no passive PowerUpId is available from the scoped Power-Ups preset.");
+        }
+
+        for (int unlockIndex = 0; unlockIndex < passivePowerUpUnlocksProperty.arraySize; unlockIndex++)
+        {
+            SerializedProperty unlockProperty = passivePowerUpUnlocksProperty.GetArrayElementAtIndex(unlockIndex);
+            SerializedProperty isEnabledProperty = unlockProperty != null ? unlockProperty.FindPropertyRelative("isEnabled") : null;
+            SerializedProperty passivePowerUpIdProperty = unlockProperty != null ? unlockProperty.FindPropertyRelative("passivePowerUpId") : null;
+            bool isEnabled = isEnabledProperty == null || isEnabledProperty.boolValue;
+            string passivePowerUpId = passivePowerUpIdProperty != null && !string.IsNullOrWhiteSpace(passivePowerUpIdProperty.stringValue)
+                ? passivePowerUpIdProperty.stringValue.Trim()
+                : string.Empty;
+
+            if (!isEnabled)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(passivePowerUpId))
+            {
+                warningLines.Add(string.Format("Passive unlock #{0} is enabled but has no Passive PowerUpId.", unlockIndex + 1));
+                continue;
+            }
+
+            if (passivePowerUpIds.Count > 0 && !passivePowerUpIds.Contains(passivePowerUpId))
+            {
+                warningLines.Add(string.Format("Passive unlock #{0} references '{1}', which is not a passive PowerUpId in the scoped Power-Ups preset.", unlockIndex + 1, passivePowerUpId));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Builds the passive PowerUpId set from the currently scoped Power-Ups preset.
+    /// none.
+    /// returns Case-insensitive passive PowerUpId set.
+    /// </summary>
+    private static HashSet<string> BuildScopedPassivePowerUpIdSet()
+    {
+        HashSet<string> passivePowerUpIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+
+        if (!PlayerProgressionTierOptionsUtility.TryResolveScopedPowerUpsPreset(out PlayerPowerUpsPreset scopedPreset))
+        {
+            return passivePowerUpIds;
+        }
+
+        IReadOnlyList<ModularPowerUpDefinition> passivePowerUps = scopedPreset.PassivePowerUps;
+
+        if (passivePowerUps == null)
+        {
+            return passivePowerUpIds;
+        }
+
+        for (int powerUpIndex = 0; powerUpIndex < passivePowerUps.Count; powerUpIndex++)
+        {
+            ModularPowerUpDefinition passivePowerUp = passivePowerUps[powerUpIndex];
+
+            if (passivePowerUp == null || passivePowerUp.CommonData == null || string.IsNullOrWhiteSpace(passivePowerUp.CommonData.PowerUpId))
+            {
+                continue;
+            }
+
+            passivePowerUpIds.Add(passivePowerUp.CommonData.PowerUpId.Trim());
+        }
+
+        return passivePowerUpIds;
     }
     #endregion
 

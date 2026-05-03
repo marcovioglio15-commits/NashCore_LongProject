@@ -53,6 +53,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         state.RequireForUpdate<PlayerRuntimeComboCounterConfig>();
         state.RequireForUpdate<PlayerBaseComboRankElement>();
         state.RequireForUpdate<PlayerRuntimeComboRankElement>();
+        state.RequireForUpdate<PlayerBaseComboPassiveUnlockElement>();
+        state.RequireForUpdate<PlayerRuntimeComboPassiveUnlockElement>();
         state.RequireForUpdate<PlayerRuntimeComboCounterScalingElement>();
         state.RequireForUpdate<PlayerComboCounterState>();
         state.RequireForUpdate<PlayerPowerUpBaseConfigElement>();
@@ -119,6 +121,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
         ComponentLookup<PlayerRuntimeComboCounterConfig> runtimeComboConfigLookup = SystemAPI.GetComponentLookup<PlayerRuntimeComboCounterConfig>(false);
         BufferLookup<PlayerBaseComboRankElement> baseComboRanksLookup = SystemAPI.GetBufferLookup<PlayerBaseComboRankElement>(true);
         BufferLookup<PlayerRuntimeComboRankElement> runtimeComboRanksLookup = SystemAPI.GetBufferLookup<PlayerRuntimeComboRankElement>(false);
+        BufferLookup<PlayerBaseComboPassiveUnlockElement> baseComboPassiveUnlocksLookup = SystemAPI.GetBufferLookup<PlayerBaseComboPassiveUnlockElement>(true);
+        BufferLookup<PlayerRuntimeComboPassiveUnlockElement> runtimeComboPassiveUnlocksLookup = SystemAPI.GetBufferLookup<PlayerRuntimeComboPassiveUnlockElement>(false);
         BufferLookup<PlayerRuntimeComboCounterScalingElement> comboScalingLookup = SystemAPI.GetBufferLookup<PlayerRuntimeComboCounterScalingElement>(true);
         ComponentLookup<PlayerComboCounterState> comboCounterStateLookup = SystemAPI.GetComponentLookup<PlayerComboCounterState>(false);
         BufferLookup<PlayerPowerUpBaseConfigElement> basePowerUpConfigsLookup = SystemAPI.GetBufferLookup<PlayerPowerUpBaseConfigElement>(true);
@@ -297,6 +301,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                           runtimeComboConfigLookup,
                                           baseComboRanksLookup,
                                           runtimeComboRanksLookup,
+                                          baseComboPassiveUnlocksLookup,
+                                          runtimeComboPassiveUnlocksLookup,
                                           comboScalingLookup,
                                           comboCounterStateLookup,
                                           characterTuningFormulaLookup,
@@ -417,6 +423,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                           runtimeComboConfigLookup,
                                           baseComboRanksLookup,
                                           runtimeComboRanksLookup,
+                                          baseComboPassiveUnlocksLookup,
+                                          runtimeComboPassiveUnlocksLookup,
                                           comboScalingLookup,
                                           comboCounterStateLookup,
                                           characterTuningFormulaLookup,
@@ -535,6 +543,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                           runtimeComboConfigLookup,
                                           baseComboRanksLookup,
                                           runtimeComboRanksLookup,
+                                          baseComboPassiveUnlocksLookup,
+                                          runtimeComboPassiveUnlocksLookup,
                                           comboScalingLookup,
                                           comboCounterStateLookup,
                                           characterTuningFormulaLookup,
@@ -696,6 +706,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                   ComponentLookup<PlayerRuntimeComboCounterConfig> runtimeComboConfigLookup,
                                                   BufferLookup<PlayerBaseComboRankElement> baseComboRanksLookup,
                                                   BufferLookup<PlayerRuntimeComboRankElement> runtimeComboRanksLookup,
+                                                  BufferLookup<PlayerBaseComboPassiveUnlockElement> baseComboPassiveUnlocksLookup,
+                                                  BufferLookup<PlayerRuntimeComboPassiveUnlockElement> runtimeComboPassiveUnlocksLookup,
                                                   BufferLookup<PlayerRuntimeComboCounterScalingElement> comboScalingLookup,
                                                   ComponentLookup<PlayerComboCounterState> comboCounterStateLookup,
                                                   BufferLookup<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulaLookup,
@@ -743,6 +755,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                              runtimeComboConfigLookup,
                                                              baseComboRanksLookup,
                                                              runtimeComboRanksLookup,
+                                                             baseComboPassiveUnlocksLookup,
+                                                             runtimeComboPassiveUnlocksLookup,
                                                              comboScalingLookup,
                                                              comboCounterStateLookup,
                                                              characterTuningFormulaLookup,

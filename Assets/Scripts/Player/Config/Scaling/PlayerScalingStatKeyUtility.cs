@@ -18,7 +18,8 @@ public static class PlayerScalingStatKeyUtility
         "presetId",
         "statName",
         "phaseID",
-        "rankId"
+        "rankId",
+        "passivePowerUpId"
     };
 
     private static readonly string[] StableNestedStringIdPropertyPaths =
@@ -110,7 +111,7 @@ public static class PlayerScalingStatKeyUtility
     /// Checks whether a serialized property is supported by Add Scaling.
     /// </summary>
     /// <param name="property">Property to inspect.</param>
-    /// <returns>True when the property is numeric, boolean or enum-backed.<returns>
+    /// <returns>True when the property is numeric, boolean, token string or enum-backed.<returns>
     public static bool IsScalingSupportedProperty(SerializedProperty property)
     {
         if (property == null)
@@ -121,6 +122,7 @@ public static class PlayerScalingStatKeyUtility
             case SerializedPropertyType.Integer:
             case SerializedPropertyType.Float:
             case SerializedPropertyType.Boolean:
+            case SerializedPropertyType.String:
             case SerializedPropertyType.Enum:
                 return true;
             default:

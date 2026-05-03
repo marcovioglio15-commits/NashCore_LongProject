@@ -127,6 +127,31 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
                                                     List<PlayerScalableStatElement> scalableStats,
                                                     out int appliedFormulaCount)
     {
+        return TryApplyCharacterTuningRange(startIndex,
+                                            formulaCount,
+                                            characterTuningFormulas,
+                                            scalableStats,
+                                            1f,
+                                            out appliedFormulaCount);
+    }
+
+    /// <summary>
+    /// Applies one flattened Character Tuning formula range to a managed scalable-stat collection using a partial numeric weight.
+    /// startIndex: Inclusive start index inside the flattened formula buffer.
+    /// formulaCount: Number of formulas to evaluate from startIndex.
+    /// characterTuningFormulas: Flattened Character Tuning formula buffer.
+    /// scalableStats: Managed scalable-stat list updated in place.
+    /// applicationWeight: Numeric blend factor from the current value toward the fully evaluated formula result.
+    /// appliedFormulaCount: Number of formulas successfully applied.
+    /// returns True when at least one formula changed runtime scalable stats; otherwise false.
+    /// </summary>
+    public static bool TryApplyCharacterTuningRange(int startIndex,
+                                                    int formulaCount,
+                                                    DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
+                                                    List<PlayerScalableStatElement> scalableStats,
+                                                    float applicationWeight,
+                                                    out int appliedFormulaCount)
+    {
         appliedFormulaCount = 0;
 
         if (scalableStats == null || scalableStats.Count <= 0)
@@ -139,6 +164,11 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
         int endIndex = math.min(characterTuningFormulas.Length, clampedStartIndex + math.max(0, formulaCount));
 
         if (clampedStartIndex >= endIndex)
+            return false;
+
+        float clampedApplicationWeight = math.saturate(applicationWeight);
+
+        if (clampedApplicationWeight <= 0f)
             return false;
 
         PlayerScalingRuntimeFormulaUtility.FillVariableContext(scalableStats, variableContext);
@@ -174,6 +204,16 @@ public static class PlayerPowerUpCharacterTuningRuntimeUtility
                                                                        false))
             {
                 continue;
+            }
+
+            if (clampedApplicationWeight < 1f)
+            {
+                if (currentValue.Type != PlayerFormulaValueType.Number || evaluatedValue.Type != PlayerFormulaValueType.Number)
+                    continue;
+
+                evaluatedValue = PlayerFormulaValue.CreateNumber(math.lerp(currentValue.NumberValue,
+                                                                           evaluatedValue.NumberValue,
+                                                                           clampedApplicationWeight));
             }
 
             if (PlayerFormulaValue.AreEqual(in currentValue, in evaluatedValue))

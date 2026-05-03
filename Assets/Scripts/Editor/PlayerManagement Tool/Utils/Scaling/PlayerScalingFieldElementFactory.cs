@@ -34,11 +34,13 @@ public static class PlayerScalingFieldElementFactory
     /// <param name="scalingRulesProperty">Serialized List&lt;PlayerStatScalingRule&gt; used for Add Scaling state.</param>
     /// <param name="labelOverride">Optional field label override.</param>
     /// <param name="allowedVariables">Optional formula variable whitelist for validation.</param>
+    /// <param name="allowTokenScaling">True when string token properties should expose Add Scaling.</param>
     /// <returns>Configured VisualElement ready to add into editor layout.<returns>
     public static VisualElement CreateField(SerializedProperty targetProperty,
                                             SerializedProperty scalingRulesProperty,
                                             string labelOverride = null,
-                                            ISet<string> allowedVariables = null)
+                                            ISet<string> allowedVariables = null,
+                                            bool allowTokenScaling = false)
     {
         if (targetProperty == null)
             return CreateMissingLabel("Missing serialized field.");
@@ -56,7 +58,8 @@ public static class PlayerScalingFieldElementFactory
         if (IsVectorProperty(targetProperty))
             return CreateVectorField(targetProperty, scalingRulesProperty, labelOverride, allowedVariables);
 
-        if (!PlayerScalingFormulaEditorUtility.SupportsScalingTarget(targetProperty))
+        if (!PlayerScalingFormulaEditorUtility.SupportsScalingTarget(targetProperty) ||
+            targetProperty.propertyType == SerializedPropertyType.String && !allowTokenScaling)
         {
             PropertyField fallbackField = string.IsNullOrWhiteSpace(labelOverride)
                 ? new PropertyField(targetProperty)

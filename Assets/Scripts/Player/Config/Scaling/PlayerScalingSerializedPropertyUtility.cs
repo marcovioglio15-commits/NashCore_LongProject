@@ -39,6 +39,9 @@ public static class PlayerScalingSerializedPropertyUtility
             case SerializedPropertyType.Boolean:
                 thisValue = PlayerFormulaValue.CreateBoolean(property.boolValue);
                 return true;
+            case SerializedPropertyType.String:
+                thisValue = PlayerFormulaValue.CreateToken(property.stringValue);
+                return true;
             case SerializedPropertyType.Enum:
                 thisValue = PlayerFormulaValue.CreateNumber(property.enumValueIndex);
                 isIntegerLike = true;
@@ -111,6 +114,19 @@ public static class PlayerScalingSerializedPropertyUtility
                     return true;
 
                 property.boolValue = result.BooleanValue;
+                changed = true;
+                return true;
+            case SerializedPropertyType.String:
+                if (result.Type != PlayerFormulaValueType.Token)
+                {
+                    errorMessage = "Target stat requires a token result.";
+                    return false;
+                }
+
+                if (string.Equals(property.stringValue, result.TokenValue, System.StringComparison.Ordinal))
+                    return true;
+
+                property.stringValue = result.TokenValue;
                 changed = true;
                 return true;
             case SerializedPropertyType.Enum:

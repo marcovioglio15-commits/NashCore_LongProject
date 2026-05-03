@@ -37,6 +37,9 @@ public sealed class PlayerComboCounterDefinition
     [Tooltip("When enabled, shield-only damage also breaks the current combo. Health damage always breaks it.")]
     [SerializeField] private bool shieldDamageBreaksCombo;
 
+    [Tooltip("When enabled, rank point decay stops on the current rank threshold before it would fall into a lower rank that has no point decay.")]
+    [SerializeField] private bool preventDecayIntoNonDecayingRanks;
+
     [Header("Ranks")]
     [Tooltip("Ordered rank milestones used to resolve the active combo rank and its temporary Character Tuning bonuses.")]
     [SerializeField] private List<PlayerComboRankDefinition> rankDefinitions = new List<PlayerComboRankDefinition>();
@@ -77,6 +80,14 @@ public sealed class PlayerComboCounterDefinition
         }
     }
 
+    public bool PreventDecayIntoNonDecayingRanks
+    {
+        get
+        {
+            return preventDecayIntoNonDecayingRanks;
+        }
+    }
+
     public IReadOnlyList<PlayerComboRankDefinition> RankDefinitions
     {
         get
@@ -95,6 +106,31 @@ public sealed class PlayerComboCounterDefinition
     /// /params comboGainPerKillValue Amount added for every valid enemy kill.
     /// /params damageBreakModeValue Controls whether damage resets the combo entirely or downgrades it to the previous rank.
     /// /params shieldDamageBreaksComboValue True when shield-only damage should also interrupt the combo.
+    /// /params preventDecayIntoNonDecayingRanksValue True when point decay should preserve the current rank before falling into a no-decay lower rank.
+    /// /params rankDefinitionsValue Ordered rank list stored by this combo definition.
+    /// /returns void.
+    /// </summary>
+    public void Configure(bool isEnabledValue,
+                          int comboGainPerKillValue,
+                          PlayerComboDamageBreakMode damageBreakModeValue,
+                          bool shieldDamageBreaksComboValue,
+                          bool preventDecayIntoNonDecayingRanksValue,
+                          List<PlayerComboRankDefinition> rankDefinitionsValue)
+    {
+        isEnabled = isEnabledValue;
+        comboGainPerKill = comboGainPerKillValue;
+        damageBreakMode = damageBreakModeValue;
+        shieldDamageBreaksCombo = shieldDamageBreaksComboValue;
+        preventDecayIntoNonDecayingRanks = preventDecayIntoNonDecayingRanksValue;
+        rankDefinitions = rankDefinitionsValue;
+    }
+
+    /// <summary>
+    /// Assigns the authored combo runtime rules and rank list while keeping decay-floor preservation disabled for older call sites.
+    /// /params isEnabledValue Enables or disables the combo system for the owning preset.
+    /// /params comboGainPerKillValue Amount added for every valid enemy kill.
+    /// /params damageBreakModeValue Controls whether damage resets the combo entirely or downgrades it to the previous rank.
+    /// /params shieldDamageBreaksComboValue True when shield-only damage should also interrupt the combo.
     /// /params rankDefinitionsValue Ordered rank list stored by this combo definition.
     /// /returns void.
     /// </summary>
@@ -104,11 +140,12 @@ public sealed class PlayerComboCounterDefinition
                           bool shieldDamageBreaksComboValue,
                           List<PlayerComboRankDefinition> rankDefinitionsValue)
     {
-        isEnabled = isEnabledValue;
-        comboGainPerKill = comboGainPerKillValue;
-        damageBreakMode = damageBreakModeValue;
-        shieldDamageBreaksCombo = shieldDamageBreaksComboValue;
-        rankDefinitions = rankDefinitionsValue;
+        Configure(isEnabledValue,
+                  comboGainPerKillValue,
+                  damageBreakModeValue,
+                  shieldDamageBreaksComboValue,
+                  false,
+                  rankDefinitionsValue);
     }
     #endregion
 
@@ -227,6 +264,80 @@ public sealed class PlayerComboRankVisualDefinition
 }
 
 /// <summary>
+/// Stores one temporary passive power-up acquisition granted while its combo rank remains reached.
+/// none.
+/// returns none.
+/// </summary>
+[Serializable]
+public sealed class PlayerComboPassivePowerUpUnlockDefinition
+{
+    #region Fields
+
+    #region Serialized Fields
+    [Tooltip("Enables this temporary passive power-up unlock while the owning combo rank remains reached.")]
+    [SerializeField] private bool isEnabled = true;
+
+    [Tooltip("Passive PowerUpId granted while the owning combo rank remains reached. The ID is resolved against the scoped Power-Ups preset runtime catalog and is revoked on derank or combo reset.")]
+    [SerializeField] private string passivePowerUpId = string.Empty;
+    #endregion
+
+    #endregion
+
+    #region Properties
+    public bool IsEnabled
+    {
+        get
+        {
+            return isEnabled;
+        }
+    }
+
+    public string PassivePowerUpId
+    {
+        get
+        {
+            return passivePowerUpId;
+        }
+    }
+    #endregion
+
+    #region Methods
+
+    #region Setup
+    /// <summary>
+    /// Assigns the passive unlock entry data used by temporary combo rank rewards.
+    /// /params isEnabledValue True when the unlock should be processed while the owning rank is active.
+    /// /params passivePowerUpIdValue Passive PowerUpId resolved against the runtime unlock catalog.
+    /// /returns void.
+    /// </summary>
+    public void Configure(bool isEnabledValue, string passivePowerUpIdValue)
+    {
+        isEnabled = isEnabledValue;
+        passivePowerUpId = passivePowerUpIdValue;
+    }
+    #endregion
+
+    #region Validation
+    /// <summary>
+    /// Trims the authored passive PowerUpId while preserving designer-authored enablement.
+    /// /params None.
+    /// /returns void.
+    /// </summary>
+    public void Validate()
+    {
+        if (passivePowerUpId == null)
+        {
+            passivePowerUpId = string.Empty;
+        }
+
+        passivePowerUpId = passivePowerUpId.Trim();
+    }
+    #endregion
+
+    #endregion
+}
+
+/// <summary>
 /// Stores one combo rank milestone with its display identifier, HUD presentation overrides, time-based point decay, and temporary Character Tuning bonus formulas.
 /// none.
 /// returns none.
@@ -246,11 +357,17 @@ public sealed class PlayerComboRankDefinition
     [Tooltip("Points removed from the combo every second while this rank is active. Values above 0 can naturally cause rank retrocession over time.")]
     [SerializeField] private float pointsDecayPerSecond;
 
+    [Tooltip("Percentage of this rank's numeric Character Tuning boost distributed linearly while progressing from the previous rank threshold to this rank threshold.")]
+    [SerializeField] private float progressiveBoostPercent;
+
     [Tooltip("Optional HUD presentation overrides applied automatically while this rank is active.")]
     [SerializeField] private PlayerComboRankVisualDefinition rankVisuals = new PlayerComboRankVisualDefinition();
 
     [Tooltip("Ordered Character Tuning formulas applied while this rank remains active. Active combo ranks stack cumulatively in ascending milestone order.")]
     [SerializeField] private PowerUpCharacterTuningModuleData rankBonuses = new PowerUpCharacterTuningModuleData();
+
+    [Tooltip("Passive power-ups granted while this combo rank remains reached and removed when the combo deranks below this rank or resets.")]
+    [SerializeField] private List<PlayerComboPassivePowerUpUnlockDefinition> passivePowerUpUnlocks = new List<PlayerComboPassivePowerUpUnlockDefinition>();
     #endregion
 
     #endregion
@@ -288,11 +405,27 @@ public sealed class PlayerComboRankDefinition
         }
     }
 
+    public float ProgressiveBoostPercent
+    {
+        get
+        {
+            return progressiveBoostPercent;
+        }
+    }
+
     public PlayerComboRankVisualDefinition RankVisuals
     {
         get
         {
             return rankVisuals;
+        }
+    }
+
+    public IReadOnlyList<PlayerComboPassivePowerUpUnlockDefinition> PassivePowerUpUnlocks
+    {
+        get
+        {
+            return passivePowerUpUnlocks;
         }
     }
     #endregion
@@ -302,6 +435,34 @@ public sealed class PlayerComboRankDefinition
     #region Setup
     /// <summary>
     /// Assigns the authored combo-rank identity, milestone threshold, optional HUD visuals, point-decay rate, and temporary Character Tuning bonuses.
+    /// /params rankIdValue Stable rank identifier shown by the runtime combo label.
+    /// /params requiredComboValueValue Minimum combo value required by this rank.
+    /// /params pointsDecayPerSecondValue Combo points removed per second while this rank is active.
+    /// /params progressiveBoostPercentValue Percent of numeric rank bonus distributed before this rank is reached.
+    /// /params rankVisualsValue Optional HUD visuals resolved automatically while this rank is active.
+    /// /params rankBonusesValue Character Tuning formulas applied while the rank is active.
+    /// /params passivePowerUpUnlocksValue Passive power-ups granted while this rank remains reached.
+    /// /returns void.
+    /// </summary>
+    public void Configure(string rankIdValue,
+                          int requiredComboValueValue,
+                          float pointsDecayPerSecondValue,
+                          float progressiveBoostPercentValue,
+                          PlayerComboRankVisualDefinition rankVisualsValue,
+                          PowerUpCharacterTuningModuleData rankBonusesValue,
+                          List<PlayerComboPassivePowerUpUnlockDefinition> passivePowerUpUnlocksValue)
+    {
+        rankId = rankIdValue;
+        requiredComboValue = requiredComboValueValue;
+        pointsDecayPerSecond = pointsDecayPerSecondValue;
+        progressiveBoostPercent = progressiveBoostPercentValue;
+        rankVisuals = rankVisualsValue ?? new PlayerComboRankVisualDefinition();
+        rankBonuses = rankBonusesValue;
+        passivePowerUpUnlocks = passivePowerUpUnlocksValue;
+    }
+
+    /// <summary>
+    /// Assigns the authored combo-rank identity, milestone threshold, optional HUD visuals, point-decay rate, and temporary Character Tuning bonuses while preserving passive unlocks.
     /// /params rankIdValue Stable rank identifier shown by the runtime combo label.
     /// /params requiredComboValueValue Minimum combo value required by this rank.
     /// /params pointsDecayPerSecondValue Combo points removed per second while this rank is active.
@@ -315,11 +476,13 @@ public sealed class PlayerComboRankDefinition
                           PlayerComboRankVisualDefinition rankVisualsValue,
                           PowerUpCharacterTuningModuleData rankBonusesValue)
     {
-        rankId = rankIdValue;
-        requiredComboValue = requiredComboValueValue;
-        pointsDecayPerSecond = pointsDecayPerSecondValue;
-        rankVisuals = rankVisualsValue ?? new PlayerComboRankVisualDefinition();
-        rankBonuses = rankBonusesValue;
+        Configure(rankIdValue,
+                  requiredComboValueValue,
+                  pointsDecayPerSecondValue,
+                  progressiveBoostPercent,
+                  rankVisualsValue,
+                  rankBonusesValue,
+                  passivePowerUpUnlocks);
     }
 
     /// <summary>
@@ -338,8 +501,10 @@ public sealed class PlayerComboRankDefinition
         Configure(rankIdValue,
                   requiredComboValueValue,
                   pointsDecayPerSecondValue,
+                  progressiveBoostPercent,
                   rankVisuals,
-                  rankBonusesValue);
+                  rankBonusesValue,
+                  passivePowerUpUnlocks);
     }
 
     /// <summary>
@@ -382,6 +547,24 @@ public sealed class PlayerComboRankDefinition
         if (rankVisuals == null)
         {
             rankVisuals = new PlayerComboRankVisualDefinition();
+        }
+
+        if (passivePowerUpUnlocks == null)
+        {
+            passivePowerUpUnlocks = new List<PlayerComboPassivePowerUpUnlockDefinition>();
+        }
+
+        for (int unlockIndex = 0; unlockIndex < passivePowerUpUnlocks.Count; unlockIndex++)
+        {
+            PlayerComboPassivePowerUpUnlockDefinition passiveUnlock = passivePowerUpUnlocks[unlockIndex];
+
+            if (passiveUnlock == null)
+            {
+                passiveUnlock = new PlayerComboPassivePowerUpUnlockDefinition();
+                passivePowerUpUnlocks[unlockIndex] = passiveUnlock;
+            }
+
+            passiveUnlock.Validate();
         }
 
         rankBonuses.Validate();

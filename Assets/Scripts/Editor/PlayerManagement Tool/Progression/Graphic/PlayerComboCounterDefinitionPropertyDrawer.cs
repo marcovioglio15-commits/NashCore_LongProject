@@ -27,6 +27,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
         SerializedProperty comboGainPerKillProperty = property.FindPropertyRelative("comboGainPerKill");
         SerializedProperty damageBreakModeProperty = property.FindPropertyRelative("damageBreakMode");
         SerializedProperty shieldDamageBreaksComboProperty = property.FindPropertyRelative("shieldDamageBreaksCombo");
+        SerializedProperty preventDecayIntoNonDecayingRanksProperty = property.FindPropertyRelative("preventDecayIntoNonDecayingRanks");
         SerializedProperty rankDefinitionsProperty = property.FindPropertyRelative("rankDefinitions");
         SerializedProperty scalingRulesProperty = property.serializedObject != null
             ? property.serializedObject.FindProperty("scalingRules")
@@ -36,6 +37,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
             comboGainPerKillProperty == null ||
             damageBreakModeProperty == null ||
             shieldDamageBreaksComboProperty == null ||
+            preventDecayIntoNonDecayingRanksProperty == null ||
             rankDefinitionsProperty == null)
         {
             HelpBox missingHelpBox = new HelpBox("Combo counter fields are missing.", HelpBoxMessageType.Warning);
@@ -43,7 +45,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
             return root;
         }
 
-        HelpBox infoBox = new HelpBox("Health damage always triggers the selected Damage Break Mode. Shield damage uses the same break mode only when Shield Damage Breaks Combo is enabled, and each rank can also define its own point-decay rate that naturally downgrades combo value over time. All numeric, boolean, and enum fields below support Add Scaling where applicable.", HelpBoxMessageType.Info);
+        HelpBox infoBox = new HelpBox("Health damage always triggers the selected Damage Break Mode. Shield damage uses the same break mode only when Shield Damage Breaks Combo is enabled, and each rank can also define point decay, progressive Character Tuning boost, and passive power-up unlocks. All numeric, boolean, enum, and token fields below support Add Scaling where applicable.", HelpBoxMessageType.Info);
         root.Add(infoBox);
         root.Add(PlayerScalingFieldElementFactory.CreateField(isEnabledProperty,
                                                               scalingRulesProperty,
@@ -57,6 +59,9 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
         root.Add(PlayerScalingFieldElementFactory.CreateField(shieldDamageBreaksComboProperty,
                                                               scalingRulesProperty,
                                                               "Shield Damage Breaks Combo"));
+        root.Add(PlayerScalingFieldElementFactory.CreateField(preventDecayIntoNonDecayingRanksProperty,
+                                                              scalingRulesProperty,
+                                                              "Prevent Decay Into Non-Decaying Ranks"));
 
         PropertyField rankDefinitionsField = new PropertyField(rankDefinitionsProperty, "Rank Definitions");
         rankDefinitionsField.BindProperty(rankDefinitionsProperty);
@@ -71,6 +76,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
             RefreshWarnings(isEnabledProperty,
                             comboGainPerKillProperty,
                             damageBreakModeProperty,
+                            preventDecayIntoNonDecayingRanksProperty,
                             rankDefinitionsProperty,
                             warningBox);
         });
@@ -78,6 +84,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
         RefreshWarnings(isEnabledProperty,
                         comboGainPerKillProperty,
                         damageBreakModeProperty,
+                        preventDecayIntoNonDecayingRanksProperty,
                         rankDefinitionsProperty,
                         warningBox);
         return root;
@@ -90,6 +97,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
     /// isEnabledProperty Serialized combo enabled property.
     /// comboGainPerKillProperty Serialized kill gain property.
     /// damageBreakModeProperty Serialized damage-break mode property.
+    /// preventDecayIntoNonDecayingRanksProperty Serialized decay-floor preservation property.
     /// rankDefinitionsProperty Serialized combo-rank list property.
     /// warningBox Warning help box refreshed in place.
     /// returns void.
@@ -97,6 +105,7 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
     private static void RefreshWarnings(SerializedProperty isEnabledProperty,
                                         SerializedProperty comboGainPerKillProperty,
                                         SerializedProperty damageBreakModeProperty,
+                                        SerializedProperty preventDecayIntoNonDecayingRanksProperty,
                                         SerializedProperty rankDefinitionsProperty,
                                         HelpBox warningBox)
     {
@@ -134,16 +143,20 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
         {
             HashSet<string> visitedRankIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             int previousRequiredValue = int.MinValue;
+            float previousPointsDecayPerSecond = 0f;
+            bool hasDecayFloorPreservationTransition = false;
 
             for (int rankIndex = 0; rankIndex < rankDefinitionsProperty.arraySize; rankIndex++)
             {
                 SerializedProperty rankProperty = rankDefinitionsProperty.GetArrayElementAtIndex(rankIndex);
                 SerializedProperty rankIdProperty = rankProperty != null ? rankProperty.FindPropertyRelative("rankId") : null;
                 SerializedProperty requiredComboValueProperty = rankProperty != null ? rankProperty.FindPropertyRelative("requiredComboValue") : null;
+                SerializedProperty pointsDecayPerSecondProperty = rankProperty != null ? rankProperty.FindPropertyRelative("pointsDecayPerSecond") : null;
                 string rankId = rankIdProperty != null && !string.IsNullOrWhiteSpace(rankIdProperty.stringValue)
                     ? rankIdProperty.stringValue.Trim()
                     : string.Empty;
                 int requiredComboValue = requiredComboValueProperty != null ? requiredComboValueProperty.intValue : 0;
+                float pointsDecayPerSecond = pointsDecayPerSecondProperty != null ? pointsDecayPerSecondProperty.floatValue : 0f;
 
                 if (string.IsNullOrWhiteSpace(rankId))
                 {
@@ -171,12 +184,28 @@ public sealed class PlayerComboCounterDefinitionPropertyDrawer : PropertyDrawer
                     warningLines.Add(string.Format("Rank '{0}' uses the same Required Combo Value as the previous rank. Downgrade To Previous Rank may not actually change the active rank.", string.IsNullOrWhiteSpace(rankId) ? "#" + (rankIndex + 1) : rankId));
                 }
 
+                if (rankIndex > 0 &&
+                    previousPointsDecayPerSecond <= 0f &&
+                    pointsDecayPerSecond > 0f)
+                {
+                    hasDecayFloorPreservationTransition = true;
+                }
+
                 previousRequiredValue = requiredComboValue;
+                previousPointsDecayPerSecond = pointsDecayPerSecond;
             }
 
             if (usesRankDowngrade && rankDefinitionsProperty.arraySize < 2)
             {
                 warningLines.Add("Downgrade To Previous Rank behaves like a full reset until at least two ranks are configured.");
+            }
+
+            if (preventDecayIntoNonDecayingRanksProperty != null &&
+                preventDecayIntoNonDecayingRanksProperty.propertyType == SerializedPropertyType.Boolean &&
+                preventDecayIntoNonDecayingRanksProperty.boolValue &&
+                !hasDecayFloorPreservationTransition)
+            {
+                warningLines.Add("Prevent Decay Into Non-Decaying Ranks is enabled, but no configured higher rank decays into a lower no-decay rank, so the option currently has no runtime effect.");
             }
         }
 

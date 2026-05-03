@@ -535,7 +535,7 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
     /// <summary>
     /// Equips one passive unlock and rebuilds aggregated passive runtime state.
     /// </summary>
-    /// <param name="passiveToolConfig">Unlocked passive-tool payload.</param>
+    /// <param name="selectedCatalogEntry">Selected passive catalog entry.</param>
     /// <param name="equippedPassiveTools">Runtime equipped passives buffer.</param>
     /// <param name="passiveToolsState">Aggregated passive runtime state to update.</param>
     /// <param name="applyTarget">Debug label describing the passive-apply result.</param>
@@ -545,53 +545,10 @@ public partial struct PlayerMilestonePowerUpSelectionResolveSystem : ISystem
                                               ref PlayerPassiveToolsState passiveToolsState,
                                               out string applyTarget)
     {
-        PlayerPassiveToolConfig passiveToolConfig = selectedCatalogEntry.PassiveToolConfig;
-        applyTarget = "PassiveBuffer";
-
-        if (passiveToolConfig.IsDefined == 0)
-        {
-            applyTarget = "InvalidPassiveConfig";
-            return false;
-        }
-
-        if (ContainsPassiveToolKind(equippedPassiveTools, passiveToolConfig.ToolKind))
-        {
-            applyTarget = "AlreadyEquipped";
-            return false;
-        }
-
-        equippedPassiveTools.Add(new EquippedPassiveToolElement
-        {
-            PowerUpId = selectedCatalogEntry.PowerUpId,
-            Tool = passiveToolConfig
-        });
-        passiveToolsState = PlayerPassiveToolsAggregationUtility.BuildPassiveToolsState(equippedPassiveTools);
-        applyTarget = "PassiveAdded";
-        return true;
-    }
-
-    /// <summary>
-    /// Checks whether one passive tool kind is already present in the equipped buffer.
-    /// </summary>
-    /// <param name="equippedPassiveTools">Runtime equipped passives buffer.</param>
-    /// <param name="toolKind">Passive tool kind to test.</param>
-    /// <returns>True when at least one matching passive tool kind exists; otherwise false.<returns>
-    private static bool ContainsPassiveToolKind(DynamicBuffer<EquippedPassiveToolElement> equippedPassiveTools, PassiveToolKind toolKind)
-    {
-        for (int passiveIndex = 0; passiveIndex < equippedPassiveTools.Length; passiveIndex++)
-        {
-            PlayerPassiveToolConfig candidate = equippedPassiveTools[passiveIndex].Tool;
-
-            if (candidate.IsDefined == 0)
-                continue;
-
-            if (candidate.ToolKind != toolKind)
-                continue;
-
-            return true;
-        }
-
-        return false;
+        return PlayerPowerUpPassiveUnlockRuntimeUtility.TryEquipPassiveTool(in selectedCatalogEntry,
+                                                                            equippedPassiveTools,
+                                                                            ref passiveToolsState,
+                                                                            out applyTarget);
     }
     #endregion
 

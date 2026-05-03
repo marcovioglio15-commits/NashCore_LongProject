@@ -35,6 +35,8 @@ internal static class PlayerRuntimeScalingApplyUtility
     /// progressionScaling: Progression scaling metadata baked from Add Scaling rules.
     /// baseGamePhases: Immutable progression-phase baselines.
     /// runtimeGamePhases: Mutable runtime progression phases rebuilt in place.
+    /// baseComboPassiveUnlocks: Immutable combo passive-unlock baseline buffer.
+    /// runtimeComboPassiveUnlocks: Mutable runtime combo passive-unlock buffer rebuilt in place.
     /// basePowerUpConfigs: Immutable modular power-up baselines keyed by PowerUpId.
     /// powerUpScaling: Power-up scaling metadata baked from Add Scaling rules.
     /// powerUpsConfig: Mutable active-slot config rebuilt in place.
@@ -72,6 +74,8 @@ internal static class PlayerRuntimeScalingApplyUtility
                                 ref PlayerRuntimeComboCounterConfig runtimeComboConfig,
                                 DynamicBuffer<PlayerBaseComboRankElement> baseComboRanks,
                                 DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
+                                DynamicBuffer<PlayerBaseComboPassiveUnlockElement> baseComboPassiveUnlocks,
+                                DynamicBuffer<PlayerRuntimeComboPassiveUnlockElement> runtimeComboPassiveUnlocks,
                                 DynamicBuffer<PlayerRuntimeComboCounterScalingElement> comboScaling,
                                 DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
                                 ref PlayerComboCounterState comboCounterState,
@@ -90,10 +94,13 @@ internal static class PlayerRuntimeScalingApplyUtility
                                 ref PlayerRuntimeScalingState runtimeScalingState,
                                 bool forceApply)
     {
+        int activeComboRankIndex = PlayerComboCounterRuntimeUtility.ResolveActiveRankIndex(comboCounterState.CurrentValue,
+                                                                                          in runtimeComboConfig,
+                                                                                          runtimeComboRanks);
         uint currentHash = PlayerComboCounterRuntimeUtility.ComputeRuntimeScalingHash(PlayerScalableStatHashUtility.ComputeHash(scalableStats),
-                                                                                     PlayerComboCounterRuntimeUtility.ResolveActiveRankIndex(comboCounterState.CurrentValue,
-                                                                                                                                            in runtimeComboConfig,
-                                                                                                                                            runtimeComboRanks));
+                                                                                     activeComboRankIndex,
+                                                                                     comboCounterState.CurrentValue,
+                                                                                     runtimeComboRanks);
 
         if (!forceApply &&
             runtimeScalingState.Initialized != 0 &&
@@ -109,12 +116,16 @@ internal static class PlayerRuntimeScalingApplyUtility
                                                                          ref runtimeComboConfig,
                                                                          baseComboRanks,
                                                                          runtimeComboRanks,
+                                                                         baseComboPassiveUnlocks,
+                                                                         runtimeComboPassiveUnlocks,
                                                                          comboScaling,
                                                                          variableContext);
         PlayerRuntimeScalingComboApplyUtility.CopyBaseScalableStats(scalableStats, effectiveScalableStats);
-        PlayerRuntimeScalingComboApplyUtility.ApplyActiveComboRankBonuses(PlayerComboCounterRuntimeUtility.ResolveActiveRankIndex(comboCounterState.CurrentValue,
-                                                                                                                                  in runtimeComboConfig,
-                                                                                                                                  runtimeComboRanks),
+        activeComboRankIndex = PlayerComboCounterRuntimeUtility.ResolveActiveRankIndex(comboCounterState.CurrentValue,
+                                                                                      in runtimeComboConfig,
+                                                                                      runtimeComboRanks);
+        PlayerRuntimeScalingComboApplyUtility.ApplyActiveComboRankBonuses(activeComboRankIndex,
+                                                                          comboCounterState.CurrentValue,
                                                                           runtimeComboRanks,
                                                                           characterTuningFormulas,
                                                                           effectiveScalableStats);

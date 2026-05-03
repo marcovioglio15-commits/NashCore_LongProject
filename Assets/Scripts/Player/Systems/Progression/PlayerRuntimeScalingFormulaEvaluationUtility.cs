@@ -73,6 +73,41 @@ internal static class PlayerRuntimeScalingFormulaEvaluationUtility
         resolvedValue = evaluatedValue.BooleanValue;
         return true;
     }
+
+    /// <summary>
+    /// Evaluates one token scaling formula against the current typed scalable-stat context.
+    /// /params formula Runtime formula text baked for the target field.
+    /// /params baseValue Immutable baseline token passed as the reserved [this] token.
+    /// /params variableContext Current typed scalable-stat context.
+    /// /params resolvedValue Evaluated token result when the formula succeeds.
+    /// /returns True when the formula evaluated successfully and resolved to a token.
+    /// </summary>
+    public static bool TryEvaluateTokenValue(string formula,
+                                             string baseValue,
+                                             IReadOnlyDictionary<string, PlayerFormulaValue> variableContext,
+                                             out string resolvedValue)
+    {
+        resolvedValue = string.IsNullOrWhiteSpace(baseValue) ? string.Empty : baseValue.Trim();
+
+        if (!PlayerScalingRuntimeFormulaUtility.TryEvaluateFormula(formula,
+                                                                   PlayerFormulaValue.CreateToken(resolvedValue),
+                                                                   variableContext,
+                                                                   out PlayerFormulaValue evaluatedValue,
+                                                                   out string _))
+        {
+            return false;
+        }
+
+        if (evaluatedValue.Type != PlayerFormulaValueType.Token)
+        {
+            return false;
+        }
+
+        resolvedValue = string.IsNullOrWhiteSpace(evaluatedValue.TokenValue)
+            ? string.Empty
+            : evaluatedValue.TokenValue.Trim();
+        return true;
+    }
     #endregion
 
     #endregion

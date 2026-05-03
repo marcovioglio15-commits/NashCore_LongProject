@@ -12,6 +12,7 @@ public struct PlayerBaseComboCounterConfig : IComponentData
     public int ComboGainPerKill;
     public PlayerComboDamageBreakMode DamageBreakMode;
     public byte ShieldDamageBreaksCombo;
+    public byte PreventDecayIntoNonDecayingRanks;
 }
 
 /// <summary>
@@ -25,10 +26,11 @@ public struct PlayerRuntimeComboCounterConfig : IComponentData
     public int ComboGainPerKill;
     public PlayerComboDamageBreakMode DamageBreakMode;
     public byte ShieldDamageBreaksCombo;
+    public byte PreventDecayIntoNonDecayingRanks;
 }
 
 /// <summary>
-/// Stores one immutable combo-rank milestone, point-decay rate, and flattened Character Tuning formula range used by that rank.
+/// Stores one immutable combo-rank milestone, point-decay rate, progressive boost data, passive unlock range, and flattened Character Tuning formula range used by that rank.
 /// none.
 /// returns none.
 /// </summary>
@@ -38,12 +40,15 @@ public struct PlayerBaseComboRankElement : IBufferElementData
     public FixedString64Bytes RankId;
     public int RequiredComboValue;
     public float PointsDecayPerSecond;
+    public float ProgressiveBoostPercent;
     public int BonusFormulaStartIndex;
     public int BonusFormulaCount;
+    public int PassiveUnlockStartIndex;
+    public int PassiveUnlockCount;
 }
 
 /// <summary>
-/// Stores one current combo-rank milestone and point-decay rate after progression Add Scaling formulas are resolved.
+/// Stores one current combo-rank milestone, point-decay rate, progressive boost data, and passive unlock range after progression Add Scaling formulas are resolved.
 /// none.
 /// returns none.
 /// </summary>
@@ -53,8 +58,35 @@ public struct PlayerRuntimeComboRankElement : IBufferElementData
     public FixedString64Bytes RankId;
     public int RequiredComboValue;
     public float PointsDecayPerSecond;
+    public float ProgressiveBoostPercent;
     public int BonusFormulaStartIndex;
     public int BonusFormulaCount;
+    public int PassiveUnlockStartIndex;
+    public int PassiveUnlockCount;
+}
+
+/// <summary>
+/// Stores one immutable passive power-up unlock authored under a combo rank.
+/// none.
+/// returns none.
+/// </summary>
+[InternalBufferCapacity(0)]
+public struct PlayerBaseComboPassiveUnlockElement : IBufferElementData
+{
+    public FixedString64Bytes PassivePowerUpId;
+    public byte IsEnabled;
+}
+
+/// <summary>
+/// Stores one current passive power-up unlock after progression Add Scaling formulas are resolved.
+/// none.
+/// returns none.
+/// </summary>
+[InternalBufferCapacity(0)]
+public struct PlayerRuntimeComboPassiveUnlockElement : IBufferElementData
+{
+    public FixedString64Bytes PassivePowerUpId;
+    public byte IsEnabled;
 }
 
 /// <summary>
@@ -69,7 +101,11 @@ public enum PlayerRuntimeComboCounterFieldId : byte
     ShieldDamageBreaksCombo = 2,
     DamageBreakMode = 3,
     RankRequiredComboValue = 4,
-    RankPointsDecayPerSecond = 5
+    RankPointsDecayPerSecond = 5,
+    PreventDecayIntoNonDecayingRanks = 6,
+    RankProgressiveBoostPercent = 7,
+    RankPassiveUnlockEnabled = 8,
+    RankPassiveUnlockPowerUpId = 9
 }
 
 /// <summary>
@@ -82,9 +118,11 @@ public struct PlayerRuntimeComboCounterScalingElement : IBufferElementData
 {
     public PlayerRuntimeComboCounterFieldId FieldId;
     public int RankIndex;
+    public int PassiveUnlockIndex;
     public byte ValueType;
     public float BaseValue;
     public byte BaseBooleanValue;
     public byte IsInteger;
+    public FixedString64Bytes BaseTokenValue;
     public FixedString512Bytes Formula;
 }

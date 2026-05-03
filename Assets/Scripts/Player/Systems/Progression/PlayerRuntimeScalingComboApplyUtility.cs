@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -18,6 +19,8 @@ internal static class PlayerRuntimeScalingComboApplyUtility
     /// /params runtimeComboConfig Mutable runtime combo config rebuilt in place.
     /// /params baseComboRanks Immutable combo-rank baseline buffer.
     /// /params runtimeComboRanks Mutable runtime combo-rank buffer rebuilt in place.
+    /// /params basePassiveUnlocks Immutable combo passive-unlock baseline buffer.
+    /// /params runtimePassiveUnlocks Mutable runtime combo passive-unlock buffer rebuilt in place.
     /// /params comboScaling Combo scaling metadata baked from Add Scaling rules.
     /// /params variableContext Current typed scalable-stat context used to evaluate formulas.
     /// /returns void.
@@ -26,6 +29,8 @@ internal static class PlayerRuntimeScalingComboApplyUtility
                                                   ref PlayerRuntimeComboCounterConfig runtimeComboConfig,
                                                   DynamicBuffer<PlayerBaseComboRankElement> baseComboRanks,
                                                   DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
+                                                  DynamicBuffer<PlayerBaseComboPassiveUnlockElement> basePassiveUnlocks,
+                                                  DynamicBuffer<PlayerRuntimeComboPassiveUnlockElement> runtimePassiveUnlocks,
                                                   DynamicBuffer<PlayerRuntimeComboCounterScalingElement> comboScaling,
                                                   IReadOnlyDictionary<string, PlayerFormulaValue> variableContext)
     {
@@ -34,15 +39,17 @@ internal static class PlayerRuntimeScalingComboApplyUtility
             Enabled = baseComboConfig.Enabled,
             ComboGainPerKill = baseComboConfig.ComboGainPerKill,
             DamageBreakMode = baseComboConfig.DamageBreakMode,
-            ShieldDamageBreaksCombo = baseComboConfig.ShieldDamageBreaksCombo
+            ShieldDamageBreaksCombo = baseComboConfig.ShieldDamageBreaksCombo,
+            PreventDecayIntoNonDecayingRanks = baseComboConfig.PreventDecayIntoNonDecayingRanks
         };
 
-        if (!runtimeComboRanks.IsCreated)
+        if (!runtimeComboRanks.IsCreated || !runtimePassiveUnlocks.IsCreated)
         {
             return;
         }
 
         runtimeComboRanks.Clear();
+        runtimePassiveUnlocks.Clear();
 
         if (baseComboRanks.IsCreated)
         {
@@ -54,8 +61,24 @@ internal static class PlayerRuntimeScalingComboApplyUtility
                     RankId = baseRank.RankId,
                     RequiredComboValue = baseRank.RequiredComboValue,
                     PointsDecayPerSecond = baseRank.PointsDecayPerSecond,
+                    ProgressiveBoostPercent = baseRank.ProgressiveBoostPercent,
                     BonusFormulaStartIndex = baseRank.BonusFormulaStartIndex,
-                    BonusFormulaCount = baseRank.BonusFormulaCount
+                    BonusFormulaCount = baseRank.BonusFormulaCount,
+                    PassiveUnlockStartIndex = baseRank.PassiveUnlockStartIndex,
+                    PassiveUnlockCount = baseRank.PassiveUnlockCount
+                });
+            }
+        }
+
+        if (basePassiveUnlocks.IsCreated)
+        {
+            for (int unlockIndex = 0; unlockIndex < basePassiveUnlocks.Length; unlockIndex++)
+            {
+                PlayerBaseComboPassiveUnlockElement baseUnlock = basePassiveUnlocks[unlockIndex];
+                runtimePassiveUnlocks.Add(new PlayerRuntimeComboPassiveUnlockElement
+                {
+                    PassivePowerUpId = baseUnlock.PassivePowerUpId,
+                    IsEnabled = baseUnlock.IsEnabled
                 });
             }
         }
@@ -80,8 +103,31 @@ internal static class PlayerRuntimeScalingComboApplyUtility
                 }
 
                 ApplyComboBooleanValue(scalingElement.FieldId,
+                                       scalingElement.RankIndex,
+                                       scalingElement.PassiveUnlockIndex,
                                        resolvedBoolean,
-                                       ref runtimeComboConfig);
+                                       ref runtimeComboConfig,
+                                       runtimeComboRanks,
+                                       runtimePassiveUnlocks);
+                continue;
+            }
+
+            if ((PlayerFormulaValueType)scalingElement.ValueType == PlayerFormulaValueType.Token)
+            {
+                if (!PlayerRuntimeScalingFormulaEvaluationUtility.TryEvaluateTokenValue(scalingElement.Formula.ToString(),
+                                                                                        scalingElement.BaseTokenValue.ToString(),
+                                                                                        variableContext,
+                                                                                        out string resolvedToken))
+                {
+                    continue;
+                }
+
+                ApplyComboTokenValue(scalingElement.FieldId,
+                                     scalingElement.RankIndex,
+                                     scalingElement.PassiveUnlockIndex,
+                                     resolvedToken,
+                                     runtimeComboRanks,
+                                     runtimePassiveUnlocks);
                 continue;
             }
 
@@ -132,22 +178,24 @@ internal static class PlayerRuntimeScalingComboApplyUtility
     /// <summary>
     /// Applies cumulative Character Tuning formulas from every active combo rank onto the effective scalable-stat list.
     /// /params activeRankIndex Highest currently active combo-rank index, or -1 when no rank is active.
+    /// /params comboValue Current combo value used to resolve progressive next-rank boost weight.
     /// /params runtimeComboRanks Current runtime combo-rank buffer.
     /// /params characterTuningFormulas Shared Character Tuning formula buffer.
     /// /params mutableScalableStats Mutable effective scalable-stat list updated in place.
     /// /returns void.
     /// </summary>
     public static void ApplyActiveComboRankBonuses(int activeRankIndex,
+                                                   int comboValue,
                                                    DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
                                                    DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas,
                                                    List<PlayerScalableStatElement> mutableScalableStats)
     {
-        if (activeRankIndex < 0)
+        if (mutableScalableStats == null || mutableScalableStats.Count <= 0)
         {
             return;
         }
 
-        if (mutableScalableStats == null || mutableScalableStats.Count <= 0)
+        if (!runtimeComboRanks.IsCreated || runtimeComboRanks.Length <= 0)
         {
             return;
         }
@@ -161,6 +209,39 @@ internal static class PlayerRuntimeScalingComboApplyUtility
                                                                                     mutableScalableStats,
                                                                                     out int _);
         }
+
+        int nextRankIndex = activeRankIndex + 1;
+
+        if (nextRankIndex < 0 || nextRankIndex >= runtimeComboRanks.Length)
+        {
+            return;
+        }
+
+        PlayerRuntimeComboRankElement nextRuntimeRank = runtimeComboRanks[nextRankIndex];
+        float progressiveBoostPercent = math.saturate(nextRuntimeRank.ProgressiveBoostPercent * 0.01f);
+
+        if (progressiveBoostPercent <= 0f)
+        {
+            return;
+        }
+
+        float progressToNextRank = PlayerComboCounterRuntimeUtility.ResolveProgressToRank(comboValue,
+                                                                                          activeRankIndex,
+                                                                                          nextRankIndex,
+                                                                                          runtimeComboRanks);
+        float applicationWeight = progressToNextRank * progressiveBoostPercent;
+
+        if (applicationWeight <= 0f)
+        {
+            return;
+        }
+
+        PlayerPowerUpCharacterTuningRuntimeUtility.TryApplyCharacterTuningRange(nextRuntimeRank.BonusFormulaStartIndex,
+                                                                                nextRuntimeRank.BonusFormulaCount,
+                                                                                characterTuningFormulas,
+                                                                                mutableScalableStats,
+                                                                                applicationWeight,
+                                                                                out int _);
     }
     #endregion
 
@@ -168,13 +249,21 @@ internal static class PlayerRuntimeScalingComboApplyUtility
     /// <summary>
     /// Applies one boolean combo scaling result to the runtime combo config.
     /// /params fieldId Target combo field identifier.
+    /// /params rankIndex Runtime rank index addressed by the scaling metadata.
+    /// /params passiveUnlockIndex Runtime passive unlock index addressed by the scaling metadata.
     /// /params resolvedBoolean Evaluated boolean value.
     /// /params runtimeComboConfig Mutable runtime combo config updated in place.
+    /// /params runtimeComboRanks Mutable runtime combo-rank buffer updated in place.
+    /// /params runtimePassiveUnlocks Mutable runtime passive-unlock buffer updated in place.
     /// /returns void.
     /// </summary>
     private static void ApplyComboBooleanValue(PlayerRuntimeComboCounterFieldId fieldId,
+                                               int rankIndex,
+                                               int passiveUnlockIndex,
                                                bool resolvedBoolean,
-                                               ref PlayerRuntimeComboCounterConfig runtimeComboConfig)
+                                               ref PlayerRuntimeComboCounterConfig runtimeComboConfig,
+                                               DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
+                                               DynamicBuffer<PlayerRuntimeComboPassiveUnlockElement> runtimePassiveUnlocks)
     {
         switch (fieldId)
         {
@@ -183,6 +272,19 @@ internal static class PlayerRuntimeScalingComboApplyUtility
                 break;
             case PlayerRuntimeComboCounterFieldId.ShieldDamageBreaksCombo:
                 runtimeComboConfig.ShieldDamageBreaksCombo = resolvedBoolean ? (byte)1 : (byte)0;
+                break;
+            case PlayerRuntimeComboCounterFieldId.PreventDecayIntoNonDecayingRanks:
+                runtimeComboConfig.PreventDecayIntoNonDecayingRanks = resolvedBoolean ? (byte)1 : (byte)0;
+                break;
+            case PlayerRuntimeComboCounterFieldId.RankPassiveUnlockEnabled:
+                if (!TryResolvePassiveUnlockAbsoluteIndex(rankIndex, passiveUnlockIndex, runtimeComboRanks, runtimePassiveUnlocks, out int absoluteUnlockIndex))
+                {
+                    return;
+                }
+
+                PlayerRuntimeComboPassiveUnlockElement passiveUnlock = runtimePassiveUnlocks[absoluteUnlockIndex];
+                passiveUnlock.IsEnabled = resolvedBoolean ? (byte)1 : (byte)0;
+                runtimePassiveUnlocks[absoluteUnlockIndex] = passiveUnlock;
                 break;
         }
     }
@@ -230,7 +332,94 @@ internal static class PlayerRuntimeScalingComboApplyUtility
                 decayRuntimeRank.PointsDecayPerSecond = math.max(0f, resolvedValue);
                 runtimeComboRanks[rankIndex] = decayRuntimeRank;
                 break;
+            case PlayerRuntimeComboCounterFieldId.RankProgressiveBoostPercent:
+                if (rankIndex < 0 || rankIndex >= runtimeComboRanks.Length)
+                {
+                    return;
+                }
+
+                PlayerRuntimeComboRankElement progressiveRuntimeRank = runtimeComboRanks[rankIndex];
+                progressiveRuntimeRank.ProgressiveBoostPercent = resolvedValue;
+                runtimeComboRanks[rankIndex] = progressiveRuntimeRank;
+                break;
         }
+    }
+
+    /// <summary>
+    /// Applies one token combo scaling result to a runtime passive unlock entry.
+    /// /params fieldId Target combo field identifier.
+    /// /params rankIndex Runtime rank index addressed by the scaling metadata.
+    /// /params passiveUnlockIndex Runtime passive unlock index addressed by the scaling metadata.
+    /// /params resolvedToken Evaluated token value.
+    /// /params runtimeComboRanks Runtime combo-rank buffer used to resolve the nested unlock range.
+    /// /params runtimePassiveUnlocks Mutable runtime passive-unlock buffer updated in place.
+    /// /returns void.
+    /// </summary>
+    private static void ApplyComboTokenValue(PlayerRuntimeComboCounterFieldId fieldId,
+                                             int rankIndex,
+                                             int passiveUnlockIndex,
+                                             string resolvedToken,
+                                             DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
+                                             DynamicBuffer<PlayerRuntimeComboPassiveUnlockElement> runtimePassiveUnlocks)
+    {
+        if (fieldId != PlayerRuntimeComboCounterFieldId.RankPassiveUnlockPowerUpId)
+        {
+            return;
+        }
+
+        if (!TryResolvePassiveUnlockAbsoluteIndex(rankIndex, passiveUnlockIndex, runtimeComboRanks, runtimePassiveUnlocks, out int absoluteUnlockIndex))
+        {
+            return;
+        }
+
+        PlayerRuntimeComboPassiveUnlockElement passiveUnlock = runtimePassiveUnlocks[absoluteUnlockIndex];
+        passiveUnlock.PassivePowerUpId = new FixedString64Bytes(string.IsNullOrWhiteSpace(resolvedToken) ? string.Empty : resolvedToken.Trim());
+        runtimePassiveUnlocks[absoluteUnlockIndex] = passiveUnlock;
+    }
+
+    /// <summary>
+    /// Resolves one rank-local passive unlock index to its absolute runtime buffer index.
+    /// /params rankIndex Runtime rank index owning the passive unlock.
+    /// /params passiveUnlockIndex Rank-local passive unlock index.
+    /// /params runtimeComboRanks Runtime rank buffer containing unlock ranges.
+    /// /params runtimePassiveUnlocks Runtime passive-unlock buffer addressed by resolved absolute index.
+    /// /params absoluteUnlockIndex Resolved absolute runtime passive-unlock index.
+    /// /returns True when the nested index resolves to a valid passive-unlock element.
+    /// </summary>
+    private static bool TryResolvePassiveUnlockAbsoluteIndex(int rankIndex,
+                                                             int passiveUnlockIndex,
+                                                             DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks,
+                                                             DynamicBuffer<PlayerRuntimeComboPassiveUnlockElement> runtimePassiveUnlocks,
+                                                             out int absoluteUnlockIndex)
+    {
+        absoluteUnlockIndex = -1;
+
+        if (!runtimeComboRanks.IsCreated || !runtimePassiveUnlocks.IsCreated)
+        {
+            return false;
+        }
+
+        if (rankIndex < 0 || rankIndex >= runtimeComboRanks.Length || passiveUnlockIndex < 0)
+        {
+            return false;
+        }
+
+        PlayerRuntimeComboRankElement runtimeRank = runtimeComboRanks[rankIndex];
+
+        if (passiveUnlockIndex >= runtimeRank.PassiveUnlockCount)
+        {
+            return false;
+        }
+
+        int resolvedUnlockIndex = runtimeRank.PassiveUnlockStartIndex + passiveUnlockIndex;
+
+        if (resolvedUnlockIndex < 0 || resolvedUnlockIndex >= runtimePassiveUnlocks.Length)
+        {
+            return false;
+        }
+
+        absoluteUnlockIndex = resolvedUnlockIndex;
+        return true;
     }
     #endregion
 

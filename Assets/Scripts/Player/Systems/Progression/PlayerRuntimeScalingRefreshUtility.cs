@@ -28,6 +28,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
     /// progressionScalingLookup: Progression scaling metadata lookup.
     /// baseGamePhasesLookup: Immutable progression-phase baseline lookup.
     /// runtimeGamePhasesLookup: Mutable runtime progression-phase lookup.
+    /// baseComboPassiveUnlocksLookup: Immutable combo passive-unlock baseline lookup.
+    /// runtimeComboPassiveUnlocksLookup: Mutable runtime combo passive-unlock lookup.
     /// basePowerUpConfigsLookup: Immutable modular power-up baseline lookup.
     /// powerUpScalingLookup: Runtime power-up scaling metadata lookup.
     /// powerUpsConfigLookup: Mutable active-slot config lookup.
@@ -66,6 +68,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
                                          ComponentLookup<PlayerRuntimeComboCounterConfig> runtimeComboConfigLookup,
                                          BufferLookup<PlayerBaseComboRankElement> baseComboRanksLookup,
                                          BufferLookup<PlayerRuntimeComboRankElement> runtimeComboRanksLookup,
+                                         BufferLookup<PlayerBaseComboPassiveUnlockElement> baseComboPassiveUnlocksLookup,
+                                         BufferLookup<PlayerRuntimeComboPassiveUnlockElement> runtimeComboPassiveUnlocksLookup,
                                          BufferLookup<PlayerRuntimeComboCounterScalingElement> comboScalingLookup,
                                          ComponentLookup<PlayerComboCounterState> comboCounterStateLookup,
                                          BufferLookup<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulaLookup,
@@ -105,6 +109,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
             !runtimeComboConfigLookup.HasComponent(entity) ||
             !baseComboRanksLookup.HasBuffer(entity) ||
             !runtimeComboRanksLookup.HasBuffer(entity) ||
+            !baseComboPassiveUnlocksLookup.HasBuffer(entity) ||
+            !runtimeComboPassiveUnlocksLookup.HasBuffer(entity) ||
             !comboScalingLookup.HasBuffer(entity) ||
             !comboCounterStateLookup.HasComponent(entity) ||
             !characterTuningFormulaLookup.HasBuffer(entity) ||
@@ -146,6 +152,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
         PlayerRuntimeComboCounterConfig runtimeComboConfig = runtimeComboConfigLookup[entity];
         DynamicBuffer<PlayerBaseComboRankElement> baseComboRanks = baseComboRanksLookup[entity];
         DynamicBuffer<PlayerRuntimeComboRankElement> runtimeComboRanks = runtimeComboRanksLookup[entity];
+        DynamicBuffer<PlayerBaseComboPassiveUnlockElement> baseComboPassiveUnlocks = baseComboPassiveUnlocksLookup[entity];
+        DynamicBuffer<PlayerRuntimeComboPassiveUnlockElement> runtimeComboPassiveUnlocks = runtimeComboPassiveUnlocksLookup[entity];
         DynamicBuffer<PlayerRuntimeComboCounterScalingElement> comboScaling = comboScalingLookup[entity];
         PlayerComboCounterState comboCounterState = comboCounterStateLookup[entity];
         DynamicBuffer<PlayerPowerUpCharacterTuningFormulaElement> characterTuningFormulas = characterTuningFormulaLookup[entity];
@@ -183,6 +191,8 @@ internal static class PlayerRuntimeScalingRefreshUtility
                                                                  ref runtimeComboConfig,
                                                                  baseComboRanks,
                                                                  runtimeComboRanks,
+                                                                 baseComboPassiveUnlocks,
+                                                                 runtimeComboPassiveUnlocks,
                                                                  comboScaling,
                                                                  characterTuningFormulas,
                                                                  ref comboCounterState,

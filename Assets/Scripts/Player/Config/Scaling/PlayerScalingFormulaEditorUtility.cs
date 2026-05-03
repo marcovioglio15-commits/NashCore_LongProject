@@ -28,6 +28,7 @@ public static class PlayerScalingFormulaEditorUtility
             case SerializedPropertyType.Integer:
             case SerializedPropertyType.Float:
             case SerializedPropertyType.Boolean:
+            case SerializedPropertyType.String:
             case SerializedPropertyType.Enum:
                 return true;
             default:
@@ -49,6 +50,8 @@ public static class PlayerScalingFormulaEditorUtility
         {
             case SerializedPropertyType.Boolean:
                 return PlayerFormulaValueType.Boolean;
+            case SerializedPropertyType.String:
+                return PlayerFormulaValueType.Token;
             case SerializedPropertyType.Integer:
             case SerializedPropertyType.Float:
             case SerializedPropertyType.Enum:
