@@ -554,10 +554,10 @@ MonoBehaviour:
                 m_PostInfinity: 2
                 m_RotationOrder: 4
           shooter:
-            aimPolicy: 0
+            aimPolicy: 1
             movementPolicy: 0
             fireInterval: 1
-            burstCount: 1
+            burstCount: 3
             aimWindupSeconds: 0.25
             intraBurstDelay: 0.08
             useMinimumRange: 0
