@@ -388,7 +388,7 @@ MonoBehaviour:
     - rankId: C
       requiredComboValue: 250
       pointsDecayPerSecond: 0
-      progressiveBoostPercent: 50
+      progressiveBoostPercent: 0
       rankVisuals:
         badgeSprite: {fileID: 1984434061, guid: 3f815dbec59a334408e6ababb0657717, type: 3}
         badgeTint: {r: 1, g: 1, b: 1, a: 1}

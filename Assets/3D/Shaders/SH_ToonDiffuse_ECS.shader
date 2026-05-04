@@ -1,35 +1,141 @@
 Shader "Cel Shader/Toon Diffuse ECS"
 {
-    // ECS/URP port of "Cel Shader/Toon Diffuse".
+    // ECS/URP port of "Cel Shader/Toon Diffuse" with opaque decal receiver support.
     Properties
     {
+        // Base toon surface inputs.
         [MainTexture] _MainTex("Texture", 2D) = "white" {}
-        [NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {} //added 05-03-2026
-        _BumpScale("Bump Scale", Range(0,2)) = 1 //added 05-03-2026
+        [NoScaleOffset] _NormalMap("Normal Map", 2D) = "bump" {}
+        _BumpScale("Bump Scale", Range(0,2)) = 1
+
+        // Toon lighting controls.
         _AmbientColor("Ambient Color", Color) = (0,0,0,1)
         _AmbientColorIntensity("Ambient Color Intensity", Range(0,5)) = 0.5
         _ShadowSoftness("Shadow Softness", Range(0,0.5)) = 0.1
         _ShadowScatter("Shadow Scatter", Range(0,10)) = 5
         _ShadowRangeMin("Shadow Range Min", Range(0,1)) = 0.54
         _ShadowRangeMax("Shadow Range Max", Range(-2,2)) = -0.4
-        // Hidden property used by DOTS deformation path (ignored for classic GOs)
-        // In DOTS/ECS rendering this value is set per-instance 
-        // to point to the correct slice of the deformation buffer.
-        // Zero means no offset (for non-DOTS fallback) 
+
+        // DOTS deformation metadata. Zero means classic non-deformed mesh data.
         [HideInInspector] _ComputeMeshIndex("Compute Mesh Buffer Index Offset", Float) = 0
     }
 
     SubShader
     {
-        Blend SrcAlpha OneMinusSrcAlpha //added 07-03-2026
-
         Tags
         {
-            "Queue" = "Transparent" //added 07-03-2026
-            "IgnoreProjector" = "True" //added 07-03-2026
-            "RenderType" = "Transparent" //added 07-03-2026
+            "Queue" = "Geometry"
+            "RenderType" = "Opaque"
             "RenderPipeline" = "UniversalPipeline"
+            "UniversalMaterialType" = "Lit"
         }
+
+        HLSLINCLUDE
+            // Shader Model 4.5 is required for DOTS deformation buffers on desktop APIs.
+            #pragma target 4.5
+
+            // DOTS.hlsl injects DOTS instancing variants and keywords.
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
+
+            // Keeping material properties inside UnityPerMaterial preserves SRP Batcher compatibility.
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float _BumpScale;
+                float4 _AmbientColor;
+                float _AmbientColorIntensity;
+                float _ShadowSoftness;
+                float _ShadowScatter;
+                float _ShadowRangeMin;
+                float _ShadowRangeMax;
+                float _ComputeMeshIndex;
+            CBUFFER_END
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_NormalMap);
+            SAMPLER(sampler_NormalMap);
+
+            #if defined(DOTS_INSTANCING_ON)
+                UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
+                    UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float, _ComputeMeshIndex)
+                UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
+                #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
+            #else
+                #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) var
+            #endif
+
+            struct DeformedVertexData
+            {
+                float3 Position;
+                float3 Normal;
+                float3 Tangent;
+            };
+
+            StructuredBuffer<DeformedVertexData> _DeformedMeshData : register(t1);
+
+            struct Attributes
+            {
+                float3 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+                uint vertexID : SV_VertexID;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct ToonVaryings
+            {
+                float2 uv : TEXCOORD0;
+                float3 normalWS : TEXCOORD1;
+                float fogFactor : TEXCOORD2;
+                float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            struct DepthNormalsVaryings
+            {
+                float3 normalWS : TEXCOORD0;
+                float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            float InverseLerp(float minValue, float maxValue, float value)
+            {
+                return (value - minValue) / (maxValue - minValue);
+            }
+
+            float3 ResolveToonNormalFromMap(float2 uv)
+            {
+                float3 normal;
+                normal.xy = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv).wy * 2.0 - 1.0;
+                normal.xy *= _BumpScale;
+                normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+                normal = normal.xzy;
+
+                return normalize(normal);
+            }
+
+            void ResolveDeformedVertexData(Attributes input, out float3 positionOS, out float3 normalOS)
+            {
+                positionOS = input.positionOS;
+                normalOS = input.normalOS;
+
+                #if defined(UNITY_DOTS_INSTANCING_ENABLED)
+                    uint meshStartIndex = asuint(UNITY_ACCESS_HYBRID_INSTANCED_PROP(_ComputeMeshIndex, float));
+
+                    if (meshStartIndex > 0u)
+                    {
+                        DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + input.vertexID];
+                        positionOS = deformedVertex.Position;
+                        normalOS = deformedVertex.Normal;
+                    }
+                #endif
+            }
+        ENDHLSL
 
         Pass
         {
@@ -44,138 +150,24 @@ Shader "Cel Shader/Toon Diffuse ECS"
             ZTest LEqual
 
             HLSLPROGRAM
-            // Shader Model 4.5 is required for DOTS deformation buffers on desktop APIs.
-            #pragma target 4.5
             #pragma vertex ToonPassVertex
             #pragma fragment ToonPassFragment
             #pragma multi_compile_fog
+            #pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 
-            // DOTS.hlsl injects DOTS instancing variants and keywords.
-            // Core.hlsl and Lighting.hlsl replace UnityCG/Lighting includes.
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-
-            // IMPORTANT:
-            // Keeping every material property inside UnityPerMaterial is mandatory for SRP Batcher.
-            // If any property is declared outside this CBUFFER, BRG/Entities rendering can emit warnings
-            // and batching will be broken.
-            CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST;
-                float _BumpScale; //added 05-03-2026
-                float4 _AmbientColor;
-                float _AmbientColorIntensity;
-                float _ShadowSoftness;
-                float _ShadowScatter;
-                float _ShadowRangeMin;
-                float _ShadowRangeMax;
-                float _ComputeMeshIndex;
-            CBUFFER_END
-
-            // URP/HLSL texture declaration style (replaces "sampler2D + tex2D").
-            TEXTURE2D(_MainTex);
-            SAMPLER(sampler_MainTex);
-            TEXTURE2D(_NormalMap); //added 05-03-2026
-            SAMPLER(sampler_NormalMap); //added 05-03-2026
-
-            #if defined(DOTS_INSTANCING_ON)
-            // Registers DOTS-overridable per-instance metadata.
-            // Exposed _ComputeMeshIndex so each entity can point to its own slice
-            // inside the deformation buffer.
-            UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
-                UNITY_DOTS_INSTANCED_PROP_OVERRIDE_SUPPORTED(float, _ComputeMeshIndex)
-            UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
-            #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(type, var)
-            #else
-            // Non-DOTS fallback (read regular material property).
-            #define UNITY_ACCESS_HYBRID_INSTANCED_PROP(var, type) var
-            #endif
-
-            // Matches Entities Graphics deformation buffer layout.
-            // The field order must stay consistent with the producer side..
-            struct DeformedVertexData
+            ToonVaryings ToonPassVertex(Attributes input)
             {
-                float3 Position;
-                float3 Normal;
-                float3 Tangent;
-            };
+                ToonVaryings output = (ToonVaryings)0;
 
-            // StructuredBuffer slot for current-frame skinned/deformed data (for Entities Graphics)
-            // register(t1) means this buffer is expected to be bound at slot t1 by the renderer,
-            // which is currently handled by the Hybrid Renderer V2's shader bindings.
-            StructuredBuffer<DeformedVertexData> _DeformedMeshData : register(t1);
-
-            // Compared to :
-            // - adds SV_VertexID (needed to index deformation buffer)
-            // - adds per-instance macros for DOTS instancing.
-            struct Attributes
-            {
-                float3 positionOS : POSITION;
-                float3 normalOS : NORMAL;
-                float2 uv : TEXCOORD0;
-                uint vertexID : SV_VertexID;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            // Compared to v2f:
-            // - stores fog as scalar factor (URP style)
-            // - includes stereo/instance plumbing macros for SRP compatibility.
-            struct Varyings
-            {
-                float2 uv : TEXCOORD0;
-                float3 normalWS : TEXCOORD1;
-                float fogFactor : TEXCOORD2;
-                float4 positionCS : SV_POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-                UNITY_VERTEX_OUTPUT_STEREO
-            };
-
-            // Same function as "invLerp" in SH_ToonDiffuse.
-            float InverseLerp(float minValue, float maxValue, float value)
-            {
-                return (value - minValue) / (maxValue - minValue);
-            }
-
-            //added 05-03-2026: mirrors SH_ToonDiffuse normal-map decode logic.
-            float3 ResolveToonNormalFromMap(float2 uv)
-            {
-                float3 normal;
-                normal.xy = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv).wy * 2.0 - 1.0;
-                normal.xy *= _BumpScale;
-                normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
-                normal = normal.xzy;
-                return normalize(normal);
-            }
-
-            Varyings ToonPassVertex(Attributes input)
-            {
-                Varyings output = (Varyings)0;
-
-                // Required SRP instance/stereo setup.
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                float3 positionOS = input.positionOS;
-                float3 normalOS = input.normalOS;
+                // Resolve classic or DOTS-deformed mesh data before entering URP transform helpers.
+                float3 positionOS;
+                float3 normalOS;
+                ResolveDeformedVertexData(input, positionOS, normalOS);
 
-                #if defined(UNITY_DOTS_INSTANCING_ENABLED)
-                    // DOTS deformation path:
-                    // 1) read per-instance mesh start index
-                    // 2) skip fetch when the entity has no deformation data
-                    // 3) fetch deformed vertex using vertexID only for valid deformed meshes.
-                    uint meshStartIndex = asuint(UNITY_ACCESS_HYBRID_INSTANCED_PROP(_ComputeMeshIndex, float));
-
-                    if (meshStartIndex > 0u)
-                    {
-                        DeformedVertexData deformedVertex = _DeformedMeshData[meshStartIndex + input.vertexID];
-                        positionOS = deformedVertex.Position;
-                        normalOS = deformedVertex.Normal;
-                    }
-                #endif
-
-                // URP helper transforms (object -> clip/world), 
-                // replacing UnityObjectToClipPos/UnityObjectToWorldNormal.
                 VertexPositionInputs vertexPositionInputs = GetVertexPositionInputs(positionOS);
                 VertexNormalInputs vertexNormalInputs = GetVertexNormalInputs(normalOS);
 
@@ -187,43 +179,102 @@ Shader "Cel Shader/Toon Diffuse ECS"
                 return output;
             }
 
-            half4 ToonPassFragment(Varyings input) : SV_Target
+            half4 ToonPassFragment(ToonVaryings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                // URP texture sampling equivalent to tex2D.
+                // Sample albedo first so DBuffer decals can modify the receiver before toon lighting.
                 half4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
-                float3 meshNormalWS = NormalizeNormalPerPixel(input.normalWS); //added 07-03-2026
+                half3 baseColor = albedo.rgb;
+                half3 meshNormalWS = NormalizeNormalPerPixel(input.normalWS);
 
-                // uv is transformed in vertex, then transformed again before normal-map sampling.
+                #if defined(_DBUFFER)
+                    ApplyDecalToBaseColorAndNormal(input.positionCS, baseColor, meshNormalWS);
+                #endif
+
+                // Keep the existing toon normal-map remap to preserve the authored look.
                 float2 toonNormalUv = TRANSFORM_TEX(input.uv, _MainTex);
-                float3 toonNormal = ResolveToonNormalFromMap(toonNormalUv); //added 05-03-2026
+                half3 toonNormal = ResolveToonNormalFromMap(toonNormalUv);
 
-                // Main light retrieval in URP.
                 Light mainLight = GetMainLight();
-                float3 lightDir = mainLight.direction;
-                float firstRamp = dot(lightDir, meshNormalWS); //added 07-03-2026
-                float ramp = dot(firstRamp.xxx, toonNormal); //added 07-03-2026
+                half firstRamp = dot(mainLight.direction, meshNormalWS);
+                half ramp = dot(firstRamp.xxx, toonNormal);
 
-                // Toon ramp math ported 1:1.
-                float remapOut = InverseLerp(-1.0, 1.0, ramp);
-                float shadowScatter = _ShadowScatter / 50.0;
-                float shadowFloor = floor(remapOut / shadowScatter);
-                float shadowRemapIn = InverseLerp(1.0 / shadowScatter, 0.0, shadowFloor);
-                float shadowRemapOut = lerp(_ShadowRangeMin, _ShadowRangeMax, shadowRemapIn);
+                // Quantize the light ramp, then combine ambient color and texture response.
+                half remapOut = InverseLerp(-1.0, 1.0, ramp);
+                half shadowScatter = _ShadowScatter / 50.0;
+                half shadowFloor = floor(remapOut / shadowScatter);
+                half shadowRemapIn = InverseLerp(1.0 / shadowScatter, 0.0, shadowFloor);
+                half shadowRemapOut = lerp(_ShadowRangeMin, _ShadowRangeMax, shadowRemapIn);
 
-                // Same color composition model:
-                // smooth toon shadow term + ambient tint, then multiplied by base texture.
-                float3 ambientTerm = _AmbientColor.rgb * _AmbientColorIntensity;
-                float3 lighting = smoothstep(0.0, _ShadowSoftness, shadowRemapOut) + ambientTerm;
-                float3 texLighting = albedo.rgb + lighting;
-                float3 finalColor = albedo.rgb * texLighting;
+                half3 ambientTerm = _AmbientColor.rgb * _AmbientColorIntensity;
+                half3 lighting = smoothstep(0.0, _ShadowSoftness, shadowRemapOut) + ambientTerm;
+                half3 finalColor = baseColor * (baseColor + lighting);
 
-                // URP fog application.
                 finalColor = MixFog(finalColor, input.fogFactor);
 
                 return half4(finalColor, albedo.a);
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthNormals"
+            Tags
+            {
+                "LightMode" = "DepthNormals"
+            }
+
+            Cull Back
+            ZWrite On
+
+            HLSLPROGRAM
+            #pragma vertex ToonDepthNormalsVertex
+            #pragma fragment ToonDepthNormalsFragment
+            #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
+
+            DepthNormalsVaryings ToonDepthNormalsVertex(Attributes input)
+            {
+                DepthNormalsVaryings output = (DepthNormalsVaryings)0;
+
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                // Match the forward pass deformation path so DBuffer decals use correct receiver normals.
+                float3 positionOS;
+                float3 normalOS;
+                ResolveDeformedVertexData(input, positionOS, normalOS);
+
+                VertexPositionInputs vertexPositionInputs = GetVertexPositionInputs(positionOS);
+                VertexNormalInputs vertexNormalInputs = GetVertexNormalInputs(normalOS);
+
+                output.positionCS = vertexPositionInputs.positionCS;
+                output.normalWS = NormalizeNormalPerVertex(vertexNormalInputs.normalWS);
+
+                return output;
+            }
+
+            void ToonDepthNormalsFragment(
+                DepthNormalsVaryings input,
+                out half4 outNormalWS : SV_Target0)
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+                // Encode normals in the same formats expected by URP DepthNormals consumers.
+                #if defined(_GBUFFER_NORMALS_OCT)
+                    float3 normalWS = normalize(input.normalWS);
+                    float2 octNormalWS = PackNormalOctQuadEncode(normalWS);
+                    float2 remappedOctNormalWS = saturate(octNormalWS * 0.5 + 0.5);
+                    half3 packedNormalWS = PackFloat2To888(remappedOctNormalWS);
+                    outNormalWS = half4(packedNormalWS, 0.0);
+                #else
+                    float3 normalWS = NormalizeNormalPerPixel(input.normalWS);
+                    outNormalWS = half4(normalWS, 0.0);
+                #endif
             }
             ENDHLSL
         }
