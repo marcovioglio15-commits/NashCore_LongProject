@@ -62,114 +62,54 @@ public partial struct EnemyProjectileHitSystem : ISystem
         if (projectileCount <= 0)
             return;
 
-        NativeArray<Entity> enemyEntities = new NativeArray<Entity>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<EnemyData> enemyDataArray = new NativeArray<EnemyData>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<EnemyHealth> enemyHealthArray = new NativeArray<EnemyHealth>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<LocalTransform> enemyTransforms = new NativeArray<LocalTransform>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<EnemyRuntimeState> enemyRuntimeArray = new NativeArray<EnemyRuntimeState>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<EnemyKnockbackState> enemyKnockbackArray = new NativeArray<EnemyKnockbackState>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        int enemyWriteIndex = 0;
-
-        // Snapshot query data into contiguous arrays so Burst jobs can run over stable memory.
-        foreach ((RefRO<EnemyData> enemyData,
-                  RefRO<EnemyHealth> enemyHealth,
-                  RefRO<LocalTransform> enemyTransform,
-                  RefRO<EnemyRuntimeState> enemyRuntimeState,
-                  RefRO<EnemyKnockbackState> enemyKnockbackState,
-                  Entity enemyEntity) in SystemAPI.Query<RefRO<EnemyData>,
-                                                         RefRO<EnemyHealth>,
-                                                         RefRO<LocalTransform>,
-                                                         RefRO<EnemyRuntimeState>,
-                                                         RefRO<EnemyKnockbackState>>()
-                                                 .WithAll<EnemyActive>()
-                                                 .WithNone<EnemyDespawnRequest>()
-                                                 .WithEntityAccess())
-        {
-            if (enemyWriteIndex >= enemyCount)
-                break;
-
-            enemyEntities[enemyWriteIndex] = enemyEntity;
-            enemyDataArray[enemyWriteIndex] = enemyData.ValueRO;
-            enemyHealthArray[enemyWriteIndex] = enemyHealth.ValueRO;
-            enemyTransforms[enemyWriteIndex] = enemyTransform.ValueRO;
-            enemyRuntimeArray[enemyWriteIndex] = enemyRuntimeState.ValueRO;
-            enemyKnockbackArray[enemyWriteIndex] = enemyKnockbackState.ValueRO;
-            enemyWriteIndex++;
-        }
-
-        enemyCount = enemyWriteIndex;
+        Allocator frameAllocator = state.WorldUpdateAllocator;
+        NativeArray<Entity> enemyEntities = enemyQuery.ToEntityArray(frameAllocator);
+        NativeArray<EnemyData> enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(frameAllocator);
+        NativeArray<EnemyHealth> enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(frameAllocator);
+        NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(frameAllocator);
+        NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(frameAllocator);
+        NativeArray<EnemyKnockbackState> enemyKnockbackArray = enemyQuery.ToComponentDataArray<EnemyKnockbackState>(frameAllocator);
+        enemyCount = enemyEntities.Length;
 
         if (enemyCount <= 0)
-        {
-            enemyEntities.Dispose();
-            enemyDataArray.Dispose();
-            enemyHealthArray.Dispose();
-            enemyTransforms.Dispose();
-            enemyRuntimeArray.Dispose();
-            enemyKnockbackArray.Dispose();
             return;
-        }
 
-        NativeArray<Entity> projectileEntities = new NativeArray<Entity>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<Projectile> projectileDataArray = new NativeArray<Projectile>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<ProjectileOwner> projectileOwnerArray = new NativeArray<ProjectileOwner>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<ProjectileSplitState> projectileSplitArray = new NativeArray<ProjectileSplitState>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<ProjectileElementalPayload> projectileElementalArray = new NativeArray<ProjectileElementalPayload>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<LocalTransform> projectileTransforms = new NativeArray<LocalTransform>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<Entity> projectileEntities = projectileQuery.ToEntityArray(frameAllocator);
+        NativeArray<Projectile> projectileDataArray = projectileQuery.ToComponentDataArray<Projectile>(frameAllocator);
+        NativeArray<ProjectileOwner> projectileOwnerArray = projectileQuery.ToComponentDataArray<ProjectileOwner>(frameAllocator);
+        NativeArray<ProjectileSplitState> projectileSplitArray = projectileQuery.ToComponentDataArray<ProjectileSplitState>(frameAllocator);
+        NativeArray<ProjectileElementalPayload> projectileElementalArray = projectileQuery.ToComponentDataArray<ProjectileElementalPayload>(frameAllocator);
+        NativeArray<LocalTransform> projectileTransforms = projectileQuery.ToComponentDataArray<LocalTransform>(frameAllocator);
         int projectileWriteIndex = 0;
         ComponentLookup<PlayerControllerConfig> playerControllerLookup = SystemAPI.GetComponentLookup<PlayerControllerConfig>(true);
 
-        foreach ((RefRO<Projectile> projectileData,
-                  RefRO<ProjectileOwner> projectileOwner,
-                  RefRO<ProjectileSplitState> projectileSplitState,
-                  RefRO<ProjectileElementalPayload> projectileElementalPayload,
-                  RefRO<LocalTransform> projectileTransform,
-                  Entity projectileEntity) in SystemAPI.Query<RefRO<Projectile>,
-                                                              RefRO<ProjectileOwner>,
-                                                              RefRO<ProjectileSplitState>,
-                                                              RefRO<ProjectileElementalPayload>,
-                                                              RefRO<LocalTransform>>()
-                                                      .WithAll<ProjectileActive>()
-                                                      .WithEntityAccess())
+        for (int readIndex = 0; readIndex < projectileCount; readIndex++)
         {
-            if (projectileWriteIndex >= projectileCount)
-                break;
-
-            Entity shooterEntity = projectileOwner.ValueRO.ShooterEntity;
+            Entity shooterEntity = projectileOwnerArray[readIndex].ShooterEntity;
 
             if (!playerControllerLookup.HasComponent(shooterEntity))
                 continue;
 
-            projectileEntities[projectileWriteIndex] = projectileEntity;
-            projectileDataArray[projectileWriteIndex] = projectileData.ValueRO;
-            projectileOwnerArray[projectileWriteIndex] = projectileOwner.ValueRO;
-            projectileSplitArray[projectileWriteIndex] = projectileSplitState.ValueRO;
-            projectileElementalArray[projectileWriteIndex] = projectileElementalPayload.ValueRO;
-            projectileTransforms[projectileWriteIndex] = projectileTransform.ValueRO;
+            if (projectileWriteIndex != readIndex)
+            {
+                projectileEntities[projectileWriteIndex] = projectileEntities[readIndex];
+                projectileDataArray[projectileWriteIndex] = projectileDataArray[readIndex];
+                projectileOwnerArray[projectileWriteIndex] = projectileOwnerArray[readIndex];
+                projectileSplitArray[projectileWriteIndex] = projectileSplitArray[readIndex];
+                projectileElementalArray[projectileWriteIndex] = projectileElementalArray[readIndex];
+                projectileTransforms[projectileWriteIndex] = projectileTransforms[readIndex];
+            }
+
             projectileWriteIndex++;
         }
 
         projectileCount = projectileWriteIndex;
 
         if (projectileCount <= 0)
-        {
-            enemyEntities.Dispose();
-            enemyDataArray.Dispose();
-            enemyHealthArray.Dispose();
-            enemyTransforms.Dispose();
-            enemyRuntimeArray.Dispose();
-            enemyKnockbackArray.Dispose();
-            projectileEntities.Dispose();
-            projectileDataArray.Dispose();
-            projectileOwnerArray.Dispose();
-            projectileSplitArray.Dispose();
-            projectileElementalArray.Dispose();
-            projectileTransforms.Dispose();
             return;
-        }
 
-        NativeArray<float3> enemyPositions = new NativeArray<float3>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<float> enemyRadii = new NativeArray<float>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float3> enemyPositions = CollectionHelper.CreateNativeArray<float3>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> enemyRadii = CollectionHelper.CreateNativeArray<float>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
 
         float maxEnemyRadius = 0.05f;
 
@@ -187,11 +127,11 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
         float cellSize = EnemySpatialHashUtility.ResolveCellSize(maxEnemyRadius);
         float inverseCellSize = 1f / cellSize;
-        NativeParallelMultiHashMap<int, int> enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.TempJob);
+        NativeParallelMultiHashMap<int, int> enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, frameAllocator);
         EnemySpatialHashUtility.BuildCellMap(in enemyPositions, inverseCellSize, ref enemyCellMap);
 
-        NativeArray<float3> projectilePositions = new NativeArray<float3>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        NativeArray<float> projectileRadii = new NativeArray<float>(projectileCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float3> projectilePositions = CollectionHelper.CreateNativeArray<float3>(projectileCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> projectileRadii = CollectionHelper.CreateNativeArray<float>(projectileCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
 
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
@@ -201,7 +141,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             projectileRadii[projectileIndex] = math.max(0.005f, BaseProjectileHitRadius * projectileScale + explosionRadius);
         }
 
-        NativeStream projectileHitStream = new NativeStream(projectileCount, Allocator.TempJob);
+        NativeStream projectileHitStream = new NativeStream(projectileCount, frameAllocator);
 
         EnemyProjectileHitCollectJob hitCollectJob = new EnemyProjectileHitCollectJob
         {
@@ -218,8 +158,8 @@ public partial struct EnemyProjectileHitSystem : ISystem
         JobHandle hitCollectHandle = hitCollectJob.Schedule(projectileCount, 64, state.Dependency);
         hitCollectHandle.Complete();
 
-        NativeArray<EnemyHealth> projectedEnemyHealth = new NativeArray<EnemyHealth>(enemyHealthArray, Allocator.Temp);
-        NativeArray<EnemyKnockbackState> projectedEnemyKnockback = new NativeArray<EnemyKnockbackState>(enemyKnockbackArray, Allocator.Temp);
+        NativeArray<EnemyHealth> projectedEnemyHealth = CollectionHelper.CreateNativeArray<EnemyHealth>(enemyHealthArray, frameAllocator);
+        NativeArray<EnemyKnockbackState> projectedEnemyKnockback = CollectionHelper.CreateNativeArray<EnemyKnockbackState>(enemyKnockbackArray, frameAllocator);
         BufferLookup<ProjectilePoolElement> projectilePoolLookup = SystemAPI.GetBufferLookup<ProjectilePoolElement>(false);
         BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
@@ -233,15 +173,17 @@ public partial struct EnemyProjectileHitSystem : ISystem
         DynamicBuffer<GameAudioEventRequest> audioRequests = default;
         bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
         NativeStream.Reader projectileHitReader = projectileHitStream.AsReader();
-        NativeList<int> currentOverlapEnemyIndices = new NativeList<int>(16, Allocator.Temp);
-        NativeList<ProjectileHitCandidate> hitCandidates = new NativeList<ProjectileHitCandidate>(16, Allocator.Temp);
+        NativeList<int> currentOverlapEnemyIndices = new NativeList<int>(16, frameAllocator);
+        NativeList<ProjectileHitCandidate> hitCandidates = new NativeList<ProjectileHitCandidate>(16, frameAllocator);
 
         // Hits are resolved sequentially per projectile so penetration modes can update projected health correctly.
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
             int hitCount = projectileHitReader.BeginForEachIndex(projectileIndex);
             Entity projectileEntity = projectileEntities[projectileIndex];
-            bool canTrackProjectileHits = projectileHitHistoryLookup.HasBuffer(projectileEntity);
+            Projectile projectileData = projectileDataArray[projectileIndex];
+            bool needsHitHistory = projectileData.PenetrationMode != ProjectilePenetrationMode.None;
+            bool canTrackProjectileHits = needsHitHistory && projectileHitHistoryLookup.HasBuffer(projectileEntity);
             DynamicBuffer<ProjectileHitHistoryElement> projectileHitHistory = default;
 
             if (canTrackProjectileHits)
@@ -257,7 +199,6 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 continue;
             }
 
-            Projectile projectileData = projectileDataArray[projectileIndex];
             ProjectileOwner projectileOwner = projectileOwnerArray[projectileIndex];
             ProjectileSplitState splitState = projectileSplitArray[projectileIndex];
             ProjectileElementalPayload elementalPayload = projectileElementalArray[projectileIndex];
@@ -580,30 +521,6 @@ public partial struct EnemyProjectileHitSystem : ISystem
         commandBuffer.Playback(entityManager);
         commandBuffer.Dispose();
 
-        enemyEntities.Dispose();
-        enemyDataArray.Dispose();
-        enemyHealthArray.Dispose();
-        enemyTransforms.Dispose();
-        enemyRuntimeArray.Dispose();
-        enemyKnockbackArray.Dispose();
-
-        projectileEntities.Dispose();
-        projectileDataArray.Dispose();
-        projectileOwnerArray.Dispose();
-        projectileSplitArray.Dispose();
-        projectileElementalArray.Dispose();
-        projectileTransforms.Dispose();
-
-        enemyPositions.Dispose();
-        enemyRadii.Dispose();
-        projectilePositions.Dispose();
-        projectileRadii.Dispose();
-        projectileHitStream.Dispose();
-        enemyCellMap.Dispose();
-        projectedEnemyHealth.Dispose();
-        projectedEnemyKnockback.Dispose();
-        currentOverlapEnemyIndices.Dispose();
-        hitCandidates.Dispose();
     }
     #endregion
 

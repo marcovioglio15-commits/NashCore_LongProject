@@ -1,3 +1,4 @@
+using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -37,33 +38,22 @@ public partial struct EnemyVisualDistanceCullingSystem : ISystem
         Entity playerEntity = playerQuery.GetSingletonEntity();
         float3 playerPosition = entityManager.GetComponentData<LocalTransform>(playerEntity).Position;
 
-        foreach ((RefRO<EnemyVisualConfig> visualConfig,
-                  RefRW<EnemyVisualRuntimeState> visualRuntimeState,
-                  RefRO<LocalTransform> enemyTransform)
-                 in SystemAPI.Query<RefRO<EnemyVisualConfig>, RefRW<EnemyVisualRuntimeState>, RefRO<LocalTransform>>()
-                             .WithAll<EnemyActive>())
+        state.Dependency = new EnemyVisualDistanceCullingJob
         {
-            EnemyVisualRuntimeState currentVisualRuntimeState = visualRuntimeState.ValueRO;
-            float planarDistance = ResolvePlanarDistance(enemyTransform.ValueRO.Position, playerPosition);
-            currentVisualRuntimeState.LastDistanceToPlayer = planarDistance;
-            currentVisualRuntimeState.IsVisible = ResolveVisibility(visualConfig.ValueRO,
-                                                                    currentVisualRuntimeState.IsVisible,
-                                                                    planarDistance);
-            visualRuntimeState.ValueRW = currentVisualRuntimeState;
-        }
+            PlayerPosition = playerPosition
+        }.ScheduleParallel(state.Dependency);
     }
     #endregion
 
     #region Helpers
-    private static float ResolvePlanarDistance(float3 enemyPosition, float3 playerPosition)
+    private static float ResolvePlanarDistanceSquared(float3 enemyPosition, float3 playerPosition)
     {
         float3 delta = enemyPosition - playerPosition;
         delta.y = 0f;
-        float squaredDistance = math.lengthsq(delta);
-        return math.sqrt(squaredDistance);
+        return math.lengthsq(delta);
     }
 
-    private static byte ResolveVisibility(in EnemyVisualConfig visualConfig, byte wasVisible, float planarDistance)
+    private static byte ResolveVisibility(in EnemyVisualConfig visualConfig, byte wasVisible, float planarDistanceSquared)
     {
         if (visualConfig.UseDistanceCulling == 0 || visualConfig.MaxVisibleDistance <= 0f)
             return 1;
@@ -71,11 +61,33 @@ public partial struct EnemyVisualDistanceCullingSystem : ISystem
         float maxVisibleDistance = visualConfig.MaxVisibleDistance;
         float hysteresisDistance = math.max(0f, visualConfig.VisibleDistanceHysteresis);
         float hideThreshold = maxVisibleDistance + hysteresisDistance;
+        float maxVisibleDistanceSquared = maxVisibleDistance * maxVisibleDistance;
+        float hideThresholdSquared = hideThreshold * hideThreshold;
 
         if (wasVisible != 0)
-            return planarDistance <= hideThreshold ? (byte)1 : (byte)0;
+            return planarDistanceSquared <= hideThresholdSquared ? (byte)1 : (byte)0;
 
-        return planarDistance <= maxVisibleDistance ? (byte)1 : (byte)0;
+        return planarDistanceSquared <= maxVisibleDistanceSquared ? (byte)1 : (byte)0;
+    }
+    #endregion
+
+    #region Jobs
+    [BurstCompile]
+    [WithAll(typeof(EnemyActive))]
+    private partial struct EnemyVisualDistanceCullingJob : IJobEntity
+    {
+        public float3 PlayerPosition;
+
+        private void Execute(in EnemyVisualConfig visualConfig,
+                             ref EnemyVisualRuntimeState visualRuntimeState,
+                             in LocalTransform enemyTransform)
+        {
+            float planarDistanceSquared = ResolvePlanarDistanceSquared(enemyTransform.Position, PlayerPosition);
+            visualRuntimeState.LastSquaredDistanceToPlayer = planarDistanceSquared;
+            visualRuntimeState.IsVisible = ResolveVisibility(in visualConfig,
+                                                             visualRuntimeState.IsVisible,
+                                                             planarDistanceSquared);
+        }
     }
     #endregion
 

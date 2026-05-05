@@ -21,7 +21,43 @@ public static class ProjectileElementalPayloadUtility
     /// </summary>
     public static bool HasAnyPayload(in ProjectileElementalPayload payload)
     {
-        return payload.Entries.Length > 0;
+        return GetEntryCount(in payload) > 0;
+    }
+
+    /// <summary>
+    /// Returns the sanitized number of elemental entries stored in a compact projectile payload.
+    /// /params payload Payload to inspect.
+    /// /returns Entry count clamped to the supported inline capacity.
+    /// </summary>
+    public static int GetEntryCount(in ProjectileElementalPayload payload)
+    {
+        return math.min(payload.EntryCount, MaximumEntryCount);
+    }
+
+    /// <summary>
+    /// Reads one compact payload entry.
+    /// /params payload Payload to read.
+    /// /params index Entry index in the compact payload.
+    /// /returns The stored entry, or default when the index is outside the active range.
+    /// </summary>
+    public static ProjectileElementalPayloadEntry GetEntry(in ProjectileElementalPayload payload, int index)
+    {
+        if (index < 0 || index >= GetEntryCount(in payload))
+            return default;
+
+        switch (index)
+        {
+            case 0:
+                return payload.Entry0;
+            case 1:
+                return payload.Entry1;
+            case 2:
+                return payload.Entry2;
+            case 3:
+                return payload.Entry3;
+            default:
+                return default;
+        }
     }
 
     /// <summary>
@@ -53,26 +89,32 @@ public static class ProjectileElementalPayloadUtility
         if (sanitizedStacksPerHit <= 0f)
             return false;
 
-        for (int index = 0; index < payload.Entries.Length; index++)
-        {
-            ProjectileElementalPayloadEntry existingEntry = payload.Entries[index];
+        int entryCount = GetEntryCount(in payload);
 
-            if (existingEntry.Effect.ElementType != effect.ElementType)
+        for (int index = 0; index < entryCount; index++)
+        {
+            ProjectileElementalPayloadEntry existingEntry = GetEntry(in payload, index);
+
+            if (existingEntry.ElementTypeId != (byte)effect.ElementType)
                 continue;
 
             existingEntry.StacksPerHit += sanitizedStacksPerHit;
-            payload.Entries[index] = existingEntry;
+            SetEntry(ref payload, index, existingEntry);
             return true;
         }
 
-        if (payload.Entries.Length >= MaximumEntryCount)
+        if (entryCount >= MaximumEntryCount)
             return false;
 
-        payload.Entries.Add(new ProjectileElementalPayloadEntry
+        SetEntry(ref payload,
+                 entryCount,
+                 new ProjectileElementalPayloadEntry
         {
             Effect = effect,
             StacksPerHit = sanitizedStacksPerHit
         });
+
+        payload.EntryCount = (byte)(entryCount + 1);
         return true;
     }
 
@@ -84,10 +126,43 @@ public static class ProjectileElementalPayloadUtility
     /// </summary>
     public static void MergePayload(ref ProjectileElementalPayload destination, in ProjectileElementalPayload source)
     {
-        for (int index = 0; index < source.Entries.Length; index++)
+        int sourceEntryCount = GetEntryCount(in source);
+
+        for (int index = 0; index < sourceEntryCount; index++)
         {
-            ProjectileElementalPayloadEntry sourceEntry = source.Entries[index];
-            TryAddOrMerge(ref destination, in sourceEntry.Effect, sourceEntry.StacksPerHit);
+            ProjectileElementalPayloadEntry sourceEntry = GetEntry(in source, index);
+            ElementalEffectConfig sourceEffect = sourceEntry.Effect;
+            TryAddOrMerge(ref destination, in sourceEffect, sourceEntry.StacksPerHit);
+        }
+    }
+    #endregion
+
+    #region Private Methods
+    /// <summary>
+    /// Writes one compact payload entry without growing beyond the fixed inline capacity.
+    /// /params payload Payload to mutate.
+    /// /params index Entry index to write.
+    /// /params entry Entry data to store.
+    /// /returns None.
+    /// </summary>
+    private static void SetEntry(ref ProjectileElementalPayload payload,
+                                 int index,
+                                 in ProjectileElementalPayloadEntry entry)
+    {
+        switch (index)
+        {
+            case 0:
+                payload.Entry0 = entry;
+                break;
+            case 1:
+                payload.Entry1 = entry;
+                break;
+            case 2:
+                payload.Entry2 = entry;
+                break;
+            case 3:
+                payload.Entry3 = entry;
+                break;
         }
     }
     #endregion

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,6 +12,9 @@ public static class SceneRenderOptimizationAuditUtility
 {
     #region Constants
     private const int MaxLoggedExamplesPerCategory = 24;
+    private const string MainGameplayScenePath = "Assets/Scenes/Testing/Main Scenes/SCN_PlayerControllerTesting/SCN_PlayerControllerTesting.unity";
+    private const string EnvironmentPrefabFolder = "Assets/3D/3D prefabs";
+    private const string EnvironmentModulesRootName = "Environment_modules";
     #endregion
 
     #region Methods
@@ -19,11 +23,31 @@ public static class SceneRenderOptimizationAuditUtility
     /// <summary>
     /// Audits currently open scenes for common render cost risks such as missing LODGroups and multi-material renderers.
     /// </summary>
-    [MenuItem("Tools/Optimization/Audit Open Scenes Rendering")]
+    //[MenuItem("Tools/Optimization/Audit Open Scenes Rendering")]
     private static void AuditOpenScenesRendering()
     {
         string report = BuildOpenScenesRenderingAuditReport();
         Debug.Log(report);
+    }
+
+    /// <summary>
+    /// Applies batching-static flags to known immobile environment modules in the open scenes.
+    /// </summary>
+    //[MenuItem("Tools/Optimization/Apply Open Scenes Environment Static Batching")]
+    private static void ApplyOpenScenesEnvironmentStaticBatchingMenu()
+    {
+        int changedObjects = ApplyOpenScenesEnvironmentStaticBatching();
+        Debug.Log(string.Format("[Scene Render Optimization] Applied batching-static flags to {0} scene environment objects.", changedObjects));
+    }
+
+    /// <summary>
+    /// Applies batching-static flags to reusable environment prefabs.
+    /// </summary>
+    //[MenuItem("Tools/Optimization/Apply Environment Prefab Static Batching")]
+    private static void ApplyEnvironmentPrefabStaticBatchingMenu()
+    {
+        int changedObjects = ApplyEnvironmentPrefabStaticBatching();
+        Debug.Log(string.Format("[Scene Render Optimization] Applied batching-static flags to {0} prefab environment objects.", changedObjects));
     }
     #endregion
 
@@ -50,6 +74,189 @@ public static class SceneRenderOptimizationAuditUtility
 
         return reportBuilder.ToString();
     }
+
+    /// <summary>
+    /// Batchmode entry point that optimizes reusable environment prefabs and the current gameplay scene.
+    /// </summary>
+    public static void ApplyMainGameplayEnvironmentStaticBatching()
+    {
+        int changedPrefabObjects = ApplyEnvironmentPrefabStaticBatching();
+        Scene scene = EditorSceneManager.OpenScene(MainGameplayScenePath, OpenSceneMode.Single);
+        int changedSceneObjects = ApplySceneEnvironmentStaticBatching(scene);
+
+        if (changedSceneObjects > 0)
+            EditorSceneManager.SaveScene(scene);
+
+        Debug.Log(string.Format("[Scene Render Optimization] Static batching pass complete. Prefab objects changed: {0}. Scene objects changed: {1}.", changedPrefabObjects, changedSceneObjects));
+        Debug.Log(BuildOpenScenesRenderingAuditReport());
+    }
+
+    /// <summary>
+    /// Applies batching-static flags to known immobile environment renderers in all loaded scenes.
+    /// </summary>
+    /// <returns>Number of GameObjects changed.</returns>
+    public static int ApplyOpenScenesEnvironmentStaticBatching()
+    {
+        int changedObjects = 0;
+
+        for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+        {
+            Scene scene = SceneManager.GetSceneAt(sceneIndex);
+            changedObjects += ApplySceneEnvironmentStaticBatching(scene);
+
+            if (scene.IsValid() && scene.isLoaded && scene.isDirty)
+                EditorSceneManager.SaveScene(scene);
+        }
+
+        return changedObjects;
+    }
+    #endregion
+
+    #region Apply
+    /// <summary>
+    /// Applies batching-static flags to reusable prefabs that represent immobile environment modules.
+    /// </summary>
+    /// <returns>Number of prefab GameObjects changed.</returns>
+    private static int ApplyEnvironmentPrefabStaticBatching()
+    {
+        string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { EnvironmentPrefabFolder });
+        int changedObjects = 0;
+
+        for (int prefabIndex = 0; prefabIndex < prefabGuids.Length; prefabIndex++)
+        {
+            string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuids[prefabIndex]);
+
+            if (!IsBatchableEnvironmentPrefabPath(prefabPath))
+                continue;
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+
+            try
+            {
+                int changedInPrefab = ApplyBatchingStaticToHierarchy(prefabRoot);
+
+                if (changedInPrefab <= 0)
+                    continue;
+
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+                changedObjects += changedInPrefab;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        AssetDatabase.SaveAssets();
+        return changedObjects;
+    }
+
+    /// <summary>
+    /// Applies batching-static flags to scene objects under the authored environment modules root.
+    /// </summary>
+    /// <param name="scene">Scene to mutate.</param>
+    /// <returns>Number of scene GameObjects changed.</returns>
+    private static int ApplySceneEnvironmentStaticBatching(Scene scene)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+            return 0;
+
+        GameObject[] rootObjects = scene.GetRootGameObjects();
+        int changedObjects = 0;
+
+        for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
+        {
+            GameObject rootObject = rootObjects[rootIndex];
+
+            if (rootObject == null)
+                continue;
+
+            if (rootObject.name == EnvironmentModulesRootName)
+            {
+                changedObjects += ApplyBatchingStaticToHierarchy(rootObject);
+                changedObjects += ClearDynamicBatchingStaticFromHierarchy(rootObject);
+                continue;
+            }
+
+            if (IsStandaloneStaticSceneMeshRoot(rootObject))
+                changedObjects += ApplyBatchingStaticToHierarchy(rootObject);
+        }
+
+        if (changedObjects > 0)
+            EditorSceneManager.MarkSceneDirty(scene);
+
+        return changedObjects;
+    }
+
+    /// <summary>
+    /// Sets only the batching-static bit on MeshRenderer GameObjects in one hierarchy.
+    /// </summary>
+    /// <param name="rootObject">Hierarchy root to inspect.</param>
+    /// <returns>Number of GameObjects changed.</returns>
+    private static int ApplyBatchingStaticToHierarchy(GameObject rootObject)
+    {
+        if (rootObject == null)
+            return 0;
+
+        MeshRenderer[] meshRenderers = rootObject.GetComponentsInChildren<MeshRenderer>(true);
+        int changedObjects = 0;
+
+        for (int rendererIndex = 0; rendererIndex < meshRenderers.Length; rendererIndex++)
+        {
+            MeshRenderer meshRenderer = meshRenderers[rendererIndex];
+
+            if (!IsBatchingStaticCandidate(meshRenderer))
+                continue;
+
+            GameObject rendererObject = meshRenderer.gameObject;
+            StaticEditorFlags currentFlags = GameObjectUtility.GetStaticEditorFlags(rendererObject);
+            StaticEditorFlags updatedFlags = currentFlags | StaticEditorFlags.BatchingStatic;
+
+            if (updatedFlags == currentFlags)
+                continue;
+
+            GameObjectUtility.SetStaticEditorFlags(rendererObject, updatedFlags);
+            EditorUtility.SetDirty(rendererObject);
+            changedObjects++;
+        }
+
+        return changedObjects;
+    }
+
+    /// <summary>
+    /// Removes batching-static from environment renderers controlled by dynamic transform drivers.
+    /// </summary>
+    /// <param name="rootObject">Hierarchy root to inspect.</param>
+    /// <returns>Number of GameObjects changed.</returns>
+    private static int ClearDynamicBatchingStaticFromHierarchy(GameObject rootObject)
+    {
+        if (rootObject == null)
+            return 0;
+
+        MeshRenderer[] meshRenderers = rootObject.GetComponentsInChildren<MeshRenderer>(true);
+        int changedObjects = 0;
+
+        for (int rendererIndex = 0; rendererIndex < meshRenderers.Length; rendererIndex++)
+        {
+            MeshRenderer meshRenderer = meshRenderers[rendererIndex];
+
+            if (meshRenderer == null || !HasDynamicTransformOwner(meshRenderer.transform))
+                continue;
+
+            GameObject rendererObject = meshRenderer.gameObject;
+            StaticEditorFlags currentFlags = GameObjectUtility.GetStaticEditorFlags(rendererObject);
+
+            if ((currentFlags & StaticEditorFlags.BatchingStatic) == 0)
+                continue;
+
+            StaticEditorFlags updatedFlags = currentFlags & ~StaticEditorFlags.BatchingStatic;
+            GameObjectUtility.SetStaticEditorFlags(rendererObject, updatedFlags);
+            EditorUtility.SetDirty(rendererObject);
+            changedObjects++;
+        }
+
+        return changedObjects;
+    }
     #endregion
 
     #region Audit
@@ -73,16 +280,40 @@ public static class SceneRenderOptimizationAuditUtility
             if (!IsSceneRenderer(meshRenderer))
                 continue;
 
+            bool activeInHierarchy = meshRenderer.gameObject.activeInHierarchy;
+
             stats.MeshRendererCount++;
+
+            if (activeInHierarchy)
+                stats.ActiveMeshRendererCount++;
+
             TrackMaterials(meshRenderer.sharedMaterials, ref stats);
 
             if (!meshRenderer.gameObject.isStatic)
             {
                 stats.NonStaticMeshRendererCount++;
-                AppendExample(reportBuilder,
-                              "Static batching candidate",
-                              meshRenderer,
-                              stats.NonStaticMeshRendererCount);
+
+                if (activeInHierarchy)
+                {
+                    stats.ActiveNonStaticMeshRendererCount++;
+
+                    if (IsBatchingStaticCandidate(meshRenderer))
+                    {
+                        stats.ActiveStaticBatchingCandidateCount++;
+                        AppendExample(reportBuilder,
+                                      "Active static batching candidate",
+                                      meshRenderer,
+                                      stats.ActiveStaticBatchingCandidateCount);
+                    }
+                    else if (HasDynamicTransformOwner(meshRenderer.transform))
+                    {
+                        stats.ActiveDynamicNonStaticMeshRendererCount++;
+                        AppendExample(reportBuilder,
+                                      "Static batching skipped by dynamic owner",
+                                      meshRenderer,
+                                      stats.ActiveDynamicNonStaticMeshRendererCount);
+                    }
+                }
             }
 
             if (meshRenderer.GetComponentInParent<LODGroup>() == null)
@@ -157,6 +388,92 @@ public static class SceneRenderOptimizationAuditUtility
 
         Scene scene = renderer.gameObject.scene;
         return scene.IsValid() && scene.isLoaded;
+    }
+
+    /// <summary>
+    /// Resolves whether a renderer can safely participate in static batching.
+    /// </summary>
+    /// <param name="meshRenderer">Renderer candidate.</param>
+    /// <returns>True when the renderer belongs to an immobile mesh hierarchy.</returns>
+    private static bool IsBatchingStaticCandidate(MeshRenderer meshRenderer)
+    {
+        if (meshRenderer == null)
+            return false;
+
+        if (!meshRenderer.enabled)
+            return false;
+
+        if (HasDynamicTransformOwner(meshRenderer.transform))
+            return false;
+
+        MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
+        return meshFilter != null && meshFilter.sharedMesh != null;
+    }
+
+    /// <summary>
+    /// Resolves authored one-off static meshes placed directly in the scene root.
+    /// </summary>
+    /// <param name="rootObject">Root GameObject to inspect.</param>
+    /// <returns>True when the root is a standalone immobile mesh.</returns>
+    private static bool IsStandaloneStaticSceneMeshRoot(GameObject rootObject)
+    {
+        if (rootObject == null || !rootObject.activeInHierarchy)
+            return false;
+
+        if (rootObject.transform.childCount != 0)
+            return false;
+
+        if (rootObject.GetComponents<MonoBehaviour>().Length != 0)
+            return false;
+
+        return IsBatchingStaticCandidate(rootObject.GetComponent<MeshRenderer>());
+    }
+
+    /// <summary>
+    /// Detects transform drivers that make static batching unsafe.
+    /// </summary>
+    /// <param name="transform">Renderer transform to inspect.</param>
+    /// <returns>True when one parent can move the renderer at runtime.</returns>
+    private static bool HasDynamicTransformOwner(Transform transform)
+    {
+        if (transform == null)
+            return false;
+
+        return transform.GetComponentInParent<Animator>(true) != null
+            || transform.GetComponentInParent<Rigidbody>(true) != null;
+    }
+
+    /// <summary>
+    /// Filters environment prefabs to immobile modular pieces. Moving set pieces stay opt-in.
+    /// </summary>
+    /// <param name="prefabPath">Asset path to inspect.</param>
+    /// <returns>True when the prefab should default to batching-static.</returns>
+    private static bool IsBatchableEnvironmentPrefabPath(string prefabPath)
+    {
+        if (string.IsNullOrEmpty(prefabPath))
+            return false;
+
+        string prefabName = System.IO.Path.GetFileNameWithoutExtension(prefabPath);
+
+        switch (prefabName)
+        {
+            case "PF_Column":
+            case "PF_Floor_A":
+            case "PF_Floor_A_Railway":
+            case "PF_Gate_Small":
+            case "PF_Grate_LevelExit":
+            case "PF_Railway_Rails_A":
+            case "PF_Railway_Rails_B":
+            case "PF_Stairs":
+            case "PF_Tunnel_LevelExit":
+            case "PF_Tunnel_Railway":
+            case "PF_Wall_A":
+            case "PF_Wall_A_Railway":
+            case "PF_Wall_B":
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -244,11 +561,15 @@ public static class SceneRenderOptimizationAuditUtility
         reportBuilder.AppendLine();
         reportBuilder.AppendLine("Summary:");
         reportBuilder.AppendLine(string.Format(" MeshRenderers: {0}", stats.MeshRendererCount));
+        reportBuilder.AppendLine(string.Format(" Active MeshRenderers: {0}", stats.ActiveMeshRendererCount));
         reportBuilder.AppendLine(string.Format(" SkinnedMeshRenderers: {0}", stats.SkinnedMeshRendererCount));
         reportBuilder.AppendLine(string.Format(" Unique shared materials: {0}", stats.UniqueMaterials.Count));
         reportBuilder.AppendLine(string.Format(" MeshRenderers without LODGroup: {0}", stats.MeshRenderersWithoutLodGroup));
         reportBuilder.AppendLine(string.Format(" SkinnedMeshRenderers without LODGroup: {0}", stats.SkinnedRenderersWithoutLodGroup));
         reportBuilder.AppendLine(string.Format(" Non-static MeshRenderers: {0}", stats.NonStaticMeshRendererCount));
+        reportBuilder.AppendLine(string.Format(" Active non-static MeshRenderers: {0}", stats.ActiveNonStaticMeshRendererCount));
+        reportBuilder.AppendLine(string.Format(" Active static batching candidates: {0}", stats.ActiveStaticBatchingCandidateCount));
+        reportBuilder.AppendLine(string.Format(" Active dynamic non-static MeshRenderers: {0}", stats.ActiveDynamicNonStaticMeshRendererCount));
         reportBuilder.AppendLine(string.Format(" Multi-material renderers: {0}", stats.MultiMaterialRendererCount));
     }
 
@@ -285,10 +606,14 @@ public static class SceneRenderOptimizationAuditUtility
     private struct SceneRenderAuditStats
     {
         public int MeshRendererCount;
+        public int ActiveMeshRendererCount;
         public int SkinnedMeshRendererCount;
         public int MeshRenderersWithoutLodGroup;
         public int SkinnedRenderersWithoutLodGroup;
         public int NonStaticMeshRendererCount;
+        public int ActiveNonStaticMeshRendererCount;
+        public int ActiveStaticBatchingCandidateCount;
+        public int ActiveDynamicNonStaticMeshRendererCount;
         public int MultiMaterialRendererCount;
         public HashSet<Material> UniqueMaterials;
     }

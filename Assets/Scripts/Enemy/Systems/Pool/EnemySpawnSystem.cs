@@ -85,15 +85,18 @@ public partial struct EnemySpawnSystem : ISystem
         if (spawnerState.Initialized == 0)
             return;
 
-        DynamicBuffer<EnemySpawnerWaveDefinitionElement> waveDefinitions = entityManager.GetBuffer<EnemySpawnerWaveDefinitionElement>(spawnerEntity);
-        DynamicBuffer<EnemySpawnerWaveRuntimeElement> waveRuntime = entityManager.GetBuffer<EnemySpawnerWaveRuntimeElement>(spawnerEntity);
-        DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents = entityManager.GetBuffer<EnemySpawnerWaveEventElement>(spawnerEntity);
-        DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap = entityManager.GetBuffer<EnemySpawnerPrefabPoolMapElement>(spawnerEntity);
         EnemySpawnWarningConfig warningConfig = entityManager.GetComponentData<EnemySpawnWarningConfig>(spawnerEntity);
         float4x4 localToWorld = entityManager.GetComponentData<LocalToWorld>(spawnerEntity).Value;
+        int waveCount = entityManager.GetBuffer<EnemySpawnerWaveDefinitionElement>(spawnerEntity).Length;
 
-        for (int waveIndex = 0; waveIndex < waveDefinitions.Length; waveIndex++)
+        for (int waveIndex = 0; waveIndex < waveCount; waveIndex++)
         {
+            DynamicBuffer<EnemySpawnerWaveDefinitionElement> waveDefinitions = entityManager.GetBuffer<EnemySpawnerWaveDefinitionElement>(spawnerEntity);
+            DynamicBuffer<EnemySpawnerWaveRuntimeElement> waveRuntime = entityManager.GetBuffer<EnemySpawnerWaveRuntimeElement>(spawnerEntity);
+
+            if (waveIndex >= waveDefinitions.Length || waveIndex >= waveRuntime.Length)
+                break;
+
             EnemySpawnerWaveDefinitionElement definition = waveDefinitions[waveIndex];
             EnemySpawnerWaveRuntimeElement runtime = waveRuntime[waveIndex];
 
@@ -107,8 +110,6 @@ public partial struct EnemySpawnSystem : ISystem
             {
                 ReserveUpcomingEvents(entityManager,
                                      spawnerEntity,
-                                     poolMap,
-                                     waveEvents,
                                      localToWorld,
                                      elapsedTime,
                                      definition,
@@ -119,8 +120,6 @@ public partial struct EnemySpawnSystem : ISystem
                 {
                     ActivateDueEvents(entityManager,
                                       spawnerEntity,
-                                      poolMap,
-                                      waveEvents,
                                       localToWorld,
                                       elapsedTime,
                                       definition,
@@ -131,7 +130,7 @@ public partial struct EnemySpawnSystem : ISystem
             }
 
             TryFinalizeWave(elapsedTime, definition, ref runtime);
-            waveRuntime[waveIndex] = runtime;
+            SetWaveRuntime(entityManager, spawnerEntity, waveIndex, runtime);
         }
 
         entityManager.SetComponentData(spawnerEntity, spawnerState);
@@ -206,23 +205,18 @@ public partial struct EnemySpawnSystem : ISystem
     }
 
     /// <summary>
-    /// Emits all currently due spawn events for a started wave.
+    /// Reserves every upcoming spawn event whose warning lead window has opened.
     /// entityManager: Entity manager used to access pools and enemy instances.
     /// spawnerEntity: Spawner that owns the wave.
-    /// poolMap: Prefab-to-pool map for this spawner.
-    /// waveEvents: Full baked event buffer for this spawner.
     /// localToWorld: Current spawner local-to-world matrix.
     /// elapsedTime: Current elapsed world time.
     /// definition: Immutable definition of the wave.
     /// warningConfig: Spawner-level fallback warning tuning.
     /// runtime: Mutable runtime state for the wave.
-    /// spawnerState: Mutable global spawner state.
     /// returns None.
     /// </summary>
     private static void ReserveUpcomingEvents(EntityManager entityManager,
                                               Entity spawnerEntity,
-                                              DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap,
-                                              DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents,
                                               float4x4 localToWorld,
                                               float elapsedTime,
                                               EnemySpawnerWaveDefinitionElement definition,
@@ -234,6 +228,7 @@ public partial struct EnemySpawnSystem : ISystem
         while (runtime.NextWarningEventIndex < definition.EventCount)
         {
             int eventIndex = definition.FirstEventIndex + runtime.NextWarningEventIndex;
+            DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents = entityManager.GetBuffer<EnemySpawnerWaveEventElement>(spawnerEntity);
 
             if (eventIndex < 0 || eventIndex >= waveEvents.Length)
             {
@@ -257,6 +252,7 @@ public partial struct EnemySpawnSystem : ISystem
             }
 
             Entity poolEntity;
+            DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap = entityManager.GetBuffer<EnemySpawnerPrefabPoolMapElement>(spawnerEntity);
 
             if (!TryGetPoolEntity(poolMap, waveEvent.PrefabEntity, out poolEntity))
                 break;
@@ -280,7 +276,7 @@ public partial struct EnemySpawnSystem : ISystem
                                                   worldPosition,
                                                   warningState);
             waveEvent.ReservedEnemyEntity = enemyEntity;
-            waveEvents[eventIndex] = waveEvent;
+            SetWaveEvent(entityManager, spawnerEntity, eventIndex, waveEvent);
             runtime.NextWarningEventIndex++;
         }
     }
@@ -289,8 +285,6 @@ public partial struct EnemySpawnSystem : ISystem
     /// Activates every reserved event whose due time has been reached at the current frame.
     /// entityManager: Entity manager used to access pools and enemy instances.
     /// spawnerEntity: Spawner that owns the wave.
-    /// poolMap: Prefab-to-pool map for this spawner.
-    /// waveEvents: Full staged event buffer of the spawner.
     /// localToWorld: Current spawner local-to-world matrix.
     /// elapsedTime: Current elapsed world time.
     /// definition: Immutable definition of the wave.
@@ -301,8 +295,6 @@ public partial struct EnemySpawnSystem : ISystem
     /// </summary>
     private static void ActivateDueEvents(EntityManager entityManager,
                                           Entity spawnerEntity,
-                                          DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap,
-                                          DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents,
                                           float4x4 localToWorld,
                                           float elapsedTime,
                                           EnemySpawnerWaveDefinitionElement definition,
@@ -313,6 +305,7 @@ public partial struct EnemySpawnSystem : ISystem
         while (runtime.NextEventIndex < definition.EventCount)
         {
             int eventIndex = definition.FirstEventIndex + runtime.NextEventIndex;
+            DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents = entityManager.GetBuffer<EnemySpawnerWaveEventElement>(spawnerEntity);
 
             if (eventIndex < 0 || eventIndex >= waveEvents.Length)
             {
@@ -332,6 +325,7 @@ public partial struct EnemySpawnSystem : ISystem
             if (enemyEntity == Entity.Null || !entityManager.Exists(enemyEntity))
             {
                 Entity poolEntity;
+                DynamicBuffer<EnemySpawnerPrefabPoolMapElement> poolMap = entityManager.GetBuffer<EnemySpawnerPrefabPoolMapElement>(spawnerEntity);
 
                 if (!TryGetPoolEntity(poolMap, waveEvent.PrefabEntity, out poolEntity))
                     break;
@@ -356,7 +350,7 @@ public partial struct EnemySpawnSystem : ISystem
 
             EnemyPoolUtility.ActivateReservedEnemy(entityManager, enemyEntity, worldPosition);
             waveEvent.ReservedEnemyEntity = Entity.Null;
-            waveEvents[eventIndex] = waveEvent;
+            SetWaveEvent(entityManager, spawnerEntity, eventIndex, waveEvent);
             runtime.NextEventIndex++;
             runtime.AliveCount++;
             runtime.SpawnedCount++;
@@ -401,6 +395,44 @@ public partial struct EnemySpawnSystem : ISystem
 
         runtime.Completed = 1;
         runtime.CompletionTime = math.max(runtime.SpawnEndTime, elapsedTime);
+    }
+
+    /// <summary>
+    /// Writes one wave runtime element after any spawn-side structural changes have completed.
+    /// entityManager: Entity manager used to reacquire the runtime buffer.
+    /// spawnerEntity: Spawner that owns the runtime buffer.
+    /// waveIndex: Wave index to update.
+    /// runtime: Runtime data to store.
+    /// returns None.
+    /// </summary>
+    private static void SetWaveRuntime(EntityManager entityManager,
+                                       Entity spawnerEntity,
+                                       int waveIndex,
+                                       EnemySpawnerWaveRuntimeElement runtime)
+    {
+        DynamicBuffer<EnemySpawnerWaveRuntimeElement> waveRuntime = entityManager.GetBuffer<EnemySpawnerWaveRuntimeElement>(spawnerEntity);
+
+        if (waveIndex >= 0 && waveIndex < waveRuntime.Length)
+            waveRuntime[waveIndex] = runtime;
+    }
+
+    /// <summary>
+    /// Writes one staged wave event after enemy reservation or activation has potentially changed archetypes.
+    /// entityManager: Entity manager used to reacquire the event buffer.
+    /// spawnerEntity: Spawner that owns the event buffer.
+    /// eventIndex: Event index to update.
+    /// waveEvent: Event data to store.
+    /// returns None.
+    /// </summary>
+    private static void SetWaveEvent(EntityManager entityManager,
+                                     Entity spawnerEntity,
+                                     int eventIndex,
+                                     EnemySpawnerWaveEventElement waveEvent)
+    {
+        DynamicBuffer<EnemySpawnerWaveEventElement> waveEvents = entityManager.GetBuffer<EnemySpawnerWaveEventElement>(spawnerEntity);
+
+        if (eventIndex >= 0 && eventIndex < waveEvents.Length)
+            waveEvents[eventIndex] = waveEvent;
     }
 
     /// <summary>

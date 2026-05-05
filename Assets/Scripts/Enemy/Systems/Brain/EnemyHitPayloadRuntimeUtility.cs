@@ -129,17 +129,21 @@ public static class EnemyHitPayloadRuntimeUtility
                 followTargetEntity = anchorEntity;
         }
 
-        for (int payloadIndex = 0; payloadIndex < elementalPayload.Entries.Length; payloadIndex++)
+        int elementalPayloadEntryCount = ProjectileElementalPayloadUtility.GetEntryCount(in elementalPayload);
+
+        for (int payloadIndex = 0; payloadIndex < elementalPayloadEntryCount; payloadIndex++)
         {
-            ProjectileElementalPayloadEntry payloadEntry = elementalPayload.Entries[payloadIndex];
+            ProjectileElementalPayloadEntry payloadEntry = ProjectileElementalPayloadUtility.GetEntry(in elementalPayload,
+                                                                                                     payloadIndex);
 
             if (payloadEntry.StacksPerHit <= 0f)
                 continue;
 
+            ElementalEffectConfig payloadEffect = payloadEntry.Effect;
             bool procTriggered;
             bool applied = EnemyElementalStackUtility.TryApplyStacks(enemyEntity,
                                                                      math.max(0f, payloadEntry.StacksPerHit),
-                                                                     payloadEntry.Effect,
+                                                                     payloadEffect,
                                                                      ref elementalStackLookup,
                                                                      out procTriggered);
 
@@ -147,7 +151,7 @@ public static class EnemyHitPayloadRuntimeUtility
                 continue;
 
             ElementalVfxDefinitionConfig elementalVfxConfig = ResolveElementalVfxDefinition(shooterEntity,
-                                                                                            payloadEntry.Effect.ElementType,
+                                                                                            payloadEffect.ElementType,
                                                                                             in elementalVfxConfigLookup);
 
             if (elementalVfxConfig.SpawnStackVfx != 0)
@@ -170,7 +174,7 @@ public static class EnemyHitPayloadRuntimeUtility
                                 followTargetEntity,
                                 enemyEntity,
                                 enemyRuntimeState.SpawnVersion,
-                                ResolveProcVfxLifetimeSeconds(in payloadEntry.Effect));
+                                ResolveProcVfxLifetimeSeconds(in payloadEffect));
         }
     }
 

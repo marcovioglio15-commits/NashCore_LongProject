@@ -836,7 +836,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4
   m_IsActive: 1
 --- !u!64 &95984605
 MeshCollider:
@@ -1759,6 +1759,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Train
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c1fe25a7e31f6b04d8c70b47ed0b7dbb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2207,6 +2211,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
       propertyPath: m_Name
       value: SM_Column (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2679,6 +2687,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Railway_Rails_B (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2865,6 +2877,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Column (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3019,6 +3035,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_B (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3843,6 +3863,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
       propertyPath: m_Name
       value: SM_Column (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7184,6 +7208,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Column
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9673,6 +9701,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Railway_Rails_B (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11485,6 +11517,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Railway_Rails_A (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12448,6 +12484,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Railway_Rails_A (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12765,6 +12805,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_A
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -15777,6 +15821,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Railway_Rails_A (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -15838,6 +15886,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_B (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17232,6 +17284,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Railway_Rails_B (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -17421,6 +17477,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_B (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17979,6 +18039,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_A (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18633,6 +18697,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_B (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19511,6 +19579,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Railway_Rails_B (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -19634,6 +19706,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_A (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -20557,6 +20633,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: c1fe25a7e31f6b04d8c70b47ed0b7dbb, type: 3}
       propertyPath: m_Name
       value: SM_Train (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c1fe25a7e31f6b04d8c70b47ed0b7dbb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22291,6 +22371,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Railway_Rails_B
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -22841,6 +22925,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_B (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -23468,6 +23556,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_A (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -24954,6 +25046,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_Name
       value: SM_Railway_Rails_A (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

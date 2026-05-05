@@ -187,7 +187,7 @@ public sealed class EnemyAuthoringBaker : Baker<EnemyAuthoring>
         AddComponent(entity, new EnemyVisualRuntimeState
         {
             AnimationTime = 0f,
-            LastDistanceToPlayer = 0f,
+            LastSquaredDistanceToPlayer = 0f,
             IsVisible = 1,
             CompanionInitialized = 0,
             AppliedVisibilityPriorityTier = int.MinValue

@@ -31,7 +31,6 @@ public partial struct EnemyFinalizeDespawnSystem : ISystem
         EntityManager entityManager = state.EntityManager;
         ComponentLookup<EnemyOwnerSpawner> ownerSpawnerLookup = SystemAPI.GetComponentLookup<EnemyOwnerSpawner>(true);
         ComponentLookup<EnemyOwnerPool> ownerPoolLookup = SystemAPI.GetComponentLookup<EnemyOwnerPool>(true);
-        BufferLookup<EnemyPoolElement> poolLookup = SystemAPI.GetBufferLookup<EnemyPoolElement>(false);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
         foreach ((RefRO<EnemyDespawnRequest> _,
@@ -52,9 +51,9 @@ public partial struct EnemyFinalizeDespawnSystem : ISystem
 
                 EnemyPoolUtility.PrepareEnemyForPool(entityManager, enemyEntity, spawnerEntity, poolEntity);
 
-                if (poolEntity != Entity.Null && poolLookup.HasBuffer(poolEntity))
+                if (poolEntity != Entity.Null && entityManager.HasBuffer<EnemyPoolElement>(poolEntity))
                 {
-                    DynamicBuffer<EnemyPoolElement> poolBuffer = poolLookup[poolEntity];
+                    DynamicBuffer<EnemyPoolElement> poolBuffer = entityManager.GetBuffer<EnemyPoolElement>(poolEntity);
                     poolBuffer.Add(new EnemyPoolElement
                     {
                         EnemyEntity = enemyEntity

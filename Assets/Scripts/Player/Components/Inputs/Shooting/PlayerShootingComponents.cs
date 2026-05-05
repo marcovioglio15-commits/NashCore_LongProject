@@ -197,8 +197,66 @@ public struct ProjectileSplitState : IComponentData
 /// </summary>
 public struct ProjectileElementalPayloadEntry
 {
-    public ElementalEffectConfig Effect;
+    public byte ElementTypeId;
+    public byte EffectKindId;
+    public byte ProcModeId;
+    public byte ReapplyModeId;
+    public byte ConsumeStacksOnProc;
+    public float ProcThresholdStacks;
+    public float MaximumStacks;
+    public float StackDecayPerSecond;
+    public float DotDamagePerTick;
+    public float DotTickInterval;
+    public float DotDurationSeconds;
+    public float ImpedimentSlowPercentPerStack;
+    public float ImpedimentProcSlowPercent;
+    public float ImpedimentMaxSlowPercent;
+    public float ImpedimentDurationSeconds;
     public float StacksPerHit;
+
+    public ElementalEffectConfig Effect
+    {
+        get
+        {
+            return new ElementalEffectConfig
+            {
+                ElementType = (ElementType)ElementTypeId,
+                EffectKind = (ElementalEffectKind)EffectKindId,
+                ProcMode = (ElementalProcMode)ProcModeId,
+                ReapplyMode = (ElementalProcReapplyMode)ReapplyModeId,
+                ProcThresholdStacks = ProcThresholdStacks,
+                MaximumStacks = MaximumStacks,
+                StackDecayPerSecond = StackDecayPerSecond,
+                ConsumeStacksOnProc = ConsumeStacksOnProc,
+                DotDamagePerTick = DotDamagePerTick,
+                DotTickInterval = DotTickInterval,
+                DotDurationSeconds = DotDurationSeconds,
+                ImpedimentSlowPercentPerStack = ImpedimentSlowPercentPerStack,
+                ImpedimentProcSlowPercent = ImpedimentProcSlowPercent,
+                ImpedimentMaxSlowPercent = ImpedimentMaxSlowPercent,
+                ImpedimentDurationSeconds = ImpedimentDurationSeconds
+            };
+        }
+
+        set
+        {
+            ElementTypeId = (byte)value.ElementType;
+            EffectKindId = (byte)value.EffectKind;
+            ProcModeId = (byte)value.ProcMode;
+            ReapplyModeId = (byte)value.ReapplyMode;
+            ProcThresholdStacks = value.ProcThresholdStacks;
+            MaximumStacks = value.MaximumStacks;
+            StackDecayPerSecond = value.StackDecayPerSecond;
+            ConsumeStacksOnProc = value.ConsumeStacksOnProc;
+            DotDamagePerTick = value.DotDamagePerTick;
+            DotTickInterval = value.DotTickInterval;
+            DotDurationSeconds = value.DotDurationSeconds;
+            ImpedimentSlowPercentPerStack = value.ImpedimentSlowPercentPerStack;
+            ImpedimentProcSlowPercent = value.ImpedimentProcSlowPercent;
+            ImpedimentMaxSlowPercent = value.ImpedimentMaxSlowPercent;
+            ImpedimentDurationSeconds = value.ImpedimentDurationSeconds;
+        }
+    }
 }
 
 /// <summary>
@@ -206,5 +264,9 @@ public struct ProjectileElementalPayloadEntry
 /// </summary>
 public struct ProjectileElementalPayload : IComponentData
 {
-    public FixedList512Bytes<ProjectileElementalPayloadEntry> Entries;
+    public byte EntryCount;
+    public ProjectileElementalPayloadEntry Entry0;
+    public ProjectileElementalPayloadEntry Entry1;
+    public ProjectileElementalPayloadEntry Entry2;
+    public ProjectileElementalPayloadEntry Entry3;
 }

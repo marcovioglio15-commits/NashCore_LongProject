@@ -50,16 +50,19 @@ public static class EnemyPoolUtility
 
         try
         {
+            for (int index = 0; index < spawnedEnemies.Length; index++)
+            {
+                Entity enemyEntity = spawnedEnemies[index];
+                PrepareEnemyForPool(entityManager, enemyEntity, spawnerEntity, poolEntity);
+            }
+
             DynamicBuffer<EnemyPoolElement> poolBuffer = entityManager.GetBuffer<EnemyPoolElement>(poolEntity);
 
             for (int index = 0; index < spawnedEnemies.Length; index++)
             {
-                Entity enemyEntity = spawnedEnemies[index];
-                EnsureEnemyComponents(entityManager, enemyEntity);
-                PrepareEnemyForPool(entityManager, enemyEntity, spawnerEntity, poolEntity);
                 poolBuffer.Add(new EnemyPoolElement
                 {
-                    EnemyEntity = enemyEntity
+                    EnemyEntity = spawnedEnemies[index]
                 });
             }
         }
@@ -79,119 +82,124 @@ public static class EnemyPoolUtility
     /// </summary>
     public static void EnsureEnemyComponents(EntityManager entityManager, Entity enemyEntity)
     {
-        if (!entityManager.HasComponent<LocalTransform>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, LocalTransform.Identity);
+        if (!entityManager.HasComponent<EnemyPoolValidated>(enemyEntity))
+        {
+            if (!entityManager.HasComponent<LocalTransform>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, LocalTransform.Identity);
 
-        if (!entityManager.HasComponent<EnemyData>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, default(EnemyData));
+            if (!entityManager.HasComponent<EnemyData>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, default(EnemyData));
 
-        if (!entityManager.HasComponent<EnemyRuntimeState>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, default(EnemyRuntimeState));
+            if (!entityManager.HasComponent<EnemyRuntimeState>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, default(EnemyRuntimeState));
 
-        if (!entityManager.HasComponent<EnemyKnockbackState>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, default(EnemyKnockbackState));
+            if (!entityManager.HasComponent<EnemyKnockbackState>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, default(EnemyKnockbackState));
 
-        if (!entityManager.HasComponent<EnemyPatternConfig>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, CreateDefaultPatternConfig());
+            if (!entityManager.HasComponent<EnemyPatternConfig>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, CreateDefaultPatternConfig());
 
-        if (!entityManager.HasComponent<EnemyPatternRuntimeState>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, CreateDefaultPatternRuntimeState());
+            if (!entityManager.HasComponent<EnemyPatternRuntimeState>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, CreateDefaultPatternRuntimeState());
 
-        if (!entityManager.HasComponent<EnemyShooterControlState>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, default(EnemyShooterControlState));
+            if (!entityManager.HasComponent<EnemyShooterControlState>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, default(EnemyShooterControlState));
 
-        if (!entityManager.HasBuffer<EnemyShooterConfigElement>(enemyEntity))
-            entityManager.AddBuffer<EnemyShooterConfigElement>(enemyEntity);
+            if (!entityManager.HasBuffer<EnemyShooterConfigElement>(enemyEntity))
+                entityManager.AddBuffer<EnemyShooterConfigElement>(enemyEntity);
 
-        if (!entityManager.HasBuffer<EnemyShooterRuntimeElement>(enemyEntity))
-            entityManager.AddBuffer<EnemyShooterRuntimeElement>(enemyEntity);
+            if (!entityManager.HasBuffer<EnemyShooterRuntimeElement>(enemyEntity))
+                entityManager.AddBuffer<EnemyShooterRuntimeElement>(enemyEntity);
 
-        if (!entityManager.HasBuffer<EnemyOffensiveEngagementConfigElement>(enemyEntity))
-            entityManager.AddBuffer<EnemyOffensiveEngagementConfigElement>(enemyEntity);
+            if (!entityManager.HasBuffer<EnemyOffensiveEngagementConfigElement>(enemyEntity))
+                entityManager.AddBuffer<EnemyOffensiveEngagementConfigElement>(enemyEntity);
 
-        if (!entityManager.HasComponent<EnemyHealth>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyHealth
-            {
-                Current = 1f,
-                Max = 1f,
-                CurrentShield = 0f,
-                MaxShield = 0f
-            });
+            if (!entityManager.HasComponent<EnemyHealth>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyHealth
+                {
+                    Current = 1f,
+                    Max = 1f,
+                    CurrentShield = 0f,
+                    MaxShield = 0f
+                });
 
-        if (!entityManager.HasComponent<EnemyOwnerSpawner>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyOwnerSpawner
-            {
-                SpawnerEntity = Entity.Null
-            });
+            if (!entityManager.HasComponent<EnemyOwnerSpawner>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyOwnerSpawner
+                {
+                    SpawnerEntity = Entity.Null
+                });
 
-        if (!entityManager.HasComponent<EnemyOwnerPool>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyOwnerPool
-            {
-                PoolEntity = Entity.Null
-            });
+            if (!entityManager.HasComponent<EnemyOwnerPool>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyOwnerPool
+                {
+                    PoolEntity = Entity.Null
+                });
 
-        if (!entityManager.HasComponent<EnemyWaveOwner>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyWaveOwner
-            {
-                WaveIndex = -1
-            });
+            if (!entityManager.HasComponent<EnemyWaveOwner>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyWaveOwner
+                {
+                    WaveIndex = -1
+                });
 
-        if (!entityManager.HasComponent<EnemyWorldSpaceStatusBarsRuntimeLink>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyWorldSpaceStatusBarsRuntimeLink
-            {
-                ViewEntity = Entity.Null
-            });
+            if (!entityManager.HasComponent<EnemyWorldSpaceStatusBarsRuntimeLink>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyWorldSpaceStatusBarsRuntimeLink
+                {
+                    ViewEntity = Entity.Null
+                });
 
-        if (!entityManager.HasComponent<EnemyVisualConfig>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyVisualConfig
-            {
-                Mode = EnemyVisualMode.GpuBaked,
-                AnimationSpeed = 1f,
-                GpuLoopDuration = 1f,
-                MaxVisibleDistance = 55f,
-                VisibleDistanceHysteresis = 6f,
-                UseDistanceCulling = 1
-            });
+            if (!entityManager.HasComponent<EnemyVisualConfig>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyVisualConfig
+                {
+                    Mode = EnemyVisualMode.GpuBaked,
+                    AnimationSpeed = 1f,
+                    GpuLoopDuration = 1f,
+                    MaxVisibleDistance = 55f,
+                    VisibleDistanceHysteresis = 6f,
+                    UseDistanceCulling = 1
+                });
 
-        if (!entityManager.HasComponent<EnemyVisualRuntimeState>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyVisualRuntimeState
-            {
-                AnimationTime = 0f,
-                LastDistanceToPlayer = 0f,
-                IsVisible = 1,
-                CompanionInitialized = 0,
-                AppliedVisibilityPriorityTier = int.MinValue
-            });
+            if (!entityManager.HasComponent<EnemyVisualRuntimeState>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyVisualRuntimeState
+                {
+                    AnimationTime = 0f,
+                    LastSquaredDistanceToPlayer = 0f,
+                    IsVisible = 1,
+                    CompanionInitialized = 0,
+                    AppliedVisibilityPriorityTier = int.MinValue
+                });
 
-        if (!entityManager.HasComponent<EnemyHitVfxConfig>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyHitVfxConfig
-            {
-                PrefabEntity = Entity.Null,
-                LifetimeSeconds = 0.35f,
-                ScaleMultiplier = 1f
-            });
+            if (!entityManager.HasComponent<EnemyHitVfxConfig>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyHitVfxConfig
+                {
+                    PrefabEntity = Entity.Null,
+                    LifetimeSeconds = 0.35f,
+                    ScaleMultiplier = 1f
+                });
 
-        if (!entityManager.HasComponent<EnemyVisualFlashPresentationState>(enemyEntity))
-            entityManager.AddComponentData(enemyEntity, new EnemyVisualFlashPresentationState
-            {
-                AppliedBlend = 0f,
-                AppliedColor = new float4(1f, 1f, 1f, 1f),
-                OffensiveEngagementColor = new float4(1f, 1f, 1f, 1f),
-                OffensiveEngagementBlend = 0f,
-                OffensiveEngagementFadeOutSeconds = 0f
-            });
+            if (!entityManager.HasComponent<EnemyVisualFlashPresentationState>(enemyEntity))
+                entityManager.AddComponentData(enemyEntity, new EnemyVisualFlashPresentationState
+                {
+                    AppliedBlend = 0f,
+                    AppliedColor = new float4(1f, 1f, 1f, 1f),
+                    OffensiveEngagementColor = new float4(1f, 1f, 1f, 1f),
+                    OffensiveEngagementBlend = 0f,
+                    OffensiveEngagementFadeOutSeconds = 0f
+                });
 
-        if (!entityManager.HasBuffer<DamageFlashRenderTargetElement>(enemyEntity))
-            entityManager.AddBuffer<DamageFlashRenderTargetElement>(enemyEntity);
+            if (!entityManager.HasBuffer<DamageFlashRenderTargetElement>(enemyEntity))
+                entityManager.AddBuffer<DamageFlashRenderTargetElement>(enemyEntity);
 
-        if (!entityManager.HasComponent<EnemyActive>(enemyEntity))
-            entityManager.AddComponent<EnemyActive>(enemyEntity);
+            if (!entityManager.HasComponent<EnemyActive>(enemyEntity))
+                entityManager.AddComponent<EnemyActive>(enemyEntity);
 
-        if (!entityManager.HasComponent<EnemySpawnInactivityLock>(enemyEntity))
-            entityManager.AddComponent<EnemySpawnInactivityLock>(enemyEntity);
+            if (!entityManager.HasComponent<EnemySpawnInactivityLock>(enemyEntity))
+                entityManager.AddComponent<EnemySpawnInactivityLock>(enemyEntity);
 
-        if (!entityManager.HasComponent<EnemySpawnWarningState>(enemyEntity))
-            entityManager.AddComponent<EnemySpawnWarningState>(enemyEntity);
+            if (!entityManager.HasComponent<EnemySpawnWarningState>(enemyEntity))
+                entityManager.AddComponent<EnemySpawnWarningState>(enemyEntity);
+
+            entityManager.AddComponent<EnemyPoolValidated>(enemyEntity);
+        }
 
         EnsureCustomMovementTag(entityManager, enemyEntity);
         EnsureVisualModeTags(entityManager, enemyEntity);
@@ -342,7 +350,7 @@ public static class EnemyPoolUtility
 
         EnemyVisualRuntimeState visualRuntimeState = entityManager.GetComponentData<EnemyVisualRuntimeState>(enemyEntity);
         visualRuntimeState.AnimationTime = 0f;
-        visualRuntimeState.LastDistanceToPlayer = 0f;
+        visualRuntimeState.LastSquaredDistanceToPlayer = 0f;
         visualRuntimeState.IsVisible = isVisible;
         visualRuntimeState.CompanionInitialized = 0;
         visualRuntimeState.AppliedVisibilityPriorityTier = int.MinValue;

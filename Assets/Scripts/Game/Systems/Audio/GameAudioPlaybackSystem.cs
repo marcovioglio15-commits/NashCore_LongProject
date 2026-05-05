@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -9,6 +10,18 @@ using Unity.Mathematics;
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial struct GameAudioPlaybackSystem : ISystem
 {
+    #region Fields
+    private static readonly bool[] cachedEventPathValidById = new bool[byte.MaxValue + 1];
+    private static readonly FixedString512Bytes[] cachedEventFixedPathById = new FixedString512Bytes[byte.MaxValue + 1];
+    private static readonly string[] cachedEventManagedPathById = new string[byte.MaxValue + 1];
+    private static bool cachedBackgroundMusicPathValid;
+    private static FixedString512Bytes cachedBackgroundMusicFixedPath;
+    private static string cachedBackgroundMusicManagedPath;
+    private static bool cachedBackgroundMusicBankValid;
+    private static FixedString64Bytes cachedBackgroundMusicFixedBank;
+    private static string cachedBackgroundMusicManagedBank;
+    #endregion
+
     #region Methods
 
     #region Lifecycle
@@ -82,7 +95,7 @@ public partial struct GameAudioPlaybackSystem : ISystem
             float pitch = math.max(0.0001f, binding.Pitch) *
                           math.max(0.0001f, request.PitchMultiplier);
 
-            GameAudioFmodRuntimeUtility.PlayOneShot(binding.EventPath.ToString(),
+            GameAudioFmodRuntimeUtility.PlayOneShot(ResolveManagedEventPath(in binding),
                                                     request.Position,
                                                     request.HasPosition != 0 && binding.Spatialize != 0,
                                                     volume,
@@ -108,8 +121,8 @@ public partial struct GameAudioPlaybackSystem : ISystem
                                             bool autoStart,
                                             float volume)
     {
-        GameAudioFmodRuntimeUtility.SyncBackgroundMusic(runtimeConfig.BackgroundMusicEventPath.ToString(),
-                                                        runtimeConfig.BackgroundMusicBankName.ToString(),
+        GameAudioFmodRuntimeUtility.SyncBackgroundMusic(ResolveManagedBackgroundMusicPath(in runtimeConfig),
+                                                        ResolveManagedBackgroundMusicBankName(in runtimeConfig),
                                                         enabled,
                                                         autoStart,
                                                         volume,
@@ -142,6 +155,64 @@ public partial struct GameAudioPlaybackSystem : ISystem
 
         binding = default;
         return false;
+    }
+
+    /// <summary>
+    /// Resolves one baked event path to a managed string only when the fixed string changes.
+    /// /params binding Baked audio event binding.
+    /// /returns Cached managed event path.
+    /// </summary>
+    private static string ResolveManagedEventPath(in GameAudioEventBindingElement binding)
+    {
+        int eventIndex = (byte)binding.EventId;
+        FixedString512Bytes eventPath = binding.EventPath;
+
+        if (!cachedEventPathValidById[eventIndex] || !cachedEventFixedPathById[eventIndex].Equals(eventPath))
+        {
+            cachedEventFixedPathById[eventIndex] = eventPath;
+            cachedEventManagedPathById[eventIndex] = eventPath.ToString();
+            cachedEventPathValidById[eventIndex] = true;
+        }
+
+        return cachedEventManagedPathById[eventIndex];
+    }
+
+    /// <summary>
+    /// Resolves the baked music path to a managed string only when the fixed string changes.
+    /// /params runtimeConfig Current baked audio singleton config.
+    /// /returns Cached managed music path.
+    /// </summary>
+    private static string ResolveManagedBackgroundMusicPath(in GameAudioRuntimeConfig runtimeConfig)
+    {
+        FixedString512Bytes eventPath = runtimeConfig.BackgroundMusicEventPath;
+
+        if (!cachedBackgroundMusicPathValid || !cachedBackgroundMusicFixedPath.Equals(eventPath))
+        {
+            cachedBackgroundMusicFixedPath = eventPath;
+            cachedBackgroundMusicManagedPath = eventPath.ToString();
+            cachedBackgroundMusicPathValid = true;
+        }
+
+        return cachedBackgroundMusicManagedPath;
+    }
+
+    /// <summary>
+    /// Resolves the baked music bank name to a managed string only when the fixed string changes.
+    /// /params runtimeConfig Current baked audio singleton config.
+    /// /returns Cached managed music bank name.
+    /// </summary>
+    private static string ResolveManagedBackgroundMusicBankName(in GameAudioRuntimeConfig runtimeConfig)
+    {
+        FixedString64Bytes bankName = runtimeConfig.BackgroundMusicBankName;
+
+        if (!cachedBackgroundMusicBankValid || !cachedBackgroundMusicFixedBank.Equals(bankName))
+        {
+            cachedBackgroundMusicFixedBank = bankName;
+            cachedBackgroundMusicManagedBank = bankName.ToString();
+            cachedBackgroundMusicBankValid = true;
+        }
+
+        return cachedBackgroundMusicManagedBank;
     }
 
     /// <summary>

@@ -93,7 +93,7 @@ public struct EnemyVisualConfig : IComponentData
 public struct EnemyVisualRuntimeState : IComponentData
 {
     public float AnimationTime;
-    public float LastDistanceToPlayer;
+    public float LastSquaredDistanceToPlayer;
     public byte IsVisible;
     public byte CompanionInitialized;
     public int AppliedVisibilityPriorityTier;
@@ -110,6 +110,13 @@ public struct EnemyVisualCompanionAnimator : IComponentData
 /// Tags enemies driven by GPU-baked animation playback data.
 /// </summary>
 public struct EnemyVisualGpuBaked : IComponentData
+{
+}
+
+/// <summary>
+/// Marks pooled enemy instances whose required runtime component set has already been validated.
+/// </summary>
+public struct EnemyPoolValidated : IComponentData
 {
 }
 
