@@ -138,6 +138,9 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
             case "holdCharge.laserDurationSeconds":
                 activeSlotConfig.ChargeShot.LaserDurationSeconds = math.max(0f, resolvedValue);
                 return;
+            case "holdCharge.maximumPlayerSlowPercent":
+                activeSlotConfig.ChargeShot.MaximumPlayerSlowPercent = math.clamp(resolvedValue, 0f, 100f);
+                return;
             case "projectilePatternCone.projectileCount":
                 activeSlotConfig.Shotgun.ProjectileCount = math.max(1, (int)resolvedValue);
                 return;
@@ -615,6 +618,9 @@ internal static class PlayerRuntimePowerUpScalingPathUtility
                 return;
             case "holdCharge.passiveChargeGainWhileReleased":
                 activeSlotConfig.ChargeShot.PassiveChargeGainWhileReleased = resolvedValue ? (byte)1 : (byte)0;
+                return;
+            case "holdCharge.slowPlayerWhileCharging":
+                activeSlotConfig.ChargeShot.SlowPlayerWhileCharging = resolvedValue ? (byte)1 : (byte)0;
                 return;
             case "bomb.bounceOnWalls":
                 activeSlotConfig.Bomb.BounceOnWalls = resolvedValue ? (byte)1 : (byte)0;

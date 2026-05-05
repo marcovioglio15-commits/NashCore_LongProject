@@ -258,9 +258,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                                                                                      primaryIsCharging,
                                                                                                                                      primaryIsActive,
                                                                                                                                      primaryCooldownRemaining);
-            bool secondaryScopedCharacterTuningShouldBeActiveBeforePrimary = ShouldScopedCharacterTuningRemainActive(in secondarySlotConfig,
-                                                                                                                       secondaryIsCharging,
-                                                                                                                       secondaryIsActive);
+            bool secondaryScopedCharacterTuningShouldBeActiveBeforePrimary = ShouldScopedCharacterTuningRemainActiveOutsideCurrentSlot(in secondarySlotConfig,
+                                                                                                                                       secondaryIsActive);
 
             bool scopedCharacterTuningChangedBeforePrimary = PlayerPowerUpChargeCharacterTuningRuntimeUtility.ReconcileScopedCharacterTuning(in primarySlotConfig,
                                                                                                                                                in secondarySlotConfig,
@@ -375,9 +374,8 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
                                                                 ref updatedShield,
                                                                 ref shieldChanged);
 
-            bool primaryScopedCharacterTuningShouldBeActiveBeforeSecondary = ShouldScopedCharacterTuningRemainActive(in primarySlotConfig,
-                                                                                                                         primaryIsCharging,
-                                                                                                                         primaryIsActive);
+            bool primaryScopedCharacterTuningShouldBeActiveBeforeSecondary = ShouldScopedCharacterTuningRemainActiveOutsideCurrentSlot(in primarySlotConfig,
+                                                                                                                                       primaryIsActive);
             bool secondaryScopedCharacterTuningShouldBeActiveBeforeSecondary = ShouldScopedCharacterTuningBeActiveBeforeSlotProcessing(in secondarySlotConfig,
                                                                                                                                          secondaryPressedThisFrame,
                                                                                                                                          secondaryIsCharging,
@@ -817,6 +815,27 @@ public partial struct PlayerPowerUpActivationSystem : ISystem
 
         if (slotConfig.ToolKind == ActiveToolKind.ChargeShot)
             return isCharging != 0;
+
+        if (slotConfig.Toggleable == 0)
+            return false;
+
+        return isActive != 0;
+    }
+
+    /// <summary>
+    /// Resolves scoped tuning for the slot that is not currently executing so charge-shot projectile tuning cannot leak into another tool's shot.
+    /// slotConfig: Opposite slot config inspected for scoped Character Tuning semantics.
+    /// isActive: Current toggle-active flag after the latest slot mutation.
+    /// returns True when non-charge scoped tuning should stay active while another slot processes.
+    /// </summary>
+    private static bool ShouldScopedCharacterTuningRemainActiveOutsideCurrentSlot(in PlayerPowerUpSlotConfig slotConfig,
+                                                                                  byte isActive)
+    {
+        if (slotConfig.IsDefined == 0)
+            return false;
+
+        if (slotConfig.ToolKind == ActiveToolKind.ChargeShot)
+            return false;
 
         if (slotConfig.Toggleable == 0)
             return false;

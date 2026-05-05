@@ -58,6 +58,7 @@ public struct PlayerAnimatorRuntimeState : IComponentData
     public byte PreviousShooting;
     public byte Initialized;
     public byte ParametersValidated;
+    public uint LastShotPulseVersion;
     public int BoundAnimatorInstanceId;
     public float RecoilValue;
     public float AimWeightValue;

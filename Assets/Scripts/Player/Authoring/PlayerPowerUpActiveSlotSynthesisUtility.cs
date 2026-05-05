@@ -230,6 +230,9 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                                                                  float decayAfterReleasePercentPerSecond,
                                                                  bool passiveChargeGainWhileReleased,
                                                                  float passiveChargeGainPercentPerSecond,
+                                                                 bool slowPlayerWhileCharging,
+                                                                 float maximumPlayerSlowPercent,
+                                                                 in FixedList128Bytes<float> playerSlowCurveSamples,
                                                                  bool suppressBaseShootingWhileCharging,
                                                                  int shotgunProjectileCount,
                                                                  float shotgunConeAngleDegrees,
@@ -265,6 +268,8 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
         float chargeShotRequired = math.max(0f, holdChargeRequired);
         float chargeShotMaximum = math.max(chargeShotRequired, holdChargeMaximum);
         float chargeShotRate = math.max(0f, holdChargeRatePerSecond);
+        FixedList128Bytes<float> normalizedPlayerSlowCurveSamples = playerSlowCurveSamples;
+        PlayerPowerUpSlowCurveBakeUtility.EnsureSampleCount(ref normalizedPlayerSlowCurveSamples);
         PowerUpActivationInputMode activationInputMode = ResolveActivationInputMode(hasTriggerPress,
                                                                                     hasTriggerRelease,
                                                                                     hasHoldCharge,
@@ -353,6 +358,9 @@ public static class PlayerPowerUpActiveSlotSynthesisUtility
                 PassiveChargeGainWhileReleased = passiveChargeGainWhileReleased ? (byte)1 : (byte)0,
                 PassiveChargeGainPercentPerSecond = math.max(0f, passiveChargeGainPercentPerSecond),
                 SuppressBaseShootingWhileCharging = suppressBaseShootingWhileCharging ? (byte)1 : (byte)0,
+                SlowPlayerWhileCharging = slowPlayerWhileCharging ? (byte)1 : (byte)0,
+                MaximumPlayerSlowPercent = math.clamp(maximumPlayerSlowPercent, 0f, 100f),
+                PlayerSlowCurveSamples = normalizedPlayerSlowCurveSamples,
                 SizeMultiplier = shotgunSizeMultiplier,
                 DamageMultiplier = shotgunDamageMultiplier,
                 SpeedMultiplier = shotgunSpeedMultiplier,

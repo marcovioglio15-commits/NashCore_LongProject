@@ -11,7 +11,9 @@ public struct PlayerShootingState : IComponentData
     public byte AutomaticEnabled;
     public byte PreviousShootPressed;
     public byte VisualShootingActive;
+    public uint ShotPulseVersion;
     public float NextShotTime;
+    public float VisualShootingUntilTime;
 }
 
 /// <summary>
@@ -117,6 +119,15 @@ public struct ProjectileRuntimeState : IComponentData
 public struct ProjectileOwner : IComponentData
 {
     public Entity ShooterEntity;
+}
+
+/// <summary>
+/// Stores enemies already hit during the projectile's current overlap contact so penetration cannot damage them every frame until the projectile exits.
+/// </summary>
+[InternalBufferCapacity(8)]
+public struct ProjectileHitHistoryElement : IBufferElementData
+{
+    public Entity EnemyEntity;
 }
 
 /// <summary>

@@ -5,7 +5,7 @@ using UnityEngine;
 /// /params None.
 /// /returns None.
 /// </summary>
-[CreateAssetMenu(fileName = "HUDLiquidBarMaterialReference", menuName = "NashCore/UI/HUD Liquid Bar Material Reference")]
+[CreateAssetMenu(fileName = "HUDLiquidBarMaterialReference", menuName = "UI/HUD Liquid Bar Material Reference")]
 public sealed class HUDLiquidBarMaterialReference : ScriptableObject
 {
     #region Fields

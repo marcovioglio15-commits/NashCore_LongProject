@@ -66,7 +66,7 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
         {
             processedAnimatorEntities++;
 
-            if (entityManager.HasComponent<Animator>(entity) == false)
+            if (!entityManager.HasComponent<Animator>(entity))
             {
                 if (loggedMissingAnimatorComponentWarning == 0)
                 {
@@ -97,7 +97,7 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
             PlayerLookState lookState = hasLookState ? lookLookup[entity] : default;
             PlayerShootingState shootingState = hasShootingState ? shootingLookup[entity] : default;
 
-            if (loggedMissingStateWarning == 0 && (hasMovementState == false || hasLookState == false || hasShootingState == false))
+            if (loggedMissingStateWarning == 0 && (!hasMovementState || !hasLookState || !hasShootingState))
             {
                 Debug.LogWarning("[PlayerAnimatorSyncSystem] Missing movement/look/shooting state on player entity. Fallback values are being used.");
                 loggedMissingStateWarning = 1;
@@ -120,7 +120,7 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
             PlayerOutlineRuntimeMaterialSyncUtility.ApplyFromOutlineConfig(in outlineConfig.ValueRO);
             EnsureAnimatorOutline(animator, in outlineConfig.ValueRO);
 
-            if (animator.enabled == false)
+            if (!animator.enabled)
                 animator.enabled = true;
 
             if (parameterConfig.ValueRO.DisableRootMotion != 0 && animator.applyRootMotion)
@@ -136,13 +136,13 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
             float3 right = math.normalize(math.cross(WorldUp, forward));
             float3 desiredLookDirection = ResolveLookDirection(lookState, forward);
             float2 localMove = ResolveLocalMoveDirection(movementState,
-                                                         in animatorRuntimeState.ValueRO,
                                                          right,
                                                          forward);
             float2 localAim = ToLocalPlanar(desiredLookDirection, right, forward);
             float moveSpeed = math.length(movementState.Velocity);
             bool isMoving = moveSpeed > math.max(0f, parameterConfig.ValueRO.MovingSpeedThreshold);
             bool isShooting = shootingState.VisualShootingActive != 0;
+            bool shootPulseThisFrame = shootingState.ShotPulseVersion != animatorRuntimeState.ValueRO.LastShotPulseVersion;
             bool isDashing = dashLookup.HasComponent(entity) && dashLookup[entity].IsDashing != 0;
 
             WriteFloatParameter(animator,
@@ -190,12 +190,13 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
                                        ref animatorRuntimeState.ValueRW,
                                        localMove,
                                        desiredLookDirection,
-                                       isShooting,
+                                       shootPulseThisFrame,
                                        deltaTime);
 
-            if (resolvedParameterConfig.HasShotPulse != 0 && isShooting && animatorRuntimeState.ValueRO.PreviousShooting == 0)
+            if (resolvedParameterConfig.HasShotPulse != 0 && shootPulseThisFrame)
                 animator.SetTrigger(resolvedParameterConfig.ShotPulseHash);
 
+            animatorRuntimeState.ValueRW.LastShotPulseVersion = shootingState.ShotPulseVersion;
             animatorRuntimeState.ValueRW.PreviousShooting = isShooting ? (byte)1 : (byte)0;
             animatorRuntimeState.ValueRW.LastMoveX = localMove.x;
             animatorRuntimeState.ValueRW.LastMoveY = localMove.y;
@@ -261,7 +262,7 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
             }
         }
 
-        if (requiresRebind == false)
+        if (!requiresRebind)
             return;
 
         animator.Rebind();
@@ -473,7 +474,6 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
     }
 
     private static float2 ResolveLocalMoveDirection(in PlayerMovementState movementState,
-                                                    in PlayerAnimatorRuntimeState runtimeState,
                                                     float3 right,
                                                     float3 forward)
     {
@@ -487,13 +487,7 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
         if (math.lengthsq(velocityMove) > DirectionEpsilon)
             return velocityMove;
 
-        float2 previousMove = new float2(runtimeState.LastMoveX, runtimeState.LastMoveY);
-
-        if (math.lengthsq(previousMove) > DirectionEpsilon)
-            return previousMove;
-
-        // Keep a deterministic non-zero direction so 2D blend trees without a center idle clip don't fall back to bind pose.
-        return new float2(0f, 1f);
+        return float2.zero;
     }
 
     private static void UpdateProceduralParameters(Animator animator,
@@ -501,12 +495,12 @@ public partial struct PlayerAnimatorSyncSystem : ISystem
                                                    ref PlayerAnimatorRuntimeState runtimeState,
                                                    float2 localMove,
                                                    float3 desiredLookDirection,
-                                                   bool isShooting,
+                                                   bool shootPulseThisFrame,
                                                    float deltaTime)
     {
         if (config.ProceduralRecoilEnabled != 0)
         {
-            if (isShooting && runtimeState.PreviousShooting == 0)
+            if (shootPulseThisFrame)
                 runtimeState.RecoilValue = math.saturate(runtimeState.RecoilValue + math.max(0f, config.ProceduralRecoilKick));
 
             runtimeState.RecoilValue -= math.max(0f, config.ProceduralRecoilRecoveryPerSecond) * deltaTime;

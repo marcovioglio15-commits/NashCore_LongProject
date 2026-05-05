@@ -31,6 +31,15 @@ public sealed class PowerUpHoldChargeModuleData
 
     [Tooltip("Seconds for which a Laser Beam triggered by this active charge-shot remains active after release.")]
     [SerializeField] private float laserDurationSeconds = 0.45f;
+
+    [Tooltip("When enabled, the player's movement is slowed progressively while this charge trigger is held.")]
+    [SerializeField] private bool slowPlayerWhileCharging;
+
+    [Tooltip("Maximum movement slow percentage applied when charge progress reaches the end of the normalized slow curve.")]
+    [SerializeField] private float maximumPlayerSlowPercent = 35f;
+
+    [Tooltip("Normalized movement slow curve evaluated from 0 to 1 charge progress. Curve values are multiplied by Maximum Player Slow Percent during bake/runtime.")]
+    [SerializeField] private AnimationCurve playerSlowCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
     #endregion
 
     #endregion
@@ -99,6 +108,30 @@ public sealed class PowerUpHoldChargeModuleData
             return laserDurationSeconds;
         }
     }
+
+    public bool SlowPlayerWhileCharging
+    {
+        get
+        {
+            return slowPlayerWhileCharging;
+        }
+    }
+
+    public float MaximumPlayerSlowPercent
+    {
+        get
+        {
+            return maximumPlayerSlowPercent;
+        }
+    }
+
+    public AnimationCurve PlayerSlowCurve
+    {
+        get
+        {
+            return playerSlowCurve;
+        }
+    }
     #endregion
 
     #region Methods
@@ -113,7 +146,10 @@ public sealed class PowerUpHoldChargeModuleData
                   25f,
                   false,
                   10f,
-                  0.45f);
+                  0.45f,
+                  false,
+                  35f,
+                  CreateDefaultSlowCurve());
     }
 
     public void Configure(float requiredChargeValue,
@@ -125,6 +161,31 @@ public sealed class PowerUpHoldChargeModuleData
                           float passiveChargeGainPercentPerSecondValue,
                           float laserDurationSecondsValue)
     {
+        Configure(requiredChargeValue,
+                  maximumChargeValue,
+                  chargeRatePerSecondValue,
+                  decayAfterReleaseValue,
+                  decayAfterReleasePercentPerSecondValue,
+                  passiveChargeGainWhileReleasedValue,
+                  passiveChargeGainPercentPerSecondValue,
+                  laserDurationSecondsValue,
+                  false,
+                  35f,
+                  CreateDefaultSlowCurve());
+    }
+
+    public void Configure(float requiredChargeValue,
+                          float maximumChargeValue,
+                          float chargeRatePerSecondValue,
+                          bool decayAfterReleaseValue,
+                          float decayAfterReleasePercentPerSecondValue,
+                          bool passiveChargeGainWhileReleasedValue,
+                          float passiveChargeGainPercentPerSecondValue,
+                          float laserDurationSecondsValue,
+                          bool slowPlayerWhileChargingValue,
+                          float maximumPlayerSlowPercentValue,
+                          AnimationCurve playerSlowCurveValue)
+    {
         requiredCharge = requiredChargeValue;
         maximumCharge = maximumChargeValue;
         chargeRatePerSecond = chargeRatePerSecondValue;
@@ -133,6 +194,9 @@ public sealed class PowerUpHoldChargeModuleData
         passiveChargeGainWhileReleased = passiveChargeGainWhileReleasedValue;
         passiveChargeGainPercentPerSecond = passiveChargeGainPercentPerSecondValue;
         laserDurationSeconds = laserDurationSecondsValue;
+        slowPlayerWhileCharging = slowPlayerWhileChargingValue;
+        maximumPlayerSlowPercent = maximumPlayerSlowPercentValue;
+        playerSlowCurve = playerSlowCurveValue != null ? playerSlowCurveValue : CreateDefaultSlowCurve();
     }
     #endregion
 
@@ -153,6 +217,17 @@ public sealed class PowerUpHoldChargeModuleData
 
         if (passiveChargeGainPercentPerSecond < 0f)
             passiveChargeGainPercentPerSecond = 0f;
+    }
+    #endregion
+
+    #region Helpers
+    /// <summary>
+    /// Creates the default normalized charge-slow curve used when a payload is initialized from code.
+    /// </summary>
+    /// <returns>Linear normalized curve from 0 charge to full charge.</returns>
+    private static AnimationCurve CreateDefaultSlowCurve()
+    {
+        return AnimationCurve.Linear(0f, 0f, 1f, 1f);
     }
     #endregion
 

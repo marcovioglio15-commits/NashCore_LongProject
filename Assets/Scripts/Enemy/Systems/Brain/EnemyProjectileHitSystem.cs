@@ -224,6 +224,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         BufferLookup<ShootRequest> shootRequestLookup = SystemAPI.GetBufferLookup<ShootRequest>(false);
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
         BufferLookup<EnemyElementStackElement> elementalStackLookup = SystemAPI.GetBufferLookup<EnemyElementStackElement>(false);
+        BufferLookup<ProjectileHitHistoryElement> projectileHitHistoryLookup = SystemAPI.GetBufferLookup<ProjectileHitHistoryElement>(false);
         ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
         ComponentLookup<EnemyElementalVfxAnchor> elementalVfxAnchorLookup = SystemAPI.GetComponentLookup<EnemyElementalVfxAnchor>(true);
         ComponentLookup<PlayerElementalVfxConfig> elementalVfxConfigLookup = SystemAPI.GetComponentLookup<PlayerElementalVfxConfig>(true);
@@ -232,16 +233,27 @@ public partial struct EnemyProjectileHitSystem : ISystem
         DynamicBuffer<GameAudioEventRequest> audioRequests = default;
         bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
         NativeStream.Reader projectileHitReader = projectileHitStream.AsReader();
+        NativeList<int> currentOverlapEnemyIndices = new NativeList<int>(16, Allocator.Temp);
         NativeList<ProjectileHitCandidate> hitCandidates = new NativeList<ProjectileHitCandidate>(16, Allocator.Temp);
 
         // Hits are resolved sequentially per projectile so penetration modes can update projected health correctly.
         for (int projectileIndex = 0; projectileIndex < projectileCount; projectileIndex++)
         {
             int hitCount = projectileHitReader.BeginForEachIndex(projectileIndex);
+            Entity projectileEntity = projectileEntities[projectileIndex];
+            bool canTrackProjectileHits = projectileHitHistoryLookup.HasBuffer(projectileEntity);
+            DynamicBuffer<ProjectileHitHistoryElement> projectileHitHistory = default;
+
+            if (canTrackProjectileHits)
+                projectileHitHistory = projectileHitHistoryLookup[projectileEntity];
 
             if (hitCount <= 0)
             {
                 projectileHitReader.EndForEachIndex();
+
+                if (canTrackProjectileHits)
+                    projectileHitHistory.Clear();
+
                 continue;
             }
 
@@ -262,6 +274,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
             if (canEnqueueShooterVfxRequests)
                 shooterVfxRequests = vfxRequestLookup[projectileOwner.ShooterEntity];
 
+            currentOverlapEnemyIndices.Clear();
             hitCandidates.Clear();
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
@@ -271,12 +284,32 @@ public partial struct EnemyProjectileHitSystem : ISystem
                 if (enemyIndex < 0 || enemyIndex >= enemyCount)
                     continue;
 
+                if (HasCurrentOverlapEnemyIndex(currentOverlapEnemyIndices, enemyIndex))
+                    continue;
+
+                currentOverlapEnemyIndices.Add(enemyIndex);
+            }
+
+            projectileHitReader.EndForEachIndex();
+            PruneProjectileHitHistoryToCurrentOverlaps(canTrackProjectileHits,
+                                                       currentOverlapEnemyIndices,
+                                                       enemyEntities,
+                                                       ref projectileHitHistory);
+
+            for (int overlapIndex = 0; overlapIndex < currentOverlapEnemyIndices.Length; overlapIndex++)
+            {
+                int enemyIndex = currentOverlapEnemyIndices[overlapIndex];
+
+                if (canTrackProjectileHits && HasProjectileAlreadyHitEnemy(projectileHitHistory, enemyEntities[enemyIndex]))
+                    continue;
+
+                if (HasHitCandidate(hitCandidates, enemyIndex))
+                    continue;
+
                 float3 delta = projectilePositions[projectileIndex] - enemyPositions[enemyIndex];
                 delta.y = 0f;
                 AddHitCandidateSorted(ref hitCandidates, enemyIndex, math.lengthsq(delta));
             }
-
-            projectileHitReader.EndForEachIndex();
 
             if (hitCandidates.Length <= 0)
                 continue;
@@ -293,6 +326,9 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
                         hasValidHit = true;
                         enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
+                        RegisterProjectileEnemyHit(canTrackProjectileHits,
+                                                   enemyEntities[enemyIndex],
+                                                   ref projectileHitHistory);
                         ApplyHitPayloads(enemyIndex,
                                          projectileOwner.ShooterEntity,
                                          in projectileData,
@@ -328,6 +364,9 @@ public partial struct EnemyProjectileHitSystem : ISystem
                         hasValidHit = true;
                         appliedHitCount++;
                         enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
+                        RegisterProjectileEnemyHit(canTrackProjectileHits,
+                                                   enemyEntities[enemyIndex],
+                                                   ref projectileHitHistory);
                         ApplyHitPayloads(enemyIndex,
                                          projectileOwner.ShooterEntity,
                                          in projectileData,
@@ -372,6 +411,9 @@ public partial struct EnemyProjectileHitSystem : ISystem
                         }
 
                         enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
+                        RegisterProjectileEnemyHit(canTrackProjectileHits,
+                                                   enemyEntities[enemyIndex],
+                                                   ref projectileHitHistory);
                         ApplyHitPayloads(enemyIndex,
                                          projectileOwner.ShooterEntity,
                                          in projectileData,
@@ -419,6 +461,9 @@ public partial struct EnemyProjectileHitSystem : ISystem
 
                         hasValidHit = true;
                         enemyKilledByProjectile = enemyKilledByProjectile || enemyKilled;
+                        RegisterProjectileEnemyHit(canTrackProjectileHits,
+                                                   enemyEntities[enemyIndex],
+                                                   ref projectileHitHistory);
                         ApplyHitPayloads(enemyIndex,
                                          projectileOwner.ShooterEntity,
                                          in projectileData,
@@ -557,6 +602,7 @@ public partial struct EnemyProjectileHitSystem : ISystem
         enemyCellMap.Dispose();
         projectedEnemyHealth.Dispose();
         projectedEnemyKnockback.Dispose();
+        currentOverlapEnemyIndices.Dispose();
         hitCandidates.Dispose();
     }
     #endregion
@@ -585,6 +631,94 @@ public partial struct EnemyProjectileHitSystem : ISystem
         }
     }
 
+    /// <summary>
+    /// Checks whether a projectile overlap list already contains the enemy index emitted by the spatial hash.
+    /// </summary>
+    /// <param name="currentOverlapEnemyIndices">Current projectile overlap list.</param>
+    /// <param name="enemyIndex">Enemy index to search for.</param>
+    /// <returns>True when the enemy index is already present.</returns>
+    private static bool HasCurrentOverlapEnemyIndex(NativeList<int> currentOverlapEnemyIndices, int enemyIndex)
+    {
+        for (int overlapIndex = 0; overlapIndex < currentOverlapEnemyIndices.Length; overlapIndex++)
+        {
+            if (currentOverlapEnemyIndices[overlapIndex] == enemyIndex)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Removes contact-hit records for enemies that are no longer overlapped by the projectile this frame.
+    /// </summary>
+    /// <param name="canTrackProjectileHits">True when the projectile owns a mutable contact-hit buffer.</param>
+    /// <param name="currentOverlapEnemyIndices">Current projectile overlap list resolved from spatial collision.</param>
+    /// <param name="enemyEntities">Stable enemy entity snapshot used to translate overlap indices.</param>
+    /// <param name="hitHistory">Mutable projectile contact-hit buffer.</param>
+    private static void PruneProjectileHitHistoryToCurrentOverlaps(bool canTrackProjectileHits,
+                                                                   NativeList<int> currentOverlapEnemyIndices,
+                                                                   NativeArray<Entity> enemyEntities,
+                                                                   ref DynamicBuffer<ProjectileHitHistoryElement> hitHistory)
+    {
+        if (!canTrackProjectileHits)
+            return;
+
+        for (int historyIndex = hitHistory.Length - 1; historyIndex >= 0; historyIndex--)
+        {
+            Entity trackedEnemyEntity = hitHistory[historyIndex].EnemyEntity;
+
+            if (HasCurrentOverlapEnemyEntity(currentOverlapEnemyIndices, enemyEntities, trackedEnemyEntity))
+                continue;
+
+            hitHistory.RemoveAt(historyIndex);
+        }
+    }
+
+    /// <summary>
+    /// Checks whether the current overlap list contains the provided enemy entity.
+    /// </summary>
+    /// <param name="currentOverlapEnemyIndices">Current projectile overlap list.</param>
+    /// <param name="enemyEntities">Stable enemy entity snapshot used to translate overlap indices.</param>
+    /// <param name="enemyEntity">Enemy entity to search for.</param>
+    /// <returns>True when the enemy is still overlapped this frame.</returns>
+    private static bool HasCurrentOverlapEnemyEntity(NativeList<int> currentOverlapEnemyIndices,
+                                                     NativeArray<Entity> enemyEntities,
+                                                     Entity enemyEntity)
+    {
+        if (enemyEntity == Entity.Null)
+            return false;
+
+        for (int overlapIndex = 0; overlapIndex < currentOverlapEnemyIndices.Length; overlapIndex++)
+        {
+            int enemyIndex = currentOverlapEnemyIndices[overlapIndex];
+
+            if (enemyIndex < 0 || enemyIndex >= enemyEntities.Length)
+                continue;
+
+            if (enemyEntities[enemyIndex] == enemyEntity)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks whether a projectile candidate list already contains the enemy index emitted by the spatial hash.
+    /// </summary>
+    /// <param name="hitCandidates">Current projectile hit candidate list.</param>
+    /// <param name="enemyIndex">Enemy index to search for.</param>
+    /// <returns>True when the candidate is already present.</returns>
+    private static bool HasHitCandidate(NativeList<ProjectileHitCandidate> hitCandidates, int enemyIndex)
+    {
+        for (int candidateIndex = 0; candidateIndex < hitCandidates.Length; candidateIndex++)
+        {
+            if (hitCandidates[candidateIndex].EnemyIndex == enemyIndex)
+                return true;
+        }
+
+        return false;
+    }
+
     private static bool TryApplyFlatDamageHit(ref NativeArray<EnemyHealth> projectedEnemyHealth,
                                               int enemyIndex,
                                               float damage,
@@ -604,6 +738,49 @@ public partial struct EnemyProjectileHitSystem : ISystem
         enemyKilled = enemyHealth.Current <= 0f;
         projectedEnemyHealth[enemyIndex] = enemyHealth;
         return true;
+    }
+
+    /// <summary>
+    /// Checks whether one projectile has already applied a hit during the current overlap contact.
+    /// </summary>
+    /// <param name="hitHistory">Projectile contact-hit buffer for the currently processed projectile.</param>
+    /// <param name="enemyEntity">Enemy entity candidate being tested.</param>
+    /// <returns>True when the enemy already exists in the current projectile contact history.</returns>
+    private static bool HasProjectileAlreadyHitEnemy(DynamicBuffer<ProjectileHitHistoryElement> hitHistory,
+                                                     Entity enemyEntity)
+    {
+        for (int historyIndex = 0; historyIndex < hitHistory.Length; historyIndex++)
+        {
+            if (hitHistory[historyIndex].EnemyEntity == enemyEntity)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Adds one enemy to a projectile contact-hit history after a successful hit application.
+    /// </summary>
+    /// <param name="canTrackProjectileHits">True when the projectile owns a mutable history buffer.</param>
+    /// <param name="enemyEntity">Enemy entity that was just hit.</param>
+    /// <param name="hitHistory">Mutable projectile contact-hit buffer.</param>
+    private static void RegisterProjectileEnemyHit(bool canTrackProjectileHits,
+                                                   Entity enemyEntity,
+                                                   ref DynamicBuffer<ProjectileHitHistoryElement> hitHistory)
+    {
+        if (!canTrackProjectileHits)
+            return;
+
+        if (enemyEntity == Entity.Null)
+            return;
+
+        if (HasProjectileAlreadyHitEnemy(hitHistory, enemyEntity))
+            return;
+
+        hitHistory.Add(new ProjectileHitHistoryElement
+        {
+            EnemyEntity = enemyEntity
+        });
     }
 
     private static float ApplyDamageBasedHit(ref NativeArray<EnemyHealth> projectedEnemyHealth,

@@ -115,7 +115,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
             if (isShootingSuppressed)
             {
                 shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
-                shootingState.ValueRW.VisualShootingActive = 0;
+                RefreshVisualShootingState(ref shootingState.ValueRW, false, elapsedTime);
 
                 if (values.RateOfFire > 0f)
                     ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
@@ -127,7 +127,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
             if (values.RateOfFire <= 0f || projectileTemplate.Speed <= 0f)
             {
                 shootingState.ValueRW.PreviousShootPressed = isShootPressed ? (byte)1 : (byte)0;
-                shootingState.ValueRW.VisualShootingActive = 0;
+                RefreshVisualShootingState(ref shootingState.ValueRW, false, elapsedTime);
                 ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
                 continue;
             }
@@ -139,7 +139,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
             if (passiveToolsState.HasLaserBeam != 0)
             {
                 shootingState.ValueRW.AutomaticEnabled = 0;
-                shootingState.ValueRW.VisualShootingActive = isShootPressed ? (byte)1 : (byte)0;
+                RefreshVisualShootingState(ref shootingState.ValueRW, isShootPressed, elapsedTime);
                 ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
                 continue;
             }
@@ -157,17 +157,15 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                                       isShootPressed,
                                                       shootPressedThisFrame);
             bool automaticIsEnabled = usesAutomaticLatch && shootingState.ValueRW.AutomaticEnabled != 0;
-            bool visualShootingActive = isShootPressed;
 
             if (shootingConfig.TriggerMode == ShootingTriggerMode.AutomaticToggle)
             {
-                visualShootingActive = visualShootingActive || automaticIsEnabled;
                 bool automaticEnabledThisFrame = !automaticWasEnabled && automaticIsEnabled;
                 bool automaticDisabledThisFrame = automaticWasEnabled && !automaticIsEnabled;
 
                 if (automaticDisabledThisFrame)
                 {
-                    shootingState.ValueRW.VisualShootingActive = 0;
+                    RefreshVisualShootingState(ref shootingState.ValueRW, false, elapsedTime);
                     shootingState.ValueRW.NextShotTime = elapsedTime + shotInterval;
                     continue;
                 }
@@ -176,7 +174,7 @@ public partial struct PlayerShootingIntentSystem : ISystem
                     ResetShotSchedule(ref shootingState.ValueRW, elapsedTime);
             }
 
-            shootingState.ValueRW.VisualShootingActive = visualShootingActive ? (byte)1 : (byte)0;
+            RefreshVisualShootingState(ref shootingState.ValueRW, false, elapsedTime);
 
             if (!shouldShoot)
                 continue;
@@ -314,6 +312,25 @@ public partial struct PlayerShootingIntentSystem : ISystem
                                           float elapsedTime)
     {
         shootingState.NextShotTime = elapsedTime;
+    }
+
+    /// <summary>
+    /// Refreshes the animator-facing shooting flag from input intent and short-lived projectile spawn pulses.
+    /// shootingState: Mutable player shooting state that stores visual pulse timing.
+    /// inputRequestsShootingVisual: True when current input or automatic latch should keep shooting visuals active.
+    /// elapsedTime: Current world elapsed time used to expire short projectile pulses.
+    /// returns void.
+    /// </summary>
+    private static void RefreshVisualShootingState(ref PlayerShootingState shootingState,
+                                                   bool inputRequestsShootingVisual,
+                                                   float elapsedTime)
+    {
+        bool pulseStillActive = shootingState.VisualShootingUntilTime > elapsedTime;
+
+        if (!pulseStillActive)
+            shootingState.VisualShootingUntilTime = 0f;
+
+        shootingState.VisualShootingActive = inputRequestsShootingVisual || pulseStillActive ? (byte)1 : (byte)0;
     }
 
     private static PlayerPassiveToolsState ResolvePassiveToolsState(Entity shooterEntity,

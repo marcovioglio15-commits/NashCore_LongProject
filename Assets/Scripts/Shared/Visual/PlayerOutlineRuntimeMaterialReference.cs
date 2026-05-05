@@ -5,7 +5,7 @@ using UnityEngine;
 /// /params None.
 /// /returns None.
 /// </summary>
-[CreateAssetMenu(fileName = "PlayerOutlineRuntimeMaterialReference", menuName = "NashCore/Visual/Player Outline Runtime Material Reference")]
+[CreateAssetMenu(fileName = "PlayerOutlineRuntimeMaterialReference", menuName = "Visual/Player Outline Runtime Material Reference")]
 public sealed class PlayerOutlineRuntimeMaterialReference : ScriptableObject
 {
     #region Fields

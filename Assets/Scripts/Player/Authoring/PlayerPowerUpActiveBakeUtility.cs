@@ -137,6 +137,9 @@ public static class PlayerPowerUpActiveBakeUtility
         float decayAfterReleasePercentPerSecond = 0f;
         bool passiveChargeGainWhileReleased = false;
         float passiveChargeGainPercentPerSecond = 0f;
+        bool slowPlayerWhileCharging = false;
+        float maximumPlayerSlowPercent = 0f;
+        FixedList128Bytes<float> playerSlowCurveSamples = default;
         bool hasBomb = false;
         GameObject bombPrefab = null;
         float3 bombSpawnOffset = float3.zero;
@@ -251,6 +254,16 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                  math.max(0f, holdChargeData.PassiveChargeGainPercentPerSecond));
                     chargeShotLaserDurationSeconds = math.max(chargeShotLaserDurationSeconds,
                                                               math.max(0f, holdChargeData.LaserDurationSeconds));
+                    slowPlayerWhileCharging = slowPlayerWhileCharging || holdChargeData.SlowPlayerWhileCharging;
+                    maximumPlayerSlowPercent = math.max(maximumPlayerSlowPercent,
+                                                        math.max(0f, holdChargeData.MaximumPlayerSlowPercent));
+
+                    if (holdChargeData.SlowPlayerWhileCharging)
+                    {
+                        FixedList128Bytes<float> holdChargeSlowCurveSamples = PlayerPowerUpSlowCurveBakeUtility.BuildNormalizedSamples(holdChargeData.PlayerSlowCurve);
+                        PlayerPowerUpSlowCurveBakeUtility.AccumulateMaximumSamples(ref playerSlowCurveSamples, in holdChargeSlowCurveSamples);
+                    }
+
                     break;
                 case PowerUpModuleKind.TriggerPress:
                     hasTriggerPress = true;
@@ -493,6 +506,9 @@ public static class PlayerPowerUpActiveBakeUtility
                                                                               decayAfterReleasePercentPerSecond,
                                                                               passiveChargeGainWhileReleased,
                                                                               passiveChargeGainPercentPerSecond,
+                                                                              slowPlayerWhileCharging,
+                                                                              maximumPlayerSlowPercent,
+                                                                              in playerSlowCurveSamples,
                                                                               suppressBaseShootingWhileCharging,
                                                                               shotgunProjectileCount,
                                                                               shotgunConeAngleDegrees,

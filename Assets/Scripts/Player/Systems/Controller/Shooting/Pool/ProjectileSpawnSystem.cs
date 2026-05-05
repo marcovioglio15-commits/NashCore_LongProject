@@ -11,6 +11,7 @@ using Unity.Transforms;
 /// </summary>
 [UpdateInGroup(typeof(PlayerControllerSystemGroup))]
 [UpdateAfter(typeof(PlayerShootingIntentSystem))]
+[UpdateAfter(typeof(PlayerPowerUpActivationSystem))]
 [UpdateAfter(typeof(ProjectilePoolInitializeSystem))]
 public partial struct ProjectileSpawnSystem : ISystem
 {
@@ -25,6 +26,7 @@ public partial struct ProjectileSpawnSystem : ISystem
 
     #region Constants
     private const float MinimumProjectileScale = 0.0001f;
+    private const float VisualShootingPulseDuration = 0.12f;
     #endregion
 
     #region Fields
@@ -69,7 +71,12 @@ public partial struct ProjectileSpawnSystem : ISystem
 
             // Refresh lookup after structural changes performed during pool expansion.
             ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
-            ProcessShootRequests(ref state, entityManager, in passiveToolsLookup);
+            ComponentLookup<PlayerShootingState> shootingStateLookup = SystemAPI.GetComponentLookup<PlayerShootingState>(false);
+            ProcessShootRequests(ref state,
+                                 entityManager,
+                                 (float)SystemAPI.Time.ElapsedTime,
+                                 in passiveToolsLookup,
+                                 ref shootingStateLookup);
         }
         finally
         {
@@ -98,12 +105,12 @@ public partial struct ProjectileSpawnSystem : ISystem
                                                            RefRO<ProjectilePoolState>>()
                                                    .WithEntityAccess())
         {
-            if (IsShooterEligibleForSpawn(entityManager, shooterEntity, shootRequests.Length, poolStateValue.ValueRO) == false)
+            if (!IsShooterEligibleForSpawn(entityManager, shooterEntity, shootRequests.Length, poolStateValue.ValueRO))
                 continue;
 
             Entity prefabEntity = projectilePrefab.ValueRO.PrefabEntity;
 
-            if (IsValidPrefab(entityManager, prefabEntity) == false)
+            if (!IsValidPrefab(entityManager, prefabEntity))
             {
                 shootRequests.Clear();
                 continue;
@@ -140,16 +147,16 @@ public partial struct ProjectileSpawnSystem : ISystem
             if (expansionRequest.ExpandCount <= 0)
                 continue;
 
-            if (entityManager.Exists(expansionRequest.ShooterEntity) == false)
+            if (!entityManager.Exists(expansionRequest.ShooterEntity))
                 continue;
 
             if (entityManager.HasComponent<Projectile>(expansionRequest.ShooterEntity))
                 continue;
 
-            if (entityManager.HasBuffer<ProjectilePoolElement>(expansionRequest.ShooterEntity) == false)
+            if (!entityManager.HasBuffer<ProjectilePoolElement>(expansionRequest.ShooterEntity))
                 continue;
 
-            if (IsValidPrefab(entityManager, expansionRequest.ProjectilePrefab) == false)
+            if (!IsValidPrefab(entityManager, expansionRequest.ProjectilePrefab))
                 continue;
 
             ProjectilePoolUtility.ExpandPool(entityManager,
@@ -167,7 +174,9 @@ public partial struct ProjectileSpawnSystem : ISystem
 
     private void ProcessShootRequests(ref SystemState state,
                                       EntityManager entityManager,
-                                      in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup)
+                                      float elapsedTime,
+                                      in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup,
+                                      ref ComponentLookup<PlayerShootingState> shootingStateLookup)
     {
         foreach ((DynamicBuffer<ShootRequest> shootRequests,
                   DynamicBuffer<ProjectilePoolElement> projectilePool,
@@ -179,14 +188,14 @@ public partial struct ProjectileSpawnSystem : ISystem
                                                            RefRO<ProjectilePoolState>>()
                                                    .WithEntityAccess())
         {
-            if (IsShooterEligibleForSpawn(entityManager, shooterEntity, shootRequests.Length, poolStateValue.ValueRO) == false)
+            if (!IsShooterEligibleForSpawn(entityManager, shooterEntity, shootRequests.Length, poolStateValue.ValueRO))
                 continue;
 
             DynamicBuffer<ShootRequest> shooterShootRequests = shootRequests;
             DynamicBuffer<ProjectilePoolElement> shooterProjectilePool = projectilePool;
             Entity prefabEntity = projectilePrefab.ValueRO.PrefabEntity;
 
-            if (IsValidPrefab(entityManager, prefabEntity) == false)
+            if (!IsValidPrefab(entityManager, prefabEntity))
             {
                 shooterShootRequests.Clear();
                 continue;
@@ -194,6 +203,7 @@ public partial struct ProjectileSpawnSystem : ISystem
 
             PlayerPassiveToolsState passiveToolsState = ResolvePassiveToolsState(shooterEntity, in passiveToolsLookup);
             int requestsCount = shooterShootRequests.Length;
+            int spawnedProjectileCount = 0;
 
             for (int requestIndex = 0; requestIndex < requestsCount; requestIndex++)
             {
@@ -205,7 +215,7 @@ public partial struct ProjectileSpawnSystem : ISystem
                 Entity projectileEntity = shooterProjectilePool[lastIndex].ProjectileEntity;
                 shooterProjectilePool.RemoveAt(lastIndex);
 
-                if (entityManager.Exists(projectileEntity) == false)
+                if (!entityManager.Exists(projectileEntity))
                     continue;
 
                 ShootRequest request = shooterShootRequests[requestIndex];
@@ -252,6 +262,7 @@ public partial struct ProjectileSpawnSystem : ISystem
                 {
                     ShooterEntity = shooterEntity
                 });
+                ResetProjectileHitHistory(entityManager, projectileEntity);
 
                 ProjectilePerfectCircleState perfectCircleState = BuildPerfectCircleState(in passiveToolsState.PerfectCircle,
                                                                                           requestIndex,
@@ -274,7 +285,11 @@ public partial struct ProjectileSpawnSystem : ISystem
                 entityManager.SetComponentData(projectileEntity, elementalPayload);
 
                 entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, true);
+                spawnedProjectileCount++;
             }
+
+            if (spawnedProjectileCount > 0)
+                RegisterShooterShotPulse(shooterEntity, elapsedTime, ref shootingStateLookup);
 
             shooterShootRequests.Clear();
         }
@@ -293,7 +308,7 @@ public partial struct ProjectileSpawnSystem : ISystem
                                                   int shootRequestsCount,
                                                   ProjectilePoolState poolState)
     {
-        if (entityManager.Exists(shooterEntity) == false)
+        if (!entityManager.Exists(shooterEntity))
             return false;
 
         if (entityManager.HasComponent<Projectile>(shooterEntity))
@@ -347,6 +362,43 @@ public partial struct ProjectileSpawnSystem : ISystem
         return default;
     }
 
+    /// <summary>
+    /// Clears per-projectile enemy hit memory before a pooled projectile is reused for a new shot.
+    /// </summary>
+    /// <param name="entityManager">EntityManager used to resolve the projectile buffer.</param>
+    /// <param name="projectileEntity">Projectile entity being reactivated from the pool.</param>
+    private static void ResetProjectileHitHistory(EntityManager entityManager, Entity projectileEntity)
+    {
+        if (!entityManager.HasBuffer<ProjectileHitHistoryElement>(projectileEntity))
+            return;
+
+        DynamicBuffer<ProjectileHitHistoryElement> hitHistory = entityManager.GetBuffer<ProjectileHitHistoryElement>(projectileEntity);
+        hitHistory.Clear();
+    }
+
+    /// <summary>
+    /// Records a real projectile spawn as a shoot pulse so managed animation sync can trigger one-shot firing clips.
+    /// </summary>
+    /// <param name="shooterEntity">Shooter entity whose animation state should be pulsed.</param>
+    /// <param name="elapsedTime">Current elapsed world time used to hold the shooting visual state briefly.</param>
+    /// <param name="shootingStateLookup">Mutable lookup used to update shooter shooting state.</param>
+    private static void RegisterShooterShotPulse(Entity shooterEntity,
+                                                 float elapsedTime,
+                                                 ref ComponentLookup<PlayerShootingState> shootingStateLookup)
+    {
+        if (!shootingStateLookup.HasComponent(shooterEntity))
+            return;
+
+        PlayerShootingState shootingState = shootingStateLookup[shooterEntity];
+        shootingState.ShotPulseVersion = shootingState.ShotPulseVersion == uint.MaxValue
+            ? 1u
+            : shootingState.ShotPulseVersion + 1u;
+        shootingState.VisualShootingActive = 1;
+        shootingState.VisualShootingUntilTime = math.max(shootingState.VisualShootingUntilTime,
+                                                         elapsedTime + VisualShootingPulseDuration);
+        shootingStateLookup[shooterEntity] = shootingState;
+    }
+
     private static ProjectilePerfectCircleState BuildPerfectCircleState(in PerfectCirclePassiveConfig perfectCircleConfig,
                                                                         int requestIndex,
                                                                         Entity shooterEntity,
@@ -355,7 +407,7 @@ public partial struct ProjectileSpawnSystem : ISystem
                                                                         float3 entryVelocity,
                                                                         bool isEnabled)
     {
-        if (isEnabled == false)
+        if (!isEnabled)
             return default;
 
         float seed = requestIndex + shooterEntity.Index * 13f;
@@ -384,7 +436,7 @@ public partial struct ProjectileSpawnSystem : ISystem
 
     private static ProjectileBounceState BuildBounceState(in BouncingProjectilesPassiveConfig bouncingProjectilesConfig, bool isEnabled)
     {
-        if (isEnabled == false || bouncingProjectilesConfig.MaxBounces <= 0)
+        if (!isEnabled || bouncingProjectilesConfig.MaxBounces <= 0)
             return default;
 
         float minimumSpeedMultiplier = math.max(0f, bouncingProjectilesConfig.MinimumSpeedMultiplierAfterBounce);
@@ -402,7 +454,7 @@ public partial struct ProjectileSpawnSystem : ISystem
 
     private static ProjectileSplitState BuildSplitState(in SplittingProjectilesPassiveConfig splittingProjectilesConfig, bool isEnabled, bool isSplitChild)
     {
-        if (isEnabled == false || isSplitChild)
+        if (!isEnabled || isSplitChild)
             return default;
 
         return new ProjectileSplitState
@@ -437,7 +489,7 @@ public partial struct ProjectileSpawnSystem : ISystem
 
     private static ProjectileElementalPayload BuildElementalPayloadFromPassive(in ElementalProjectilesPassiveConfig elementalProjectilesConfig, bool isEnabled)
     {
-        if (isEnabled == false || elementalProjectilesConfig.StacksPerHit <= 0f)
+        if (!isEnabled || elementalProjectilesConfig.StacksPerHit <= 0f)
             return default;
 
         return ProjectileElementalPayloadUtility.BuildSingle(in elementalProjectilesConfig.Effect,

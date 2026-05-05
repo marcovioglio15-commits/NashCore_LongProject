@@ -190,6 +190,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -375,6 +401,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -560,6 +612,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 1
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -745,6 +823,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -930,6 +1034,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -1115,6 +1245,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -1300,6 +1456,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -1485,6 +1667,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -1670,6 +1878,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -1855,6 +2089,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -2040,6 +2300,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -2225,6 +2511,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -2410,6 +2722,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -2595,6 +2933,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -2780,6 +3144,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -2965,6 +3355,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -3150,6 +3566,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -3335,6 +3777,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -3520,6 +3988,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -3705,6 +4199,32 @@ MonoBehaviour:
         passiveChargeGainWhileReleased: 0
         passiveChargeGainPercentPerSecond: 10
         laserDurationSeconds: 0.45
+        slowPlayerWhileCharging: 0
+        maximumPlayerSlowPercent: 35
+        playerSlowCurve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 1
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 1
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
       triggerEvent:
         eventType: 0
       resourceGate:
@@ -3903,6 +4423,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -4088,6 +4634,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -4273,6 +4845,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -4471,6 +5069,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -4656,6 +5280,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.75
+          slowPlayerWhileCharging: 1
+          maximumPlayerSlowPercent: 100
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -4841,6 +5491,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -5026,6 +5702,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -5211,6 +5913,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -5236,7 +5964,7 @@ MonoBehaviour:
           laserDurationSeconds: 0.35
         characterTuning:
           formulas:
-          - formula: '[BulletPenetration]=5'
+          - formula: '[InfinitePenetration]=true'
           - formula: '[BulletSizeMultiplier]=[BulletSizeMultiplier]*3'
           - formula: '[ShotRange]=[ShotRange]+999'
           - formula: '[LaserWidth]=[LaserWidth_Big]'
@@ -5413,6 +6141,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -5598,6 +6352,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -5783,6 +6563,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -5981,6 +6787,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -6166,6 +6998,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -6351,6 +7209,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -6549,6 +7433,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -6734,6 +7644,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -6919,6 +7855,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -7117,6 +8079,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -7302,6 +8290,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -7487,6 +8501,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -7682,6 +8722,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -7867,6 +8933,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -8052,6 +9144,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -8249,6 +9367,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -8432,6 +9576,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -8629,6 +9799,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -8814,6 +10010,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -9012,6 +10234,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -9210,6 +10458,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -9395,6 +10669,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -9594,6 +10894,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -9792,6 +11118,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 10
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -9987,6 +11339,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -10183,6 +11561,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -10367,6 +11771,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -10561,6 +11991,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -10745,6 +12201,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -10929,6 +12411,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -11123,6 +12631,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -11307,6 +12841,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -11501,6 +13061,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -11685,6 +13271,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -11879,6 +13491,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -12063,6 +13701,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -12257,6 +13921,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -12441,6 +14131,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -12635,6 +14351,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -12819,6 +14561,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -13014,6 +14782,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -13209,6 +15003,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -13404,6 +15224,32 @@ MonoBehaviour:
           passiveChargeGainWhileReleased: 0
           passiveChargeGainPercentPerSecond: 0
           laserDurationSeconds: 0.45
+          slowPlayerWhileCharging: 0
+          maximumPlayerSlowPercent: 35
+          playerSlowCurve:
+            serializedVersion: 2
+            m_Curve:
+            - serializedVersion: 3
+              time: 0
+              value: 0
+              inSlope: 0
+              outSlope: 1
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            - serializedVersion: 3
+              time: 1
+              value: 1
+              inSlope: 1
+              outSlope: 0
+              tangentMode: 0
+              weightedMode: 0
+              inWeight: 0
+              outWeight: 0
+            m_PreInfinity: 2
+            m_PostInfinity: 2
+            m_RotationOrder: 4
         triggerEvent:
           eventType: 0
         resourceGate:
@@ -13574,7 +15420,7 @@ MonoBehaviour:
           maxAcquisitions: 2
     unreplaceable: 0
   primaryActivePowerUpId: ActiveChargeShot
-  secondaryActivePowerUpId: ActiveBasicDash
+  secondaryActivePowerUpId: Active_Shotgun
   equippedPassivePowerUpIds:
   - PassiveBouncingProjectiles
   passiveTools:

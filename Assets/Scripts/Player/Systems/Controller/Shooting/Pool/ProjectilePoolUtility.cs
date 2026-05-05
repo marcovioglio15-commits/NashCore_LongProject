@@ -36,7 +36,7 @@ public static class ProjectilePoolUtility
         if (count <= 0)
             return;
 
-        if (entityManager.HasBuffer<ProjectilePoolElement>(shooterEntity) == false)
+        if (!entityManager.HasBuffer<ProjectilePoolElement>(shooterEntity))
             return;
 
         NativeArray<Entity> spawnedProjectiles = new NativeArray<Entity>(count, Allocator.Temp);
@@ -78,37 +78,40 @@ public static class ProjectilePoolUtility
     /// <param name="projectileEntity">The entity representing the projectile to check and update.</param>
     public static void EnsureProjectileComponents(EntityManager entityManager, Entity projectileEntity)
     {
-        if (entityManager.HasComponent<LocalTransform>(projectileEntity) == false)
+        if (!entityManager.HasComponent<LocalTransform>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, LocalTransform.Identity);
 
-        if (entityManager.HasComponent<Projectile>(projectileEntity) == false)
+        if (!entityManager.HasComponent<Projectile>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, default(Projectile));
 
-        if (entityManager.HasComponent<ProjectileRuntimeState>(projectileEntity) == false)
+        if (!entityManager.HasComponent<ProjectileRuntimeState>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, default(ProjectileRuntimeState));
 
-        if (entityManager.HasComponent<ProjectileOwner>(projectileEntity) == false)
+        if (!entityManager.HasComponent<ProjectileOwner>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, default(ProjectileOwner));
 
-        if (entityManager.HasComponent<ProjectileActive>(projectileEntity) == false)
+        if (!entityManager.HasBuffer<ProjectileHitHistoryElement>(projectileEntity))
+            entityManager.AddBuffer<ProjectileHitHistoryElement>(projectileEntity);
+
+        if (!entityManager.HasComponent<ProjectileActive>(projectileEntity))
             entityManager.AddComponent<ProjectileActive>(projectileEntity);
 
-        if (entityManager.HasComponent<ProjectileBaseScale>(projectileEntity) == false)
+        if (!entityManager.HasComponent<ProjectileBaseScale>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, new ProjectileBaseScale
             {
                 Value = 1f
             });
 
-        if (entityManager.HasComponent<ProjectilePerfectCircleState>(projectileEntity) == false)
+        if (!entityManager.HasComponent<ProjectilePerfectCircleState>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, default(ProjectilePerfectCircleState));
 
-        if (entityManager.HasComponent<ProjectileBounceState>(projectileEntity) == false)
+        if (!entityManager.HasComponent<ProjectileBounceState>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, default(ProjectileBounceState));
 
-        if (entityManager.HasComponent<ProjectileSplitState>(projectileEntity) == false)
+        if (!entityManager.HasComponent<ProjectileSplitState>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, default(ProjectileSplitState));
 
-        if (entityManager.HasComponent<ProjectileElementalPayload>(projectileEntity) == false)
+        if (!entityManager.HasComponent<ProjectileElementalPayload>(projectileEntity))
             entityManager.AddComponentData(projectileEntity, default(ProjectileElementalPayload));
     }
 
@@ -119,10 +122,10 @@ public static class ProjectilePoolUtility
     /// <param name="projectileEntity">The entity representing the projectile to update.</param>
     public static void EnsureProjectileBaseScale(EntityManager entityManager, Entity projectileEntity)
     {
-        if (entityManager.HasComponent<LocalTransform>(projectileEntity) == false)
+        if (!entityManager.HasComponent<LocalTransform>(projectileEntity))
             return;
 
-        if (entityManager.HasComponent<ProjectileBaseScale>(projectileEntity) == false)
+        if (!entityManager.HasComponent<ProjectileBaseScale>(projectileEntity))
             return;
 
         LocalTransform localTransform = entityManager.GetComponentData<LocalTransform>(projectileEntity);
@@ -141,7 +144,7 @@ public static class ProjectilePoolUtility
     /// <param name="projectileEntity">The projectile entity whose position will be set.</param>
     public static void SetProjectileParked(EntityManager entityManager, Entity projectileEntity)
     {
-        if (entityManager.HasComponent<LocalTransform>(projectileEntity) == false)
+        if (!entityManager.HasComponent<LocalTransform>(projectileEntity))
             return;
 
         LocalTransform parkedTransform = entityManager.GetComponentData<LocalTransform>(projectileEntity);
@@ -178,7 +181,7 @@ public static class ProjectilePoolUtility
         SetProjectileParked(ref projectileTransform);
         projectileActiveLookup.SetComponentEnabled(projectileEntity, false);
 
-        if (poolLookup.HasBuffer(shooterEntity) == false)
+        if (!poolLookup.HasBuffer(shooterEntity))
             return;
 
         DynamicBuffer<ProjectilePoolElement> shooterPool = poolLookup[shooterEntity];

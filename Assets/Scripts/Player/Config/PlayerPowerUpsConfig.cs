@@ -127,6 +127,8 @@ public struct ShotgunPowerUpConfig
 /// </summary>
 public struct ChargeShotPowerUpConfig
 {
+    public const int PlayerSlowCurveSampleCount = 16;
+
     public float RequiredCharge;
     public float MaximumCharge;
     public float ChargeRatePerSecond;
@@ -136,6 +138,9 @@ public struct ChargeShotPowerUpConfig
     public byte PassiveChargeGainWhileReleased;
     public float PassiveChargeGainPercentPerSecond;
     public byte SuppressBaseShootingWhileCharging;
+    public byte SlowPlayerWhileCharging;
+    public float MaximumPlayerSlowPercent;
+    public FixedList128Bytes<float> PlayerSlowCurveSamples;
     public float SizeMultiplier;
     public float DamageMultiplier;
     public float SpeedMultiplier;

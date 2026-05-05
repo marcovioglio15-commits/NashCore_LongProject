@@ -7,7 +7,7 @@ using UnityEngine;
 /// None.
 /// returns None.
 /// </summary>
-[CreateAssetMenu(fileName = "EnemyWavePreset", menuName = "NashCore/Enemy/Enemy Wave Preset")]
+[CreateAssetMenu(fileName = "EnemyWavePreset", menuName = "Enemy/Enemy Wave Preset")]
 public sealed class EnemyWavePreset : ScriptableObject
 {
     #region Fields
