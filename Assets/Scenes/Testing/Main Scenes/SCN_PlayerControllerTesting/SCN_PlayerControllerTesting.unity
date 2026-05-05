@@ -241,6 +241,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -372,6 +376,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (18)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -739,6 +747,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (03)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -836,7 +848,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!64 &95984605
 MeshCollider:
@@ -1096,6 +1108,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1286,6 +1302,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (13)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1347,6 +1367,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (28)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1523,6 +1547,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1584,6 +1612,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2214,7 +2246,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2278,6 +2310,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2299,6 +2335,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -2558,6 +2598,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (37)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2625,6 +2669,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (14)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2689,7 +2737,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2712,6 +2760,10 @@ PrefabInstance:
     - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_Name
       value: PF_Tunnel_Railway (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 4539001439582417831, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2815,6 +2867,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (22)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2879,7 +2935,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2942,6 +2998,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3038,7 +3098,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3102,6 +3162,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (45)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3164,6 +3228,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3225,6 +3293,10 @@ PrefabInstance:
     - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A_Railway (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3369,6 +3441,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (27)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3589,6 +3665,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (13)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3650,6 +3730,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (20)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3866,7 +3950,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4400,6 +4484,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4542,6 +4630,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (30)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4806,6 +4898,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4827,6 +4923,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (22)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -4933,6 +5033,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (23)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5117,6 +5221,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (13)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.14
@@ -5222,6 +5330,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (15)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6032,6 +6144,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6257,6 +6373,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6278,6 +6398,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -6384,6 +6508,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (28)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6845,6 +6973,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6866,6 +6998,10 @@ PrefabInstance:
     - target: {fileID: 5947898850351587052, guid: 4b89609ec2a5c5d45beb03e0102840c7, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A_Railway
+      objectReference: {fileID: 0}
+    - target: {fileID: 5947898850351587052, guid: 4b89609ec2a5c5d45beb03e0102840c7, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 6467449239270671446, guid: 4b89609ec2a5c5d45beb03e0102840c7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6969,6 +7105,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (05)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7031,6 +7171,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (14)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7092,6 +7236,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (14)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7210,7 +7358,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6976884ce5586ed4a8430ca9763771dc, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7358,6 +7506,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7683,6 +7835,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (13)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7826,6 +7982,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (19)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8068,6 +8228,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (27)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8414,6 +8578,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8475,6 +8643,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8580,6 +8752,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.1
@@ -8656,6 +8832,10 @@ PrefabInstance:
     - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_Name
       value: PF_Tunnel_Railway (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 4539001439582417831, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_LocalPosition.x
@@ -8759,6 +8939,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (26)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8780,6 +8964,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (21)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -8886,6 +9074,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (39)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9089,6 +9281,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (25)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9172,6 +9368,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (12)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9557,6 +9757,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9703,7 +9907,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9848,6 +10052,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9909,6 +10117,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9972,6 +10184,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (32)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10033,6 +10249,10 @@ PrefabInstance:
     - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A_Railway (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10107,6 +10327,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10168,6 +10392,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (42)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10241,6 +10469,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10354,6 +10586,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (16)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10438,6 +10674,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (49)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10499,6 +10739,10 @@ PrefabInstance:
     - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A_Railway (11)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10562,6 +10806,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (46)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10623,6 +10871,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (18)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10801,6 +11053,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Tunnel_Railway (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 4539001439582417831, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_LocalPosition.x
       value: -19.629997
@@ -10902,6 +11158,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (15)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11187,6 +11447,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (43)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11351,6 +11615,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11455,6 +11723,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -11519,7 +11791,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11664,6 +11936,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (25)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12101,6 +12377,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (21)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12486,7 +12766,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12509,6 +12789,10 @@ PrefabInstance:
     - target: {fileID: 7165731464152660847, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
       propertyPath: m_Name
       value: PF_Stairs (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7165731464152660847, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 7510344335026086357, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
       propertyPath: m_LocalPosition.x
@@ -12612,6 +12896,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (47)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12673,6 +12961,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (48)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12808,7 +13100,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12872,6 +13164,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -12893,6 +13189,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -13089,6 +13389,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (23)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -13525,6 +13829,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A_Railway (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 5947898850351587052, guid: 4b89609ec2a5c5d45beb03e0102840c7, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 6467449239270671446, guid: 4b89609ec2a5c5d45beb03e0102840c7, type: 3}
       propertyPath: m_LocalPosition.x
       value: -15.6299925
@@ -13671,6 +13979,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (19)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -13819,6 +14131,10 @@ PrefabInstance:
     - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_Name
       value: PF_Tunnel_Railway
+      objectReference: {fileID: 0}
+    - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 4539001439582417831, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14046,6 +14362,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -14108,6 +14428,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -14169,6 +14493,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (17)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14273,6 +14601,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (14)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -14422,6 +14754,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalPosition.x
       value: 16.52
@@ -14524,6 +14860,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (24)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -14545,6 +14885,10 @@ PrefabInstance:
     - target: {fileID: 7165731464152660847, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
       propertyPath: m_Name
       value: PF_Stairs
+      objectReference: {fileID: 0}
+    - target: {fileID: 7165731464152660847, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 7510344335026086357, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14607,6 +14951,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14709,6 +15057,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14944,6 +15296,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.1
@@ -15120,6 +15476,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (20)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -15263,6 +15623,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -15823,7 +16187,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -15889,7 +16253,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -15922,6 +16286,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -16028,6 +16396,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (26)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -16286,6 +16658,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -16347,6 +16723,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (50)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -16452,6 +16832,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (34)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -16514,6 +16898,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -16575,6 +16963,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -16770,6 +17162,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (18)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.1
@@ -16876,6 +17272,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (36)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -16937,6 +17337,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (13)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17069,6 +17473,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (19)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17286,7 +17694,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17354,6 +17762,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Grate_LevelExit
       objectReference: {fileID: 0}
+    - target: {fileID: 7828436845313079814, guid: c05c47c7f3da61a4e8222db9e5130bf3, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -17415,6 +17827,10 @@ PrefabInstance:
     - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A_Railway (16)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17480,7 +17896,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17543,6 +17959,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (35)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17619,6 +18039,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (16)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.1
@@ -17690,6 +18114,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalPosition.x
       value: -19.52
@@ -17751,6 +18179,10 @@ PrefabInstance:
     - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_Name
       value: PF_Tunnel_Railway (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 4539001439582417831, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17854,6 +18286,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (18)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -17916,6 +18352,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (15)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -17977,6 +18417,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18042,7 +18486,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18175,6 +18619,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (25)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18636,6 +19084,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (41)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -18700,7 +19152,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -18936,6 +19388,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (21)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -19121,6 +19577,10 @@ PrefabInstance:
     - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_Name
       value: PF_Tunnel_Railway (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 4539001439582417831, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_LocalPosition.x
@@ -19415,6 +19875,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Tunnel_Railway (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 4539001439582417831, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_LocalPosition.x
       value: 20.370008
@@ -19517,6 +19981,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (15)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -19581,7 +20049,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19644,6 +20112,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (22)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19709,7 +20181,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19773,6 +20245,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (26)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -19834,6 +20310,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (27)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -19979,6 +20459,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (19)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -20040,6 +20524,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (24)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -20132,6 +20620,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -20345,6 +20837,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (21)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -20572,6 +21068,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -20724,6 +21224,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -20899,6 +21403,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (40)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -21001,6 +21509,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -21022,6 +21534,10 @@ PrefabInstance:
     - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_Name
       value: PF_Tunnel_Railway (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3870304492565801245, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 4539001439582417831, guid: 24e7c704682449b41b80fc14dbeb4498, type: 3}
       propertyPath: m_LocalPosition.x
@@ -21262,6 +21778,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -21410,6 +21930,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (16)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -21472,6 +21996,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (16)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -21533,6 +22061,10 @@ PrefabInstance:
     - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A_Railway (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -21671,6 +22203,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (31)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -21733,6 +22269,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -21759,6 +22299,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (15)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -21876,6 +22420,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22243,6 +22791,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (44)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -22264,6 +22816,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (23)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -22373,7 +22929,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22447,6 +23003,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22592,6 +23152,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -22736,6 +23300,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (30)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -22757,6 +23325,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
@@ -22864,6 +23436,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_A (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -22928,7 +23504,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 52f9fa0245ee74d479366b1ceb095641, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -23073,6 +23649,10 @@ PrefabInstance:
     - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A_Railway (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -23559,7 +24139,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -24300,6 +24880,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -24404,6 +24988,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.14
@@ -24469,6 +25057,10 @@ PrefabInstance:
     - target: {fileID: 7165731464152660847, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
       propertyPath: m_Name
       value: PF_Stairs (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7165731464152660847, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 7510344335026086357, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
       propertyPath: m_LocalPosition.x
@@ -24625,6 +25217,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (33)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -24687,6 +25283,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -24719,6 +25319,10 @@ PrefabInstance:
     - target: {fileID: 7165731464152660847, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
       propertyPath: m_Name
       value: PF_Stairs
+      objectReference: {fileID: 0}
+    - target: {fileID: 7165731464152660847, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 7510344335026086357, guid: 1c98c8a809ca9734680e9034526ab170, type: 3}
       propertyPath: m_LocalPosition.x
@@ -25049,7 +25653,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d663e904dd19f5b44b1a46f0f763048b, type: 3}
       propertyPath: m_StaticEditorFlags
-      value: 4
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -25155,6 +25759,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (29)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -25259,6 +25867,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -25321,6 +25933,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A_Railway (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -25382,6 +25998,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (24)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -25449,6 +26069,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (14)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -25651,6 +26275,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (22)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -25878,6 +26506,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (23)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -25966,6 +26598,10 @@ PrefabInstance:
     - target: {fileID: 4251616204181370595, guid: 66faefbaa711001429f3819f3afd2c55, type: 3}
       propertyPath: m_Name
       value: PF_Tunnel_LevelExit
+      objectReference: {fileID: 0}
+    - target: {fileID: 4251616204181370595, guid: 66faefbaa711001429f3819f3afd2c55, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -26181,6 +26817,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Wall_B (29)
       objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -26242,6 +26882,10 @@ PrefabInstance:
     - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
       propertyPath: m_Name
       value: PF_Wall_A (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4091897113330992648, guid: 1baba2e07ab749448a04b0ae2a926499, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -26305,6 +26949,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Floor_A (31)
       objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -26366,6 +27014,10 @@ PrefabInstance:
     - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
       propertyPath: m_Name
       value: PF_Wall_B (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2140799110888812910, guid: 4730f9ef89c7bdd40a0ef51402851569, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -26590,6 +27242,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (20)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.1
@@ -26738,6 +27394,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_Gate_Small (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
+      objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.1
@@ -26803,6 +27463,10 @@ PrefabInstance:
     - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_Name
       value: PF_Gate_Small (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8297232087654573780, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     - target: {fileID: 8677979304571698286, guid: 6115decf42d775e48815fd12b344ffd9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -26998,6 +27662,10 @@ PrefabInstance:
     - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A_Railway (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -27267,6 +27935,10 @@ PrefabInstance:
     - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A (38)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7926193795815770660, guid: fb19e9fdcc6a1014bb928b7dbc054dcb, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -27574,6 +28246,10 @@ PrefabInstance:
     - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
       propertyPath: m_Name
       value: PF_Floor_A_Railway (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6487603411075833459, guid: aa9b4d7301664c34aa3b99e07da7c813, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
