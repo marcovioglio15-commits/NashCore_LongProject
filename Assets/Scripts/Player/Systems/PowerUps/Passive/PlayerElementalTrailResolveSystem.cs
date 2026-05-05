@@ -32,6 +32,7 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
     {
         float deltaTime = SystemAPI.Time.DeltaTime;
         EntityManager entityManager = state.EntityManager;
+        Allocator frameAllocator = state.WorldUpdateAllocator;
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
         BufferLookup<EnemyElementStackElement> elementalStackLookup = SystemAPI.GetBufferLookup<EnemyElementStackElement>(false);
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
@@ -50,12 +51,12 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
 
         if (enemyCount > 0)
         {
-            enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
-            enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.Temp);
-            NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Temp);
+            enemyEntities = enemyQuery.ToEntityArray(frameAllocator);
+            enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(frameAllocator);
+            NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(frameAllocator);
+            enemyPositions = CollectionHelper.CreateNativeArray<float3>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+            enemyBodyRadii = CollectionHelper.CreateNativeArray<float>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+            enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, frameAllocator);
 
             for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
             {
@@ -66,8 +67,6 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
                 if (bodyRadius > maximumEnemyRadius)
                     maximumEnemyRadius = bodyRadius;
             }
-
-            enemyTransforms.Dispose();
             float cellSize = EnemySpatialHashUtility.ResolveCellSize(maximumEnemyRadius);
             inverseCellSize = 1f / cellSize;
             EnemySpatialHashUtility.BuildCellMap(in enemyPositions, inverseCellSize, ref enemyCellMap);
@@ -210,14 +209,6 @@ public partial struct PlayerElementalTrailResolveSystem : ISystem
         commandBuffer.Playback(entityManager);
         commandBuffer.Dispose();
 
-        if (enemyCount > 0)
-        {
-            enemyEntities.Dispose();
-            enemyDataArray.Dispose();
-            enemyPositions.Dispose();
-            enemyBodyRadii.Dispose();
-            enemyCellMap.Dispose();
-        }
     }
     #endregion
 

@@ -39,6 +39,26 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
         public float3 BossPosition;
         public EnemyBossMinionSpawnElement Rule;
     }
+
+    private struct BossMinionRuleKey : System.IEquatable<BossMinionRuleKey>
+    {
+        public Entity BossEntity;
+        public int RuleIndex;
+
+        public bool Equals(BossMinionRuleKey other)
+        {
+            return BossEntity == other.BossEntity && RuleIndex == other.RuleIndex;
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)math.hash(new int3(BossEntity.Index, BossEntity.Version, RuleIndex));
+        }
+    }
+    #endregion
+
+    #region Fields
+    private EntityQuery activeMinionQuery;
     #endregion
 
     #region Methods
@@ -51,6 +71,9 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
     /// </summary>
     public void OnCreate(ref SystemState state)
     {
+        activeMinionQuery = SystemAPI.QueryBuilder()
+            .WithAll<EnemyBossMinionOwner, EnemyActive>()
+            .Build();
         state.RequireForUpdate<EnemyBossMinionSpawnElement>();
     }
 
@@ -63,8 +86,10 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
     {
         EntityManager entityManager = state.EntityManager;
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
-        NativeList<RuleInitializationRequest> initializationRequests = new NativeList<RuleInitializationRequest>(Allocator.Temp);
-        NativeList<MinionSpawnRequest> spawnRequests = new NativeList<MinionSpawnRequest>(Allocator.Temp);
+        Allocator frameAllocator = state.WorldUpdateAllocator;
+        NativeList<RuleInitializationRequest> initializationRequests = new NativeList<RuleInitializationRequest>(frameAllocator);
+        NativeList<MinionSpawnRequest> spawnRequests = new NativeList<MinionSpawnRequest>(frameAllocator);
+        NativeParallelHashMap<BossMinionRuleKey, int> aliveMinionCounts = new NativeParallelHashMap<BossMinionRuleKey, int>(math.max(1, activeMinionQuery.CalculateEntityCount()), frameAllocator);
         NativeArray<EnemyNavigationCellElement> navigationCellSnapshot = default;
         PhysicsWorldSingleton physicsWorldSingleton = default;
         bool hasPhysicsWorld = SystemAPI.TryGetSingleton<PhysicsWorldSingleton>(out physicsWorldSingleton);
@@ -78,94 +103,123 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
             wallsLayerMask = worldLayersConfig.WallsLayerMask;
         }
 
-        try
-        {
-            foreach ((RefRO<EnemyHealth> bossHealth,
-                      RefRO<EnemyRuntimeState> bossRuntime,
-                      RefRO<LocalTransform> bossTransform,
-                      Entity bossEntity)
-                     in SystemAPI.Query<RefRO<EnemyHealth>,
-                                        RefRO<EnemyRuntimeState>,
-                                        RefRO<LocalTransform>>()
-                                 .WithAll<EnemyBossTag, EnemyActive>()
-                                 .WithNone<EnemyDespawnRequest>()
-                                 .WithEntityAccess())
-            {
-                DynamicBuffer<EnemyBossMinionSpawnElement> minionRules = entityManager.GetBuffer<EnemyBossMinionSpawnElement>(bossEntity);
+        BuildAliveMinionCounts(ref state, ref aliveMinionCounts);
 
-                for (int ruleIndex = 0; ruleIndex < minionRules.Length; ruleIndex++)
+        foreach ((RefRO<EnemyHealth> bossHealth,
+                  RefRO<EnemyRuntimeState> bossRuntime,
+                  RefRO<LocalTransform> bossTransform,
+                  Entity bossEntity)
+                 in SystemAPI.Query<RefRO<EnemyHealth>,
+                                    RefRO<EnemyRuntimeState>,
+                                    RefRO<LocalTransform>>()
+                             .WithAll<EnemyBossTag, EnemyActive>()
+                             .WithNone<EnemyDespawnRequest>()
+                             .WithEntityAccess())
+        {
+            DynamicBuffer<EnemyBossMinionSpawnElement> minionRules = entityManager.GetBuffer<EnemyBossMinionSpawnElement>(bossEntity);
+
+            for (int ruleIndex = 0; ruleIndex < minionRules.Length; ruleIndex++)
+            {
+                EnemyBossMinionSpawnElement rule = minionRules[ruleIndex];
+
+                if (rule.Initialized == 0)
                 {
-                    EnemyBossMinionSpawnElement rule = minionRules[ruleIndex];
-
-                    if (rule.Initialized == 0)
-                    {
-                        QueueRuleInitialization(initializationRequests,
-                                                bossEntity,
-                                                ruleIndex,
-                                                ref rule,
-                                                in bossRuntime.ValueRO,
-                                                elapsedTime);
-                        minionRules[ruleIndex] = rule;
-                        continue;
-                    }
-
-                    if (EnemyBossMinionSpawnTriggerUtility.ShouldTriggerRule(entityManager,
-                                                                             bossEntity,
-                                                                             ruleIndex,
-                                                                             ref rule,
-                                                                             in bossHealth.ValueRO,
-                                                                             in bossRuntime.ValueRO,
-                                                                             elapsedTime))
-                    {
-                        EnemyBossMinionSpawnTriggerUtility.MarkRuleTriggered(ref rule, in bossRuntime.ValueRO, elapsedTime);
-                        QueueMinionSpawn(spawnRequests,
-                                         bossEntity,
-                                         ruleIndex,
-                                         bossTransform.ValueRO.Position,
-                                         in rule);
-                    }
-
+                    QueueRuleInitialization(initializationRequests,
+                                            bossEntity,
+                                            ruleIndex,
+                                            ref rule,
+                                            in bossRuntime.ValueRO,
+                                            elapsedTime);
                     minionRules[ruleIndex] = rule;
+                    continue;
                 }
+
+                int aliveMinionCount = ResolveAliveMinionCount(in aliveMinionCounts, bossEntity, ruleIndex);
+
+                if (EnemyBossMinionSpawnTriggerUtility.ShouldTriggerRule(aliveMinionCount,
+                                                                         ref rule,
+                                                                         in bossHealth.ValueRO,
+                                                                         in bossRuntime.ValueRO,
+                                                                         elapsedTime))
+                {
+                    EnemyBossMinionSpawnTriggerUtility.MarkRuleTriggered(ref rule, in bossRuntime.ValueRO, elapsedTime);
+                    QueueMinionSpawn(spawnRequests,
+                                     bossEntity,
+                                     ruleIndex,
+                                     bossTransform.ValueRO.Position,
+                                     in rule);
+                }
+
+                minionRules[ruleIndex] = rule;
             }
-
-            ProcessRuleInitializationRequests(entityManager, initializationRequests);
-
-            if (spawnRequests.Length > 0 &&
-                SystemAPI.TryGetSingleton<EnemyNavigationGridState>(out navigationGridState) &&
-                SystemAPI.TryGetSingletonBuffer<EnemyNavigationCellElement>(out DynamicBuffer<EnemyNavigationCellElement> navigationCells) &&
-                navigationGridState.Initialized != 0 &&
-                navigationGridState.FlowReady != 0 &&
-                navigationCells.Length > 0)
-            {
-                navigationCellSnapshot = navigationCells.ToNativeArray(Allocator.Temp);
-                navigationReady = navigationCellSnapshot.IsCreated && navigationCellSnapshot.Length > 0;
-            }
-
-            ProcessMinionSpawnRequests(entityManager,
-                                       spawnRequests,
-                                       hasPhysicsWorld,
-                                       in physicsWorldSingleton,
-                                       wallsLayerMask,
-                                       navigationReady,
-                                       in navigationGridState,
-                                       navigationCellSnapshot);
         }
-        finally
+
+        ProcessRuleInitializationRequests(entityManager, initializationRequests);
+
+        if (spawnRequests.Length > 0 &&
+            SystemAPI.TryGetSingleton<EnemyNavigationGridState>(out navigationGridState) &&
+            SystemAPI.TryGetSingletonBuffer<EnemyNavigationCellElement>(out DynamicBuffer<EnemyNavigationCellElement> navigationCells) &&
+            navigationGridState.Initialized != 0 &&
+            navigationGridState.FlowReady != 0 &&
+            navigationCells.Length > 0)
         {
-            if (initializationRequests.IsCreated)
-                initializationRequests.Dispose();
-
-            if (spawnRequests.IsCreated)
-                spawnRequests.Dispose();
-
-            if (navigationCellSnapshot.IsCreated)
-                navigationCellSnapshot.Dispose();
+            navigationCellSnapshot = CollectionHelper.CreateNativeArray(navigationCells.AsNativeArray(), frameAllocator);
+            navigationReady = navigationCellSnapshot.IsCreated && navigationCellSnapshot.Length > 0;
         }
+
+        ProcessMinionSpawnRequests(entityManager,
+                                   spawnRequests,
+                                   in aliveMinionCounts,
+                                   hasPhysicsWorld,
+                                   in physicsWorldSingleton,
+                                   wallsLayerMask,
+                                   navigationReady,
+                                   in navigationGridState,
+                                   navigationCellSnapshot);
     }
     #endregion
 
     #region Private Methods
+    private void BuildAliveMinionCounts(ref SystemState state,
+                                        ref NativeParallelHashMap<BossMinionRuleKey, int> aliveMinionCounts)
+    {
+        foreach ((RefRO<EnemyBossMinionOwner> owner,
+                  EnabledRefRO<EnemyActive> enemyActive)
+                 in SystemAPI.Query<RefRO<EnemyBossMinionOwner>, EnabledRefRO<EnemyActive>>()
+                             .WithAll<EnemyActive>())
+        {
+            if (!enemyActive.ValueRO)
+                continue;
+
+            BossMinionRuleKey key = new BossMinionRuleKey
+            {
+                BossEntity = owner.ValueRO.BossEntity,
+                RuleIndex = owner.ValueRO.RuleIndex
+            };
+
+            if (aliveMinionCounts.TryGetValue(key, out int count))
+            {
+                aliveMinionCounts[key] = count + 1;
+                continue;
+            }
+
+            aliveMinionCounts.Add(key, 1);
+        }
+    }
+
+    private static int ResolveAliveMinionCount(in NativeParallelHashMap<BossMinionRuleKey, int> aliveMinionCounts,
+                                               Entity bossEntity,
+                                               int ruleIndex)
+    {
+        BossMinionRuleKey key = new BossMinionRuleKey
+        {
+            BossEntity = bossEntity,
+            RuleIndex = ruleIndex
+        };
+
+        return aliveMinionCounts.TryGetValue(key, out int count) ? count : 0;
+    }
+
     /// <summary>
     /// Queues pool initialization for one boss minion rule without performing structural changes during query iteration.
     /// /params initializationRequests Request list filled by the current update.
@@ -303,6 +357,7 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
     /// </summary>
     private static void ProcessMinionSpawnRequests(EntityManager entityManager,
                                                    NativeList<MinionSpawnRequest> spawnRequests,
+                                                   in NativeParallelHashMap<BossMinionRuleKey, int> aliveMinionCounts,
                                                    bool hasPhysicsWorld,
                                                    in PhysicsWorldSingleton physicsWorldSingleton,
                                                    int wallsLayerMask,
@@ -328,11 +383,14 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
             if (rule.PoolEntity == Entity.Null || !entityManager.Exists(rule.PoolEntity))
                 continue;
 
+            int aliveMinionCount = ResolveAliveMinionCount(in aliveMinionCounts, request.BossEntity, request.RuleIndex);
+
             SpawnMinions(entityManager,
                          request.BossEntity,
                          request.RuleIndex,
                          request.BossPosition,
                          ref rule,
+                         aliveMinionCount,
                          hasPhysicsWorld,
                          in physicsWorldSingleton,
                          wallsLayerMask,
@@ -412,6 +470,7 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
                                      int ruleIndex,
                                      float3 bossPosition,
                                      ref EnemyBossMinionSpawnElement rule,
+                                     int aliveMinionCount,
                                      bool hasPhysicsWorld,
                                      in PhysicsWorldSingleton physicsWorldSingleton,
                                      int wallsLayerMask,
@@ -420,7 +479,7 @@ public partial struct EnemyBossMinionSpawnSystem : ISystem
                                      NativeArray<EnemyNavigationCellElement> navigationCells)
     {
         int availableSlots = rule.MaxAliveMinions > 0
-            ? math.max(0, rule.MaxAliveMinions - EnemyBossMinionSpawnTriggerUtility.CountAliveMinions(entityManager, bossEntity, ruleIndex))
+            ? math.max(0, rule.MaxAliveMinions - aliveMinionCount)
             : rule.SpawnCount;
         int spawnCount = math.min(math.max(0, rule.SpawnCount), availableSlots);
 

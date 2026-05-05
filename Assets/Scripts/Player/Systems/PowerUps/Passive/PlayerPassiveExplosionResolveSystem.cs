@@ -41,14 +41,15 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
         }
 
         EntityManager entityManager = state.EntityManager;
-        NativeArray<Entity> enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
-        NativeArray<EnemyData> enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.Temp);
-        NativeArray<EnemyHealth> enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.Temp);
-        NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.Temp);
-        NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-        NativeArray<float3> enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-        NativeArray<float> enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-        NativeArray<byte> enemyDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+        Allocator frameAllocator = state.WorldUpdateAllocator;
+        NativeArray<Entity> enemyEntities = enemyQuery.ToEntityArray(frameAllocator);
+        NativeArray<EnemyData> enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(frameAllocator);
+        NativeArray<EnemyHealth> enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(frameAllocator);
+        NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(frameAllocator);
+        NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(frameAllocator);
+        NativeArray<float3> enemyPositions = CollectionHelper.CreateNativeArray<float3>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> enemyBodyRadii = CollectionHelper.CreateNativeArray<float>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+        NativeArray<byte> enemyDirtyFlags = CollectionHelper.CreateNativeArray<byte>(enemyCount, frameAllocator, NativeArrayOptions.ClearMemory);
         ComponentLookup<EnemyDespawnRequest> despawnRequestLookup = SystemAPI.GetComponentLookup<EnemyDespawnRequest>(true);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
         float maximumEnemyRadius = 0.05f;
@@ -65,7 +66,7 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
 
         float cellSize = EnemySpatialHashUtility.ResolveCellSize(maximumEnemyRadius);
         float inverseCellSize = 1f / cellSize;
-        NativeParallelMultiHashMap<int, int> enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Temp);
+        NativeParallelMultiHashMap<int, int> enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, frameAllocator);
         EnemySpatialHashUtility.BuildCellMap(in enemyPositions, inverseCellSize, ref enemyCellMap);
 
         foreach ((DynamicBuffer<PlayerExplosionRequest> explosionRequests,
@@ -115,15 +116,6 @@ public partial struct PlayerPassiveExplosionResolveSystem : ISystem
 
         commandBuffer.Playback(entityManager);
         commandBuffer.Dispose();
-        enemyEntities.Dispose();
-        enemyDataArray.Dispose();
-        enemyHealthArray.Dispose();
-        enemyRuntimeArray.Dispose();
-        enemyTransforms.Dispose();
-        enemyPositions.Dispose();
-        enemyBodyRadii.Dispose();
-        enemyDirtyFlags.Dispose();
-        enemyCellMap.Dispose();
     }
     #endregion
 

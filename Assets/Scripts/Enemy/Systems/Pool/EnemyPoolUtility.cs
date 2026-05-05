@@ -45,7 +45,7 @@ public static class EnemyPoolUtility
         if (!entityManager.HasBuffer<EnemyPoolElement>(poolEntity))
             return;
 
-        NativeArray<Entity> spawnedEnemies = new NativeArray<Entity>(count, Allocator.Temp);
+        NativeArray<Entity> spawnedEnemies = new NativeArray<Entity>(count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
         entityManager.Instantiate(enemyPrefab, spawnedEnemies);
 
         try

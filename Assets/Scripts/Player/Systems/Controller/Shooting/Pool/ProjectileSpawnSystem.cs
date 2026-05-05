@@ -61,28 +61,44 @@ public partial struct ProjectileSpawnSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
-        NativeList<PoolExpansionRequest> expansionRequests = new NativeList<PoolExpansionRequest>(Allocator.Temp);
+        Allocator frameAllocator = state.WorldUpdateAllocator;
+        NativeList<PoolExpansionRequest> expansionRequests = new NativeList<PoolExpansionRequest>(frameAllocator);
 
-        try
-        {
-            // Two-phase flow: collect requests first, then apply structural pool growth outside query iteration.
-            CollectPoolExpansionRequests(ref state, entityManager, ref expansionRequests);
-            ExecutePoolExpansionRequests(entityManager, in expansionRequests);
+        // Two-phase flow: collect requests first, then apply structural pool growth outside query iteration.
+        CollectPoolExpansionRequests(ref state, entityManager, ref expansionRequests);
+        ExecutePoolExpansionRequests(entityManager, in expansionRequests);
 
-            // Refresh lookup after structural changes performed during pool expansion.
-            ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
-            ComponentLookup<PlayerShootingState> shootingStateLookup = SystemAPI.GetComponentLookup<PlayerShootingState>(false);
-            ProcessShootRequests(ref state,
-                                 entityManager,
-                                 (float)SystemAPI.Time.ElapsedTime,
-                                 in passiveToolsLookup,
-                                 ref shootingStateLookup);
-        }
-        finally
-        {
-            if (expansionRequests.IsCreated)
-                expansionRequests.Dispose();
-        }
+        // Refresh lookups after structural changes performed during pool expansion.
+        ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup = SystemAPI.GetComponentLookup<PlayerPassiveToolsState>(true);
+        ComponentLookup<PlayerShootingState> shootingStateLookup = SystemAPI.GetComponentLookup<PlayerShootingState>(false);
+        ComponentLookup<LocalTransform> projectileTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(false);
+        ComponentLookup<Projectile> projectileLookup = SystemAPI.GetComponentLookup<Projectile>(false);
+        ComponentLookup<ProjectileRuntimeState> projectileRuntimeLookup = SystemAPI.GetComponentLookup<ProjectileRuntimeState>(false);
+        ComponentLookup<ProjectileOwner> projectileOwnerLookup = SystemAPI.GetComponentLookup<ProjectileOwner>(false);
+        ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup = SystemAPI.GetComponentLookup<ProjectileBaseScale>(true);
+        ComponentLookup<ProjectilePerfectCircleState> perfectCircleLookup = SystemAPI.GetComponentLookup<ProjectilePerfectCircleState>(false);
+        ComponentLookup<ProjectileBounceState> bounceLookup = SystemAPI.GetComponentLookup<ProjectileBounceState>(false);
+        ComponentLookup<ProjectileSplitState> splitLookup = SystemAPI.GetComponentLookup<ProjectileSplitState>(false);
+        ComponentLookup<ProjectileElementalPayload> elementalPayloadLookup = SystemAPI.GetComponentLookup<ProjectileElementalPayload>(false);
+        ComponentLookup<ProjectileActive> projectileActiveLookup = SystemAPI.GetComponentLookup<ProjectileActive>(false);
+        BufferLookup<ProjectileHitHistoryElement> projectileHitHistoryLookup = SystemAPI.GetBufferLookup<ProjectileHitHistoryElement>(false);
+
+        ProcessShootRequests(ref state,
+                             entityManager,
+                             (float)SystemAPI.Time.ElapsedTime,
+                             in passiveToolsLookup,
+                             ref shootingStateLookup,
+                             ref projectileTransformLookup,
+                             ref projectileLookup,
+                             ref projectileRuntimeLookup,
+                             ref projectileOwnerLookup,
+                             in projectileBaseScaleLookup,
+                             ref perfectCircleLookup,
+                             ref bounceLookup,
+                             ref splitLookup,
+                             ref elementalPayloadLookup,
+                             ref projectileActiveLookup,
+                             ref projectileHitHistoryLookup);
     }
 
     /// <summary>
@@ -176,7 +192,18 @@ public partial struct ProjectileSpawnSystem : ISystem
                                       EntityManager entityManager,
                                       float elapsedTime,
                                       in ComponentLookup<PlayerPassiveToolsState> passiveToolsLookup,
-                                      ref ComponentLookup<PlayerShootingState> shootingStateLookup)
+                                      ref ComponentLookup<PlayerShootingState> shootingStateLookup,
+                                      ref ComponentLookup<LocalTransform> projectileTransformLookup,
+                                      ref ComponentLookup<Projectile> projectileLookup,
+                                      ref ComponentLookup<ProjectileRuntimeState> projectileRuntimeLookup,
+                                      ref ComponentLookup<ProjectileOwner> projectileOwnerLookup,
+                                      in ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup,
+                                      ref ComponentLookup<ProjectilePerfectCircleState> perfectCircleLookup,
+                                      ref ComponentLookup<ProjectileBounceState> bounceLookup,
+                                      ref ComponentLookup<ProjectileSplitState> splitLookup,
+                                      ref ComponentLookup<ProjectileElementalPayload> elementalPayloadLookup,
+                                      ref ComponentLookup<ProjectileActive> projectileActiveLookup,
+                                      ref BufferLookup<ProjectileHitHistoryElement> projectileHitHistoryLookup)
     {
         foreach ((DynamicBuffer<ShootRequest> shootRequests,
                   DynamicBuffer<ProjectilePoolElement> projectilePool,
@@ -225,15 +252,18 @@ public partial struct ProjectileSpawnSystem : ISystem
                 if (passiveToolsState.HasPerfectCircle != 0)
                     speed = math.max(0f, passiveToolsState.PerfectCircle.RadialEntrySpeed);
 
-                LocalTransform projectileTransform = entityManager.GetComponentData<LocalTransform>(projectileEntity);
+                if (!projectileTransformLookup.HasComponent(projectileEntity))
+                    continue;
+
+                LocalTransform projectileTransform = projectileTransformLookup[projectileEntity];
                 projectileTransform.Position = request.Position;
                 projectileTransform.Rotation = quaternion.LookRotationSafe(direction, new float3(0f, 1f, 0f));
 
-                float baseScale = ResolveProjectileBaseScale(entityManager, projectileEntity, projectileTransform.Scale);
+                float baseScale = ResolveProjectileBaseScale(projectileEntity, projectileTransform.Scale, in projectileBaseScaleLookup);
 
                 float scaleMultiplier = math.max(0.01f, request.ProjectileScaleMultiplier);
                 projectileTransform.Scale = baseScale * scaleMultiplier;
-                entityManager.SetComponentData(projectileEntity, projectileTransform);
+                projectileTransformLookup[projectileEntity] = projectileTransform;
 
                 Projectile projectileData = new Projectile
                 {
@@ -252,17 +282,17 @@ public partial struct ProjectileSpawnSystem : ISystem
                     InheritPlayerSpeed = request.InheritPlayerSpeed
                 };
 
-                entityManager.SetComponentData(projectileEntity, projectileData);
-                entityManager.SetComponentData(projectileEntity, new ProjectileRuntimeState
+                projectileLookup[projectileEntity] = projectileData;
+                projectileRuntimeLookup[projectileEntity] = new ProjectileRuntimeState
                 {
                     TraveledDistance = 0f,
                     ElapsedLifetime = 0f
-                });
-                entityManager.SetComponentData(projectileEntity, new ProjectileOwner
+                };
+                projectileOwnerLookup[projectileEntity] = new ProjectileOwner
                 {
                     ShooterEntity = shooterEntity
-                });
-                ResetProjectileHitHistory(entityManager, projectileEntity);
+                };
+                ResetProjectileHitHistory(projectileEntity, ref projectileHitHistoryLookup);
 
                 ProjectilePerfectCircleState perfectCircleState = BuildPerfectCircleState(in passiveToolsState.PerfectCircle,
                                                                                           requestIndex,
@@ -271,20 +301,20 @@ public partial struct ProjectileSpawnSystem : ISystem
                                                                                           direction,
                                                                                           projectileData.Velocity,
                                                                                           passiveToolsState.HasPerfectCircle != 0);
-                entityManager.SetComponentData(projectileEntity, perfectCircleState);
+                perfectCircleLookup[projectileEntity] = perfectCircleState;
 
                 ProjectileBounceState bounceState = BuildBounceState(in passiveToolsState.BouncingProjectiles, passiveToolsState.HasBouncingProjectiles != 0);
-                entityManager.SetComponentData(projectileEntity, bounceState);
+                bounceLookup[projectileEntity] = bounceState;
 
                 ProjectileSplitState splitState = BuildSplitState(in passiveToolsState.SplittingProjectiles, passiveToolsState.HasSplittingProjectiles != 0, request.IsSplitChild != 0);
-                entityManager.SetComponentData(projectileEntity, splitState);
+                splitLookup[projectileEntity] = splitState;
 
                 ProjectileElementalPayload elementalPayload = ResolveElementalPayload(in request,
                                                                                       in passiveToolsState.ElementalProjectiles,
                                                                                       passiveToolsState.HasElementalProjectiles != 0);
-                entityManager.SetComponentData(projectileEntity, elementalPayload);
+                elementalPayloadLookup[projectileEntity] = elementalPayload;
 
-                entityManager.SetComponentEnabled<ProjectileActive>(projectileEntity, true);
+                projectileActiveLookup.SetComponentEnabled(projectileEntity, true);
                 spawnedProjectileCount++;
             }
 
@@ -340,16 +370,16 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// <summary>
     /// Resolves cached projectile base scale without performing structural changes during query iteration.
     /// </summary>
-    /// <param name="entityManager">EntityManager used for optional ProjectileBaseScale lookup.</param>
     /// <param name="projectileEntity">Projectile entity being spawned.</param>
     /// <param name="transformScale">Current LocalTransform scale fallback.</param>
+    /// <param name="projectileBaseScaleLookup">Lookup used for cached projectile base scale reads.</param>
     /// <returns>Clamped base scale value used for spawn scale multiplier.<returns>
-    private static float ResolveProjectileBaseScale(EntityManager entityManager,
-                                                    Entity projectileEntity,
-                                                    float transformScale)
+    private static float ResolveProjectileBaseScale(Entity projectileEntity,
+                                                    float transformScale,
+                                                    in ComponentLookup<ProjectileBaseScale> projectileBaseScaleLookup)
     {
-        if (entityManager.HasComponent<ProjectileBaseScale>(projectileEntity))
-            return math.max(MinimumProjectileScale, entityManager.GetComponentData<ProjectileBaseScale>(projectileEntity).Value);
+        if (projectileBaseScaleLookup.HasComponent(projectileEntity))
+            return math.max(MinimumProjectileScale, projectileBaseScaleLookup[projectileEntity].Value);
 
         return math.max(MinimumProjectileScale, transformScale);
     }
@@ -365,14 +395,15 @@ public partial struct ProjectileSpawnSystem : ISystem
     /// <summary>
     /// Clears per-projectile enemy hit memory before a pooled projectile is reused for a new shot.
     /// </summary>
-    /// <param name="entityManager">EntityManager used to resolve the projectile buffer.</param>
     /// <param name="projectileEntity">Projectile entity being reactivated from the pool.</param>
-    private static void ResetProjectileHitHistory(EntityManager entityManager, Entity projectileEntity)
+    /// <param name="projectileHitHistoryLookup">Lookup used to resolve the projectile hit-history buffer.</param>
+    private static void ResetProjectileHitHistory(Entity projectileEntity,
+                                                  ref BufferLookup<ProjectileHitHistoryElement> projectileHitHistoryLookup)
     {
-        if (!entityManager.HasBuffer<ProjectileHitHistoryElement>(projectileEntity))
+        if (!projectileHitHistoryLookup.HasBuffer(projectileEntity))
             return;
 
-        DynamicBuffer<ProjectileHitHistoryElement> hitHistory = entityManager.GetBuffer<ProjectileHitHistoryElement>(projectileEntity);
+        DynamicBuffer<ProjectileHitHistoryElement> hitHistory = projectileHitHistoryLookup[projectileEntity];
         hitHistory.Clear();
     }
 

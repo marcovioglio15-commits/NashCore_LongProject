@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -256,6 +257,68 @@ public static class EnemyExperienceDropDistributionCompatibilityUtility
         return true;
     }
 
+    public static bool TryResolveRandomCompatibleTotal(NativeArray<EnemyExperienceDropDefinitionElement> definitions,
+                                                       int definitionStartIndex,
+                                                       int definitionCount,
+                                                       float minimumTotal,
+                                                       float maximumTotal,
+                                                       float distribution,
+                                                       uint randomSeed,
+                                                       out float resolvedTotal)
+    {
+        resolvedTotal = 0f;
+
+        int sanitizedDefinitionStartIndex = math.max(0, definitionStartIndex);
+        int definitionEndIndex = math.min(definitions.Length, sanitizedDefinitionStartIndex + math.max(0, definitionCount));
+
+        if (definitionEndIndex <= sanitizedDefinitionStartIndex)
+            return false;
+
+        float sanitizedMinimumTotal = math.max(0f, minimumTotal);
+        float sanitizedMaximumTotal = math.max(sanitizedMinimumTotal, maximumTotal);
+
+        if (sanitizedMaximumTotal <= PrecisionEpsilon)
+            return false;
+
+        int quantizationStepUnits = ResolveRuntimeQuantizationStepUnits(definitions,
+                                                                       sanitizedDefinitionStartIndex,
+                                                                       definitionEndIndex - sanitizedDefinitionStartIndex);
+
+        if (quantizationStepUnits <= 0)
+            return false;
+
+        int minimumUnits = ConvertMinimumTotalToUnits(sanitizedMinimumTotal, quantizationStepUnits);
+        int maximumUnits = ConvertMaximumTotalToUnits(sanitizedMaximumTotal, quantizationStepUnits);
+
+        if (maximumUnits < minimumUnits)
+            return false;
+
+        uint sanitizedSeed = randomSeed;
+
+        if (sanitizedSeed == 0u)
+            sanitizedSeed = 1u;
+
+        Unity.Mathematics.Random random = new Unity.Mathematics.Random(sanitizedSeed);
+        int targetUnits = random.NextInt(minimumUnits, maximumUnits + 1);
+        int compatibleUnits;
+
+        if (!TryFindNearestCompatibleRuntimeTotalUnits(definitions,
+                                                       sanitizedDefinitionStartIndex,
+                                                       definitionEndIndex - sanitizedDefinitionStartIndex,
+                                                       minimumUnits,
+                                                       maximumUnits,
+                                                       targetUnits,
+                                                       quantizationStepUnits,
+                                                       distribution,
+                                                       out compatibleUnits))
+        {
+            return false;
+        }
+
+        resolvedTotal = ConvertUnitsToTotal(compatibleUnits, quantizationStepUnits);
+        return true;
+    }
+
     /// <summary>
     /// Resolves valid runtime bounds from authored runtime definitions.
     /// definitions Runtime drop definitions.
@@ -284,6 +347,46 @@ public static class EnemyExperienceDropDistributionCompatibilityUtility
     /// returns True when at least one valid runtime definition exists.
     /// </summary>
     public static bool TryResolveRuntimeBounds(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                               int definitionStartIndex,
+                                               int definitionCount,
+                                               out float minimumValue,
+                                               out float maximumValue)
+    {
+        minimumValue = float.MaxValue;
+        maximumValue = 0f;
+        bool hasValidDefinition = false;
+        int sanitizedDefinitionStartIndex = math.max(0, definitionStartIndex);
+        int definitionEndIndex = math.min(definitions.Length, sanitizedDefinitionStartIndex + math.max(0, definitionCount));
+
+        for (int index = sanitizedDefinitionStartIndex; index < definitionEndIndex; index++)
+        {
+            EnemyExperienceDropDefinitionElement definition = definitions[index];
+            float amount = definition.ExperienceAmount;
+
+            if (definition.PrefabEntity == Entity.Null)
+                continue;
+
+            if (amount <= 0f)
+                continue;
+
+            hasValidDefinition = true;
+
+            if (amount < minimumValue)
+                minimumValue = amount;
+
+            if (amount > maximumValue)
+                maximumValue = amount;
+        }
+
+        if (hasValidDefinition)
+            return true;
+
+        minimumValue = 0f;
+        maximumValue = 0f;
+        return false;
+    }
+
+    public static bool TryResolveRuntimeBounds(NativeArray<EnemyExperienceDropDefinitionElement> definitions,
                                                int definitionStartIndex,
                                                int definitionCount,
                                                out float minimumValue,
@@ -359,6 +462,101 @@ public static class EnemyExperienceDropDistributionCompatibilityUtility
     }
 
     private static bool TryFindNearestCompatibleRuntimeTotalUnits(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                                                  int definitionStartIndex,
+                                                                  int definitionCount,
+                                                                  int minimumUnits,
+                                                                  int maximumUnits,
+                                                                  int targetUnits,
+                                                                  int quantizationStepUnits,
+                                                                  float distribution,
+                                                                  out int compatibleUnits)
+    {
+        compatibleUnits = -1;
+
+        if (minimumUnits > maximumUnits)
+            return false;
+
+        int clampedTargetUnits = math.clamp(targetUnits, minimumUnits, maximumUnits);
+        int totalSpan = maximumUnits - minimumUnits;
+        int maximumSearchSteps = math.min(totalSpan, MaxCompatibilitySearchSteps);
+        float clampedDistribution = math.clamp(distribution, 0f, 1f);
+        bool preferHigherTotals = clampedDistribution >= 0.5f;
+
+        for (int offset = 0; offset <= maximumSearchSteps; offset++)
+        {
+            int lowerCandidateUnits = clampedTargetUnits - offset;
+            int upperCandidateUnits = clampedTargetUnits + offset;
+
+            if (preferHigherTotals)
+            {
+                if (upperCandidateUnits <= maximumUnits)
+                {
+                    float upperCandidateTotal = ConvertUnitsToTotal(upperCandidateUnits, quantizationStepUnits);
+
+                    if (IsRuntimeTotalCompatible(definitions,
+                                                 definitionStartIndex,
+                                                 definitionCount,
+                                                 upperCandidateTotal,
+                                                 distribution))
+                    {
+                        compatibleUnits = upperCandidateUnits;
+                        return true;
+                    }
+                }
+
+                if (offset > 0 && lowerCandidateUnits >= minimumUnits)
+                {
+                    float lowerCandidateTotal = ConvertUnitsToTotal(lowerCandidateUnits, quantizationStepUnits);
+
+                    if (IsRuntimeTotalCompatible(definitions,
+                                                 definitionStartIndex,
+                                                 definitionCount,
+                                                 lowerCandidateTotal,
+                                                 distribution))
+                    {
+                        compatibleUnits = lowerCandidateUnits;
+                        return true;
+                    }
+                }
+
+                continue;
+            }
+
+            if (lowerCandidateUnits >= minimumUnits)
+            {
+                float lowerCandidateTotal = ConvertUnitsToTotal(lowerCandidateUnits, quantizationStepUnits);
+
+                if (IsRuntimeTotalCompatible(definitions,
+                                             definitionStartIndex,
+                                             definitionCount,
+                                             lowerCandidateTotal,
+                                             distribution))
+                {
+                    compatibleUnits = lowerCandidateUnits;
+                    return true;
+                }
+            }
+
+            if (offset > 0 && upperCandidateUnits <= maximumUnits)
+            {
+                float upperCandidateTotal = ConvertUnitsToTotal(upperCandidateUnits, quantizationStepUnits);
+
+                if (IsRuntimeTotalCompatible(definitions,
+                                             definitionStartIndex,
+                                             definitionCount,
+                                             upperCandidateTotal,
+                                             distribution))
+                {
+                    compatibleUnits = upperCandidateUnits;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryFindNearestCompatibleRuntimeTotalUnits(NativeArray<EnemyExperienceDropDefinitionElement> definitions,
                                                                   int definitionStartIndex,
                                                                   int definitionCount,
                                                                   int minimumUnits,
@@ -538,6 +736,31 @@ public static class EnemyExperienceDropDistributionCompatibilityUtility
         return absoluteError <= CompatibilityTolerance;
     }
 
+    private static bool IsRuntimeTotalCompatible(NativeArray<EnemyExperienceDropDefinitionElement> definitions,
+                                                 int definitionStartIndex,
+                                                 int definitionCount,
+                                                 float totalExperienceDrop,
+                                                 float distribution)
+    {
+        if (totalExperienceDrop <= PrecisionEpsilon)
+            return false;
+
+        float deliveredExperience;
+        float absoluteError;
+        int estimatedDropCount = EnemyExperienceDropDistributionUtility.EstimateDropsPerDeath(definitions,
+                                                                                              definitionStartIndex,
+                                                                                              definitionCount,
+                                                                                              totalExperienceDrop,
+                                                                                              distribution,
+                                                                                              out deliveredExperience,
+                                                                                              out absoluteError);
+
+        if (estimatedDropCount <= 0)
+            return false;
+
+        return absoluteError <= CompatibilityTolerance;
+    }
+
     private static bool IsPreviewTotalCompatible(IReadOnlyList<float> definitionExperienceValues,
                                                  float totalExperienceDrop,
                                                  float distribution)
@@ -560,6 +783,46 @@ public static class EnemyExperienceDropDistributionCompatibilityUtility
     }
 
     private static int ResolveRuntimeQuantizationStepUnits(DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                                           int definitionStartIndex,
+                                                           int definitionCount)
+    {
+        int quantizationStepUnits = 0;
+        int sanitizedDefinitionStartIndex = math.max(0, definitionStartIndex);
+        int definitionEndIndex = math.min(definitions.Length, sanitizedDefinitionStartIndex + math.max(0, definitionCount));
+
+        for (int index = sanitizedDefinitionStartIndex; index < definitionEndIndex; index++)
+        {
+            EnemyExperienceDropDefinitionElement definition = definitions[index];
+
+            if (definition.PrefabEntity == Entity.Null)
+                continue;
+
+            float amount = definition.ExperienceAmount;
+
+            if (amount <= PrecisionEpsilon)
+                continue;
+
+            int amountUnits = ConvertExperienceAmountToUnits(amount);
+
+            if (amountUnits <= 0)
+                continue;
+
+            if (quantizationStepUnits <= 0)
+            {
+                quantizationStepUnits = amountUnits;
+                continue;
+            }
+
+            quantizationStepUnits = ComputeGreatestCommonDivisor(quantizationStepUnits, amountUnits);
+
+            if (quantizationStepUnits <= 1)
+                return 1;
+        }
+
+        return quantizationStepUnits;
+    }
+
+    private static int ResolveRuntimeQuantizationStepUnits(NativeArray<EnemyExperienceDropDefinitionElement> definitions,
                                                            int definitionStartIndex,
                                                            int definitionCount)
     {

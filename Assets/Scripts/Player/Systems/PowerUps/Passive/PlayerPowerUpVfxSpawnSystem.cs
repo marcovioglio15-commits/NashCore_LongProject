@@ -23,6 +23,7 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
+        Allocator frameAllocator = state.WorldUpdateAllocator;
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
         foreach ((DynamicBuffer<PlayerPowerUpVfxSpawnRequest> vfxRequests,
@@ -40,9 +41,9 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
             PlayerPowerUpVfxCapConfig capConfig = SanitizeCapConfig(in vfxCapConfig.ValueRO);
             float areaInverseCellSize = ResolveInverseAreaCellSize(capConfig.CellSize);
             int estimatedCapacity = math.max(8, vfxPool.Length + vfxRequests.Length);
-            NativeParallelHashMap<VfxAreaKey, int> areaCounts = new NativeParallelHashMap<VfxAreaKey, int>(estimatedCapacity, Allocator.Temp);
-            NativeParallelHashMap<VfxTargetKey, int> targetCounts = new NativeParallelHashMap<VfxTargetKey, int>(estimatedCapacity, Allocator.Temp);
-            NativeParallelHashMap<VfxTargetKey, Entity> targetInstances = new NativeParallelHashMap<VfxTargetKey, Entity>(estimatedCapacity, Allocator.Temp);
+            NativeParallelHashMap<VfxAreaKey, int> areaCounts = new NativeParallelHashMap<VfxAreaKey, int>(estimatedCapacity, frameAllocator);
+            NativeParallelHashMap<VfxTargetKey, int> targetCounts = new NativeParallelHashMap<VfxTargetKey, int>(estimatedCapacity, frameAllocator);
+            NativeParallelHashMap<VfxTargetKey, Entity> targetInstances = new NativeParallelHashMap<VfxTargetKey, Entity>(estimatedCapacity, frameAllocator);
             int activeOneShotCount = 0;
             BuildActiveVfxSnapshot(entityManager,
                                    vfxPool,
@@ -196,9 +197,6 @@ public partial struct PlayerPowerUpVfxSpawnSystem : ISystem
             }
 
             vfxRequests.Clear();
-            areaCounts.Dispose();
-            targetCounts.Dispose();
-            targetInstances.Dispose();
         }
 
         commandBuffer.Playback(entityManager);

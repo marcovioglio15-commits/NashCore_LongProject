@@ -33,7 +33,7 @@ public partial struct EnemyBossMinionLifecycleSystem : ISystem
     /// </summary>
     public void OnUpdate(ref SystemState state)
     {
-        NativeList<Entity> dyingBosses = new NativeList<Entity>(Allocator.Temp);
+        NativeList<Entity> dyingBosses = new NativeList<Entity>(state.WorldUpdateAllocator);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
         try
@@ -49,9 +49,6 @@ public partial struct EnemyBossMinionLifecycleSystem : ISystem
         finally
         {
             commandBuffer.Dispose();
-
-            if (dyingBosses.IsCreated)
-                dyingBosses.Dispose();
         }
     }
     #endregion

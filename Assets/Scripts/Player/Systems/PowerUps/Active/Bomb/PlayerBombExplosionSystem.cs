@@ -35,14 +35,15 @@ public partial struct PlayerBombExplosionSystem : ISystem
     public void OnUpdate(ref SystemState state)
     {
         EntityManager entityManager = state.EntityManager;
+        Allocator frameAllocator = state.WorldUpdateAllocator;
         ComponentLookup<LocalTransform> localTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true);
         BufferLookup<PlayerPowerUpVfxSpawnRequest> vfxRequestLookup = SystemAPI.GetBufferLookup<PlayerPowerUpVfxSpawnRequest>(false);
         DynamicBuffer<GameAudioEventRequest> audioRequests = default;
         bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
 
-        NativeArray<Entity> bombEntities = bombQuery.ToEntityArray(Allocator.Temp);
-        NativeArray<BombFuseState> bombFuseStates = bombQuery.ToComponentDataArray<BombFuseState>(Allocator.Temp);
+        NativeArray<Entity> bombEntities = bombQuery.ToEntityArray(frameAllocator);
+        NativeArray<BombFuseState> bombFuseStates = bombQuery.ToComponentDataArray<BombFuseState>(frameAllocator);
 
         int enemyCount = enemyQuery.CalculateEntityCount();
         NativeArray<Entity> enemyEntities = default;
@@ -59,15 +60,15 @@ public partial struct PlayerBombExplosionSystem : ISystem
 
         if (enemyCount > 0)
         {
-            enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
-            enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.Temp);
-            enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.Temp);
-            enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.Temp);
-            enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            enemyDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-            enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Temp);
+            enemyEntities = enemyQuery.ToEntityArray(frameAllocator);
+            enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(frameAllocator);
+            enemyHealthArray = enemyQuery.ToComponentDataArray<EnemyHealth>(frameAllocator);
+            enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(frameAllocator);
+            enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(frameAllocator);
+            enemyPositions = CollectionHelper.CreateNativeArray<float3>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+            enemyBodyRadii = CollectionHelper.CreateNativeArray<float>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+            enemyDirtyFlags = CollectionHelper.CreateNativeArray<byte>(enemyCount, frameAllocator, NativeArrayOptions.ClearMemory);
+            enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, frameAllocator);
 
             for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
             {
@@ -131,22 +132,10 @@ public partial struct PlayerBombExplosionSystem : ISystem
                 entityManager.SetComponentData(enemyEntity, enemyHealthArray[enemyIndex]);
                 DamageFlashRuntimeUtility.Trigger(entityManager, enemyEntity);
             }
-
-            enemyEntities.Dispose();
-            enemyDataArray.Dispose();
-            enemyHealthArray.Dispose();
-            enemyRuntimeArray.Dispose();
-            enemyTransforms.Dispose();
-            enemyPositions.Dispose();
-            enemyBodyRadii.Dispose();
-            enemyDirtyFlags.Dispose();
-            enemyCellMap.Dispose();
         }
 
         commandBuffer.Playback(entityManager);
         commandBuffer.Dispose();
-        bombEntities.Dispose();
-        bombFuseStates.Dispose();
     }
     #endregion
 

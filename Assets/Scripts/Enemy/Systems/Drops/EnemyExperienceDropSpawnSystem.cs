@@ -90,31 +90,23 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         if (remainingSpawnBudget <= PrecisionEpsilon)
             return;
 
-        // Snapshot buffers to keep iteration stable even if later systems mutate the live buffers.
-        NativeArray<EnemyExperienceDropPoolMapElement> poolMapSnapshot = poolMap.ToNativeArray(Allocator.Temp);
-        NativeArray<EnemyKilledEventElement> killedEventsSnapshot = killedEventsBuffer.ToNativeArray(Allocator.Temp);
+        Allocator frameAllocator = state.WorldUpdateAllocator;
 
-        try
+        // Snapshot buffers to keep iteration stable even if pool expansion performs structural changes.
+        NativeArray<EnemyExperienceDropPoolMapElement> poolMapSnapshot = CollectionHelper.CreateNativeArray(poolMap.AsNativeArray(), frameAllocator);
+        NativeArray<EnemyKilledEventElement> killedEventsSnapshot = CollectionHelper.CreateNativeArray(killedEventsBuffer.AsNativeArray(), frameAllocator);
+
+        for (int killedIndex = 0; killedIndex < killedEventsSnapshot.Length; killedIndex++)
         {
-            for (int killedIndex = 0; killedIndex < killedEventsSnapshot.Length; killedIndex++)
-            {
-                if (remainingSpawnBudget <= PrecisionEpsilon)
-                    break;
+            if (remainingSpawnBudget <= PrecisionEpsilon)
+                break;
 
-                remainingSpawnBudget -= SpawnDropsForKilledEnemy(entityManager,
-                                                                 poolMapSnapshot,
-                                                                 killedEventsSnapshot[killedIndex],
-                                                                 killedIndex,
-                                                                 remainingSpawnBudget);
-            }
-        }
-        finally
-        {
-            if (poolMapSnapshot.IsCreated)
-                poolMapSnapshot.Dispose();
-
-            if (killedEventsSnapshot.IsCreated)
-                killedEventsSnapshot.Dispose();
+            remainingSpawnBudget -= SpawnDropsForKilledEnemy(entityManager,
+                                                             poolMapSnapshot,
+                                                             killedEventsSnapshot[killedIndex],
+                                                             killedIndex,
+                                                             remainingSpawnBudget,
+                                                             frameAllocator);
         }
     }
     #endregion
@@ -141,7 +133,8 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
                                                   NativeArray<EnemyExperienceDropPoolMapElement> poolMap,
                                                   EnemyKilledEventElement killedEvent,
                                                   int killEventIndex,
-                                                  float remainingSpawnBudget)
+                                                  float remainingSpawnBudget,
+                                                  Allocator frameAllocator)
     {
         Entity enemyEntity = killedEvent.EnemyEntity;
 
@@ -162,8 +155,10 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
         if (entityManager.HasBuffer<EnemyExperienceDropDefinitionElement>(enemyEntity) == false)
             return 0f;
 
-        DynamicBuffer<EnemyExperienceDropModuleElement> experienceModules = entityManager.GetBuffer<EnemyExperienceDropModuleElement>(enemyEntity);
-        DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions = entityManager.GetBuffer<EnemyExperienceDropDefinitionElement>(enemyEntity);
+        NativeArray<EnemyExperienceDropModuleElement> experienceModules = CollectionHelper.CreateNativeArray(entityManager.GetBuffer<EnemyExperienceDropModuleElement>(enemyEntity).AsNativeArray(),
+                                                                                                             frameAllocator);
+        NativeArray<EnemyExperienceDropDefinitionElement> definitions = CollectionHelper.CreateNativeArray(entityManager.GetBuffer<EnemyExperienceDropDefinitionElement>(enemyEntity).AsNativeArray(),
+                                                                                                           frameAllocator);
 
         if (experienceModules.Length <= 0 || definitions.Length <= 0)
             return 0f;
@@ -202,7 +197,7 @@ public partial struct EnemyExperienceDropSpawnSystem : ISystem
                                                        int killEventIndex,
                                                        int moduleIndex,
                                                        EnemyExperienceDropModuleElement experienceModule,
-                                                       DynamicBuffer<EnemyExperienceDropDefinitionElement> definitions,
+                                                       NativeArray<EnemyExperienceDropDefinitionElement> definitions,
                                                        float rewardMultiplier,
                                                        float remainingSpawnBudget)
     {

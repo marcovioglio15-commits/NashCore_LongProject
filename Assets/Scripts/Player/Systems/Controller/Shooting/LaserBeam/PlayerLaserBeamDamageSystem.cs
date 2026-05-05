@@ -66,6 +66,7 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
             return;
 
         EntityManager entityManager = state.EntityManager;
+        Allocator frameAllocator = state.WorldUpdateAllocator;
         int enemyCount = enemyQuery.CalculateEntityCount();
 
         if (enemyCount <= 0)
@@ -74,17 +75,17 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
             return;
         }
 
-        NativeArray<Entity> enemyEntities = enemyQuery.ToEntityArray(Allocator.Temp);
-        NativeArray<EnemyData> enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(Allocator.Temp);
-        NativeArray<EnemyHealth> projectedEnemyHealth = enemyQuery.ToComponentDataArray<EnemyHealth>(Allocator.Temp);
-        NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-        NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(Allocator.Temp);
-        NativeArray<EnemyKnockbackState> projectedEnemyKnockback = enemyQuery.ToComponentDataArray<EnemyKnockbackState>(Allocator.Temp);
-        NativeArray<byte> enemyDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-        NativeArray<byte> enemyFlashDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-        NativeArray<byte> enemyKnockbackDirtyFlags = new NativeArray<byte>(enemyCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
-        NativeArray<float3> enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-        NativeArray<float> enemyBodyRadii = new NativeArray<float>(enemyCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+        NativeArray<Entity> enemyEntities = enemyQuery.ToEntityArray(frameAllocator);
+        NativeArray<EnemyData> enemyDataArray = enemyQuery.ToComponentDataArray<EnemyData>(frameAllocator);
+        NativeArray<EnemyHealth> projectedEnemyHealth = enemyQuery.ToComponentDataArray<EnemyHealth>(frameAllocator);
+        NativeArray<LocalTransform> enemyTransforms = enemyQuery.ToComponentDataArray<LocalTransform>(frameAllocator);
+        NativeArray<EnemyRuntimeState> enemyRuntimeArray = enemyQuery.ToComponentDataArray<EnemyRuntimeState>(frameAllocator);
+        NativeArray<EnemyKnockbackState> projectedEnemyKnockback = enemyQuery.ToComponentDataArray<EnemyKnockbackState>(frameAllocator);
+        NativeArray<byte> enemyDirtyFlags = CollectionHelper.CreateNativeArray<byte>(enemyCount, frameAllocator, NativeArrayOptions.ClearMemory);
+        NativeArray<byte> enemyFlashDirtyFlags = CollectionHelper.CreateNativeArray<byte>(enemyCount, frameAllocator, NativeArrayOptions.ClearMemory);
+        NativeArray<byte> enemyKnockbackDirtyFlags = CollectionHelper.CreateNativeArray<byte>(enemyCount, frameAllocator, NativeArrayOptions.ClearMemory);
+        NativeArray<float3> enemyPositions = CollectionHelper.CreateNativeArray<float3>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> enemyBodyRadii = CollectionHelper.CreateNativeArray<float>(enemyCount, frameAllocator, NativeArrayOptions.UninitializedMemory);
         float maximumEnemyRadius = 0.05f;
 
         for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++)
@@ -99,7 +100,7 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
 
         float cellSize = EnemySpatialHashUtility.ResolveCellSize(maximumEnemyRadius);
         float inverseCellSize = 1f / cellSize;
-        NativeParallelMultiHashMap<int, int> enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Temp);
+        NativeParallelMultiHashMap<int, int> enemyCellMap = new NativeParallelMultiHashMap<int, int>(enemyCount, frameAllocator);
         EnemySpatialHashUtility.BuildCellMap(in enemyPositions, inverseCellSize, ref enemyCellMap);
 
         BufferLookup<EnemyElementStackElement> elementalStackLookup = SystemAPI.GetBufferLookup<EnemyElementStackElement>(false);
@@ -112,8 +113,8 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
         DynamicBuffer<GameAudioEventRequest> audioRequests = default;
         bool canEnqueueAudioRequests = SystemAPI.TryGetSingletonBuffer<GameAudioEventRequest>(out audioRequests);
         EntityCommandBuffer commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-        NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> hitCandidates = new NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate>(32, Allocator.Temp);
-        NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> traversedHitCandidates = new NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate>(16, Allocator.Temp);
+        NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> hitCandidates = new NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate>(32, frameAllocator);
+        NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate> traversedHitCandidates = new NativeList<PlayerLaserBeamDamageResolutionUtility.LaserBeamHitCandidate>(16, frameAllocator);
 
         foreach ((RefRO<PlayerRuntimeShootingConfig> runtimeShootingConfig,
                   DynamicBuffer<PlayerRuntimeShootingAppliedElementSlot> appliedElementSlots,
@@ -348,20 +349,6 @@ public partial struct PlayerLaserBeamDamageSystem : ISystem
 
         commandBuffer.Playback(entityManager);
         commandBuffer.Dispose();
-        hitCandidates.Dispose();
-        traversedHitCandidates.Dispose();
-        enemyEntities.Dispose();
-        enemyDataArray.Dispose();
-        projectedEnemyHealth.Dispose();
-        enemyTransforms.Dispose();
-        enemyRuntimeArray.Dispose();
-        projectedEnemyKnockback.Dispose();
-        enemyDirtyFlags.Dispose();
-        enemyFlashDirtyFlags.Dispose();
-        enemyKnockbackDirtyFlags.Dispose();
-        enemyPositions.Dispose();
-        enemyBodyRadii.Dispose();
-        enemyCellMap.Dispose();
     }
     #endregion
 

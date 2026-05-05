@@ -50,18 +50,10 @@ public partial struct EnemySpawnSystem : ISystem
     {
         EntityManager entityManager = state.EntityManager;
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
-        NativeArray<Entity> spawnerEntities = spawnerQuery.ToEntityArray(Allocator.Temp);
+        NativeArray<Entity> spawnerEntities = spawnerQuery.ToEntityArray(state.WorldUpdateAllocator);
 
-        try
-        {
-            for (int spawnerIndex = 0; spawnerIndex < spawnerEntities.Length; spawnerIndex++)
-                ProcessSpawner(entityManager, spawnerEntities[spawnerIndex], elapsedTime);
-        }
-        finally
-        {
-            if (spawnerEntities.IsCreated)
-                spawnerEntities.Dispose();
-        }
+        for (int spawnerIndex = 0; spawnerIndex < spawnerEntities.Length; spawnerIndex++)
+            ProcessSpawner(entityManager, spawnerEntities[spawnerIndex], elapsedTime);
     }
     #endregion
 

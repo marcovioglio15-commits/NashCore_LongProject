@@ -39,7 +39,7 @@ public static class ProjectilePoolUtility
         if (!entityManager.HasBuffer<ProjectilePoolElement>(shooterEntity))
             return;
 
-        NativeArray<Entity> spawnedProjectiles = new NativeArray<Entity>(count, Allocator.Temp);
+        NativeArray<Entity> spawnedProjectiles = new NativeArray<Entity>(count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
         try
         {

@@ -1,4 +1,3 @@
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -14,18 +13,14 @@ internal static class EnemyBossMinionSpawnTriggerUtility
     #region Trigger Evaluation
     /// <summary>
     /// Evaluates the configured trigger and alive cap for one minion rule.
-    /// /params entityManager Entity manager used to count active minions.
-    /// /params bossEntity Boss that owns the rule.
-    /// /params ruleIndex Rule index being evaluated.
+    /// /params aliveMinionCount Current active minions for the source boss rule.
     /// /params rule Rule runtime data, mutated to consume non-spawnable damage-hit triggers.
     /// /params bossHealth Boss health state.
     /// /params bossRuntime Boss runtime state.
     /// /params elapsedTime Current world elapsed time. Damage-trigger rules use boss lifetime for cooldown timestamps.
     /// /returns True when the rule should spawn minions now.
     /// </summary>
-    public static bool ShouldTriggerRule(EntityManager entityManager,
-                                         Entity bossEntity,
-                                         int ruleIndex,
+    public static bool ShouldTriggerRule(int aliveMinionCount,
                                          ref EnemyBossMinionSpawnElement rule,
                                          in EnemyHealth bossHealth,
                                          in EnemyRuntimeState bossRuntime,
@@ -39,8 +34,7 @@ internal static class EnemyBossMinionSpawnTriggerUtility
         }
 
         // Consume damage hits that arrive while the alive cap keeps the rule blocked.
-        if (rule.MaxAliveMinions > 0 &&
-            CountAliveMinions(entityManager, bossEntity, ruleIndex) >= rule.MaxAliveMinions)
+        if (rule.MaxAliveMinions > 0 && aliveMinionCount >= rule.MaxAliveMinions)
         {
             ConsumeBlockedBossDamageTrigger(ref rule, in bossRuntime);
             return false;
@@ -60,48 +54,6 @@ internal static class EnemyBossMinionSpawnTriggerUtility
         }
     }
 
-    /// <summary>
-    /// Counts active minions currently owned by one boss rule.
-    /// /params entityManager Entity manager used to inspect component-enabled state.
-    /// /params bossEntity Boss that owns the minions.
-    /// /params ruleIndex Rule index to count.
-    /// /returns Active minion count.
-    /// </summary>
-    public static int CountAliveMinions(EntityManager entityManager, Entity bossEntity, int ruleIndex)
-    {
-        int count = 0;
-        EntityQuery query = entityManager.CreateEntityQuery(typeof(EnemyBossMinionOwner), typeof(EnemyActive));
-        NativeArray<Entity> minionEntities = query.ToEntityArray(Allocator.Temp);
-
-        try
-        {
-            // Scan only active boss-minion owners and match the source rule.
-            for (int index = 0; index < minionEntities.Length; index++)
-            {
-                Entity minionEntity = minionEntities[index];
-
-                if (!entityManager.Exists(minionEntity))
-                    continue;
-
-                if (!entityManager.IsComponentEnabled<EnemyActive>(minionEntity))
-                    continue;
-
-                EnemyBossMinionOwner owner = entityManager.GetComponentData<EnemyBossMinionOwner>(minionEntity);
-
-                if (owner.BossEntity == bossEntity && owner.RuleIndex == ruleIndex)
-                    count++;
-            }
-        }
-        finally
-        {
-            if (minionEntities.IsCreated)
-                minionEntities.Dispose();
-
-            query.Dispose();
-        }
-
-        return count;
-    }
     #endregion
 
     #region Trigger State

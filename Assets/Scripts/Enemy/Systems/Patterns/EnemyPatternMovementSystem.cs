@@ -27,6 +27,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
 
     #region Fields
     private EntityQuery playerQuery;
+    private EntityQuery occupancyQuery;
     #endregion
 
     #region Methods
@@ -36,6 +37,10 @@ public partial struct EnemyPatternMovementSystem : ISystem
     {
         playerQuery = SystemAPI.QueryBuilder()
             .WithAll<PlayerControllerConfig, LocalTransform>()
+            .Build();
+        occupancyQuery = SystemAPI.QueryBuilder()
+            .WithAll<EnemyData, EnemyPatternConfig, EnemyPatternRuntimeState, EnemyRuntimeState, EnemyKnockbackState, LocalTransform, EnemyActive>()
+            .WithNone<EnemyDespawnRequest>()
             .Build();
 
         state.RequireForUpdate(playerQuery);
@@ -86,6 +91,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
 
         bool wallsEnabled = wallsLayerMask != 0;
         float elapsedTime = (float)SystemAPI.Time.ElapsedTime;
+        Allocator frameAllocator = state.WorldUpdateAllocator;
         ComponentLookup<EnemyShooterControlState> shooterControlLookup = SystemAPI.GetComponentLookup<EnemyShooterControlState>(true);
         ComponentLookup<EnemyElementalRuntimeState> elementalRuntimeLookup = SystemAPI.GetComponentLookup<EnemyElementalRuntimeState>(true);
         EnemyNavigationGridState navigationGridState = default;
@@ -98,13 +104,14 @@ public partial struct EnemyPatternMovementSystem : ISystem
             navigationFlowReady = navigationGridState.FlowReady != 0 && navigationCells.Length > 0;
         }
 
-        NativeList<Entity> occupancyEntities = new NativeList<Entity>(Allocator.Temp);
-        NativeList<float3> occupancyPositions = new NativeList<float3>(Allocator.Temp);
-        NativeList<float3> occupancyVelocities = new NativeList<float3>(Allocator.Temp);
-        NativeList<float> occupancyRadii = new NativeList<float>(Allocator.Temp);
-        NativeList<byte> occupancyDvdFlags = new NativeList<byte>(Allocator.Temp);
-        NativeList<float> occupancyDvdBounceDamping = new NativeList<float>(Allocator.Temp);
-        NativeList<int> occupancyPriorityTiers = new NativeList<int>(Allocator.Temp);
+        int occupancyCapacity = math.max(1, occupancyQuery.CalculateEntityCount());
+        NativeList<Entity> occupancyEntities = new NativeList<Entity>(occupancyCapacity, frameAllocator);
+        NativeList<float3> occupancyPositions = new NativeList<float3>(occupancyCapacity, frameAllocator);
+        NativeList<float3> occupancyVelocities = new NativeList<float3>(occupancyCapacity, frameAllocator);
+        NativeList<float> occupancyRadii = new NativeList<float>(occupancyCapacity, frameAllocator);
+        NativeList<byte> occupancyDvdFlags = new NativeList<byte>(occupancyCapacity, frameAllocator);
+        NativeList<float> occupancyDvdBounceDamping = new NativeList<float>(occupancyCapacity, frameAllocator);
+        NativeList<int> occupancyPriorityTiers = new NativeList<int>(occupancyCapacity, frameAllocator);
         float occupancyMaxRadius = 0.05f;
         float occupancyMaxPlanarSpeed = 0f;
 
@@ -159,7 +166,7 @@ public partial struct EnemyPatternMovementSystem : ISystem
         int occupancyCount = occupancyEntities.Length;
         float occupancyCellSize = math.max(0.25f, occupancyMaxRadius + 0.35f);
         float occupancyInverseCellSize = 1f / occupancyCellSize;
-        NativeParallelMultiHashMap<int, int> occupancyCellMap = new NativeParallelMultiHashMap<int, int>(math.max(1, occupancyCount * 2), Allocator.Temp);
+        NativeParallelMultiHashMap<int, int> occupancyCellMap = new NativeParallelMultiHashMap<int, int>(math.max(1, occupancyCount * 2), frameAllocator);
 
         // Populate spatial hash map with nearby enemy positions.
         for (int occupancyIndex = 0; occupancyIndex < occupancyCount; occupancyIndex++)
@@ -654,14 +661,6 @@ public partial struct EnemyPatternMovementSystem : ISystem
             enemyTransform.ValueRW = currentEnemyTransform;
         }
 
-        occupancyCellMap.Dispose();
-        occupancyDvdBounceDamping.Dispose();
-        occupancyDvdFlags.Dispose();
-        occupancyRadii.Dispose();
-        occupancyPriorityTiers.Dispose();
-        occupancyVelocities.Dispose();
-        occupancyPositions.Dispose();
-        occupancyEntities.Dispose();
     }
     #endregion
 

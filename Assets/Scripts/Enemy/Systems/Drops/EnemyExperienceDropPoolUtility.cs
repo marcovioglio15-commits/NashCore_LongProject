@@ -37,7 +37,7 @@ public static class EnemyExperienceDropPoolUtility
         if (entityManager.HasBuffer<EnemyExperienceDropPoolElement>(poolEntity) == false)
             return;
 
-        NativeArray<Entity> spawnedDrops = new NativeArray<Entity>(count, Allocator.Temp);
+        NativeArray<Entity> spawnedDrops = new NativeArray<Entity>(count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
         try
         {
