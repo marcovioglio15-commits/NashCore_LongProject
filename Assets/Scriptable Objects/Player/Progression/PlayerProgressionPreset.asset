@@ -399,9 +399,7 @@ MonoBehaviour:
       rankBonuses:
         formulas:
         - formula: '[MovementSpeed]=[MovementSpeed]*1.2'
-      passivePowerUpUnlocks:
-      - isEnabled: 1
-        passivePowerUpId: PassiveSplittingProjectiles
+      passivePowerUpUnlocks: []
     - rankId: B
       requiredComboValue: 500
       pointsDecayPerSecond: 1

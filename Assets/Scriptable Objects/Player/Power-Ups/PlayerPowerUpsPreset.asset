@@ -100,7 +100,7 @@ MonoBehaviour:
     tierRolls:
     - tierId: Milestone_Tier1-2-3
       selectionPercentage: 80
-    - tierId: Milestone_Tier1-2-3
+    - tierId: Milestone_Tier4-5
       selectionPercentage: 20
   tierLevels:
   - tierId: Milestone_Tier1-2-3
@@ -15419,10 +15419,9 @@ MonoBehaviour:
         stackable:
           maxAcquisitions: 2
     unreplaceable: 0
-  primaryActivePowerUpId: ActiveChargeShot
-  secondaryActivePowerUpId: Active_Shotgun
-  equippedPassivePowerUpIds:
-  - PassiveBouncingProjectiles
+  primaryActivePowerUpId: 
+  secondaryActivePowerUpId: 
+  equippedPassivePowerUpIds: []
   passiveTools:
   - commonData:
       powerUpId: BIG SHOT

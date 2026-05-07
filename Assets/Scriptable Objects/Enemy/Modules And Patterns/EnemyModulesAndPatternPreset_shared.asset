@@ -1667,8 +1667,8 @@ MonoBehaviour:
             experienceAmount: 6
           - dropPrefab: {fileID: 6858454939034102764, guid: b4ca66a6a67765143825d976eb834132, type: 3}
             experienceAmount: 9
-          complessiveExperienceDropMinimum: 3
-          complessiveExperienceDropMaximum: 12
+          complessiveExperienceDropMinimum: 9
+          complessiveExperienceDropMaximum: 16
           dropsDistribution: 0.5
           dropRadius: 0.6
           collectionMovement:
